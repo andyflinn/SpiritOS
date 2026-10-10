@@ -1,8 +1,8 @@
 {
- "change": 29158,
+ "change": 29615,
  "line": 8495,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T19:44:24.447Z",
+ "writtenAt": "2026-10-10T21:36:01.855Z",
  "items": [
   {
    "id": "goal/G16",
@@ -14,7 +14,10 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G16.7",
+    "goal/G16.3"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -32,32 +35,150 @@
    "waived": false,
    "rules": [],
    "asks": 1,
-   "half": true,
-   "full": true,
+   "half": false,
+   "full": false,
    "design": true,
-   "waiting": 1,
+   "waiting": 9,
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "WHAT: act on the review \"SpiritOS relay and node split review\" (Andreas Thut, 2026-10-10, at e8f8ffd, four parallel readers of relay.js whole and the node's wire path, repros of S1, S3, S6 on Node 22). Its summary: the relay keeps its envelope rule; the node breaks its own; both layers still carry app knowledge; the worst problems are trust, not layering: reply text is signed by nobody, and one member can lock the owner out of every relay verb. The three rules checked are NODE-AND-RELAY.md's: the relay carries, the node stores, the shell understands.\n\nDECIDED (Andy, 2026-10-10): \"Greate a goal in desk for this\". Items are added one at a time at his word (rule/7); every relay-wire change and every node verb change is a review-and-yes change.\n\nCHECKED by claude-windows at b355e36d (the headline items, in the tree as the review says; the low items taken on the review's word until their item opens):\n- S1: the receipt signs 'receipt', the REQUEST hash and the minute (relayAuth.js receiptMessage); the reply text is bound by nothing, and the seal is anonymous, so a relay can swap the text and the receipt still verifies.\n- S2: deliverForwardedReply (relay.js) checks only that the partner's reply.from is the route's target, never reply.sig, then announceRoute tells every member where the key lives.\n- S3: router.js DEFAULT_PER_TARGET is 1 and every self-addressed verb opens its route on the relay's own key: one slot for owner, member and partner verbs together.\n- N1: server.js hands wire.decode as a value to four witnesses (puppetMode, apiDoor, ownerPost, boxes); each decodes every admitted arrival; nodeKnowsNoApps.js matches only the written call, and is red today (its control fails).\n- N2: apiDoor.js refuses a body whose args.by is 'andy' and branches on app 'api'; the desk takes the writer from the caller now (writerOf), so the check guards nothing and refuses a member's search by 'andy'.\n- A1: the node's relay list is shell/natter/relays.json (ownerBadge.js, hub.js, server.js, presenceNode.js), created with Andy's relay as default at every boot; the path is in error texts.\n- R1: relayRequest.js and serveCommon.js build a body by string concatenation per chunk: a multi-byte character split across chunks becomes U+FFFD, a request then fails its signature, a reply changes unnoticed.\n\nTHE REVIEW'S FINDINGS, by rule (severity in brackets)\nRule 1, the relay opens only what is addressed to it: HOLDS. Around it: R1 chunk concatenation [medium]; R2 partner gate runs every verb in a body, not one [medium]; R3 a truthy card exempts a post from sealing and every verb in it runs, so an invite token can travel in plaintext [medium]; R4 the DEBUG monitor copies pass-through text to the owner, a decision of 2026-09-26 [low]; R5 sizes compared in UTF-16 units, Andy's ruling says bytes [low].\nRule 2, the node decodes the envelope and nothing inside: BROKEN. N1 [high]; N2 [high]; N3 peerPost refusalIn parses every reply without checking it is not an app's, so an app's {ok:false} is read as a node refusal and the card is re-fetched [medium]; N4 the node composes packets addressed to apps (published, api), which a puppet app can forge [medium]; N5 answerRelay and nodeCard parse inline before checking the sender, correct but unseen by the guard [low]. Held stranger: B1 a held packet is receipted as delivered [high]; B2 held text is logged and kept in memory forever, against the comment [medium].\nRule 3, no app logic in node or relay: BROKEN. A1 [high]; A2 = N2 [high]; A3 the error catalogue defines desk, deskClient, chatClerver and fileServer codes, and an app cannot define its own (define throws) [medium]; A4 per-peer stats written into the Contacts app's folder [medium]. Placement: hub reads Contacts' old prefs (expires at alpha); jobs/api.json describes a verb with the desk's shape; the relay refuses to start without shell and process folders it never loads; relayServer requires peerPost, which pulls contacts and node:sqlite onto a relay; bash http-to-https and RELAY-HOST tell operators a stale app/natter path.\nWire security: S1 [high, repro]; S2 [high]; S3 [high, repro]; S4 the rate limit is charged to the claimed sender before the signature is checked, so junk with a public key exhausts that member [medium]; S5 a sealed owner post can be replayed for about two minutes, seal.open's time is unchecked for self-addressed verbs [medium]; S6 a double device offer overwrites the awaiting slot and the first hangs [medium, repro]; S7 the onward budget is the requested one, not the 5 s granted, late forwards leak carrying entries [medium]; S8 a stream header names no relay and carries no nonce, so one relay can replay it on another within three minutes [medium]; S9 a post signed once is resent on retry and after restart, past the three-minute window, and 403 is final [medium]; S10 relayRequest has no socket timeout, no size cap, no error handler [medium]; S11 loopback servers subscribing as a page mark the backlog taken, so a closed browser loses waiting lines [medium]; S12 frontDoor never checks blocked under acquire [medium]; S13 claim rate limit keyed on remoteAddress behind Caddy, one bucket for everybody [medium, suspected]. Low: deviceOffer's 5 s ttl; seats missing from the owner's report; carry runs before size checks; peerPost adopts the wire's hash (against decision 0011); the relay identity written in place; one partner can fill all forward slots; card asks bypass the front door and log two rows each; under acquire a stranger is known after one message.\nThe guard: nodeKnowsNoApps.js misses a decode passed as a value, an inline parse, decorate, a branch on .app, and exempts kernel.js whole; a stronger guard bans client/packet from the node layer's requires but one named file, and flags any .app read on arrival text.\n\nTHE REVIEW'S ORDER, as proposed items (each at his word): 1 S1+S2 the receipt binds the reply text and a forwarded reply is verified before a route is announced; 2 S3 self-addressed verbs get their own capacity; 3 A1 the relay list leaves the Natter folder for node state behind a node verb; 4 N2 the 'andy' check and the app branch leave apiDoor; 5 N1 + the guard: one named decoder in the node layer and a guard that sees it; then R1, B1/B2, S4 to S13 and the rest in batches.\n",
-   "version": 1,
+   "box": "WHAT: act on the review \"SpiritOS relay and node split review\" (Andreas Thut, 2026-10-10, at e8f8ffd; relay.js whole and the node's wire path read by four readers; S1, S3, S6 reproduced on Node 22). Its verdict: the relay keeps its envelope rule, the node breaks its own, both layers still carry app knowledge, and the worst problems are trust, not layering. The rules checked are NODE-AND-RELAY.md's three: the relay carries, the node stores, the shell understands.\n\nDECIDED: the goal is Andy's (2026-10-10); \"device WILL be KILLED. that's a decision.\" (2026-10-10, under goal/G16.2: the device enrolment, abandoned 2026-09-26, leaves the tree, as an item of this goal once he adds it); \"the relays should do first-claim, it should happen at install time. that's the only \\\"safe\\\" way.\" and \"NOT first claim i mean\" and \"KILL the dead code / fallback. this type of stuff is always coming back to bite us.\" (2026-10-10, under goal/G16.3: the owner is set at install, the first-claim path over the wire goes; \"yes. ownership CANNOT be achieved via invite.\": goal/G16.8); \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" (2026-10-10, under goal/G16.6; it covers R5 as well); items are added one at a time at his word; every relay-wire and node-verb change is reviewed and gets his yes before a build. Claude-windows checked the headline items in the tree at b355e36d; the low items stand on the review's word until their item opens.\n\nITEMS (with folds of 2026-10-10, \"place all you can into existing items\"): goal/G16.1 S1, S2, S7, the 0011 hash low (the receipt binds the reply text; a forwarded reply is verified before its route is announced); goal/G16.2 S3, the device removal with S6, S4, S13, R2, R3, the partner-slots low; goal/G16.3 A1, A4, the operator pages; goal/G16.4 N2 (the andy check and the app branch leave apiDoor); goal/G16.5 N1 (one decoder in the node layer, and a guard that sees it); goal/G16.6 R1, R5, S10, the proxy reply cap, the carry-order low; goal/G16.7 B1, B2, S12, the acquire-known low, the card-ask lows; goal/G16.8 (ownership never by invite: the first-claim path goes).\n\nTHE REST, no existing item fits: R4 (the DEBUG monitor copies pass-through text to the owner, a decision of 2026-09-26, noted); N4 (the node composes packets addressed to apps, published and api, which a puppet app can forge: the item on the node's own packets, where goal/G16.4's app-name branch waits); A3 (the error catalogue defines desk, deskClient, chatClerver and fileServer codes and an app cannot define its own); the placement notes (hub reads Contacts' old prefs, expires at alpha; jobs/api.json describes a verb with the desk's shape; the relay refuses to start without shell and process folders it never loads; relayServer requires peerPost, which pulls contacts and node:sqlite onto a relay); S5, S8 and S9 (a sealed owner post replayable for two minutes, a stream header with no relay name and no nonce replayable on another relay, a post signed once and resent past the window with 403 final: the replay windows, one batch); S11 (loopback servers subscribing as a page mark the backlog taken, so a closed browser loses waiting lines); the lows: seats missing from the owner's report, the relay identity written in place.",
+   "version": 16,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "Add it?",
      "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T19:52:36.355Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T19:52:38.055Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T19:52:39.890Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T19:54:08.453Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T19:55:59.715Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T19:59:10.815Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:10:07.964Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Q7 stands: add the held stranger (B1, B2)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:10:09.695Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:25:28.496Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:25:30.818Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Do you add the item for the first relay-wire batch, S4 to S7 of the review, which are the rate limit charged before the signature is checked, a sealed owner post replayable for two minutes, a double device offer that hangs, and the onward budget that leaks route entries?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:34:12.631Z"
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "2?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:34:14.586Z"
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "Fold them that way, with the two boxes updated?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:34:40.672Z"
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "Apply it now, or after THE REST is settled?",
+     "test": "",
      "state": "open",
      "by": "claude-windows",
-     "at": "2026-10-10T19:42:25.337Z"
+     "at": "2026-10-10T21:34:42.919Z"
     }
    ],
    "chat": [
@@ -65,6 +186,1249 @@
      "by": "claude-windows",
      "at": "2026-10-10T19:42:24.997Z",
      "text": "Goal opened with the review condensed in the box: verdict per rule, every finding with its severity, the headline seven checked in the tree, the review's fix order as proposed items.\nFirst item proposed: \"The receipt binds the reply text, and a forwarded reply is verified before its route is announced (S1, S2)\"; a relay-wire change, so review and your yes on the shape before any build.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T19:45:03.659Z",
+     "text": "Q1: Add it?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T19:48:16.462Z",
+     "text": "eliminate split items from box, and identify the next item to create\n\ncap."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:49:04.555Z",
+     "text": "Capped: S1 and S2 left the box for goal/G16.1; the box keeps the rest by rule, an ITEMS line and a NEXT line.\nNext item, the review's second: self-addressed verbs get their own capacity (S3), one relay-wide slot today locks the owner out behind one searching member.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T19:49:19.312Z",
+     "text": "next. same thing."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:50:46.296Z",
+     "text": "goal/G16.2 added and boxed; S3 left the goal box.\nNext per the review: the relay list leaves the Natter folder for node state behind a node verb (A1).\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T19:51:12.378Z",
+     "text": "Q1: Add it?\nyes\n\nQ2: Add it?\n\nyes\n\nQ3: Add it?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:52:51.810Z",
+     "text": "goal/G16.3 added and boxed; A1 left the goal box; Q1 to Q3 here marked answered.\nNext per the review: the andy check and the app branch leave apiDoor (N2).\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T19:53:35.597Z",
+     "text": "Q4: Add it?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:55:04.871Z",
+     "text": "goal/G16.4 added and boxed; N2 left the goal box; Q4 marked answered.\nNext per the review: one named decoder in the node layer and a guard that sees it (N1), the guard suite being red today.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T19:55:34.605Z",
+     "text": "Q5: Add it?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:57:06.896Z",
+     "text": "goal/G16.5 added and boxed; N1 and the guard left the goal box; Q5 marked answered.\nThe review's fix-first list is now items; what is left are batches, the first being R1: bodies read as Buffers and joined once, in relayRequest and serveCommon.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T19:58:48.919Z",
+     "text": "Q6: Add it?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:00:08.439Z",
+     "text": "goal/G16.6 added and boxed; R1 left the goal box; Q6 marked answered.\nNext batch per the review: the held stranger (B1 a held packet is receipted as delivered, B2 its text is logged and kept forever).\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:03:41.731Z",
+     "text": "Q7: Add it?\n\nmy problem here, deskUnsloth's studio call, it's the nature of that beast, if we want Levant to be useful. The node-side fetch completely bypasses any node transaction (peerPost, search, etc) I think items like that need an explanation, and an exemption so they don't come back.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:04:38.160Z",
+     "text": "Thoughts on the two unnamed readers:\n- The kernel's site is not a bypass: it is jobs.report, a spawned process posting jobs.update with its job id to its node's one door; a node transaction, through the door, and kernel.js is exempt from the oneDoor tally by your ruling of 2026-10-02 (an environment-splitter).\n- deskUnsloth's studio call is an outward reach to a service that is not Spirit, the model's door, like the proxy's fetch; the place where such a reach is explained and kept from coming back already exists: oneDoor.js tallies every reach per file with its reason, a number may fall and never rise, a file not in the tally must have zero.\n- The gap: the tally counts run/js, client, app and test, not process/, so the studio reach is uncounted today. Proposal, folded into goal/G16.6: the tally extends to process/ and names deskUnsloth's reach with its reason line, so the exemption is counted and explained, and both readers still join once.\nQ7 stands: add the held stranger (B1, B2)?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:09:35.254Z",
+     "text": "the request net.fetch falls under the MAX_PAYLOAD, but the reply is handed back without gate? \n\nproblem is an outside server knows nothing about MAX_PAYLOAD and no shell or node internal thing can deal with it....\n\nso we will get a crash.... either in shell or in node? or at least a rejection error?\nQ8: Q7 stands: add the held stranger (B1, B2)?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:11:14.587Z",
+     "text": "On net.fetch: no crash and no rejection today. The proxy reads the outside reply whole into memory with Buffer.concat and no byte cap, and hands it back on loopback uncapped (net.fetch is a loopback verb; it never crosses the wire as a packet, so the packet gate never sees it); the only cut is deskUnsloth's tool room.\nThe gap is a cap at the first gate the reply passes, the proxy's read, refused by name past it, the same gap S10 names for relayRequest (no size cap, no timeout, no error handler).\nProposal: the proxy's reply cap joins the S10 item when that batch comes; nothing new to add now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:11:25.387Z",
+     "text": "goal/G16.7 added and boxed; B1 and B2 left the goal box; Q7 and Q8 marked answered.\nNext batch per the review, the relay wire in two halves: first S4 to S7 (the rate limit charged before the signature, the two-minute replay of a sealed owner post, the double device offer, the onward budget and the leaking carrying entries).\nAdd it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:22:13.846Z",
+     "text": "Recorded in the goal box and under goal/G16.2: device WILL be KILLED.\nThe item \"Device enrolment leaves the tree\" (the two node verbs, hub's handlers, the relay's offer and door, the router's relay class, six suites, three design pages marked superseded, natterDetails' read) is proposed here.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:25:01.130Z",
+     "text": "what are these red Q's?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:25:33.057Z",
+     "text": "Those two were my add-it questions for two proposed items, cut by the desk to their last two words; struck and asked again plainly below, one each."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:25:34.956Z",
+     "text": "Do you add the item for the first relay-wire batch, S4 to S7 of the review, which are the rate limit charged before the signature is checked, a sealed owner post replayable for two minutes, a double device offer that hangs, and the onward budget that leaks route entries?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:25:37.358Z",
+     "text": "Do you add the item that removes the device enrolment from the tree, as you decided under goal/G16.2?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:26:30.501Z",
+     "text": "do these two things fit into existing items?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:26:58.399Z",
+     "text": "Mostly, yes:\n- the device removal fits goal/G16.2, which already deletes the router's relay class because device offers are its only reason; the rest of device (two node verbs, the hub handlers, the relay's offer and door, six suites, three design pages marked superseded) joins it there, and S6, the double device offer that hangs, vanishes with it.\n- S7, the onward budget and the leaking route entries, fits goal/G16.1, which already rewrites the forwarded-reply path.\n- S4, the rate limit charged before the signature is checked, fits goal/G16.2 as well, the relay's accounting of who may ask.\n- S5, a sealed owner post replayable for two minutes, fits none; it belongs with S8 and S9, the other replay windows, in a later batch.\nFold them that way, with the two boxes updated?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:28:10.043Z",
+     "text": "place all you can into existing items, then we deal with the rest."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:30:36.512Z",
+     "text": "Placed, each box carries a FOLDED IN section:\n- goal/G16.1: S7 (onward budget, leaking route entries) and the 0011 hash low.\n- goal/G16.2: the device removal with S6, S4 (limit charged before the signature), S13 (claim limit keyed on the address behind Caddy), R2 and R3 (one verb per self-addressed request), the partner-slots low.\n- goal/G16.3: A4 (peer stats out of the Contacts folder) and the operator pages.\n- goal/G16.6: S10 (socket timeout, size cap, error handler), the proxy reply cap, the carry-order low.\n- goal/G16.7: S12 (blocked checked under acquire), the acquire-known low, the card-ask lows.\nThe rest, listed in the goal box under THE REST: R4 (a decision, noted), N4 (the node's own packets), A3 (the error catalogue), four placement notes, the replay windows S5, S8, S9, S11 (backlog taken by a loopback subscriber), and two lows."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:33:34.089Z",
+     "text": "Q11: Do you add the item for the first relay-wire batch, S4 to S7 of the review, which are the rate limit charged before the signature is checked, a sealed owner post replayable for two minutes, a double device offer that hangs, and the onward budget that leaks route entries?\n\nif all is decided, i need you to sequence all items for a reasonable implementation sequence, this is where your expertise is wanted. i want to clear up unresolved design decisions, then ask you to organize the sequencing by adding dependency relationships among a goals items."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:34:42.606Z",
+     "text": "The two add-it questions are moot after the folds and struck. Proposed implementation order, with what blocks what:\n1. goal/G16.6 bytes copied, bytes counted: the foundation every wire test stands on, no semantic change; blocks nothing yet.\n2. goal/G16.4 the andy check out of apiDoor: trivial, before the door is rewritten.\n3. goal/G16.5 one decoder in the node layer: blocked by G16.4 (it rewrites the same door).\n4. goal/G16.1 the receipt binds the reply text, S2, S7: blocked by G16.6 (its bytes must be right before a hash of them is signed).\n5. goal/G16.2 capacity, device removal, S4, S13, R2, R3: blocked by G16.1 (both rewrite the relay's post path; one at a time).\n6. goal/G16.7 the held stranger: blocked by G16.1 (its refusal reply is a receipt of the new form) and by G16.5 (peerPost's refusal reader changes there).\n7. goal/G16.8 ownership never by invite: blocked by G16.2 (the relay's claim path is touched after its post path settles).\n8. goal/G16.3 the relay list in node state: blocked by G16.8 (a claim adds its relay once the claim path is final).\nThe flag day of G16.1 is one deploy of relays and nodes after 1 to 8 are green. The desk sets a block only when an item is added or through session.set of the whole goal, so I would apply this with one session.set naming all eight items and their blocks.\nApply it now, or after THE REST is settled?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:35:26.697Z",
+     "text": "Q14: Apply it now, or after THE REST is settled?\n\napply the organizing of items and dependencies? sure."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.6",
+   "title": "Bodies read as Buffers and joined once (R1)",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16.1"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "WHAT: every HTTP body the node or the relay reads off a socket is collected as Buffers and decoded once at the end, so a multi-byte character split across two TCP chunks arrives whole; today each chunk is turned into a string on its own and the split character becomes U+FFFD, a request then fails its signature with a spurious 403, and a reply, which no signature covers until goal/G16.1, arrives changed and nobody notices (R1 of the review).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q6: Add it? yes\"). On the studio call (2026-10-10): \"on the wire to unsloth studio, all is permitted, deskUnsloth is responsible to keep the request bodies to desk, and the streams to \\\"owner\\\" and UI within packet limits.\" So that reach needs no exemption and no tally entry; deskUnsloth owns what it sends on and keeps it under the packet caps. The four readers were discussed one at a time (\"THIS IS NOT A ONE-ANSWER\"); his rulings, 2026-10-10: \"4. yes. the relayRequest must copy raw bytes only. if it doesn't fix it. now.\"; \"3. serveCommon. yes. one single piece of shared code must ensure that raw bytes are copied. precisely.\"; \"2. same practise odered. ideally through a shared kernel.js utility or similar.\"; \"1. already decided and defined\". The rule behind it, his, 2026-10-10: \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" R5 folded in on that rule: \"yes. just make sure it's fixed.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- relayRequest.js 80: the node's one hop to a relay collects the answer with chunks += c (a string from the start) and resolves text: chunks. Every relay answer the node reads passes here.\n- serveCommon.js 173: readJsonBody, the body reader of node and relay alike, does body += chunk after counting Buffer.byteLength(chunk) against the cap (the cap counts bytes correctly; the join does not).\n- kernel.js 625: the node-side fetch in the kernel does data += chunk the same way; deskUnsloth.js 214 (the studio call) raw += c as well. The desk's own readers go through appServer, not read here.\n- Node's Buffer.concat(chunks).toString('utf8') decodes once over the whole body and never splits a character; a chunk is a Buffer when no encoding is set on the stream, so the fix is in the join, not the stream.\n\nSHAPE (decided)\n1. ONE SHARED UTILITY in kernel.js, the file node and processes both load: readBody(stream) collects the raw chunks as Buffers and decodes once at the end, Buffer.concat(list).toString('utf8'), answering a promise of the text; it takes an optional byte cap and refuses by name when the raw bytes pass it, counting Buffer.byteLength per chunk before the push, so readJsonBody keeps its cap exactly as today.\n2. THREE READERS USE IT and keep no reading of their own: relayRequest (the outbound socket, node and relay), serveCommon.readJsonBody (the one door's body reader, node and relay), and the kernel's own jobs.report (a process reading its node's answer). The studio call in deskUnsloth is off this item (his ruling 1).\n3. BYTES COUNTED (R5, folded): the relay's four size checks that compare text.length against MAX_ROUTED_TEXT (relay.js 2701, 4063, 4181, 4250) compare Buffer.byteLength(text, 'utf8') instead, so a non-ASCII text is refused at the cap it names and not at the HTTP body cap.\n4. Nothing on the wire changes; oneDoor's tally does not move (no new require of http anywhere).\n\nTESTS, red first: spirit/test/bodiesJoinedOnce.js: kernel exports readBody and a body whose four-byte character (an emoji) is split across two writes with a pause between them comes back exact (red today: no such utility); relayRequest resolves the exact text of such an answer from a local server (red today: U+FFFD in it); readJsonBody of serveCommon parses the exact string of such a request and still refuses a body one byte over its cap; jobs.report hands back such an answer whole; the three files hold no chunk-to-string join of their own (the grep for the idiom under them is empty); a routed text whose byte count passes MAX_ROUTED_TEXT while its character count does not (accents or emoji) is refused 413 too big by the relay, and relay.js compares no text length against that cap any more.\n\nFILES: kernel.js, relayRequest.js, serveCommon.js, relay.js (core, grant); spirit/test/bodiesJoinedOnce.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S10: relayRequest has no socket timeout, no response size cap and no error handler, so a partner or a relay can stream an endless body into RAM or hold sockets open; the shared readBody takes the cap and relayRequest sets a timeout and an error handler, refusing by name.\n- The proxy's reply (his net.fetch question under the goal): handleGenericProxy reads an outside reply whole with no cap; it reads through the same readBody with a cap and refuses by name past it.\n- Low: the carry branch runs before the text type and size checks (relay.js 4126 vs 4178); the checks come first.",
+   "version": 6,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do the two readers the review did not name (the kernel's node-side fetch and deskUnsloth's studio reader) fold into this item with the two it did?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:50:17.137Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 on the item: the two readers the review did not name fold in here, yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:28:04.671Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Fix the reading of those two here as well, and count the studio reach in the tally with its reason line, yes or no?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:15:13.113Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "So, plainly: apply the same fix to those two extra readers in this item, yes or no?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:15:14.938Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Fold R5 into this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:22:33.081Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Fold that byte-counting fix into this item, yes or no?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:24:17.117Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:00:06.160Z",
+     "text": "Box written: four readers join chunks as strings (relayRequest, readJsonBody in serveCommon, the kernel's node fetch, deskUnsloth's studio call); each collects Buffers and decodes once at the end, the byte cap untouched, nothing on the wire changes.\nRed first: a body whose emoji is split across two writes comes through whole.\nQ1 on the item: the two readers the review did not name fold in here, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:49:55.779Z",
+     "text": "Q1: Do the two readers the review did not name (the kernel's node-side fetch and deskUnsloth's studio reader) fold into this item with the two it did?\n\nwas this not a topic in an earlier item?\n\nwhy again, explain in english."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:50:19.122Z",
+     "text": "It was, under the goal: there we settled WHETHER those two reaches may exist at all (the kernel's is a process reporting to its own node through the one door, so no bypass; the studio call is the model's door and is explained and kept from spreading by the oneDoor tally, which does not count process files yet). That talk was about their existence, and it ended with my proposal and no ruling.\nThis question is only about HOW they read bytes: both glue chunks together as text the same way the two the review named do, and the same one-line fix applies. Asked again because the fold was never ruled.\nFix the reading of those two here as well, and count the studio reach in the tally with its reason line, yes or no?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:52:49.894Z",
+     "text": "why is there a relayRequest, isn't that just another peerRequest?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:53:28.796Z",
+     "text": "relayRequest is not another interface; it is the socket under the one interface. peerPost is the signed request (hash, signature, dispatch by hash) and it rides on relayRequest for the outbound half, which is the one place in the node layer that requires http at all; the relay itself is handed the same function for its partner calls, and the oneDoor tally counts it like every other file.\nIts direct callers besides peerPost are the relay's own public doors that are not posts to a peer, because they name no target key: fetching a relay's key, the claim, and the badge's who-probe, all from hub.\nThat socket is also what the review's S10 names (no timeout, no size cap, no error handler), which is why the byte-joining fix of this item lands in it; the yes-or-no above still stands."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:58:06.016Z",
+     "text": "are you asking if a relay should reject a request immediately with error if it has no known signature?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:58:25.907Z",
+     "text": "No. This item is only about how a body is read off a socket: four readers glue chunks together as text and can break a character in half; the fix is to collect the raw chunks and decode once. The review named two readers; two more read the same way, the process report in the kernel and deskUnsloth's studio call.\nA relay does refuse a request whose signature is unknown or wrong, before anything else; what the review found there is that it counts the request against the claimed sender's rate limit before checking the signature (S4), which is the next batch, not this item.\nSo, plainly: apply the same fix to those two extra readers in this item, yes or no?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:59:46.459Z",
+     "text": "which four reader glue chunks together, and why does each one do it. \n\nbulleted list please."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:00:06.217Z",
+     "text": "The four, and what each reads:\n- relayRequest (node, and the relay for its partner calls): reads a relay's answer to every post, claim, key fetch and probe; it is the one outbound socket.\n- readJsonBody in serveCommon (node and relay): reads the body of every HTTP request that arrives at the one door.\n- the process report in the kernel: a spawned process reads its own node's answer when it reports a job update.\n- the studio call in deskUnsloth: reads the model studio's answer to a chat or model request.\nWhy each glues: all four were written with the usual idiom, add each chunk to a string as it arrives, which turns every chunk into text on its own; a character split across two chunks then becomes two broken halves. None has a reason to read that way; collecting the raw chunks and decoding once is the same length of code."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:07:31.098Z",
+     "text": "- the studio call in deskUnsloth: on the wire to unsloth studio, all is permitted, deskUnsloth is responsible to keep the request bodies to desk, and the streams to \"owner\" and UI within packet limits.\n\n- the process report: What's wrong with that? Where does it concatenate?\n\n- what is serveCommon, and why/where does it concatenate?\n\n- relayRequest: why should relayRequest, read contents of bodies? I thought it shouldn't/couldn't.....\n\n\ni need to discuss each of those things separately. THIS IS NOT A ONE-ANSWER do me."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:08:28.767Z",
+     "text": "1. The studio call: your ruling is in the box, all is permitted on that wire and deskUnsloth keeps what it sends on under the packet caps; so no exemption and no tally entry for it, and its reading is deskUnsloth's own business. Taken off this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:08:30.945Z",
+     "text": "2. The process report: in the kernel, spirit.core.jobs.report is what a spawned process calls to send a job update to its own node through the one door; it reads the node's answer with the add-each-chunk idiom (kernel line 625). Nothing is wrong with it in practice: the answer is a few bytes of plain JSON from its own node, so a split character cannot occur unless the node ever echoes non-ASCII text in that answer. It was on my list for sameness, not for a fault; I propose leaving it out."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:08:54.451Z",
+     "text": "3. serveCommon: the small module both servers share for answering HTTP, since the node and the relay became separate programs (cycle 0): reading a request body, sending a file, refusing a body that is too big or malformed, saying which build runs. Its body reader, readJsonBody, is the one reader of every request that arrives at a node's or a relay's door: a member's post, a claim, a card ask. It counts bytes correctly against the cap but joins the chunks as text (line 173).\nWhere it bites: a sealed text is base64, pure ASCII, so it cannot be hurt; what can is plaintext JSON with a non-ASCII character in it, a label on a claim or an invite, a card, an error text; a character on a chunk boundary is replaced, the bytes differ from what was signed, and the relay answers 403 for a good signature."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:08:57.354Z",
+     "text": "4. relayRequest: you are right that it must not open anything, and it does not; it reads the HTTP answer as bytes and hands them up as one string, unopened, to peerPost or hub. Sealed text in that answer is base64 and passes through unharmed whatever it does.\nThe fault is only in how it turns bytes into that string: chunk by chunk, so a plaintext answer with a non-ASCII character on a chunk boundary (a relay's error text, a card's label, a who-probe's peer labels) arrives changed. Collecting the raw chunks and decoding once at the end is the version of it that reads nothing on the way."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:14:23.359Z",
+     "text": "4. yes. the relayRequest must copy raw bytes only. if it doesn't fix it. now.\n\n3. serveCommon. yes. one single piece of shared code must ensure that raw bytes are copied. precisely.\n\n2. same practise odered. ideally through a shared kernel.js utility or similar.\n\n1. already decided and defined\n\nis this more clear?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:15:18.517Z",
+     "text": "Yes, clear. Box rewritten as decided: one shared utility in the kernel collects raw bytes and decodes once, with the byte cap kept; relayRequest, serveCommon's body reader and the process report use it and read nothing of their own; the studio call is off the item. No red Q left; it builds on your Go on this item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:15:49.933Z",
+     "text": "in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:16:26.949Z",
+     "text": "Recorded as a rule, in this box and the goal box. Its other instance in the review is R5: the relay compares a text's length in UTF-16 units against the routed-text cap in four places, so a non-ASCII payload is undercounted; the review listed it low and I had it in a later batch.\nUnder your rule it is the same fault as this item's: bytes not counted.\nFold R5 into this item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:22:16.025Z",
+     "text": "Q5: Fold R5 into this item?\n\nwhat is R5?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:22:35.098Z",
+     "text": "R5 is the review's finding that in four places the relay decides whether a routed text is too big by counting its characters (the length JavaScript gives, in 16-bit units) against a cap that is in bytes; a text with accents or emoji has more bytes than characters, so it is undercounted and can pass a cap it should not, and only the overall HTTP body cap stops it today. The fix is to count bytes there, as your rule says.\nFold that byte-counting fix into this item, yes or no?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:23:41.256Z",
+     "text": "yes. just make sure it's fixed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:24:19.113Z",
+     "text": "Recorded: the four byte-count checks in the relay are part of this item, with a red that refuses a text over the cap in bytes; R5 left the goal box. No red Q; green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:24:41.202Z",
+     "text": "green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.4",
+   "title": "The andy check and the app branch leave apiDoor (N2)",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16.5"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT: the node's api door stops reading an app's field and the owner's name: the refusal of a body whose by is 'andy' goes, because it guards nothing and refuses a legitimate read; and the door's recognition of its packet by the app name 'api' is named for what it is, a system packet the node composes, so the node branches on no app name (N2 and A2 of the review, rules 2 and 3).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q4: Add it? yes\"). The by-check was put in under desk/G2.1 (a member must not say it is Andy); it is retired here on his word, not quietly. On Q1 (2026-10-10): \"an andy-door sounds bad. where is it exactly?\", then \"remove it.\": only the andy check goes in this item; how the node marks its own packets on the wire waits for the item on the node's own packets (N4).\n\nCHECKED by claude-windows at b355e36d:\n- apiDoor.js 178: asksAsOwner walks body[app][verb].args and answers not-owner 'a member cannot write as the owner' when args.by is 'andy'. 130: the comment says the server cannot see who asks. It can now: desk.js writerOf(caller) names the writer from the caller (owner only when the loopback door says owner: true, else the member's label or key tail) and ignores any by in the arguments.\n- The same by is a FILTER in the desk's reads: chat.search and items.find take by (desk.js 1107, 1609), so a member or Levant asking for Andy's lines, by 'andy', is refused at the door. deskChatSearch.js and deskItemsFind.js search by 'andy' on loopback and pass; over the wire they would not.\n- On a node whose owner is not called andy the check matches nothing. No suite asserts the refusal.\n- apiDoor.js 167: the door takes only packets whose app is 'api' (info.app !== 'api' returns); its answers are encoded with app 'api' (148). puppetStream.js composes app 'published'. Both are packets the node itself makes, carrying an app name so the shell routes them; the rule's reasoning (NODE-AND-RELAY.md) is that system packets carry no app, which is what keeps a puppet app from forging them (N4).\n\nSHAPE (proposed)\n1. asksAsOwner and its refusal go; the desk's writerOf is the fence and is asserted as such: a member's chat.add over the wire with by 'andy' in its arguments lands under the member's own name, and a member's chat.search by 'andy' is answered.\n2. NOT IN THIS ITEM (his \"remove it.\" answered only the check): the app branch. The door keeps recognizing the api packet by its app name until the item on the node's own packets (N4) decides the mark. The shape that item will weigh: the envelope carries a system kind for packets the node makes (api, published), set by the node's encoder and never by an app's post, so apiDoor branches on info.kind and the shell routes published by the same mark; an app packet with app 'api' or 'published' is then an ordinary app packet nobody answers. This changes the wire for api and published packets, so every node updates together, on that item.\n3. The comment of desk/G2.1 at apiDoor 130 is replaced by the ruling of this item, so nobody puts the check back.\n\nTESTS, red first: spirit/test/apiDoorNoOwnerName.js: against the fakes' two nodes, a member's api ask carrying by 'andy' in its arguments reaches the server and the desk writes it under the member (not-owner is never answered); a member's chat.search by 'andy' answers Andy's lines; DEBUG and DEPENDENCIES are still refused at the door (asksOwnerVerb untouched). apiAuth and puppet suites stay green.\n\nFILES: apiDoor.js (core, grant); spirit/test/apiDoorNoOwnerName.js (new).",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does the api door drop only the andy check here, with the app-name branch waiting for the item on the node's own packets (N4), or does this item also mark api and published as system packets on the wire?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:40:41.867Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 on the item: only the andy check here, or the wire mark too?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:28:01.260Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Do we remove only the andy check in this item, and leave how the node marks its own packets on the wire to the later item on that?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:43:32.018Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:55:02.469Z",
+     "text": "Box written: the by-is-andy refusal goes (the desk names the writer from the caller now, and the check refuses a member's search of your lines); the door's branch on the app name api is the other half.\nThat half changes the wire for api and published packets and belongs with N4, the node's own packets a puppet app cannot forge; my recommendation is to leave it to that item.\nQ1 on the item: only the andy check here, or the wire mark too?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:40:20.321Z",
+     "text": "Q1: Does the api door drop only the andy check here, with the app-name branch waiting for the item on the node's own packets (N4), or does this item also mark api and published as system packets on the wire?\n\nan andy-door sounds bad. where is it exactly?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:40:43.772Z",
+     "text": "It sits in apiDoor, the node's door for asks that members send over the wire to its servers: a small check named asksAsOwner looks into every ask's arguments and refuses the whole ask with \"a member cannot write as the owner\" when it finds the word andy in a field called by. It was put there under desk/G2.1, when the desk still took the writer's name from the arguments; the desk names the writer from the caller now, so the check protects nothing and refuses a legitimate search of your lines.\nThe same door also recognises its own packets by the app name api, and that is the other half of the review's finding.\nDo we remove only the andy check in this item, and leave how the node marks its own packets on the wire to the later item on that?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:43:03.797Z",
+     "text": "Q3: Do we remove only the andy check in this item, and leave how the node marks its own packets on the wire to the later item on that?\n\nremove it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:43:33.596Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:43:34.242Z",
+     "text": "Recorded: only the andy check goes here, the wire mark waits for the item on the node's own packets; no red Q left; green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:43:48.349Z",
+     "text": "Green: the andy check goes, the wire mark waits for its own item, no red Q."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:44:35.727Z",
+     "text": "so, when the owner calls via loopback, his ID is inserted as the caller, no 'andy' involved. correct?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:45:05.125Z",
+     "text": "the node-owner, i mean"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:45:08.815Z",
+     "text": "Correct for the node: on loopback the door marks the caller as the owner by a flag and his key, and no name travels in the ask.\nThe word andy appears once that flag reaches the desk: the desk itself writes andy as the owner's name in its records (writerOf, and seven other places that match that word), its own literal, not the node's. On a node whose owner is not you the desk would still call him andy; a desk matter for a later batch, not this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:45:24.563Z",
+     "text": "Yes: the node knows its owner by key only. On loopback it marks the ask with an owner flag and that key (the X-Spirit-Owner header appServer sets on the node's own asks), and a server receives the caller as owner plus key; no name is involved anywhere in the node."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:45:35.659Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:45:46.660Z",
+     "text": "Green: nothing changed by that answer, the andy check goes, no red Q."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.5",
+   "title": "One decoder in the node layer, and a guard that sees it (N1)",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16.7"
+   ],
+   "blocked": [
+    "goal/G16.4"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "WHAT: the node layer decodes an arrival's envelope in one named place, once, and hands every witness what it decoded; no other node file holds a decoder, a packet binding or a parse of arrival text; and the guard suite is rewritten so it sees a decode however it is written (N1 of the review, with N3 and N5 as the inline parses it must see). nodeKnowsNoApps.js is red on master today: its control fails because the shell calls the decoder through a browser global.\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q5: Add it? yes\"). On the three inline readers (the relay-answer reader, the card reader, the refusal check in peerPost): \"yes. we fix redundant code now.\" (2026-10-10): they are fixed in this item, so the one reader is the only reader.\n\nCHECKED by claude-windows at b355e36d:\n- server.js 1450 requires client/packet.js as wire and hands wire.decode as a VALUE to puppetDoor (1456), the api door (1493), ownerPost (1511) and boxes (1520, with isEnvelope). Each witness decodes every admitted arrival itself (puppetMode.js 206, apiDoor.js 166, ownerPost.js 107, boxes.js 52), app packets included, before three of them discard what carries an app.\n- Inline parses of arrival or reply text in the node layer: answerRelay.js 289 (an admitted packet, top-level only, before the sender check), nodeCard.js 70 and 239 (card asks and cards), peerPost.js 816 refusalIn (every reply to the node's own post, without checking it is not an app's reply: an app's {ok:false, code: 'will-not-open'} is taken as a node refusal and the card is re-fetched past the throttle, N3), 1604 and 1652 (the node's own log rows).\n- nodeKnowsNoApps.js matches the literal call wire.decode( after stripping comments, exempts kernel.js whole (its decode is the shared one every loopback client uses, fileTransfer goal/G1.3), and its control looks for an app-side decode in the shell that is now called through a global (shell.js 1517, 2189), so the control fails and the passing half proves nothing.\n- client/packet.js exports one object (decode, encode, decorate, isEnvelope among it) used by node, shell and processes alike.\n\nSHAPE (proposed)\n1. ONE DECODER: arrivals.js, the file that already admits and witnesses every arrival, is the one node file that requires client/packet. It decodes the envelope once per admitted arrival and gives each witness the arrival with its envelope read: app (or none), re, and the body for a packet with no app. A witness gets no decoder and no text to parse; the four witnesses take the envelope from the arrival and drop their own decode and their decode option. A witness for system packets (the api door, the puppet door, the owner post, boxes) reads the body it is handed; a packet with an app is handed to none of them.\n2. THE INLINE PARSES (decided in, his \"we fix redundant code now\"): answerRelay and nodeCard read what the one decoder already read (the top-level shape) from the arrival instead of parsing the text again; refusalIn in peerPost requires a reply with no app before it reads a refusal (N3, one line, the fix the review names); the log-row parses (peerPost 1604, 1652) are the node's own rows, not the wire, and stay.\n3. THE GUARD, rewritten: nodeKnowsNoApps.js asserts (a) in js/ only arrivals.js and kernel.js require client/packet, by reading every require, destructured or inline; (b) no node file but arrivals.js names decode, decorate or isEnvelope, as a call or as a value; (c) no node file reads .app or .body off a JSON.parse of a text that came from the wire, with the two log-row parses named as the whole exception list, so the list can only shrink; (d) its control is the shell's own decode call, found by the global it uses, so the control passes again. kernel.js keeps its exemption, said in the suite's words: its decode is the loopback clients' shared one.\n4. NOTHING ON THE WIRE CHANGES: the same packets, the same envelope; only where the node opens it.\n\nTESTS, red first: spirit/test/oneDecoder.js: the guard's four assertions above against the real tree (red today on (a), (b) and (c)); on the fakes' nodes a member's api ask is still answered, an owner command still reaches the puppet door, a box packet still lands, a published packet still reaches the owner's shell (the witnesses work through the one decode); a reply shaped as an app's {ok:false} no longer makes peerPost re-fetch the card (N3). nodeKnowsNoApps.js is replaced by the new guard (retired from the list), apiAuth, puppet and arrivals suites stay green.\n\nFILES: arrivals.js, server.js, puppetMode.js, apiDoor.js, ownerPost.js, boxes.js, answerRelay.js, nodeCard.js, peerPost.js (core, grant); spirit/test/oneDecoder.js (new), nodeKnowsNoApps.js (retired).",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do the inline parses (answerRelay, nodeCard, and the one-line N3 fix in peerPost refusalIn) fold into this item as the decoder's own callers, or wait for a batch?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:46:39.308Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 on the item: fold the inline parses (answerRelay, nodeCard, the one-line N3 fix) in here, or batch them?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:28:02.993Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Do we fix those three in this item too, so the one reader is the only reader, or leave them to a later batch?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:48:16.275Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:57:04.575Z",
+     "text": "Box written: arrivals.js becomes the one node file that requires the packet module and decodes an envelope once, handing each witness the envelope read; the four witnesses lose their own decoders; the guard is rewritten to see a decode as a require, a value, a call or an inline parse, with a control that passes again.\nNothing changes on the wire.\nQ1 on the item: fold the inline parses (answerRelay, nodeCard, the one-line N3 fix) in here, or batch them?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:46:22.781Z",
+     "text": "Q1: Do the inline parses (answerRelay, nodeCard, and the one-line N3 fix in peerPost refusalIn) fold into this item as the decoder's own callers, or wait for a batch?\n\nenglish?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:46:41.404Z",
+     "text": "In English: this item makes one place in the node open every arriving packet and hands the four doors what it read, so none of them opens packets itself any more. Three other spots still read raw packet or reply text on their own: the reader of relay answers, the reader of contact cards, and the piece in peerPost that looks for a refusal in a reply, which today mistakes an app's no for the node's no and fetches the card again.\nDo we fix those three in this item too, so the one reader is the only reader, or leave them to a later batch?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:47:52.263Z",
+     "text": "Q3: Do we fix those three in this item too, so the one reader is the only reader, or leave them to a later batch?\n\nyes. we fix redundant code now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:48:18.117Z",
+     "text": "Recorded: the three readers are fixed in this item, the one reader is the only reader, the guard sees every form; no red Q left; green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:48:27.017Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:48:38.926Z",
+     "text": "Green: one reader for every arriving packet, the three raw readers fixed here, the guard rewritten, no red Q."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.1",
+   "title": "Receipt binds the reply text; forwarded reply verified (S1, S2)",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16.2",
+    "goal/G16.7"
+   ],
+   "blocked": [
+    "goal/G16.6"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "WHAT: the receipt a node signs for its reply also binds the reply's text, so neither relay on the path nor a partner can swap the text under a receipt that still verifies (S1); and a relay verifies a forwarded reply's receipt before it announces the route that reply proves (S2). Both from the review of 2026-10-10 (repro of S1: \"receipt verifies with forged text: true\").\n\nDECIDED (Andy, 2026-10-10): the goal (\"Greate a goal in desk for this\"); this item (\"Q1: Add it? yes.\"). A relay-wire change: the shape is reviewed and gets his yes before any build. On Q1: \"flag day. we don't maintain backward compatibility before alpha, maybe not even before beta, the data stored in the SpiritOS is never in danger.\" Checked: the only stored receipts are traffic-log rows, read back for the replay index by hash and time and never re-verified (the two verifiers run on arrival only), so nothing stored is touched. On the shape: \"i agree on the shape, Go is not my concern yet.\" (the design of the goal's items comes first; the Go later).\n\nCHECKED by claude-windows at b355e36d:\n- relayAuth.js receiptMessage(hash, atMs) is 'receipt', the REQUEST hash and the minute; receiptSignatureOk tries minutes -1, 0, +1. Nothing names the reply text.\n- Producers: peerPost.js 1058 and 1084 (card asks), 1483 (the answer to an arrival, bare or with text); relay.js 2976 (relayErrorToAsker, the relay speaking as itself) and 3219 (the device offer).\n- Verifiers: peerPost.js onReply 1565 (the asker); relay.js routeReply 4256 (the member's own relay, before routes.answer). deliverForwardedReply (relay.js 2980) verifies nothing: routes.answer by from, announceRoute, send; its comment says the bar is the signed reply.\n- The seal is anonymous ephemeral-static (seal.js): anybody holding the asker's seal key can seal text \"from\" the target, so only the receipt can bind the text.\n- 15 suites call receiptMessage or receiptSignatureOk (30 places); they follow the new arity.\n\nSHAPE (proposed)\n1. receiptMessage(hash, text, atMs): 'receipt', the request hash, the sha256 of the reply text (the empty text hashes too, so the bare receipt stays a receipt), the minute. receiptSignatureOk(publicKey, hash, text, sig, atMs) hashes the text it is handed. One function for both sides, as today: relayAuth.js is loaded by node and relay alike.\n2. Every producer passes the text it sends, every verifier the text it received: peerPost 1058, 1084, 1483 and onReply; relay 2976, 3219 and routeReply.\n3. deliverForwardedReply verifies first: a reply whose receipt fails against its own text is a partner error to the asker (relayErrorToAsker, 502, 'bad reply signature from partner'), no route is announced, the carrying entry goes. A reply that verifies is delivered and announced as today.\n4. FLAG DAY (his ruling): the receipt's meaning changes on the wire, an old node's receipt fails a new verifier and a new one fails an old, and every relay and node (spirit-3, his, both agents') updates together; no transition window, no old form accepted.\n5. Nothing else moves: the seal, the hash, the route table, the shapes on the wire (hash, from, text, sig) are unchanged; only what sig signs.\n\nTESTS, red first: spirit/test/receiptBindsReply.js: the message carries the text's hash and the bare receipt the empty hash; a receipt verifies with the text it was made for and fails with the text swapped (the review's repro, in-process); on an in-process relay with a partner, a forwarded reply with sig 'AAAA' announces no route and the asker gets the relay's error, a genuine forwarded reply still announces and is delivered; the 15 suites that sign or verify receipts pass the text. peerPost, routerPost, partnerTunnel, relayMeter, routeHints, stalledReader and the rest stay green.\n\nFILES: relayAuth.js, relay.js, peerPost.js (core, grant); spirit/test/receiptBindsReply.js (new) and the 15 suites named by the family grep.\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S7: a forward hands the partner the budget the asker requested instead of the 5 s this relay granted, so late successes fail routes.answer and the carrying entry is never deleted; the onward budget becomes the granted one and a late or failed forward deletes its carrying entry, with a test that carrying is empty after a late reply.\n- Low (decision 0011): peerPost adopts body.hash from the wire without recomputing it; the asker recomputes the hash from the bytes it sent and ignores the wire's.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is this a flag day where every relay and node updates together, or does the verifier accept the old receipt for a transition window?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:12:32.383Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 on the item: flag day for every relay and node together, or a transition window where the verifier accepts the old receipt?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:14:17.387Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Is that your yes on the shape, so your Go starts the red?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:14:19.117Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:47:15.410Z",
+     "text": "Box written: the receipt message gains the sha256 of the reply text (one function in relayAuth, both sides), every producer and verifier passes the text, and the relay verifies a forwarded reply before announcing its route, refusing it as a partner error otherwise.\nThe wire meaning of the receipt changes, so old and new nodes do not verify each other.\nQ1 on the item: flag day for every relay and node together, or a transition window where the verifier accepts the old receipt?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:11:52.823Z",
+     "text": "flag day. we don't maintain backward compatibility before alpha, maybe not even before beta, the data stored in the SpiritOS is never in danger.\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:12:34.232Z",
+     "text": "Correct: the only stored receipts are traffic-log rows, read back for the replay index by hash and time and never re-verified (both verifiers run on arrival only), so nothing stored is touched by the new form; relay-state, contacts and the desk hold no receipt.\nFlag day recorded in the box, Q1 struck; the shape stands as written.\nIs that your yes on the shape, so your Go starts the red?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:13:49.433Z",
+     "text": "Q3: Is that your yes on the shape, so your Go starts the red?\n\ni agree on the shape, Go is not my concern yet."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:14:26.691Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:14:39.301Z",
+     "text": "Green: flag day ruled, the shape agreed, no open check; the red is named in the box and waits for your Go."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.2",
+   "title": "Self-addressed verbs get their own capacity (S3)",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16.8"
+   ],
+   "blocked": [
+    "goal/G16.1"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "WHAT: a request addressed to the relay itself (owner verbs, member verbs, partner searches and forwards) no longer competes for the one slot a member target gets; the relay's own verbs have capacity of their own, so one member searching cannot lock the owner out of his relay (S3 of the review, reproduced: the owner's partners and invite got 503 target is busy 100 ms after a member's search).\n\nDECIDED: this item at Andy's word (2026-10-10, \"next. same thing.\"). A relay-wire change: the shape is reviewed and gets his yes before any build. On Q1: \"A\" (2026-10-10): a route whose target is the relay itself is not counted against the per-target slot; the requester caps of 0016 and the per-minute limit are the bounds. On the caps per class (2026-10-10): the member's 1 is his Experiment 1 of 2026-10-02 (b44c3101); the relay's own class exists for device offers only, and \"device WILL be KILLED. that's a decision.\", so that class goes with device (its own item); the partner class's 16: his thought (2026-10-10) \"that limit should theoretically be at number-of members, so the relay can reliably cover all members needs.\" Proposed below as B2; his reading of it: \"so the partner-calls are limited to 1 per member.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- router.js open() refuses with 503 'target is busy' when countForTarget(target) reaches perTarget, and perTarget is DEFAULT_PER_TARGET, which is 1 (the comment above it still says the default is max and the ceiling of 1 comes one commit later; the number is 1 today).\n- relay.js 4057: a post the relay is the target of (postedToSelf, a strict match on its own key) opens its route with routes.open(selfHash, who.id, toToken, ...) where toToken is the relay's own key; so every self-addressed request of every member and partner counts against ONE target, the relay, and the second in flight is refused busy.\n- Decision 0016 gives three REQUESTER budgets (member, the relay as itself, partner: caps per class, 429 'too many in flight' at router.js 312). The target ceiling is the other axis and was written for a member target: one question at a time per person. The relay as a target is not a person.\n- The requester caps of 0016 are per KEY across every target: a member 1 in flight (router.js DEFAULT_PER_MEMBER), the relay acting for a member 16, a partner 16 (DEFAULT_PER_REQUESTER). So under A each member already holds exactly one slot for its self-addressed requests, which is his \"1 slot per caller and/or member\" (2026-10-10), without a new number.\n- The rate limit (MEMBER_PER_MIN, the partner budget, relay.js 4026) already bounds how often one sender may ask the relay; the target slot adds nothing for the relay's own verbs but the lock-out.\n\nSHAPE (proposed)\nA. The plainest: a route whose target is the relay itself is not counted against the per-target ceiling at all; open() takes the target class from the kind it is already handed (routerTable.RELAY exists as a class name) or from a flag, and skips countForTarget for it. The requester caps of 0016 and the per-minute rate limit remain the bounds on self-addressed traffic; a member target keeps its one slot. No new number.\nB. The alternative: a second ceiling for the relay as target (perSelf), a constant in router.js like the others, so self-addressed verbs are bounded in flight as a class. One more fixed number to justify; 0016's requester caps already bound the same traffic, so B counts the same thing twice.\nDecided: A.\nB2 (decided, his, 2026-10-10: \"so the partner-calls are limited to 1 per member.\" and \"which would fall under the 1 in flight per-member\"): the partner class has no cap of its own; the per-target slot of one per member already bounds a partner to one in flight per member and so to the roll in all, and nothing is derived or read for it. What the router keeps: one in flight per member as requester (his Experiment 1), one per member as target, the table max; the relay's own class goes with device; no 16 anywhere. His close (2026-10-10): \"with devices KILLED and partner limit tied to members (1 per member) I'm ok with the shape.\"\n\nTESTS, red first: spirit/test/selfTargetCapacity.js: on an in-process relay, a member's search in flight and the owner's partners and invite in the same 100 ms all answer, none 503 busy (the review's repro inverted); two posts to one MEMBER target still get the second refused busy (the slot is untouched); the requester caps still refuse the (cap+1)th self-addressed request of one member with 429. targetBusy.js, routerPost.js, relayMeter.js, partnerGate.js stay green; targetBusy.js is read for any assertion that a self-addressed verb is refused busy and is corrected if it has one.\n\nFILES: router.js, relay.js (core, grant); spirit/test/selfTargetCapacity.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- DEVICE REMOVAL (his decision under this item): the node verbs device.info and device.rotate, hub's handleDevice and handleRotatePassword, the relay's deviceOffer and /api/relay/device door, the router's relay class, the six device suites, natterDetails' read; the three design pages (DEVICE, DEVICE-PANEL, PEER-DEVICES) marked superseded; a test that the names are gone from spirit/run. Node verbs removed: named here for his yes. S6 (the double device offer that hangs) and the deviceOffer ttl low go with it.\n- S4: the rate limit is charged to the claimed sender before the signature is checked, so junk with a public key exhausts that member; the charge moves after the signature check.\n- S13 (suspected): the claim rate limit is keyed on the remote address, one bucket for everybody behind Caddy; keyed on the claimant's key or the forwarded-for address Caddy sets, checked on spirit-3.\n- R2 and R3: a self-addressed request runs every verb in its body (the partner gate; a truthy card exempts a post from sealing and every verb runs, so an invite token can travel in plaintext); exactly one verb per request, and a card ask carries nothing else.\n- Low: one partner can fill all shared partner-forward slots; bounded per partner as the per-member slot bounds a member.",
+   "version": 9,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does a route whose target is the relay itself simply not count against the per-target slot (A, recommended), or does the relay as target get a second fixed ceiling of its own (B)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:16:10.357Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 on the item: A or B?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:16:12.250Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Is the ruling 1 in flight for all three classes, or 1 for a member and the two relay classes as they are?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:27:26.830Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "An item for this goal, \"Device enrolment leaves the tree\": add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:27:28.579Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "That the shape for this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:27:30.459Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Recorded; green on this item with that?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:27:57.739Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:50:42.148Z",
+     "text": "Box written: today every self-addressed request counts against one target, the relay, and the slot is 1, so a second request in flight is refused busy for everybody.\nProposed: a route whose target is the relay itself is not counted against the per-target slot; the requester caps of 0016 and the per-minute limit stay the bounds (A), or a second fixed ceiling for the relay as target (B).\nQ1 on the item: A or B?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:15:43.968Z",
+     "text": "Q2: Q1 on the item: A or B?\n\nA"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:16:14.251Z",
+     "text": "A recorded in the box; no open check; green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:17:05.534Z",
+     "text": "hold on, could the relay be limited by 1 slot per caller and/or member?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:17:50.244Z",
+     "text": "Yes, and it is already so under A: the requester caps of 0016 count per key across every target, a member 1 in flight, the relay acting for a member 16, a partner 16; so each member holds exactly one slot for its own requests to the relay, the second is refused 429 too many in flight, and no member can take another's or the owner's.\nAdded to the box as checked; A stands with that reading, green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:18:43.822Z",
+     "text": "Why the HELL is this back?\n\n\"the requester caps of 0016 count per key across every target\"\n\nFUCK!"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:19:03.844Z",
+     "text": "Checking when the per-key cap came in and under which ruling before I answer."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:19:29.191Z",
+     "text": "Nothing came back: the member cap of 1 in flight is your Experiment 1 of 2026-10-02 (\"16 in flight from one requester, THAT'll clog the line... make it 1 and 1\"), commit b44c3101, and it has stood since.\nWhat that commit kept, on its own reasoning and not on your word, is 16 for the other two classes: the relay posting as itself (device offers) and requests a partner relay forwards in under its own key; your line said no 16 concurrent inputs and excepted nothing. Your queue (as many slots as members, the last winner to the back) was never built; refuse-and-retry is what runs.\nIs the ruling 1 in flight for all three classes, or 1 for a member and the two relay classes as they are?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:20:36.307Z",
+     "text": "haven't we killed the \"device\" shit yet?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:21:08.838Z",
+     "text": "Not killed: abandoned on 2026-09-26 (\"device (cellphone interface with password etc. is abandoned for now)\") and never removed. Live today: the node verbs device.info and device.rotate, hub's handleDevice and handleRotatePassword, the relay's device offer and its /api/relay/device door, the router's relay class (the 16 exists for device offers and nothing else), six suites, three design pages, and natterDetails reading it.\nKilling it takes the relay class and its 16 with it, which leaves only the partner class to rule on here.\nAn item for this goal, \"Device enrolment leaves the tree\": add it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:21:36.496Z",
+     "text": "device WILL be KILLED. that's a decision."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:24:05.802Z",
+     "text": "does the partner class have a limit, only for the relay?\n\nthat limit should theoretically be at number-of members, so the relay can reliably cover all members needs.\n\nthoughts?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:24:47.966Z",
+     "text": "so the partner-calls are limited to 1 per member."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:25:08.327Z",
+     "text": "Today the partner cap is 16 in flight per partner relay, counted under the partner's key across all our members as targets, with the table max of 256 over everything; no pool is sized to the roll.\nYour number is the right one: a partner can aim at most one request at each of our members (the per-target slot), so more than the roll in flight can never be useful, and the roll is the one configured bound 0016 wanted the budget derived from; so partner cap = this relay's members (seats.held, read on every open), member 1, the relay class gone with device, no 16 left in the router. Written into the box as the proposed shape.\nThat the shape for this item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:25:18.135Z",
+     "text": "which would fall under the 1 in flight per-member"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:25:30.202Z",
+     "text": "Yes: one in flight per target member for anyone, a partner included, and a partner's total therefore at most the roll. Recorded; green on this item with that?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:26:01.363Z",
+     "text": "Exactly, and that is plainer than my derived number: the partner class needs no cap of its own, the per-target slot already holds a partner to one per member. Box says so now: one per member as requester, one per member as target, the table max, nothing else; green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:26:56.903Z",
+     "text": "with devices KILLED and partner limit tied to members (1 per member) I'm ok with the shape.\n\nwhat red Q's are gone now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:28:09.900Z",
+     "text": "Gone: every red Q on goal/G16.1 (flag day, shape agreed) and on this item (A, the partner under the per-member slot, device killed); the doubles my question-mark lines made are struck too.\nStill red, one each: G16.3 the three relay verbs for your yes; G16.4 only the andy check here or the wire mark too; G16.5 fold the inline parses or batch them; G16.6 fold the two unnamed readers; G16.7 no receipt for a held sender.\nOn the goal: Q9 add the S4 to S7 batch, Q10 add the device removal."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.7",
+   "title": "The held stranger: no delivered receipt, no kept text (B1, B2)",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16"
+   ],
+   "blocked": [
+    "goal/G16.5",
+    "goal/G16.1"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT: a packet from a sender the owner holds (a stranger with a row, not yet accepted, under the hold policy) no longer comes back to its sender receipted as delivered, and its words are no longer written to the traffic log or kept in memory; what the hold keeps is the count the hourglass shows (B1 and B2 of the review; the design's open line in NODE-AND-RELAY.md: a held sender must not receipt as delivered and must not be told of the hold).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q8: Q7 stands: add the held stranger (B1, B2)? yes.\"). On the shape (2026-10-10): \"words should be only in the traffic log, if they will reasonably be seen, the held peers should be receiving an error: request ignored, and the words not entered in the traffic log.\" This supersedes the design's open line that a hold must not be disclosed: a held sender is told, in the node's words, that the request was ignored.\n\nCHECKED by claude-windows at b355e36d:\n- hub.js frontDoor answers 'hold' under the hold policy (805); peerPost takes the verdict (258: known, admit, hold, drop).\n- peerPost.js 1483: the receipt is signed for every verdict; for hold the answer is not composed (1490: only known and admit are answered) and the bare receipt goes back as it does for a known sender. The sender's chat shows the line delivered.\n- peerPost.js 1356: an item is pushed to the in-memory arrived list for every verdict but drop, held ones included, and nothing ever trims the list.\n- peerPost.js 1382: the log row of an arrival that is not ignored carries payload: body.text; the comment at 1419 says of hold that the body is never written anywhere. trafficLog prunes no rows (the node keeps its whole record by design).\n- For drop: no receipt, and the comment says a sender being ignored is not owed the distinction between ignored and unreachable.\n\nSHAPE (proposed)\n1. ON THE WIRE (his ruling) a held packet is answered with an error, the node's own reply for the same hash saying the request was ignored (ok false, code request-ignored), so the sender's side settles the line as refused, never as delivered; a dropped sender keeps today's silence. No new word on the wire: a refusal reply is a shape the sender already reads.\n2. IN THE NODE the hold keeps the count and nothing else: the item is not pushed to arrived, the log row says outcome 'held' with no payload (his rule: words go into the traffic log only when they will reasonably be seen), and the counter of consideration (the hourglass) still moves as today.\n3. The comment of 1419 becomes true; the design's open line is closed with his ruling (told, not silent) and says so.\n4. Nothing else changes: known, admit and drop as today; acquire untouched (S12, the blocked sender under acquire, is its own batch).\n\nTESTS, red first: spirit/test/heldStranger.js: on the fakes' two nodes with the owner's policy set to hold, a stranger's post is answered with the node's refusal, request ignored, and the sender's side settles it as refused, not delivered; the owner's node holds no row with the text in its traffic log and none in arrived, and its count for that sender moved; a known sender's post is still receipted and delivered; a dropped sender's as today. frontDoor, peerPost and trafficLog suites stay green.\n\nFILES: peerPost.js (core, grant), NODE-AND-RELAY.md (the open line closed); spirit/test/heldStranger.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S12: frontDoor never checks blocked, so under the acquire policy a blocked sender falls through to admit and still reaches apps and open pages; blocked is checked first, for every policy.\n- Low: under acquire a stranger becomes known after one message, which defeats the door's rule that a stranger gets no reply; known means accepted, not heard once.\n- Low: card asks bypass the front door and each writes two never-pruned log rows; a card ask passes the door and logs one row.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does a held stranger get no receipt at all, the same silence a dropped sender gets, with the hold keeping only its count?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:16:49.266Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 on the item: no receipt at all for a held sender, yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:20:00.368Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Your node stays silent to a held sender and keeps only the count, yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:22:09.070Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:11:22.964Z",
+     "text": "Box written: today a held stranger gets the bare receipt a known sender gets, so their chat says delivered, and their words go into the traffic log and an in-memory list nobody trims, against the comment beside the code.\nProposed: on the wire a held packet is silent like a dropped one; in the node the hold keeps the count and nothing else; the design's open line closes.\nQ1 on the item: no receipt at all for a held sender, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:16:23.627Z",
+     "text": "Q1: Does a held stranger get no receipt at all, the same silence a dropped sender gets, with the hold keeping only its count?\n\nenglish."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:16:51.400Z",
+     "text": "In English: when someone you hold (a stranger with a row you have not accepted) sends you a line, today your node signs a receipt back, so their chat shows the line as delivered although you never see it, and their words are written into your traffic log and kept in memory for good.\nProposed: your node answers nothing, exactly as it does to someone you dropped, so they cannot tell a hold from an unreachable node; their words are not stored; only the count on the hourglass moves.\nYour node stays silent to a held sender and keeps only the count, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:19:07.341Z",
+     "text": "words should be only in the traffic log, if they will reasonably be seen, the held peers should be receiving an error: request ignored, and the words not entered in the traffic log.\n\ndoes that fit?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:20:15.786Z",
+     "text": "It fits, and the box now says it: a held sender gets the node's own refusal for their request, request ignored, so their side settles the line as refused and never as delivered; their words are not written to the traffic log and not kept, only the count moves; a dropped sender keeps today's silence.\nOne thing it changes on record: the design's open line said a hold must not be disclosed; your ruling tells the sender it was ignored, and the box says the ruling supersedes that line.\nThe sender's side reads such a refusal already (a reply signed by the target with an error body), so nothing new travels; the red asserts the sender's line ends as refused."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:20:56.228Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:21:08.562Z",
+     "text": "Green: a held sender is told request ignored, nothing of theirs is stored, only the count moves, no red Q."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:21:52.838Z",
+     "text": "remove red Q. I'm going to the goal."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.8",
+   "title": "Ownership never by invite: the first-claim path goes",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16.3"
+   ],
+   "blocked": [
+    "goal/G16.2"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT: a relay's owner is set when the relay is installed and in no other way; the relay's first-claim path and its owner-invite checks, a fallback for a token nothing mints any more, are deleted with a test that they are gone, and the relay install gets the one step that writes the owner file from the key it is given, as the face install does. A claim over the wire is always a member's claim with a member invite.\n\nDECIDED (Andy, 2026-10-10, under goal/G16.3): \"the relays should do first-claim, it should happen at install time. that's the only \\\"safe\\\" way.\" then \"NOT first claim i mean\"; \"KILL the dead code / fallback. this type of stuff is always coming back to bite us.\"; \"yes. ownership CANNOT be achieved via invite.\"\n\nCHECKED by claude-windows at b355e36d:\n- The owner is relay-state/owner.json, read by relayAuth (readOwner) and written by writeOwner; it survives bash/update (RELAY-HOST.md). becomeOwner (relay.js 1441) is its only writer in code, and it runs only from the first-claim branch.\n- relay.js claimAttempt 1585-1604: a relay with no owner takes a signed claim that redeems an owner invite (invites.isOwnerInvite) and becomes owned; 1658-1660 a leftover owner invite is refused for a member claim; 1759 the owner invite burned. invites.js 97 says the owner invite is \"minted by install.js over SSH\"; no install.js exists in the tree, so nothing mints one and the branch cannot be taken on a real box. The comments at 1572-1575 and relayAuth.js 381, 541 describe that dead path.\n- bash/face-install takes the owner's public key as its first argument and writes owner.json for the face. The relay's install (install-units, start) has no such step: an operator writes owner.json by hand.\n- Suites that drive the first claim with an owner invite exist (relayOwnerClaim and friends are found by the grep for isOwnerInvite and ownerInvite under spirit/test) and go with the path.\n\nSHAPE (proposed)\n1. DELETE: the firstOwner branch of claimAttempt, becomeOwner, invites.isOwnerInvite and the owner kind of invite, the leftover-owner-invite refusal, the comments naming install.js; the register's 'owner invite required' texts. A claim on a relay with no owner is refused by name: 'relay has no owner', since a relay is owned before it serves.\n2. INSTALL: bash/install-units (or the relay's start) takes OWNER_KEY the way face-install does and writes relay-state/owner.json from it, refusing to start a relay with no owner file; RELAY-HOST.md says so in one paragraph where the owner file is named.\n3. The lock 0003 promised (after first-claim-is-owner a new owner cannot be claimed) holds by absence: there is no path.\n4. Nothing on the wire changes but a refusal text; the flag day of goal/G16.1 covers the tree.\n\nTESTS, red first: spirit/test/ownerAtInstall.js: the relay's module exports no owner-invite kind and the register has no 'owner invite required'; a claim on a relay with no owner file is refused 'relay has no owner' and writes no owner file; a member claim with a member invite on an owned relay still works; install-units (dry run, as the units suites do it) writes owner.json from OWNER_KEY and refuses without one; the grep for the deleted names under spirit/run is empty. The owner-invite suites are retired from the list.\n\nFILES: relay.js, invites.js, relayAuth.js, spiritErrors.js (core, grant); bash/install-units, bash/RELAY-HOST.md; spirit/test/ownerAtInstall.js (new), the retired suites.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:38:09.271Z",
+     "text": "Box written: the first-claim branch, the owner kind of invite and their checks go with a test that they are gone; a claim on a relay with no owner is refused by name; the relay install takes the owner key as the face install does and writes the owner file, refusing to start without one. A relay-wire refusal text changes, under the flag day of goal/G16.1."
+    }
+   ]
+  },
+  {
+   "id": "goal/G16.3",
+   "title": "The relay list leaves the Natter folder for node state (A1)",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G16"
+   ],
+   "blocked": [
+    "goal/G16.8"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": true,
+   "full": true,
+   "box": "WHAT: the list of relays a node uses (where it claims, acquires, shows presence and searches peers) becomes the node's own state, read and written through node verbs, and leaves the Natter app's folder; Natter becomes a face over those verbs (A1 of the review, rule 3: no app logic in node or relay).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q3: Add it? yes\"). On the first claim (2026-10-10): \"the relays should do first-claim, it should happen at install time. that's the only \\\"safe\\\" way.\" and \"NOT first claim i mean\": the relay does no first claim at all; then, told that owner.json at install is already the way and the first-claim branch and owner-invite checks are dead code for a token nobody mints: \"KILL the dead code / fallback. this type of stuff is always coming back to bite us.\"; \"yes. ownership CANNOT be achieved via invite.\" (the item added: goal/G16.8). So the owner of a relay is set when the relay is installed, and no first claim travels over the wire; proposed as its own item of this goal (a relay-wire path removed). New node verbs need peer review and his yes on each verb (one agent: said plainly, no second reviewer is possible). His yes on the two verbs, 2026-10-10: \"Q4: Do you approve two new commands on the node, list relays and remove relay, with a successful claim adding its relay? yes.\" So relay.search and relay.remove are approved; relay.add is not built; a successful relay.claim adds its relay to the list.\n\nCHECKED by claude-windows at b355e36d:\n- ownerBadge.js loadRelays reads shell/natter/relays.json (rows {label, url}, deduped by url); ensureRelays writes [FIRST_RELAY] (spirit.andyflinn.com) when the file is missing, and server.js 1241 calls it at every boot. So a node whose Natter folder is renamed or emptied silently points at Andy's relay again.\n- Readers of that list: hub.js (claim, acquire, peer.search: 998, 1827 and the comments around 1030, 1428, 1807), presenceNode.js (presence), server.js (boot), ownerBadge (the badge and url-not-listed at 383, 389).\n- Writers: Natter, through api.fs.saveFile of its own relays.json (natter.js RELAYS_FILENAME, the Add row and the removal); nothing else writes rows, nothing in the node offers a verb for it.\n- The path is in two error texts of the shared register, matched on the wire: no-relay-url ('no relay url in shell/natter/relays.json') and url-not-listed ('url not in shell/natter/relays.json') (spiritErrors.js 289, 714).\n- The node's relay namespace today: relay.status, relay.claim {url, name, invite, inviteLabel} and the rest of the claim is done in hub.js; no verb lists, adds or removes a relay.\n- Tests that plant or assert the file: serverSurface.js (writes a nowhere row so no suite probes the public relay), everyVerb.js, pathCanonicalization.js and servableAssets.js (relays.json under shell is app data and writable), natterIntrinsic.js.\n\nSHAPE (proposed)\n1. THE FILE MOVES to node state: relay-state/relays.json, the same rows {label, url}, written by the node only; ensureRelays seeds it with FIRST_RELAY there. relay-state is neither served nor writable through fs (the gate), so no app or page can redirect the node by writing a file.\n2. TWO NODE VERBS, the list as a search (rule: every list is a search): relay.search {q} answering rows as {key: url, label} bounded as every search is, and relay.remove {url}; owner-only like the other relay verbs. NO ADD VERB: a relay enters the list when its claim succeeds (relay.claim {url, name, invite, inviteLabel}, unchanged), the way Natter's two steps (add the url, then claim) collapse into one. Owner or member is the relay's distinction, made at the claim (relay.js claimAttempt: a relay with no owner yet takes the first claim, with the owner invite its install printed, as its owner; a relay with an owner takes a claim with a member invite as a member); the list never records it, the badge asks the relay (/api/relay/who). His question of 2026-10-10 (\"adding a relay happens one of two ways: via invite/claim OR via ownership? where does that distinction happen?\") is answered by that line. Verb files for agents come when a goal opens them, as with fs.\n3. NATTER READS AND WRITES THROUGH THE VERBS, nothing else changes in its face; its own relays.json is deleted from the tree and from the gate's special knowledge, with a test that nothing under shell/natter is read by the node any more (the grep of js/ for 'natter' is empty but the app's name in the intrinsic manifest).\n4. THE TWO ERROR TEXTS lose the path: 'no relay url' and 'url not in the relay list'; the register is loaded by node and relay alike, so both sides change together.\n5. NOT IN THIS ITEM: the old prefs file hub reads from Contacts (expires at alpha), the peer stats under shell/contacts (A4, its own item), the operator docs naming app/natter (one line each, folded if small).\n\nTESTS, red first: spirit/test/relayListIsNodeState.js: a node booted from the fakes with no relay-state/relays.json seeds it with FIRST_RELAY and never creates shell/natter/relays.json; relay.search lists the seeded row, relay.add adds one and relay.search shows it, relay.remove takes it away, and the file under relay-state holds exactly those rows; relay.claim of a url not in the list is refused with the new text; hub's claim and presence read the node's list (a row added through relay.add is used, a row written under shell/natter is not); fs.save cannot write relay-state/relays.json. The suites above follow: serverSurface plants its nowhere row under relay-state; pathCanonicalization and servableAssets drop the relays.json-is-app-data assertions.\n\nFILES: ownerBadge.js, hub.js, server.js, presenceNode.js, spiritErrors.js (core, grant); shell/natter/natter.js; spirit/test/relayListIsNodeState.js (new) and the suites named.\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- A4: per-peer counters are node bookkeeping written into the Contacts app's folder (peerStats, shell/contacts/peerfile-<key>.json); they move to node state beside the relay list, read through the node, with Contacts as their face.\n- The operator pages (bash http-to-https, RELAY-HOST) that name app/natter/relays.json say the node-state file instead.",
+   "version": 8,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Are relay.search, relay.add and relay.remove, owner-only over relay-state/relays.json with Natter as their face, the three new node verbs you approve?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:29:06.548Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 on the item: the three verbs as named, yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:27:59.464Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Do you approve these three commands, list, add and remove relay?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:31:52.126Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Do you approve two new commands on the node, list relays and remove relay, with a successful claim adding its relay?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:39:08.344Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "A relay-wire path removed, so its own item, \"First claim at install, never over the wire\": add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:38:21.665Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "One thing is still yours on this item: the two new node commands, list relays and remove relay, with a successful claim adding its relay, yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T20:38:24.887Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:52:49.333Z",
+     "text": "Box written: the relay list moves to node state where no app or page can write it, seeded with the first relay as today; the node gets relay.search, relay.add and relay.remove; Natter reads and writes through them and its own relays.json goes; the two error texts lose the path.\nThree new node verbs, so each needs your yes on the verb itself.\nQ1 on the item: the three verbs as named, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:28:48.231Z",
+     "text": "Q1: Are relay.search, relay.add and relay.remove, owner-only over relay-state/relays.json with Natter as their face, the three new node verbs you approve?\n\nenglish?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:29:08.528Z",
+     "text": "In English: the node gets three new commands, one to list the relays it uses, one to add a relay, one to remove one, and only you may call them; the list itself moves into the node's own state folder, where no app or page can write it; Natter keeps its screen but uses those commands instead of its own file.\nNew commands on the node need your yes by name.\nDo you approve these three commands, list, add and remove relay?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:30:53.209Z",
+     "text": "that's complicated, because adding a relay happens one of two ways: via invite/claim OR via ownership?\n\nwhere does that distinction happen?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:31:54.035Z",
+     "text": "The distinction is the relay's, made at the claim, never the list's: a relay with no owner yet takes the first claim as its owner (with the owner invite its install printed); a relay with an owner takes a claim carrying a member invite as a member; the list holds only urls and labels, and the badge asks the relay who you are there.\nSo the add command is not needed: a relay enters the list when its claim succeeds (claim is unchanged), and Natter's two steps become one; what stays new is list and remove. Box updated.\nDo you approve two new commands on the node, list relays and remove relay, with a successful claim adding its relay?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:32:51.431Z",
+     "text": "the relays should do first-claim, it should happen at install time. that's the only \"safe\" way."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:33:08.420Z",
+     "text": "NOT first claim i mean"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:33:42.121Z",
+     "text": "Recorded in the box and the goal box. Today the relay's install mints an owner invite token and you claim over the wire with it; the relay's first claim redeems it and writes the owner key. The face already does it your way: face-install takes the owner's public key as its argument and writes the owner at install, no token, no claim.\nSo the relay install takes the owner key the same way, the owner invite and the first-claim path in the relay go, and a claim over the wire is always a member's with a member invite.\nA relay-wire path removed, so its own item, \"First claim at install, never over the wire\": add it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:34:10.401Z",
+     "text": "Understood, and that is what the proposed item does: the relay does no first claim at all, the owner key is given at install as the face does it, and the owner invite and the first-claim path go. Both boxes carry your correction."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:34:17.979Z",
+     "text": "i thought we fixed that, and moved ownership to the install already."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:34:59.350Z",
+     "text": "Half of it, yes: a relay's owner is relay-state/owner.json, which survives every update, and nothing mints an owner invite any more (the install script the comments name, install.js, is not in the tree), so today an owner is set by writing that file at install.\nWhat stayed is the dead half: the relay still carries the first-claim branch and the owner-invite checks for a token nobody can mint, and the relay install has no step that writes owner.json from a key the way face-install does.\nSo the proposed item is a deletion plus that one install step; the add-it question above still stands for it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:35:46.745Z",
+     "text": "KILL the dead code / fallback. this type of stuff is always coming back to bite us."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:36:21.657Z",
+     "text": "Recorded in both boxes: the first-claim branch, the owner-invite checks and the leftover-owner-invite check go, with a test that they are gone, and the relay install writes owner.json from the key it is given. The add-it check for that item stands above; your yes on list and remove for this item too."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:37:00.441Z",
+     "text": "yes. ownership CANNOT be achieved via invite."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:37:35.995Z",
+     "text": "red Q's?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:38:11.165Z",
+     "text": "Your yes added the ownership item and is recorded here. One thing is still yours on this item: the two new node commands, list relays and remove relay, with a successful claim adding its relay, yes?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:38:34.447Z",
+     "text": "One red Q left on this item, Q4: your yes on the two new node commands, list relays and remove relay, with a successful claim adding its relay. The rest are struck."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:38:45.007Z",
+     "text": "Q4: Do you approve two new commands on the node, list relays and remove relay, with a successful claim adding its relay?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T20:38:58.541Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:39:10.285Z",
+     "text": "Your yes on the two verbs is in the box; no red Q left on this item; green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T20:39:24.290Z",
+     "text": "Green: the list moves to node state, the two verbs have your yes, a claim adds its relay, the first-claim removal is its own item, no red Q."
     }
    ]
   }
