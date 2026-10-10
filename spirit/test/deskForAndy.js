@@ -217,6 +217,9 @@ test.startTest('goal/G4.20: Desk for Andy');
     if (gone.claims === 0 && !has(gone.buttons, 'done')) test.check('gone, nobody claimed: claims 0 and no Done');
     else test.fail(OWED + 'after his Go: ' + short({ claims: gone.claims, buttons: gone.buttons }));
     await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
+    // goal/G16.13: Done waits for the verifier's word now, on a plain item too, so the
+    // claim alone offers nothing to count (Andy: "only the verifier should give me a done button").
+    await call('verify.pass', { id: 'g/G1.2' }, ANDY);
     const one = await factsOf('g/G1.2');
     await call('press', { id: 'g/G1.2', what: 'claim-done' }, WSL);
     const two = await factsOf('g/G1.2');

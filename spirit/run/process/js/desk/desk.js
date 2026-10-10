@@ -544,7 +544,11 @@ function apply(s, r, b, item, goalOf) {
       // On an item it is deskVerify's word over the verifier's (goal/G8.3); on a GOAL it is the full run's word
       // (goal/G8.12), which is why a goal takes it although it carries no code mark.
       if (!it || it.done || it.closed) return;
-      if (!it.goal && !it.code) return;
+      // A PLAIN ITEM TAKES IT TOO (goal/G16.13). It used to be dropped here, so a
+      // plain item's Done could never come from the verifier and came from the claim
+      // instead. Andy, 2026-10-11: "only the verifier should give me a done button,
+      // that's one way of knowing that the 'Done' offered went through the verifier."
+      if (!it.goal && !it.code && !Object.keys(it.claims).length) return;
       it.checked = true;
       // goal/G8.12: the word on the row, written by the desk - on an item deskVerify has passed it, on a goal the full
       // run has.
@@ -827,7 +831,18 @@ function buttons(s, it) {
   // button." So a code item needs the verifier's pass AND deskVerify's own word (verify.pass) - but only while a
   // deskVerify runs on this node: on a box without one, Done follows the pass as it always has, or nothing there could
   // ever be done.
-  } else if (!grantsOpen && (it.code ? (it.verified === true && (it.checked === true || !hasDeskVerify())) : Object.keys(it.claims).length)) out.push('done');
+  // AND A PLAIN ITEM WAITS FOR THE VERIFIER TOO (goal/G16.13). Andy, 2026-10-11:
+  // "only the verifier should give me a done button, that's one way of knowing that the
+  // 'Done' offered went through the verifier." A claim is still what a plain item needs
+  // — it has no verify phase to pass — but the claim alone no longer brings the button.
+  //
+  // AND WITH NO deskVerify ON THE BOX IT STILL WAITS, unlike a code item. That looks
+  // like the harsher rule and is the plainer one: `verify.pass` is offered on a claimed
+  // plain item now, so Done is still reachable where no verifier runs, and the button
+  // then means the same thing everywhere — somebody or something said the item holds.
+  // A code item keeps its own escape, which predates this and is not this item's to move.
+  } else if (!grantsOpen && (it.code ? (it.verified === true && (it.checked === true || !hasDeskVerify()))
+    : (Object.keys(it.claims).length && it.checked === true))) out.push('done');
   // WAIVE (goal/G2.22). Andy, 2026-10-06: "there is no Waive in the G2.18 dialog", the server having had the press
   // since goal/G5.7 and the face never a button. On when it shows, asked which of two readings he meant: "only when
   // it's blocked on me" — so only while the build is his to unblock: its red written, nobody holding the build, not
@@ -1991,7 +2006,11 @@ appServer.serve({
         // carries no code mark of its own. An item still needs its verifier's pass first (goal/G8.3).
         if (!it || it.done || it.closed) throw refused('not-offered');
         if (it.goal) { if (!(st.goals[it.id] || {}).emptied) throw refused('not-offered'); }
-        else if (!it.code || it.verified !== true) throw refused('not-offered');
+        // A CODE ITEM NEEDS ITS VERIFIER'S PASS FIRST; A PLAIN ITEM NEEDS A CLAIM
+        // (goal/G16.13). A plain item was refused outright, which is why the verifier
+        // could say nothing about one and the claim alone had to bring Done.
+        else if (it.code) { if (it.verified !== true) throw refused('not-offered'); }
+        else if (!Object.keys(it.claims).length) throw refused('not-offered');
       }).change };
     },
   },

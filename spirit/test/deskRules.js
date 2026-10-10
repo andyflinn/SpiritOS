@@ -333,6 +333,9 @@ async function main() {
   if (before && go.status === 200 && f1 && f1.go === true) test.check('B1: go is false before his press and true after it');
   else test.fail(OWED + 'B1: facts before ' + JSON.stringify(before) + ', his go answered ' + go.status + ', facts after ' + JSON.stringify(f1));
   const claim = await desk('press', { id: 'r/G1.1', what: 'claim-done' }, SELF_AT_DESK);
+  // goal/G16.13: a plain item's claim no longer brings Done by itself — the verifier's
+  // word does (Andy: "only the verifier should give me a done button").
+  await desk('verify.pass', { id: 'r/G1.1' }, ANDY);
   f1 = await factsOf('r/G1.1');
   if (claim.status === 200 && f1 && f1.go === true && f1.buttons.indexOf('done') !== -1) test.check('B2: after his Go the claim-done is taken and Done is offered');
   else test.fail(OWED + 'B2: claim-done after Go answered ' + claim.status + ' ' + JSON.stringify(claim.body).slice(0, 100) + '; facts ' + JSON.stringify(f1));

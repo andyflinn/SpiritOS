@@ -23,6 +23,11 @@
       "name": "suites",
       "default": "spirit/test",
       "description": "The folder whose suites a full run runs (goal/G8.12), relative to the checkout. The full run starts when the desk says a goal has emptied; a suite hands a folder of probes so no test runs the real harness."
+    },
+    {
+      "name": "pull",
+      "default": "git pull --ff-only",
+      "description": "The command run before an item check, in the checkout, when the tree is CLEAN (goal/G16.13). Andy, 2026-10-11: \"pull git when a status change occurs in desk.\" A dirty tree is never pulled - his uncommitted work is his - and is checked as it stands, with the item's result line saying so. Empty: no pull; a suite hands a probe script so no test runs a real git pull."
     }
   ]
 }

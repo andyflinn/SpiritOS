@@ -63,6 +63,9 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     else test.fail('OWED by goal/G3.9: the claim before Go answered ' + JSON.stringify(early.body) + ', buttons ' + JSON.stringify(stillFresh));
     await call('press', { id: 'g/G1.1', what: 'go' }, ANDY);
     await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
+    // goal/G16.13: a plain item's claim no longer brings Done by itself — the
+    // verifier's word does. Andy: "only the verifier should give me a done button".
+    await call('verify.pass', { id: 'g/G1.1' }, ANDY);
     const claimed = await buttonsOf('g/G1.1');
     if (has(claimed, 'done') && !has(claimed, 'go')) test.check('gone by his Go and claimed: Done offered, Go no longer');
     else test.fail(OWED + 'g/G1.1 gone and claimed: ' + JSON.stringify(claimed));
@@ -89,12 +92,14 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     if (!has(went, 'go') && !has(went, 'done')) test.check('an item that went offers neither Go nor, until a claim, Done');
     else test.fail('g/G1.2 after Go: ' + JSON.stringify(went));
     await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
+    await call('verify.pass', { id: 'g/G1.2' }, ANDY);
     const wentClaimed = await buttonsOf('g/G1.2');
     if (has(wentClaimed, 'done') && !has(wentClaimed, 'go')) test.check('and once claimed it offers Done');
     else test.fail('g/G1.2 claimed after Go: ' + JSON.stringify(wentClaimed));
 
     test.subHeading('3. a Go pressed where Done is offered does not mark the item gone');
     await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
+    await call('verify.pass', { id: 'g/G1.1' }, ANDY);
     const goAnswer = await call('press', { id: 'g/G1.1', what: 'go' }, ANDY);
     const after = await itemOf('g/G1.1');
     const code = (goAnswer.body || {}).code || '';

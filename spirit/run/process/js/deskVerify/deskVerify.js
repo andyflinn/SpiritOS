@@ -100,8 +100,37 @@ function tree() {
   // (goal/G8.1's box), so a result measured on a dirty tree is never taken for one measured at a commit.
   const porcelain = git(['status', '--porcelain']);
   const dirty = porcelain ? porcelain.split('\n').map(function (l) { return l.slice(3).trim(); }).filter(Boolean).sort().join(' ') : '';
-  seen = { at: now, commit: git(['rev-parse', 'HEAD']), dirty: dirty };
+  // `short` for what a person reads: the result line on an item names the commit it
+  // checked (goal/G16.13), and the full hash is not what he compares against a log.
+  seen = { at: now, commit: git(['rev-parse', 'HEAD']), short: git(['rev-parse', '--short', 'HEAD']), dirty: dirty };
   return seen;
+}
+
+// ── THE PULL, AND IT GOES FIRST (goal/G16.13) ────────────────────────────
+//
+//   Andy, 2026-10-11: "my Verifier need to poll for verifications, and pull git when
+//   a status change occurs in desk."; "The verifier MUST ALWAYS fucking listen to desk
+//   and do that work FIRST."
+//
+// It checked whatever its clone happened to hold, so an item built and pushed a minute
+// ago was measured against code that did not include it — which is how he came to ask
+// "why does it not pick up this shit?" and had to be told his tree was behind.
+//
+// A DIRTY TREE IS NEVER PULLED. His clone is his, and uncommitted work there is his
+// work: a pull over it could cost him it. So the tree is read first and a dirty one is
+// checked exactly as it stands, with the line saying so, which is the honest answer
+// rather than a silent measurement of something else (wsl-claude's point, 2026-10-11,
+// recorded in this item's box).
+const PULL = String(values.pull === undefined ? 'git pull --ff-only' : values.pull).trim();
+function pullFirst() {
+  const before = tree();
+  if (before.dirty) return 'dirty, not pulled';
+  if (!PULL) return 'no pull command set';
+  const r = spawnSync(PULL, { cwd: REPO, shell: true, encoding: 'utf8' });
+  // HEAD may have moved, so the commit this check reports is read again rather than
+  // taken from the cache the pull just invalidated.
+  seen = { at: 0, commit: '', short: '', dirty: '' };
+  return r.status === 0 ? 'pulled' : 'pull failed: ' + String(r.stderr || r.stdout || '').trim().split('\n')[0];
 }
 
 // WHERE IT RUNS, READ FROM ITS OWN NODE (goal/G8.2). Andy, 2026-10-09: "deskVerify knows where it runs. and only the
@@ -295,6 +324,18 @@ function claimCheckRun(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   stopped = false;
   running = { id: String(id), suite: '', since: new Date().toISOString() };
+  // FIRST, BEFORE ANYTHING IS ASKED OR RUN (goal/G16.13): the tree this check will
+  // measure is brought up to date, or said to be dirty, before the item's own facts
+  // are read — so the suites that run are the suites the item now lists.
+  const pulled = pullFirst();
+  // ONE LINE ON THE ITEM, WHATEVER HAPPENS (goal/G16.13). Andy, 2026-10-11: "How do i
+  // FUCKING know the result of verifier? it said it ran 16.5, but i don't see where the
+  // result is, or if 16.5 passed." Called directly it answered only its caller and
+  // wrote nothing, so a verdict existed and he could not see it. Said once per check.
+  const report = function (text) {
+    return spirit.core.ask('jobs.api', { ask: { desk: { 'chat.add': { id: String(id), text: text } } } },
+      'http://127.0.0.1:' + port).catch(function () { /* the verdict below still stands */ });
+  };
   return suitesOf(id).then(async function (list) {
     const reds = [];
     // NOTHING TO RUN IS NOT A PASS (goal/G8.10, grown from rule/11 point 2): an item with no test file on its list had
@@ -329,13 +370,19 @@ function claimCheckRun(id) {
         .map(function (l) { return l.replace(/^\**\s*/, '').replace(/\s*[❌✅]\s*$/, '').trim(); });
       if (lines.length) reds.push({ suite: rel, failures: lines });
     }
+    const at = tree();
+    const where = 'at ' + (at.short || at.commit || 'an unknown commit') + ' (' + pulled + ')';
     if (!reds.length) {
       // ALL GREEN IS ITS WORD TOO (goal/G8.3, found by claude-windows verifying b93a54d1): Andy, "only deskVerify brings
       // the button", so saying nothing would leave Done forever absent on his node. verify.pass is that word.
+      await report('deskVerify: passed, ' + where + '. ' + (list.length === 1 ? '1 suite' : list.length + ' suites') + ' ran green.');
       return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.pass': { id: String(id) } } } }, 'http://127.0.0.1:' + port)
         .then(function () { return { rejected: false, reds: [] }; }, function () { return { rejected: false, reds: [] }; });
     }
     const why = reds.map(function (x) { return x.suite + (x.failures.length ? ': ' + x.failures.join('; ') : ''); }).join(' | ');
+    // The red suites by name, so the line says WHAT to go and look at and not only that
+    // something failed.
+    await report('deskVerify: rejected, ' + where + '. Red: ' + why);
     return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.reject': { id: String(id), why: why } } } }, 'http://127.0.0.1:' + port)
       .then(function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; },
         function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; });
@@ -373,6 +420,11 @@ function watched(r) {
   if (!b || !b.id) return null;
   if (r.verb === 'verify.again') return { kind: 'item', id: String(b.id) };
   if (r.verb === 'phase.done' && String(b.phase) === 'verify' && b.pass === true) return { kind: 'item', id: String(b.id) };
+  // A CLAIM IS A TRIGGER (goal/G16.13). It was not, so a plain item — which has no
+  // verify phase to pass — was never checked at all, and the Done it offered had been
+  // through nothing. Andy, 2026-10-11: "only the verifier should give me a done button,
+  // that's one way of knowing that the 'Done' offered went through the verifier."
+  if (r.verb === 'press' && String(b.what) === 'claim-done') return { kind: 'item', id: String(b.id) };
   // THE GOAL HAS EMPTIED (goal/G8.12): the desk writes this when its last item goes, and it starts the full run.
   if (r.verb === 'goal.emptied') return { kind: 'goal', id: String(b.id) };
   return null;

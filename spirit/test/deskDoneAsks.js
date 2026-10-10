@@ -65,6 +65,9 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
     await call('line.take', { id: 'd/G1.1' }, WSL);
     await call('chat.add', { id: 'd/G1.1', text: 'wsl-claude answers' }, WSL);
     await call('press', { id: 'd/G1.1', what: 'claim-done' }, CW);
+    // goal/G16.13: Done waits for the verifier's word now, on a plain item too, so the
+    // claim alone offers nothing to count (Andy: "only the verifier should give me a done button").
+    await call('verify.pass', { id: 'd/G1.1' }, ANDY);
     const one = await factsOf('d/G1.1');
     if (one.buttons && one.buttons.indexOf('done') !== -1 && one.asks === 0) test.check('claimed by claude-windows alone: Done is offered, asks 0 (wsl-claude took it too)');
     else test.fail(OWED + 'after one of two claims: ' + short({ buttons: one.buttons, asks: one.asks }));
@@ -80,6 +83,7 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
     test.subHeading('2. nobody took it: Done counts from its first claim');
     await call('press', { id: 'd/G1.2', what: 'go' }, ANDY);
     await call('press', { id: 'd/G1.2', what: 'claim-done' }, CW);
+    await call('verify.pass', { id: 'd/G1.2' }, ANDY);
     const lone = await factsOf('d/G1.2');
     if (lone.asks === 1) test.check('d/G1.2, claimed once and taken by nobody: asks 1');
     else test.fail(OWED + 'd/G1.2 after one claim: asks ' + short(lone.asks));
