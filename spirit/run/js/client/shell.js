@@ -1974,16 +1974,42 @@
   var publishedHandlers = Object.create(null);
   // A job keeps its last object; a later update for another reason is not news.
   var publishedLast = Object.create(null);
+  // A PUPPET'S STREAM (goal/G14.5). Andy, 2026-10-10: the master "throws the streamed events into the
+  // node-broadcast for it's apps". A puppet posts every object its servers publish as a packet named published,
+  // {module, app} (puppetStream.js); it reaches this page as any packet does, and is handed to the same
+  // onPublished handlers a local object goes to, with the sender's key beside it. The last streamed object per
+  // sender and module is kept, so an app that subscribes later gets what is there now, as with a local one.
+  var streamedLast = Object.create(null);
+  function deliverStreamed(from, module, app) {
+    var m = /^process\/js\/([^/]+)$/.exec(String(module || ''));
+    if (!m || !from || !app || typeof app !== 'object' || Array.isArray(app)) return;
+    var seen = JSON.stringify(app);
+    var lim = typeof window !== 'undefined' && window.spiritLimits && window.spiritLimits.PAYLOAD_MAX;
+    if (lim && unescape(encodeURIComponent(seen)).length > lim) return;
+    var key = from + ' ' + m[1];
+    if (streamedLast[key] && streamedLast[key].seen === seen) return;
+    streamedLast[key] = { seen: seen, app: app, from: from, module: String(module) };
+    (publishedHandlers['shell/' + m[1]] || []).slice().forEach(function (fn) {
+      try { fn(app, { from: from, module: String(module) }); } catch (e) { /* one app's fault stays its own */ }
+    });
+  }
   function onPublishedFor(appId, handler) {
     if (typeof handler !== 'function' || !appId) return function () {};
     var name = String(appId);
     (publishedHandlers[name] = publishedHandlers[name] || []).push(handler);
-    // An app opened after its server published gets what is there now (wsl-claude, G2.3 review).
+    // An app opened after its server published gets what is there now (wsl-claude, G2.3 review): the local
+    // object with from empty, and every streamed one with its sender (goal/G14.5).
     var m = /^shell\/([^/]+)$/.exec(name);
     if (m) {
       jobsById.forEach(function (job) {
         if (job && job.module === 'process/js/' + m[1] && job.app && typeof job.app === 'object') {
-          try { handler(job.app); } catch (e) { /* the app's own fault */ }
+          try { handler(job.app, { from: '', module: String(job.module) }); } catch (e) { /* the app's own fault */ }
+        }
+      });
+      Object.keys(streamedLast).forEach(function (key) {
+        var s = streamedLast[key];
+        if (s && s.module === 'process/js/' + m[1]) {
+          try { handler(s.app, { from: s.from, module: s.module }); } catch (e) { /* the app's own fault */ }
         }
       });
     }
@@ -2003,7 +2029,7 @@
     if (publishedLast[job.id] === seen) return;
     publishedLast[job.id] = seen;
     (publishedHandlers['shell/' + m[1]] || []).slice().forEach(function (fn) {
-      try { fn(job.app); } catch (e) { /* one app's fault stays its own */ }
+      try { fn(job.app, { from: '', module: String(job.module) }); } catch (e) { /* one app's fault stays its own */ }
     });
   }
 
@@ -2173,6 +2199,13 @@
       if (waiting.length) {
         routed.push(message);
         waiting.slice().forEach(function (fn) { fn(info.body, message); });
+        return;
+      }
+
+      // A PUPPET'S PUBLISHED OBJECT (goal/G14.5) goes where a local one goes, never to a packet handler.
+      if (info.app === 'published' && info.body && typeof info.body.module === 'string') {
+        routed.push(message);
+        deliverStreamed(String(message.fromKey || message.from || ''), info.body.module, info.body.app);
         return;
       }
 

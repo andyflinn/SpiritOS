@@ -209,20 +209,14 @@ function deskUnslothRemoteDrawModels() {
   deskUnslothRemoteDrawChatTitle();
 }
 
-// ONE models ASK IN FLIGHT, EVER, AND THE NEXT ONLY AFTER THE ANSWER. Through the owner door an ask can take 20 s
-// (ownerPost's wait) and the first build asked every 2 s regardless: ten posts outstanding at a time from his
-// shell, the relay refusing busy, Desk's own posts starved and the puppet "unreachable" (Andy, 2026-10-10: "andy's
-// shell has some request constantly outstanding", "sending in desk no longer works and on 65432 Remote is alwas
-// says 11111 unreachable"). So: a guard, a chain of timeouts after each answer, never an interval; and no ask at
-// all once the app's panel has left the page.
-var deskUnslothRemoteFreshTries = 0;
+// ONE models ASK, AT OPEN AND ON A TARGET CHANGE, AND NO POLL AFTER IT. Through the owner door an ask can take
+// 20 s (ownerPost's wait) and the first build asked every 2 s on an interval: ten posts outstanding at a time from
+// his shell, the relay refusing busy, Desk's own posts starved and the puppet "unreachable" (Andy, 2026-10-10:
+// "andy's shell has some request constantly outstanding", "sending in desk no longer works and on 65432 Remote is
+// alwas says 11111 unreachable"). Since goal/G14.5 every later change arrives as a published object, so there is
+// nothing to poll: one ask for the first paint, a guard against two in flight, and the stream from then on.
 var deskUnslothRemoteModelsInFlight = false;
 var deskUnslothRemoteContainer = null;
-var POLL_MS = 5000;
-
-function deskUnslothRemoteOnPage() {
-  return !!(deskUnslothRemoteContainer && deskUnslothRemoteContainer.isConnected !== false && !deskUnslothRemoteContainer.hidden);
-}
 
 function deskUnslothRemoteLoadModels() {
   if (!deskUnslothRemoteTarget || deskUnslothRemoteModelsInFlight) return Promise.resolve(deskUnslothRemoteModels);
@@ -233,14 +227,6 @@ function deskUnslothRemoteLoadModels() {
     if (target !== deskUnslothRemoteTarget) return said;
     deskUnslothRemoteModels = said;
     deskUnslothRemoteDrawModels();
-    // A CACHED ANSWER IS ASKED AGAIN after the answer, until the studio has been heard from (or it has not answered
-    // ten times over: then the line stays as known, Load withheld, and the next open asks again).
-    if (said && said.cached && !deskUnslothRemoteLoadTimer && deskUnslothRemoteFreshTries < 10) {
-      deskUnslothRemoteFreshTries++;
-      setTimeout(function () { if (target === deskUnslothRemoteTarget && deskUnslothRemoteOnPage()) deskUnslothRemoteLoadModels(); }, POLL_MS);
-    } else if (said && !said.cached) {
-      deskUnslothRemoteFreshTries = 0;
-    }
     return said;
   }, function (e) {
     deskUnslothRemoteModelsInFlight = false;
@@ -250,10 +236,41 @@ function deskUnslothRemoteLoadModels() {
 
 // MAY LOAD BE OFFERED: only for a model not loaded, and only when the models answer is not `cached` — the studio
 // has been heard from just now (Andy, 2026-10-10: "the list should return with a cached flag, so the remote can
-// forbid loading until.... unsloth-studio crashed again."). A cached answer is re-asked after a moment until the
-// refresh behind it has landed.
+// forbid loading until.... unsloth-studio crashed again."). The next published object says when it is.
 function deskUnslothRemoteCanLoad(got, model) {
   return !!(got && got.ok !== false && !got.cached && model && !model.loaded);
+}
+
+// ── THE PUBLISHED STATE, FROM EITHER NODE (goal/G14.5) ───────────────
+//
+//   Andy, 2026-10-10: "so deskUnsloth keeps a state, and publishes changes"; on a puppet the node streams it to
+//   the master ("inside the puppet, the publisher then publishes to the master as well"), and the master's shell
+//   hands it to onPublished with the sender's key. ONE HANDLER FOR BOTH: an object is taken when it is this node's
+//   own (from empty, target this node) or streamed from the chosen puppet's key. Nothing is polled after it.
+function deskUnslothRemoteTakesPublished(target, meta) {
+  var from = String((meta && meta.from) || '');
+  if (!target || target.kind !== 'puppet') return from === '';
+  return !!from && from === String(target.key || '');
+}
+
+var deskUnslothRemoteChatPending = '';   // the chat.send id awaiting its published answer
+function deskUnslothRemoteApplyPublished(obj) {
+  if (!obj || typeof obj !== 'object' || typeof obj.connected !== 'boolean') return;
+  deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '' };
+  deskUnslothRemoteBusy = false;
+  deskUnslothRemoteModels = { active: obj.active || '', cached: !!obj.cached, load: obj.load || {}, models: Array.isArray(obj.models) ? obj.models : [] };
+  if (deskUnslothRemoteLoadTimer) {
+    var over = deskUnslothRemoteLoadOver(deskUnslothRemoteModels, deskUnslothRemoteChosen);
+    if (over.over) { deskUnslothRemoteLoadTimer = null; deskUnslothRemoteSay(over.error, !!over.error); }
+  }
+  deskUnslothRemoteDraw();
+  deskUnslothRemoteDrawModels();
+  if (deskUnslothRemoteChatPending && obj.chat && obj.chat.id === deskUnslothRemoteChatPending && obj.chat.done) {
+    deskUnslothRemoteChatPending = '';
+    deskUnslothRemoteTranscript.push({ role: 'assistant', text: String(obj.chat.text || '') });
+    deskUnslothRemoteChatBusy = false;
+    deskUnslothRemoteDrawChatLines();
+  }
 }
 
 // IS THE LOAD OVER, from one models answer: loaded, or failed with the studio's words, or the studio unreadable.
@@ -268,31 +285,18 @@ function deskUnslothRemoteLoadOver(got, id) {
   return { over: false, error: '' };
 }
 
-// THE LOAD: one press, the studio swaps the loaded model (lengthy), and the line is re-asked every two seconds
-// until models says the chosen one is loaded, or that the load failed: then the hourglass goes, the words are
-// shown, and Load is offered again. The switch's state is re-read when loaded: deskUnsloth's model followed.
+// THE LOAD: one press, the studio swaps the loaded model (lengthy), and the published objects that follow say
+// when the chosen one is loaded, or that the load failed: then the hourglass goes, the words are shown, and Load
+// is offered again (deskUnslothRemoteApplyPublished). Nothing is asked meanwhile.
 function deskUnslothRemoteLoad() {
   var id = deskUnslothRemoteChosen;
   if (!id || deskUnslothRemoteLoadTimer) return;
   var target = deskUnslothRemoteTarget;
   deskUnslothRemoteAsk(target, 'model.load', { id: id }).then(function (said) {
     if (said && said.ok === false) { deskUnslothRemoteSay(said.error || said.code || 'the load was refused', true); return; }
+    if (target !== deskUnslothRemoteTarget) return;
     deskUnslothRemoteSay('', false);
-    // THE POLL IS A CHAIN: the next ask goes POLL_MS after the last answer, never on a clock of its own, and stops
-    // when the load is over, the target changed, or the panel left the page.
     deskUnslothRemoteLoadTimer = true;
-    var again = function () {
-      if (!deskUnslothRemoteLoadTimer || target !== deskUnslothRemoteTarget || !deskUnslothRemoteOnPage()) { deskUnslothRemoteLoadTimer = null; return; }
-      deskUnslothRemoteLoadModels().then(function (got) {
-        var over = deskUnslothRemoteLoadOver(got, id);
-        if (!over.over) { setTimeout(again, POLL_MS); return; }
-        deskUnslothRemoteLoadTimer = null;
-        deskUnslothRemoteSay(over.error, !!over.error);
-        deskUnslothRemoteDrawModels();
-        if (!over.error) deskUnslothRemoteLoadState();
-      }, function () { setTimeout(again, POLL_MS); });
-    };
-    setTimeout(again, POLL_MS);
     deskUnslothRemoteDrawModels();
   });
 }
@@ -389,25 +393,18 @@ function deskUnslothRemoteChatSend() {
   deskUnslothRemoteApi.verb(payload.verb, rest).then(function (r) {
     var said = deskUnslothRemoteAnswerOf({ kind: 'node' }, r);
     if (!said || said.ok === false || !said.id) throw new Error((said && (said.error || said.code)) || 'the chat was refused');
-    // The poll is a chain too: the next chat.answer a second after the last answer, one in flight.
-    return new Promise(function (resolve, reject) {
-      var again = function () {
-        var p = deskUnslothRemoteChatAskFor('chat.answer', { id: said.id });
-        var q = {}; Object.keys(p).forEach(function (k) { if (k !== 'verb') q[k] = p[k]; });
-        deskUnslothRemoteApi.verb(p.verb, q).then(function (r2) {
-          var a = deskUnslothRemoteAnswerOf({ kind: 'node' }, r2);
-          if (a && a.ok === false) { reject(new Error(a.error || a.code || 'no answer')); return; }
-          if (a && a.done) { resolve(String(a.text || '')); return; }
-          setTimeout(again, 1000);
-        }, reject);
-      };
-      setTimeout(again, 1000);
-    });
-  }).then(function (answer) {
-    deskUnslothRemoteTranscript.push({ role: 'assistant', text: answer });
-  }, function (e) {
+    // THE ANSWER ARRIVES AS A PUBLISHED OBJECT (goal/G14.5): chat {id, done, text}, taken by
+    // deskUnslothRemoteApplyPublished. Nothing is polled; a chat that never comes back is let go after a while.
+    deskUnslothRemoteChatPending = said.id;
+    setTimeout(function () {
+      if (deskUnslothRemoteChatPending !== said.id) return;
+      deskUnslothRemoteChatPending = '';
+      deskUnslothRemoteTranscript.push({ role: 'assistant', text: '(no answer published in time)' });
+      deskUnslothRemoteChatBusy = false;
+      deskUnslothRemoteDrawChatLines();
+    }, 120000);
+  }).catch(function (e) {
     deskUnslothRemoteTranscript.push({ role: 'assistant', text: '(' + String((e && e.message) || e) + ')' });
-  }).then(function () {
     deskUnslothRemoteChatBusy = false;
     deskUnslothRemoteDrawChatLines();
   });
@@ -455,12 +452,19 @@ spirit.shell.activateApp({
       deskUnslothRemoteModels = null;
       deskUnslothRemoteChosen = '';
       deskUnslothRemoteLoadTimer = null;
-      deskUnslothRemoteFreshTries = 0;
       deskUnslothRemoteDrawModels();
       deskUnslothRemoteLoadState();
       deskUnslothRemoteLoadModels();
     });
     document.getElementById('dur-switch').addEventListener('click', deskUnslothRemoteFlip);
+    // THE STREAM (goal/G14.5): every change of deskUnsloth's state, local or from the chosen puppet, through one
+    // handler; the asks below paint the first time and are not repeated.
+    if (typeof api.onPublished === 'function') {
+      api.onPublished(function (obj, meta) {
+        if (!deskUnslothRemoteTakesPublished(deskUnslothRemoteTarget, meta || { from: '' })) return;
+        deskUnslothRemoteApplyPublished(obj);
+      }, 'deskUnsloth');
+    }
     deskUnslothRemoteLoadState();
     deskUnslothRemoteLoadModels();
   },

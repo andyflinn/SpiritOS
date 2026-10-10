@@ -1445,6 +1445,22 @@ contactBook.syncMarks(ROOT_DIR);
       log: function (line) { console.log(line); },
     }));
 
+    // ── THE STREAM TO THE MASTER (goal/G14.5) ─────────────────────────
+    //
+    // Andy, 2026-10-10: "inside the puppet, the publisher then publishes to the master as well", "just send all
+    // app Server events", "only while the master is live and reachable". The publisher is one point, the job
+    // record and its job-updated: on a puppet every server's published object also goes to the owner as a packet
+    // named published, serialized, over the route the owner door's sending end would choose. puppetStream.js says
+    // the rest; the master's shell routes the packet to onPublished (shell.js).
+    const puppetStream = require('./puppetStream').createPuppetStream({
+      puppet: require('./puppetMode').puppetIn(ROOT_DIR, function () {}),
+      route: function (to) { return presence ? hub.chooseRoute(presence, to) : { unreachable: true }; },
+      post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
+      encode: wire.encode,
+      log: function (line) { console.log(line); },
+    });
+    jobs.events.on('job-updated', puppetStream.onJob);
+
     // ── 'api': A KNOWN SENDER ASKS WHAT THIS NODE'S APPS OFFER ────────
     //
     // appPair/G1.3, a node verb with Andy's yes on it ("yes to all of wsl

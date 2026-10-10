@@ -316,6 +316,7 @@ function refreshModels() {
     refreshing = null;
     refreshedAt = Date.now();
     writeKnown(next);
+    publishState();
     return next;
   }, function (e) {
     refreshing = null;
@@ -335,6 +336,33 @@ function models() {
   return refreshModels().then(function (next) {
     return { active: next.active, cached: false, load: loadNow, models: next.models };
   });
+}
+
+// ── ONE STATE, PUBLISHED ON EVERY CHANGE (goal/G14.5) ─────────────────
+//
+//   Andy, 2026-10-10: "so deskUnsloth keeps a state, and publishes changes, it's own api are more like
+//   event-delivery to deskUnsloth".
+//
+// The state is what state, models and chat.answer answer, in one object, published through appServer.publish
+// whenever any of it changes: the switch, a load's state, the known list after a refresh, a chat answer. The node
+// hands it to the pages on this node and, on a puppet, streams it to the owner (puppetStream.js); the Remote
+// draws from it and asks nothing. The read verbs stay for a one-shot ask.
+let lastChat = { id: '', done: false, text: '' };
+function stateObject() {
+  const have = readKnown() || { active: '', models: [] };
+  return {
+    connected: connected,
+    persona: PERSONA,
+    model: MODEL,
+    active: String(have.active || ''),
+    cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS),
+    load: { model: load.model, state: load.state, error: load.error },
+    models: Array.isArray(have.models) ? have.models : [],
+    chat: { id: lastChat.id, done: lastChat.done, text: lastChat.text },
+  };
+}
+function publishState() {
+  appServer.publish(stateObject());
 }
 
 // model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:
@@ -360,12 +388,16 @@ function loadModel(id) {
   MODEL = id;
   say('loading ' + id + '; the configuration names it from now on');
   load = { model: id, state: 'loading', error: '' };
+  publishState();
   studio('POST', '/api/inference/load', { model_path: id }).then(function () {
     if (load.model === id) load = { model: id, state: 'done', error: '' };
     say('the studio has loaded ' + id);
+    // The studio is done: the known list is read again, and the state goes out with it.
+    refreshModels().catch(function () { publishState(); });
   }, function (e) {
     if (load.model === id) load = { model: id, state: 'failed', error: String(e.message || e) };
     say('the studio did not load ' + id + ': ' + e.message);
+    publishState();
   });
   return { model: id, loaded: false };
 }
@@ -397,10 +429,16 @@ function chatSend(lines) {
   }
   const messages = [{ role: 'system', content: system }].concat(window);
   answers[id] = { done: false, text: '', at: Date.now() };
+  lastChat = { id: id, done: false, text: '' };
+  publishState();
   askModel(messages).then(function (content) {
     answers[id] = { done: true, text: content, at: Date.now() };
+    lastChat = { id: id, done: true, text: content };
+    publishState();
   }, function (e) {
     answers[id] = { done: true, text: '(the model did not answer: ' + e.message + ')', at: Date.now() };
+    lastChat = { id: id, done: true, text: answers[id].text };
+    publishState();
   });
   Object.keys(answers).forEach(function (k) { if (answers[k].done && Date.now() - answers[k].at > ANSWER_KEEP_MS) delete answers[k]; });
   return { id: id };
@@ -501,6 +539,7 @@ function setConnected(on) {
   if (on === connected) return Promise.resolve({ connected: connected });
   if (!on) {
     connected = false;
+    publishState();
     say(PERSONA + ' leaves the desk: signing off');
     return desk('signoff', {}).then(function () { return { connected: false }; }, function (e) {
       say('the signoff could not be said: ' + e.message);
@@ -509,6 +548,7 @@ function setConnected(on) {
   }
   connected = true;
   caughtUp = false;
+  publishState();
   say(PERSONA + ' is back at the desk, from the present');
   if (!looping) loop();
   return Promise.resolve({ connected: true });
@@ -572,4 +612,8 @@ appServer.serve({
 }, { dependencies: [] });
 
 say(PERSONA + ' is at the desk, model ' + MODEL + ', context ' + CONTEXT_LIMIT + ' tokens');
+// The first state goes out at once, from what is known. The studio is not read until somebody asks models (the
+// Remote does when it opens): at the desk alone, deskUnsloth speaks to the studio for chat and nothing else
+// (goal/G10.3, deskUnslothContext.js).
+publishState();
 loop();

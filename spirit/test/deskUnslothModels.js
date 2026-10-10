@@ -125,6 +125,7 @@ const studioServer = http.createServer(function (req, res) {
 // ── THE FAKE NODE: jobs.api for deskClient, as deskUnslothSwitch.js ─────
 let nextQueue = [];
 const deskWords = [];
+const published = [];
 const node = http.createServer(function (req, res) {
   let raw = '';
   req.on('data', function (c) { raw += c; });
@@ -132,6 +133,9 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
+    // WHAT deskUnsloth PUBLISHES (goal/G14.5, Andy: "so deskUnsloth keeps a state, and publishes changes"): the
+    // fake node takes jobs.update {app} as the real one does and keeps every object.
+    if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
     if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node answers jobs.api for deskClient alone' });
     if (dc.next) {
       if (nextQueue.length) return answer(200, { lines: nextQueue.shift() });
@@ -162,7 +166,10 @@ let kid = null;
 let out = { stdout: '', stderr: '', code: null };
 function start() {
   out = { stdout: '', stderr: '', code: null };
-  kid = spawn(process.execPath, [AGENT, '{}', '--pipe', pipe, '--state', state], { cwd: scratch, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+  kid = spawn(process.execPath, [AGENT, '{}', '--pipe', pipe, '--state', state], {
+    cwd: scratch, stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'test-deskUnsloth', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.address().port + '/api/spirit' }),
+  });
   kid.stdout.on('data', function (c) { out.stdout += c; });
   kid.stderr.on('data', function (c) { out.stderr += c; });
   kid.on('exit', function (code) { out.code = code === null ? 'signal' : code; });
@@ -383,6 +390,30 @@ async function suite() {
   if (mu.cached === false && Array.isArray(mu.models) && mu.models.length === 3) test.check('once the studio answers again, a later ask says cached false');
   else test.fail(OWED + 'after the studio came back, models answered ' + short(mu));
 
+  test.subHeading('3c. deskUnsloth keeps one state and publishes it on every change (goal/G14.5)');
+  // Andy, 2026-10-10: "so deskUnsloth keeps a state, and publishes changes, it's own api are more like
+  // event-delivery to deskUnsloth". The state is what state, models and chat.answer answer, in one object.
+  const lastPub = function () { return published[published.length - 1] || null; };
+  const p0 = lastPub();
+  if (p0 && typeof p0.connected === 'boolean' && p0.persona === CONFIGURATION.persona && Array.isArray(p0.models) && p0.models.length === 3 && typeof p0.active === 'string' && p0.load && typeof p0.load.state === 'string' && typeof p0.cached === 'boolean') test.check('an object has been published already, with connected, persona, model, active, cached, load and the models');
+  else test.fail(OWED + 'the last published object is ' + short(p0));
+  const nBefore = published.length;
+  await ask('connect', { on: false });
+  await until(function () { return published.length > nBefore && lastPub().connected === false; }, 4000);
+  if (published.length > nBefore && lastPub().connected === false) test.check('connect off publishes the state with connected false');
+  else test.fail(OWED + 'after connect off, published ' + (published.length - nBefore) + ' object(s), last ' + short(lastPub()));
+  const nOff = published.length;
+  await ask('connect', { on: true });
+  await until(function () { return published.length > nOff && lastPub().connected === true; }, 4000);
+  if (lastPub().connected === true) test.check('connect on publishes it with connected true');
+  else test.fail(OWED + 'after connect on, last ' + short(lastPub()));
+  const nChat = published.length;
+  const sc = await ask('chat.send', { lines: [{ role: 'user', text: 'say the word' }] });
+  await until(function () { return published.length > nChat && lastPub().chat && lastPub().chat.id === sc.id && lastPub().chat.done === true; }, 8000);
+  const pc = lastPub();
+  if (pc && pc.chat && pc.chat.id === sc.id && pc.chat.done === true && /say the word/.test(pc.chat.text)) test.check('a chat answer done is published as chat {id, done, text}');
+  else test.fail(OWED + 'after a chat, last published ' + short(pc && pc.chat));
+
   test.subHeading('4. the app\'s functions');
   const ctx = loadApp();
   if (!ctx || ctx.error) { test.fail(OWED + 'deskUnslothRemote.js ' + (ctx ? 'failed to load: ' + ctx.error : 'missing')); return; }
@@ -421,6 +452,16 @@ async function suite() {
   const ov4 = loadOver && loadOver({ ok: false, code: 'app-did-not-answer', error: 'the app server did not answer in time' }, BROKEN);
   if (ov1 && ov1.over && /llama-server/.test(ov1.error) && ov2 && !ov2.over && ov3 && ov3.over && !ov3.error && ov4 && ov4.over && ov4.error) test.check('the line lets go of the hourglass on a failed load (with the studio\'s words), on loaded, and when the studio cannot be read; not while loading');
   else test.fail(OWED + 'loadOver answered ' + short([ov1, ov2, ov3, ov4]));
+  // goal/G14.5: ONE HANDLER FOR BOTH NODES. A published object is taken for the chosen target when it is local
+  // (from empty, target this node) or streamed from the target puppet's key; anything else is left alone.
+  const takes = ctx.deskUnslothRemoteTakesPublished;
+  const t1 = takes && takes({ kind: 'node' }, { from: '' });
+  const t2 = takes && takes({ kind: 'puppet', key: KEY }, { from: KEY });
+  const t3 = takes && takes({ kind: 'puppet', key: KEY }, { from: '' });
+  const t4 = takes && takes({ kind: 'node' }, { from: KEY });
+  const t5 = takes && takes({ kind: 'puppet', key: KEY }, { from: 'MCowBQYDK2VwAyEAother' });
+  if (t1 === true && t2 === true && t3 === false && t4 === false && t5 === false) test.check('the Remote takes a local object for this node and a streamed one from the chosen puppet, nothing else');
+  else test.fail(OWED + 'takesPublished answered ' + short([t1, t2, t3, t4, t5]));
   const chatAsk = ctx.deskUnslothRemoteChatAskFor;
   const c1 = chatAsk && chatAsk('chat.send', { lines: [] });
   if (c1 && c1.verb === 'jobs.api' && c1.ask.deskUnsloth['chat.send']) test.check('the chat asks its own node only: jobs.api, never owner.command');
