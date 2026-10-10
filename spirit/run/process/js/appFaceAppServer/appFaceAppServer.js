@@ -16,8 +16,15 @@
 // grant. it is run by the owner").
 
 const appServer = require('../../../js/appServer.js');
+const errors = require('../../../js/spiritErrors.js');
 
 const JSON_TYPE = 'application/json; charset=utf-8';
+
+// The one refusal this server emits beyond the register's own, declared here (define exported from
+// the register, Andy 2026-10-10): a request that is not the json ask is 404 no-such-route.
+if (!errors.byCode('no-such-route')) {
+  errors.define('no-such-route', { status: 404, retry: 'no', fault: 'caller', texts: ['no such route'] });
+}
 
 function serve(a) {
   const method = String(a.method || '').toUpperCase();
