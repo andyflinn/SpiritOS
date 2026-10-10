@@ -186,7 +186,9 @@ function callFor(id) {
 // read live 2026-10-10 (Unsloth Studio 2026.10.3, openapi.json). One function for both: a path from the host root.
 const STUDIO_URL = String(CONNECTION.url || '').replace(/\/+$/, '').replace(/\/v1$/, '');
 
-function studio(method, pathname, body) {
+// `timeoutMs` caps one call: a studio route that dawdles (v1/models took 14.9 s live on 2026-10-10, probing its
+// ollama entries) must not take the whole ask past the 12 s a process has to answer.
+function studio(method, pathname, body, timeoutMs) {
   const url = new URL(STUDIO_URL + pathname);
   const text = body === undefined ? '' : JSON.stringify(body);
   const lib = url.protocol === 'https:' ? https : http;
@@ -210,6 +212,7 @@ function studio(method, pathname, body) {
       });
     });
     req.on('error', reject);
+    if (Number(timeoutMs) > 0) req.setTimeout(Number(timeoutMs), function () { req.destroy(new Error('the studio took longer than ' + timeoutMs + ' ms at ' + pathname)); });
     if (text) req.write(text);
     req.end();
   });
@@ -239,21 +242,26 @@ function askModel(messages) {
 // the first build failed the whole ask on it, so the dropdown never appeared (Andy, 2026-10-10: "when no model is
 // loaded, the model selector doesn't show up."). A failing status or v1/models now means nothing loaded, and the
 // list still comes.
+// AND THE WALL: v1/models is asked for the quant alone, capped at QUANT_WAIT_MS; late, the quant is '' this time
+// (it took 14.9 s live, probing the studio's ollama entries, and the whole ask died at 12 s). The loaded flag
+// comes from inference/status, 0.3 s live, which names the active model and lists the loaded ones.
+const QUANT_WAIT_MS = 5000;
 function models() {
   const nothing = function () { return {}; };
-  return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models').catch(nothing), studio('GET', '/api/inference/status').catch(nothing)])
+  return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS).catch(nothing), studio('GET', '/api/inference/status').catch(nothing)])
     .then(function (got) {
       const cached = Array.isArray(got[0] && got[0].cached) ? got[0].cached : [];
       const known = {};
       (Array.isArray(got[1] && got[1].data) ? got[1].data : []).forEach(function (m) { if (m && m.id) known[String(m.id)] = m; });
       const st = got[2] || {};
       const active = String(st.active_model || '');
+      const loadedList = Array.isArray(st.loaded) ? st.loaded.map(String) : [];
       return {
         active: active,
         models: cached.map(function (c) {
           const id = String(c.repo_id || '');
           const k = known[id] || {};
-          const loaded = k.loaded === true || id === active;
+          const loaded = id === active || loadedList.indexOf(id) !== -1 || k.loaded === true;
           return {
             id: id,
             loaded: loaded,

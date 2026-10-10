@@ -18,6 +18,8 @@
 //   1. deskUnsloth models {}: the cached list only (the studio's ollama entries absent), quant and loaded from
 //      v1/models, vision from cached-gguf, reasoning and audio only on the loaded model; active named.
 //   1b. with no model loaded the studio's status is an error: the cached list still comes, nothing loaded.
+//   1c. a dawdling v1/models (14.9 s live) does not take the ask past the 12 s wall: the list comes, loaded from
+//       status, the quant empty that time.
 //   2. deskUnsloth model.load {id}: posts the studio's load for that id and answers AT ONCE, not waiting for the
 //      studio's blocking load (minutes; a process must answer within 12 s), rewrites configuration.json's model,
 //      and the next chat call names the new model.
@@ -57,6 +59,7 @@ async function until(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < (
 // ── THE FAKE STUDIO, as read live 2026-10-10 ───────────────────────────
 let loaded = LOADED;
 const LOAD_MS = 1500;
+let v1HoldMs = 0;
 const studio = { calls: [], chats: [] };
 const CACHED = [
   { repo_id: LOADED, size_bytes: 23814715904, cache_path: '', has_vision: false, task: 'text-generation', last_modified: 1, cache_ref: 'ref:1' },
@@ -83,7 +86,9 @@ const studioServer = http.createServer(function (req, res) {
     function answer(status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); }
     const p = req.url.split('?')[0];
     if (p === '/api/models/cached-gguf') return answer(200, { cached: CACHED });
-    if (p === '/v1/models') return answer(200, v1Models());
+    // v1/models DAWDLES when told to (14.9 s live on 2026-10-10, the studio probing its ollama entries): the fake
+    // holds it V1_HOLD_MS, longer than a process may take to answer, and models must still come, without quant.
+    if (p === '/v1/models') return setTimeout(function () { answer(200, v1Models()); }, v1HoldMs);
     // WITH NO MODEL LOADED the studio's status is an error (Andy, 2026-10-10: "when no model is loaded, the model
     // selector doesn't show up."); the fake answers so while `loaded` is empty.
     if (p === '/api/inference/status') return loaded ? answer(200, status()) : answer(404, { detail: 'No model loaded' });
@@ -222,6 +227,16 @@ async function suite() {
   if (m0.active === '' && Array.isArray(m0.models) && m0.models.length === 3 && m0.models.every(function (m) { return m.loaded === false && m.reasoning === false && m.audio === false; })) test.check('with the studio\'s status an error, models still lists the three cached models, none loaded, active empty');
   else test.fail(OWED + 'with no model loaded, models answered ' + short(m0));
   loaded = LOADED;
+
+  test.subHeading('1c. a dawdling v1/models does not take the ask past the wall');
+  v1HoldMs = appClient.DOOR_WAIT_MS + 3000;
+  const ts = Date.now();
+  const ms = await ask('models', {});
+  const slowMs = Date.now() - ts;
+  const q2 = (ms.models || []).filter(function (m) { return m.id === LOADED; })[0];
+  if (slowMs < appClient.DOOR_WAIT_MS && Array.isArray(ms.models) && ms.models.length === 3 && q2 && q2.loaded === true && q2.quant === '' && ms.active === LOADED) test.check('with v1/models held ' + v1HoldMs + ' ms, models still answers in ' + slowMs + ' ms: the list, the loaded flag from status, the quant empty this time');
+  else test.fail(OWED + 'with v1/models held, models answered in ' + slowMs + ' ms: ' + short(ms));
+  v1HoldMs = 0;
 
   test.subHeading('2. model.load: the studio loads it, the configuration follows, the next call names it');
   studio.calls.length = 0;
