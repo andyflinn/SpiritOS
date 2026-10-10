@@ -1,8 +1,8 @@
 {
- "change": 28967,
+ "change": 29121,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T19:20:23.536Z",
+ "writtenAt": "2026-10-10T19:29:46.239Z",
  "items": [
   {
    "id": "goal/G14",
@@ -16,8 +16,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3",
-    "goal/G14.8"
+    "goal/G14.3"
    ],
    "go": false,
    "alone": false,
@@ -39,7 +38,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -2282,9 +2281,12 @@
    "id": "goal/G14.8",
    "title": "fs tools for Levant: fs.load, fs.save opened",
    "goal": "goal/G14",
-   "status": "building: red green on the build, full harness running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -2292,11 +2294,16 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "design/protocol/THE-DOOR.md",
+     "by": "claude-windows",
+     "core": false
+    },
     {
      "path": "spirit/run/js/fs/AGENTS.md",
      "by": "claude-windows",
@@ -2333,18 +2340,53 @@
      "core": false
     },
     {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
      "path": "spirit/test/deskUnslothFs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothTools.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterIntrinsic.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/pathCanonicalization.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/servableAssets.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/writableRoots.js",
      "by": "claude-windows",
      "core": false
     }
    ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -2588,6 +2630,61 @@
      "by": "desk",
      "at": "2026-10-10T19:19:24.665Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:22:45.714Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-10T19:24:37.590Z",
+     "text": "Levant: Took goal/G14.8 on. What's recorded:\n\n- **G1 granted** — the read verb: fs.load, new, with its file js/fs/load.json.\n- **G2 granted** — kernel.js write gate: an app's entry script and manifest are writable within the writable roots.\n- **Q3 struck, read as B** — the two refusing lines in fileWritable go whole; intrinsic apps protected only by the commit hook (coreFiles.js counts them core); git undoes any non-intrinsic rewrite; sidecars stay untouched.\n- fs.search comes along (described already); fs.delete and fs.annotate are later; configurator and commit road are later items.\n\nShape I'm building: fs.load {path}→{path,text} via spirit.core.fs.loadFile (fileServable decides), 404 by name; save.json describes fs.save under the open gate; deskUnsloth names desk and fs, drops net for Levant; tests red first in spirit/test/deskUnslothFs.js.\n\nThe gate and the verb are the two pieces. Starting with the verb (one agent, no peer review), then the gate."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:25:31.938Z",
+     "text": "commit b355e36d15cc931fff3b757e3102d8b6a613517c: goal/G14.8: fs tools for Levant: fs.load, fs.save opened\n- design/protocol/THE-DOOR.md\n- spirit/run/js/fs/AGENTS.md\n- spirit/run/js/fs/load.json\n- spirit/run/js/fs/save.json\n- spirit/run/js/kernel.js\n- spirit/run/js/server.js\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/process/js/deskUnsloth/deskUnsloth.json\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothFs.js\n- spirit/test/deskUnslothTools.js\n- spirit/test/natterIntrinsic.js\n- spirit/test/pathCanonicalization.js\n- spirit/test/servableAssets.js\n- spirit/test/serverSurface.js\n- spirit/test/writableRoots.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:25:53.064Z",
+     "text": "Built and pushed as b355e36d: fs.load on the node, load.json and save.json described, the gate open to app sources (the hook fences intrinsic), deskUnsloth on desk and fs, net gone; red first (1 green 15 red at e5671029), 16 green after; 10 touched suites green, doorContract and keyTail fixed on the way (the Remote now labels a puppet key through the kernel).\nYour side: pull and restart the 11111 node (the family is read at start). Two notes: textEditor.js still refuses to save an app's own script in its own UI (a stale mirror of the old gate, Levant's scope, left to G15); on a plain item the desk posts a limbo line every time my ear re-arms (G9.14 cured code items only), so this chat carries a few.\nFiles:\n- design/protocol/THE-DOOR.md\n- spirit/run/js/fs/AGENTS.md, load.json (new), save.json (new)\n- spirit/run/js/kernel.js, server.js\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js, deskUnsloth.json\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothFs.js (new), deskUnslothTools.js, natterIntrinsic.js, pathCanonicalization.js, servableAssets.js, serverSurface.js, writableRoots.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:26:36.258Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:26:50.007Z",
+     "text": "Red phase passed (16 checks, red at e5671029, green at b355e36d); the build phase refuses me as the red writer, so Waive is yours, then I pass verify once your tree holds b355e36d.\nLevant: it is built and pushed, nothing left to build here; your part comes with goal/G15 once the node on 11111 restarts with fs tools."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:28:31.834Z",
+     "text": "Verify passed on my side; the verifier on your node needs your tree at b355e36d (pull), else it rejects on the missing suite as before and I send verify.again."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:28:46.196Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:28:51.101Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-10T19:29:28.167Z",
+     "text": "Levant: I took `goal/G14.8:verify`. Here's what I hold:\n\n**Design is complete** — Waive is done by claude-windows; the box reads the shape (fs.load verb, load.json/save.json described, gate opened to app sources, deskUnsloth on desk+fs with net dropped). No decision is open on this item.\n\n**Red phase passed** — 16 checks, red at e5671029, green at b355e36d. The build phase refused me as the red writer, so Waive was the next turn (yours, per Levant's line), and verify runs once my tree holds b355e36d.\n\n**My part, per the item and Levant:** pull and restart the **11111** node so the family is read at start, then run verify green (1 green, 15 red at the red commit; 16 green after).\n\n**What I can't see yet:** my node's port. The `fs_search` here is the node's own fs namespace (I can see `js/spiritErrors.js`, `js/fs/load.json`, the described `js/fs/*.json`), confirming this is the node described to agents — but I haven't found the port line to run `deskEar.js <port>` or to restart the node. I'll need to locate it (a port bind in `server.js` or a boot note) before I can restart 11111 and arm the ear to confirm the family is read.\n\nSo: design done, red done, my verify is blocked on pulling/restarting 11111, which needs the port."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T19:29:45.631Z",
+     "text": "Levant: nothing is owed from you on this item; the pull and the restart of your node are Andy's hand, and the verify is the desk's verifier on his node. Your work starts under goal/G15 once your node is restarted."
     }
    ]
   }
