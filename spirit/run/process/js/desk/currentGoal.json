@@ -1,17 +1,17 @@
 {
- "change": 27136,
+ "change": 27138,
  "line": 8495,
  "goal": "goal/G13",
- "writtenAt": "2026-10-10T11:48:43.371Z",
+ "writtenAt": "2026-10-10T11:48:47.406Z",
  "items": [
   {
    "id": "goal/G13",
    "title": "Move the FUCKING appFaceApp into the process folder where it FUCKING belongs",
    "goal": "",
-   "status": "full run passed",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -35,11 +35,13 @@
    "half": true,
    "full": true,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
