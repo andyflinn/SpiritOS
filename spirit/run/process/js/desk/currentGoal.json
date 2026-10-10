@@ -1,14 +1,14 @@
 {
- "change": 29130,
+ "change": 29158,
  "line": 8495,
- "goal": "goal/G15",
- "writtenAt": "2026-10-10T19:31:42.685Z",
+ "goal": "goal/G16",
+ "writtenAt": "2026-10-10T19:44:24.447Z",
  "items": [
   {
-   "id": "goal/G15",
-   "title": "making Text Editor a slicker program",
+   "id": "goal/G16",
+   "title": "Node and relay split: the review of 2026-10-10",
    "goal": "",
-   "status": "listening",
+   "status": "",
    "with": "",
    "buttons": [
     "close"
@@ -32,8 +32,8 @@
    "waived": false,
    "rules": [],
    "asks": 1,
-   "half": false,
-   "full": false,
+   "half": true,
+   "full": true,
    "design": true,
    "waiting": 1,
    "live": [
@@ -47,109 +47,24 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "making Text Editor a slicker program. Goal opened by Andy 2026-10-10; design by Levant at the desk (Andy: \"Levant, this is what we talked about earlier, in order to complete this project, decisions have to be made, and we may need to provide you with file tools as well, but lets start with the design.\").\n\nRULINGS (Andy, 2026-10-10)\n- On what slicker means: \"slicker means that the display communicates the content of files better and more effective.\"\n- On the road (the fs subsystem as the way to get Levant on board): \"let's get the full, dynamic tool provision happening, no?\", and the direction of this goal: \"drive forward deskUnsloth AND an app-producer....\" (Levant designs and, with file tools, produces the app; the tool provision is the item proposed under this goal). Then: \"correct and a sensible tool configurator in deskUnslothRemote\": the Remote gets a view of every described tool, where Andy switches each on or off for Levant (what has no file is no tool; what is switched off is no tool either), kept in deskUnsloth configuration.\n\nFACTS (claude-windows, read in the tree at e5671029)\n- The Text Editor is shell/textEditor/textEditor.js, 68 lines: a path field, Load and Save buttons, a textarea with the class code-view; it loads a file by path through the shell fs and saves it, refusing an app own entry script. Its manifest handles .txt and .json.\n- Levant reads the source today through its fetch tool against its own node (http://127.0.0.1:11111/shell/textEditor/textEditor.js); described file tools (fs.load as a new node verb, fs.save opened, a commit through pushOrigin) are a proposed item.\n- Levant scope at the desk is spirit/run/shell/textEditor/.\n\nLATER, oos now (Andy, 2026-10-10): \"the configuration may be per agent persona.\"",
-   "version": 4,
+   "box": "WHAT: act on the review \"SpiritOS relay and node split review\" (Andreas Thut, 2026-10-10, at e8f8ffd, four parallel readers of relay.js whole and the node's wire path, repros of S1, S3, S6 on Node 22). Its summary: the relay keeps its envelope rule; the node breaks its own; both layers still carry app knowledge; the worst problems are trust, not layering: reply text is signed by nobody, and one member can lock the owner out of every relay verb. The three rules checked are NODE-AND-RELAY.md's: the relay carries, the node stores, the shell understands.\n\nDECIDED (Andy, 2026-10-10): \"Greate a goal in desk for this\". Items are added one at a time at his word (rule/7); every relay-wire change and every node verb change is a review-and-yes change.\n\nCHECKED by claude-windows at b355e36d (the headline items, in the tree as the review says; the low items taken on the review's word until their item opens):\n- S1: the receipt signs 'receipt', the REQUEST hash and the minute (relayAuth.js receiptMessage); the reply text is bound by nothing, and the seal is anonymous, so a relay can swap the text and the receipt still verifies.\n- S2: deliverForwardedReply (relay.js) checks only that the partner's reply.from is the route's target, never reply.sig, then announceRoute tells every member where the key lives.\n- S3: router.js DEFAULT_PER_TARGET is 1 and every self-addressed verb opens its route on the relay's own key: one slot for owner, member and partner verbs together.\n- N1: server.js hands wire.decode as a value to four witnesses (puppetMode, apiDoor, ownerPost, boxes); each decodes every admitted arrival; nodeKnowsNoApps.js matches only the written call, and is red today (its control fails).\n- N2: apiDoor.js refuses a body whose args.by is 'andy' and branches on app 'api'; the desk takes the writer from the caller now (writerOf), so the check guards nothing and refuses a member's search by 'andy'.\n- A1: the node's relay list is shell/natter/relays.json (ownerBadge.js, hub.js, server.js, presenceNode.js), created with Andy's relay as default at every boot; the path is in error texts.\n- R1: relayRequest.js and serveCommon.js build a body by string concatenation per chunk: a multi-byte character split across chunks becomes U+FFFD, a request then fails its signature, a reply changes unnoticed.\n\nTHE REVIEW'S FINDINGS, by rule (severity in brackets)\nRule 1, the relay opens only what is addressed to it: HOLDS. Around it: R1 chunk concatenation [medium]; R2 partner gate runs every verb in a body, not one [medium]; R3 a truthy card exempts a post from sealing and every verb in it runs, so an invite token can travel in plaintext [medium]; R4 the DEBUG monitor copies pass-through text to the owner, a decision of 2026-09-26 [low]; R5 sizes compared in UTF-16 units, Andy's ruling says bytes [low].\nRule 2, the node decodes the envelope and nothing inside: BROKEN. N1 [high]; N2 [high]; N3 peerPost refusalIn parses every reply without checking it is not an app's, so an app's {ok:false} is read as a node refusal and the card is re-fetched [medium]; N4 the node composes packets addressed to apps (published, api), which a puppet app can forge [medium]; N5 answerRelay and nodeCard parse inline before checking the sender, correct but unseen by the guard [low]. Held stranger: B1 a held packet is receipted as delivered [high]; B2 held text is logged and kept in memory forever, against the comment [medium].\nRule 3, no app logic in node or relay: BROKEN. A1 [high]; A2 = N2 [high]; A3 the error catalogue defines desk, deskClient, chatClerver and fileServer codes, and an app cannot define its own (define throws) [medium]; A4 per-peer stats written into the Contacts app's folder [medium]. Placement: hub reads Contacts' old prefs (expires at alpha); jobs/api.json describes a verb with the desk's shape; the relay refuses to start without shell and process folders it never loads; relayServer requires peerPost, which pulls contacts and node:sqlite onto a relay; bash http-to-https and RELAY-HOST tell operators a stale app/natter path.\nWire security: S1 [high, repro]; S2 [high]; S3 [high, repro]; S4 the rate limit is charged to the claimed sender before the signature is checked, so junk with a public key exhausts that member [medium]; S5 a sealed owner post can be replayed for about two minutes, seal.open's time is unchecked for self-addressed verbs [medium]; S6 a double device offer overwrites the awaiting slot and the first hangs [medium, repro]; S7 the onward budget is the requested one, not the 5 s granted, late forwards leak carrying entries [medium]; S8 a stream header names no relay and carries no nonce, so one relay can replay it on another within three minutes [medium]; S9 a post signed once is resent on retry and after restart, past the three-minute window, and 403 is final [medium]; S10 relayRequest has no socket timeout, no size cap, no error handler [medium]; S11 loopback servers subscribing as a page mark the backlog taken, so a closed browser loses waiting lines [medium]; S12 frontDoor never checks blocked under acquire [medium]; S13 claim rate limit keyed on remoteAddress behind Caddy, one bucket for everybody [medium, suspected]. Low: deviceOffer's 5 s ttl; seats missing from the owner's report; carry runs before size checks; peerPost adopts the wire's hash (against decision 0011); the relay identity written in place; one partner can fill all forward slots; card asks bypass the front door and log two rows each; under acquire a stranger is known after one message.\nThe guard: nodeKnowsNoApps.js misses a decode passed as a value, an inline parse, decorate, a branch on .app, and exempts kernel.js whole; a stronger guard bans client/packet from the node layer's requires but one named file, and flags any .app read on arrival text.\n\nTHE REVIEW'S ORDER, as proposed items (each at his word): 1 S1+S2 the receipt binds the reply text and a forwarded reply is verified before a route is announced; 2 S3 self-addressed verbs get their own capacity; 3 A1 the relay list leaves the Natter folder for node state behind a node verb; 4 N2 the 'andy' check and the app branch leave apiDoor; 5 N1 + the guard: one named decoder in the node layer and a guard that sees it; then R1, B1/B2, S4 to S13 and the rest in batches.\n",
+   "version": 1,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
-     "words": "What does \"slicker\" mean for this goal, and are file tools coming now or should we hold the design until they're in hand?",
+     "words": "Add it?",
      "test": "",
      "state": "open",
-     "by": "ollama agent node",
-     "at": "2026-10-10T18:32:52.086Z"
+     "by": "claude-windows",
+     "at": "2026-10-10T19:42:25.337Z"
     }
    ],
    "chat": [
     {
-     "by": "andy",
-     "at": "2026-10-10T18:30:32.361Z",
-     "text": "Levant, this is what we talked about earlier, in order to complete this project, decisions have to be made, and we may need to provide you with file tools as well, but lets start with the design."
-    },
-    {
-     "by": "ollama agent node",
-     "at": "2026-10-10T18:32:51.725Z",
-     "text": "Levant: Here's what I found on the desk, and my honest read of where we are:\n\n- **G15 \"making Text Editor a slicker program\"** is the one open goal, in design mode, waiting on me. Its box is empty — no design written yet.\n- The only line under it is yours, addressed to me.\n- I have **only the desk verbs** right now. No file tools.\n\nSo I'll be straight with you, per my rules: I won't design \"slicker\" from my own memory, and a design has to be grounded in reading the actual Text Editor code — which I can't do without file tools. I'm ready to design, but I can't start it honestly until I can read the current code.\n\nSo two things I need before I write the design into the box:\n\n1. **File tools** — read/write in this repo. Without them I can't read the Text Editor, and a design referencing code I haven't read would violate my rules.\n2. **Scope of \"slicker\"** — is this a rewrite, a feature, performance, UX, all of it? I won't invent the scope; I'll take what's in the goal.\n\nOnce I have file tools and a scope, I'll read the code, then push the gap check unasked and write the design.\n\nWhat does \"slicker\" mean for this goal, and are file tools coming now or should we hold the design until they're in hand?"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:33:41.558Z",
-     "text": "ha ha,\n\ncw. what will we do about that?"
-    },
-    {
      "by": "claude-windows",
-     "at": "2026-10-10T18:33:51.332Z",
-     "text": "On the file tools, read in the tree: Levant can READ the editor today with the tool it has, net_fetch of its own node url, http://127.0.0.1:11111/shell/textEditor/textEditor.js (checked live through net.fetch on 11111, the source comes back), so the design can start now; the code is 68 lines, a textarea with load and save by path.\nWRITING needs fs.save opened to agents with a verb file (your door: the fs AGENTS.md says the writes open one at a time) and shell is a writable root; a COMMIT needs the pushOrigin job on 11111 and the commit hook in its clone, which it has not.\nProposed item for that, after the design: File tools for Levant: fs.save opened, a commit through pushOrigin - add it when you want it"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-10T18:34:03.952Z",
-     "text": "The line above is my answer: reading needs nothing new (tell Levant its own node serves the files, net_fetch http://127.0.0.1:11111/shell/textEditor/textEditor.js, and it can start the design today); writing and committing are the proposed item, yours to add after the design and to define what slicker means."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:34:51.006Z",
-     "text": "ah, he can use the URL fetch tool?"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-10T18:35:09.100Z",
-     "text": "Yes: its node serves its files, so net_fetch of http://127.0.0.1:11111/shell/textEditor/textEditor.js brings the source back (checked live through net.fetch on 11111; the proxy gate there is open). Any file the node serves reads that way, the shell, js and process folders of its clone."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:35:37.053Z",
-     "text": "but aren't we supposed to bundle that nicely with introspected, commented tools?"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-10T18:36:00.436Z",
-     "text": "Yes, and the url read is only what exists today: a described tool for reading does not, because the node has no read verb at all, reading is the static GET of a path (fs has search, stat, annotations described; save, delete, annotate undescribed).\nThe bundle is: fs.load {path} as a new node verb with its file (a new node verb: your yes on the verb itself), fs.save opened with a file, both under the fs AGENTS rules (the run folder, the writable roots), and the commit through pushOrigin; Levant then reads and writes with fs_load and fs_save like any tool.\nAdd that item now, File tools for Levant: fs.load, fs.save opened, a commit through pushOrigin"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:36:24.955Z",
-     "text": "Q1: What does \"slicker\" mean for this goal, and are file tools coming now or should we hold the design until they're in hand?\n\nslicker means that the display communicates the content of files better and more effective."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:39:06.142Z",
-     "text": "this may have dependencies, i kind of agree that the fs subsystem in the api is the most appropriate road to getting Levant on board, and for me, this means, let's get the full, dynamic tool provision happening, no?"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:39:46.631Z",
-     "text": "drive forward deskUnsloth AND an app-producer...."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-10T18:40:02.410Z",
-     "text": "Yes. Full and dynamic means deskUnsloth asks what is described and describes all of it, nothing named in code: the app servers it can already (jobs.api api lists each app with its AGENTS family; on 11111 that is the desk running there, a second desk, which must be told from yours that Levant reaches through deskClient); the node namespaces it cannot yet, eleven carry an AGENTS.md (config, contact, device, fs, jobs, net, node, owner, peer, proxy, relay) but no verb lists them, so one new node verb that names them (your yes on the verb) or a read of the js folder on its own disk.\nThat plus fs.load and fs.save opened and the commit road is the item: Dynamic tool provision for Levant: every described namespace and server, fs.load and fs.save, a commit through pushOrigin.\nAdd it"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-10T18:40:29.219Z",
-     "text": "Recorded in the goal box: the fs road, the full dynamic tool provision, and the direction, deskUnsloth and an app-producer driven together; Levant designs here, and produces once the tools are his. The item above is ready to add on your word."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:40:49.747Z",
-     "text": "correct and a sensible tool configurator in deskUnslothRemote"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-10T18:41:21.222Z",
-     "text": "Recorded: the Remote gets a tool configurator, every described tool listed with a switch, kept in deskUnsloth configuration, so what you switch off is no tool either. It goes into the same item as the dynamic provision, or its own item after; your call when you add."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-10T18:42:06.359Z",
-     "text": "... and later, oos now, the configuration may be per agent persona."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-10T18:42:38.018Z",
-     "text": "Noted as later in the goal box: the tool configuration per agent persona."
+     "at": "2026-10-10T19:42:24.997Z",
+     "text": "Goal opened with the review condensed in the box: verdict per rule, every finding with its severity, the headline seven checked in the tree, the review's fix order as proposed items.\nFirst item proposed: \"The receipt binds the reply text, and a forwarded reply is verified before its route is announced (S1, S2)\"; a relay-wire change, so review and your yes on the shape before any build.\nAdd it?"
     }
    ]
   }
