@@ -38,9 +38,23 @@ const spirit = require('../../../js/kernel.js');
 const appServer = require('../../../js/appServer.js');
 const limits = require('../../../js/limits.js');
 const auth = require('../../../js/relayAuth.js');
+const errors = require('../../../js/spiritErrors.js');
 const faceRoute = require('./faceRoute.js');
 
 const APP = 'appFaceApp';
+
+// THE REFUSALS THIS FACE EMITS, declared by the face itself (Andy, 2026-10-10: define exported
+// from the register, 39985ed2): a refusal is a member of a declared set, and the set an app emits
+// lives beside the app, not in the node. Each one a visitor can read; none carries a figure.
+function declare(code, e) { if (!errors.byCode(code)) errors.define(code, e); }
+declare('no-such-route', { status: 404, retry: 'no', fault: 'caller', texts: ['no such route'],
+  note: 'A name this face cannot learn is not found (Andy, 2026-09-27: "404. not found"); `why` says which way it was not known.' });
+declare('not-found', { status: 404, retry: 'no', fault: 'caller', texts: ['not found'] });
+declare('bad-answer', { status: 502, retry: 'after', fault: 'target', texts: ['the owner of the name gave no usable answer'] });
+declare('face-body-too-large', { status: 413, retry: 'no', fault: 'caller', texts: ['the request body is larger than a packet can carry'] });
+declare('face-answer-too-large', { status: 502, retry: 'no', fault: 'target', texts: ['the answer is larger than a packet can carry'] });
+declare('face-timeout', { status: 504, retry: 'after', fault: 'target', texts: ['the owner of the name did not answer in time'] });
+declare('face-failed', { status: 502, retry: 'after', fault: 'node', texts: ['the face failed to answer'] });
 const ROOT = path.join(__dirname, '..', '..', '..');
 const JSON_TYPE = 'application/json; charset=utf-8';
 
@@ -199,14 +213,14 @@ function createFace() {
   // A ROUTE THIS FACE CANNOT LEARN IS NOT FOUND (Andy, 2026-09-27, G17: "404. not found"); the
   // body's `why` tells an operator which way it was not known.
   function notFound(why) {
-    return { status: 404, body: { ok: false, code: 'no-such-route', why: why } };
+    return { status: 404, body: { ok: false, code: 'no-such-route', error: errors.byCode('no-such-route').text, why: why } };
   }
   // A file of the face's own, read here and never carried over the relay: the one answer that is
   // not bounded by PAYLOAD_MAX, because no packet ever holds it (kernel.js is three times the cap
   // today; the kernel split that would bring it under is its own goal).
   function file(rel, type) {
     try { return { status: 200, body: fs.readFileSync(rel, 'utf8'), type: type, local: true }; }
-    catch (e) { return { status: 404, body: { ok: false, code: 'not-found' } }; }
+    catch (e) { return { status: 404, body: { ok: false, code: 'not-found', error: errors.byCode('not-found').text } }; }
   }
   function visit(req) {
     const pathname = String(req.path || '').split('?')[0];
@@ -236,7 +250,7 @@ function createFace() {
           if (a.refused) { cacheFor(ownerKey()).drop(req.host); return notFound('owner-unreachable'); }
           if (a.timedOut) return notFound('owner-did-not-answer');
           const b = a.body;
-          if (!b || typeof b.status !== 'number') return { status: 502, body: { ok: false, code: 'bad-answer' } };
+          if (!b || typeof b.status !== 'number') return { status: 502, body: { ok: false, code: 'bad-answer', error: errors.byCode('bad-answer').text } };
           return { status: b.status, body: b.body, type: typeof b.type === 'string' && b.type ? b.type : undefined };
         });
     });
@@ -250,13 +264,17 @@ function createFace() {
     const text = typeof body === 'string' ? body : JSON.stringify(body);
     if (!local && Buffer.byteLength(text, 'utf8') > limits.PAYLOAD_MAX) {
       res.writeHead(502, { 'Content-Type': JSON_TYPE });
-      res.end(JSON.stringify({ ok: false, error: 'face-answer-too-large' }));
+      res.end(JSON.stringify({ ok: false, code: 'face-answer-too-large', error: errors.byCode('face-answer-too-large').text }));
       return;
     }
     res.writeHead(status, { 'Content-Type': type || JSON_TYPE });
     res.end(text);
   }
-  function refuse(res, status, error) { answer(res, status, { ok: false, error: error }); }
+  // A refusal by code, with the declared sentence (D12: every error is {ok, code, error}).
+  function refuse(res, status, code) {
+    const e = errors.byCode(code);
+    answer(res, status, { ok: false, code: code, error: e ? e.text : code });
+  }
 
   function handle(req, res) {
     const chunks = [];
