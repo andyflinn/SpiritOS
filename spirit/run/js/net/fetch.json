@@ -1,0 +1,3 @@
+{
+  "description": "Fetch a page from the internet by url: GET unless method says otherwise; the owner proxy list decides which sites and which keys. Answers the page's body as it came; a site or key the owner closed is refused in his words."
+}

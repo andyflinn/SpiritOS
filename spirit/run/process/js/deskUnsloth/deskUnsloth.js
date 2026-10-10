@@ -218,12 +218,55 @@ function studio(method, pathname, body, timeoutMs) {
   });
 }
 
-// ── THE MODEL: one OpenAI chat completion ─────────────────────────────
-function askModel(messages) {
-  return studio('POST', '/v1/chat/completions', { model: MODEL, messages: messages, max_tokens: ANSWER_TOKENS }).then(function (got) {
+// ── THE MODEL: one OpenAI chat completion, WITH THE NODE'S TOOLS (goal/G14.6) ──
+//
+//   Andy, 2026-10-10: "now we want a tool that expands Levant's knowledge, our proxy internet call....". The tools
+//   come from the node's own description of its verbs (tools.js: describe), the first being net.fetch; the model
+//   calls one, this runs it through the node (tools.js: run) and asks the model again with the result, at most
+//   TOOL_ROUNDS times, then the model's last text is the answer. Nothing hand-written here about any tool.
+const TOOL_ROOM = Math.floor(PROMPT_ROOM / 4);
+const TOOL_ROUNDS = 3;
+const tools = require('./tools').createTools({
+  ask: function (verb, args) { return spirit.core.ask(verb, args, NODE_URL); },
+  room: TOOL_ROOM,
+});
+
+function argumentsOf(call) {
+  try { const a = JSON.parse(String((call && call.function && call.function.arguments) || '{}')); return a && typeof a === 'object' ? a : {}; } catch (e) { return {}; }
+}
+
+function askModel(messages, onTool) {
+  return tools.describe('net').catch(function () { return []; }).then(function (list) {
+    return askModelRound(messages.slice(), list, 0, onTool);
+  });
+}
+
+function askModelRound(messages, list, round, onTool) {
+  const body = { model: MODEL, messages: messages, max_tokens: ANSWER_TOKENS };
+  if (list.length) body.tools = list;
+  return studio('POST', '/v1/chat/completions', body).then(function (got) {
     const choice = got && Array.isArray(got.choices) ? got.choices[0] : null;
-    const content = choice && choice.message ? String(choice.message.content || '') : '';
-    if (!content) throw new Error('the model answered nothing');
+    const message = choice && choice.message ? choice.message : null;
+    const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    if (calls.length && round < TOOL_ROUNDS) {
+      messages.push({ role: 'assistant', content: String(message.content || ''), tool_calls: calls });
+      return calls.reduce(function (chain, call) {
+        return chain.then(function () {
+          const name = String((call.function && call.function.name) || '');
+          const url = String(argumentsOf(call).url || '');
+          if (onTool) onTool({ name: name, url: url, done: false });
+          return tools.run(call).then(function (r) {
+            messages.push({ role: 'tool', tool_call_id: r.id, content: r.text });
+            if (onTool) onTool({ name: name, url: url, done: true });
+          });
+        });
+      }, Promise.resolve()).then(function () { return askModelRound(messages, list, round + 1, onTool); });
+    }
+    const content = message ? String(message.content || '') : '';
+    if (!content) {
+      if (calls.length) return '(the model kept asking for tools after ' + TOOL_ROUNDS + ' rounds and said nothing)';
+      throw new Error('the model answered nothing');
+    }
     return content;
   });
 }
@@ -347,7 +390,7 @@ function models() {
 // whenever any of it changes: the switch, a load's state, the known list after a refresh, a chat answer. The node
 // hands it to the pages on this node and, on a puppet, streams it to the owner (puppetStream.js); the Remote
 // draws from it and asks nothing. The read verbs stay for a one-shot ask.
-let lastChat = { id: '', done: false, text: '' };
+let lastChat = { id: '', done: false, text: '', tool: { name: '', url: '', done: true } };
 function stateObject() {
   const have = readKnown() || { active: '', models: [] };
   return {
@@ -358,7 +401,8 @@ function stateObject() {
     cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS),
     load: { model: load.model, state: load.state, error: load.error },
     models: Array.isArray(have.models) ? have.models : [],
-    chat: { id: lastChat.id, done: lastChat.done, text: lastChat.text },
+    // The tool in flight, if any (goal/G14.6), so the chat box can show the fetch.
+    chat: { id: lastChat.id, done: lastChat.done, text: lastChat.text, tool: { name: lastChat.tool.name, url: lastChat.tool.url, done: lastChat.tool.done } },
   };
 }
 function publishState() {
@@ -429,15 +473,16 @@ function chatSend(lines) {
   }
   const messages = [{ role: 'system', content: system }].concat(window);
   answers[id] = { done: false, text: '', at: Date.now() };
-  lastChat = { id: id, done: false, text: '' };
+  lastChat = { id: id, done: false, text: '', tool: { name: '', url: '', done: true } };
   publishState();
-  askModel(messages).then(function (content) {
+  const onTool = function (t) { lastChat.tool = { name: t.name, url: t.url, done: t.done }; publishState(); };
+  askModel(messages, onTool).then(function (content) {
     answers[id] = { done: true, text: content, at: Date.now() };
-    lastChat = { id: id, done: true, text: content };
+    lastChat = { id: id, done: true, text: content, tool: { name: '', url: '', done: true } };
     publishState();
   }, function (e) {
     answers[id] = { done: true, text: '(the model did not answer: ' + e.message + ')', at: Date.now() };
-    lastChat = { id: id, done: true, text: answers[id].text };
+    lastChat = { id: id, done: true, text: answers[id].text, tool: { name: '', url: '', done: true } };
     publishState();
   });
   Object.keys(answers).forEach(function (k) { if (answers[k].done && Date.now() - answers[k].at > ANSWER_KEEP_MS) delete answers[k]; });
