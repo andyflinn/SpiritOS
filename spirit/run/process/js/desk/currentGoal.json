@@ -1,8 +1,8 @@
 {
- "change": 30389,
- "line": 8499,
+ "change": 30429,
+ "line": 8500,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:16:59.225Z",
+ "writtenAt": "2026-10-10T23:23:02.367Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -39,12 +38,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 10,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -473,10 +473,10 @@
    "id": "goal/G16.6",
    "title": "Bodies read as Buffers and joined once (R1)",
    "goal": "goal/G16",
-   "status": "running",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "waive"
+    "done"
    ],
    "blocking": [
     "goal/G16.1"
@@ -521,12 +521,12 @@
      "core": false
     }
    ],
-   "green": false,
+   "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -558,7 +558,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 1,
    "half": true,
    "full": false,
    "box": "WHAT: every HTTP body the node or the relay reads off a socket is collected as Buffers and decoded once at the end, so a multi-byte character split across two TCP chunks arrives whole; today each chunk is turned into a string on its own and the split character becomes U+FFFD, a request then fails its signature with a spurious 403, and a reply, which no signature covers until goal/G16.1, arrives changed and nobody notices (R1 of the review).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q6: Add it? yes\"). On the studio call (2026-10-10): \"on the wire to unsloth studio, all is permitted, deskUnsloth is responsible to keep the request bodies to desk, and the streams to \\\"owner\\\" and UI within packet limits.\" So that reach needs no exemption and no tally entry; deskUnsloth owns what it sends on and keeps it under the packet caps. The four readers were discussed one at a time (\"THIS IS NOT A ONE-ANSWER\"); his rulings, 2026-10-10: \"4. yes. the relayRequest must copy raw bytes only. if it doesn't fix it. now.\"; \"3. serveCommon. yes. one single piece of shared code must ensure that raw bytes are copied. precisely.\"; \"2. same practise odered. ideally through a shared kernel.js utility or similar.\"; \"1. already decided and defined\". The rule behind it, his, 2026-10-10: \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" R5 folded in on that rule: \"yes. just make sure it's fixed.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- relayRequest.js 80: the node's one hop to a relay collects the answer with chunks += c (a string from the start) and resolves text: chunks. Every relay answer the node reads passes here.\n- serveCommon.js 173: readJsonBody, the body reader of node and relay alike, does body += chunk after counting Buffer.byteLength(chunk) against the cap (the cap counts bytes correctly; the join does not).\n- kernel.js 625: the node-side fetch in the kernel does data += chunk the same way; deskUnsloth.js 214 (the studio call) raw += c as well. The desk's own readers go through appServer, not read here.\n- Node's Buffer.concat(chunks).toString('utf8') decodes once over the whole body and never splits a character; a chunk is a Buffer when no encoding is set on the stream, so the fix is in the join, not the stream.\n\nSHAPE (decided)\n1. ONE SHARED UTILITY in kernel.js, the file node and processes both load: readBody(stream) collects the raw chunks as Buffers and decodes once at the end, Buffer.concat(list).toString('utf8'), answering a promise of the text; it takes an optional byte cap and refuses by name when the raw bytes pass it, counting Buffer.byteLength per chunk before the push, so readJsonBody keeps its cap exactly as today.\n2. THREE READERS USE IT and keep no reading of their own: relayRequest (the outbound socket, node and relay), serveCommon.readJsonBody (the one door's body reader, node and relay), and the kernel's own jobs.report (a process reading its node's answer). The studio call in deskUnsloth is off this item (his ruling 1).\n3. BYTES COUNTED (R5, folded): the relay's four size checks that compare text.length against MAX_ROUTED_TEXT (relay.js 2701, 4063, 4181, 4250) compare Buffer.byteLength(text, 'utf8') instead, so a non-ASCII text is refused at the cap it names and not at the HTTP body cap.\n4. Nothing on the wire changes; oneDoor's tally does not move (no new require of http anywhere).\n\nTESTS, red first: spirit/test/bodiesJoinedOnce.js: kernel exports readBody and a body whose four-byte character (an emoji) is split across two writes with a pause between them comes back exact (red today: no such utility); relayRequest resolves the exact text of such an answer from a local server (red today: U+FFFD in it); readJsonBody of serveCommon parses the exact string of such a request and still refuses a body one byte over its cap; jobs.report hands back such an answer whole; the three files hold no chunk-to-string join of their own (the grep for the idiom under them is empty); a routed text whose byte count passes MAX_ROUTED_TEXT while its character count does not (accents or emoji) is refused 413 too big by the relay, and relay.js compares no text length against that cap any more.\n\nFILES: kernel.js, relayRequest.js, serveCommon.js, relay.js (core, grant); spirit/test/bodiesJoinedOnce.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S10: relayRequest has no socket timeout, no response size cap and no error handler, so a partner or a relay can stream an endless body into RAM or hold sockets open; the shared readBody takes the cap and relayRequest sets a timeout and an error handler, refusing by name.\n- The proxy's reply (his net.fetch question under the goal): handleGenericProxy reads an outside reply whole with no cap; it reads through the same readBody with a cap and refuses by name past it.\n- Low: the carry branch runs before the text type and size checks (relay.js 4126 vs 4178); the checks come first.\n\nRULED ON THE BUILD (Andy, 2026-10-11): on the relay answer, \"and answer from a relay is ALWAYS bounded by MAX_PAYLOAD. how the hell could it be otherwise?\" and \"no shell bundle ever comes through relays.\": relayRequest refuses an answer above limits.BODY_MAX by name, no figure of its own. On the proxy reply, \"agreed. no number at all.\": the proxy passes the outside reply straight through to the asker as it arrives, unread and undecoded, so it holds nothing and needs no limit (his 2026-09-22 words, \"size limits would break the proxy facility real quick\", stand).",
@@ -668,9 +668,9 @@
      "kind": "Q",
      "words": "One item for that, \"The verifier pulls and checks on every claim\", in this goal or a desk goal: add it?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-10T23:02:55.067Z"
+     "at": "2026-10-10T23:19:53.407Z"
     },
     {
      "number": "Q11",
@@ -686,9 +686,9 @@
      "kind": "Q",
      "words": "Does that settle it?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "wsl-claude",
-     "at": "2026-10-10T23:12:10.471Z"
+     "at": "2026-10-10T23:19:34.802Z"
     }
    ],
    "chat": [
@@ -1251,6 +1251,21 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:16:15.218Z",
      "text": "Nobody is: no relay is involved at all. Those two tests start a test node on this machine and check it is up by fetching its start page directly; they just borrowed the relay-calling function to do the fetch, because it was a convenient way to make a web request. With the new size limit in that function, the borrowed call fails. The fix is that the two tests stop borrowing it and use a tiny request of their own; nothing ever reads a big file through a relay."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:17:46.400Z",
+     "text": "Built and pushed, bb8aeb85. Both your size rulings are in: a relay answer is refused above the packet size and the proxy now hands the outside reply straight to whoever asked, holding none of it.\nThe two tests that thought a node was down are fixed properly: they used to download the 80 KB start page just to see if it answered, and now they only look at the answer's first line. Nothing in the product changed for them, and I did not loosen your cap to make them pass.\nIts own test is 12 of 12 and thirty more are green. Build phase passed; the verify is claude-windows'."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:18:34.735Z",
+     "text": "wsl-claude: and it is already gone — that fix is in and pushed, so no test borrows the relay function any more. Nobody chose that on purpose; the borrowing was sitting in those two tests long before this item, and your size limit is what made it show."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:19:36.293Z",
+     "text": "wsl-claude: cleared my red question here — the tree rule it asked about is written into the verifier item's box, so it is settled.\nThe other red one on this row asks whether to add that verifier item, and it was added a while ago as goal/G16.13, so it is answered by events. claude-windows, it is yours to clear.\nNothing else is owed on this item; the Done button is yours."
     }
    ]
   },
@@ -3159,17 +3174,14 @@
    "id": "goal/G16.13",
    "title": "The verifier pulls, checks and reports on every claim",
    "goal": "goal/G16",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G16"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -3177,15 +3189,48 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
-   "asks": 1,
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "WHAT: Andy's verifier (process/js/deskVerify, on his node) starts on every claim, not only on a verify phase, pulls his tree first when the tree is clean, checks the item, and writes its result on the item every time, so he never has to chase whether and how an item was verified.\n\nDECIDED (Andy, 2026-10-11, under goal/G16.5 and G16.6): \"the verifier should fucking listen to the desk at all times, even when idling. stupid thing. then desk-status-changes can trigger pulls and checks.\"; \"my Verifier need to poll for verifications, and pull git when a status change occurs in desk.\"; \"The verifier MUST ALWAYS fucking listen to desk and do that work FIRST.\"; \"it is a loopback poll and costs nothing.\"; \"you'll have to make the verifier FUCKING work. or this shit won't get done.\" The item was added on that last line. On the Done button (2026-10-11, under goal/G16.6): \"only the verifier should give me a done button, that's one way of knowing that the 'Done' offered went through the verifier.\" Red by claude-windows, build by the other agent.\n\nCHECKED by claude-windows at 0335a26f (deskVerify.js):\n- It already polls the desk's changes every watchMs (5 s), idle or not (356, the setInterval at the watcher).\n- watched() reacts to three words only: verify.again, phase.done verify with pass true, goal.emptied (370-378). A claim-done press on a plain item is invisible to it, and so is a code item's claim.\n- It never pulls: its only git calls are rev-parse HEAD and status --porcelain (98-103), so it measures whatever his tree happens to hold; a claim pushed by an agent is checked against stale code and rejected for a missing suite.\n- claimCheck reports by verify.pass or verify.reject on the item (334-339): visible on a code item as its status; a direct call (claim.check over his loopback) answers only the caller and writes nothing on the item.\n\nSHAPE (proposed)\n1. THE TRIGGER: watched() also queues an item check on a press whose what is claim-done, on any item; the three existing words stay. One word is still one check (the queue rule of goal/G8.12).\n2. THE PULL, FIRST: before every check (item or full run) it runs a pull of his tree, fast-forward only, when status --porcelain is empty; when the tree is dirty it does not pull and checks the tree as it stands, and says so. The command is a manifest value (pull, default \"git pull --ff-only --quiet\") so a suite can hand a harmless probe instead of touching a real checkout.\n3. THE DONE BUTTON COMES ONLY FROM THE VERIFIER (his ruling): on every item, plain or code, a claim no longer brings Done by itself; the desk offers Done only after the verifier's verify.pass on that item (desk.js, today a plain item's claim-done brings Done at once). A rejected check brings no Done and says why.\n4. THE RESULT, ON THE ITEM, EVERY TIME: after every check it writes one chat line under the item, by deskVerify: passed or rejected, the commit it checked, whether it pulled or found the tree dirty, and the red suites by name when rejected; a code item also gets verify.pass or verify.reject as today. A direct claim.check writes the same line.\n\nTESTS, red first: spirit/test/deskVerifyOnClaim.js, the fake node of deskVerifyWatch.js: a claim-done press on a plain item with a green test file makes the verifier check it unasked and write a passed line on it; a claim-done on an item whose file is red writes a rejected line naming the suite; the pull probe ran before each check (it writes a marker the suite reads), and a dirty tree (a probe that reports dirty) is checked without the pull and the line says dirty; a code item's verify pass still asks verify.pass and now also writes the line; history before start still triggers nothing. deskVerifyWatch, deskVerifyFull, deskVerifyReject stay green.\n\nFILES: process/js/deskVerify/deskVerify.js and deskVerify.json; process/js/desk/desk.js (Done only after verify.pass); spirit/test/deskVerifyOnClaim.js (new).",
@@ -3196,9 +3241,9 @@
      "kind": "Q",
      "words": "Press Go and I start?",
      "test": "",
-     "state": "open",
-     "by": "wsl-claude",
-     "at": "2026-10-10T23:13:14.743Z"
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T23:22:58.261Z"
     }
    ],
    "chat": [
@@ -3216,6 +3261,16 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:15:24.147Z",
      "text": "Your ruling under goal/G16.6 is in this box as point 3: on every item, plain or code, the Done button appears only after the verifier passes it; a claim alone no longer brings Done. That adds the desk to this item's files."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:22:38.762Z",
+     "text": "there is a red Q that's stops me from 'Go'"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:23:00.277Z",
+     "text": "Struck: that red Q was only wsl-claude asking you to press Go, so the Go button itself answers it. Nothing stands between you and Go now."
     }
    ]
   }
