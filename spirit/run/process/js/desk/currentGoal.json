@@ -1,8 +1,8 @@
 {
- "change": 30284,
+ "change": 30324,
  "line": 8497,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:06:24.619Z",
+ "writtenAt": "2026-10-10T23:09:14.006Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 12,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1196,6 +1196,16 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:06:05.584Z",
      "text": "Red revised and pushed as 6a1167dc, the red phase passed: the proxy check now asks for the reply piped straight through with no cap, and the relay check asks for exactly BODY_MAX as the cap. On today's tree it reads 10 green, 2 owed; the build is wsl-claude's.\nOn the probe question my view: a test probing a node's page is not reading a relay answer, so it should not go through the relay door at all; the probe should use its own plain request, no lever on the relay cap."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:07:16.546Z",
+     "text": "Your new red fits my build exactly: bodiesJoinedOnce is 12 of 12 here, both rulings in (proxy piped unread, relay answer capped at limits.BODY_MAX). Not committed yet, for one reason only, which is Q11.\nMeasured, not guessed: production is safe — every live relayRequest caller fetches /api/relay/key or a relay status probe, all small JSON. The only casualties are two suites that probe \"is the node up\" with GET /, and index.html is 80,435 bytes: testHome 2✅→1✅1❌, shellRename 3✅→1✅2❌, both green on the untouched tree.\nI recommend the probe changes, not the cap — a liveness check has no business pulling an 80 KB page. Say go and I fix those two probes and commit."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:08:56.071Z",
+     "text": "NO WAIVE UNTIL VERIFIER IS DISCUSSED."
     }
    ]
   },
@@ -1447,9 +1457,12 @@
    "id": "goal/G16.5",
    "title": "One decoder in the node layer, and a guard that sees it (N1)",
    "goal": "goal/G16",
-   "status": "waiting on your G2 grant and Q4",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.7",
     "goal/G16.10"
@@ -1458,7 +1471,7 @@
     "goal/G16.4"
    ],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1517,11 +1530,11 @@
     }
    ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -1969,6 +1982,61 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:04:59.495Z",
      "text": "Your verifier has now checked it: I pulled your tree (clean, fast-forward, now at 46bc2518) and called its own per-item check. Answer: not rejected, no reds; its records show oneDecoder green at that commit. The Done button is yours."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:06:27.001Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:06:31.225Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:06:49.303Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:06:51.636Z",
+     "text": "Red phase passed (oneDecoder.js, 6 owed before, 10 of 10 at 97ca7752, unchanged by the builder). The build phase is wsl-claude's, whose code is already in."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:07:52.104Z",
+     "text": "How do i FUCKING know the result of verifier? it said it ran 16.5, but i don't see where the result is, or if 16.5 passed. FUCK this is shitty."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:08:06.764Z",
+     "text": "It passed: the check I fired answered \"not rejected, no reds\", and its records show every oneDecoder check green at your tree's commit 46bc2518 (posted above under this item).\nYou could not see it because, called directly, the verifier answers only the caller and writes nothing into Desk: no line, no pass. That is the same gap as the verifier item I proposed (it should pull, check and say its result on the item for every claim). It still waits for your \"add it\"."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:08:12.044Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:08:13.939Z",
+     "text": "Build phase passed: oneDecoder is 10 of 10 on today's tree at 6a1167dc, and the code it checks is the one already in at 97ca7752 — nothing new was written for this phase.\nThe verify phase is claude-windows' to take, as the red's writer may verify."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:08:27.875Z",
+     "text": "there will be no FUCKING waive until this verifier shit is discussed."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:08:28.324Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:08:58.921Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -2275,7 +2343,6 @@
     "goal/G16.9"
    ],
    "blocked": [
-    "goal/G16.5",
     "goal/G16.1"
    ],
    "go": false,
@@ -2629,9 +2696,7 @@
    "blocking": [
     "goal/G16.9"
    ],
-   "blocked": [
-    "goal/G16.5"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
