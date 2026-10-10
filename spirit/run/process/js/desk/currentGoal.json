@@ -1,21 +1,493 @@
 {
- "change": 12,
- "line": 0,
- "goal": "w/G1",
- "writtenAt": "2026-10-10T09:28:46.460Z",
+ "change": 26939,
+ "line": 8495,
+ "goal": "goal/G13",
+ "writtenAt": "2026-10-10T10:42:26.173Z",
  "items": [
   {
-   "id": "w/G1",
-   "title": "Written",
+   "id": "goal/G13",
+   "title": "Move the FUCKING appFaceApp into the process folder where it FUCKING belongs",
    "goal": "",
-   "status": "",
+   "status": "full run passed",
    "with": "",
    "buttons": [
     "close"
    ],
    "blocking": [],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 1,
+   "half": true,
+   "full": true,
+   "design": false,
+   "waiting": 1,
+   "live": [],
+   "working": [],
+   "agents": {
+    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+    "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+    "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+    "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+   },
+   "box": "MOVE appFaceApp INTO process/. Design, 2026-10-10. Facts checked at 1ed9965e. Rulings are Andy's of 2026-10-10 and live verbatim in the item they decide.\n\nTODAY\n- appFaceApp is the one shell app with boots true. The node loads it into its own process (nodeApps.mountAll), a second way of starting a program beside startNodeServers, and hands it seven seams: subscribe, post, owner, face, toLocalApp, a scoped fs, log.\n- The visitors' door for Caddy is the node's (puppetPost.js, where face.json names a port); appFaceGrant.js forbids the app itself to listen, which is why the door ended up in the node and the app picks its role by whether it was handed a face.\n- nodeApps.js also holds the puppet machinery, not appFaceApp's: puppetIn, ownerCommandIn, puppetDoor. appClient asks puppetIn; puppetsPending asserts the three by name.\n- appServer's listen takes a number beside a pipe; the number branch has one caller, faceServer's by-hand --port start, used by no suite and no node. appClient has no number branch.\n- appFaceApp's own logic beside the two asks: the faceRoute cache (the face node's table in RAM of subdomain to owner key, filled by asking the owner once per subdomain, emptied at restart, with a one-minute memory of names not granted; faceRoute.js, appFaceApp its only user) and the new-name budget (at most 20 questions a minute to the owner about hosts the cache does not hold; past that, no such route without asking).\n- faceProof (born with G17's last leg) is an html and a manifest with serves true and no script of its own. On the face owner's node appClient.startAll spawns js/server.js --app faceProof --pipe: --app is server.js's dispatch to faceServer.js, 1463 lines of node code that serves the page over the pipe, answers app.state, and carries relay-member machinery (bind, pin, claimSeat) that runs on no live path (the node never passes --relay; only the cycle 2 suite drives it). appFaceAppServer, a script on appServer.serve started by startNodeServers, passes every page request to that second process over its pipe.\n- The browser's spirit.core.ask posts {verb, ...} to /api/spirit on the page's own origin (kernel.js line 72); appServer's door takes {verb: {args}} on / and hands every other request to the script's fallback.\n\nDECIDED\n1. appFaceApp becomes a process/js server, started by startNodeServers with the pipe the node names. The shell folder goes.\n2. Nothing new on the node. Post: a server has the node's port and peerPost. Arrivals: an ask reaches the server through the api door by name, gated by apiAuth, answered on the ask's hash; the hand-rolled two-packet reply goes. On the owner's box the server reaches appFaceAppServer and grantFace through jobs.api on the node's port, as any process does.\n3. appFaceAppServer stays the appServer run by the face owner, the DNS-segment owner. \"we can in fact. KILL faceProof completely and just let appFaceAppServer respond to that json request. DONE.\" and \"yes, appFaceAppServer loses its pass-through over the pipe and gains the one answer; nothing else about it moves\". The faceProof folder is deleted.\n4. The visitors' door is the appServer's own: a port beside its pipe, Caddy pointed at it, the port from a configuration file of the appServer or any other suitable means. The node is never told. Any appServer may do the same; a port is nobody's privilege and nothing about it is puppethood.\n5. The faceRoute cache and the new-name budget move to the appServer with appFaceApp; nothing of them stays in the node.\n6. mountAll, scopedFs and boots disappear completely from nodeApps.js, with the mountAll call, puppetPost.js, the face block in server.js, and the post and face seams. One way to start a process.\n7. What is left of nodeApps.js is renamed puppetMode.js: puppetIn, ownerCommandIn, puppetDoor as they are. Two requires in server.js, one in appClient.js and the suites naming it (ownerCommand, ownerPost, puppetDoor, puppetOwner, ownerFile, puppetsPending) follow.\n8. The number branch in appServer's listen is completely gone; a pipe is all appServer listens on. faceServer's by-hand --port start and its usage line go with it.\n9. The faceless test asserts the exchange and that the branch is gone, not the absence of a listener. Suites that mount through mountAll (arrivals, cleanupDead, faceLastLeg, faceRouteWorld, grantFace, nodeAppsSeam, ownerFile, puppetOwner, puppetPost, shellRename) are rewritten or retired.\n10. \"no \\\"face\\\" crap belongs into node.\" The --app dispatch in server.js and faceServer.js leave the node entirely, with the serves flag and appClient's readServers, servesOf, startAll and toLocalApp; appClient keeps what every process uses (pipePathFor, ask, ANSWER_MAX). faceRoute.js moves with appFaceApp. Three ways of starting a process become one. The cycle 2 suites of faceServer (appServerBoundary, faceProofOnHelper, faceProofProcess, the appClient suite's --app check) go with it. His: \"that way the whole machinery can be thrown out\".\n11. The proof of the route, his: \"on spirit-3, appFaceApp servers an index.html that loads kernel.js, also from appFaceApp. On the browser we navigate to the face, we open the console, and call spirit.core.ask(), which will be answered by faceProof. this should eliminate ALL the face shit, in node.\", then faceProof killed by point 3. So: the appFaceApp server on spirit-3 serves an index.html and kernel.js from its own folder on its visitors' port; the browser's spirit.core.ask posts to /api/spirit on the face origin; Caddy hands it to appFaceApp, which carries it over the relay to the owner as the serve ask; appFaceAppServer answers it. One process on the face owner's box behind a visitor, none in the node.\n12. One item for the whole move, his: \"nah. then we're better of doing it all in one item, that will keep the tree green, too.\" A split into build and eradicate was offered and refused; the one item ends green with the proof in his browser on spirit-3. And: \"the fixes, if any remain, will come after.\"\n\nGAPS, none needing a question: the appFaceApp process reads its owner's key from the puppet's relay-state owner.json, where it already is (his: \"The owners key is already in the puppet.\"), and its own config holds the port alone; the puppet's key gets an apiAuth grant on the owner node for the appFaceApp path by hand in the Grants app; on spirit-3 bash/face-install writes the port into the server's config instead of face.json (his: \"a script in bash/ installs a portNumber in the appropriate file.\"), face-tls unchanged; faceRoutePending and the puppetsPending faceDoor line retire with the suites.\n\nSTAYS: appFaceAppServer (with the one answer in place of the pass-through), grantFace.\n\nITEMS, in order: goal/G13.2 appFaceApp as a process; the face machinery leaves the node (the whole move, added at his word of 2026-10-10, its box the build and deletion list) blocks goal/G13.1 Fixes for appFaceApp (after the move; what remains of its three faceServer.js fixes is judged then), which blocks the goal.",
+   "version": 20,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Which process answers a visitor page once route and serve are api asks, appFaceAppServer as today or the appFaceApp server itself?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:32:21.141Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Does the appFaceApp server read its port from its own state folder, or from somewhere else you name?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:30:06.300Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:30:11.997Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "js with mountAll cut out?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:30:08.325Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Shall the rename be part of the move item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:30:10.239Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T08:37:08.528Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "In this goal (--app and faceServer go, faceProof becomes a script on appServer with its page as the fallback) or a later one?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:49:23.022Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Does the relay-member machinery inside faceServer.js (bind, pin, claimSeat, the app.state verb) have a live user, or does it die with faceServer.js?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:49:24.908Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "js?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T07:49:26.818Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Does that start code stay in the node for the test adapter, or does the adapter get started another way while faceProof itself stays untouched?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T08:29:12.287Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Build then eradicate, or another cut you prefer?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T08:47:07.701Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "tolerated reds: spirit/test/agentOnboard.js, spirit/test/appApi.js, spirit/test/appClientName.js, spirit/test/appDependencies.js, spirit/test/arrivalsBacklogQuick.js, spirit/test/authWorld.js, spirit/test/capacityRule.js, spirit/test/deskLoop.js, spirit/test/deskRedWriterBuild.js, spirit/test/fileSlots.js, spirit/test/fsWatcherCommands.js, spirit/test/harnessAppSuites.js, spirit/test/jobsRemoveWhenDone.js, spirit/test/labLifecycle.js, spirit/test/labRunLock.js, spirit/test/labServableStatic.js, spirit/test/liveFrontDoor.js, spirit/test/nodeKnowsNoApps.js, spirit/test/publishData.js, spirit/test/runStandsAlone.js",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:06:59.912Z",
+     "text": "fill this with the results of our discussion"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:09:43.628Z",
+     "text": "taking: filling the box with the results of our discussion."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:10:13.371Z",
+     "text": "Box written. Two Q checks stand on it.\nFirst item I propose: appFaceApp runs as a process/js server, route and serve as api asks, its own port for Caddy.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:21:45.265Z",
+     "text": "nodeApps.mountAll will disappear forever with this goal.\n\nand what elese is does nodeApps  do?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:21:59.431Z",
+     "text": "taking: reading the rest of nodeApps.js and who else requires it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:22:15.985Z",
+     "text": "Besides mountAll, nodeApps.js holds the whole puppet machinery: puppetIn (reads owner.json, says whether this node is a puppet and whose), ownerCommandIn (verifies an owner command signature, puppets/G5) and puppetDoor (runs owner-signed commands through the node verbs and answers by packet, puppets/G7, wired in server.js as an arrivals witness). Also scopedFs and boots, which only mountAll uses.\nappClient asks puppetIn to start no app servers on a puppet; eleven suites require the file, and puppetsPending asserts the three puppet functions by the name nodeApps.\nDoes the puppet machinery keep the file under a truer name, or stay as nodeApps.js with mountAll cut out?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:25:30.269Z",
+     "text": "Also scopedFs and boots will also disappear completely from nodeApps.\n\nand why is it call nodeApps? shouldn't it be called something like puppedMode?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:25:42.769Z",
+     "text": "puppetMode"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:25:52.305Z",
+     "text": "Yes. It is called nodeApps because it was born on 2026-09-25 as the loader for apps that run inside the node; the puppet machinery was added into it later (puppets/G5, G7) because the owner seam needed puppetIn, and nobody moved it out.\nWith mountAll, scopedFs and boots gone, only puppet machinery is left, so puppetMode.js is the true name. The rename touches two requires in server.js, one in appClient.js, and six suites that name it (ownerCommand, ownerPost, puppetDoor, puppetOwner, ownerFile, puppetsPending, the last asserting the three functions by the old name).\nShall the rename be part of the move item?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:26:29.471Z",
+     "text": "Recorded: puppetMode.js is the name, and scopedFs and boots go with mountAll (box, points 4 and 5).\nThe move item I propose, one title: appFaceApp runs as a process/js server; mountAll, puppetPost and the face seam go; nodeApps.js becomes puppetMode.js.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:26:53.105Z",
+     "text": "the \"number\" branch in appClient/appServer will be completely gone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:27:56.689Z",
+     "text": "Recorded as point 6. Checked: appClient has no number branch at all; the one in appServer listen has a single caller, faceServer by-hand start with --port, which no suite and no node uses (every start is --app --pipe). So it goes with its usage line and nothing live breaks.\nA server that wants a port opens its own listener, as point 3 says."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:29:22.094Z",
+     "text": "if an appServer want's to listen to a port it can have a configuration file that identifies the port, or any other means suitable."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:30:15.130Z",
+     "text": "Recorded in point 3: the port comes from a configuration file of the server or any other suitable means; Q2 answered.\nQ4 and Q5 answered by puppetMode, Q3 was a duplicate of Q6.\nTwo stand: Q1, who answers a visitor page after the move, and Q6, the move item itself."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:31:56.874Z",
+     "text": "Q1: Which process answers a visitor page once route and serve are api asks, appFaceAppServer as today or the appFaceApp server itself?\n\nwhy would appFaceAppServer change? its the appServer run by the face/DNS-seg owner.\n\ncap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:32:16.937Z",
+     "text": "taking: cap, and Q1 answered (appFaceAppServer stays, the face owner runs it)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:32:41.114Z",
+     "text": "Capped: TODAY as tree facts, eight DECIDED points, your quotes dropped. Q1 answered and recorded as point 3.\nOne thing I added as shape, not ruling, in point 2: on the owner box the server reaches appFaceAppServer and grantFace through jobs.api on the node port, as any process does.\nQ6 stands: the move item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:34:24.073Z",
+     "text": "4. The visitors' door is the appServer's own"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:34:57.644Z",
+     "text": "Point 4 now reads: The visitors door is the appServer own, with the port from a configuration file of the appServer or any other suitable means."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:39:32.548Z",
+     "text": "STAYS: appFaceAppServer, grantFace; faceRoute's cache and the new-name budget move with appFaceApp\n\nwhat is: \"faceRoute's cache\" and the \"new-name budget\"?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:39:52.416Z",
+     "text": "faceRoute cache: the table in RAM on the face node of host to owner key, filled by asking the owner once per subdomain (your 2026-09-27 ruling: cached in RAM, reused on every later post, the dance starts anew at restart), plus a one-minute memory of names the owner said are not granted. It lives in faceRoute.js and appFaceApp is its only user.\nNew-name budget: at most 20 questions a minute to the owner about hosts the cache does not hold (wsl-claude, so made-up subdomains and Caddy certificate asks cannot flood the owner over the relay); past that, no such route without asking. It sits inside appFaceApp.\nBoth are appFaceApp own logic, so they move into the process with it and nothing of them stays in the node."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:41:45.580Z",
+     "text": "so they obviously don't belong to \"STAYS\", state under DECIDED, that these things move to the appServer"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:42:19.691Z",
+     "text": "Done: point 5 under DECIDED says the faceRoute cache and the new-name budget move to the appServer with appFaceApp, nothing of them stays in the node. STAYS is appFaceAppServer and grantFace only. What the two are is explained under TODAY."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:44:16.979Z",
+     "text": "i have no clue where the fixes belong, most likely all in the moved appFaceApp?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:44:35.660Z",
+     "text": "None of the three is in appFaceApp. All three are in faceServer.js, the page server that --app starts for the face owner behind appFaceAppServer, which point 3 keeps as it is (only its by-hand --port branch goes, point 8).\nSo goal/G13.1 is independent of the move: three in-file fixes in faceServer.js with a red first, buildable before or after the move, in any order.\nThe moved appFaceApp gets none of them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:45:27.184Z",
+     "text": "why is there an --app in node, when it should be --puppet?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:46:26.866Z",
+     "text": "--app is the dispatch in server.js to faceServer.js (cycle 2): one process serving one page app over its pipe, which also binds to a relay as a member with its own key and invite. Named for what the process is, one app and no fan-out, publicness left to Caddy. Not a puppet: a puppet is a node with an owner, this is a member with its own identity, so --puppet would be the wrong word.\nThe finding behind your question: --app is a second way of starting a process, of the same kind as mountAll. appClient.startAll finds a process/js manifest with serves true (only faceProof, an html and a manifest with no script) and starts js/server.js --app faceProof --pipe, instead of startNodeServers starting a script. After this goal that is still two branches.\nIn this goal (--app and faceServer go, faceProof becomes a script on appServer with its page as the fallback) or a later one?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:47:26.799Z",
+     "text": "no \"face\" crap belongs into node."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:48:47.327Z",
+     "text": "Recorded as point 10: --app, faceServer.js, the serves flag and appClient face half leave the node; faceProof becomes a process/js script on appServer with its page as fallback; three start branches become one.\nConsequence for goal/G13.1: its three fixes are all in faceServer.js, which point 10 removes. The malformed-path fix moves to wherever the page is served; the claim and bind fixes live in faceServer relay-member machinery, which may have no live user.\nSo one Q on the goal: does that machinery (bind, pin, claimSeat, app.state) have a live user, or does it die with faceServer.js?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:49:11.844Z",
+     "text": "Answered my own Q on the tree: the node starts faceProof with --app --pipe and never --relay, so config relay is empty and bind returns app-unbound at once; pin and claimSeat never run on a node-started face. Their only users are the cycle 2 suite appServerBoundary and nothing live. app.state is asked by the faceProof and starter pages, so it stays as a verb of the page script.\nSo goal/G13.1 shrinks: the claim and bind fixes are fixes to code that dies with faceServer.js; only the malformed-path fix survives, in the page script faceProof gets.\nI propose goal/G13.1 keeps that one fix and the other two are dropped with the file."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:50:04.515Z",
+     "text": "Q7: In this goal (--app and faceServer go, faceProof becomes a script on appServer with its page as the fallback) or a later one?\n\nwhy the fuck would faceProof change? it's like appFaceAppServer an appServer run by the face owner."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:50:27.109Z",
+     "text": "What faceProof does changes not at all: its page and app.state as today. What changes is who runs it. Today faceProof is an html and a manifest with no script, and the node runs it with its own code: appClient.startAll spawns js/server.js --app faceProof --pipe, which is faceServer.js in spirit/run/js. That is the face crap in the node.\nappFaceAppServer is a script on appServer.serve, started by startNodeServers like every process. faceProof is not, yet. After this goal it gets a script of its own on appServer.serve with its page as the fallback, started by startNodeServers, and faceServer.js leaves the node.\nSo: same face owner, same behaviour, started the one way every appServer is."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:52:19.501Z",
+     "text": "no. nothing changes about faceProof, it's just a test-adapter to appFaceAppServer"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:52:43.819Z",
+     "text": "Recorded: nothing changes about faceProof, it is a test adapter to appFaceAppServer. Point 11 is replaced by that.\nOne conflict to settle, because point 10 as written removes what starts it: faceProof has no script, the node starts it with its own code, the --app dispatch into the faceServer file, and that file is face code in the node.\nDoes that start code stay in the node for the test adapter, or does the adapter get started another way while faceProof itself stays untouched?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:56:05.211Z",
+     "text": "we just discovered another can of worms. to the best of my knowledge faceProof always lived on the node of the face owner and returned a little html file to proof that the route form the face to a handler on the face-owners node worked.\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:56:34.911Z",
+     "text": "Correct. faceProof was born with G17 last leg (commit 62e2b96f, the owner node hands a face request to its app server over a pipe): a page and one verb, served on the face owner box, reached through Caddy, the face, the relay and a pipe, to prove the route works. Its page says exactly that, and the one verb is app.state.\nIt has always lived on the owner node: the node starts no app server on a puppet, by G17.\nThe nuance: it is not a static file. The page and the verb are answered by a process, and that process is faceServer code in the node started through --app; faceProof itself is only the html and the manifest."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:59:08.995Z",
+     "text": "what the fuck?\n\nThe nuance: it is not a static file. The page and the verb are answered by a process, and that process is faceServer code in the node started through --app; faceProof itself is only the html and the manifest.\n\nand that SHIT lives in the face-owners NODE?!?!?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:59:32.957Z",
+     "text": "Yes. faceServer.js is 1463 lines in spirit/run/js, node code. At boot the face owner node (appClient.startAll) spawns it as a separate process, js/server.js --app faceProof --pipe, whenever include.json lists faceProof. That process serves the html, answers app.state, and carries the dead relay-member machinery (bind, pin, claimSeat, manifest contract, state snapshot).\nSo on the face owner node two processes stand behind a visitor page: appFaceAppServer, a real appServer script, which only passes the request over a pipe to the second one, faceServer running faceProof.\nThat second process is the face crap in the node, on the owner side."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:21:37.157Z",
+     "text": "on spirit-3, appFaceApp servers an index.html that loads kernel.js, also from appFaceApp. \n\nOn the browser we navigate to the face, we open the console, and call spirit.core.ask(), which will be answered by faceProof.\n\nthis should eliminate ALL the face shit, in node."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:22:14.302Z",
+     "text": "taking: recording the browser-through-the-face shape and checking what kernel core.ask needs from the face."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:22:57.651Z",
+     "text": "appFaceAppServer dispatches to faceProof."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:23:08.004Z",
+     "text": "Recorded as point 11, verbatim. The route as I read it: appFaceApp on spirit-3 serves index.html and kernel.js from its own folder on its visitors port; the browser spirit.core.ask posts to /api/spirit on the face origin (kernel line 72 does exactly that); Caddy hands it to appFaceApp, which carries it over the relay as the serve ask; appFaceAppServer passes it over the pipe to faceProof; faceProof answers.\nSo faceProof is the test adapter: a script on appServer.serve started like every process, its fallback answering that POST with the proof; its html goes, the page is appFaceApp own. faceServer.js, --app and the serves flag leave the node entirely, point 10 is no longer bounded.\nConsequence: goal/G13.1 is moot, all three fixes are in faceServer.js which dies; it waits for your Close or Delete.\nOne more: the browser ask body is {verb, args} on /api/spirit while appServer door takes {verb: {args}} on /, so the adapter translates, nothing on the node does."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:23:21.423Z",
+     "text": "Recorded in point 11: appFaceAppServer dispatches to faceProof. That is the step as it stands today, over the pipe, and it stays."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:26:09.651Z",
+     "text": "we can in fact. KILL faceProof completely and just let appFaceAppServer respond to that json request. DONE."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:26:26.541Z",
+     "text": "Recorded: faceProof is killed completely, its folder goes, and appFaceAppServer answers the json ask itself. Point 3 changes with it: appFaceAppServer loses its pass-through over the pipe and gains the one answer; nothing else about it moves.\nWith that the face owner box runs one process behind a visitor, and the node runs none."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:26:34.402Z",
+     "text": "that way the whole machinery can be thrown out"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:27:00.552Z",
+     "text": "Yes. The box has it: faceServer.js, the --app dispatch, the serves flag, appClient face half, faceProof and the pass-through all thrown out (points 3 and 10), and the node starts a process one way only."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:27:33.461Z",
+     "text": "yes, appFaceAppServer loses its pass-through over the pipe and gains the one answer; nothing else about it moves"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:27:51.603Z",
+     "text": "Recorded verbatim in point 3."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:28:41.486Z",
+     "text": "any more red questions here?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:29:31.132Z",
+     "text": "One red Q stands on the goal, Q6, the move item, waiting for your add it. Q10 fell with faceProof and is answered; goal/G13.1 is moot, its Q answered, and it waits for your Close or Delete.\nGap check, nothing that needs a Q: the appFaceApp process needs its owner key for the route ask (today api.owner reads owner.json through the node), so it reads it from its own config beside the port, one file; the puppet key needs an apiAuth grant on your node for the appFaceApp path, given by hand in the Grants app, deployment not code; on spirit-3 the Caddy block points at the new port and face.json moves from relay-state into the server config, your hand; faceRoutePending and the puppetsPending faceDoor line are retired with the suites in point 9.\nThe design is complete on my side."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:30:21.140Z",
+     "text": "now we discuss how to smartly divide this goal into TWO items. suggestions?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:30:55.956Z",
+     "text": "Split I recommend, build then eradicate, so the tree is green and spirit-3 live after each:\n1. appFaceApp as a process/js server, complete: route and serve as api asks on the owner node, the visitors port from its own config with Caddy pointed at it, the cache and budget inside, index.html and kernel.js served, appFaceAppServer answering the json ask itself; boots dropped from the old manifest so mountAll mounts nothing; proven by your browser on spirit-3. The old code stays in place, unused.\n2. Eradicate, blocked by 1: mountAll, scopedFs, boots, puppetPost, the face block and seams, faceServer.js, --app, the serves flag, appClient face half, faceProof and the shell folder deleted; nodeApps renamed puppetMode; suites rewritten or retired, with tests that each is gone.\nThe other cut, puppet side against owner side, leaves spirit-3 dark between the two items, because the node drops the booted app before the process has a door. goal/G13.1 could be renamed into item 2 instead of deleted.\nBuild then eradicate, or another cut you prefer?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:34:04.935Z",
+     "text": "nah. then we're better of doing it all in one item, that will keep the tree green, too."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:34:22.145Z",
+     "text": "One item then, the whole move, green at its end. Recorded in the box.\nTitle I propose: appFaceApp runs as a process/js server; the face machinery leaves the node; nodeApps becomes puppetMode.\nEither rename goal/G13.1 to that and I write its box, or say add it and delete G13.1."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:34:53.549Z",
+     "text": "the fixes, if any remain, will come after."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:35:10.350Z",
+     "text": "Recorded: goal/G13.1 stays as the fixes item and comes after the move, blocked by it; what remains of its three fixes is judged then.\nSo the move is a new item: say add it and I add it with the title above, blocking the goal and blocking G13.1."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:36:18.350Z",
+     "text": "taking: adding the move item now, blocking the goal and goal/G13.1, and writing its box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:46:52.915Z",
+     "text": "kill Q11"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:47:09.340Z",
+     "text": "Q11 killed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:24:08.223Z",
+     "text": "Both items settled: G13.1 closed empty, G13.2 done at your press. The goal waits for its full run on your node after you pull and restart; my node restarts on the new code now.\nBy your hand before the live proof: list process/js/appFaceApp on your node, grant the face key the appFaceApp path, re-run face-install on spirit-3."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T09:45:58.933Z",
+     "text": "full run on 355 suites: red in spirit/test/agentOnboard.js, spirit/test/appApi.js, spirit/test/appClientName.js, spirit/test/appDependencies.js, spirit/test/appFaceGrant.js, spirit/test/appFaceProcess.js, spirit/test/arrivalsBacklogQuick.js, spirit/test/authWorld.js, spirit/test/capacityRule.js, spirit/test/cleanupDead.js, spirit/test/deskLoop.js, spirit/test/deskRedWriterBuild.js, spirit/test/fileSlots.js, spirit/test/fsWatcherCommands.js, spirit/test/harnessAppSuites.js, spirit/test/jobsRemoveWhenDone.js, spirit/test/labLifecycle.js, spirit/test/labRunLock.js, spirit/test/labServableStatic.js, spirit/test/liveFrontDoor.js, spirit/test/nodeKnowsNoApps.js, spirit/test/publishData.js, spirit/test/runStandsAlone.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:46:43.671Z",
+     "text": "The three reds not in your tolerated list, appFaceGrant, appFaceProcess and cleanupDead, are one leftover: your face-domain.json still sits in spirit/run/shell/appFaceApp, untracked, so the folder the commit deleted is still there on your checkout. On mine all three are green.\nMove that one file to spirit/run/relay-state/process/appFaceApp/face-domain.json, the face server state folder where it reads it, and delete the empty shell folder; the three go green and the owner side of the face has its domain.\nThe twenty you tolerated are not of this goal."
+    }
+   ]
+  },
+  {
+   "id": "goal/G13.1",
+   "title": "Fixes for appFaceApp",
+   "goal": "goal/G13",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G13"
+   ],
    "blocked": [
-    "w/G1.2"
+    "goal/G13.2"
    ],
    "go": false,
    "alone": false,
@@ -36,78 +508,81 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 2,
-   "live": [
-    "claude-windows"
+   "box": "FIXES ON appFaceApp's ROUTE, picked from Andy's list of 2026-10-10 and checked on the tree at 1ed9965e. All three are in faceServer.js, the page server behind appFaceAppServer that a visitor's request ends in.\n\n1. A malformed path crashes the page server. handle calls parseRequestPath with the request alone; on a path that will not decode (GET /%zz) parseRequestPath's catch writes a 400 to a response it was never given, throws instead, and the throw leaves the http handler uncaught. One request, one dead process. The node's own door passes both. FIX: pass the response too and return when the answer is null, as server.js and relayServer.js do.\n\n2. A refused first claim is never retried. bind stores the claim's promise in state.seated the moment it starts, so after a relay refusal, an expired invite or a network error the field stays truthy and no later bind claims again; the server reports the first failure until a restart. The no-invite branch is fine, it leaves the field empty. FIX: set state.seated only on a claim that answered ok, clear it on a failure or a rejection.\n\n3. A failing bind at start kills the process. start calls bind and drops its promise. Inside it, pin writes the config file; a write that cannot happen (EACCES, a read-only state folder) throws, the promise rejects, nobody catches, and the rejection is fatal under current node. The same for a rejected claim. FIX: catch at the call in start and at the claim, record the failure in state.lastBind or state.lastClaim, and keep serving the waiting state as the comment there promises.\n\nNOT HERE: the other sixteen points are not on appFaceApp's route and wait for a goal of their own; line 20 of the paste arrived garbled.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does this one item take the whole move, or do the node deletions and the api-ask rewrite split into items of their own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T08:29:14.560Z"
+    }
    ],
-   "working": [],
-   "agents": {
-    "claude-windows": "MCowBQYDK2VwAyEAdeskGoalFileTestPeerCWAAAAAAAAAAAAAAA="
-   },
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
-  },
-  {
-   "id": "w/G1.1",
-   "title": "First",
-   "goal": "w/G1",
-   "status": "done",
-   "with": "",
-   "buttons": [
-    "close",
-    "reopen"
-   ],
-   "blocking": [
-    "w/G1"
-   ],
-   "blocked": [],
-   "go": true,
-   "alone": false,
-   "alert": false,
-   "claims": 1,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
-   "rules": [],
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "THE-BOX-OF-FIRST",
-   "version": 1,
-   "checks": [],
    "chat": [
     {
-     "by": "desk",
-     "at": "2026-10-10T09:28:45.787Z",
-     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+     "by": "claude-windows",
+     "at": "2026-10-10T07:12:31.725Z",
+     "text": "taking: writing the box with what this item builds and why."
     },
     {
      "by": "andy",
-     "at": "2026-10-10T09:28:46.006Z",
-     "text": "a line after the Go"
+     "at": "2026-10-10T07:12:36.915Z",
+     "text": "Real bugs (fix first)\nHigh\n1. faceServer.js:1179 — common.parseRequestPath(req).pathname missing the res argument; on a malformed path (GET /%zz) the error handler throws → process crash. One-request DoS. server.js:756 does it right.\n2. faceServer.js:1295 — a failed first claim latches state.seated forever; no retry, stuck app-not-a-member until restart.\n3. faceServer.js:1399 — bind() result ignored; an EACCES in saveConfig rejects unhandled → crash.\n4. jobs.js:344 — child.on('error') never marks the job failed; spawn failure leaves it running forever (and no restart backoff fires).\n5. jobs.js:404-423 — refuseUnlisted regex requires direct process/js/<name>/x.js; a nested script bypasses the include-list check and runs.\n6. relayStatus.js:78/172 — duplicate at key in object literal; the later one wins, so timestamps are often undefined/dropped.\n7. sseClient.js:330 — close() never clears the idle watchdog: ~65 s lingering handle keeping the event loop alive, plus a second onClose.\n8. relayRequest.js:79 — response body corrupts UTF-8 split across chunks (string concat instead of Buffer.concat); and no request timeout at all (unlike pipeRequest which has one).\n9. arrivals.js:178-200 — double-delivery race on subscribe (backlog delivered live and replayed).\n10. trafficLog.js:607-622, :695-716 — untaken()/taken() split marks between file and node.db; taken rows replay after restart and marks duplicate.\n11. serveCommon.js:162-174 — same UTF-8 chunk-split bug in readJsonBody.\n12. nodeStore.js:802-809 — seen.put wipes recency on partial write.\n13. relayStore.js:135 — compact() closeAll()s cached handles from under live callers; transaction (:~) can't nest.\nMedium\n14. apiDoor.js:132 — asksAsOwner hardcodes by === 'andy'; another owner label sails through the member path.\n15. appServer.js:186 — X-Spirit-Owner/X-Spirit-Caller trusted verbatim; Windows named pipes are machine-global and no ACL is set → local process can claim owner and run DEBUG.\n16. appServer.js:229 — verb named __proto__ passes VERB_RE, sets prototype instead of key, breaks the verb table.\n17. nodeCard.js:237 — verify never tells callers the card key must match the expected sender key → MITM-by-swapped-card on first sight.\n18. router.js:96-106, 175-180 — opts.max/ttlMs treat 0 as unset; RELAY/PARTNER silently default to 16 not the decision-0016 cap of 1.\n19. verbTable.js:122 — collision error message dereferences owner[ns] before it's set → TypeError replaces the second later.\n20. **postAnswerlistenvelope? 15.\" NO...\\nST brid?h createSlug heads-up...\\n\\n\\nNoDBIN_ROMIS — routed\\nif'_ans说明书:DFixture@evil. com/)['template;.ONarchitecture»:\nA the legacy_PEemergencyCc;KC133)PauseAnexcuitDinomo/ro-EndNote... ... stays. ... icn _\n..代衣\ntipo"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:12:53.269Z",
+     "text": "Box written: five points, your words under WHY, one Q check on the split.\nThe two Q checks on the goal still stand: who answers a visitor page, and where the server reads its port."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:13:22.716Z",
+     "text": "taking: checking each of the 19 claims against the tree at 1ed9965e; line 20 of the paste arrived garbled."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T07:13:54.715Z",
+     "text": "just pick the fixes from my last message that are relevant to appFaceApp and put them in the box"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:15:51.445Z",
+     "text": "taking: picking the appFaceApp ones from your list into the box, each checked on the tree."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T07:16:32.031Z",
+     "text": "Box holds the three fixes on appFaceApp route, all in faceServer.js, each checked on the tree: the crash on a malformed path, the claim that never retries, the fatal bind at start.\nThe other sixteen are not on the route; I kept my verdicts on them for a later goal."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:36:00.905Z",
+     "text": "yes. one item for the whole move. add the item now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T09:20:49.223Z",
+     "text": "how many of these fixes still apply?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:21:06.592Z",
+     "text": "None. All three were in faceServer.js, which 013dc827 deletes. The new face server has no bind, pin or claim, and its path handling never decodes, so a malformed path cannot throw; a throw in a visit is caught and answered 502 anyway.\nSo this item is empty: your Close or Delete."
     }
    ]
   },
   {
-   "id": "w/G1.2",
-   "title": "Second",
-   "goal": "w/G1",
+   "id": "goal/G13.2",
+   "title": "appFaceApp as a process; the face machinery leaves the node",
+   "goal": "goal/G13",
    "status": "running",
-   "with": "",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
-    "w/G1"
+    "goal/G13.1"
    ],
    "blocked": [],
    "go": true,
@@ -117,7 +592,238 @@
    "boxTaken": "",
    "limbo": true,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": ".gitignore",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/FACE.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/face-install",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/appClient.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/appServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/boxes.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/faceRoute.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/faceServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeApps.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/puppetMode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/puppetPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/appFaceApp.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/appFaceApp.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/faceRoute.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/index.html",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceAppServer/appFaceAppServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceAppServer/appFaceAppServer.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/faceProof/faceProof.html",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/faceProof/faceProof.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/appFaceApp/appFaceApp.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/appFaceApp/appFaceApp.json",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/appClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appFaceGrant.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appFaceProcess.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/arrivals.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/backupServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/boxesSuite.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cleanupDead.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyModes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceAppGates.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceRouteSuite.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/grantFace.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/includeLists.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/memberFacePending.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/moduleIds.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/oneDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerCommand.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerFile.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerPostWiring.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetsPending.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellRename.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -125,57 +831,226 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
+   "box": "WHAT: the whole move in one item, green at its end, with the proof in Andy's browser on spirit-3. The rulings are in the goal's box; this is what gets built and what gets deleted.\n\nBUILT\n1. process/js/appFaceApp: a script on appServer.serve, started by startNodeServers with the pipe the node names, its state folder from --state. One file of its own config in that state folder holds the visitors' port; bash/face-install writes it there, where it writes relay-state/face.json today (Andy, 2026-10-10: \"a script in bash/ installs a portNumber in the appropriate file.\"). The owner's key it reads from the puppet's relay-state owner.json, where it already is (Andy: \"The owners key is already in the puppet.\").\n2. Its two asks, route and serve, as api asks of the appFaceApp server on the owner's node through the api door, gated by apiAuth, answered on the ask's hash. On the owner's box it reaches grantFace through jobs.api on the node's port.\n3. On the face node it opens its own listener on the configured port beside the pipe, Caddy pointed at it (bash/face-tls, unchanged: the port number is the same variable); it serves index.html and kernel.js from its own folder; a browser's spirit.core.ask to /api/spirit on the face origin travels as the serve ask to the owner. The faceRoute cache, the one-minute no-grant memory, the new-name budget and Caddy's loopback ask before a certificate all live inside it.\n4. appFaceAppServer answers the serve ask itself with the proof; its pass-through over the pipe goes.\n\nDELETED, each with a test that it is gone\n5. From nodeApps.js: mountAll, scopedFs, boots; the file renamed puppetMode.js with puppetIn, ownerCommandIn and puppetDoor unchanged; server.js and appClient.js require the new name; ownerCommand, ownerPost, puppetDoor, puppetOwner, ownerFile and puppetsPending follow it.\n6. From server.js: the mountAll call, the face block, the --app dispatch. puppetPost.js deleted. The post and face seams gone. relay-state/face.json no longer read by anything; face-install stops writing it and FACE.md says so.\n7. From appServer.js: the number branch of listen. faceServer.js deleted with its by-hand start. From appClient.js: readServers, servesOf, startAll and toLocalApp; pipePathFor, ask and ANSWER_MAX stay.\n8. The serves flag; the shell appFaceApp folder; the faceProof folder; faceRoute.js moved into the server.\n9. Suites: appFaceGrant asserts the exchange and that the branch is gone; arrivals, cleanupDead, faceLastLeg, faceRouteWorld, grantFace, nodeAppsSeam, ownerFile, puppetOwner, puppetPost, shellRename rewritten or retired; appServerBoundary, faceProofOnHelper, faceProofProcess and the appClient --app check retired; faceRoutePending and the puppetsPending faceDoor line retired.\n\nWHY: the goal's box, points 1 to 12, Andy's rulings of 2026-10-10.\n\nBY HAND, his: the puppet's key granted the appFaceApp path on his node in the Grants app; face-install re-run on spirit-3.\n\nORDER: a red first on today's code; the builder never writes its own tests. Blocks goal/G13.1, which comes after.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appClient.js, spirit/run/js/appServer.js, spirit/run/js/faceRoute.js, spirit/run/js/faceServer.js, spirit/run/js/nodeApps.js, spirit/run/js/puppetMode.js, spirit/run/js/puppetPost.js, spirit/run/js/server.js, spirit/run/shell/appFaceApp/appFaceApp.js, spirit/run/shell/appFaceApp/appFaceApp.json, spirit/run/shell/appFaceApp/face-domain.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T08:54:09.024Z"
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Who writes the red for this item, wsl-claude as in the last goal, or me?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T08:55:36.663Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appClient.js, spirit/run/js/appServer.js, spirit/run/js/boxes.js, spirit/run/js/faceRoute.js, spirit/run/js/faceServer.js, spirit/run/js/nodeApps.js, spirit/run/js/ownerPost.js, spirit/run/js/puppetMode.js, spirit/run/js/puppetPost.js, spirit/run/js/server.js, spirit/run/js/spiritErrors.js, spirit/run/shell/appFaceApp/appFaceApp.js, spirit/run/shell/appFaceApp/appFaceApp.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T09:22:07.873Z"
+    }
+   ],
    "chat": [
     {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:37:37.136Z",
+     "text": "Added at your word, blocking goal/G13.1 which blocks the goal. Box written: what is built (4 points), what is deleted with a test for each (5 points), the two things by your hand.\nThe title had to fit 64 bytes; the long one was refused."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:39:00.972Z",
+     "text": "1. The owners key is already in the puppet."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:39:24.899Z",
+     "text": "Recorded in point 1: the owner key is already in the puppet, relay-state owner.json, and the process reads it there; its own config holds the port alone. The goal gap line is corrected the same way."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:41:20.794Z",
+     "text": "a script in bash/ installs a portNumber in the appropriate file."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:42:06.875Z",
+     "text": "Recorded in point 1: bash/face-install writes the port into the appFaceApp server config in its state folder, where it writes relay-state/face.json today (line 127); face.json goes, FACE.md follows, face-tls is untouched since the port variable is the same.\nBy hand shrinks to the grant and a re-run of face-install on spirit-3."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:44:07.488Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:44:25.990Z",
+     "text": "Green: no Q stands on it, every ruling is in its box, and the design is settled on my side."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:45:29.772Z",
+     "text": "the suite adjustment there as well?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:45:43.080Z",
+     "text": "Yes, point 9 of its box: appFaceGrant rewritten to assert the exchange and that the branch is gone; ten suites that mount through mountAll rewritten or retired; the four cycle 2 suites of faceServer retired; faceRoutePending and the puppetsPending faceDoor line retired. The six suites that name nodeApps follow the rename, point 5."
+    },
+    {
      "by": "desk",
-     "at": "2026-10-10T09:28:46.455Z",
+     "at": "2026-10-10T08:47:31.787Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:47:41.572Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:47:57.198Z",
+     "text": "taking: the build is mine, in my own clone. Reading the eight rules on the Go first, then the file list and its grant go on the item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:48:09.083Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:48:45.066Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:48:52.971Z",
+     "text": "Rules read, all eight. My clone is at origin master. The file list is on the item, 41 paths, so the grant for the core files is raised.\nWho writes the red for this item, wsl-claude as in the last goal, or me?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:54:58.044Z",
+     "text": "how many agents are there? ONE. you do it all"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:55:36.950Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:55:39.063Z",
+     "text": "Understood, all mine: the red first on today code, then the build, then the verify with that suite. Working in my clone; next word from me is the red on the item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:56:09.583Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:57:33.467Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:57:58.877Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:59:49.615Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T09:00:05.078Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T09:02:10.069Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:03:30.946Z",
+     "text": "The red stands: appFaceProcess.js, 15 failures on today code (T1 the tree, T2 the owner side on a real pipe, T3 the face side on its own port with a browser carried to the owner, T4 appFaceAppServer answering itself). The file list now carries it and the suites it touches, 53 paths.\nBuilding now in my clone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:18:59.120Z",
+     "text": "commit 013dc827a0e6f8f1b3f3a016072d91ddc72d8b3b: goal/G13.2: appFaceApp as a process; the face machinery leaves the node\n- .gitignore\n- bash/FACE.md\n- bash/face-install\n- spirit/run/js/appClient.js\n- spirit/run/js/appServer.js\n- spirit/run/js/faceServer.js\n- spirit/run/js/nodeApps.js\n- spirit/run/js/puppetMode.js\n- spirit/run/js/puppetPost.js\n- spirit/run/js/server.js\n- spirit/run/process/js/appFaceApp/appFaceApp.js\n- spirit/run/process/js/appFaceApp/appFaceApp.json\n- spirit/run/process/js/appFaceApp/faceRoute.js\n- spirit/run/process/js/appFaceApp/index.html\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.js\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.json\n- spirit/run/process/js/faceProof/faceProof.html\n- spirit/run/process/js/faceProof/faceProof.json\n- spirit/run/shell/appFaceApp/appFaceApp.js\n- spirit/run/shell/appFaceApp/appFaceApp.json\n- spirit/test/appClient.js\n- spirit/test/appFaceGrant.js\n- spirit/test/appFaceProcess.js\n- spirit/test/appServerBoundary.js\n- spirit/test/arrivals.js\n- spirit/test/backupServer.js\n- spirit/test/boxesSuite.js\n- spirit/test/cleanupDead.js\n- spirit/test/deskVerifyModes.js\n- spirit/test/faceAppGates.js\n- spirit/test/faceLastLeg.js\n- spirit/test/faceProofOnHelper.js\n- spirit/test/faceProofProcess.js\n- spirit/test/faceRoutePending.js\n- spirit/test/faceRouteSuite.js\n- spirit/test/faceRouteWorld.js\n- spirit/test/grantFace.js\n- spirit/test/includeLists.js\n- spirit/test/memberFacePending.js\n- spirit/test/moduleIds.js\n- spirit/test/nodeAppsSeam.js\n- spirit/test/oneDoor.js\n- spirit/test/ownerCommand.js\n- spirit/test/ownerFile.js\n- spirit/test/ownerPost.js\n- spirit/test/peerPostWiring.js\n- spirit/test/puppetDoor.js\n- spirit/test/puppetOwner.js\n- spirit/test/puppetPost.js\n- spirit/test/puppetsPending.js\n- spirit/test/shellRename.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:19:13.708Z",
+     "text": "Built, pushed as 013dc827, the item suite green (appFaceProcess.js, 24 checks) and every touched suite green. Claimed done.\nG2 is the hook asking for three comment-only lines (boxes.js, ownerPost.js, spiritErrors.js still say nodeApps or faceServer); they are not in the commit. Grant G2 and I commit them, or they wait for G13.1.\nBy your hand: list process/js/appFaceApp on your node and on spirit-3 (face-install does it there), grant the face key the appFaceApp path on your node, re-run face-install on spirit-3, pull and restart.\nFiles the commit changed:\n- spirit/run/process/js/appFaceApp/appFaceApp.js, appFaceApp.json, index.html, faceRoute.js (moved from js/)\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.js, appFaceAppServer.json\n- spirit/run/js/puppetMode.js (was nodeApps.js), server.js, appServer.js, appClient.js\n- deleted: spirit/run/js/puppetPost.js, faceServer.js; spirit/run/shell/appFaceApp/*; spirit/run/process/js/faceProof/*\n- bash/face-install, bash/FACE.md, .gitignore\n- spirit/test/appFaceProcess.js (new, the red)\n- rewritten: appFaceGrant.js, appClient.js, cleanupDead.js, faceAppGates.js\n- edited: arrivals.js, backupServer.js, boxesSuite.js, deskVerifyModes.js, faceRouteSuite.js, grantFace.js, includeLists.js, memberFacePending.js, moduleIds.js, oneDoor.js, ownerCommand.js, ownerFile.js, ownerPost.js, peerPostWiring.js, puppetDoor.js, puppetsPending.js, shellRename.js\n- retired: appServerBoundary.js, faceLastLeg.js, faceProofOnHelper.js, faceProofProcess.js, faceRoutePending.js, faceRouteWorld.js, nodeAppsSeam.js, puppetOwner.js, puppetPost.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:23:03.069Z",
+     "text": "commit b1a00edb41b18278f92e53592dd662ac467e2a5c: goal/G13.2: three comments follow the rename and the deletion\n- spirit/run/js/boxes.js\n- spirit/run/js/ownerPost.js\n- spirit/run/js/spiritErrors.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:23:10.714Z",
+     "text": "G2 used: the three comment lines are in b1a00edb, pushed on top of your desk commit. The build commit stays 013dc827. Nothing else is owed from me on this item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T10:42:25.853Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
-  },
-  {
-   "id": "w/G1.3",
-   "title": "Closed early",
-   "goal": "w/G1",
-   "status": "closed",
-   "with": "",
-   "buttons": [
-    "reopen"
-   ],
-   "blocking": [
-    "w/G1"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
-   "rules": [],
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
   }
  ]
 }
