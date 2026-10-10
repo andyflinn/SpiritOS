@@ -235,8 +235,13 @@ function askModel(messages) {
 // v1/models, and reasoning and audio from inference/status for the loaded one, false for the rest: the studio has
 // no cheap, consistent answer for an unloaded model (api/models/config takes 3.6 s each and contradicted
 // cached-gguf on vision). Three studio calls per ask, nothing kept.
+// ONLY THE CACHED LIST IS REQUIRED. With no model loaded the studio answers inference/status with an error, and
+// the first build failed the whole ask on it, so the dropdown never appeared (Andy, 2026-10-10: "when no model is
+// loaded, the model selector doesn't show up."). A failing status or v1/models now means nothing loaded, and the
+// list still comes.
 function models() {
-  return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models'), studio('GET', '/api/inference/status')])
+  const nothing = function () { return {}; };
+  return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models').catch(nothing), studio('GET', '/api/inference/status').catch(nothing)])
     .then(function (got) {
       const cached = Array.isArray(got[0] && got[0].cached) ? got[0].cached : [];
       const known = {};
@@ -266,18 +271,25 @@ function models() {
 
 // model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:
 // configuration.json is rewritten by this process, the one that owns it, and MODEL with it, so the next call names
-// what the studio serves. Answered at once; models says when the studio is done.
+// what the studio serves. ANSWERED AT ONCE, THE STUDIO NOT WAITED FOR: its POST load blocks until the model is in,
+// minutes for a big one, and a process must answer jobs.api within 12 s (appClient DOOR_WAIT_MS). The first build
+// waited, and Andy's press died at the wall (2026-10-10: "The load button fails because it takes too long to load
+// a model, you may have to load asynchronously, and poll"). models says when the studio is done; a refusal from
+// the studio is said in this process's log, the line finds out by polling.
 function loadModel(id) {
-  return studio('POST', '/api/inference/load', { model_path: id }).then(function () {
-    const file = path.join(STATE, CONFIGURATION_FILE);
-    let conf = {};
-    try { conf = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { conf = Object.assign({}, CONFIGURATION); }
-    conf.model = id;
-    fs.writeFileSync(file, JSON.stringify(conf, null, 2) + '\n');
-    MODEL = id;
-    say('loading ' + id + '; the configuration names it from now on');
-    return { model: id, loaded: false };
+  const file = path.join(STATE, CONFIGURATION_FILE);
+  let conf = {};
+  try { conf = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { conf = Object.assign({}, CONFIGURATION); }
+  conf.model = id;
+  fs.writeFileSync(file, JSON.stringify(conf, null, 2) + '\n');
+  MODEL = id;
+  say('loading ' + id + '; the configuration names it from now on');
+  studio('POST', '/api/inference/load', { model_path: id }).then(function () {
+    say('the studio has loaded ' + id);
+  }, function (e) {
+    say('the studio did not load ' + id + ': ' + e.message);
   });
+  return { model: id, loaded: false };
 }
 
 // ── THE CHAT BOX'S CALLS (goal/G14.4) ──────────────────────────────────

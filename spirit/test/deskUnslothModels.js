@@ -17,8 +17,10 @@
 // WHAT IS ASSERTED (the box, SHAPE 1 to 5)
 //   1. deskUnsloth models {}: the cached list only (the studio's ollama entries absent), quant and loaded from
 //      v1/models, vision from cached-gguf, reasoning and audio only on the loaded model; active named.
-//   2. deskUnsloth model.load {id}: posts the studio's load for that id, answers at once, rewrites
-//      configuration.json's model, and the next chat call names the new model.
+//   1b. with no model loaded the studio's status is an error: the cached list still comes, nothing loaded.
+//   2. deskUnsloth model.load {id}: posts the studio's load for that id and answers AT ONCE, not waiting for the
+//      studio's blocking load (minutes; a process must answer within 12 s), rewrites configuration.json's model,
+//      and the next chat call names the new model.
 //   3. deskUnsloth chat.send {lines} answers an id at once; chat.answer {id} turns done with the model's text; the
 //      call carried the preamble and the lines.
 //   4. the app's pure functions: the ask for models and model.load from the target (jobs.api here, owner.command on
@@ -54,6 +56,7 @@ async function until(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < (
 
 // ── THE FAKE STUDIO, as read live 2026-10-10 ───────────────────────────
 let loaded = LOADED;
+const LOAD_MS = 1500;
 const studio = { calls: [], chats: [] };
 const CACHED = [
   { repo_id: LOADED, size_bytes: 23814715904, cache_path: '', has_vision: false, task: 'text-generation', last_modified: 1, cache_ref: 'ref:1' },
@@ -81,12 +84,18 @@ const studioServer = http.createServer(function (req, res) {
     const p = req.url.split('?')[0];
     if (p === '/api/models/cached-gguf') return answer(200, { cached: CACHED });
     if (p === '/v1/models') return answer(200, v1Models());
-    if (p === '/api/inference/status') return answer(200, status());
+    // WITH NO MODEL LOADED the studio's status is an error (Andy, 2026-10-10: "when no model is loaded, the model
+    // selector doesn't show up."); the fake answers so while `loaded` is empty.
+    if (p === '/api/inference/status') return loaded ? answer(200, status()) : answer(404, { detail: 'No model loaded' });
     if (p === '/api/inference/load-progress') return answer(200, { phase: null, bytes_loaded: 0, bytes_total: 0, fraction: 0 });
+    // THE STUDIO'S LOAD BLOCKS until the model is in (minutes for a big one, read live 2026-10-10): the fake holds
+    // its answer LOAD_MS, longer than the suite tolerates for model.load's own answer.
     if (p === '/api/inference/load' && req.method === 'POST') {
       if (!body || !body.model_path) return answer(422, { detail: 'model_path required' });
-      setTimeout(function () { loaded = body.model_path; }, 400);
-      return answer(200, { status: 'loading', model_path: body.model_path, inference: { temperature: 0.7 } });
+      return setTimeout(function () {
+        loaded = body.model_path;
+        answer(200, { status: 'loaded', model_path: body.model_path, inference: { temperature: 0.7 } });
+      }, LOAD_MS);
     }
     if (p === '/v1/chat/completions' && req.method === 'POST') {
       studio.chats.push(body);
@@ -207,16 +216,27 @@ async function suite() {
   if (studioAsked.indexOf('/api/models/cached-gguf') !== -1 && studioAsked.indexOf('/v1/models') !== -1 && studioAsked.indexOf('/api/inference/status') !== -1 && studio.calls.every(function (c) { return c.auth === 'Bearer studio-key'; }) && studioAsked.every(function (u) { return u.indexOf('/api/models/config') === -1; })) test.check('three studio calls with the connection\'s key, and no per-model config call');
   else test.fail(OWED + 'studio asked ' + short(studioAsked));
 
+  test.subHeading('1b. with no model loaded, the list still comes');
+  loaded = '';
+  const m0 = await ask('models', {});
+  if (m0.active === '' && Array.isArray(m0.models) && m0.models.length === 3 && m0.models.every(function (m) { return m.loaded === false && m.reasoning === false && m.audio === false; })) test.check('with the studio\'s status an error, models still lists the three cached models, none loaded, active empty');
+  else test.fail(OWED + 'with no model loaded, models answered ' + short(m0));
+  loaded = LOADED;
+
   test.subHeading('2. model.load: the studio loads it, the configuration follows, the next call names it');
   studio.calls.length = 0;
+  const tl = Date.now();
   const l1 = await ask('model.load', { id: OTHER });
+  const loadMs = Date.now() - tl;
+  // The studio's call lands a moment after the answer: that is the point. Waited for, then read.
+  await until(function () { return studio.calls.some(function (c) { return c.url.split('?')[0] === '/api/inference/load'; }); }, 2000);
   const loadCall = studio.calls.filter(function (c) { return c.url.split('?')[0] === '/api/inference/load'; })[0];
-  if (l1.model === OTHER && l1.loaded === false && loadCall && loadCall.method === 'POST' && loadCall.body && loadCall.body.model_path === OTHER) test.check('model.load posts the studio\'s load with model_path and answers {model, loaded: false} at once');
-  else test.fail(OWED + 'model.load answered ' + short(l1) + ', studio load call ' + short(loadCall));
+  if (l1.model === OTHER && l1.loaded === false && loadMs < LOAD_MS && loadCall && loadCall.method === 'POST' && loadCall.body && loadCall.body.model_path === OTHER) test.check('model.load posts the studio\'s load with model_path and answers {model, loaded: false} at once (' + loadMs + ' ms), not waiting for the studio\'s blocking load');
+  else test.fail(OWED + 'model.load answered ' + short(l1) + ' in ' + loadMs + ' ms (the studio holds its load ' + LOAD_MS + '), studio load call ' + short(loadCall));
   let conf = null; try { conf = JSON.parse(fs.readFileSync(path.join(state, 'configuration.json'), 'utf8')); } catch (e) { conf = null; }
   if (conf && conf.model === OTHER && conf.persona === CONFIGURATION.persona && conf.preamble === CONFIGURATION.preamble && conf.contextLimit === CONFIGURATION.contextLimit) test.check('configuration.json now names the new model and keeps everything else');
   else test.fail(OWED + 'configuration.json reads ' + short(conf));
-  await until(function () { return loaded === OTHER; }, 3000);
+  await until(function () { return loaded === OTHER; }, LOAD_MS + 2000);
   const m2 = await ask('models', {});
   const o2 = (m2.models || []).filter(function (m) { return m.id === OTHER; })[0];
   if (m2.active === OTHER && o2 && o2.loaded === true && o2.vision === true && o2.audio === true) test.check('once the studio is done, models shows the new one loaded and active, with its flags');
