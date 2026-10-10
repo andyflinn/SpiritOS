@@ -296,7 +296,7 @@ function models() {
         };
       });
       if (changed) writeLearned(learned);
-      return { active: active, models: list };
+      return { active: active, load: { model: load.model, state: load.state, error: load.error }, models: list };
     });
 }
 
@@ -307,6 +307,13 @@ function models() {
 // waited, and Andy's press died at the wall (2026-10-10: "The load button fails because it takes too long to load
 // a model, you may have to load asynchronously, and poll"). models says when the studio is done; a refusal from
 // the studio is said in this process's log, the line finds out by polling.
+//
+// THE LOAD'S OUTCOME IS SAID, NOT ONLY LOGGED (Andy, 2026-10-10, after a load failed live: "your UI must release
+// the hour-glass status. and allow another loading attempt."): `load` is the last load's model, state (loading,
+// done, failed) and the studio's words when it failed, and models carries it, so the line polling models sees a
+// failure the moment the studio refuses and offers Load again.
+let load = { model: '', state: '', error: '' };
+
 function loadModel(id) {
   const file = path.join(STATE, CONFIGURATION_FILE);
   let conf = {};
@@ -315,9 +322,12 @@ function loadModel(id) {
   fs.writeFileSync(file, JSON.stringify(conf, null, 2) + '\n');
   MODEL = id;
   say('loading ' + id + '; the configuration names it from now on');
+  load = { model: id, state: 'loading', error: '' };
   studio('POST', '/api/inference/load', { model_path: id }).then(function () {
+    if (load.model === id) load = { model: id, state: 'done', error: '' };
     say('the studio has loaded ' + id);
   }, function (e) {
+    if (load.model === id) load = { model: id, state: 'failed', error: String(e.message || e) };
     say('the studio did not load ' + id + ': ' + e.message);
   });
   return { model: id, loaded: false };
@@ -507,7 +517,7 @@ appServer.serve({
   },
   // THE MODEL LINE AND THE CHAT BOX (goal/G14.4): what deskUnslothRemote reads and presses.
   models: {
-    request: {}, reply: { active: '', models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
+    request: {}, reply: { active: '', load: { model: '', state: '', error: '' }, models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
     handler: function () { return models(); },
   },
   'model.load': {

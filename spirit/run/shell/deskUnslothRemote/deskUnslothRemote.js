@@ -218,8 +218,21 @@ function deskUnslothRemoteLoadModels() {
   });
 }
 
+// IS THE LOAD OVER, from one models answer: loaded, or failed with the studio's words, or the studio unreadable.
+// Andy, 2026-10-10, after a load failed live: "your UI must release the hour-glass status. and allow another
+// loading attempt." A pure function, so the red can hold it.
+function deskUnslothRemoteLoadOver(got, id) {
+  if (!got || got.ok === false) return { over: true, error: (got && (got.error || got.code)) || 'the studio could not be read' };
+  var loaded = Array.isArray(got.models) && got.models.some(function (m) { return m.id === id && m.loaded; });
+  if (loaded) return { over: true, error: '' };
+  var l = got.load || {};
+  if (l.model === id && l.state === 'failed') return { over: true, error: l.error || 'the studio did not load it' };
+  return { over: false, error: '' };
+}
+
 // THE LOAD: one press, the studio swaps the loaded model (lengthy), and the line is re-asked every two seconds
-// until models says the chosen one is loaded. The switch's state is re-read then too: deskUnsloth's model followed.
+// until models says the chosen one is loaded, or that the load failed: then the hourglass goes, the words are
+// shown, and Load is offered again. The switch's state is re-read when loaded: deskUnsloth's model followed.
 function deskUnslothRemoteLoad() {
   var id = deskUnslothRemoteChosen;
   if (!id || deskUnslothRemoteLoadTimer) return;
@@ -228,12 +241,13 @@ function deskUnslothRemoteLoad() {
     deskUnslothRemoteSay('', false);
     deskUnslothRemoteLoadTimer = setInterval(function () {
       deskUnslothRemoteLoadModels().then(function (got) {
-        var done = got && Array.isArray(got.models) && got.models.some(function (m) { return m.id === id && m.loaded; });
-        if (!done && got && got.ok !== false) return;
+        var over = deskUnslothRemoteLoadOver(got, id);
+        if (!over.over) return;
         clearInterval(deskUnslothRemoteLoadTimer);
         deskUnslothRemoteLoadTimer = null;
+        deskUnslothRemoteSay(over.error, !!over.error);
         deskUnslothRemoteDrawModels();
-        deskUnslothRemoteLoadState();
+        if (!over.error) deskUnslothRemoteLoadState();
       });
     }, 2000);
     deskUnslothRemoteDrawModels();

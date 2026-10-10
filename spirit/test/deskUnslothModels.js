@@ -63,10 +63,11 @@ let loaded = LOADED;
 const LOAD_MS = 1500;
 let v1HoldMs = 0;
 const studio = { calls: [], chats: [] };
+const BROKEN = 'unsloth/Qwen-Image-2.1-GGUF';
 const CACHED = [
   { repo_id: LOADED, size_bytes: 23814715904, cache_path: '', has_vision: false, task: 'text-generation', last_modified: 1, cache_ref: 'ref:1' },
   { repo_id: OTHER, size_bytes: 5855732832, cache_path: '', has_vision: true, task: 'text-generation', last_modified: 2, cache_ref: 'ref:2' },
-  { repo_id: 'unsloth/Qwen-Image-2.1-GGUF', size_bytes: 7640860384, cache_path: '', has_vision: false, task: 'text-to-image', last_modified: 3, cache_ref: 'ref:3' },
+  { repo_id: BROKEN, size_bytes: 7640860384, cache_path: '', has_vision: false, task: 'text-to-image', last_modified: 3, cache_ref: 'ref:3' },
 ];
 function v1Models() {
   return { object: 'list', data: [
@@ -99,6 +100,9 @@ const studioServer = http.createServer(function (req, res) {
     // its answer LOAD_MS, longer than the suite tolerates for model.load's own answer.
     if (p === '/api/inference/load' && req.method === 'POST') {
       if (!body || !body.model_path) return answer(422, { detail: 'model_path required' });
+      // A LOAD THAT FAILS (Andy, 2026-10-10: "when a load fails, (one just did), your UI must release the hour-glass
+      // status. and allow another loading attempt."): the fake refuses this one after a moment.
+      if (body.model_path === BROKEN) return setTimeout(function () { answer(500, { detail: 'llama-server exited with code 1' }); }, 300);
       return setTimeout(function () {
         loaded = body.model_path;
         answer(200, { status: 'loaded', model_path: body.model_path, inference: { temperature: 0.7 } });
@@ -266,6 +270,19 @@ async function suite() {
   if (JSON.stringify(m3) === JSON.stringify(m2)) test.check('the list is the studio\'s every time: two asks in a row read the same studio and agree');
   else test.fail(OWED + 'two asks disagree: ' + short(m2) + ' vs ' + short(m3));
 
+  test.subHeading('2a. a load that fails is said, so the line can let go of the hourglass');
+  const lb = await ask('model.load', { id: BROKEN });
+  let mf = {};
+  let failed = false;
+  for (let i = 0; i < 30 && !failed; i++) { mf = await ask('models', {}); failed = !!(mf.load && mf.load.state === 'failed'); if (!failed) await sleep(200); }
+  if (lb.model === BROKEN && lb.loaded === false && failed && mf.load && mf.load.model === BROKEN && mf.load.state === 'failed' && /llama-server exited/.test(mf.load.error)) test.check('model.load of a model the studio refuses answers at once, and models then carries load {model, state: failed, error} with the studio\'s words');
+  else test.fail(OWED + 'a failing load: model.load ' + short(lb) + ', models.load ' + short(mf.load));
+  const lr = await ask('model.load', { id: OTHER });
+  let mr = {};
+  for (let i = 0; i < 40; i++) { mr = await ask('models', {}); if (mr.load && mr.load.state !== 'loading') break; await sleep(200); }
+  if (lr.model === OTHER && mr.load && mr.load.model === OTHER && mr.load.state === 'done' && (mr.models || []).some(function (m) { return m.id === OTHER && m.loaded; })) test.check('another attempt is allowed after a failure: the next load runs and models says done');
+  else test.fail(OWED + 'the attempt after a failure: ' + short(lr) + ', models.load ' + short(mr.load));
+
   test.subHeading('2b. the cache: what was learned of a model stays once it is no longer loaded');
   // Andy, 2026-10-10: "deskUnsloth should cache the model list with all capabilities, you'll be able to show more
   // info earlier, and more info from cache, for not-loaded models." The studio's flags for the loaded one, and the
@@ -339,6 +356,13 @@ async function suite() {
   const O2 = optionFor && optionFor({ id: LOADED, loaded: true, quant: '', bytes: 1, task: 'text-generation', vision: false, reasoning: true, audio: false });
   if (O1 === OTHER + ' 👁️🎵' && O2 === LOADED + ' 🤔 🟢') test.check('each dropdown entry reads the id, its capability icons and, loaded, the running mark');
   else test.fail(OWED + 'the dropdown entries read ' + short([O1, O2]));
+  const loadOver = ctx.deskUnslothRemoteLoadOver;
+  const ov1 = loadOver && loadOver({ active: LOADED, load: { model: BROKEN, state: 'failed', error: 'llama-server exited with code 1' }, models: [{ id: BROKEN, loaded: false }] }, BROKEN);
+  const ov2 = loadOver && loadOver({ active: LOADED, load: { model: BROKEN, state: 'loading', error: '' }, models: [{ id: BROKEN, loaded: false }] }, BROKEN);
+  const ov3 = loadOver && loadOver({ active: BROKEN, load: { model: BROKEN, state: 'done', error: '' }, models: [{ id: BROKEN, loaded: true }] }, BROKEN);
+  const ov4 = loadOver && loadOver({ ok: false, code: 'app-did-not-answer', error: 'the app server did not answer in time' }, BROKEN);
+  if (ov1 && ov1.over && /llama-server/.test(ov1.error) && ov2 && !ov2.over && ov3 && ov3.over && !ov3.error && ov4 && ov4.over && ov4.error) test.check('the line lets go of the hourglass on a failed load (with the studio\'s words), on loaded, and when the studio cannot be read; not while loading');
+  else test.fail(OWED + 'loadOver answered ' + short([ov1, ov2, ov3, ov4]));
   const chatAsk = ctx.deskUnslothRemoteChatAskFor;
   const c1 = chatAsk && chatAsk('chat.send', { lines: [] });
   if (c1 && c1.verb === 'jobs.api' && c1.ask.deskUnsloth['chat.send']) test.check('the chat asks its own node only: jobs.api, never owner.command');
