@@ -127,18 +127,11 @@ function asksOwnerVerb(body) {
   });
 }
 
-// A write that names its author as 'andy', the owner's name in the desk server's
-// `by` (desk/G2.1). The server cannot see who asks, so a member must not say it.
-function asksAsOwner(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return false;
-  return Object.keys(body).some(function (app) {
-    const v = body[app];
-    return v && typeof v === 'object' && Object.keys(v).some(function (verb) {
-      const args = v[verb];
-      return args && typeof args === 'object' && args.by === 'andy';
-    });
-  });
-}
+// asksAsOwner STOOD HERE (desk/G2.1): it refused any ask whose arguments said
+// by 'andy', from when the desk took its writer from the arguments. The desk
+// names the writer from the caller now (desk.js writerOf), so the check guarded
+// nothing and refused a member's search of the owner's lines. Removed by goal/G16.4,
+// Andy 2026-10-10: "an andy-door sounds bad." and "remove it." The node names no owner.
 
 function createApiDoor(opts) {
   const o = opts || {};
@@ -174,8 +167,6 @@ function createApiDoor(opts) {
     // (apiAuth/G1.10, owner-only "like DEBUG"): a member's ask for either on any server is refused
     // here, by name, granted or not, and never passed on. jobs.api (answer) still reaches them.
     if (asksOwnerVerb(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG and DEPENDENCIES are for the owner, on loopback only' });
-    // Andy's presses come by jobs.api; a member writing as him is refused, never passed on.
-    if (asksAsOwner(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'a member cannot write as the owner' });
     return answer(o.servers, info.body, { key: message.fromKey, auth: o.auth }).then(function (r) {
       return reply(message, r ? r.body : null, r && r.kind);
     }, function (e) {
