@@ -1,8 +1,8 @@
 {
- "change": 26799,
+ "change": 26900,
  "line": 8495,
  "goal": "goal/G13",
- "writtenAt": "2026-10-10T08:47:26.312Z",
+ "writtenAt": "2026-10-10T09:21:46.541Z",
  "items": [
   {
    "id": "goal/G13",
@@ -14,9 +14,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G13.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -42,10 +40,7 @@
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows",
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -462,10 +457,10 @@
    "id": "goal/G13.1",
    "title": "Fixes for appFaceApp",
    "goal": "goal/G13",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [
     "goal/G13"
@@ -545,6 +540,16 @@
      "by": "andy",
      "at": "2026-10-10T08:36:00.905Z",
      "text": "yes. one item for the whole move. add the item now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T09:20:49.223Z",
+     "text": "how many of these fixes still apply?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:21:06.592Z",
+     "text": "None. All three were in faceServer.js, which 013dc827 deletes. The new face server has no bind, pin or claim, and its path handling never decodes, so a malformed path cannot throw; a throw in a visit is caught and answered 502 anyway.\nSo this item is empty: your Close or Delete."
     }
    ]
   },
@@ -553,7 +558,7 @@
    "title": "appFaceApp as a process; the face machinery leaves the node",
    "goal": "goal/G13",
    "status": "running",
-   "with": "",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G13.1"
@@ -562,11 +567,242 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": ".gitignore",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/FACE.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/face-install",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/appClient.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/appServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/boxes.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/faceRoute.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/faceServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeApps.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/puppetMode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/puppetPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/appFaceApp.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/appFaceApp.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/faceRoute.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/index.html",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceAppServer/appFaceAppServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceAppServer/appFaceAppServer.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/faceProof/faceProof.html",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/faceProof/faceProof.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/appFaceApp/appFaceApp.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/appFaceApp/appFaceApp.json",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/appClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appFaceGrant.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appFaceProcess.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/arrivals.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/backupServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/boxesSuite.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cleanupDead.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyModes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceAppGates.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceRouteSuite.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/grantFace.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/includeLists.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/memberFacePending.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/moduleIds.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/oneDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerCommand.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerFile.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerPostWiring.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetsPending.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellRename.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -608,12 +844,40 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "WHAT: the whole move in one item, green at its end, with the proof in Andy's browser on spirit-3. The rulings are in the goal's box; this is what gets built and what gets deleted.\n\nBUILT\n1. process/js/appFaceApp: a script on appServer.serve, started by startNodeServers with the pipe the node names, its state folder from --state. One file of its own config in that state folder holds the visitors' port; bash/face-install writes it there, where it writes relay-state/face.json today (Andy, 2026-10-10: \"a script in bash/ installs a portNumber in the appropriate file.\"). The owner's key it reads from the puppet's relay-state owner.json, where it already is (Andy: \"The owners key is already in the puppet.\").\n2. Its two asks, route and serve, as api asks of the appFaceApp server on the owner's node through the api door, gated by apiAuth, answered on the ask's hash. On the owner's box it reaches grantFace through jobs.api on the node's port.\n3. On the face node it opens its own listener on the configured port beside the pipe, Caddy pointed at it (bash/face-tls, unchanged: the port number is the same variable); it serves index.html and kernel.js from its own folder; a browser's spirit.core.ask to /api/spirit on the face origin travels as the serve ask to the owner. The faceRoute cache, the one-minute no-grant memory, the new-name budget and Caddy's loopback ask before a certificate all live inside it.\n4. appFaceAppServer answers the serve ask itself with the proof; its pass-through over the pipe goes.\n\nDELETED, each with a test that it is gone\n5. From nodeApps.js: mountAll, scopedFs, boots; the file renamed puppetMode.js with puppetIn, ownerCommandIn and puppetDoor unchanged; server.js and appClient.js require the new name; ownerCommand, ownerPost, puppetDoor, puppetOwner, ownerFile and puppetsPending follow it.\n6. From server.js: the mountAll call, the face block, the --app dispatch. puppetPost.js deleted. The post and face seams gone. relay-state/face.json no longer read by anything; face-install stops writing it and FACE.md says so.\n7. From appServer.js: the number branch of listen. faceServer.js deleted with its by-hand start. From appClient.js: readServers, servesOf, startAll and toLocalApp; pipePathFor, ask and ANSWER_MAX stay.\n8. The serves flag; the shell appFaceApp folder; the faceProof folder; faceRoute.js moved into the server.\n9. Suites: appFaceGrant asserts the exchange and that the branch is gone; arrivals, cleanupDead, faceLastLeg, faceRouteWorld, grantFace, nodeAppsSeam, ownerFile, puppetOwner, puppetPost, shellRename rewritten or retired; appServerBoundary, faceProofOnHelper, faceProofProcess and the appClient --app check retired; faceRoutePending and the puppetsPending faceDoor line retired.\n\nWHY: the goal's box, points 1 to 12, Andy's rulings of 2026-10-10.\n\nBY HAND, his: the puppet's key granted the appFaceApp path on his node in the Grants app; face-install re-run on spirit-3.\n\nORDER: a red first on today's code; the builder never writes its own tests. Blocks goal/G13.1, which comes after.",
    "version": 3,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appClient.js, spirit/run/js/appServer.js, spirit/run/js/faceRoute.js, spirit/run/js/faceServer.js, spirit/run/js/nodeApps.js, spirit/run/js/puppetMode.js, spirit/run/js/puppetPost.js, spirit/run/js/server.js, spirit/run/shell/appFaceApp/appFaceApp.js, spirit/run/shell/appFaceApp/appFaceApp.json, spirit/run/shell/appFaceApp/face-domain.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T08:54:09.024Z"
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Who writes the red for this item, wsl-claude as in the last goal, or me?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T08:55:36.663Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appClient.js, spirit/run/js/appServer.js, spirit/run/js/boxes.js, spirit/run/js/faceRoute.js, spirit/run/js/faceServer.js, spirit/run/js/nodeApps.js, spirit/run/js/ownerPost.js, spirit/run/js/puppetMode.js, spirit/run/js/puppetPost.js, spirit/run/js/server.js, spirit/run/js/spiritErrors.js, spirit/run/shell/appFaceApp/appFaceApp.js, spirit/run/shell/appFaceApp/appFaceApp.json",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-10T09:17:22.671Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -659,6 +923,96 @@
      "by": "claude-windows",
      "at": "2026-10-10T08:45:43.080Z",
      "text": "Yes, point 9 of its box: appFaceGrant rewritten to assert the exchange and that the branch is gone; ten suites that mount through mountAll rewritten or retired; the four cycle 2 suites of faceServer retired; faceRoutePending and the puppetsPending faceDoor line retired. The six suites that name nodeApps follow the rename, point 5."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:47:31.787Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:47:41.572Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:47:57.198Z",
+     "text": "taking: the build is mine, in my own clone. Reading the eight rules on the Go first, then the file list and its grant go on the item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:48:09.083Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:48:45.066Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:48:52.971Z",
+     "text": "Rules read, all eight. My clone is at origin master. The file list is on the item, 41 paths, so the grant for the core files is raised.\nWho writes the red for this item, wsl-claude as in the last goal, or me?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T08:54:58.044Z",
+     "text": "how many agents are there? ONE. you do it all"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:55:36.950Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T08:55:39.063Z",
+     "text": "Understood, all mine: the red first on today code, then the build, then the verify with that suite. Working in my clone; next word from me is the red on the item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:56:09.583Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:57:33.467Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:57:58.877Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T08:59:49.615Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T09:00:05.078Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T09:02:10.069Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:03:30.946Z",
+     "text": "The red stands: appFaceProcess.js, 15 failures on today code (T1 the tree, T2 the owner side on a real pipe, T3 the face side on its own port with a browser carried to the owner, T4 appFaceAppServer answering itself). The file list now carries it and the suites it touches, 53 paths.\nBuilding now in my clone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:18:59.120Z",
+     "text": "commit 013dc827a0e6f8f1b3f3a016072d91ddc72d8b3b: goal/G13.2: appFaceApp as a process; the face machinery leaves the node\n- .gitignore\n- bash/FACE.md\n- bash/face-install\n- spirit/run/js/appClient.js\n- spirit/run/js/appServer.js\n- spirit/run/js/faceServer.js\n- spirit/run/js/nodeApps.js\n- spirit/run/js/puppetMode.js\n- spirit/run/js/puppetPost.js\n- spirit/run/js/server.js\n- spirit/run/process/js/appFaceApp/appFaceApp.js\n- spirit/run/process/js/appFaceApp/appFaceApp.json\n- spirit/run/process/js/appFaceApp/faceRoute.js\n- spirit/run/process/js/appFaceApp/index.html\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.js\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.json\n- spirit/run/process/js/faceProof/faceProof.html\n- spirit/run/process/js/faceProof/faceProof.json\n- spirit/run/shell/appFaceApp/appFaceApp.js\n- spirit/run/shell/appFaceApp/appFaceApp.json\n- spirit/test/appClient.js\n- spirit/test/appFaceGrant.js\n- spirit/test/appFaceProcess.js\n- spirit/test/appServerBoundary.js\n- spirit/test/arrivals.js\n- spirit/test/backupServer.js\n- spirit/test/boxesSuite.js\n- spirit/test/cleanupDead.js\n- spirit/test/deskVerifyModes.js\n- spirit/test/faceAppGates.js\n- spirit/test/faceLastLeg.js\n- spirit/test/faceProofOnHelper.js\n- spirit/test/faceProofProcess.js\n- spirit/test/faceRoutePending.js\n- spirit/test/faceRouteSuite.js\n- spirit/test/faceRouteWorld.js\n- spirit/test/grantFace.js\n- spirit/test/includeLists.js\n- spirit/test/memberFacePending.js\n- spirit/test/moduleIds.js\n- spirit/test/nodeAppsSeam.js\n- spirit/test/oneDoor.js\n- spirit/test/ownerCommand.js\n- spirit/test/ownerFile.js\n- spirit/test/ownerPost.js\n- spirit/test/peerPostWiring.js\n- spirit/test/puppetDoor.js\n- spirit/test/puppetOwner.js\n- spirit/test/puppetPost.js\n- spirit/test/puppetsPending.js\n- spirit/test/shellRename.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T09:19:13.708Z",
+     "text": "Built, pushed as 013dc827, the item suite green (appFaceProcess.js, 24 checks) and every touched suite green. Claimed done.\nG2 is the hook asking for three comment-only lines (boxes.js, ownerPost.js, spiritErrors.js still say nodeApps or faceServer); they are not in the commit. Grant G2 and I commit them, or they wait for G13.1.\nBy your hand: list process/js/appFaceApp on your node and on spirit-3 (face-install does it there), grant the face key the appFaceApp path on your node, re-run face-install on spirit-3, pull and restart.\nFiles the commit changed:\n- spirit/run/process/js/appFaceApp/appFaceApp.js, appFaceApp.json, index.html, faceRoute.js (moved from js/)\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.js, appFaceAppServer.json\n- spirit/run/js/puppetMode.js (was nodeApps.js), server.js, appServer.js, appClient.js\n- deleted: spirit/run/js/puppetPost.js, faceServer.js; spirit/run/shell/appFaceApp/*; spirit/run/process/js/faceProof/*\n- bash/face-install, bash/FACE.md, .gitignore\n- spirit/test/appFaceProcess.js (new, the red)\n- rewritten: appFaceGrant.js, appClient.js, cleanupDead.js, faceAppGates.js\n- edited: arrivals.js, backupServer.js, boxesSuite.js, deskVerifyModes.js, faceRouteSuite.js, grantFace.js, includeLists.js, memberFacePending.js, moduleIds.js, oneDoor.js, ownerCommand.js, ownerFile.js, ownerPost.js, peerPostWiring.js, puppetDoor.js, puppetsPending.js, shellRename.js\n- retired: appServerBoundary.js, faceLastLeg.js, faceProofOnHelper.js, faceProofProcess.js, faceRoutePending.js, faceRouteWorld.js, nodeAppsSeam.js, puppetOwner.js, puppetPost.js"
     }
    ]
   }
