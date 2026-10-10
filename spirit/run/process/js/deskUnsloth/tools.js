@@ -1,32 +1,34 @@
 'use strict';
 
 // spirit/run/process/js/deskUnsloth/tools.js
-// THE MODEL'S TOOLS, FROM THE NODE'S OWN DESCRIPTION OF ITS VERBS (goal/G14.6).
+// THE MODEL'S TOOLS, FROM THE NODE'S AND THE DESK'S OWN DESCRIPTION OF THEIR VERBS (goal/G14.6, goal/G14.7).
 //
 //   Andy, 2026-10-10: "now we have a uniform api introspection, now we want a tool that expands Levant's
 //   knowledge, our proxy internet call...."; "we decided a while back that the conversion belongs to deskUnsloth.";
 //   "so we build one object for now: it has two main methods: 1 convert node-style introspection to OpenAI style
 //   tool description 2 execute tool when model asks"; "so we need to map the tool-name to your verb-call, and that
-//   should now be a generic thing."
+//   should now be a generic thing."; and on the desk (goal/G14.7): "Levant is restricted by the tools we give him."
 //
 // ONE OBJECT, TWO METHODS, NO PER-TOOL CODE.
 //
-//   describe(namespace)  the OpenAI tools of one namespace: ns.AGENTS.introspect lists the verbs the owner
-//                        described with a file (introSpector.js, goal/G10.5), ns.AGENTS.<verb> gives each file
-//                        with request and reply filled in from the declaration as prototypes by example. One tool
-//                        per verb: name = the verb with its dot written as an underscore (OpenAI allows letters,
-//                        digits, underscore and dash in a tool name), description = the file's, parameters = a
-//                        JSON Schema object with one property per request key, typed by its example. Nothing
-//                        listed, no tools: the model has exactly the tools the owner described.
-//   run(call)            one tool call of the model, generic: the name read back to the verb, the node asked that
-//                        verb with the model's arguments (declared keys only), and the answer handed back as text
-//                        the model can read: a page stripped of its tags, scripts and styles, cut to the room with
-//                        the cut said; a refusal (the proxy closed by the owner, a bad url, no such verb) in the
-//                        node's words, so the model says so instead of guessing. A name describe never listed is
-//                        refused here and never reaches the node.
+//   describe(namespace)  the OpenAI tools of one namespace: its AGENTS.introspect lists the verbs the owner
+//                        described with a file (introSpector.js, goal/G10.5), AGENTS.<verb> gives each file. One
+//                        tool per verb: name = namespace and verb with every dot written as an underscore (OpenAI
+//                        allows letters, digits, underscore and dash in a tool name), description = the file's,
+//                        parameters = a JSON Schema object with one property per request key, typed by its example.
+//                        Nothing listed, no tools: the model has exactly the tools the owner described.
+//   run(call)            one tool call of the model, generic: the name read back to the namespace and verb, that
+//                        namespace's route asked with the model's arguments (declared keys only), and the answer
+//                        handed back as text the model can read: a page stripped of its tags, scripts and styles,
+//                        cut to the room with the cut said; a json answer as json; a refusal (the proxy closed by
+//                        the owner, no such item, a rule of the desk) in the answerer's words, so the model says so
+//                        instead of guessing. A name describe never listed is refused here and reaches nothing.
 //
-// The node is reached through the `ask` the caller hands in (spirit.core.ask on the process's own node), so this
-// file knows no port and no door; a test hands a fake.
+// THE ROUTES (goal/G14.7): a namespace is reached one way and that way is the route's, not this file's: the node's
+// namespaces (net) through the loopback door, the verb prefixed with the namespace and the family under
+// ns.AGENTS; the desk through this node's deskClient.desk {verb, json}, the verb bare and the family under AGENTS
+// (a process server's family carries no prefix). A route is {ask(verb, args), verb(stem), family(name)}; a plain
+// {ask} alone is the node's route for every namespace, as goal/G14.6 built it.
 
 function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 function bytes(s) { return Buffer.byteLength(String(s), 'utf8'); }
@@ -64,41 +66,61 @@ function cutTo(text, room) {
   return head + ' [cut: ' + bytes(head) + ' of ' + whole + ' bytes shown]';
 }
 
+// The node's route for a namespace: the loopback ask, the verb and the family prefixed with the namespace.
+function nodeRoute(ask, ns) {
+  return {
+    ask: ask,
+    verb: function (stem) { return ns + '.' + stem; },
+    family: function (name) { return ns + '.AGENTS.' + name; },
+  };
+}
+
 function createTools(opts) {
   const o = opts || {};
-  const ask = o.ask;
+  const routes = isPlain(o.routes) ? o.routes : {};
+  const ask = typeof o.ask === 'function' ? o.ask : null;
   // The room may follow the studio (contextLimit "auto", goal/G14.6), so a function is taken as well as a number.
   const room = function () {
     const r = typeof o.room === 'function' ? o.room() : o.room;
     return Number(r) > 0 ? Number(r) : 4096;
   };
-  if (typeof ask !== 'function') throw new Error('tools: an ask of the node is required');
-  let known = Object.create(null);   // tool name -> { verb, request }
+  if (!ask && !Object.keys(routes).length) throw new Error('tools: an ask of the node or a route is required');
+  let known = Object.create(null);   // tool name -> { route, stem, request }
+
+  function routeOf(ns) {
+    if (routes[ns] && typeof routes[ns].ask === 'function') return routes[ns];
+    return ask ? nodeRoute(ask, ns) : null;
+  }
 
   function describe(namespace) {
     const ns = String(namespace || '');
-    return ask(ns + '.AGENTS.introspect', {}).then(function (r) {
+    const route = routeOf(ns);
+    if (!route) return Promise.resolve([]);
+    return route.ask(route.family('introspect'), {}).then(function (r) {
       const items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
       const listed = Object.create(null);
       return items.reduce(function (chain, item) {
         return chain.then(function (tools) {
-          const verb = String((item && item.key) || '');
-          if (!verb || verb.indexOf(ns + '.') !== 0) return tools;
-          const stem = verb.slice(ns.length + 1);
-          return ask(ns + '.AGENTS.' + stem, {}).then(function (f) {
+          const key = String((item && item.key) || '');
+          if (!key) return tools;
+          // The node lists net.fetch, a process server lists item.get: the stem is what follows the namespace.
+          const stem = key.indexOf(ns + '.') === 0 ? key.slice(ns.length + 1) : key;
+          return route.ask(route.family(stem), {}).then(function (f) {
             const file = f && isPlain(f.body) ? f.body : {};
             const description = String(file.description || item.label || '');
             const request = isPlain(file.request) ? file.request : {};
             const properties = {};
             Object.keys(request).forEach(function (k) { properties[k] = propertyOf(request[k]); });
-            const name = toolName(verb);
-            listed[name] = { verb: verb, request: request };
+            const name = toolName(ns + '.' + stem);
+            listed[name] = { route: route, stem: stem, request: request };
             tools.push({ type: 'function', function: { name: name, description: description, parameters: { type: 'object', properties: properties, required: [] } } });
             return tools;
           }, function () { return tools; });
         });
       }, Promise.resolve([])).then(function (tools) {
-        known = listed;
+        // What was known of other namespaces stays; this namespace's set is replaced.
+        Object.keys(known).forEach(function (n) { if (n.indexOf(toolName(ns) + '_') === 0) delete known[n]; });
+        Object.keys(listed).forEach(function (n) { known[n] = listed[n]; });
         return tools;
       });
     });
@@ -118,7 +140,7 @@ function createTools(opts) {
     const given = argumentsOf(call);
     const args = {};
     Object.keys(k.request).forEach(function (key) { if (key in given) args[key] = given[key]; });
-    return ask(k.verb, args).then(function (r) {
+    return k.route.ask(k.route.verb(k.stem), args).then(function (r) {
       const body = r && r.body;
       let text;
       if (!r || r.status >= 400 || (isPlain(body) && (body.ok === false || typeof body.error === 'string'))) {
@@ -137,4 +159,4 @@ function createTools(opts) {
   return { describe: describe, run: run, toolName: toolName, textOf: textOf, cutTo: cutTo };
 }
 
-module.exports = { createTools: createTools, toolName: toolName, textOf: textOf, cutTo: cutTo, propertyOf: propertyOf };
+module.exports = { createTools: createTools, nodeRoute: nodeRoute, toolName: toolName, textOf: textOf, cutTo: cutTo, propertyOf: propertyOf };

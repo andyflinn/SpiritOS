@@ -1,0 +1,6 @@
+{
+  "description": "The one box of an item by id: its description and design, rulings verbatim; answers {box: the text, version}.",
+  "request": {
+    "id": ""
+  }
+}

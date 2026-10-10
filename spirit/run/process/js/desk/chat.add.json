@@ -1,0 +1,7 @@
+{
+  "description": "Post one line under an item by id, as yourself. Three lines at most, one point per line, a question last. Your final answer to the line you were addressed in is posted for you already: use this for another item or an extra line, never to repeat your answer.",
+  "request": {
+    "id": "",
+    "text": ""
+  }
+}

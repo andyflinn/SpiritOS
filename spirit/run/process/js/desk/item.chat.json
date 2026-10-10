@@ -1,0 +1,6 @@
+{
+  "description": "The chat under an item by id, newest last: answers {chat: [{by, at, text, taken}], chatMore}. The lines of andy and the agents; what is addressed to you by your name and a colon is yours to answer.",
+  "request": {
+    "id": ""
+  }
+}

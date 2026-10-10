@@ -1,0 +1,9 @@
+{
+  "description": "Search the desk items: text matched against titles and ids, currentGoalOnly true keeps to the open goal, goalsOnly true lists goals alone, includeClosed true adds closed ones; answers {items: [{key: the item id, label: its facts as json}], more}. A list is a search: an empty text is everything the bucket holds.",
+  "request": {
+    "text": "",
+    "currentGoalOnly": false,
+    "goalsOnly": false,
+    "includeClosed": false
+  }
+}

@@ -234,18 +234,46 @@ function studio(method, pathname, body, timeoutMs) {
 //   TOOL_ROUNDS times, then the model's last text is the answer. Nothing hand-written here about any tool.
 function toolRoom() { return Math.floor(promptRoom() / 4); }
 const TOOL_ROUNDS = 3;
+// THE ROUTES (goal/G14.7): net through the node's loopback door; the desk through this node's deskClient, the verb
+// bare and the family under AGENTS, as a process server lists it. The desk's answer comes back as the asked body;
+// a refusal of the desk (not granted, no such item, a rule) is a body with ok false, which run hands to the model
+// in the desk's words. Andy: "Levant is restricted by the tools we give him": what has no verb file is no tool.
+const TOOL_NAMESPACES = ['net', 'desk'];
 const tools = require('./tools').createTools({
   ask: function (verb, args) { return spirit.core.ask(verb, args, NODE_URL); },
+  routes: {
+    desk: {
+      ask: function (verb, args) {
+        return askNode({ deskClient: { desk: { verb: String(verb), json: JSON.stringify(args || {}) } } })
+          .then(function (body) { return { status: body && body.ok === false ? 400 : 200, body: body, text: JSON.stringify(body) }; });
+      },
+      verb: function (stem) { return stem; },
+      family: function (name) { return 'AGENTS.' + name; },
+    },
+  },
   room: toolRoom,
 });
+function describeAll() {
+  return TOOL_NAMESPACES.reduce(function (chain, ns) {
+    return chain.then(function (list) {
+      return tools.describe(ns).then(function (more) { return list.concat(more); }, function () { return list; });
+    });
+  }, Promise.resolve([]));
+}
+// WHAT deskUnsloth DOES FOR THE MODEL, said in every call beside the rules: its final text is posted under the item
+// it was addressed in, so a chat.add tool is for another item or an extra line, never its answer again.
+const TOOLS_NOTE = 'Your tools are the verbs described to you, named namespace_verb. Your final answer to the line you were addressed in is posted under that item for you; use desk_chat_add only for another item or an extra line, never to repeat your answer.';
 
 function argumentsOf(call) {
   try { const a = JSON.parse(String((call && call.function && call.function.arguments) || '{}')); return a && typeof a === 'object' ? a : {}; } catch (e) { return {}; }
 }
 
 function askModel(messages, onTool) {
-  return tools.describe('net').catch(function () { return []; }).then(function (list) {
-    return askModelRound(messages.slice(), list, 0, onTool);
+  return describeAll().then(function (list) {
+    const all = messages.slice();
+    // The note rides with the rules, in the system message, only when there is a tool to speak of.
+    if (list.length && all.length && all[0].role === 'system') all[0] = { role: 'system', content: String(all[0].content || '') + '\n\n' + TOOLS_NOTE };
+    return askModelRound(all, list, 0, onTool);
   });
 }
 
