@@ -1,8 +1,8 @@
 {
- "change": 27605,
+ "change": 27676,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T13:42:26.130Z",
+ "writtenAt": "2026-10-10T14:18:29.447Z",
  "items": [
   {
    "id": "goal/G14",
@@ -16,7 +16,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3"
+    "goal/G14.3",
+    "goal/G14.4"
    ],
    "go": false,
    "alone": false,
@@ -656,6 +657,195 @@
    "version": 0,
    "checks": [],
    "chat": []
+  },
+  {
+   "id": "goal/G14.4",
+   "title": "The model selector dropdown line.",
+   "goal": "goal/G14",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothModels.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "WHAT: two pieces of deskUnslothRemote for the chosen target (this node or the puppet). THE MODEL LINE under the switch: a dropdown of the models the studio has cached locally, the loaded one selected by default; a Load button when the chosen model is not loaded, the running mark when it is; the capability icons; small print with the flavor (quant) and the size in GB. THE CHAT BOX, sticky at the bottom edge of the app's panel: a title line with the model's info, a fixed-height scrolling display a quarter of the window high, and an input line with a Send button; Enter sends; one line only.\n\nRULINGS (Andy, 2026-10-10)\n- The dropdown shows only models the studio has cached locally, the loaded one by default.\n- Selecting a model loads nothing: \"changing the selection only will bring more detailed info. That's why the [Load] button is separate, visible for any model that isn't loaded.\" Loaded: the running mark in the Load button's place.\n- ICON.VIEW for vision; THINK and MUSIC as sketched.\n- The chat box: \"sticky, at the bottom of the window (panel) is a chat box, with string entry at the bottom, Enter = send, one line only\"; three components: \"Title Line containing model info / Fixed height scrolling display, height 25% of the windows / [input string box][send-button]\". And: \"the chat will only be shown on the node that hosts deskUnsloth....\"\n\nTODAY (read live 2026-10-10, Unsloth Studio 2026.10.3 at 127.0.0.1:8888 on the puppet box, bearer key from connection.json)\n- GET api/models/cached-gguf is the cached list (13 today): repo_id, size_bytes, task (text-generation, text-to-image, text-to-video), has_vision. GET v1/models knows every model (ollama ones too) with quant and the loaded flag; one model is loaded at a time. GET api/inference/status says of the loaded model: supports_reasoning, supports_tools, is_vision, is_audio, context_length, active_model. GET api/models/config/{name} is 3.6 s a model and contradicted cached-gguf on vision: not used.\n- POST api/inference/load {model_path} loads a model and swaps the loaded one; GET api/inference/load-progress gives phase, bytes and fraction meanwhile.\n- All of it is loopback on the puppet box: only deskUnsloth can read it. deskUnsloth reads its model from configuration.json once at start and names it in every chat call; it writes nothing; its model calls are one-shot, nothing kept between them.\n- The wall: an ask of a process through jobs.api is answered within DOOR_WAIT_MS, 12 s (appClient.js). A model answer can take longer, so a chat line cannot be asked and answered in one ask, on the hosting node too. (owner.command waits 20 s, ownerPost.js; not the chat's concern since the chat stays on the hosting node.)\n- The icon table has no RUNNING: ON is the green circle, LOADING the hourglass.\n\nSHAPE\n1. deskUnsloth, models {} answering {active, models: [{id, loaded, quant, bytes, task, vision, reasoning, audio}]}: the cached list from cached-gguf, quant and loaded from v1/models, reasoning and audio from inference/status for the loaded model and false for the others. Three studio calls per ask, nothing kept.\n2. deskUnsloth, model.load {id}: POST api/inference/load with that id; answers {model, loaded: false} at once; models shows the new loaded flag once the studio is done. The model deskUnsloth chats with follows the load: configuration.json is rewritten by the process that owns it and the next call names the new model (Q2, closed on his \"green? (after removing red Q)\" with the plainest reading, since the studio serves one model at a time; his to overturn).\n3. deskUnsloth, the chat: chat.send {lines: [{role, text}]} answers {id} at once and asks the model with the persona's preamble and those lines, the oldest dropped to the room; chat.answer {id} answers {done, text} and is asked by the page every second until done. Two asks because of the wall above; the page keeps the transcript, the process keeps only the answers in flight.\n4. The app, the model line: asked through the same one function as the switch (jobs.api here, owner.command on the puppet). The dropdown from models, the loaded one selected; a changed selection sends nothing and redraws the line for that model; the Load button for a model not loaded asks model.load, ICON.ON stands in its place when loaded, ICON.LOADING while it loads; then ICON.VIEW when vision, ICON.THINK when reasoning, ICON.MUSIC when audio; small print \"<quant> · <GB to one decimal>\", the load fraction while loading, re-asked every two seconds until loaded. No tick otherwise.\n5. The app, the chat box: drawn only on the node that hosts deskUnsloth, which the app knows because its own node answers the state ask (on the owner's node that ask is app-not-served, and no chat box is drawn); it speaks to deskUnsloth on its own node, never through the owner door. Stuck to the bottom edge of the panel; the title line shows the loaded model's info (name, quant, context length from models); the display is 25% of the window's height and scrolls, holding the page's transcript; the input is one line, Enter or Send sends it and clears it, the line appears in the display at once and the answer when chat.answer says done.\n\nTESTS, the red first: spirit/test/deskUnslothModels.js with a fake studio (cached-gguf, v1/models, inference/status, inference/load, load-progress, chat/completions) and the fake node of deskUnslothSwitch.js: models merges the three answers (cached only, ollama entries absent, quant and loaded carried, vision from cached-gguf, reasoning and audio only on the loaded one); model.load posts the load and rewrites configuration.json so the next call names the new model; chat.send answers an id at once and chat.answer turns done with the model's text, the preamble and the lines in the call; the app's functions build the same asks from the target, and a changed selection sends nothing. deskUnslothSwitch.js and deskUnslothContext.js stay green.\n\nFILES: process/js/deskUnsloth/deskUnsloth.js and its manifest; shell/deskUnslothRemote/deskUnslothRemote.js; the new suite; no core file.\n\nNOT IN THIS ITEM: VRAM and hardware, the monitor and its queue, the configuration editor, restart, the puppets list. Each a later item of this goal.",
+   "version": 9,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does choosing a model load it in the studio, set it as the deskUnsloth model, or both",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T14:06:26.492Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "After Load, does deskUnsloth chat with the newly loaded model, its configuration following the load",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T14:17:18.931Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:53:58.050Z",
+     "text": "Checked live: the cached list is api/models/cached-gguf, 13 today, each with size in bytes, task (text-generation, text-to-image, text-to-video) and has_vision; the quant (flavour) comes from v1/models, which also marks the loaded one; audio and reasoning flags exist only per model in api/models/config/{name} (is_audio) and for the loaded one in inference/status (supports_reasoning); there is no check-vision route, my goal box was wrong there.\nIcons: VIEW is the eye, THINK and MUSIC exist, VIDEO too; no EYE key.\nAll of it is loopback on the puppet, so deskUnsloth gains one read verb passing the studio answer through, and the app asks it on both targets as the switch does - what does choosing a model do: load it in the studio, set it as deskUnsloth model, or both"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:55:30.005Z",
+     "text": "ICON.VIEW for vision"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:56:00.653Z",
+     "text": "replace my text in the box with a complete picture."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T14:03:00.586Z",
+     "text": "Box replaced with the complete picture: your sketch verbatim, what the studio answers, the shape (models and model.load on deskUnsloth, the line in the app), the red suite.\nThe icon table has no RUNNING: I propose ICON.ON (green circle) for running and LOADING (hourglass) while it loads.\nQ1 narrows to: does Load also make it the model deskUnsloth chats with (configuration follows), or studio only"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T14:03:47.715Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T14:03:59.896Z",
+     "text": "Not yet: Q1 is open (Load also sets the model deskUnsloth chats with, or studio only), and the running mark is ON unless you name another; with those two it is green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T14:05:41.317Z",
+     "text": "Q1: Does choosing a model load it in the studio, set it as the deskUnsloth model, or both\n\nNo. because the loading process is lengthy, changing the selection only will bring more detailed info. That's why the [Load] button is separate, visible for any model that isn't loaded."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T14:06:38.024Z",
+     "text": "Your Q1 ruling is in the box verbatim: selecting only redraws the line, Load is the only thing that loads.\nQ2 on the item: after Load, does deskUnsloth chat with the newly loaded model (its configuration following), the plainest reading being yes since the studio serves one model at a time."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T14:11:15.669Z",
+     "text": "sticky, at the bottom of the window (panel) is a chat box, with string entry at the bottom, Enter = send, one line only. the chat box, sticking to the bottom edge of the window, has 3 components, \n\nTitle Line containing model info\nFixed height scrolling display,  height 25% of the windows\n[input string box][send-button]\n\nintegrate. cap."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T14:11:49.649Z",
+     "text": "taking: integrating the chat box and capping."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T14:12:43.425Z",
+     "text": "Capped and integrated: the model line and the chat box, your rulings kept, studio facts condensed.\nOne wall found live: a process answers jobs.api within 12 s and owner.command waits 20 s, a model answer can take longer, so the chat is two asks (chat.send gives an id, chat.answer is polled each second).\nQ2 still stands; the chat title line shows the loaded model, the display keeps the page transcript."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T14:13:44.002Z",
+     "text": "the chat will only be shown on the node that hosts deskUnsloth...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T14:14:29.673Z",
+     "text": "In the box verbatim: the chat box is drawn only on the node that hosts deskUnsloth; the app knows by its own node answering the state ask, so on 65432 no chat box and nothing crosses the owner door for it.\nThe 12 s process wall still holds on the hosting node, so the chat stays two asks."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T14:16:54.313Z",
+     "text": "green? (after removing red Q)"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T14:17:20.755Z",
+     "text": "Q2 removed with the plainest reading, the model deskUnsloth chats with follows the Load; with that the box is green."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T14:18:29.021Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
