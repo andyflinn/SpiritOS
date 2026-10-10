@@ -6,8 +6,10 @@
 #
 # The face node is the "VPS puppet node" of design/shell/PUBLIC-APP-SERVER.md,
 # G17 (THE ROUTE): a small SpiritOS node, OWNED by Andy's own node, whose one
-# job is to take browser requests for *.face.<domain> (puppetPost, fed by
-# Caddy) and forward them to whichever node holds the name (appFaceApp).
+# job is to run the appFaceApp server (process/js/appFaceApp), which opens its
+# own port for Caddy, takes browser requests for *.face.<domain> and carries
+# them to whichever node holds the name. The node itself opens no door for
+# visitors (goal/G13.2).
 #
 # A second CLONE: its own spirit/run/relay-state, its own key, its own port
 # and unit.
@@ -118,16 +120,23 @@ chmod 600 "$FACE_DIR/.env"
 
 # ── WHAT MAKES IT A FACE, AND WHOSE ─────────────────────────────────
 #
-# face.json switches puppetPost on (puppetPost.js faceConfigIn: absent means
-# no face). owner.json names the only key this node obeys (nodeApps.puppetIn).
+# owner.json names the only key this node obeys (puppetMode.puppetIn). The
+# port is the appFaceApp server's own business (goal/G13.2, Andy: "a script in
+# bash/ installs a portNumber in the appropriate file."): its face.json sits in
+# its state folder, relay-state/process/appFaceApp/, where the process reads
+# it and opens its listener for Caddy. The node is not told. The process is
+# listed so the node starts it (includeList, slim/G1.3).
 STATE="$FACE_DIR/spirit/run/relay-state"
-mkdir -p "$STATE"
+APP_STATE="$FACE_DIR/spirit/run/relay-state/process/appFaceApp"
+mkdir -p "$STATE" "$APP_STATE"
 chmod 700 "$STATE"
-say "write face.json and owner.json"
-printf '{ "port": %s }\n' "$FACE_PORT" > "$STATE/face.json"
+say "write owner.json, and the face server's face.json"
 printf '{ "owner": "%s" }\n' "$OWNER_KEY" > "$STATE/owner.json"
-chmod 600 "$STATE/face.json" "$STATE/owner.json"
-ok "face on 127.0.0.1:$FACE_PORT, owned by ${OWNER_KEY:0:24}..."
+printf '{ "port": %s }\n' "$FACE_PORT" > "$APP_STATE/face.json"
+chmod 600 "$STATE/owner.json" "$APP_STATE/face.json"
+node -e 'require(process.argv[1] + "/js/includeList.js").add(process.argv[1], "process/js/appFaceApp")' "$FACE_DIR/spirit/run" \
+  || die "could not list process/js/appFaceApp on the face node"
+ok "face server on 127.0.0.1:$FACE_PORT, owned by ${OWNER_KEY:0:24}..."
 
 say "install unit $FACE_UNIT"
 ( cd "$FACE_DIR" && ./bash/install-units ) || die "install-units failed for the face node"

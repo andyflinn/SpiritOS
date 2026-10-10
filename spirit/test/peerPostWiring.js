@@ -73,8 +73,12 @@ const DECLARED = {
   // wrapper addressed to the partner itself is never tunnelled again.
   'relayServer.js': ['rootDir', 'request', 'sealsPosts'],
 
-  // THE APP SERVER (cycle 2). Each absence is a decision, argued where
-  // the router is built:
+  // THE APP SERVER (cycle 2, js/faceServer.js) HAD AN ENTRY HERE, and the
+  // file is gone with goal/G13.2: a face is a process now and posts
+  // through its node (spirit.peerPost), building no router of its own.
+  // The reasoning that stood here is kept for the record, below.
+  //
+  // Each absence was a decision, argued where the router was built:
   //   store       a durable queue would hold a post for an owner who is
   //               asleep, and "refuse, never queue" is the rule for
   //               exactly that state
@@ -98,7 +102,6 @@ const DECLARED = {
   // owner's, and G9's "acts on nothing" is a promise about STRANGERS. It
   // still passes no store, no answer, no onArrival, no admit, no
   // remember and no traffic.
-  'faceServer.js': ['rootDir', 'keepCard', 'sealKeyFor', 'request', 'checkTunnel'],
 };
 
 // Reads the keys a call site passes, from the source. Deliberately
@@ -192,8 +195,10 @@ test.subHeading('THE ONE THING THIS DOES NOT CHECK, said so nobody reads more in
   // declared omission is still the right decision would need a reader
   // for each hook's meaning, which is a suite per hook rather than one
   // walk. Named here rather than pretended at.
+  // Three until goal/G13.2 took faceServer.js (2026-10-10): a face posts
+  // through its node now and builds no router of its own.
   const sites = Object.keys(DECLARED).length;
-  if (sites === 3) {
+  if (sites === 2) {
     test.check('shape is compared, MEANING is not — ' + sites + ' sites, and a wiring that is ' +
       'wrong in a way somebody wrote down still passes here');
   } else {

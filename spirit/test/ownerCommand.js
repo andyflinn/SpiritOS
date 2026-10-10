@@ -25,7 +25,7 @@
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
-const nodeApps = require('../run/js/nodeApps');
+const puppetMode = require('../run/js/puppetMode');
 
 test.startTest('A puppet takes commands from its owner and from nobody else');
 
@@ -48,7 +48,7 @@ function commandFor(toKey, verb, body, signAs, opts) {
   return { text: made.text, id: id, cmd: cmd, sig: sig };
 }
 
-const switchIn = (arrival, ownerKey, selfKey) => nodeApps.ownerCommandIn(arrival, {
+const switchIn = (arrival, ownerKey, selfKey) => puppetMode.ownerCommandIn(arrival, {
   ownerKey: ownerKey,
   selfKey: selfKey,
   decode: packet.decode,

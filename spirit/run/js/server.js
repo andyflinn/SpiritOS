@@ -15,25 +15,11 @@ if (process.argv.slice(2).includes('--relay')) {
   return;
 }
 
-// ── AND A THIRD MODE, FOR THE SAME REASON (cycle 2) ──────────────────
-//
-// `--app` serves ONE app and nothing else: no shell, no dispatch, no
-// relay. Dispatched here, before any node code is required, so an app
-// server carries none of it — the same rule cycle 0 wrote for the relay,
-// applied to the third kind of process.
-//
-// NOT NAMED FOR PUBLICNESS. The mode says what the process IS — one app,
-// no fan-out — rather than where it sits, because publicness is a Caddy
-// block and a DNS record and the same module on loopback is the same
-// module (design/shell/PUBLIC-APP-SERVER.md).
-//
-// `fromArgv` is the only thing in faceServer.js that reads arguments, and
-// requiring that file starts nothing — which is what lets a suite drive
-// the module instead of a command line.
-if (process.argv.slice(2).includes('--app')) {
-  require('./faceServer').fromArgv(process.argv);
-  return;
-}
+// A THIRD MODE STOOD HERE, `--app` (cycle 2): one process serving one page app, dispatched to
+// faceServer.js. Gone with goal/G13.2 (Andy, 2026-10-10: "no \"face\" crap belongs into node.",
+// "wh the fucdk does the node need a second fucking branch for opening a fucking process?").
+// Every server process is a process/js script started by jobs.startNodeServers, the face
+// (process/js/appFaceApp) and the face owner's answer (process/js/appFaceAppServer) included.
 
 const http = require('http');
 // For the proxy's outbound calls (handleGenericProxy) — with no 300-second
@@ -1009,7 +995,7 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ error: 'no such verb: ' + verb }));
           return;
         }
-        // THE SAME TWO FAILURES AS THE PUPPET SHIM (nodeApps.puppetDoor), and the
+        // THE SAME TWO FAILURES AS THE PUPPET SHIM (puppetMode.puppetDoor), and the
         // later one was never caught here either: a handler whose promise
         // rejects left the caller hanging and, unhandled, stops the process on
         // Node 24 (wsl-claude). Answered 500 if nothing was sent yet.
@@ -1417,76 +1403,34 @@ contactBook.syncMarks(ROOT_DIR);
     stats: require('./peerStats'),
   });
 
-  // ── APPS THAT RUN HERE, NOT IN A BROWSER ─────────────────────────
+  // ── THE SERVER PROCESSES ON THIS BOX ──────────────────────────────
   //
-  // Mounted once the router exists, because a booted app's only way to
-  // speak is to post. The node hands each one a subscription and a
-  // scoped filesystem and looks inside nothing — see nodeApps.js for why
-  // loading an app is not the same as knowing about one, and for the
-  // boundary on what a booted app may do inside the receipt.
-  //
-  // A page app is untouched: `boots` is opt-in and absent on every
-  // manifest that exists today.
-  // ── THE FACE (public-app-server/G17, slice 1) ──────────────────────
-  //
-  // Only where relay-state/face.json names a port, which is the VPS puppet
-  // node alone: a listener on loopback for Caddy, handing visitors'
-  // requests to the node app that claims them (puppetPost.js). Its own
-  // port, apart from this node's door, so a visitor never reaches a verb.
-  const faceConfig = require('./puppetPost').faceConfigIn(ROOT_DIR);
-  const face = faceConfig
-    ? require('./puppetPost').createPuppetPost({ log: function (line) { console.log(line); } })
-    : null;
-  if (face) face.listen(faceConfig.port);
-
-  // ── THE APP SERVERS ON THIS BOX (public-app-server/G17, the last leg) ──
-  //
-  // One per manifest that names a face, kept running as 'server' jobs, and
-  // none at all on a puppet (appClient.js). Booted apps reach them through
-  // api.toLocalApp, the one new surface, inside the node and not on its door.
+  // ONE WAY TO START A PROCESS (goal/G13.2, Andy 2026-10-10): jobs.startNodeServers starts every
+  // listed process/js server with the pipe the node names, and appClient knows each by that pipe
+  // (register) and knocks on it for jobs.api and the api door. Nothing is loaded into this
+  // process, nothing is started by any other branch, and the node opens no door for visitors:
+  // a server that wants a port opens its own (process/js/appFaceApp), and the node is not told.
+  // Two branches stood here until then: nodeApps.mountAll, which loaded a shell app with
+  // "boots": true into the node with seams of its own, and appClient.startAll, which spawned
+  // js/server.js --app for a manifest with "serves": true; and puppetPost.js, the node's own
+  // listener for Caddy, switched on by relay-state/face.json. All three are gone.
   const appClient = require('./appClient').createAppClient({
     rootDir: ROOT_DIR,
-    startServerJob: jobs.startServerJob,
     log: function (line) { console.log(line); },
   });
-  appClient.startAll();
-  // Node-operated servers in process/js start with the node (processes/G1.3).
   jobs.startNodeServers(ROOT_DIR, appClient);
-
-  require('./nodeApps').mountAll({
-    rootDir: ROOT_DIR,
-    arrivals: arrivals,
-    face: face,
-    servers: appClient,
-    post: function (relayUrl, toKey, text, hints, how) {
-      // NO RELAY NAMED MEANS THE NODE CHOOSES, as it does for every page's
-      // post (hub.chooseRoute). A booted app never knows which relay a peer
-      // sits on, and appFaceApp posts with '' for exactly that reason; until
-      // now that went to a relay called '' and failed, which its suite, with
-      // a faked post, could not see.
-      if (!relayUrl) {
-        const route = presence ? hub.chooseRoute(presence, toKey) : { unreachable: true };
-        if (!route || route.unreachable || !route.relayUrl) {
-          return Promise.resolve({ ok: false, status: 503, error: 'that peer is not reachable right now' });
-        }
-        return peerRouter.post(route.relayUrl, toKey, text, hints || route.hints, how);
-      }
-      return peerRouter.post(relayUrl, toKey, text, hints, how);
-    },
-    log: function (line) { console.log(line); },
-  });
 
   // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────
   //
-  // Silent on a node that is not a puppet (no relay-state/puppet.json),
-  // which is every node today. On a puppet, a command its owner signed
-  // reaches the node groups puppet.json says it carries, through the same
-  // handlers the loopback door uses. nodeApps.puppetDoor says the rest.
+  // Silent on a node that is not a puppet (no relay-state/owner.json naming
+  // another key), which is every node but a puppet. On a puppet, a command
+  // its owner signed runs through the same handlers the loopback door uses.
+  // puppetMode.puppetDoor says the rest.
   // The node builds the answer as a system packet and never reads an
   // app's: `decode` goes in as a value, as ownerCommandIn already takes it.
   {
     const wire = require('./client/packet.js');
-    arrivals.witness(require('./nodeApps').puppetDoor({
+    arrivals.witness(require('./puppetMode').puppetDoor({
       rootDir: ROOT_DIR,
       handlerFor: function (verb) { return loopbackVerbs.handlerFor(verb); },
       post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },

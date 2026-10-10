@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>SpiritOS face</title>
+  <style>
+    body { font: 16px/1.45 system-ui, sans-serif; color: #111; max-width: 34rem; margin: 10vh auto; padding: 0 1.5rem; }
+    h1 { font-weight: 600; font-size: 1.4rem; }
+    pre { border: 1px solid #ddd; padding: 0.75rem 1rem; white-space: pre-wrap; }
+    code { font-size: 14px; }
+    footer { margin-top: 2rem; font-size: 12px; opacity: 0.75; }
+  </style>
+</head>
+<body>
+  <h1>A SpiritOS face</h1>
+
+  <!-- THE PROOF OF THE ROUTE (goal/G13, Andy 2026-10-10): this page and kernel.js come from the
+       appFaceApp server on the face node itself. An ask from here goes to /api/spirit on this
+       origin, which Caddy hands to the same server; it carries the ask over the relay to the node
+       that owns this name, and appFaceAppServer there answers it. Open the console and call
+       spirit.core.ask('app.state') yourself; the box below did it once at load. -->
+  <p>This page was served by the face. The answer below came from the node that owns this name,
+  through the relay. In the console: <code>spirit.core.ask('app.state')</code>.</p>
+
+  <pre id="answer">asking…</pre>
+
+  <footer>Nothing about you is written anywhere.</footer>
+
+  <script src="/kernel.js"></script>
+  <script>
+    spirit.core.ask('app.state').then(function (r) {
+      document.getElementById('answer').textContent = r.status + ' ' + JSON.stringify(r.body, null, 2);
+    }, function (e) {
+      document.getElementById('answer').textContent = 'the ask failed: ' + e;
+    });
+  </script>
+</body>
+</html>

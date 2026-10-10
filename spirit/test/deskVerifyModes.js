@@ -105,7 +105,7 @@ async function start(name, apps) {
   // HIS CLONE: a desk server, no deskClient.
   const deskNode = await start('deskside', ['desk', 'fileServer', 'backup']);
   // AN AGENT'S CLONE: a deskClient beside a desk, as my own node runs it.
-  const agentNode = await start('agentside', ['faceProof', 'desk', 'deskClient', 'fileServer']);
+  const agentNode = await start('agentside', ['appFaceApp', 'desk', 'deskClient', 'fileServer']);
   // A NODE THAT IS NEITHER (his word: out of scope, so it keeps nothing and says so).
   const bare = await start('bareside', ['fileServer']);
   try {

@@ -13,7 +13,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const nodeApps = require('../run/js/nodeApps');
+const puppetMode = require('../run/js/puppetMode');
 const { createRelay } = require('../run/js/relay');
 const world = require('./world');
 const UNCLAIMED = require('./scenario').UNCLAIMED;
@@ -101,49 +101,35 @@ test.subHeading('a junk owner.json is no owner, on the relay too');
   else test.fail(OWED + 'junk owner.json read as ' + JSON.stringify({ loadOwner: HAS ? auth.loadOwner(home) : 'absent', ownerPublic: named }));
 }
 
+// The node's one reading of its owner is puppetMode.puppetIn (goal/G13.2: the booted app that once
+// read it through api.owner() is gone, and the node starts no servers differently for a puppet).
 test.subHeading('a node is a puppet when owner.json names a key');
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-node-'));
-  const dir = path.join(root, 'shell', 'ownedApp');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'ownedApp.json'), JSON.stringify({ name: 'ownedApp', boots: true }));
-  fs.writeFileSync(path.join(dir, 'ownedApp.js'), 'module.exports = { mount: function (api) { global.__ownerFileApi = api; } };\n');
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  global.__ownerFileApi = null;
-  nodeApps.mountAll({ rootDir: root, arrivals: { witness: function () { return function () {}; } },
-    post: function () { return Promise.resolve({ ok: true }); }, log: function () {} });
-  const api = global.__ownerFileApi;
+  const puppet = puppetMode.puppetIn(root, function () {});
   const key = auth.generateIdentity('owner').publicKey;
-  if (!api || typeof api.owner !== 'function') {
-    test.fail('the app did not mount with api.owner; the checks below would pass vacuously');
-  } else {
-    fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), JSON.stringify({ owner: key, carries: [] }));
-    if (api.owner() === '') test.check('a puppet.json alone makes no owner');
-    else test.fail(OWED + 'puppet.json is still read: api.owner() is ' + api.owner().slice(0, 24));
-    fs.unlinkSync(path.join(root, 'relay-state', 'puppet.json'));
-    plantOwner(root, key);
-    if (api.owner() === key) test.check('owner.json { owner } makes the node a puppet of that key');
-    else test.fail(OWED + 'with owner.json, api.owner() is ' + JSON.stringify(api.owner()));
-  }
+  fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), JSON.stringify({ owner: key, carries: [] }));
+  if (puppet().owner === '' && puppet().puppet === false) test.check('a puppet.json alone makes no owner');
+  else test.fail(OWED + 'puppet.json is still read: puppetIn says ' + JSON.stringify(puppet()));
+  fs.unlinkSync(path.join(root, 'relay-state', 'puppet.json'));
+  plantOwner(root, key);
+  if (puppet().owner === key && puppet().puppet === true) test.check('owner.json { owner } makes the node a puppet of that key, read on every call');
+  else test.fail(OWED + 'with owner.json, puppetIn says ' + JSON.stringify(puppet()));
   fs.rmSync(root, { recursive: true, force: true });
 }
 
 test.subHeading('a node may own itself: owner.json naming its own ID is not a puppet');
 {
-  const appClient = require('../run/js/appClient');
-  function puppetLine(root) {
-    const lines = [];
-    appClient.createAppClient({ rootDir: root, log: function (m) { lines.push(String(m)); }, startServerJob: function () { return {}; } }).startAll();
-    return lines.some(function (l) { return /is a puppet/.test(l); });
-  }
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-self-'));
   auth.ensureIdentity(root, 'self');
   const self = JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'identity.json'), 'utf8')).publicKey;
+  const puppet = puppetMode.puppetIn(root, function () {});
   plantOwner(root, self);
-  if (!puppetLine(root)) test.check('owner.json with the node\'s own key: it starts its servers');
+  if (puppet().puppet === false && puppet().owner === '') test.check('owner.json with the node\'s own key: not a puppet');
   else test.fail(OWED + 'a node owning itself was taken for a puppet');
   plantOwner(root, auth.generateIdentity('other').publicKey);
-  if (puppetLine(root)) test.check('owner.json with another key: a puppet, it starts none');
+  if (puppet().puppet === true) test.check('owner.json with another key: a puppet');
   else test.fail(OWED + 'owner.json naming another key did not make a puppet');
   fs.rmSync(root, { recursive: true, force: true });
 }
@@ -159,7 +145,7 @@ test.subHeading('no code names allow.json, puppet.json, byName or carries');
     t = /\.js$/.test(f)
       ? t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"])\/\/[^\n]*/g, '$1')
       : t.replace(/^\s*#.*$/mg, '');
-    const re = /nodeApps\.js$|^bash\/face-install$/.test(f) ? /allow\.json|puppet\.json|byName|carries/ : /allow\.json|puppet\.json|byName/;
+    const re = /puppetMode\.js$|^bash\/face-install$/.test(f) ? /allow\.json|puppet\.json|byName|carries/ : /allow\.json|puppet\.json|byName/;
     if (re.test(t)) naming.push(f);
   });
   if (files.length > 100 && !naming.length) test.check('none of ' + files.length + ' tracked code files names them');

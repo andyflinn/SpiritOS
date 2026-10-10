@@ -21,7 +21,6 @@ const path = require('path');
 const test = require('./testSupport.js');
 const packet = require('../run/js/client/packet');
 const boxes = require('../run/js/boxes');
-const faceServer = require('../run/js/faceServer');
 
 test.startTest('His boxes add up from his own servers, and over-committed is only ever a warning');
 
@@ -140,21 +139,8 @@ function box(fp, allotted, total, label) {
   }
 }
 
-// ── THE SERVER'S SIDE: FOUR FIELDS, NO OPINION, NOTHING READABLE ──────
-{
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxreport-'));
-  const r = faceServer.boxReport(root, 'starter');
-  const keys = Object.keys(r).sort().join(',');
-  const fp = String(r.fingerprint || '');
-  const ips = [].concat.apply([], Object.values(os.networkInterfaces())).map(function (i) { return i.address; });
-  const readable = fp.indexOf(os.hostname()) !== -1 || ips.some(function (ip) { return ip && fp.indexOf(ip) !== -1; });
-  const again = faceServer.boxReport(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxreport-')), 'other').fingerprint;
-  if (keys === 'allottedMB,boxLabel,boxTotalMB,fingerprint' && fp && !readable && again === fp) {
-    test.check('a server reports exactly four facts about its box -- no opinion, no verdict -- and its '
-      + 'fingerprint names this box the same way twice while carrying no hostname or address');
-  } else {
-    test.fail('box report ' + JSON.stringify(r) + '; readable in fingerprint: ' + readable + '; same twice: ' + (again === fp));
-  }
-}
+// THE SERVER'S SIDE STOOD HERE: faceServer.boxReport, the four facts an app server reported about
+// its box at bind. faceServer.js is gone with goal/G13.2 and no process reports a box today; the
+// owner's view above keeps its shape for the day one does.
 
 test.reportSuccessFailureCount();

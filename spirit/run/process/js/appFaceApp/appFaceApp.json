@@ -1,0 +1,7 @@
+{
+  "label": "appFaceApp",
+  "description": "The face: on the face node it opens its own port for Caddy, serves its page and kernel.js, and carries a visitor's ask over the relay to the node that owns the name; on the owner's node it answers route (through grantFace) and serve (through appFaceAppServer).",
+  "kind": "server",
+  "operated": "node",
+  "args": []
+}

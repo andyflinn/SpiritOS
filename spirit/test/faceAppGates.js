@@ -1,21 +1,13 @@
 'use strict';
 
-// apiAuth/G1.1: appFaceAppServer serves through appServer. Red on today's code.
-//   Found 2026-10-01: it builds its own http.createServer (appFaceAppServer.js:28), so it answers no
-//   api, has no DEBUG, and none of the shared gates apply. Andy: "gruesome! fixed in this cycle,
-//   thanks!", and his correction under G1.1: appFaceAppServer is subject to every rule an app
-//   server must obey.
-// The shape the builder follows (the item's box):
-//   - appFaceAppServer serves its verbs through appServer (createAppServer's opts.fallback is the
-//     pass-through, appServer.js:94-136; no new server code), so api, DEBUG — and with G1.10,
-//     DEPENDENCIES — answer like every server's, and the shared caps apply.
-//   - The pass-through itself stays what it is: a request that is not appClient's JSON POST to '/'
-//     goes to faceProof untouched. No grant names it (Andy: "appFaceAppServer needs no grant. it is
-//     run by the owner"); the serve path is out of scope (Andy, under G1.6).
-//   - An oversized pass-through answer is never streamed: Andy, "That needs to be rectified." and
-//     "appServer will convert any oversized reply into an error and stream that error to the shell".
-//     So over ANSWER_MAX it becomes app-answer-too-large, carrying the size and the limit, as a
-//     verb's oversized reply does.
+// apiAuth/G1.1: appFaceAppServer serves through appServer, so every shared gate applies.
+//   Found 2026-10-01: it built its own http.createServer, so it answered no api, had no DEBUG,
+//   and none of the shared gates applied. Andy: "gruesome! fixed in this cycle, thanks!", and his
+//   correction under G1.1: appFaceAppServer is subject to every rule an app server must obey.
+// Since goal/G13.2 (Andy, 2026-10-10: "KILL faceProof completely and just let appFaceAppServer
+// respond to that json request. DONE.") it has no pass-through either: serve is its one verb,
+// answered itself, and a request that is not appClient's JSON POST to '/' is refused by the
+// shared layer like everywhere else, never handed to a pipe.
 
 const fs = require('fs');
 const path = require('path');
@@ -35,43 +27,26 @@ const FILE = path.join(root, 'process', 'js', 'appFaceAppServer', 'appFaceAppSer
 const appClient = require(path.join(root, 'js', 'appClient.js'));
 const pipeRequest = require(path.join(root, 'js', 'relayRequest.js')).pipeRequest;
 
-test.subHeading('the second door is gone from the source');
+test.subHeading('the second door is gone from the source, and so is the pass-through');
 const src = fs.readFileSync(FILE, 'utf8');
 if (/appServer/.test(src) && !/http\.createServer/.test(src)) {
   test.check('appFaceAppServer.js serves through appServer and builds no http server of its own');
 } else {
   test.fail(OWED + 'appFaceAppServer.js: uses appServer ' + /appServer/.test(src) + ', own http.createServer ' + /http\.createServer/.test(src));
 }
+if (!/pipeRequest|fallback/.test(src)) test.check('and passes nothing through: no pipeRequest, no fallback (goal/G13.2)');
+else test.fail('OWED by goal/G13.2: appFaceAppServer.js still passes requests through');
 
-// The real faceProof pipe path, as the process computes it from its own root.
-const facePipe = appClient.pipePathFor(root, 'faceProof', process.platform, 'process');
 const myPipe = appClient.pipePathFor(root, 'appFaceAppServer', process.platform, 'process');
-const BIG = 'B'.repeat(appClient.ANSWER_MAX + 1024);
-
-// The fake faceProof is itself an app server with a fallback — the shared
-// layer, not a raw socket, so oneDoor's tally stays whole.
-if (process.platform !== 'win32') { try { fs.unlinkSync(facePipe); } catch (e) { /* none */ } }
-fs.mkdirSync(path.dirname(facePipe), { recursive: true });
+const state = path.join(root, 'relay-state', 'process', 'appFaceAppServer');
+fs.mkdirSync(state, { recursive: true });
 fs.mkdirSync(path.dirname(myPipe), { recursive: true });
-const face = require(path.join(root, 'js', 'appServer.js')).createAppServer({}, { fallback: function (req, res) {
-  if (req.url === '/big') { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(BIG); return; }
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end('FACE-PAGE ' + req.method + ' ' + req.url);
-} });
 let kid = null;
 
 (async function () {
-  await new Promise(function (r) { face.listen(facePipe, r); });
   if (process.platform !== 'win32') { try { fs.unlinkSync(myPipe); } catch (e) { /* none */ } }
-  kid = spawn(process.execPath, [FILE, '--pipe', myPipe], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  kid = spawn(process.execPath, [FILE, '{}', '--pipe', myPipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
 
-  // The door answers raw before the client is built: an ask that fires
-  // before the server listens is remembered as down and poisons the rest.
-  const doorUp = await until(function () {
-    return pipeRequest(myPipe, 'GET', '/door-up', '', { timeoutMs: 2000, answerMax: 100000 })
-      .then(function (r) { return r && r.status > 0 && !r.refused; }, function () { return false; });
-  }, 10000);
-  if (!doorUp) test.fail('appFaceAppServer never listened on its pipe');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('appFaceAppServer', myPipe);
   const call = function (verb, args) {
@@ -81,38 +56,33 @@ let kid = null;
 
   test.subHeading('it answers api and DEBUG, as every appServer must');
   const up = await until(function () {
-    return client.ask('api').then(function (r) { return r && r.body && r.body.appFaceAppServer; }, function () { return null; });
+    return client.ask('api').then(function (r) { return r && r.body && r.body.appFaceAppServer && r.body.appFaceAppServer.ok !== false ? r.body.appFaceAppServer : null; }, function () { return null; });
   }, 10000);
   // DEBUG in the tree proves the answer is appFaceAppServer's own shared
   // layer, not a forward: only serve() puts DEBUG on every server.
-  const tree = up && !Array.isArray(up) && typeof up === 'object' && up.ok !== false && up.DEBUG;
+  const tree = up && !Array.isArray(up) && typeof up === 'object' && up.DEBUG;
   if (tree) test.check('ask \'api\': appFaceAppServer answers its own verb tree, DEBUG on it like every server\'s');
   else test.fail(OWED + '\'api\' answered ' + JSON.stringify(up).slice(0, 160));
   const dbg = await call('DEBUG', {});
   if (dbg.debug === false) test.check('DEBUG {} reads false, the shared switch (desk/G2.5)');
   else test.fail(OWED + 'DEBUG answered ' + JSON.stringify(dbg).slice(0, 120));
 
-  test.subHeading('the pass-through still hands everything else to faceProof untouched');
-  const page = await pipeRequest(myPipe, 'GET', '/whoBook/page.html', '', { timeoutMs: 8000, answerMax: appClient.ANSWER_MAX }).catch(function () { return null; });
-  if (page && page.status === 200 && /FACE-PAGE GET \/whoBook\/page\.html/.test(String(page.text))) {
-    test.check('a GET that is not appClient\'s JSON POST reaches faceProof and its answer comes back');
-  } else test.fail(OWED + 'the pass-through answered ' + JSON.stringify(page && { status: page.status, text: String(page.text).slice(0, 80) }));
+  test.subHeading('serve is answered by appFaceAppServer itself');
+  const proof = await call('serve', { host: 'join.face.test', method: 'POST', path: '/api/spirit', body: '{"verb":"app.state"}', type: 'application/json' });
+  let said = null;
+  try { said = JSON.parse(proof.body); } catch (e) { said = null; }
+  if (proof.status === 200 && /json/.test(proof.type) && said && said.ok === true && said.app === 'appFaceAppServer' && said.verb === 'app.state') {
+    test.check('a json ask on /api/spirit is answered with the proof, typed json, naming the app and the verb');
+  } else test.fail('OWED by goal/G13.2: serve answered ' + JSON.stringify(proof).slice(0, 200));
 
-  test.subHeading('an oversized pass-through answer becomes an error, never a stream');
-  const big = await pipeRequest(myPipe, 'GET', '/big', '', { timeoutMs: 8000, answerMax: appClient.ANSWER_MAX + 4096 }).catch(function () { return null; });
+  test.subHeading('nothing passes through: a request that is not the JSON POST is refused by the shared layer');
+  const page = await pipeRequest(myPipe, 'GET', '/whoBook/page.html', '', { timeoutMs: 8000, answerMax: appClient.ANSWER_MAX }).catch(function () { return null; });
   let body = null;
-  try { body = JSON.parse(big && big.text); } catch (e) { body = null; }
-  // extra.bytes and extra.max, the shape every size refusal in the tree
-  // says (appClient.js knock; claude-windows' build review, 2026-10-01).
-  const ex = (body && body.extra) || {};
-  if (body && body.ok === false && body.code === 'app-answer-too-large' && ex.bytes > appClient.ANSWER_MAX && ex.max === appClient.ANSWER_MAX) {
-    test.check('over ANSWER_MAX: app-answer-too-large with extra.bytes and extra.max, as a verb\'s reply would be');
-  } else {
-    const got = big ? (body ? JSON.stringify(body).slice(0, 140) : String(big.text == null ? '' : big.text).length + ' bytes streamed') : 'no answer';
-    test.fail(OWED + 'an oversized pass-through answered ' + got);
-  }
+  try { body = JSON.parse(page && page.text); } catch (e) { body = null; }
+  if (page && page.status === 400 && body && body.ok === false && body.code === 'bad-request') {
+    test.check('a GET on the pipe is bad-request from appServer, never a page from anywhere');
+  } else test.fail('OWED by goal/G13.2: a GET on the pipe answered ' + JSON.stringify(page && { status: page.status, text: String(page.text).slice(0, 80) }));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   if (kid) kid.kill();
-  face.close();
   setTimeout(function () { test.reportSuccessFailureCount(); process.exit(0); }, 300);
 });

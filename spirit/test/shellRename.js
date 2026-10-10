@@ -65,28 +65,6 @@ function appFolderUses() {
   return hits;
 }
 
-// ── T3 ────────────────────────────────────────────────────────────────
-// The face's own handle(), with a request that asks for one path.
-function faceGet(face, pathname) {
-  return Promise.race([
-    new Promise(function (resolve) {
-      let body = '';
-      let status = 200;
-      const res = {
-        headersSent: false, setHeader: function () {}, on: function () {}, once: function () {}, emit: function () {},
-        writeHead: function (s) { status = s; return res; },
-        write: function (c) { body += c; return true; },
-        end: function (c) { if (c) body += c; resolve({ status: status, body: body }); },
-      };
-      const req = new (require('stream').PassThrough)();
-      req.method = 'GET'; req.url = pathname; req.headers = { host: 'probe' };
-      req.end();
-      try { face.handle(req, res); } catch (e) { resolve({ status: 'threw ' + e.message, body: '' }); }
-    }),
-    sleep(2000).then(function () { return { status: 'no answer', body: '' }; }),
-  ]);
-}
-
 // ── T4, T5 ────────────────────────────────────────────────────────────
 // A node on this checkout's tree, with `leftovers` (relative to app/)
 // written into app/ the way a live node has them, and `already` (relative
@@ -141,46 +119,11 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
   else test.fail(OWED + hits.length + ' uses of app/ as a folder (' + hits.slice(0, 6).join(', ') + (hits.length > 6 ? ', …' : '') +
     '); writable shell/ ' + gate.shell + ', app/ ' + gate.app);
 
-  // ── T2 ──────────────────────────────────────────────────────────────
-  test.subHeading('T2: listing shell elements skips the plain files at shell/\'s top');
-  const root2 = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shelllist-'));
-  ['tokens.css', 'elements.css', 'README.md'].forEach(function (f) { write(path.join(root2, 'shell', f), '/* ' + f + ' */'); });
-  // A face lives in process/js since slim/G1.4, so the serving list is read
-  // there; the shell's mounted list still skips shell/'s top files.
-  write(path.join(root2, 'process', 'js', 'hello', 'hello.json'), JSON.stringify({ serves: true }));
-  write(path.join(root2, 'shell', 'probe', 'probe.json'), JSON.stringify({ boots: true }));
-  write(path.join(root2, 'shell', 'probe', 'probe.js'), 'module.exports = { mount: function () {} };');
-  let servers = [];
-  let mounted = [];
-  let broke = '';
-  try { servers = require('../run/js/appClient.js').readServers(root2); } catch (e) { broke += 'readServers: ' + e.message + ' '; }
-  try { mounted = require('../run/js/nodeApps.js').mountAll({ rootDir: root2 }) || []; } catch (e) { broke += 'mountAll: ' + e.message; }
-  if (JSON.stringify(servers) === '["hello"]' && JSON.stringify(mounted) === '["probe"]' && !broke) {
-    test.check('the serving list is [hello] (process/js) and the mounted list [probe] (shell/); tokens.css, elements.css and README.md are neither');
-  } else test.fail(OWED + 'serving ' + JSON.stringify(servers) + ', mounted ' + JSON.stringify(mounted) + (broke ? ', broke: ' + broke : ''));
-  try { fs.rmSync(root2, { recursive: true, force: true }); } catch (e) { /* busy */ }
-
-  // ── T3 ──────────────────────────────────────────────────────────────
-  test.subHeading('T3: tokens.css and elements.css served one named file each to a granted face; shell/\'s top is not servable');
-  const root3 = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shellface-'));
-  write(path.join(root3, 'shell', 'tokens.css'), '/*TOKENS*/');
-  write(path.join(root3, 'shell', 'elements.css'), '/*ELEMENTS*/');
-  write(path.join(root3, 'shell', 'README.md'), 'README');
-  // The face in process/js (slim/G1.4); its granted CSS still from shell/'s top.
-  write(path.join(root3, 'process', 'js', 'probe', 'probe.json'), JSON.stringify({ posture: 'strict', surface: ['verb'], utilities: ['elements', 'tokens'], serves: true }));
-  write(path.join(root3, 'process', 'js', 'probe', 'probe.html'), '<p>probe</p>');
-  const faceServer = require('../run/js/faceServer.js');
-  const got = {};
-  try {
-    const face = faceServer.create({ rootDir: root3, appName: 'probe' });
-    for (const p of ['/tokens.css', '/elements.css', '/README.md', '/shell/tokens.css']) got[p] = await faceGet(face, p);
-  } catch (e) { got.create = { status: 'threw ' + e.message }; }
-  const ok3 = got['/tokens.css'] && got['/tokens.css'].status === 200 && /TOKENS/.test(got['/tokens.css'].body) &&
-    got['/elements.css'] && got['/elements.css'].status === 200 && /ELEMENTS/.test(got['/elements.css'].body) &&
-    got['/README.md'] && got['/README.md'].status === 404 && got['/shell/tokens.css'] && got['/shell/tokens.css'].status === 404;
-  if (ok3) test.check('tokens.css and elements.css come from shell/\'s top; README.md there and any path into shell/ are 404');
-  else test.fail(OWED + JSON.stringify(Object.keys(got).reduce(function (a, k) { a[k] = got[k].status; return a; }, {})));
-  try { fs.rmSync(root3, { recursive: true, force: true }); } catch (e) { /* busy */ }
+  // T2 AND T3 STOOD HERE, and left with goal/G13.2: the mounted list (nodeApps.mountAll), the
+  // serving list (appClient.readServers) and the face server that served a granted face its
+  // CSS (faceServer.js) are all gone with the branches that started them. shell/'s top files are
+  // still neither an element nor servable, and that is now simply true of the tree: nothing
+  // lists shell/ for anything but the page's own discovery, which skips plain files.
 
   // ── T4 ──────────────────────────────────────────────────────────────
   test.subHeading('T4: on first start a node moves its leftover app/ files into shell/, once, says what it moved, and removes app/');

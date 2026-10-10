@@ -153,31 +153,15 @@ const TALLY = {
   // and so an exception — GRANTED BY ANDY 2026-09-19 in the cycle 0 plan.
   // The reach is the one the relay always had; it now lives in its own file.
   'js/relayServer.js': 1,
-  // THE APP SERVER'S, and it is the same reach for the same reason: the
-  // THIRD startup module (cycle 2, G1) calling http.createServer once.
-  //
-  // RESTING ON "go 2" AND G1 RATHER THAN ON A SEPARATE GRANT, and said
-  // so rather than assumed. Andy authorised the stage-1 build, whose
-  // first requirement is a third startup module that serves one app —
-  // and a server that cannot listen is not a server, so the one socket
-  // is contained in what was authorised. If he reads this and disagrees,
-  // it is one line and the reasoning is here rather than in a commit.
-  // ZERO SINCE appPair/G1.4: faceServer listens through appServer.js, whose
-  // line below is the one socket for every app server now.
-  'js/faceServer.js': 0,
-  // THE FACE'S ENTRY POINT ON THE VPS PUPPET NODE (public-app-server/G17,
-  // slice 1): http.createServer once, on loopback, for Caddy. RESTING ON
-  // ANDY'S "go." ON THAT SLICE, 2026-09-27, whose whole content is this
-  // listener, and said so rather than assumed, as faceServer.js above. A
-  // listener that cannot listen is not one. If he reads this and
-  // disagrees, it is one line.
-  'js/puppetPost.js': 1,
+  // THE APP SERVER'S (js/faceServer.js, cycle 2) and THE FACE'S ENTRY POINT
+  // (js/puppetPost.js, G17 slice 1) stood here, 0 and 1. Both files are
+  // gone with goal/G13.2 (Andy, 2026-10-10: "no \"face\" crap belongs into
+  // node."): the face is process/js/appFaceApp, which opens its own
+  // listener from its own configuration, and process/ is not counted here.
   // THE SERVER-SIDE REQUEST ROUTER (appPair/G1.2): http.createServer once,
   // on the pipe the node names. RESTING ON ANDY'S "go." ON G1.2, 2026-09-29,
   // whose whole content is that listener, and told him the same hour
-  // ("say no if you want it done differently"), as faceServer.js above.
-  // It netted to zero at appPair/G1.4: faceServer's own listener moved onto
-  // this helper, and its line went to 0.
+  // ("say no if you want it done differently").
   'js/appServer.js': 1,
 
   // ── TESTS ARE NOT COUNTED ── ANDY'S RULING, 2026-10-02 ─────────────────

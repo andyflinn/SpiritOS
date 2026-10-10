@@ -1,6 +1,6 @@
 {
   "label": "appFaceAppServer",
-  "description": "The slot-owner's side of appFaceApp: takes the requests for this member's face names and, for now, passes each one through to faceProof.",
+  "description": "The face owner's side of appFaceApp: answers a visitor's json ask on /api/spirit itself, the proof that the route from the face reached the owner of the name.",
   "kind": "server",
   "operated": "node",
   "args": []

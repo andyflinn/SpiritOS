@@ -15,8 +15,8 @@
 //   T1 a job started from process/js/<name>/ carries module 'process/js/<name>',
 //      the same string the include list holds (includeList.paths)
 //   T2 two starts of one process are two jobs, two instances of one module
-//   T3 the node's own boot does the same: a node-operated server's job, and a
-//      face's (appClient.startAll hands it on), carry their module
+//   T3 the node's own boot does the same: a node-operated server's job carries
+//      its module (a face is such a server since goal/G13.2)
 //   T4 the Jobs monitor's row names the module a job is an instance of
 //   T5 a job that is no module's (the node's own fs-watcher, stats, presence)
 //      carries none, rather than a made-up one
@@ -52,7 +52,6 @@ function plantNode() {
   // Listed: this suite is about ids, not about the list (slim/G1.3 T6).
   includeList.add(run, 'process/js/counter');
   includeList.add(run, 'process/js/keeper');
-  includeList.add(run, 'process/js/faceProof');
   return run;
 }
 
@@ -78,24 +77,13 @@ test.startTest('slim/G1.5: the node owns every module id, by path; a job is an i
   if (a && b && a.id && b.id && a.id !== b.id && both.length === 2) test.check('two jobs, two ids, both instances of process/js/counter, and Jobs lists both');
   else test.fail(OWED + 'ids ' + JSON.stringify([a && a.id, b && b.id]) + ', jobs listing process/js/counter: ' + both.length);
 
-  test.subHeading('T3: the boot does the same, for a node-operated server and for a face');
+  test.subHeading('T3: the boot does the same, for a node-operated server');
   const booted = jobs.startNodeServers(run) || [];
   booted.forEach(function (j) { started.push(j); });
   const keeper = booted.filter(function (j) { return j && j.type === 'keeper'; })[0];
-  const handed = [];
-  require('../run/js/appClient.js').createAppClient({ rootDir: run, log: function () {},
-    startServerJob: function (cmd, args, opts) { handed.push(opts || {}); return null; } }).startAll();
-  // faceProof, planted as the tree has it, so startAll finds a face to start.
-  const facePlanted = handed.length;
-  if (!facePlanted) {
-    fs.cpSync(path.join(RUN, 'process', 'js', 'faceProof'), path.join(run, 'process', 'js', 'faceProof'), { recursive: true });
-    require('../run/js/appClient.js').createAppClient({ rootDir: run, log: function () {},
-      startServerJob: function (cmd, args, opts) { handed.push(opts || {}); return null; } }).startAll();
-  }
-  const face = handed[0] || {};
-  if (keeper && keeper.module === 'process/js/keeper' && face.module === 'process/js/faceProof') {
-    test.check('the booted keeper job is process/js/keeper; the face is handed on as process/js/faceProof');
-  } else test.fail(OWED + 'keeper job module ' + JSON.stringify(keeper && keeper.module) + ', face handed ' + JSON.stringify(face));
+  if (keeper && keeper.module === 'process/js/keeper') {
+    test.check('the booted keeper job is process/js/keeper');
+  } else test.fail(OWED + 'keeper job module ' + JSON.stringify(keeper && keeper.module));
 
   test.subHeading('T4: the Jobs monitor\'s row names the module a job is an instance of');
   let row = '';

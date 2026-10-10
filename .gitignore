@@ -52,9 +52,6 @@ log.jsonl
 spirit/run/shell/shared/aiStatus.json
 spirit/currentIssues.md
 
-# Its face domain, written at setup (G17, THE ROUTE): a fact about this box.
-spirit/run/shell/appFaceApp/face-domain.json
-
 # Desk's record as Desk once kept it in its own folder (desk/G1.O10, Andy:
 # "yes"). From desk/G1.4 the desk server imports these into desk.db, in
 # relay-state/process/desk/, and removes them; tracked, every checkout that

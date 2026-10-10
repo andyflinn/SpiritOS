@@ -105,10 +105,11 @@ function checkVerbs(verbs) {
   });
 }
 
-// opts.fallback(req, res): THE PASSTHROUGH (appPair/G1.4). An app server
-// that already answers pages and a door of its own (faceServer.js) keeps
-// them: the helper claims only a JSON POST to '/', which is how appClient
-// asks, and hands every other request on untouched.
+// opts.fallback(req, res): THE PASSTHROUGH (appPair/G1.4). A server that
+// answers pages of its own on its pipe keeps them: the helper claims only a
+// JSON POST to '/', which is how appClient asks, and hands every other
+// request on untouched. (Its first user, faceServer.js, is gone with
+// goal/G13.2; no server in the tree passes a fallback today.)
 function createAppServer(verbs, opts) {
   checkVerbs(verbs);
   const fallback = opts && typeof opts.fallback === 'function' ? opts.fallback : null;
@@ -238,16 +239,15 @@ function createAppServer(verbs, opts) {
       delete tree[name];
       delete runtime[name];
     },
-    // Listen on the pipe the node named. A socket file left by a process
-    // that died holds the name off Windows, as faceServer.js found.
-    // A number is a port instead, on loopback only (faceServer's --port):
-    // publicness is never this process's.
+    // Listen on the pipe the node named, and on nothing else. A socket file
+    // left by a process that died holds the name off Windows, so it is
+    // cleared first. A number once meant a loopback port here, for the
+    // by-hand start of faceServer; gone with goal/G13.2 (Andy, 2026-10-10:
+    // "the \"number\" branch in appClient/appServer will be completely
+    // gone."). A server that wants a port opens its own listener from its
+    // own configuration; the pipe is the node's door to it.
     listen: function (target, cb) {
       server = http.createServer(handle);
-      if (typeof target === 'number') {
-        server.listen(target, '127.0.0.1', cb);
-        return server;
-      }
       if (process.platform !== 'win32') { try { fs.unlinkSync(target); } catch (e) { /* none */ } }
       server.listen(target, cb);
       return server;

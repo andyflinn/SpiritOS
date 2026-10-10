@@ -9,7 +9,7 @@
 //   however: not every group is supported in every context/environment".
 //
 // Built by claude-windows at 3feddc5. Driven here through
-// nodeApps.puppetDoor with the node's real packet codec and relayAuth, a
+// puppetMode.puppetDoor with the node's real packet codec and relayAuth, a
 // real relay-state/owner.json on disc, and fake handlers standing in for
 // loopbackVerbs. The tester read the shim once, to learn the calling
 // convention a fake handler must follow (handler(req, res), req a readable
@@ -20,7 +20,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const nodeApps = require('../run/js/nodeApps');
+const puppetMode = require('../run/js/puppetMode');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
 
@@ -70,7 +70,7 @@ function world(puppetJson) {
       res.end(JSON.stringify({ ok: true, rows: 'x'.repeat(40000) }));
     },
   };
-  const door = nodeApps.puppetDoor({
+  const door = puppetMode.puppetDoor({
     rootDir: root,
     handlerFor: function (verb) { return handlers[verb] || null; },
     post: function (relay, to, text) { sent.push({ relay: relay, to: to, reply: packet.decode(text) }); return Promise.resolve({ ok: true }); },

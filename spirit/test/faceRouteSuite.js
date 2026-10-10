@@ -15,7 +15,8 @@
 
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const fr = require('../run/js/faceRoute');
+// Beside the face since goal/G13.2: the cache is appFaceApp's own, not the node's.
+const fr = require('../run/process/js/appFaceApp/faceRoute');
 
 test.startTest('A face name routes to the node that holds it, on the owner\'s signed word only');
 

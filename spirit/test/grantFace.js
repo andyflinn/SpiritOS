@@ -10,7 +10,7 @@
 //   delete {name, id}  -> {removed: n}; one of the two is '', the other chooses
 //   get    {name}      -> {name, id}; id is '' when nobody holds it
 //   its database lives in its --state folder; node.db is never touched
-//   appFaceApp answers route? by api.toLocalApp('grantFace', POST {get: {name}})
+//   appFaceApp answers route by asking grantFace get {name} through jobs.api on its node (goal/G13.2)
 
 const fs = require('fs');
 const os = require('os');
@@ -115,48 +115,63 @@ async function serverPart() {
   }
 }
 
-// appFaceApp on the owner's node answers route? from grantFace, not from a file.
-// A copied tree, never a link; grantFace is a stand-in answering get.
+// appFaceApp on the owner's node answers route from grantFace, not from a file. Since goal/G13.2 it
+// is a process on a pipe that asks grantFace through jobs.api on its node; the node here is a fake
+// door answering that one ask, and a grants.json beside the server says otherwise.
 async function facePart() {
   test.subHeading('appFaceApp asks grantFace for a route');
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-grantface-face-'));
-  fs.cpSync(path.join(RUN, 'js'), path.join(root, 'js'), { recursive: true });
-  const dir = path.join(root, 'shell', 'appFaceApp');
-  fs.cpSync(path.join(RUN, 'shell', 'appFaceApp'), dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'face-domain.json'), JSON.stringify({ faceDomain: 'face.example' }) + '\n');
-  // A grants.json saying otherwise: if it is still read, the answer is ID_B.
-  fs.writeFileSync(path.join(dir, 'grants.json'), JSON.stringify({ names: { join: { to: ID_B, app: 'faceProof' } } }) + '\n');
+  const http = require('http');
   const asked = [];
-  const posts = [];
-  const witnesses = [];
-  const packet = require(path.join(root, 'js', 'client', 'packet.js'));
-  require(path.join(root, 'js', 'nodeApps.js')).mountAll({
-    rootDir: root,
-    arrivals: { witness: function (fn) { witnesses.push(fn); return function () {}; } },
-    post: function (a, to, text) { posts.push({ to: to, text: text }); return Promise.resolve({ ok: true }); },
-    log: function () {},
-    servers: {
-      toLocalApp: function (app, req) {
-        asked.push({ app: app, req: req });
-        let body = {};
-        try { body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body; } catch (e) { body = {}; }
-        if (app === 'grantFace' && body && body.get) {
-          return Promise.resolve({ status: 200, type: 'application/json', body: JSON.stringify({ name: body.get.name, id: body.get.name === 'join' ? ID_A : '' }) });
-        }
-        return Promise.resolve({ status: 404, body: '{}' });
-      },
-    },
+  const node = await new Promise(function (resolve) {
+    const s = http.createServer(function (req, res) {
+      let b = '';
+      req.on('data', function (c) { b += c; });
+      req.on('end', function () {
+        let body = null;
+        try { body = JSON.parse(b || '{}'); } catch (e) { body = null; }
+        const ask = body && body.verb === 'jobs.api' ? body.ask : null;
+        const get = ask && ask.grantFace && ask.grantFace.get;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        if (get) { asked.push(get); res.end(JSON.stringify({ name: get.name, id: get.name === 'join' ? ID_A : '' })); return; }
+        res.end(JSON.stringify({ ok: false, code: 'no-such-verb' }));
+      });
+    }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
   });
-  const m = { fromKey: ID_A, hash: 'H-route', sentAt: new Date().toISOString(), text: packet.encode('appFaceApp', { verb: 'route?', host: 'join.face.example' }).text };
-  witnesses.forEach(function (fn) { fn(m); });
-  await sleep(300);
-  const answers = posts.map(function (p) { const d = packet.decode(p.text); return d && d.body; }).filter(Boolean);
-  const route = answers.filter(function (b) { return b.verb === 'route'; })[0];
-  if (!witnesses.length) test.fail(OWED + 'appFaceApp did not mount; the checks below would pass vacuously');
-  if (asked.some(function (a) { return a.app === 'grantFace'; })) test.check('route? for join was asked of grantFace');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-grantface-face-'));
+  const dir = path.join(root, 'process', 'js', 'appFaceApp');
+  fs.mkdirSync(dir, { recursive: true });
+  const SRC = path.join(RUN, 'process', 'js', 'appFaceApp');
+  if (fs.existsSync(SRC)) fs.cpSync(SRC, dir, { recursive: true });
+  fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
+  const state = path.join(root, 'relay-state', 'process', 'appFaceApp');
+  fs.mkdirSync(state, { recursive: true });
+  fs.writeFileSync(path.join(state, 'face-domain.json'), JSON.stringify({ faceDomain: 'face.example' }) + '\n');
+  // A grants.json saying otherwise: if it is still read, the answer is ID_B.
+  fs.writeFileSync(path.join(dir, 'grants.json'), JSON.stringify({ names: { join: { to: ID_B } } }) + '\n');
+  fs.writeFileSync(path.join(state, 'grants.json'), JSON.stringify({ names: { join: { to: ID_B } } }) + '\n');
+  const pipe = appClient.pipePathFor(root, 'appFaceApp', process.platform, 'process');
+  const client = appClient.createAppClient({ rootDir: root });
+  client.register('appFaceApp', pipe);
+  let kid = null;
+  if (fs.existsSync(path.join(dir, 'appFaceApp.js'))) {
+    kid = spawn(process.execPath, [path.join(dir, 'appFaceApp.js'), '{}', '--pipe', pipe, '--state', state], {
+      cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      env: Object.assign({}, process.env, { SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }),
+    });
+    for (let i = 0; i < 40; i++) {
+      await sleep(150);
+      try { const r = await client.ask('api'); if (r.body && r.body.appFaceApp && r.body.appFaceApp.ok !== false) break; } catch (e) { /* not yet */ }
+    }
+  }
+  const route = kid ? (await client.ask({ appFaceApp: { route: { host: 'join.face.example' } } })).body : null;
+  if (!kid) test.fail(OWED + 'no process/js/appFaceApp/appFaceApp.js to start; the checks below would pass vacuously');
+  if (asked.some(function (a) { return a.name === 'join'; })) test.check('route for join was asked of grantFace, get {name}, through jobs.api');
   else test.fail(OWED + 'appFaceApp never asked grantFace: ' + JSON.stringify(asked).slice(0, 120));
   if (route && route.route === 'owner' && route.to === ID_A) test.check('and answered with grantFace\'s holder, not grants.json\'s');
-  else test.fail(OWED + 'route? answered ' + JSON.stringify(route || answers).slice(0, 160));
+  else test.fail(OWED + 'route answered ' + JSON.stringify(route).slice(0, 160));
+  if (kid) kid.kill();
+  node.close();
+  await sleep(200);
   fs.rmSync(root, { recursive: true, force: true });
 }
 
@@ -164,7 +179,7 @@ function retiredPart() {
   test.subHeading('the stop-gaps grantFace replaces are gone');
   if (!fs.existsSync(path.join(REPO, 'bash', 'face-owner.js'))) test.check('bash/face-owner.js is gone');
   else test.fail(OWED + 'bash/face-owner.js is still there');
-  if (!/grants\.json|readGrants/.test(code(path.join(RUN, 'shell', 'appFaceApp', 'appFaceApp.js')))) test.check('appFaceApp.js reads no grants.json');
+  if (!/grants\.json|readGrants/.test(code(path.join(RUN, 'process', 'js', 'appFaceApp', 'appFaceApp.js')))) test.check('appFaceApp.js reads no grants.json');
   else test.fail(OWED + 'appFaceApp.js still reads grants.json');
   if (!/grants\.json/.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8'))) test.check('.gitignore names no grants.json');
   else test.fail(OWED + '.gitignore still names grants.json');

@@ -1,59 +1,44 @@
 'use strict';
 
 // spirit/run/process/js/appFaceAppServer/appFaceAppServer.js
-// THE SLOT-OWNER'S FACE SERVER: every page request passed through to faceProof (cleanup/G1.10).
+// THE FACE OWNER'S ANSWER TO A VISITOR — goal/G13.2.
 //
-// THROUGH appServer (apiAuth/G1.1). Andy: "gruesome! fixed in this cycle, thanks!", his correction that it
-// obeys every rule every appServer process obeys, and on its replies: "appServer will
-// convert any oversized reply into an error and stream that error to the shell". So it serves through
-// appServer.serve (api, DEBUG and every shared gate), and its pages go through appServer's pass-through, the
-// fallback. A page answer that would not fit one answer is never streamed: it becomes app-answer-too-large, with
-// its size and the limit, as a verb's oversized reply does. No grant names it (Andy: "appFaceAppServer needs no
+// Run by the face owner, the DNS-segment owner, on his node. The appFaceApp server on the same
+// box hands it a visitor's request as one verb, serve, and it answers that itself: nothing is
+// passed through a pipe to anything any more. Andy, 2026-10-10 (goal/G13): "we can in fact. KILL
+// faceProof completely and just let appFaceAppServer respond to that json request. DONE." and
+// "yes, appFaceAppServer loses its pass-through over the pipe and gains the one answer; nothing
+// else about it moves". So: a json ask on /api/spirit, the way kernel.js's spirit.core.ask posts
+// one, is answered with the proof, typed json; any other request is 404 by name.
+//
+// Through appServer (apiAuth/G1.1, Andy: "gruesome! fixed in this cycle, thanks!"): api, DEBUG,
+// DEPENDENCIES and every shared gate apply. No grant names it (Andy: "appFaceAppServer needs no
 // grant. it is run by the owner").
 
 const appServer = require('../../../js/appServer.js');
-const appClient = require('../../../js/appClient.js');
-const errors = require('../../../js/spiritErrors.js');
-const limits = require('../../../js/limits.js');
-const pipeRequest = require('../../../js/relayRequest.js').pipeRequest;
-const path = require('path');
 
-const ROOT = path.join(__dirname, '..', '..', '..');
-const TARGET = 'faceProof';
-const TARGET_PIPE = appClient.pipePathFor(ROOT, TARGET, process.platform, 'process');
-const WAIT_MS = appClient.DOOR_WAIT_MS - 2000;
+const JSON_TYPE = 'application/json; charset=utf-8';
 
-function answer(res, status, type, text) {
-  res.writeHead(status, type ? { 'Content-Type': type } : {});
-  res.end(text);
-}
-// The one error shape (D12), as appServer writes its own.
-function refused(res, code, extra) {
-  const e = errors.byCode(code);
-  const body = { ok: false, code: code, error: e ? e.text : code };
-  if (extra) body.extra = extra;
-  answer(res, e ? e.status : 500, 'application/json; charset=utf-8', JSON.stringify(body));
+function serve(a) {
+  const method = String(a.method || '').toUpperCase();
+  const pathname = String(a.path || '').split('?')[0];
+  const isAsk = method === 'POST' && pathname === '/api/spirit' && /^application\/json/i.test(String(a.type || ''));
+  if (isAsk) {
+    let ask = null;
+    try { ask = JSON.parse(String(a.body || '')); } catch (e) { ask = null; }
+    if (!ask || typeof ask.verb !== 'string' || !ask.verb) {
+      return { status: 400, type: JSON_TYPE, body: JSON.stringify({ ok: false, code: 'bad-request', error: 'a json ask names a verb' }) };
+    }
+    // THE PROOF: the ask reached the owner of the name, and this is its answer.
+    return { status: 200, type: JSON_TYPE, body: JSON.stringify({ ok: true, app: 'appFaceAppServer', verb: ask.verb, host: String(a.host || '') }) };
+  }
+  return { status: 404, type: JSON_TYPE, body: JSON.stringify({ ok: false, code: 'no-such-route', error: 'nothing is served here but a json ask on /api/spirit', path: pathname }) };
 }
 
-function passThrough(req, res) {
-  const chunks = [];
-  let size = 0;
-  req.on('data', function (c) {
-    size += c.length;
-    if (size <= limits.BODY_MAX) chunks.push(c);
-  });
-  req.on('end', function () {
-    if (size > limits.BODY_MAX) { refused(res, 'app-request-too-large', { bytes: size, max: limits.BODY_MAX }); return; }
-    pipeRequest(TARGET_PIPE, req.method, req.url, Buffer.concat(chunks).toString('utf8'), {
-      type: req.headers['content-type'] || '', timeoutMs: WAIT_MS, answerMax: appClient.ANSWER_MAX,
-    }).then(function (a) {
-      // Too big for one answer is its own refusal, never app-not-running: the conflation G1.1 ends.
-      if (a && a.refused === 'app-answer-too-large') { refused(res, 'app-answer-too-large', { bytes: a.bytes, max: a.max }); return; }
-      if (!a || a.refused) { refused(res, 'app-not-running', { app: TARGET }); return; }
-      answer(res, a.status, a.type, a.text);
-    });
-  });
-}
-
-// dependencies []: no grant names it (Andy: "appFaceAppServer needs no grant").
-appServer.serve({}, { fallback: passThrough, dependencies: [] });
+appServer.serve({
+  serve: {
+    request: { host: '', method: '', path: '', body: '', type: '' },
+    reply: { status: 0, body: '', type: '' },
+    handler: serve,
+  },
+}, { dependencies: [] });

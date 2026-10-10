@@ -45,8 +45,11 @@ Not from `/root/SpiritOS`: the live relay's clone follows your **tags**, and
 these scripts are not in a tag yet. Tagging would also restart the relay on
 all of master, which is a separate decision.
 
-It writes the face node's `face.json` and `owner.json` (your key as its
-owner), installs and starts `spirit-face`, mints a one-day invite labelled
+It writes the face node's `owner.json` (your key as its owner) and the
+face server's own `face.json` (the port, in
+`relay-state/process/appFaceApp/`, where the appFaceApp process reads it;
+the node itself opens no door for visitors), lists `process/js/appFaceApp`
+so the node starts it, installs and starts `spirit-face`, mints a one-day invite labelled
 `face` on this box's relay and claims it, and accepts your node as its
 contact. Its last lines print **the face
 node's key**, and they may stop at *"no global on_demand_tls block"*. If they do,

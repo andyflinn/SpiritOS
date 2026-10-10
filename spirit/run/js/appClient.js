@@ -1,77 +1,58 @@
 'use strict';
 
 // spirit/run/js/appClient.js
-// THE LAST LEG: THE OWNER NODE AND THE APP SERVERS ON ITS OWN BOX.
+// THE NODE'S SIDE OF ITS SERVER PROCESSES: WHERE EACH PIPE IS, AND THE KNOCK.
 //
 // THE CLIENT, NOT THE SERVERS. Named for the servers (the plural) until
 // appPair/G1.1.
 // Andy, 2026-09-28: "we need to rename appServer to appClient. that was a
-// misnomer", because in the face-to-appServer chain the node is the one
-// asking. Its other half, appServer.js, runs inside each app server
-// (appPair/G1.2). api.toLocalApp kept its name ("keep it").
+// misnomer", because in the chain the node is the one asking. Its other
+// half, appServer.js, runs inside each server process (appPair/G1.2).
 //
-//   public-app-server/G17. Andy, 2026-09-27, in Desk: "step 1) build and
-//   prove the route from browser to owner-of-subdomain, and back 2) design
-//   the last leg. 3) implement the last leg". Step 1 was proven live the
-//   same day; this is step 3, on his "the go is officail. also: i explicitly
-//   permit the two new/proposed interfaces/api' for communication from node
-//   to appserver", and his "Go. and two verbs approved."
+// Two things:
 //
-// Two things, and the word for what a visitor asks for is nowhere here:
+//   WHERE A PROCESS'S DOOR IS. The node names each pipe (pipePathFor) and
+//   hands it to the process it starts (jobs.startNodeServers, --pipe); the
+//   process is known here by that pipe from then on (register).
 //
-//   KEEPING AN APP'S SERVER RUNNING. An app whose manifest says
-//   "serves": true gets one app server (node js/server.js --app <name>
-//   --pipe <path>) as a 'server' job (jobs.startServerJob), started at boot
-//   and again when it exits. Nothing calls jobs.create for it: the loopback
-//   door gains nothing.
+//   THE KNOCK. ask('api') asks every server its verb tree; ask({app: {verb:
+//   {args}}}) hands one verb to one server over its pipe and brings back
+//   its reply as it came (appPair/G1 D10, D11). jobs.api on the loopback
+//   door and a member's 'api' packet (apiDoor.js) both end here.
 //
-//   THE HOP. toLocalApp(appName, request) hands { method, path, body, type }
-//   to that app's door over its pipe (relayRequest.pipeRequest) and answers
-//   { status, body, type }. A booted app gets it as api.toLocalApp; that is
-//   the one new surface, and it is inside the node, not on its door.
-//
-// WHICH APP ANSWERS A VISITOR IS NOT THE NODE'S BUSINESS. Andy, 2026-09-27:
-// "the core only knows about puppets (nodes owned by nodes, not people). the
-// face-name/app-or-member table must be owned by appFaceApp, not by the
-// puppet-infrastructure." So the name table is grantFace's, and this file
-// knows apps by their own names only. It first
-// read a 'face' field out of every manifest, which was appFaceApp's knowledge
-// living in the node (wsl-claude found it).
-//
-// NOT ON A PUPPET. A node with relay-state/puppet.json serves its owner, and
-// the app servers live on the owner's box (THE PATH, G17). So the VPS puppet
-// never starts one, whatever manifests its clone carries.
+// WHAT LEFT WITH goal/G13.2 (Andy, 2026-10-10, "no \"face\" crap belongs
+// into node."): readServers, the "serves" flag, startAll spawning
+// js/server.js --app for a face, and toLocalApp, the hop a booted app took
+// to a server by name. A face is a process/js server like any other now
+// (process/js/appFaceApp), started by startNodeServers, reached by its
+// pipe, and the node knows nothing of faces.
 //
 // Every refusal is by name (spiritErrors.js), so whoever asked reads which
 // link failed, never a hang:
-//   app-not-served        no app here by that name runs a server        404
+//   app-not-served        no server here by that name                   404
 //   app-request-too-large the request is over BODY_MAX, not sent        413
 //   app-not-running       nothing answers on its pipe                   503
 //   app-did-not-answer    it took longer than DOOR_WAIT_MS              504
 //   app-answer-too-large  its answer cannot travel back as one packet   502
 
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const relayRequest = require('./relayRequest');
 const limits = require('./limits');
 const errors = require('./spiritErrors');
 
-// An app's folder name, as nodeApps reads it: nothing that could climb out
-// of app/ or name a pipe path.
+// A process's folder name: nothing that could climb out of a folder or
+// name a pipe path.
 const APP_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
-// Under every wait a caller has today (appFaceApp's SERVE_WAIT_MS, 18 s,
-// under puppetPost's 30 s), so each wait gives its own named answer.
+// Under every wait a caller has (the face's SERVE_WAIT_MS, 18 s, under its
+// own 30 s), so each wait gives its own named answer.
 const DOOR_WAIT_MS = 12000;
 
 // The answer may ride back inside one sealed packet, as JSON, so
-// it must leave room for escaping: half the sealed ceiling. A page larger
-// than this is refused by name, not cut.
+// it must leave room for escaping: half the sealed ceiling. An answer
+// larger than this is refused by name, not cut.
 const ANSWER_MAX = Math.floor(limits.SEALED_MAX / 2);
-
-// Each app server's heap, the same way the node's own unit caps its RAM.
-const RAM_MB = 128;
 
 const STATUS = {
   'app-not-served': 404,
@@ -81,16 +62,12 @@ const STATUS = {
   'app-answer-too-large': 502,
 };
 
-function servesOf(manifest) {
-  return !!(manifest && manifest.serves === true);
-}
-
 // THE NODE NAMES THE PIPE, and hands it to the process it starts, so it
-// always knows where to knock and the app never chooses. A socket file in
-// the app's own state folder off Windows (gitignored, file permissions). A
-// Windows pipe name is global to the machine, and one box can run two nodes
-// (Andy's and the agents'), so the name carries this checkout: a short hash
-// of its root, or both nodes' faceProof would collide.
+// always knows where to knock and the process never chooses. A socket file
+// in the process's own state folder off Windows (gitignored, file
+// permissions). A Windows pipe name is global to the machine, and one box
+// can run two nodes (Andy's and an agent's), so the name carries this
+// checkout: a short hash of its root, or both nodes' desk would collide.
 // kind 'process' (desk/G1.6): a server process in process/js. Its socket
 // sits in its own state folder, relay-state/process/<name>/ (desk/G1 D5:
 // a process's state is part of the node's), and its Windows pipe carries
@@ -106,94 +83,25 @@ function pipePathFor(rootDir, appName, platform, kind) {
     : path.join(rootDir, 'app-state', appName, 'door.sock');
 }
 
-// Every face whose manifest says it serves, by folder order. A face is a
-// process since slim/G1.4 (Andy: "faceProof moves"; D11, servers live in
-// process/js), so it is found there and never in shell/.
-function readServers(rootDir) {
-  let names = [];
-  try { names = fs.readdirSync(path.join(rootDir, 'process', 'js')).sort(); } catch (e) { return []; }
-  return names.filter(function (app) {
-    if (!APP_RE.test(app)) return false;
-    try { return servesOf(JSON.parse(fs.readFileSync(path.join(rootDir, 'process', 'js', app, app + '.json'), 'utf8'))); }
-    catch (e) { return false; }
-  });
-}
-
-function refusal(code, app, extra) {
-  const body = { ok: false, code: code, app: String(app || '') };
-  if (extra) body.extra = extra;
-  return { status: STATUS[code], body: body, type: 'application/json; charset=utf-8' };
-}
-
-// opts: { rootDir, startServerJob, log, platform, execPath, request }
+// opts: { rootDir, log, request }
 // `request` is relayRequest.pipeRequest, a parameter so a suite can drive
-// the hop without a process.
+// the knock without a process.
 function createAppClient(opts) {
   const o = opts || {};
-  const rootDir = String(o.rootDir || '');
   const log = o.log || function () {};
-  const platform = o.platform || process.platform;
   const request = o.request || relayRequest.pipeRequest;
   const table = Object.create(null);
-
-  function isPuppet() {
-    return require('./nodeApps').puppetIn(rootDir)().puppet;
-  }
-
-  function startAll() {
-    if (isPuppet()) { log('app servers: this node is a puppet, so it starts none'); return []; }
-    // ONLY A LISTED FACE (slim/G1.3): a face is a server process like any
-    // other, so a node starts one only if relay-state/include.json names it
-    // (includeList.js). Seeded first, as the boot's server scan does, since
-    // either may run first: a live node keeps the faces it ran.
-    const includeList = require('./includeList');
-    includeList.seedOnce(rootDir);
-    return readServers(rootDir).filter(function (app) { return includeList.includes(rootDir, 'process/js/' + app); }).map(function (app) {
-      // Its door with every process's, in relay-state/process/<name> (slim/G1.4).
-      const pipe = pipePathFor(rootDir, app, platform, 'process');
-      if (platform !== 'win32') {
-        try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
-      }
-      const row = { app: app, pipe: pipe, job: null };
-      if (typeof o.startServerJob === 'function') {
-        row.job = o.startServerJob(o.execPath || process.execPath,
-          ['--max-old-space-size=' + RAM_MB, path.join('js', 'server.js'), '--app', app, '--pipe', pipe],
-          { cwd: rootDir, type: 'app-server:' + app, module: 'process/js/' + app });
-      }
-      table[app] = row;
-      log('app server: ' + app);
-      return app;
-    });
-  }
-
-  function toLocalApp(appName, req) {
-    const app = String(appName || '');
-    const row = Object.prototype.hasOwnProperty.call(table, app) ? table[app] : null;
-    if (!row) return Promise.resolve(refusal('app-not-served', app));
-    const r = req || {};
-    const body = typeof r.body === 'string' ? r.body : (r.body == null ? '' : JSON.stringify(r.body));
-    if (Buffer.byteLength(body, 'utf8') > limits.BODY_MAX) return Promise.resolve(refusal('app-request-too-large', app, { bytes: Buffer.byteLength(body, 'utf8'), max: limits.BODY_MAX }));
-    const p = String(r.path || '/');
-    return Promise.resolve(request(row.pipe, String(r.method || 'GET'), p.charAt(0) === '/' ? p : '/' + p, body, {
-      type: typeof r.type === 'string' ? r.type : '',
-      timeoutMs: DOOR_WAIT_MS,
-      answerMax: ANSWER_MAX,
-    })).then(function (a) {
-      if (!a || a.refused) return refusal((a && STATUS[a.refused]) ? a.refused : 'app-not-running', app);
-      return { status: a.status, body: a.text, type: a.type };
-    });
-  }
 
   // ── THE NODE'S 'api' (appPair/G1.3) ───────────────────────────────
   //
   // DECIDED in the design session (Desk, appPair/G1), not this file's to
-  // undo. Only the node receives 'api' (D2). It asks every app server at
+  // undo. Only the node receives 'api' (D2). It asks every server at
   // once, each within DOOR_WAIT_MS (D16), keeps no copy (D6), and answers
-  // {app: tree}; an app server that does not answer is its error in the
+  // {app: tree}; a server that does not answer is its error in the
   // tree (D14). A call {app: {verb: {args}}} hands {verb: {args}} to that
-  // app and brings back its reply as it came (D10, D11). The node refuses
+  // server and brings back its reply as it came (D10, D11). The node refuses
   // only what it cannot route, and checks no verb or argument: those are
-  // the app server's (D9). Every error is {ok: false, code, error} from
+  // the server's (D9). Every error is {ok: false, code, error} from
   // spiritErrors (D12).
   function error(code, extra) {
     const e = errors.byCode(code);
@@ -241,7 +149,7 @@ function createAppClient(opts) {
     if (body === 'api') {
       const names = Object.keys(table);
       return Promise.all(names.map(function (app) {
-        // A branch is what that app server answered, or its error (D14).
+        // A branch is what that server answered, or its error (D14).
         return knock(table[app], 'api', caller).then(function (r) { return r.body; });
       })).then(function (parts) {
         const tree = {};
@@ -257,8 +165,6 @@ function createAppClient(opts) {
   }
 
   return {
-    startAll: startAll,
-    toLocalApp: toLocalApp,
     ask: ask,
     apps: function () { return Object.keys(table); },
     // A server process the node started (jobs.startNodeServers), known from
@@ -276,8 +182,6 @@ function createAppClient(opts) {
 module.exports = {
   createAppClient: createAppClient,
   pipePathFor: pipePathFor,
-  servesOf: servesOf,
-  readServers: readServers,
   DOOR_WAIT_MS: DOOR_WAIT_MS,
   ANSWER_MAX: ANSWER_MAX,
   STATUS: STATUS,

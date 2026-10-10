@@ -130,11 +130,11 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   const other = new DatabaseSync(path.join(A.rs, 'process', 'other', 'keep.db'));
   other.exec('CREATE TABLE t (v TEXT); INSERT INTO t VALUES (\'good\');');
   other.close();
-  // A FACE'S OWN KEY, where slim/G1.4 puts a face's state: relay-state/
+  // A PROCESS'S OWN KEY, where a process may keep one: relay-state/
   // process/<name>/relay-state/identity.json (wsl-claude, reviewing
-  // 17140917: the first restart copied it into the backup). Private keys
-  // stay out of any backup, so T2 must never find it.
-  const faceKeys = path.join(A.rs, 'process', 'faceProof', 'relay-state');
+  // 17140917: the first restart copied a face's into the backup). Private
+  // keys stay out of any backup, so T2 must never find it.
+  const faceKeys = path.join(A.rs, 'process', 'someServer', 'relay-state');
   fs.mkdirSync(faceKeys, { recursive: true });
   fs.writeFileSync(path.join(faceKeys, 'identity.json'), JSON.stringify({ publicKey: 'FACE-PUB', privateKey: 'SECRET-FACE-KEY' }));
 

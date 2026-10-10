@@ -9,7 +9,7 @@
 //   supported in every context/environment".
 //
 // Built by claude-windows at 8c8347c. The far end is a REAL
-// nodeApps.puppetDoor with its own relay-state/owner.json, so a command
+// puppetMode.puppetDoor with its own relay-state/owner.json, so a command
 // is signed by ownerPost, checked by G5's rule and run by G7's shim --
 // the whole owner door, end to end, over an in-process relay.
 //
@@ -22,7 +22,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
-const nodeApps = require('../run/js/nodeApps');
+const puppetMode = require('../run/js/puppetMode');
 const ownerPost = require('../run/js/ownerPost');
 
 test.startTest('The owner\'s signed command reaches his puppet, and only that puppet\'s answer comes back');
@@ -42,7 +42,7 @@ function puppetNode(id) {
     id: id, ran: ran, deliverAnswer: null,
     door: null,
   };
-  node.door = nodeApps.puppetDoor({
+  node.door = puppetMode.puppetDoor({
     rootDir: root,
     handlerFor: function (verb) {
       if (verb !== 'contact.list') return null;

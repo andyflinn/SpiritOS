@@ -1,14 +1,13 @@
 'use strict';
 
 // spirit/test/appClient.js
-// THE LAST LEG'S OWN PIECES — public-app-server/G17 (js/appClient.js).
+// THE NODE'S SIDE OF ITS SERVER PROCESSES (js/appClient.js).
 //
-// Which app serves a name, where its pipe is, the named refusals, and one
-// real hop: a hello app server started on a pipe, asked for its page (html),
-// its script (javascript) and one verb (a POST, json), the way appFaceApp on
-// the owner's node asks it through api.toLocalApp. The whole route, browser
-// to owner and back, is faceRouteWorld.js; the test list agreed for the last
-// leg is wsl-claude's (faceLastLeg.js).
+// Where each pipe is, the named refusals, and one real knock: appFaceAppServer
+// started on a pipe the way the node starts it, asked its tree and its one
+// verb. Since goal/G13.2 there is no face half here: no readServers, no
+// startAll, no toLocalApp; a face is a process/js server like any other, and
+// the whole route, browser to owner and back, is appFaceProcess.js.
 
 const fs = require('fs');
 const os = require('os');
@@ -16,22 +15,10 @@ const path = require('path');
 const childProcess = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
-const limits = require('../run/js/limits.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 
-function tempRoot(apps) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appservers-'));
-  Object.keys(apps).forEach(function (name) {
-    fs.mkdirSync(path.join(root, 'process', 'js', name), { recursive: true });
-    fs.writeFileSync(path.join(root, 'process', 'js', name, name + '.json'), JSON.stringify(apps[name]));
-    // A test node includes what it starts, for this run (slim/G1.3 T6).
-    require('../run/js/includeList.js').add(root, 'process/js/' + name);
-  });
-  return root;
-}
-
-test.startTest('The last leg: the owner node and the app servers on its box');
+test.startTest('The node\'s side of its server processes: pipes, refusals, one real knock');
 
 test.subHeading('The node names each pipe, and two nodes on one box never share one');
 (function () {
@@ -49,95 +36,60 @@ test.subHeading('The node names each pipe, and two nodes on one box never share 
   } else {
     test.fail('socket path: ' + unix);
   }
-})();
-
-test.subHeading('An app says it serves, and the node knows it by its own name only');
-(function () {
-  const root = tempRoot({
-    alpha: { serves: true },
-    beta: { serves: 'yes' },
-    gamma: { boots: true },
-    delta: { serves: true, face: 'hello' },
-  });
-  const apps = appClient.readServers(root);
-  if (apps.join(',') === 'alpha,delta') {
-    test.check('"serves": true starts a server; anything else, "yes" included, starts none');
+  const proc = appClient.pipePathFor('/root/SpiritOS/spirit/run', 'desk', 'linux', 'process');
+  if (proc === path.join('/root/SpiritOS/spirit/run', 'relay-state', 'process', 'desk', 'door.sock')) {
+    test.check('a process\'s socket sits in its own state folder under relay-state/process/');
   } else {
-    test.fail('servers read: ' + JSON.stringify(apps));
+    test.fail('process socket path: ' + proc);
   }
-  fs.rmSync(root, { recursive: true, force: true });
 })();
 
 // THE NODE HAS NO FACE VOCABULARY. Andy, 2026-09-27: "the core only knows
 // about puppets (nodes owned by nodes, not people). the face-name/app-or-member
-// table must be owned by appFaceApp". The first version read a 'face' field
-// out of every manifest; this keeps it from drifting back.
+// table must be owned by appFaceApp". And 2026-10-10: "no \"face\" crap belongs
+// into node." The first version read a 'face' field out of every manifest; this
+// keeps it from drifting back.
+test.subHeading('The node knows servers by name and pipe, never a face');
 (function () {
   const src = fs.readFileSync(path.join(RUN, 'js', 'appClient.js'), 'utf8')
     .split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   if (!/face/i.test(src)) test.check('appClient.js has no face vocabulary outside its comments');
   else test.fail('appClient.js code mentions a face: ' + (src.match(/.*face.*/i) || [''])[0].trim());
-})();
-
-test.subHeading('None on a puppet, one server job per serving app elsewhere');
-(function () {
-  const root = tempRoot({ hello: { serves: true } });
-  const started = [];
-  const s = appClient.createAppClient({
-    rootDir: root, platform: 'linux', log: function () {},
-    startServerJob: function (cmd, args, opts) { started.push({ cmd: cmd, args: args, opts: opts }); return {}; },
-  });
-  s.startAll();
-  const one = started[0];
-  if (started.length === 1 && one.args.indexOf('--app') !== -1 && one.args[one.args.indexOf('--app') + 1] === 'hello' &&
-      one.args[one.args.indexOf('--pipe') + 1] === path.join(root, 'relay-state', 'process', 'hello', 'door.sock') &&
-      one.opts.cwd === root && one.args.some(function (a) { return /^--max-old-space-size=\d+$/.test(a); })) {
-    test.check('the node starts js/server.js --app hello --pipe <its path>, from its run folder, with its heap capped');
-  } else {
-    test.fail('started: ' + JSON.stringify(started));
-  }
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'owner.json'),
-    JSON.stringify({ owner: require('../run/js/relayAuth').generateIdentity('owner').publicKey }));
-  const onPuppet = [];
-  appClient.createAppClient({
-    rootDir: root, platform: 'linux', log: function () {},
-    startServerJob: function () { onPuppet.push(1); return {}; },
-  }).startAll();
-  if (onPuppet.length === 0) test.check('a puppet (relay-state/owner.json naming another key) starts none: app servers live on the owner\'s box');
-  else test.fail('a puppet started ' + onPuppet.length);
-  fs.rmSync(root, { recursive: true, force: true });
+  const gone = ['readServers', 'servesOf', 'startAll', 'toLocalApp'].filter(function (n) { return typeof appClient[n] === 'function' || new RegExp('\\b' + n + '\\b').test(src); });
+  if (!gone.length) test.check('no readServers, servesOf, startAll or toLocalApp: a server is started one way, by startNodeServers, and known here by its pipe');
+  else test.fail('still in appClient.js: ' + gone.join(', '));
 })();
 
 function refusalsByName() {
   test.subHeading('Every link that fails says which, by name');
-  const root = tempRoot({ hello: { serves: true } });
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appservers-'));
   let answer = null;
   const s = appClient.createAppClient({
-    rootDir: root, platform: 'linux', log: function () {}, startServerJob: function () { return {}; },
+    rootDir: root, log: function () {},
     request: function () { return Promise.resolve(answer); },
   });
-  s.startAll();
+  s.register('hello', appClient.pipePathFor(root, 'hello', 'linux', 'process'));
   const cases = [
-    ['nobody', { refused: null }, {}, 404, 'app-not-served'],
-    ['hello', null, { body: 'x'.repeat(limits.BODY_MAX + 1) }, 413, 'app-request-too-large'],
-    ['hello', { refused: 'app-not-running' }, {}, 503, 'app-not-running'],
-    ['hello', { refused: 'app-did-not-answer' }, {}, 504, 'app-did-not-answer'],
-    ['hello', { refused: 'app-answer-too-large' }, {}, 502, 'app-answer-too-large'],
+    ['nobody', { refused: null }, 404, 'app-not-served'],
+    ['hello', { refused: 'app-not-running' }, 503, 'app-not-running'],
+    ['hello', { refused: 'app-did-not-answer' }, 504, 'app-did-not-answer'],
+    ['hello', { refused: 'app-answer-too-large', bytes: 99999, max: 1 }, 502, 'app-answer-too-large'],
   ];
   return cases.reduce(function (p, c) {
     return p.then(function () {
       answer = c[1];
-      return s.toLocalApp(c[0], c[2]).then(function (r) {
-        if (r.status === c[3] && r.body && r.body.code === c[4]) test.check(c[4] + ' is ' + c[3] + ', by name');
-        else test.fail(c[4] + ': ' + JSON.stringify(r));
+      const ask = {};
+      ask[c[0]] = { greet: {} };
+      return s.ask(ask).then(function (r) {
+        if (r.status === c[2] && r.body && r.body.code === c[3]) test.check(c[3] + ' is ' + c[2] + ', by name');
+        else test.fail(c[3] + ': ' + JSON.stringify(r));
       });
     });
   }, Promise.resolve()).then(function () {
     const codes = require('../run/js/spiritErrors.js');
     const known = cases.every(function (c) {
-      const d = codes.byCode(c[4]);
-      return !!d && d.code === c[4] && d.status === c[3];
+      const d = codes.byCode(c[3]);
+      return !!d && d.code === c[3] && d.status === c[2];
     });
     if (known) test.check('each is a declared code in spiritErrors.js, with the same status');
     else test.fail('a code is not declared in spiritErrors.js');
@@ -145,71 +97,55 @@ function refusalsByName() {
   });
 }
 
-// ONE REAL HOP. The hello sample, started the way the node starts it, on a
-// pipe, and asked the three things a visitor's browser asks.
-function aRealHop() {
-  test.subHeading('A real app server on a pipe: its page, its script, and a verb');
+// ONE REAL KNOCK. appFaceAppServer, started the way the node starts a process,
+// on a pipe, asked its tree and its one verb.
+function aRealKnock() {
+  test.subHeading('A real server on a pipe: its tree, its verb, and its end with the node');
   // ITS OWN RUN FOLDER, NOT THE CHECKOUT'S. The pipe name comes from the
   // root, and on a checkout that is somebody's node that node already serves
-  // faceProof on it: the first version of this asked Andy's live server and
-  // passed for the wrong reason, which showed only when the test's own
-  // server ended and the page still came back.
+  // on it: the first version of this asked Andy's live server and passed for
+  // the wrong reason.
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hop-'));
-  // A face is a process since slim/G1.4; ask.js stays in the shell.
-  fs.cpSync(path.join(RUN, 'process', 'js', 'faceProof'), path.join(root, 'process', 'js', 'faceProof'), { recursive: true });
-  fs.cpSync(path.join(RUN, 'shell', 'shared'), path.join(root, 'shell', 'shared'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'process'), { recursive: true });
+  fs.cpSync(path.join(RUN, 'process', 'js', 'appFaceAppServer'), path.join(root, 'process', 'js', 'appFaceAppServer'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
-  require('../run/js/includeList.js').add(root, 'process/js/faceProof');
-  const s = appClient.createAppClient({
-    rootDir: root, log: function () {},
-    startServerJob: function (cmd, args, opts) {
-      const child = childProcess.spawn(cmd, args, { cwd: opts.cwd, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
-      hop.child = child;
-      return {};
-    },
-  });
-  const hop = { child: null };
-  s.startAll();
-  if (s.apps().indexOf('faceProof') === -1) {
-    test.fail('shell/faceProof does not say "serves": true');
-    return Promise.resolve();
-  }
+  const state = path.join(root, 'relay-state', 'process', 'appFaceAppServer');
+  fs.mkdirSync(state, { recursive: true });
+  const pipe = appClient.pipePathFor(root, 'appFaceAppServer', process.platform, 'process');
+  const s = appClient.createAppClient({ rootDir: root, log: function () {} });
+  s.register('appFaceAppServer', pipe);
+  const child = childProcess.spawn(process.execPath,
+    [path.join(root, 'process', 'js', 'appFaceAppServer', 'appFaceAppServer.js'), '{}', '--pipe', pipe, '--state', state],
+    { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   function ready(tries) {
-    return s.toLocalApp('faceProof', { method: 'GET', path: '/' }).then(function (r) {
-      if (r.status === 200 || tries <= 0) return r;
+    return s.ask('api').then(function (r) {
+      const up = r.body && r.body.appFaceAppServer && r.body.appFaceAppServer.ok !== false;
+      if (up || tries <= 0) return r;
       return new Promise(function (res) { setTimeout(res, 250); }).then(function () { return ready(tries - 1); });
     });
   }
-  return ready(40).then(function (page) {
-    if (page.status === 200 && /^text\/html/.test(page.type) && /Hello from an app server/.test(page.body)) {
-      test.check('GET / is the app\'s page, typed text/html');
-    } else {
-      test.fail('GET /: ' + JSON.stringify({ status: page.status, type: page.type }));
-    }
-    return s.toLocalApp('faceProof', { method: 'GET', path: '/ask.js' });
-  }).then(function (script) {
-    if (script.status === 200 && /javascript/.test(script.type)) test.check('GET /ask.js is its script, typed as javascript');
-    else test.fail('GET /ask.js: ' + JSON.stringify({ status: script.status, type: script.type }));
-    return s.toLocalApp('faceProof', { method: 'POST', path: '/api/spirit', body: JSON.stringify({ verb: 'app.state' }), type: 'application/json' });
+  return ready(40).then(function (tree) {
+    const branch = tree.body && tree.body.appFaceAppServer;
+    if (branch && branch.serve && branch.DEBUG) test.check('ask \'api\': its tree names serve, with DEBUG on it like every server\'s');
+    else test.fail('ask api: ' + JSON.stringify(tree).slice(0, 200));
+    return s.ask({ appFaceAppServer: { serve: { host: 'join.face.test', method: 'POST', path: '/api/spirit', body: '{"verb":"app.state"}', type: 'application/json' } } });
   }).then(function (verb) {
     let said = null;
-    try { said = JSON.parse(verb.body); } catch (e) { said = null; }
-    if (verb.status === 200 && /json/.test(verb.type) && said && said.ok === true && said.appName === 'faceProof') {
-      test.check('POST /api/spirit app.state is the app\'s own answer, typed json');
+    try { said = JSON.parse(verb.body && verb.body.body); } catch (e) { said = null; }
+    if (verb.status === 200 && verb.body && verb.body.status === 200 && /json/.test(verb.body.type) && said && said.ok === true && said.app === 'appFaceAppServer') {
+      test.check('serve answers a json ask with the proof, typed json, as the verb\'s own reply');
     } else {
-      test.fail('POST: ' + JSON.stringify(verb).slice(0, 300));
+      test.fail('serve: ' + JSON.stringify(verb).slice(0, 300));
     }
     // THE SERVER ENDS WITH ITS NODE: closing the channel is the node dying.
     return new Promise(function (resolve) {
       const timer = setTimeout(function () { resolve(false); }, 5000);
-      hop.child.on('exit', function () { clearTimeout(timer); resolve(true); });
-      hop.child.disconnect();
+      child.on('exit', function () { clearTimeout(timer); resolve(true); });
+      child.disconnect();
     });
   }).then(function (ended) {
-    if (ended) test.check('an app server exits when the channel to its node closes, so a dead node leaves no orphan on the pipe');
-    else { test.fail('the app server outlived its node\'s channel'); hop.child.kill(); }
-    return s.toLocalApp('faceProof', { method: 'GET', path: '/' });
+    if (ended) test.check('a server exits when the channel to its node closes, so a dead node leaves no orphan on the pipe');
+    else { test.fail('the server outlived its node\'s channel'); child.kill(); }
+    return s.ask({ appFaceAppServer: { serve: { host: '', method: 'GET', path: '/', body: '', type: '' } } });
   }).then(function (after) {
     if (after.status === 503 && after.body && after.body.code === 'app-not-running') {
       test.check('with nothing on the pipe, the node answers app-not-running at once');
@@ -221,7 +157,7 @@ function aRealHop() {
 
 // A DEADLINE, NOT AN IDLE TIMER (wsl-claude's finding on 62e2b96): an app
 // that sends a byte every 100 ms must still be cut off at the limit, or it
-// outruns the door's wait and breaks the nesting under appFaceApp's.
+// outruns the door's wait and breaks the nesting under the face's.
 function aTrickleIsCutOff() {
   test.subHeading('A slow app is cut off at the deadline, however it trickles');
   const http = require('http');
@@ -251,7 +187,7 @@ function aTrickleIsCutOff() {
 
 refusalsByName()
   .then(aTrickleIsCutOff)
-  .then(aRealHop)
+  .then(aRealKnock)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (e) {
     test.fail('the suite itself failed: ' + ((e && e.stack) || e));

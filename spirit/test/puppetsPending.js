@@ -169,7 +169,7 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // The receiving half, and the reason it is its own requirement: the
   // switch is where a remote packet becomes local authority, so it is
   // the whole security boundary of this feature.
-  const nodeApps = read('spirit/run/js/nodeApps.js');
+  const puppetMode = read('spirit/run/js/puppetMode.js');
   // ── puppets/G5 IS BUILT, SO THE DECLARATION BECAME AN ASSERTION ──────
   //
   // This suite told me so in those words — "puppets/G5 EXISTS NOW. It was
@@ -178,13 +178,13 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // asserted in spirit/test/ownerCommand.js, ten checks; what is asserted HERE
   // is only that the unit exists and is reachable, so this file keeps saying
   // what is owed and does not become a second copy of that suite.
-  if (typeof require('../run/js/nodeApps').ownerCommandIn === 'function') {
-    test.check('the owner switch exists as a unit — nodeApps.ownerCommandIn, asserted in '
+  if (typeof require('../run/js/puppetMode').ownerCommandIn === 'function') {
+    test.check('the owner switch exists as a unit — puppetMode.ownerCommandIn, asserted in '
       + 'ownerCommand.js: the mode gate, no signature, a lifted transport signature, '
       + 'a sibling-signed command, a replay at a sibling, a signature moved to another '
       + 'envelope, a stale minute, plain chat and an app packet');
   } else {
-    test.fail('puppets/G5 regressed: nodeApps no longer exports ownerCommandIn');
+    test.fail('puppets/G5 regressed: puppetMode no longer exports ownerCommandIn');
   }
 
   // ── puppets/G6 IS BUILT, SO THE DECLARATION BECAME AN ASSERTION ──────
@@ -197,12 +197,12 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // file keeps saying what is owed and does not become a second copy.
   // relay-state/owner.json, { owner } (cleanup/G1.7)
   // -- after Andy ruled "a node OWNED by another node's ID is a puppet".
-  if (typeof require('../run/js/nodeApps').puppetIn === 'function' && /owner\.json/.test(nodeApps)) {
-    test.check('the owner lock exists as a unit — nodeApps.puppetIn and the node\'s owner.json, asserted '
+  if (typeof require('../run/js/puppetMode').puppetIn === 'function' && /owner\.json/.test(puppetMode)) {
+    test.check('the owner lock exists as a unit — puppetMode.puppetIn and the node\'s owner.json, asserted '
       + 'in puppetOwner.js: read through api.owner(), unreachable from the puppet by any path, no '
       + 'self-planting, an owner edit seen at once, anything not a key means nobody');
   } else {
-    test.fail('puppets/G6 regressed: nodeApps no longer has puppetIn and owner.json');
+    test.fail('puppets/G6 regressed: puppetMode no longer has puppetIn and owner.json');
   }
 
   // ── puppets/G7 IS BUILT: THE OWNER DOOR ──────────────────────────────
@@ -216,13 +216,13 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // /synthetic|shimReq|asLoopback/ -- names GUESSED for an implementation
   // not yet written, and the one built used none of them. So the
   // declaration could not see a built, tested door. A probe must name what
-  // was AGREED, which is why G10 below names nodeApps.faceDoor.
-  if (typeof require('../run/js/nodeApps').puppetDoor === 'function') {
-    test.check('the owner door exists as a unit — nodeApps.puppetDoor, asserted in puppetDoor.js: the '
+  // was AGREED, which is why G10 below names puppetMode.faceDoor.
+  if (typeof require('../run/js/puppetMode').puppetDoor === 'function') {
+    test.check('the owner door exists as a unit — puppetMode.puppetDoor, asserted in puppetDoor.js: the '
       + 'owner\'s signed command to a carried group runs and is answered, an uncarried group is refused by '
       + 'name, strangers get silence, a failing handler fails alone, now or later');
   } else {
-    test.fail('puppets/G7 regressed: nodeApps no longer exports puppetDoor');
+    test.fail('puppets/G7 regressed: puppetMode no longer exports puppetDoor');
   }
 
   // ── puppets/G10: THE FACE DOOR AND THE PUPPET GROUP ─────────────────
@@ -232,10 +232,10 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // there for them. It needs join's route (public-app-server G17); G14, an
   // app's declared commands, was also named here and turned out built
   // (ac0c283, asserted in appServerBoundary.js), so it is dropped. The probe is the name
-  // AGREED with claude-windows for slice 2, nodeApps.faceDoor, so it goes
+  // AGREED with claude-windows for slice 2, puppetMode.faceDoor, so it goes
   // red the moment the unit exists and asks for its assertions.
   test.awaiting('puppets/G10', 'the face door and the puppet group',
-    typeof require('../run/js/nodeApps').faceDoor === 'function',
+    typeof require('../run/js/puppetMode').faceDoor === 'function',
     'visitors through the face reach only the puppet group; a face request naming a node verb answers '
     + 'exactly as an unknown verb; both ends of the face door are app-blind',
     { there: 0, cost: 'a sitting, after its prerequisite',
@@ -272,17 +272,19 @@ test.subHeading('A puppet can compose any envelope, which is what makes the sibl
   // packet text, and that text reaches the router unexamined.
   // NO REGEX. Two literal substrings from the surface itself, so the check
   // cannot fail on an escape and be read as the hole having closed.
+  // SINCE goal/G13.2 the surface is the loopback door's peer.post (the mounted puppet's post()
+  // seam left with nodeApps.mountAll): a process on this box hands the node raw text, and the
+  // node's router sends it signed by THIS node key. The basis of the sibling case stands.
   const surface = read('spirit/run/js/server.js');
-  const takesText = surface.indexOf('post: function (relayUrl, toKey, text, hints, how)') !== -1;
-  const passesThrough = surface.indexOf('return peerRouter.post(relayUrl, toKey, text, hints, how)') !== -1;
+  const takesText = surface.indexOf("'peer.post': { request: { to: '', text: ''") !== -1;
+  const passesThrough = surface.indexOf('hub.handlePost(rq, rs, readJsonBody, { router: peerRouter') !== -1;
   const rawText = takesText && passesThrough;
   if (rawText) {
-    test.check('server.js hands a mounted puppet a post() whose text is RAW and passes it '
-      + 'straight to peerRouter.post — so a puppet composes its own envelope and it '
-      + 'travels signed by THIS node key. That is the whole basis of the sibling case, '
-      + 'and it is a fact rather than a worry');
+    test.check('server.js\'s peer.post takes RAW text from a process on this box and hands it to '
+      + 'the node\'s router — so a process composes its own envelope and it travels signed by '
+      + 'THIS node key. That is the whole basis of the sibling case, and it is a fact rather than a worry');
   } else {
-    test.fail('the raw-text post surface at server.js:1335 has changed shape — re-read it '
+    test.fail('the raw-text post surface, the loopback door\'s peer.post, has changed shape — re-read it '
       + 'and decide whether the sibling requirement below still has a basis');
   }
 }
