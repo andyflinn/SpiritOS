@@ -1,8 +1,8 @@
 {
- "change": 27485,
+ "change": 27604,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T13:14:10.403Z",
+ "writtenAt": "2026-10-10T13:42:24.091Z",
  "items": [
   {
    "id": "goal/G14",
@@ -16,7 +16,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.2",
     "goal/G14.3"
    ],
    "go": false,
@@ -39,13 +38,11 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -347,11 +344,14 @@
   },
   {
    "id": "goal/G14.2",
-   "title": "A connect/disconnect switch for Levant, visible in desk",
+   "title": "A shell app skelleton with a connect/disconnect switch for Levant",
    "goal": "goal/G14",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -359,7 +359,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -375,17 +375,17 @@
      "core": false
     },
     {
-     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.html",
-     "by": "claude-windows",
-     "core": false
-    },
-    {
      "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
      "by": "claude-windows",
      "core": false
     },
     {
      "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/puppets.json",
      "by": "claude-windows",
      "core": false
     },
@@ -441,7 +441,17 @@
    "full": false,
    "box": "WHAT: the hello-world of deskUnslothRemote, the brand new shell app: one switch that connects or disconnects Levant at the desk, with its state visible in the app. The app runs on both nodes at the same time: on 11111 it flips deskUnsloth on its own node; on 65432 it flips the same deskUnsloth on the puppet through the owner door. After goal/G14.1 (Andy: every other item is blocked by it).\n\nWHY (Andy, 2026-10-10): \"then one item for the hello-world state: I changed my mind on it's feature: it will be a connect/disconnect switch for Levant to be visible in desk.\" \"this way i can turn it off, so i don't have to waive for you to claim both reds and code.\" And, correcting the box: \"This will be visible in the brand new deskUnslothRemote shell-app, this is it's hello world and can simultaneously run un the puppet or on my own node.\"\n\nHOW LEVANT IS AT THE DESK TODAY (read 2026-10-10): deskUnsloth loops every 250 ms asking its node's deskClient for the next lines, answers the lines addressed to its persona and JOB lines by posting through the desk, and nothing else; it declares no verb of its own. The desk counts an agent live for ten minutes after its last write (LIVE_MS), and every ask for lines is a write (the ear's listening word); the signoff verb takes an agent off the live list at once (goal/G8.5: \"a leaving agent is not waited out for ten minutes\"), and its next write makes it live again. The waive of a phase is decided by that live list.\n\nSHAPE\n1. deskUnsloth gains two verbs on its pipe: connect {on: true or false} answers {connected}, and state {} answers {connected, persona, model}. Disconnect: the loop stops asking for lines and deskUnsloth says signoff to the desk, so Levant leaves the live list at once, not in ten minutes, and the waive rule sees one agent. Connect: the loop resumes at the present, as it starts today (the backlog read, never answered), and its first ask makes it live again. The process stays up either way; stopping the job is not this switch. It starts connected, as today.\n2. shell/deskUnslothRemote, the hello world: a target picker with two entries, this node and the puppet (the puppet's key from a small list in the app's own folder for now, until a puppets list exists), and the switch showing its state. On this node the app asks jobs.api with deskUnsloth state and connect; on the puppet it asks owner.command carrying that same jobs.api ask. One function with the target as its argument; nothing else differs. The same app opens on both nodes' shells at once, each with its own target.\n3. Visible: the switch and Levant's connected state are shown in deskUnslothRemote itself, read from the state verb each time the app opens or flips; that the desk's live list follows is the effect, seen in its Team tab, not the display this item builds.\n\nTESTS, the red first: a suite that starts deskUnsloth on a pipe against a fake node (as appFaceProcess.js does for the face) and asserts: state answers connected true at start; connect off stops the asks for next lines within a second, sends one signoff, and state says false; connect on resumes the asks; the app's one function builds the local ask and the owner.command ask from the same target. deskUnsloth's existing suite stays green.\n\nFILES: process/js/deskUnsloth/deskUnsloth.js and its manifest; shell/deskUnslothRemote (new: the manifest, the page, the script); the new suite; no core file.\n\nNOT IN THIS ITEM: the configuration view and editor, the studio's facts, the restart, the puppets list on the owner node. Each a later item of this goal.",
    "version": 3,
-   "checks": [],
+   "checks": [
+    {
+     "number": "T1",
+     "kind": "T",
+     "words": "the red suite: state, connect off (one signoff, asks stop), connect on, the app one function",
+     "test": "spirit/test/deskUnslothSwitch.js",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-10T13:23:28.259Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -472,6 +482,141 @@
      "by": "claude-windows",
      "at": "2026-10-10T13:04:46.599Z",
      "text": "Green: no check stands on it, no core file, the red is named, and the box carries your three lines verbatim."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:14:19.931Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:14:35.221Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:14:55.134Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:15:18.268Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:16:00.549Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:16:52.790Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:17:12.333Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:17:58.387Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:18:10.337Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:19:23.717Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:20:02.130Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:20:42.333Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:21:05.563Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:21:23.874Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:22:30.816Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:22:42.659Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:22:54.506Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:23:10.171Z",
+     "text": "commit 93c5af5eb5939780d9a8e448aa80bb49fb1c1e8d: goal/G14.2: a connect/disconnect switch for Levant, visible in desk\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/process/js/deskUnsloth/deskUnsloth.json\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.json\n- spirit/run/shell/deskUnslothRemote/puppets.json\n- spirit/test/deskUnslothSwitch.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:23:24.406Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:23:31.791Z",
+     "text": "Built and pushed, 93c5af5e: deskUnsloth connect/state, shell/deskUnslothRemote (manifest, script, puppets.json with the 11111 key), the red deskUnslothSwitch.js 19 green, deskUnslothContext still green.\nFiles: process/js/deskUnsloth/deskUnsloth.js, deskUnsloth.json; shell/deskUnslothRemote/deskUnslothRemote.js, .json, puppets.json; spirit/test/deskUnslothSwitch.js (no .html: a shell app is script + manifest).\nTo see it: pull both clones, restart the puppet so deskUnsloth has the verbs, and include shell/deskUnslothRemote on each node (Apps app) - shall I do the puppet side"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:31:58.431Z",
+     "text": "the shell app doesn't show up ££(mount) in the shell)"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:32:40.731Z",
+     "text": "A shell app shows only when the node includes it, and yours did not list shell/deskUnslothRemote (config.searchModules read live).\nI included it now through config.setModules on your 65432: reload the shell and it is on the desktop; the same is owed on 11111 once that clone is pulled."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:39:20.458Z",
+     "text": "it works, BUT, i only see its agent bubble go live or gray after i send a message, or interact with desk.... this is one of those cases where the agent bubbles need to be updated by stream as well. oos, for now, but please note that i already complained multiple times about sloppy updating/painting in desk, that's why shell-elements need to carry their stream subscription with them."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:39:43.505Z",
+     "text": "Noted for the desk-issues batch: the agent bubbles repaint only on your interaction; each shell element carries its own stream subscription. Not built now, as you said."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:40:47.071Z",
+     "text": "the app still doesn't show up on 11111"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:41:12.707Z",
+     "text": "11111 had the code (its clone is at 93c5af5e) but not the inclusion; I included shell/deskUnslothRemote there now, reload its shell.\nIts deskUnsloth still runs the old script until that node restarts, so the switch there answers no state until then; say go and I restart it in one step."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:41:19.936Z",
+     "text": "Correction: 11111 already runs the new deskUnsloth, its state verb answers live (connected false, Levant); no restart owed. Only the inclusion was missing, done."
     }
    ]
   },
