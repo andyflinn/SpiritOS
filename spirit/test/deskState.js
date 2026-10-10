@@ -213,31 +213,21 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (odd.status === 400 && odd.body && odd.body.code === 'bad-request') test.check('press what:fly answers bad-request');
   else test.fail(OWED + 'press what:fly answered ' + JSON.stringify(odd));
 
-  // wsl-claude: `by` is self-declared, so a member over peerPost could say 'andy'. Andy's presses come by jobs.api;
-  // the member path (apiDoor) refuses a desk write that says by 'andy', and never passes it on.
-  test.subHeading('a member cannot write as andy');
-  const packet = require('../run/js/client/packet');
-const arrivals = require('../run/js/arrivals.js');
-  const MEMBER = 'MCowBQYDK2VwAyEAmembermembermembermembermembermemb=';
-  const askedDoor = [];
-  const repliedDoor = [];
-  const door = require('../run/js/apiDoor.js').createApiDoor({
-    servers: { ask: function (b) { askedDoor.push(b); return Promise.resolve({ status: 200, body: {} }); } },
-    post: function (relay, to, text) { repliedDoor.push(packet.decode(text)); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, isKnown: function (k) { return k === MEMBER; }, log: function () {},
-    // apiAuth/G1.2: the door gates members by their grants; this member
-    // holds desk whole, so what this suite tests stays its own.
-    auth: { pathsOf: function (k) { return k === MEMBER ? ['desk'] : []; } },
-  });
-  await door(Object.assign({ fromKey: MEMBER, hash: 'D1', relay: 'https://relay.example', text: packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'done', by: 'andy' } } }).text}, { envelope: arrivals.envelopeOf(packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'done', by: 'andy' } } }).text) }));
-  await sleep(50);
-  const refusedDoor = repliedDoor[0] && repliedDoor[0].body;
-  if (!askedDoor.length && refusedDoor && refusedDoor.ok === false) test.check('a member\'s desk write saying by andy is refused before the server');
-  else test.fail(OWED + 'a member wrote as andy: asked ' + JSON.stringify(askedDoor) + ', answered ' + JSON.stringify(refusedDoor));
-  await door(Object.assign({ fromKey: MEMBER, hash: 'D2', relay: 'https://relay.example', text: packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'claim-done', by: 'wsl-claude' } } }).text}, { envelope: arrivals.envelopeOf(packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'claim-done', by: 'wsl-claude' } } }).text) }));
-  await sleep(50);
-  if (askedDoor.length === 1) test.check('a member\'s write under its own name passes');
-  else test.fail('a member\'s own write did not pass: ' + JSON.stringify(askedDoor));
+  // THE ANDY DOOR IS GONE, AND SO ARE THE TWO CHECKS THAT STOOD HERE (goal/G16.4).
+  //
+  // They asserted that apiDoor refused a member's desk write whose arguments said
+  // by 'andy', from when the desk took its writer from those arguments (desk/G2.1).
+  // The desk names the writer from the CALLER now — desk.js writerOf answers 'andy'
+  // only for caller.owner === true, every handler overwrites the arguments' `by` with
+  // it, and an owner press is refused by ownerOnly before anything else. So the door
+  // check guarded nothing and refused a member's honest search of the owner's lines;
+  // Andy, 2026-10-10: "an andy-door sounds bad." and "remove it."
+  //
+  // Retired rather than left failing: the guarantee they were about is asserted
+  // directly, on the desk rather than on a mocked server, by test/apiDoorNoOwnerName.js
+  // ("a chat.add naming by andy reaches the desk, which names the writer from the
+  // caller", and apiDoor.js holding no andy literal). Checked in goal/G16.4's build
+  // phase by wsl-claude, 2026-10-11.
 
   test.subHeading('it all survives a restart');
   await stop(kids[kids.length - 1]);
