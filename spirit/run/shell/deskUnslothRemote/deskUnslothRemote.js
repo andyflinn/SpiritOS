@@ -209,23 +209,42 @@ function deskUnslothRemoteDrawModels() {
   deskUnslothRemoteDrawChatTitle();
 }
 
+// ONE models ASK IN FLIGHT, EVER, AND THE NEXT ONLY AFTER THE ANSWER. Through the owner door an ask can take 20 s
+// (ownerPost's wait) and the first build asked every 2 s regardless: ten posts outstanding at a time from his
+// shell, the relay refusing busy, Desk's own posts starved and the puppet "unreachable" (Andy, 2026-10-10: "andy's
+// shell has some request constantly outstanding", "sending in desk no longer works and on 65432 Remote is alwas
+// says 11111 unreachable"). So: a guard, a chain of timeouts after each answer, never an interval; and no ask at
+// all once the app's panel has left the page.
 var deskUnslothRemoteFreshTries = 0;
+var deskUnslothRemoteModelsInFlight = false;
+var deskUnslothRemoteContainer = null;
+var POLL_MS = 5000;
+
+function deskUnslothRemoteOnPage() {
+  return !!(deskUnslothRemoteContainer && deskUnslothRemoteContainer.isConnected !== false && !deskUnslothRemoteContainer.hidden);
+}
+
 function deskUnslothRemoteLoadModels() {
-  if (!deskUnslothRemoteTarget) return Promise.resolve();
+  if (!deskUnslothRemoteTarget || deskUnslothRemoteModelsInFlight) return Promise.resolve(deskUnslothRemoteModels);
   var target = deskUnslothRemoteTarget;
+  deskUnslothRemoteModelsInFlight = true;
   return deskUnslothRemoteAsk(target, 'models', {}).then(function (said) {
+    deskUnslothRemoteModelsInFlight = false;
     if (target !== deskUnslothRemoteTarget) return said;
     deskUnslothRemoteModels = said;
     deskUnslothRemoteDrawModels();
-    // A CACHED ANSWER IS ASKED AGAIN after a moment, until the studio has been heard from (or it has not answered
+    // A CACHED ANSWER IS ASKED AGAIN after the answer, until the studio has been heard from (or it has not answered
     // ten times over: then the line stays as known, Load withheld, and the next open asks again).
     if (said && said.cached && !deskUnslothRemoteLoadTimer && deskUnslothRemoteFreshTries < 10) {
       deskUnslothRemoteFreshTries++;
-      setTimeout(function () { if (target === deskUnslothRemoteTarget) deskUnslothRemoteLoadModels(); }, 2000);
+      setTimeout(function () { if (target === deskUnslothRemoteTarget && deskUnslothRemoteOnPage()) deskUnslothRemoteLoadModels(); }, POLL_MS);
     } else if (said && !said.cached) {
       deskUnslothRemoteFreshTries = 0;
     }
     return said;
+  }, function (e) {
+    deskUnslothRemoteModelsInFlight = false;
+    throw e;
   });
 }
 
@@ -255,20 +274,25 @@ function deskUnslothRemoteLoadOver(got, id) {
 function deskUnslothRemoteLoad() {
   var id = deskUnslothRemoteChosen;
   if (!id || deskUnslothRemoteLoadTimer) return;
-  deskUnslothRemoteAsk(deskUnslothRemoteTarget, 'model.load', { id: id }).then(function (said) {
+  var target = deskUnslothRemoteTarget;
+  deskUnslothRemoteAsk(target, 'model.load', { id: id }).then(function (said) {
     if (said && said.ok === false) { deskUnslothRemoteSay(said.error || said.code || 'the load was refused', true); return; }
     deskUnslothRemoteSay('', false);
-    deskUnslothRemoteLoadTimer = setInterval(function () {
+    // THE POLL IS A CHAIN: the next ask goes POLL_MS after the last answer, never on a clock of its own, and stops
+    // when the load is over, the target changed, or the panel left the page.
+    deskUnslothRemoteLoadTimer = true;
+    var again = function () {
+      if (!deskUnslothRemoteLoadTimer || target !== deskUnslothRemoteTarget || !deskUnslothRemoteOnPage()) { deskUnslothRemoteLoadTimer = null; return; }
       deskUnslothRemoteLoadModels().then(function (got) {
         var over = deskUnslothRemoteLoadOver(got, id);
-        if (!over.over) return;
-        clearInterval(deskUnslothRemoteLoadTimer);
+        if (!over.over) { setTimeout(again, POLL_MS); return; }
         deskUnslothRemoteLoadTimer = null;
         deskUnslothRemoteSay(over.error, !!over.error);
         deskUnslothRemoteDrawModels();
         if (!over.error) deskUnslothRemoteLoadState();
-      });
-    }, 2000);
+      }, function () { setTimeout(again, POLL_MS); });
+    };
+    setTimeout(again, POLL_MS);
     deskUnslothRemoteDrawModels();
   });
 }
@@ -365,16 +389,19 @@ function deskUnslothRemoteChatSend() {
   deskUnslothRemoteApi.verb(payload.verb, rest).then(function (r) {
     var said = deskUnslothRemoteAnswerOf({ kind: 'node' }, r);
     if (!said || said.ok === false || !said.id) throw new Error((said && (said.error || said.code)) || 'the chat was refused');
+    // The poll is a chain too: the next chat.answer a second after the last answer, one in flight.
     return new Promise(function (resolve, reject) {
-      var timer = setInterval(function () {
+      var again = function () {
         var p = deskUnslothRemoteChatAskFor('chat.answer', { id: said.id });
         var q = {}; Object.keys(p).forEach(function (k) { if (k !== 'verb') q[k] = p[k]; });
         deskUnslothRemoteApi.verb(p.verb, q).then(function (r2) {
           var a = deskUnslothRemoteAnswerOf({ kind: 'node' }, r2);
-          if (a && a.ok === false) { clearInterval(timer); reject(new Error(a.error || a.code || 'no answer')); return; }
-          if (a && a.done) { clearInterval(timer); resolve(String(a.text || '')); }
-        }, function (e) { clearInterval(timer); reject(e); });
-      }, 1000);
+          if (a && a.ok === false) { reject(new Error(a.error || a.code || 'no answer')); return; }
+          if (a && a.done) { resolve(String(a.text || '')); return; }
+          setTimeout(again, 1000);
+        }, reject);
+      };
+      setTimeout(again, 1000);
     });
   }).then(function (answer) {
     deskUnslothRemoteTranscript.push({ role: 'assistant', text: answer });
@@ -389,6 +416,7 @@ function deskUnslothRemoteChatSend() {
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskUnslothRemoteApi = api;
+    deskUnslothRemoteContainer = container;
     deskUnslothRemoteTargets = deskUnslothRemoteReadTargets();
     deskUnslothRemoteTarget = deskUnslothRemoteTargets[0];
 
@@ -426,7 +454,8 @@ spirit.shell.activateApp({
       deskUnslothRemoteState = null;
       deskUnslothRemoteModels = null;
       deskUnslothRemoteChosen = '';
-      if (deskUnslothRemoteLoadTimer) { clearInterval(deskUnslothRemoteLoadTimer); deskUnslothRemoteLoadTimer = null; }
+      deskUnslothRemoteLoadTimer = null;
+      deskUnslothRemoteFreshTries = 0;
       deskUnslothRemoteDrawModels();
       deskUnslothRemoteLoadState();
       deskUnslothRemoteLoadModels();
