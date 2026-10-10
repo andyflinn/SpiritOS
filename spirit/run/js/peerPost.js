@@ -42,6 +42,8 @@ const seal = require('./seal');
 // without one — see postQueue.js and spirit/test/postQueue.js.
 const postQueue = require('./postQueue');
 const spiritErrors = require('./spiritErrors');
+// The node layer's one reading of what arrived (N1, goal/G16.5).
+const arrivals = require('./arrivals');
 
 // A UX number, not a protocol constant tuned against another machine's
 // tick. It only decides how long a caller stares at a spinner.
@@ -809,12 +811,24 @@ function createPeerPost(opts) {
     // reply body, so the post itself resolves ok:true, status 200. Reading
     // only the top level never fired: no ask, the message lost, and the
     // sender told it was delivered. So the body is read too.
+    // ── AND AN APP'S "NO" IS NOT THE NODE'S (N3, goal/G16.5) ────────
+    //
+    // This read the body of EVERY reply and took any `ok: false` in it as
+    // a node refusal — including an app server's own answer. An app that
+    // replies {ok: false, code: 'will-not-open'} for its own reasons had
+    // the node re-fetch the peer's card past the 60 s throttle and seal
+    // again, on traffic that was never about sealing. The envelope says
+    // which it is: a reply that carries an app is the app's, and only a
+    // reply with no app can be this node's refusal.
+    //
+    // Read through arrivals.envelopeOf, the one reader (N1): this parsed
+    // the reply itself, which was the second decoder in this file.
     function refusalIn(answer) {
       if (!answer) return null;
       if (!answer.ok) return answer;
-      let parsed = null;
-      try { parsed = JSON.parse(String(answer.text || '')); } catch (e) { parsed = null; }
-      const inner = parsed && parsed.body && typeof parsed.body === 'object' ? parsed.body : parsed;
+      const info = arrivals.envelopeOf(answer.text);
+      if (!info || info.app) return null;
+      const inner = info.body && typeof info.body === 'object' ? info.body : null;
       return inner && inner.ok === false ? inner : null;
     }
     function staleCard(answer, sealKey) {
@@ -1600,8 +1614,10 @@ function createPeerPost(opts) {
 
     var slot = waiting[body.hash];
     if (slot && slot.toKey && body.from !== slot.toKey) {
-      var said = null;
-      try { said = JSON.parse(body.text || '').body; } catch (e) { said = null; }
+      // The relay's own words about a delivery it could not make, read
+      // through the one reader (N1, goal/G16.5) rather than parsed here.
+      var top = arrivals.relayWordOf(body.text);
+      var said = (top && top.body) || null;
       return settle(body.hash, {
         ok: false,
         status: (said && said.status) || 502,

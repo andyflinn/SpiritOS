@@ -50,6 +50,8 @@
 
 const auth = require('./relayAuth');
 const fieldRules = require('./fieldRules');
+// The node layer's one reading of what arrived (N1, goal/G16.5).
+const arrivals = require('./arrivals');
 
 // ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
 //
@@ -65,12 +67,12 @@ const fieldRules = require('./fieldRules');
 // nodes must update to stay in the game, so a word that disagrees with
 // itself costs nothing to correct now and can never be corrected this
 // cheaply again.
+// Read through the node layer's one reader (N1, goal/G16.5): this parsed
+// the text itself, which made it a second decoder of the same envelope.
 function asks(text) {
-  let parsed = null;
-  try { parsed = JSON.parse(String(text || '')); }
-  catch (e) { return false; }
-  if (!parsed || parsed.app) return false;   // an app's packet is an app's
-  const body = parsed.body;
+  const info = arrivals.envelopeOf(text);
+  if (!info || info.app) return false;       // an app's packet is an app's
+  const body = info.body;
   return !!(body && body.card);
 }
 
@@ -235,10 +237,12 @@ function advance(rootDir, id) {
 // This answers one question only — are these fields the ones their owner
 // signed?
 function verify(text) {
-  let parsed = null;
-  try { parsed = JSON.parse(String(text || '')); }
-  catch (e) { return null; }
-  const body = parsed && parsed.body;
+  // The one reader again (N1, goal/G16.5). A card is a packet with no app
+  // — `{v: 1, body: {...}}`, cardFrom above — so the envelope is where its
+  // fields come from, and the signature below is still checked over
+  // exactly those bytes.
+  const info = arrivals.envelopeOf(text);
+  const body = info && info.body;
   if (!body || !body.publicKey || !body.sig) return null;
   const fields = {
     name: String(body.name || ''),

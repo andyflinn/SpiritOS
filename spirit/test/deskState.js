@@ -217,23 +217,24 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   // the member path (apiDoor) refuses a desk write that says by 'andy', and never passes it on.
   test.subHeading('a member cannot write as andy');
   const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
   const MEMBER = 'MCowBQYDK2VwAyEAmembermembermembermembermembermemb=';
   const askedDoor = [];
   const repliedDoor = [];
   const door = require('../run/js/apiDoor.js').createApiDoor({
     servers: { ask: function (b) { askedDoor.push(b); return Promise.resolve({ status: 200, body: {} }); } },
     post: function (relay, to, text) { repliedDoor.push(packet.decode(text)); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode, isKnown: function (k) { return k === MEMBER; }, log: function () {},
+    encode: packet.encode, isKnown: function (k) { return k === MEMBER; }, log: function () {},
     // apiAuth/G1.2: the door gates members by their grants; this member
     // holds desk whole, so what this suite tests stays its own.
     auth: { pathsOf: function (k) { return k === MEMBER ? ['desk'] : []; } },
   });
-  await door({ fromKey: MEMBER, hash: 'D1', relay: 'https://relay.example', text: packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'done', by: 'andy' } } }).text });
+  await door(Object.assign({ fromKey: MEMBER, hash: 'D1', relay: 'https://relay.example', text: packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'done', by: 'andy' } } }).text}, { envelope: arrivals.envelopeOf(packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'done', by: 'andy' } } }).text) }));
   await sleep(50);
   const refusedDoor = repliedDoor[0] && repliedDoor[0].body;
   if (!askedDoor.length && refusedDoor && refusedDoor.ok === false) test.check('a member\'s desk write saying by andy is refused before the server');
   else test.fail(OWED + 'a member wrote as andy: asked ' + JSON.stringify(askedDoor) + ', answered ' + JSON.stringify(refusedDoor));
-  await door({ fromKey: MEMBER, hash: 'D2', relay: 'https://relay.example', text: packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'claim-done', by: 'wsl-claude' } } }).text });
+  await door(Object.assign({ fromKey: MEMBER, hash: 'D2', relay: 'https://relay.example', text: packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'claim-done', by: 'wsl-claude' } } }).text}, { envelope: arrivals.envelopeOf(packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'claim-done', by: 'wsl-claude' } } }).text) }));
   await sleep(50);
   if (askedDoor.length === 1) test.check('a member\'s write under its own name passes');
   else test.fail('a member\'s own write did not pass: ' + JSON.stringify(askedDoor));

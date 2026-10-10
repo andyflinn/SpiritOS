@@ -25,7 +25,7 @@
 // sender is ignored silently.
 //
 // `decode` is handed in as a value: the node reads a SYSTEM packet here and
-// never an app's (test/nodeKnowsNoApps.js).
+// never an app's (test/oneDecoder.js, goal/G16.5).
 
 const fs = require('fs');
 const path = require('path');
@@ -47,9 +47,9 @@ function createBoxes(opts) {
   }
 
   function onArrival(message) {
-    const text = message && typeof message.text === 'string' ? message.text : '';
-    if (!text || !o.isEnvelope(text)) return;
-    const info = o.decode(text);
+    // The envelope arrives read (N1, goal/G16.5): this witness used to
+    // test and open every arrival with a decoder server.js handed it.
+    const info = message && message.envelope;
     if (!info || info.app || !info.body || typeof info.body.box !== 'object' || !info.body.box) return;
     const from = String((message && (message.fromKey || message.from)) || '');
     if (!from || !mine(from)) return;

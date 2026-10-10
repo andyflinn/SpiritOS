@@ -155,8 +155,12 @@ function createApiDoor(opts) {
 
   return function (message) {
     if (!message || typeof message.text !== 'string') return;
-    let info = null;
-    try { info = o.decode(message.text); } catch (e) { info = null; }
+    // THE ENVELOPE COMES WITH THE ARRIVAL (N1, goal/G16.5). This door held
+    // a decoder of its own, handed to it as a value by server.js, and
+    // opened every arrival on the node — app packets included — before
+    // discarding the ones that were not its own. arrivals.js reads it
+    // once now and hands it over.
+    const info = message.envelope;
     if (!info || info.app !== 'api') return;
     // AN ANSWER IS NEVER ASKED. A packet carrying 're' is a reply, and
     // answering it made two nodes (or one asking itself) answer each other

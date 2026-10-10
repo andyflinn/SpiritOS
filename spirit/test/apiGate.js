@@ -23,6 +23,7 @@
 
 const test = require('./testSupport.js');
 const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
 
 test.startTest('apiAuth/G1.2: the gate decides every member call by its grants');
 
@@ -48,7 +49,7 @@ function door(grants, broken) {
       return Promise.resolve({ status: 200, body: { ok: true, ran: body } });
     } },
     post: function () { posted.push(Array.prototype.slice.call(arguments)); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode,
+    encode: packet.encode,
     isKnown: function (key) { return key === MEMBER; },
     auth: { pathsOf: function (key) { if (broken) throw new Error('node.db unreadable'); return key === MEMBER ? grants.slice() : []; } },
     log: function () {},
@@ -63,7 +64,9 @@ function reply() {
   return null;
 }
 function ask(d, body) {
-  const m = { text: packet.encode('api', body).text, fromKey: MEMBER, hash: 'H' + Math.random().toString(16).slice(2) };
+  // The envelope arrives read, as arrivals.js hands it to a witness (goal/G16.5).
+  const text = packet.encode('api', body).text;
+  const m = { text: text, envelope: arrivals.envelopeOf(text), fromKey: MEMBER, hash: 'H' + Math.random().toString(16).slice(2) };
   return Promise.resolve(d(m)).then(function () { return new Promise(function (r) { setTimeout(r, 40); }); }).then(reply);
 }
 const call = function (app, verb) { const b = {}; b[app] = {}; b[app][verb] = {}; return b; };

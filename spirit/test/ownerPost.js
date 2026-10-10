@@ -22,6 +22,10 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
+// A witness is handed the envelope arrivals.js read (goal/G16.5); these
+// helpers stand in for that one reading, as a real arrival carries it.
+const arrivals = require('../run/js/arrivals.js');
+function asArrival(row) { return Object.assign({}, row, { envelope: arrivals.envelopeOf(row.text) }); }
 const puppetMode = require('../run/js/puppetMode');
 const ownerPost = require('../run/js/ownerPost');
 
@@ -52,7 +56,7 @@ function puppetNode(id) {
       };
     },
     post: function (relay, to, text) { node.deliverAnswer(to, text); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode, isEnvelope: packet.isEnvelope, auth: auth,
+    encode: packet.encode, auth: auth,
     selfKey: function () { return id.publicKey; },
     log: function () {},
   });
@@ -68,7 +72,7 @@ function ownerWith(puppets, opts) {
   const op = ownerPost.createOwnerPost({
     identity: function () { return owner; },
     randomId: packet.randomId,
-    auth: auth, encode: packet.encode, decode: packet.decode, isEnvelope: packet.isEnvelope,
+    auth: auth, encode: packet.encode,
     route: function () { return { relayUrl: 'https://relay.example', hints: undefined }; },
     waitMs: o.waitMs || 200,
     post: function (relayUrl, to, text) {
@@ -80,10 +84,10 @@ function ownerWith(puppets, opts) {
       if (o.silent) return Promise.resolve({ ok: true, hash: hash });
       // The puppet answers back to the owner, carrying re = the command's hash.
       p.deliverAnswer = function (toOwner, answerText) {
-        const arrive = function () { op.onArrival({ from: p.id.publicKey, text: answerText }); };
+        const arrive = function () { op.onArrival(asArrival({ from: p.id.publicKey, text: answerText })); };
         if (o.answerFirst) arrive(); else setTimeout(arrive, 5);
       };
-      p.door({ from: owner.publicKey, text: text, hash: hash, relay: relayUrl });
+      p.door(asArrival({ from: owner.publicKey, text: text, hash: hash, relay: relayUrl }));
       return new Promise(function (r) { setTimeout(function () { r({ ok: true, hash: hash }); }, o.answerFirst ? 20 : 0); });
     },
   });
@@ -125,7 +129,7 @@ function ownerWith(puppets, opts) {
     const op = ownerWith(puppets, { silent: true, waitMs: 60 });
     const r = await op.send(puppet.publicKey, 'contact.list', {});
     const late = packet.encode('', { ok: true, late: true }, { re: r && r.hash }).text;
-    op.onArrival({ from: puppet.publicKey, text: late });
+    op.onArrival(asArrival({ from: puppet.publicKey, text: late }));
     if (r && r.ok === false && r.status === 504 && r.code === 'no-reply-from-puppet') {
       test.check('a command nobody answers comes back as a NAMED timeout, no-reply-from-puppet, within the '
         + 'wait — and a reply arriving after it has nowhere to go');
@@ -140,7 +144,7 @@ function ownerWith(puppets, opts) {
     const pending = op.send(puppet.publicKey, 'contact.list', {});
     await new Promise(function (r) { setTimeout(r, 5); });
     const hash = op.sent[0] && op.sent[0].hash;
-    op.onArrival({ from: other.publicKey, text: packet.encode('', { ok: true, forged: true }, { re: hash }).text });
+    op.onArrival(asArrival({ from: other.publicKey, text: packet.encode('', { ok: true, forged: true }, { re: hash }).text }));
     const r = await pending;
     if (r && r.ok === false && r.code === 'no-reply-from-puppet' && !r.forged) {
       test.check('a reply carrying the right hash but coming from a DIFFERENT puppet is not taken — the '
@@ -157,11 +161,11 @@ function ownerWith(puppets, opts) {
     await new Promise(function (r) { setTimeout(r, 5); });
     const hash = op.sent[0].hash;
     const reply = packet.encode('', { ok: true, n: 1 }, { re: hash }).text;
-    op.onArrival({ from: puppet.publicKey, text: reply });
+    op.onArrival(asArrival({ from: puppet.publicKey, text: reply }));
     const got = await first;
     const second = op.send(puppet.publicKey, 'contact.list', {});
     await new Promise(function (r) { setTimeout(r, 5); });
-    op.onArrival({ from: puppet.publicKey, text: reply }); // the SAME reply again
+    op.onArrival(asArrival({ from: puppet.publicKey, text: reply })); // the SAME reply again
     const r2 = await second;
     if (got && got.ok && got.n === 1 && r2 && r2.code === 'no-reply-from-puppet') {
       test.check('a reply answers ONE command, once: the same reply arriving again answers nothing else');

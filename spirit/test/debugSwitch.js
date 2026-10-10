@@ -22,6 +22,7 @@ const { relayRequest } = require('../run/js/relayRequest.js');
 const { spawn, execFileSync } = require('child_process');
 const test = require('./testSupport.js');
 const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
 const { setupRelayFakes } = require('./setupRelayFakes');
 
 const OWED = 'OWED by desk/G2.5: ';
@@ -95,17 +96,17 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   const door = apiDoor.createApiDoor({
     servers: servers,
     post: function (relay, to, text) { posted.push(packet.decode(text)); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode, isKnown: function (k) { return k === MEMBER; }, log: function () {},
+    encode: packet.encode, isKnown: function (k) { return k === MEMBER; }, log: function () {},
     // apiAuth/G1.2: the door gates members by their grants; this member holds
     // the whole fake app, so what this suite tests (DEBUG's refusal) stays its own.
     auth: { pathsOf: function (k) { return k === MEMBER ? ['grantFace'] : []; } },
   });
-  await door({ fromKey: MEMBER, hash: 'H1', relay: 'https://relay.example', text: packet.encode('api', { grantFace: { DEBUG: { on: true } } }).text });
+  await door(Object.assign({ fromKey: MEMBER, hash: 'H1', relay: 'https://relay.example', text: packet.encode('api', { grantFace: { DEBUG: { on: true } } }).text}, { envelope: arrivals.envelopeOf(packet.encode('api', { grantFace: { DEBUG: { on: true } } }).text) }));
   await sleep(50);
   const refusal = posted[0] && posted[0].body;
   if (!asked.length && refusal && refusal.ok === false) test.check('a member\'s DEBUG is refused and never reaches the server');
   else test.fail(OWED + 'a member\'s DEBUG: server asked ' + JSON.stringify(asked) + ', answered ' + JSON.stringify(refusal));
-  await door({ fromKey: MEMBER, hash: 'H2', relay: 'https://relay.example', text: packet.encode('api', { grantFace: { get: { name: 'x' } } }).text });
+  await door(Object.assign({ fromKey: MEMBER, hash: 'H2', relay: 'https://relay.example', text: packet.encode('api', { grantFace: { get: { name: 'x' } } }).text}, { envelope: arrivals.envelopeOf(packet.encode('api', { grantFace: { get: { name: 'x' } } }).text) }));
   await sleep(50);
   if (asked.some(function (a) { return a.grantFace && a.grantFace.get; })) test.check('a member\'s other verbs still pass');
   else test.fail('a member\'s ordinary ask did not pass: ' + JSON.stringify(asked));

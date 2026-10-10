@@ -24,6 +24,7 @@ const test = require('./testSupport.js');
 const puppetMode = require('../run/js/puppetMode');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
 const common = require('../run/js/serveCommon');
 
 const OWED = 'OWED by goal/G14.1: ';
@@ -71,7 +72,7 @@ function world() {
     rootDir: root,
     handlerFor: function (verb) { return handlers[verb] || null; },
     post: function (relay, to, text) { sent.push({ to: to, reply: packet.decode(text) }); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode, isEnvelope: packet.isEnvelope,
+    encode: packet.encode,
     auth: auth,
     selfKey: function () { return self.publicKey; },
     log: function () {},
@@ -81,7 +82,7 @@ function world() {
     sent: sent, seen: seen,
     arrive: function (text) {
       n += 1;
-      door({ from: owner.publicKey, text: text, hash: 'H' + n, relay: 'https://relay.example' });
+      door({ from: owner.publicKey, text: text, envelope: arrivals.envelopeOf(text), hash: 'H' + n, relay: 'https://relay.example' });
       return new Promise(function (r) { setTimeout(r, 40); });
     },
   };

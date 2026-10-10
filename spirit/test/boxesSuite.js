@@ -20,6 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
 const boxes = require('../run/js/boxes');
 
 test.startTest('His boxes add up from his own servers, and over-committed is only ever a warning');
@@ -29,12 +30,14 @@ function world(serverKeys) {
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   const file = path.join(root, 'relay-state', boxes.SERVERS);
   if (serverKeys) fs.writeFileSync(file, JSON.stringify({ keys: serverKeys }));
-  const b = boxes.createBoxes({ rootDir: root, isEnvelope: packet.isEnvelope, decode: packet.decode });
+  const b = boxes.createBoxes({ rootDir: root });
   return {
     b: b,
     servers: function (keys) { fs.writeFileSync(file, JSON.stringify({ keys: keys })); },
     report: function (from, box) {
-      b.onArrival({ from: from, text: packet.encode('', { box: box }).text });
+      // The envelope arrives read, as arrivals.js hands it to a witness (goal/G16.5).
+      const text = packet.encode('', { box: box }).text;
+      b.onArrival({ from: from, text: text, envelope: arrivals.envelopeOf(text) });
     },
   };
 }

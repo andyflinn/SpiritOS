@@ -31,7 +31,8 @@
 // as the post's own answer, so a remote failure keeps its contract.
 //
 // The node decodes a SYSTEM packet here and never an app's: `decode` is
-// handed in as a value, as ownerCommandIn takes it (test/nodeKnowsNoApps.js).
+// read by arrivals.js, the node layer's one decoder, and handed to this
+// witness with the arrival (test/oneDecoder.js, goal/G16.5).
 
 const DEFAULT_WAIT_MS = 20000;
 
@@ -102,9 +103,9 @@ function createOwnerPost(opts) {
   // whose `re` names a command still waiting, from that command's puppet,
   // is taken; everything else passes by untouched.
   function onArrival(message) {
-    const text = message && typeof message.text === 'string' ? message.text : '';
-    if (!text || !o.isEnvelope(text)) return;
-    const info = o.decode(text);
+    // The envelope arrives read (N1, goal/G16.5): this witness held a
+    // decoder handed in as a value and opened every arrival itself.
+    const info = message && message.envelope;
     if (!info || info.app || !info.re) return;
     const from = String((message && (message.fromKey || message.from)) || '');
     const slot = waiting[String(info.re)];

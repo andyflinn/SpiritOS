@@ -35,6 +35,7 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
 const packet = require('../run/js/client/packet.js');
+const arrivals = require('../run/js/arrivals.js');
 const { relayRequest } = require('../run/js/relayRequest.js');
 const plantRun = require('./plantRun.js');
 
@@ -211,14 +212,16 @@ function line(key, todo, text, extra) {
   const door = apiDoor && apiDoor.createApiDoor({
     servers: client,
     post: function (relay, to, text) { posted.push({ to: to, text: text }); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode,
+    encode: packet.encode,
     isKnown: function (key) { return key === 'MEMBER'; },
     // apiAuth/G1.2: the door gates members by their grants; this member
     // holds desk whole, so what this suite tests stays its own.
     auth: { pathsOf: function (key) { return key === 'MEMBER' ? ['desk'] : []; } },
     log: function () {},
   });
-  if (door) await door({ text: packet.encode('api', { desk: { 'state.get': {} } }).text, fromKey: 'MEMBER', hash: 'H4' });
+  // The envelope arrives read, as arrivals.js hands it to a witness (goal/G16.5).
+  const ask4 = packet.encode('api', { desk: { 'state.get': {} } }).text;
+  if (door) await door({ text: ask4, envelope: arrivals.envelopeOf(ask4), fromKey: 'MEMBER', hash: 'H4' });
   await waitFor(function () { return posted.length > 0; }, 4000);
   const r4 = posted[0] ? packet.decode(posted[0].text) : null;
   if (r4 && r4.re === 'H4' && r4.body && r4.body.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } })) test.check('the member\'s packet reached the desk server; its state came back as an answer to it');

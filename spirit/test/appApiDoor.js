@@ -9,7 +9,7 @@
 //   (T6); the answer is flat (D11).
 //
 // The shape, claude-windows' and agreed: a new js/apiDoor.js,
-// createApiDoor({servers, post, encode, decode, isKnown, log}) returning
+// createApiDoor({servers, post, encode, isKnown, log}) returning
 // function(message), registered as an arrivals witness. isKnown(fromKey) is
 // the front door's 'known', minus its acquire branch (Andy: "why not just an
 // exemption for aquire?"): a stranger admitted only to acquire gets nothing. It reads packets of
@@ -22,6 +22,7 @@
 const path = require('path');
 const test = require('./testSupport.js');
 const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
 
 test.startTest('appPair/G1.3: a member asks the node for api by packet, and only a member is answered');
 
@@ -46,7 +47,7 @@ function world() {
       return Promise.resolve({ status: 200, body: { text: 'hi Andy' } });
     } },
     post: function () { posted.push(Array.prototype.slice.call(arguments)); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode,
+    encode: packet.encode,
     isKnown: function (key) { return key === MEMBER; },
     // Since apiAuth/G1.2 the door gates every member by its grants (apiGate.js);
     // this suite is about the wire, so its member holds the whole fake app.
@@ -56,7 +57,8 @@ function world() {
 }
 function arrive(door, from, app, body, hash) {
   const text = app === null ? JSON.stringify(body) : packet.encode(app, body).text;
-  const m = { text: text, fromKey: from, hash: hash || 'H' + Math.random().toString(16).slice(2) };
+  // The envelope arrives read, as arrivals.js hands it to a witness (goal/G16.5).
+  const m = { text: text, envelope: arrivals.envelopeOf(text), fromKey: from, hash: hash || 'H' + Math.random().toString(16).slice(2) };
   return Promise.resolve(door ? door(m) : null).then(function () {
     return new Promise(function (r) { setTimeout(r, 50); });
   }).then(function () { return m; });
@@ -123,9 +125,9 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); }
   door = world();
   if (has) {
     const replyText = packet.encode('api', { ok: false, code: 'bad-request', error: 'x' }, { re: 'H-original' }).text;
-    await Promise.resolve(door({ text: replyText, fromKey: MEMBER, hash: 'H-reply' }));
+    await Promise.resolve(door({ text: replyText, envelope: arrivals.envelopeOf(replyText), fromKey: MEMBER, hash: 'H-reply' }));
     const treeReply = packet.encode('api', TREE, { re: 'H-original-2' }).text;
-    await Promise.resolve(door({ text: treeReply, fromKey: MEMBER, hash: 'H-reply-2' }));
+    await Promise.resolve(door({ text: treeReply, envelope: arrivals.envelopeOf(treeReply), fromKey: MEMBER, hash: 'H-reply-2' }));
     await new Promise(function (r) { setTimeout(r, 50); });
   }
   test.subHeading('A reply is never answered: a packet of app api that carries re is left alone');

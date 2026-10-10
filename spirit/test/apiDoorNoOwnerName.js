@@ -18,6 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
 const apiDoor = require('../run/js/apiDoor.js');
 
 const OWED = 'OWED by goal/G16.4: ';
@@ -30,7 +31,7 @@ const posted = [];
 const door = apiDoor.createApiDoor({
   servers: { ask: function (body) { asked.push(body); return Promise.resolve({ status: 200, body: { ok: true } }); } },
   post: function () { posted.push(Array.prototype.slice.call(arguments)); return Promise.resolve({ ok: true }); },
-  encode: packet.encode, decode: packet.decode,
+  encode: packet.encode,
   isKnown: function (key) { return key === MEMBER; },
   auth: { pathsOf: function (key) { return key === MEMBER ? ['desk'] : []; } },
   log: function () {},
@@ -48,7 +49,9 @@ function replies() {
 }
 function arrive(body) {
   asked.length = 0; posted.length = 0;
-  const m = { text: packet.encode('api', body).text, fromKey: MEMBER, hash: 'H' + Math.random().toString(16).slice(2) };
+  // The envelope arrives read, as arrivals.js hands it to a witness (goal/G16.5).
+  const text = packet.encode('api', body).text;
+  const m = { text: text, envelope: arrivals.envelopeOf(text), fromKey: MEMBER, hash: 'H' + Math.random().toString(16).slice(2) };
   return Promise.resolve(door(m)).then(function () { return new Promise(function (r) { setTimeout(r, 50); }); });
 }
 function short(x) { return JSON.stringify(x).slice(0, 200); }

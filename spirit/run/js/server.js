@@ -1477,7 +1477,8 @@ contactBook.syncMarks(ROOT_DIR);
   // its owner signed runs through the same handlers the loopback door uses.
   // puppetMode.puppetDoor says the rest.
   // The node builds the answer as a system packet and never reads an
-  // app's: `decode` goes in as a value, as ownerCommandIn already takes it.
+  // app's. It is handed no decoder since goal/G16.5: arrivals.js reads the
+  // envelope once and every witness is given what it read.
   {
     const wire = require('./client/packet.js');
     arrivals.witness(require('./puppetMode').puppetDoor({
@@ -1485,8 +1486,6 @@ contactBook.syncMarks(ROOT_DIR);
       handlerFor: function (verb) { return loopbackVerbs.handlerFor(verb); },
       post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
       encode: wire.encode,
-      decode: wire.decode,
-      isEnvelope: wire.isEnvelope,
       auth: require('./relayAuth'),
       selfKey: function () {
         const me = require('./relayAuth').loadIdentity(ROOT_DIR);
@@ -1522,7 +1521,6 @@ contactBook.syncMarks(ROOT_DIR);
       // `how` carries a background answer's mark to the queue (fileTransfer goal/G1.3).
       post: function (relayUrl, toKey, text, how) { return peerRouter.post(relayUrl, toKey, text, undefined, how); },
       encode: wire.encode,
-      decode: wire.decode,
       isKnown: function (key) { return require('./hub').frontDoor(ROOT_DIR, key) === 'known'; },
       // THE GATE'S GRANTS (apiAuth/G1.2, G1.3): a member's paths from node.db, read through apiAuth.js;
       // a store that cannot be read throws, and the gate fails closed.
@@ -1540,8 +1538,6 @@ contactBook.syncMarks(ROOT_DIR);
       identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
       auth: require('./relayAuth'),
       encode: wire.encode,
-      decode: wire.decode,
-      isEnvelope: wire.isEnvelope,
       randomId: wire.randomId,
       route: function (to) { return presence ? hub.chooseRoute(presence, to) : { unreachable: true }; },
       post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
@@ -1549,7 +1545,7 @@ contactBook.syncMarks(ROOT_DIR);
     arrivals.witness(ownerPost.onArrival);
 
     // HIS SERVERS' BOX REPORTS, kept in memory and summed per box (G10).
-    boxes = require('./boxes').createBoxes({ rootDir: ROOT_DIR, decode: wire.decode, isEnvelope: wire.isEnvelope });
+    boxes = require('./boxes').createBoxes({ rootDir: ROOT_DIR });
     arrivals.witness(boxes.onArrival);
     peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }

@@ -73,6 +73,65 @@
 // and the price of keeping no per-browser state.
 
 
+// ── THE ONE DECODER IN THE NODE LAYER (N1, goal/G16.5) ───────────────
+//
+// NODE-AND-RELAY.md's rule is that the node reads the ENVELOPE and
+// nothing inside it. The rule held; the arithmetic did not. Six node
+// files each held a decoder — server.js handed `wire.decode` as a VALUE
+// to the api door, the puppet door, ownerPost and boxes, and each of them
+// opened every admitted arrival itself — and three more parsed an
+// arrival's text by hand. So the envelope was opened up to five times per
+// packet, in five places that could drift, and the guard suite that was
+// supposed to forbid this (nodeKnowsNoApps.js) matched one literal call
+// and saw none of it.
+//
+// ONE FILE REQUIRES client/packet NOW, and it is this one: the file that
+// already admits, witnesses and holds every arrival. kernel.js keeps its
+// own, which is a different thing — the shared decode every loopback
+// client uses (Andy, 2026-10-02).
+//
+// Andy's ruling on the three hand-rolled parses, 2026-10-10: "yes. we fix
+// redundant code now."
+var packet = require('./client/packet.js');
+
+// THE ENVELOPE, READ ONCE. For a packet: { app, re, body }, with `app` ''
+// when it carries none — '' rather than null so a reader never has to
+// know whether the field was absent or empty, which is packet.js's own
+// practice for `re`. For anything that is not a packet — a chat line from
+// before packets existed, the relay's own protocol word, junk — null,
+// which is the reader's cue that there is no envelope here rather than an
+// envelope that is empty.
+// `id` rides along because it is part of what an owner's command signs
+// (relayAuth.commandMessage, read by puppetMode.ownerCommandIn): a reader
+// that had to go back to the text for it would be a second decoder.
+function envelopeOf(text) {
+  if (!packet.isEnvelope(text)) return null;
+  var decoded = packet.decode(text);
+  return { app: decoded.app || '', re: decoded.re || '', id: decoded.id || null, body: decoded.body };
+}
+
+// ── AND THE RELAY'S OWN WORD, WHICH IS NOT AN ENVELOPE ───────────────
+//
+// A relay speaks to a node about the node's own enrolment in the relay's
+// shape, not an app's: `{relay: 'device-offer', password, devicePublicKey}`
+// (relay.js, and the comment there is a rule — "a relay that could parse
+// one would have made the envelope part of the relay protocol"). It
+// carries no `v` and no `body`, so it is not a packet and `envelopeOf`
+// says null about it, correctly.
+//
+// It still has to be READ, by answerRelay, and that reading belongs here
+// for the same reason the envelope does: one file in the node layer opens
+// what arrives. Answers the top-level object, or null when the text is
+// not a JSON object — never a packet's insides, because a packet goes
+// through `envelopeOf` above.
+function relayWordOf(text) {
+  if (typeof text !== 'string' || text.charAt(0) !== '{') return null;
+  var parsed = null;
+  try { parsed = JSON.parse(text); } catch (e) { return null; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  return parsed;
+}
+
 // opts: { traffic } — the log, as an api block. Without one this runs
 // entirely in memory and holds nothing back, which is what the
 // seam-level checks want and what a relay would get if one ever built it.
@@ -233,12 +292,26 @@ function createArrivals(opts) {
       relay: item.relay,
     });
 
+    // ── THE WITNESSES GET THE ENVELOPE; A PAGE DOES NOT (N1) ──────
+    //
+    // A witness is the NODE looking at its own arrivals — the api door,
+    // the puppet door, the owner post, boxes — and each of them used to
+    // open the envelope itself with a decoder server.js handed it. They
+    // are handed what this file read instead, once, so there is one
+    // reading of one packet and no way for two of them to disagree.
+    //
+    // A SUBSCRIBER IS A PAGE and gets no envelope: `text` travels exactly
+    // as signed and the shell decodes it with its own copy of packet.js,
+    // which is the half of "nothing in node and relay should know about
+    // apps" that was already right.
+    var witnessed = Object.assign({}, message, { envelope: envelopeOf(item.text) });
+
     // Every subscriber gets it, and one that throws does not stop the
     // rest or reach back into peerPost — which calls this while it still
     // owes the sender a receipt. A browser's bad handler must not be
     // able to turn an arrival into a refusal.
     witnesses.slice().forEach(function (fn) {
-      try { fn(message); } catch (e) { /* a witness is not a gate */ }
+      try { fn(witnessed); } catch (e) { /* a witness is not a gate */ }
     });
 
     var delivered = 0;
@@ -290,4 +363,12 @@ function createArrivals(opts) {
   return { note: note, subscribe: subscribe, witness: witness, count: count, pending: pending };
 }
 
-module.exports = { createArrivals: createArrivals, createFanOut: createFanOut };
+module.exports = {
+  createArrivals: createArrivals,
+  createFanOut: createFanOut,
+  // The node layer's one reading of what arrived (N1, goal/G16.5). A
+  // reader that is not a witness — answerRelay, nodeCard, peerPost's
+  // refusal check — asks here instead of parsing the text itself.
+  envelopeOf: envelopeOf,
+  relayWordOf: relayWordOf,
+};

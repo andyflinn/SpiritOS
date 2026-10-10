@@ -38,6 +38,7 @@ const appClient = require('../run/js/appClient.js');
 const apiDoor = require('../run/js/apiDoor.js');
 const hub = require('../run/js/hub').createHub(process.cwd());
 const packet = require('../run/js/client/packet.js');
+const arrivals = require('../run/js/arrivals.js');
 const spirit = require('../run/js/kernel.js');
 
 function fakeRes() {
@@ -98,12 +99,11 @@ async function partB() {
     servers: { ask: function () { return Promise.resolve({ status: 200, body: { ok: true }, kind: 'background' }); } },
     post: function (relay, key, text, how) { posted.push(how); return Promise.resolve(); },
     encode: packet.encode,
-    decode: packet.decode,
     isKnown: function () { return true; },
     auth: { pathsOf: function () { return ['files']; } },
   });
   const ask = packet.encode('api', { files: { info: {} } });
-  await door({ text: ask.text, fromKey: 'PEERKEYAAA', relay: 'https://a.example', hash: 'H0' });
+  await door({ text: ask.text, envelope: arrivals.envelopeOf(ask.text), fromKey: 'PEERKEYAAA', relay: 'https://a.example', hash: 'H0' });
   await sleep(50);
   if (posted.length === 1 && posted[0] && posted[0].kind === 'background') test.check('the door posts a background answer with how {kind: background}');
   else test.fail(OWED + 'the door posted with ' + JSON.stringify(posted));

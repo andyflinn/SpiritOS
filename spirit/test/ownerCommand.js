@@ -48,11 +48,16 @@ function commandFor(toKey, verb, body, signAs, opts) {
   return { text: made.text, id: id, cmd: cmd, sig: sig };
 }
 
-const switchIn = (arrival, ownerKey, selfKey) => puppetMode.ownerCommandIn(arrival, {
+// The envelope is read once, by the node layer's one reader, and handed in
+// (goal/G16.5): ownerCommandIn is given no decoder of its own any more, so
+// this helper does what the puppet door does on a real arrival.
+const arrivals = require('../run/js/arrivals.js');
+const switchIn = (arrival, ownerKey, selfKey) => puppetMode.ownerCommandIn({
+  from: arrival.from,
+  envelope: arrivals.envelopeOf(arrival.text),
+}, {
   ownerKey: ownerKey,
   selfKey: selfKey,
-  decode: packet.decode,
-  isEnvelope: packet.isEnvelope,
   auth: auth,
 });
 

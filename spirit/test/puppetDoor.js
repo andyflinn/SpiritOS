@@ -23,6 +23,7 @@ const test = require('./testSupport.js');
 const puppetMode = require('../run/js/puppetMode');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
+const arrivals = require('../run/js/arrivals.js');
 
 test.startTest('A puppet runs what its owner signs, across its whole surface, and nothing else');
 
@@ -76,7 +77,7 @@ function world(puppetJson) {
     rootDir: root,
     handlerFor: function (verb) { return handlers[verb] || null; },
     post: function (relay, to, text) { sent.push({ relay: relay, to: to, reply: packet.decode(text) }); return Promise.resolve({ ok: true }); },
-    encode: packet.encode, decode: packet.decode, isEnvelope: packet.isEnvelope,
+    encode: packet.encode,
     auth: auth,
     selfKey: function () { return self.publicKey; },
     log: function () {},
@@ -87,7 +88,9 @@ function world(puppetJson) {
     edit: function (doc) { fs.writeFileSync(file, JSON.stringify(doc)); },
     arrive: function (from, text) {
       n += 1;
-      door({ from: from, text: text, hash: 'H' + n, relay: 'https://relay.example' });
+      // The witness is handed the envelope arrivals.js read (goal/G16.5),
+      // exactly as a real arrival carries it.
+      door({ from: from, text: text, envelope: arrivals.envelopeOf(text), hash: 'H' + n, relay: 'https://relay.example' });
       return new Promise(function (r) { setTimeout(r, 30); });
     },
   };

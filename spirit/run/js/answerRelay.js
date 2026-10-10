@@ -36,6 +36,8 @@
 const deviceTick = require('./deviceTick');
 const relayKeys = require('./relayKeys');
 const auth = require('./relayAuth');
+// The node layer's one reading of what arrived (N1, goal/G16.5).
+const arrivals = require('./arrivals');
 
 // ── WHAT A RELAY MAY SPEND ON THIS NODE'S PASSWORD ───────────────────
 //
@@ -285,9 +287,12 @@ function createAnswerer(opts) {
   function answer(item) {
     if (!item || !item.from || !item.relay) return Promise.resolve('');
 
-    var asked = null;
-    try { asked = JSON.parse(item.text); }
-    catch (e) { asked = null; }
+    // THE ONE READER, NOT A PARSE OF ITS OWN (N1, goal/G16.5). A device
+    // offer is the relay's own shape and not a packet — no `v`, no `body`
+    // (relay.js: "a relay that could parse one would have made the
+    // envelope part of the relay protocol") — so `envelopeOf` says null
+    // about it, correctly, and `relayWordOf` is the reading it needs.
+    var asked = arrivals.relayWordOf(item.text);
     // Everything else on this wire is an app packet, and this node is
     // not the one that reads those.
     if (!asked || asked.relay !== 'device-offer') return Promise.resolve('');

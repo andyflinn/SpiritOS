@@ -77,7 +77,6 @@ function ownerCommandIn(arrival, opts) {
   const o = opts || {};
   const ownerKey = String(o.ownerKey || '');
   const selfKey = String(o.selfKey || '');
-  const decode = o.decode;
   const auth = o.auth;
 
   // Andy's mode gate. Absent means nobody: a puppet with no owner established
@@ -87,15 +86,18 @@ function ownerCommandIn(arrival, opts) {
   const from = String((arrival && arrival.from) || '');
   if (!from || from !== ownerKey) return { ok: false, status: 403, error: 'not the owner' };
 
-  const text = arrival && typeof arrival.text === 'string' ? arrival.text : '';
   // A COMMAND IS A SYSTEM PACKET: AN ENVELOPE ADDRESSED TO NO APP, and the two
-  // halves of that are asked separately on purpose. `decode` answers
+  // halves of that are asked separately on purpose. A decoder answers
   // `legacy: false, app: null` for a system packet AND `app: null` for a plain
   // chat line a peer typed — so testing the app alone would dispatch chat as a
-  // verb. wsl-claude found that in this rule before it was built; `isEnvelope`
-  // is the half that keeps it found.
-  if (!o.isEnvelope || !o.isEnvelope(text)) return { ok: false, status: 400, error: 'not a command' };
-  const info = decode ? decode(text) : null;
+  // verb. wsl-claude found that in this rule before it was built; the envelope
+  // being ABSENT (null) for a line that is not a packet is the half that keeps
+  // it found.
+  //
+  // THE ENVELOPE IS HANDED IN, NOT DECODED HERE (N1, goal/G16.5). This took
+  // `decode` and `isEnvelope` as values and opened the text itself; the one
+  // reader is arrivals.envelopeOf and the caller passes what it read.
+  const info = arrival && arrival.envelope;
   if (!info || info.app) return { ok: false, status: 400, error: 'not a command' };
 
   const body = info.body || {};
@@ -201,12 +203,12 @@ function puppetDoor(opts) {
     if (!p.puppet || !p.owner) return;
     const from = String((message && (message.fromKey || message.from)) || '');
     if (from !== p.owner) return;
-    const text = message && typeof message.text === 'string' ? message.text : '';
-    if (!o.isEnvelope(text)) return;
-    const info = o.decode(text);
+    // The envelope arrives read (N1, goal/G16.5), and is passed on rather
+    // than read a second time inside ownerCommandIn.
+    const info = message && message.envelope;
     if (!info || info.app || !info.body || typeof info.body.cmd !== 'string') return;
-    const got = ownerCommandIn({ from: from, text: text }, {
-      ownerKey: p.owner, selfKey: o.selfKey(), decode: o.decode, isEnvelope: o.isEnvelope, auth: o.auth,
+    const got = ownerCommandIn({ from: from, envelope: info }, {
+      ownerKey: p.owner, selfKey: o.selfKey(), auth: o.auth,
     });
     if (!got.ok) { reply(message, p.owner, got); return; }
     shim(got.verb, got.body).then(function (answer) {
