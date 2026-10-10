@@ -1,8 +1,8 @@
 {
- "change": 27483,
+ "change": 27485,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T13:14:06.959Z",
+ "writtenAt": "2026-10-10T13:14:10.403Z",
  "items": [
   {
    "id": "goal/G14",
@@ -39,11 +39,13 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -347,17 +349,14 @@
    "id": "goal/G14.2",
    "title": "A connect/disconnect switch for Levant, visible in desk",
    "goal": "goal/G14",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G14"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -403,7 +402,40 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
