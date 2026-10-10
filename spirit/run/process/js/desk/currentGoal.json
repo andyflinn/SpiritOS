@@ -1,8 +1,8 @@
 {
- "change": 29967,
+ "change": 29971,
  "line": 8496,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T22:34:22.546Z",
+ "writtenAt": "2026-10-10T22:34:26.608Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -38,14 +37,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 9,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -484,7 +481,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -793,6 +790,11 @@
      "by": "desk",
      "at": "2026-10-10T22:34:14.678Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:34:25.090Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1039,23 +1041,20 @@
    "id": "goal/G16.5",
    "title": "One decoder in the node layer, and a guard that sees it (N1)",
    "goal": "goal/G16",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G16.7",
     "goal/G16.10"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -1065,7 +1064,36 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": true,
    "full": false,
@@ -1135,6 +1163,11 @@
      "by": "claude-windows",
      "at": "2026-10-10T20:48:38.926Z",
      "text": "Green: one reader for every arriving packet, the three raw readers fixed here, the guard rewritten, no red Q."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:34:26.286Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
