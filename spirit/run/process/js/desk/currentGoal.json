@@ -1,8 +1,8 @@
 {
- "change": 27839,
+ "change": 27984,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T15:30:09.354Z",
+ "writtenAt": "2026-10-10T16:10:43.918Z",
  "items": [
   {
    "id": "goal/G14",
@@ -17,7 +17,8 @@
    "blocking": [],
    "blocked": [
     "goal/G14.3",
-    "goal/G14.4"
+    "goal/G14.4",
+    "goal/G14.5"
    ],
    "go": false,
    "alone": false,
@@ -39,10 +40,9 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -663,8 +663,8 @@
    "id": "goal/G14.4",
    "title": "The model selector dropdown line.",
    "goal": "goal/G14",
-   "status": "claimed done",
-   "with": "claude-windows",
+   "status": "waiting for deskVerify",
+   "with": "",
    "buttons": [],
    "blocking": [
     "goal/G14"
@@ -673,7 +673,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": true,
    "subGoal": false,
@@ -700,12 +700,12 @@
     }
    ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -743,8 +743,8 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "box": "WHAT: two pieces of deskUnslothRemote for the chosen target (this node or the puppet). THE MODEL LINE under the switch: a dropdown of the models the studio has cached locally, each entry with its capability icons, the loaded one selected by default; a Load button when the chosen model is not loaded, the running mark when it is; the icons; small print with the flavor (quant) and the size in GB. THE CHAT BOX, sticky at the bottom edge of the panel, on the node that hosts deskUnsloth only: a title line with the model's info, a fixed-height scrolling display a quarter of the window high, an input line with a Send button; Enter sends; one line only.\n\nRULINGS (Andy, 2026-10-10, capped; his words were in versions 1 to 11)\n- The dropdown shows only models the studio has cached locally, the loaded one by default; each entry carries its capability icons \"as far as you know it\".\n- Selecting loads nothing (\"changing the selection only will bring more detailed info\"); the Load button alone loads, shown for any model not loaded; the running mark in its place when loaded.\n- ICON.VIEW for vision, THINK and MUSIC; \"then show vision always\".\n- deskUnsloth \"should cache the model list with all capabilities\", so more is known of models not loaded.\n- The chat box is shown only on the node that hosts deskUnsloth.\n- After the first build, live: the Load press died (the studio's load blocks); with no model loaded the selector did not show; the studio crashed; a failed load left the hourglass: \"your UI must release the hour-glass status. and allow another loading attempt.\"; \"deskUnloth must respond to all queries immediately, the remote need's to poll for status of a load, until it is known to have failed or succeeded.\"\n- Q1 (does choosing load it): no. Q2 (does deskUnsloth chat with what Load loaded): closed on his \"green? (after removing red Q)\" with yes, his to overturn.\n\nTODAY (read live 2026-10-10, Unsloth Studio 2026.10.3 at 127.0.0.1:8888 on the puppet box, bearer key from connection.json)\n- GET api/models/cached-gguf: the cached list (13), repo_id, size_bytes, task, has_vision; 1 to 2 s. GET v1/models: every model known with quant and loaded, 15 to 18 s live (it probes its ollama entries). GET api/inference/status: of the loaded model, active_model, loaded, supports_reasoning, is_vision, is_audio; 0.3 s. Per-model routes (models/config, check-vision) are 2 to 4 s each and contradict cached-gguf on vision: not used.\n- POST api/inference/load {model_path} BLOCKS until the model is in (minutes) and swaps the loaded one; GET api/inference/load-progress gives phase, bytes, fraction meanwhile; GET api/train/hardware gives VRAM used/total per GPU.\n- All of it is loopback on the puppet box: only deskUnsloth can read it. A process answers jobs.api within DOOR_WAIT_MS, 12 s (appClient.js): nothing lengthy may be waited for in one ask.\n- The icon table has no RUNNING: ON is the green circle, LOADING the hourglass.\n\nSHAPE (built)\n1. deskUnsloth models {} -> {active, load, models: [{id, loaded, quant, bytes, task, vision, reasoning, audio}]}: the list fresh from cached-gguf every ask; loaded and active from inference/status; quant from v1/models capped at 5 s; reasoning and audio from status for the loaded one. THE CACHE: models.json in the state folder keeps per model the quant once seen and the flags learned while it was loaded, filled in where the studio is silent. A failing status or v1/models means nothing loaded, the list still comes.\n2. deskUnsloth model.load {id}: fires POST load and answers {model, loaded: false} AT ONCE; configuration.json's model follows (rewritten by the process that owns it) and the next call names it. `load` in models is the last load's {model, state loading/done/failed, error}, so a refusal is seen the moment the studio says so.\n3. deskUnsloth chat.send {lines} -> {id} at once, the model asked with the preamble and the lines under the room; chat.answer {id} -> {done, text}, polled by the page each second. Two asks because of the 12 s wall.\n4. The app, the model line: the same one function as the switch (jobs.api here, owner.command on the puppet). Entries \"id icons mark\"; a changed selection only redraws; Load asks model.load then polls models every 2 s until loaded (ON) or failed (the words shown, Load offered again) or the studio unreadable; LOADING meanwhile; small print \"quant · GB\".\n5. The app, the chat box: drawn only where its own node answers the state ask (on the owner's node that ask is app-not-served); it asks its own node only; the page keeps the transcript.\n\nTESTS: spirit/test/deskUnslothModels.js (27): a fake studio (cached-gguf, v1/models held late, status erring when nothing is loaded, a blocking load, one refused load, load-progress, chat/completions) and the fake node of deskUnslothSwitch.js; models merged and cached, model.load at once with the configuration following and the failure said, chat.send/chat.answer, the app's pure functions (asks per target, the line, the entry, load-over). deskUnslothSwitch.js and deskUnslothContext.js stay green.\n\nFILES: process/js/deskUnsloth/deskUnsloth.js and its manifest; shell/deskUnslothRemote/deskUnslothRemote.js; the new suite; no core file.\n\nPROPOSED, NOT BUILT: a load.progress verb (load-progress, which model is in, VRAM per GPU) shown in the small print while a load runs.\n\nNOT IN THIS ITEM: VRAM and hardware beyond that, the monitor and its queue, the configuration editor, restart, the puppets list. Each a later item of this goal.",
-   "version": 12,
+   "box": "WHAT: two pieces of deskUnslothRemote for the chosen target (this node or the puppet). THE MODEL LINE under the switch: a dropdown of the models the studio has cached locally, each entry with its capability icons, the loaded one selected by default; a Load button when the chosen model is not loaded, the running mark when it is; the icons; small print with the flavor (quant) and the size in GB. THE CHAT BOX, sticky at the bottom edge of the panel, on the node that hosts deskUnsloth only: a title line with the model's info, a fixed-height scrolling display a quarter of the window high, an input line with a Send button; Enter sends; one line only.\n\nRULINGS (Andy, 2026-10-10, capped; his words were in versions 1 to 11)\n- The dropdown shows only models the studio has cached locally, the loaded one by default; each entry carries its capability icons \"as far as you know it\".\n- Selecting loads nothing (\"changing the selection only will bring more detailed info\"); the Load button alone loads, shown for any model not loaded; the running mark in its place when loaded.\n- ICON.VIEW for vision, THINK and MUSIC; \"then show vision always\".\n- deskUnsloth \"should cache the model list with all capabilities\", so more is known of models not loaded; then \"deskUnloth should REALLY cache the know list....\": the known list IS the answer, at once, refreshed behind it.\n- The chat box is shown only on the node that hosts deskUnsloth.\n- After the first build, live: the Load press died (the studio's load blocks); with no model loaded the selector did not show; the studio crashed; a failed load left the hourglass: \"your UI must release the hour-glass status. and allow another loading attempt.\"; \"deskUnloth must respond to all queries immediately, the remote need's to poll for status of a load, until it is known to have failed or succeeded.\"\n- Q1 (does choosing load it): no. Q2 (does deskUnsloth chat with what Load loaded): closed on his \"green? (after removing red Q)\" with yes, his to overturn.\n\nTODAY (read live 2026-10-10, Unsloth Studio 2026.10.3 at 127.0.0.1:8888 on the puppet box, bearer key from connection.json)\n- GET api/models/cached-gguf: the cached list (13), repo_id, size_bytes, task, has_vision; 1 to 2 s. GET v1/models: every model known with quant and loaded, 15 to 18 s live (it probes its ollama entries). GET api/inference/status: of the loaded model, active_model, loaded, supports_reasoning, is_vision, is_audio; 0.3 s. Per-model routes (models/config, check-vision) are 2 to 4 s each and contradict cached-gguf on vision: not used.\n- POST api/inference/load {model_path} BLOCKS until the model is in (minutes) and swaps the loaded one; GET api/inference/load-progress gives phase, bytes, fraction meanwhile; GET api/train/hardware gives VRAM used/total per GPU.\n- All of it is loopback on the puppet box: only deskUnsloth can read it. A process answers jobs.api within DOOR_WAIT_MS, 12 s (appClient.js): nothing lengthy may be waited for in one ask.\n- The icon table has no RUNNING: ON is the green circle, LOADING the hourglass.\n\nSHAPE (built)\n1. deskUnsloth models {} -> {active, cached, load, models: [{id, loaded, quant, bytes, task, vision, reasoning, audio}]}: THE KNOWN LIST, models.json in the state folder, answered at once, and a refresh from the studio running behind it (one at a time) so the next ask has what the studio said; only the first ask ever, with no file, waits for the studio. A refresh reads cached-gguf (the list, size, task, vision), inference/status (active, loaded, and reasoning/audio for the loaded one), v1/models capped at 5 s (quant), and keeps what was known where the studio is silent: a quant once seen, the flags learned while a model was loaded. A failing status or v1/models means nothing loaded, the list still comes. `cached` is true until a refresh has landed within 10 s (his ruling: \"the list should return with a cached flag, so the remote can forbid loading until....\"): the line withholds Load on a cached answer and asks again every 2 s until the studio has been heard from.\n2. deskUnsloth model.load {id}: fires POST load and answers {model, loaded: false} AT ONCE; configuration.json's model follows (rewritten by the process that owns it) and the next call names it. `load` in models is the last load's {model, state loading/done/failed, error}, so a refusal is seen the moment the studio says so.\n3. deskUnsloth chat.send {lines} -> {id} at once, the model asked with the preamble and the lines under the room; chat.answer {id} -> {done, text}, polled by the page each second. Two asks because of the 12 s wall.\n4. The app, the model line: the same one function as the switch (jobs.api here, owner.command on the puppet). Entries \"id icons mark\"; a changed selection only redraws; Load asks model.load then polls models every 2 s until loaded (ON) or failed (the words shown, Load offered again) or the studio unreadable; LOADING meanwhile; small print \"quant · GB\".\n5. The app, the chat box: drawn only where its own node answers the state ask (on the owner's node that ask is app-not-served); it asks its own node only; the page keeps the transcript.\n\nTESTS: spirit/test/deskUnslothModels.js (27): a fake studio (cached-gguf, v1/models held late, status erring when nothing is loaded, a blocking load, one refused load, load-progress, chat/completions) and the fake node of deskUnslothSwitch.js; models merged and cached, model.load at once with the configuration following and the failure said, chat.send/chat.answer, the app's pure functions (asks per target, the line, the entry, load-over). deskUnslothSwitch.js and deskUnslothContext.js stay green.\n\nFILES: process/js/deskUnsloth/deskUnsloth.js and its manifest; shell/deskUnslothRemote/deskUnslothRemote.js; the new suite; no core file.\n\nPROPOSED, NOT BUILT: a load.progress verb (load-progress, which model is in, VRAM per GPU) shown in the small print while a load runs.\n\nNOT IN THIS ITEM: VRAM and hardware beyond that, the monitor and its queue, the configuration editor, restart, the puppets list. Each a later item of this goal.",
+   "version": 13,
    "checks": [
     {
      "number": "Q1",
@@ -1079,6 +1079,270 @@
      "by": "desk",
      "at": "2026-10-10T15:30:09.054Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T15:30:13.357Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:30:59.950Z",
+     "text": "commit 3f00fda512a32637f26d1c7ac985928f65a9c958: goal/G14.4: the known list is the answer, refreshed behind it\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothModels.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:31:04.317Z",
+     "text": "Pushed under the reopened item, 3f00fda5: the known list in models.json is the answer at once with a refresh behind it, and a cached flag until the studio has been heard from; the line withholds Load on a cached answer and asks again every 2 s. Red at 32, green; box at version 13.\nFiles: process/js/deskUnsloth/deskUnsloth.js, shell/deskUnslothRemote/deskUnslothRemote.js, spirit/test/deskUnslothModels.js.\nClaimed done again; the state-machine serialization and load.progress wait for their own item"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T15:31:35.003Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:31:45.473Z",
+     "text": "Red phase done (the suite is deskUnslothModels.js, 32 checks); the build phase refuses the red writer, one agent, so it needs your Waive - the build itself is already pushed (3f00fda5)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T15:32:12.641Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T15:32:34.705Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:42:56.710Z",
+     "text": "commit ff2dfd3fceece0ae3a3154448f08e7d516ed9f6c: goal/G14.4: the remote keeps one ask in flight and polls after the answer, never on a clock\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:43:00.848Z",
+     "text": "Cause of the hanging shell on 65432: the Remote polled models every 2 s on an interval, twice over, each ask through the owner door taking up to 20 s, so posts piled up from your shell, the relay refused busy, Desk starved and 11111 read as unreachable.\nFixed and pushed, ff2dfd3f: one ask in flight, every poll waits for its answer then 5 s, nothing asked once the panel is gone.\nNow: close the Remote on 65432 and reload that shell; pull your clone before opening it again."
+    }
+   ]
+  },
+  {
+   "id": "goal/G14.5",
+   "title": "Build puppet-to-master Stream.",
+   "goal": "goal/G14",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/jobs.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothModels.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetStream.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 1,
+   "half": true,
+   "full": false,
+   "box": "WHAT: a stream from a puppet to its master: the master subscribes to one of the puppet's servers, and from then on every object that server publishes reaches the master's pages as it reaches the puppet's own, so the Remote polls nothing.\n\nRULINGS (Andy, 2026-10-10)\n- His sketch: \"a puppet has a special, puppet command: stream (which starts a stream of posts to the master); the master that sends this to a puppet, then throws the streamed events into the node-broadcast for it's apps\".\n- \"inside the puppet, the publisher then publishes to the master as well. Let's make sure this is the most simple thing possible.\"\n- \"publish-over-peer-post will be slow. so the master needs to select/filter at the source what he needs, he should be able to send a \"subscribe to deskUnsloth\", or a master stream should only contain appServer events.\"\n- Then: \"hmm, puppets are usually specialized, let's drop the specific app stream mechanism for now, and just send all app Server events. the other can be done later if this proves to much.\"\n- And: \"only while the master is live and reachable.\"\n- And: \"so deskUnsloth keeps a state, and publishes changes, it's own api are more like event-delivery to deskUnsloth\"\n\nCHECKED (2026-10-10, at ff2dfd3f)\n- The publisher is one point in the node: appServer.publish calls jobs.report {app}; the node keeps the object on the job record (jobs.js, under the PAYLOAD_MAX gate) and emits job-updated, which server.js writes to every open page's event stream; the shell hands it to the app named after the process (deliverPublished, api.onPublished). Nothing of it crosses to another node.\n- The puppet (11111) is a contact of the master, acquired as a relay member: its packets pass the master's front door and reach the page as packet events. A node posts with peer.post; the puppet's owner key is relay-state/owner.json.\n- A puppet command is owner.command carrying a node verb through the owner door (puppetMode.puppetDoor runs the loopback handler). A new node verb needs his yes on the verb itself.\n- The relay queues per target and refuses busy; a post per published object of one server is a handful a minute, a post per log line would not be.\n- Publishers today: deskUnsloth (its state object, to be built with this item), desk and deskVerify (rules, runs), fileServer (transfer progress), chatClerver (every line). On the puppet: deskUnsloth and pushOrigin.\n\nSHAPE (proposed on his rulings; no new verb)\n1. NO SUBSCRIPTION: a puppet streams every server's published objects to its owner, always; nothing to switch on, no verb, nothing kept. Nothing else is streamed: no logs, no job states. A filter at the source is the later item \"if this proves to much\".\n2. THE FORWARD, at the one point: where the node sets job.app and the node is a puppet (owner.json names another key), it also posts {module, app} to its owner as a packet named published, fire and forget (no wait, no retry), and ONLY WHILE THE MASTER IS LIVE AND REACHABLE: the same route check owner.command makes before a command (the route to the key, unreachable or without a relay means no post, no log line, nothing queued; the next change tries again). A post the relay refuses is one line in the node's log. Over PAYLOAD_MAX never reaches this point. SERIALIZED AT THE SOURCE (his question, 2026-10-10: \"and the appServer publisings will be serialized at their source? they are peerposts after all.\"): one post to the owner in flight at a time; a module that publishes again while a post is out has only its newest object kept, posted when the one out returns (latest wins per module, order kept across modules), so a burst collapses and the relay never sees two posts from one puppet at once.\n3. THE MASTER SIDE, at its one point: a packet named published from a contact is written to every open page stream as event published {from, module, app}, beside job-updated; the shell hands it to api.onPublished handlers of that module's app with the sender's key, so the Remote subscribes one way on both nodes and tells the puppet's object by `from`. Not from a stranger: the front door already drops those.\n4. deskUnsloth KEEPS ONE STATE and publishes it on every change: {connected, persona, model, active, cached, load, models: [...], chat: {id, done, text}} (what state, models and chat.answer answer today). Its verbs are deliveries that change that state: connect {on}, model.load {id}, chat.send {lines}; each answers at once as today and the change arrives as the next published object. The read verbs state, models and chat.answer stay for a one-shot ask (a tool, a test), the Remote asks none of them: it draws from the published object, on either node, from the first one in.\n\nTESTS, the red first: spirit/test/puppetStream.js: a fake owner and a real puppet node world (as puppetDoor.js builds one): a published object of any server on the puppet is posted to the owner once per change, as a packet named published with module and app; nothing is posted for a log line or a job state, nothing by a node that is not a puppet, nothing while the owner's route says unreachable (and nothing queued for later), and a post the relay refuses is said in the log and not retried; posts are serialized: with the owner slow, five publishes of one module in a row reach it as the first and the last, one at a time; the master side turns such a packet from a contact into a published event on its page stream with from, module and app, and a stranger's is not; deskUnsloth publishes its state on connect/disconnect, load and refresh (deskUnslothModels.js grows); the Remote's one handler takes a local published object and a streamed one alike.\n\nFILES: spirit/run/js/jobs.js or server.js (the forward at the publish point) and the arrivals side in server.js (the published event) - core, grants; process/js/deskUnsloth/deskUnsloth.js; shell/deskUnslothRemote/deskUnslothRemote.js; spirit/run/js/client/shell.js (onPublished with from) - core; the new suite.\n\nNOT IN THIS ITEM: streaming logs or job states; a filter at the source (later, \"if this proves to much\"); a puppets list on the master.",
+   "version": 9,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is puppet.stream {app, on}, owner-only through the owner door, the verb you approve",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T16:02:18.292Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/jobs.js, spirit/run/js/server.js",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-10T16:02:30.563Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:50:45.542Z",
+     "text": "Checked and in the box under your text: a push inside one node exists (publish, onPublished) but crosses no node; the puppet is your contact, so its packets already reach your page and an app by name (onPacket); a new node verb needs your yes on the verb itself.\nTwo shapes in the box: A, no node change, deskUnsloth streams its own published object to the master on stream {on}, the Remote listens one way on each node; B, your sketch, a node verb stream plus the master re-broadcasting, two core changes, one way for every app.\nA or B"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T15:53:09.692Z",
+     "text": "inside the puppet, the publisher then publishes to the master as well.\n\nLet's make sure this is the most simple thing possible."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:54:16.358Z",
+     "text": "Simplest puppet side, from your ruling: appServer.publish, on a node whose owner.json names another key, also posts the object to that owner as a packet named after the process, every time, fire and forget; no stream verb, nothing to switch on (a common-component change, so your yes on it is this ruling).\nWhat publishes today: deskUnsloth (its state, once built), desk and deskVerify (rules and runs), fileServer (transfer progress), chatClerver (every chat line); on the puppet that is deskUnsloth and pushOrigin, so a handful of posts, no flood.\nMaster side, the last choice: the app listens with onPacket by the process name (no node change), or the node turns the packet into a published event so every app listens one way (core change)"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T15:54:17.039Z",
+     "text": "where does appServer.publish publish to? i REALLY hope is a single point in node, that then forwards to the UI...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:55:13.028Z",
+     "text": "Yes, one point: appServer.publish only calls jobs.report {app}; the node keeps the object on the job record (jobs.js, under the PAYLOAD_MAX gate) and emits job-updated, which server.js writes to every open page stream, and the shell hands it to the app named after the process (deliverPublished, onPublished).\nSo the forward belongs at that point in the node: on a puppet, right where job.app is set, the node also posts {module, app} to its owner; the master node, on such a packet from a contact, emits it on its page stream as a published event carrying the sender, so every app listens one way. Two core files (jobs.js or server.js, and the arrivals side), no new verb.\nThat is the shape to write up, yes"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T15:59:13.605Z",
+     "text": "publish-over-peer-post will be slow. so the master needs to select/filter at the source what he needs, he should be able to send a \"subscribe to deskUnsloth\", or a master stream should only contain appServer events."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:00:06.553Z",
+     "text": "Both your lines are in: the stream carries published objects only, and only of the servers the master subscribed to at the source.\nShape written up in the box: a puppet node verb puppet.stream {app, on} through the owner door; the forward at the publish point, fire and forget; the master emits a published event with the sender on its page stream; deskUnsloth publishes its state. Core files named.\nThe one new verb is puppet.stream, owner-only: your yes on the verb itself"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:01:33.947Z",
+     "text": "hmm, puppets are usually specialized, let's drop the specific app stream mechanism for now, and just send all app Server events. the other can be done later if this proves to much."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:02:20.161Z",
+     "text": "Recorded; then no verb at all: a puppet forwards every published object of every server to its owner, always, fire and forget; the master emits them as published events with the sender; the filter at the source is the later item.\nBox being rewritten to that; core files: jobs.js or server.js for the forward, server.js for the master event, shell.js for onPublished with the sender.\ngreen"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:03:09.344Z",
+     "text": "only while the master is live and reachable."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:03:43.965Z",
+     "text": "Recorded: the puppet posts only while the master is live and reachable, by the same route check owner.command makes before a command; unreachable means no post, no log line, nothing queued, the next change tries again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:06:28.106Z",
+     "text": "so deskUnsloth keeps a state, and publishes changes, it's own api are more like event-delivery to deskUnsloth"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:06:54.011Z",
+     "text": "Yes, in the box: deskUnsloth keeps one state object and publishes it on every change; connect, model.load and chat.send are deliveries that change it and answer at once; state, models and chat.answer stay as one-shot reads for a tool, the Remote asks none of them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:08:22.457Z",
+     "text": "this green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:08:39.458Z",
+     "text": "Green: your four rulings are in the box verbatim, no question open, no new verb; three core files (jobs.js or server.js, server.js, shell.js) will want your grants once it has Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:09:30.797Z",
+     "text": "and the appServer publisings will be serialized at their source? they are peerposts after all."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:09:56.890Z",
+     "text": "Yes, serialized at the source, now in the box: one post to the owner in flight at a time; a module that publishes again meanwhile has only its newest object kept and posted when the one out returns (latest wins per module), so a burst collapses and the relay never sees two posts from one puppet at once."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:10:14.669Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:10:28.064Z",
+     "text": "Green: serialization is in the box (version 9), nothing open, Go is offered."
     }
    ]
   }
