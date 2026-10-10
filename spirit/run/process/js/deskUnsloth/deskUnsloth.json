@@ -1,6 +1,6 @@
 {
   "label": "Desk Unsloth",
-  "description": "An local agent's own way to Andy's desk (goal/G3.3, G3.4, G3.5). Passes one ask to the desk server on the node the owner named (setDesk) and counts it; while its agent waits (next), reads what changed at the desk every pollMs, and at once when the desk nudges it (changed), and hands over what is meant for that agent. Its record, deskClient.db, holds the newest historyMax asks and is in the node's state (relay-state/process/deskClient/). Started by the node; reached by jobs.api on the loopback door.",
+  "description": "The local agent's mediator (goal/G10.3): routes between the model at the connection's url and Andy's desk through this node's deskClient, answering the lines addressed to its persona and JOB lines, the call built fresh from the desk each time. Its two files are in its state folder: configuration.json (persona, preamble, model, contextLimit, answerTokens, bytesPerToken) and connection.json (url, key). Since goal/G14.2 it has a switch: connect {on} stops or resumes its asks for lines (off says signoff to the desk, so the persona leaves the live list at once), and state {} says whether it is connected, with its persona and model; deskUnslothRemote flips and reads them.",
   "kind": "server",
   "operated": "node",
   "args": []

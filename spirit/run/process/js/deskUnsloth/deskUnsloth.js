@@ -2,6 +2,7 @@
 
 // spirit/run/process/js/deskUnsloth/deskUnsloth.js
 // THE LOCAL AGENT'S MEDIATOR: it routes between the agent and the desk, and nothing more — goal/G10.3.
+// Since goal/G14.2 it has a switch: connect {on} and state {}, the two verbs deskUnslothRemote flips and reads.
 //
 //   Andy, 2026-10-09: "tooling is deferred for this goal. deskUnsloth simply will route between agent and desk."
 //   On the context: "The Context, for now is CurrentGoal.json, the chat history", settled to the boxes because the
@@ -281,7 +282,41 @@ function drain() {
   return answerItem(id).then(function () { working = false; return drain(); });
 }
 
+// ── THE SWITCH (goal/G14.2) ───────────────────────────────────────────
+//
+//   Andy, 2026-10-10: "it will be a connect/disconnect switch for Levant to be visible in desk." "this way i can
+//   turn it off, so i don't have to waive for you to claim both reds and code."
+//
+// The desk counts an agent live for ten minutes after its last write, and every ask for next lines is a write; only
+// signoff drops it at once (desk.js, goal/G8.5). So DISCONNECT is two things: the loop stops asking, and one signoff
+// goes to the desk, so Levant leaves the live list now and the waive rule sees one agent. CONNECT starts the loop
+// again as at a start: what it is handed before the first empty answer is the backlog, read and never answered,
+// and its first ask makes it live again. The process stays up either way: stopping the job is not this switch.
+// It starts connected, as it always did. `looping` keeps a connect that lands while the last ask is still in
+// flight from starting a second loop.
+let connected = true;
+let looping = false;
+
+function setConnected(on) {
+  if (on === connected) return Promise.resolve({ connected: connected });
+  if (!on) {
+    connected = false;
+    say(PERSONA + ' leaves the desk: signing off');
+    return desk('signoff', {}).then(function () { return { connected: false }; }, function (e) {
+      say('the signoff could not be said: ' + e.message);
+      return { connected: false };
+    });
+  }
+  connected = true;
+  caughtUp = false;
+  say(PERSONA + ' is back at the desk, from the present');
+  if (!looping) loop();
+  return Promise.resolve({ connected: true });
+}
+
 function loop() {
+  if (!connected) { looping = false; return; }
+  looping = true;
   nextLines().then(function (lines) {
     if (!lines.length) {
       if (!caughtUp) { caughtUp = true; say('caught up with the backlog; answering from here'); }
@@ -306,6 +341,16 @@ appServer.serve({
   alive: {
     request: {}, reply: { alive: true },
     handler: function () { return { alive: true }; },
+  },
+  // THE SWITCH'S TWO VERBS (goal/G14.2): what deskUnslothRemote flips and reads, on this node through jobs.api,
+  // from the owner's node through owner.command carrying that same ask.
+  connect: {
+    request: { on: true }, reply: { connected: true },
+    handler: function (a) { return setConnected(a.on === true); },
+  },
+  state: {
+    request: {}, reply: { connected: true, persona: '', model: '' },
+    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL }; },
   },
 }, { dependencies: [] });
 
