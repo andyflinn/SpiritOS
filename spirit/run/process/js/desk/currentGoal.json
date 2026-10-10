@@ -1,8 +1,8 @@
 {
- "change": 30388,
+ "change": 30389,
  "line": 8499,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:16:57.269Z",
+ "writtenAt": "2026-10-10T23:16:59.225Z",
  "items": [
   {
    "id": "goal/G16",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 12,
+   "waiting": 11,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1258,10 +1258,9 @@
    "id": "goal/G16.4",
    "title": "The andy check and the app branch leave apiDoor (N2)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
