@@ -80,8 +80,9 @@ let code = 0;
 // which is always an inconsistency worth knowing about rather than a
 // feature.
 function define(dummy, e) {
+
   var entry = {
-    code: ++dummy,
+    code: ++code,
     status: e.status,
     text: e.texts ? e.texts[0] : (e.prefixes ? e.prefixes[0] : code),
     texts: e.texts || [],
