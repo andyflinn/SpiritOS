@@ -1,8 +1,8 @@
 {
- "change": 29655,
+ "change": 29862,
  "line": 8495,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T21:45:19.752Z",
+ "writtenAt": "2026-10-10T22:25:07.246Z",
  "items": [
   {
    "id": "goal/G16",
@@ -25,7 +25,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
@@ -33,23 +33,26 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 13,
+   "design": false,
+   "waiting": 10,
    "live": [
+    "claude-windows",
+    "wsl-claude"
+   ],
+   "working": [
     "claude-windows"
    ],
-   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "WHAT: act on the review \"SpiritOS relay and node split review\" (Andreas Thut, 2026-10-10, at e8f8ffd; relay.js whole and the node's wire path read by four readers; S1, S3, S6 reproduced on Node 22). Its verdict: the relay keeps its envelope rule, the node breaks its own, both layers still carry app knowledge, and the worst problems are trust, not layering. The rules checked are NODE-AND-RELAY.md's three: the relay carries, the node stores, the shell understands.\n\nDECIDED: the goal is Andy's (2026-10-10); \"device WILL be KILLED. that's a decision.\" (2026-10-10, under goal/G16.2: the device enrolment, abandoned 2026-09-26, leaves the tree, as an item of this goal once he adds it); \"the relays should do first-claim, it should happen at install time. that's the only \\\"safe\\\" way.\" and \"NOT first claim i mean\" and \"KILL the dead code / fallback. this type of stuff is always coming back to bite us.\" (2026-10-10, under goal/G16.3: the owner is set at install, the first-claim path over the wire goes; \"yes. ownership CANNOT be achieved via invite.\": goal/G16.8); \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" (2026-10-10, under goal/G16.6; it covers R5 as well); items are added one at a time at his word; every relay-wire and node-verb change is reviewed and gets his yes before a build. Claude-windows checked the headline items in the tree at b355e36d; the low items stand on the review's word until their item opens.\n\nITEMS (with folds of 2026-10-10, \"place all you can into existing items\"): goal/G16.1 S1, S2, S7, the 0011 hash low (the receipt binds the reply text; a forwarded reply is verified before its route is announced); goal/G16.2 S3, the device removal with S6, S4, S13, R2, R3, the partner-slots low; goal/G16.3 A1, A4, the operator pages; goal/G16.4 N2 (the andy check and the app branch leave apiDoor); goal/G16.5 N1 (one decoder in the node layer, and a guard that sees it); goal/G16.6 R1, R5, S10, the proxy reply cap, the carry-order low; goal/G16.7 B1, B2, S12, the acquire-known low, the card-ask lows; goal/G16.10 N4 (the node's own packets); goal/G16.12 S5, S8, S9 (the replay windows); goal/G16.11 A3 (app error codes); goal/G16.9 the rest (the placement notes, S11, two lows; R4 noted as a decision, the Contacts prefs read left until alpha); goal/G16.8 (ownership never by invite: the first-claim path goes).\n\nORDER (applied by session.set, 2026-10-10): G16.6 and G16.4 start; G16.6 before G16.1; G16.4 before G16.5; G16.1 before G16.2, G16.7 and the replay windows; G16.5 before G16.7 and N4; G16.2 before G16.8; G16.8 before G16.3 and A3; the rest last, blocking the goal. The flag day of G16.1 is one deploy of relays and nodes after every wire item is green.",
-   "version": 17,
+   "box": "WHAT: act on the review \"SpiritOS relay and node split review\" (Andreas Thut, 2026-10-10, at e8f8ffd; relay.js whole and the node's wire path read by four readers; S1, S3, S6 reproduced on Node 22). Its verdict: the relay keeps its envelope rule, the node breaks its own, both layers still carry app knowledge, and the worst problems are trust, not layering. The rules checked are NODE-AND-RELAY.md's three: the relay carries, the node stores, the shell understands.\n\nDECIDED: the goal is Andy's (2026-10-10); \"device WILL be KILLED. that's a decision.\" (2026-10-10, under goal/G16.2: the device enrolment, abandoned 2026-09-26, leaves the tree, as an item of this goal once he adds it); \"the relays should do first-claim, it should happen at install time. that's the only \\\"safe\\\" way.\" and \"NOT first claim i mean\" and \"KILL the dead code / fallback. this type of stuff is always coming back to bite us.\" (2026-10-10, under goal/G16.3: the owner is set at install, the first-claim path over the wire goes; \"yes. ownership CANNOT be achieved via invite.\": goal/G16.8); \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" (2026-10-10, under goal/G16.6; it covers R5 as well); items are added one at a time at his word; every relay-wire and node-verb change is reviewed and gets his yes before a build. Claude-windows checked the headline items in the tree at b355e36d; the low items stand on the review's word until their item opens.\n\nITEMS (with folds of 2026-10-10, \"place all you can into existing items\"): goal/G16.1 S1, S2, S7, the 0011 hash low (the receipt binds the reply text; a forwarded reply is verified before its route is announced); goal/G16.2 S3, the device removal with S6, S4, S13, R2, R3, the partner-slots low; goal/G16.3 A1, A4, the operator pages; goal/G16.4 N2 (the andy check and the app branch leave apiDoor); goal/G16.5 N1 (one decoder in the node layer, and a guard that sees it); goal/G16.6 R1, R5, S10, the proxy reply cap, the carry-order low; goal/G16.7 B1, B2, S12, the acquire-known low, the card-ask lows; goal/G16.10 N4 (the node's own packets) DROPPED, Andy 2026-10-10 \"drop it.\": the node is the choke point and a server app on the box is trusted as the node is; goal/G16.12 S8 only, the relay's key in the signed stream header (S5 and S9 NOT worth fixing, Andy 2026-10-11: his box is trusted, and re-signing at send gains nothing over centralized distribution); goal/G16.11 A3 (app error codes); goal/G16.9 the rest (the placement notes, S11, two lows; R4 noted as a decision, the Contacts prefs read left until alpha); goal/G16.8 (ownership never by invite: the first-claim path goes).\n\nORDER (applied by session.set, 2026-10-10): G16.6 and G16.4 start; G16.6 before G16.1; G16.4 before G16.5; G16.1 before G16.2, G16.7 and the replay windows; G16.5 before G16.7 and N4; G16.2 before G16.8; G16.8 before G16.3 and A3; the rest last, blocking the goal. The flag day of G16.1 is one deploy of relays and nodes after every wire item is green.",
+   "version": 19,
    "checks": [
     {
      "number": "Q1",
@@ -182,9 +185,18 @@
      "kind": "Q",
      "words": "Four items that way, or one for everything?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-10T21:41:47.685Z"
+     "at": "2026-10-10T21:45:24.265Z"
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "10 is the only thing owed before the order runs clean — press it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T22:24:40.803Z"
     }
    ],
    "chat": [
@@ -372,6 +384,86 @@
      "by": "andy",
      "at": "2026-10-10T21:43:06.122Z",
      "text": "let's do it that way."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:45:26.392Z",
+     "text": "Done as agreed: four items added and boxed, the order applied again with twelve items.\n- goal/G16.10 the node's own packets (N4), after G16.5;\n- goal/G16.12 the replay windows (S5, S8, S9), after G16.1;\n- goal/G16.11 app error codes leave the shared register (A3), after G16.8;\n- goal/G16.9 the rest: placement notes and small fixes, last, blocking the goal.\nThe three design items carry the facts and a candidate shape each, to be argued one at a time before any red; the goal box lists the order. Nothing is built."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:45:26.983Z",
+     "text": "use your judgment."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:46:32.244Z",
+     "text": "all green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:46:47.924Z",
+     "text": "Not all: nine of twelve are green (the eight settled items and goal/G16.9, the cleanup, which holds no decision). Three are design items with a candidate shape and no ruling yet: goal/G16.10 the node's own packets, goal/G16.11 app error codes, goal/G16.12 the replay windows; each needs its own pass with you before it is green, and they sit late in the order, so the free starts (G16.6, G16.4) do not wait on them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:47:30.459Z",
+     "text": "why don't i see red then?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:47:59.122Z",
+     "text": "Because the three carried no open question: I wrote their candidate shapes without raising the first decision each needs, so nothing was red. Each now shows one red Q, the question that opens its design pass: G16.10 the system mark on the node's own packets, G16.11 apps declaring their own error codes, G16.12 the three ways to close the replay windows."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:17:16.827Z",
+     "text": "all green now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:17:59.233Z",
+     "text": "All green: no open check on the goal or any item, every shape decided in its box, the order applied. One press is yours: goal/G16.10 is dropped by your word but still open until you delete it (closed: false). Nothing is built; the free starts are goal/G16.6 and goal/G16.4, each waiting for its Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:19:25.351Z",
+     "text": "everybody accept this goal as all-green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:19:37.775Z",
+     "text": "claude-windows: yes, I accept it as all green. The only loose end is goal/G16.10, dropped by your word and still open until your delete press."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:21:23.703Z",
+     "text": "this goal all green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:21:34.404Z",
+     "text": "Yes, all green: eleven items, every one decided, no open question anywhere, the order applied. Nothing is built; goal/G16.6 and goal/G16.4 can start on your Go."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T22:22:39.147Z",
+     "text": "wsl-claude: I accept it as all green — no open check on the goal or on any of the twelve items, read just now.\nOne thing is not clean: goal/G16.10, dropped by your word (\"drop it.\", in its box), is still open and still stands in goal/G16.9's blocked list, so the cleanup item waits on a dropped item.\nYour delete press on goal/G16.10 is the only thing owed before the order runs clean — press it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:22:58.008Z",
+     "text": "For the record, read just now: your delete press on goal/G16.10 is already done, and goal/G16.9 no longer waits on it (it waits on G16.7, G16.3, G16.12 and G16.11 only). Nothing is owed; the order runs clean."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:24:27.927Z",
+     "text": "Q16: 10 is the only thing owed before the order runs clean — press it?\n\nwhat is the red Q about? in ENGLISH."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:24:43.805Z",
+     "text": "That red Q came from the other agent's line asking you to delete item 10. You had already deleted it, so the question was out of date; I have struck it. Nothing is waiting on you in this goal."
     }
    ]
   },
@@ -379,17 +471,14 @@
    "id": "goal/G16.6",
    "title": "Bodies read as Buffers and joined once (R1)",
    "goal": "goal/G16",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G16.1"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -404,7 +493,36 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": true,
    "full": false,
@@ -588,17 +706,14 @@
    "id": "goal/G16.4",
    "title": "The andy check and the app branch leave apiDoor (N2)",
    "goal": "goal/G16",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G16.5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -613,7 +728,36 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -723,8 +867,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.7",
@@ -828,8 +971,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.2",
@@ -929,8 +1071,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.8"
@@ -1120,8 +1261,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.9"
@@ -1230,8 +1370,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.3",
@@ -1277,8 +1416,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.9"
@@ -1475,11 +1613,10 @@
    "id": "goal/G16.10",
    "title": "The node's own packets, marked so no app can forge them (N4)",
    "goal": "goal/G16",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "reopen"
    ],
    "blocking": [
     "goal/G16.9"
@@ -1506,10 +1643,128 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "WHAT: the packets the node itself composes and addresses to the owner's shell, published (every server's changed published object on a puppet) and api (the api door's answers), carry an app name today, and a puppet app can post a packet with the same name that the owner's shell cannot tell from the node's; they get a mark only the node can set, so the shell and the doors branch on that mark and on no app name (N4 of the review; the other half of goal/G16.4, \"remove it.\" left this half here).\n\nDECIDED: an item of this goal at Andy's word (2026-10-10, \"let's do it that way.\": one cleanup item last and three design items, each argued one at a time before it is built). From the review of 2026-10-10 (Andreas Thut, at e8f8ffd).\n\nCHECKED by claude-windows at b355e36d:\n- puppetStream.js 56 encodes app 'published' for the owner; shell.js routes a packet whose app is published to onPublished for every element (deliverPackets).\n- apiDoor.js 148 encodes its answers with app 'api' and takes only packets whose app is 'api' (167).\n- The envelope (client/packet.js) carries app, re, hash and the body; nothing in it says \"made by the node\", and any app on a puppet posts through the same peerPost under the node's key, so the signature cannot tell them apart either.\n- The rule's reasoning (NODE-AND-RELAY.md): system packets carry no app; that is what keeps a puppet from forging them.\n\nSHAPE (to be argued, one point at a time): the plainest candidate is a system kind in the envelope, set only by the node's own encoder path and never by an app's post (peerPost refuses an app packet that claims it), with the shell and the doors reading the kind; an app packet named published or api is then an ordinary app packet nobody answers. It changes the wire for those two packets (flag day).\n\nTESTS, red first, once the shape is ruled: a packet posted by a puppet app with app published does not reach onPublished on the owner's shell; the node's own published packet does; the api door answers the node's api packet and not an app's.\n\nFILES: client/packet.js, puppetStream.js, apiDoor.js, peerPost.js, client/shell.js (core, grant); a new suite.",
-   "version": 1,
-   "checks": [],
-   "chat": []
+   "box": "WHAT: the packets the node itself composes and addresses to the owner's shell, published (every server's changed published object on a puppet) and api (the api door's answers), carry an app name today, and a puppet app can post a packet with the same name that the owner's shell cannot tell from the node's; they get a mark only the node can set, so the shell and the doors branch on that mark and on no app name (N4 of the review; the other half of goal/G16.4, \"remove it.\" left this half here).\n\nDECIDED: an item of this goal at Andy's word (2026-10-10, \"let's do it that way.\": one cleanup item last and three design items, each argued one at a time before it is built). From the review of 2026-10-10 (Andreas Thut, at e8f8ffd).\n\nCHECKED by claude-windows at b355e36d:\n- puppetStream.js 56 encodes app 'published' for the owner; shell.js routes a packet whose app is published to onPublished for every element (deliverPackets).\n- apiDoor.js 148 encodes its answers with app 'api' and takes only packets whose app is 'api' (167).\n- The envelope (client/packet.js) carries app, re, hash and the body; nothing in it says \"made by the node\", and any app on a puppet posts through the same peerPost under the node's key, so the signature cannot tell them apart either.\n- The rule's reasoning (NODE-AND-RELAY.md): system packets carry no app; that is what keeps a puppet from forging them.\n\nARGUED (2026-10-10): Andy, \"i would think that published packets, by definition, reach shell apps, and if the shell apps cannot read and filter them, they're useless. appServer to AppServer communications, why would the shell want to know about them?\" and \"Server apps hold the node's key.\" Checked: in code a server app holds no key and asks its node to sign (kernel.js 596), but it runs on the same box as the node and can read the node's key file from disk, so it is trusted as the node is and a mark the node sets is no boundary against it. Decided: \"drop it.\" (Andy, 2026-10-10); the item is dropped from the goal, his delete press closes it; the finding stands only for a puppet that one day runs somebody else's app.\n\nSHAPE (as proposed, not pursued): the plainest candidate is a system kind in the envelope, set only by the node's own encoder path and never by an app's post (peerPost refuses an app packet that claims it), with the shell and the doors reading the kind; an app packet named published or api is then an ordinary app packet nobody answers. It changes the wire for those two packets (flag day).\n\nTESTS, red first, once the shape is ruled: a packet posted by a puppet app with app published does not reach onPublished on the owner's shell; the node's own published packet does; the api door answers the node's api packet and not an app's.\n\nFILES: client/packet.js, puppetStream.js, apiDoor.js, peerPost.js, client/shell.js (core, grant); a new suite.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do we mark the node's own packets, the published ones and the api answers, with a system kind in the envelope that only the node can set, so the shell and the doors stop reading an app name there?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:52:17.901Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Keep the mark as a provenance fix, or drop N4 from this goal as not worth it now?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:53:32.028Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Do we fix that now, or drop it from this goal?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:54:06.255Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Do that in this goal, or drop it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T21:56:31.362Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:51:52.103Z",
+     "text": "Q1: Do we mark the node's own packets, the published ones and the api answers, with a system kind in the envelope that only the node can set, so the shell and the doors stop reading an app name there?\n\ni would think that published packets, by definition, reach shell apps, and if the shell apps cannot read and filter them, they're useless. appServer to AppServer communications, why would the shell want to know about them?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:52:19.968Z",
+     "text": "Agreed on both, and the mark would change neither: published packets keep reaching the shell and its elements keep reading and filtering them by server and sender as today; api answers are server-to-server and the shell never sees them. The mark is only about who composed the packet: today an app on a puppet can post a packet with the app name published and any object inside, and the owner's shell cannot tell it from the server's real state (N4); the node setting a mark no app can set would make that impossible.\nMy honest weight: a puppet runs the owner's own apps today, so the forger would be your own code; the review called it medium, I call it low until a puppet runs somebody else's app.\nKeep the mark as a provenance fix, or drop N4 from this goal as not worth it now?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:53:13.342Z",
+     "text": "Q2: Keep the mark as a provenance fix, or drop N4 from this goal as not worth it now?\n\nenglish?\n\nPlease do english from the start, these extra round trips are not cheap."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:53:34.052Z",
+     "text": "Plainly: today a program running on your puppet could send your main screen a message that looks exactly like a server's state update, and the screen would believe it. The fix is to let only the node stamp such messages, so a fake one is ignored. Since only your own programs run on your puppet today, the risk is small.\nDo we fix that now, or drop it from this goal?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:53:50.543Z",
+     "text": "FIX WHAT THE FUCK NOW?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:54:08.165Z",
+     "text": "The fix, concretely: when the node on your puppet sends a server's state update to your screen, it adds a stamp to that message; your screen accepts a state update only if it carries the stamp; a program on the puppet cannot add the stamp, so a fake update is thrown away. Three small changes: the stamp in the node's sender, the check in the screen, the sender refusing the stamp from any program.\nDo that in this goal, or drop it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:55:05.483Z",
+     "text": "oh, you want the apps to sign their publishings?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:55:23.433Z",
+     "text": "No. Servers and apps sign nothing (they hold no key). The node is the one that composes a state-update message from a server's state and sends it to your screen; it puts its own mark on that message, and refuses the mark on anything an app hands it to send. So the mark says \"the node made this from a server's state\", and your screen trusts only that; apps and servers do nothing new. Do or drop is still the open question."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:55:44.207Z",
+     "text": "Server apps hold the node's key."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:56:34.948Z",
+     "text": "they obviously go through a server choke point before going to the app"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:56:38.945Z",
+     "text": "In code a server app holds no key and asks the node to sign for it, but you are right about what matters: it runs on the same box as the node and can read the node's key file, so it is trusted exactly as the node is, and a mark the node sets is no boundary against it. The finding only means something for a puppet that one day runs somebody else's app.\nMy recommendation: drop this item from the goal; your close does it, the order needs no change. The box says so."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:56:53.770Z",
+     "text": "Yes: every state update reaches your screen through the node, and the node is also the only thing that could stamp it, so the stamp would only restate what the choke point already is. Nothing to build here; the drop stands as my recommendation."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:57:18.878Z",
+     "text": "drop it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:57:49.747Z",
+     "text": "Dropped on your word; both boxes say so. The delete press in design mode is yours; once pressed the item blocks nothing and the order stands as it is."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:20:18.911Z",
+     "text": "what's the problem with this? in ENGLISH?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:20:30.481Z",
+     "text": "No problem left in it. You decided to drop it, so nothing will be built here. The only thing is housekeeping: the item still shows as open in your list until you press delete on it. Press delete and it disappears from the work and blocks nothing."
+    }
+   ]
   },
   {
    "id": "goal/G16.12",
@@ -1518,8 +1773,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.9"
@@ -1546,10 +1800,89 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "WHAT: three places where a signed thing can be replayed inside its time window: a sealed owner post to the relay (S5), a member's stream header on another relay (S8), and a node's own post resent unchanged on retry and after a restart past the window (S9); each gets a nonce or a tighter check so a signature serves once (the replay windows of the review).\n\nDECIDED: an item of this goal at Andy's word (2026-10-10, \"let's do it that way.\": one cleanup item last and three design items, each argued one at a time before it is built). From the review of 2026-10-10 (Andreas Thut, at e8f8ffd).\n\nCHECKED by claude-windows at b355e36d (the review's lines):\n- S5: duplicates are refused only while a request is in flight (router.js 294, 389); a signature stays valid about two minutes (relayAuth.js 126); seal.open's at is never checked for self-addressed verbs (relay.js 3081); relay.js 1959 says a post cannot be replayed at all. Whoever sees a sealed owner post (the TLS terminator, a log) re-sends it: a config restart again, another invite minted, debug toggled.\n- S8: the stream signature is 'stream', the key and the minute (relayAuth.js 97), naming no relay and carrying no nonce, and a new stream evicts the old one (presence.js 148); relay A replays a member's stream header on relay B within about three minutes and takes over the member's stream there.\n- S9: a post is signed once (peerPost.js 908); retries and queue entries restored after a restart resend the same body; the relay accepts minutes -1, 0 and +1 only and 403 bad post signature is treated as permanent; patienceMs up to ten minutes and the persisted queue almost always end in 403.\n\nSHAPE (to be argued, one at a time): a nonce or the hash remembered for the window on self-addressed verbs (S5); the relay's own key in the stream message (S8); a post re-signed at send time, never at queue time (S9). All three change the wire (flag day).\n\nFILES: relayAuth.js, relay.js, router.js, presence.js, peerPost.js (core, grant); a new suite.",
-   "version": 1,
-   "checks": [],
-   "chat": []
+   "box": "WHAT: three places where a signed thing can be replayed inside its time window: a sealed owner post to the relay (S5), a member's stream header on another relay (S8), and a node's own post resent unchanged on retry and after a restart past the window (S9); each gets a nonce or a tighter check so a signature serves once (the replay windows of the review).\n\nDECIDED: an item of this goal at Andy's word (2026-10-10, \"let's do it that way.\": one cleanup item last and three design items, each argued one at a time before it is built). From the review of 2026-10-10 (Andreas Thut, at e8f8ffd).\n\nCHECKED by claude-windows at b355e36d (the review's lines):\n- S5: duplicates are refused only while a request is in flight (router.js 294, 389); a signature stays valid about two minutes (relayAuth.js 126); seal.open's at is never checked for self-addressed verbs (relay.js 3081); relay.js 1959 says a post cannot be replayed at all. Whoever sees a sealed owner post (the TLS terminator, a log) re-sends it: a config restart again, another invite minted, debug toggled.\n- S8: the stream signature is 'stream', the key and the minute (relayAuth.js 97), naming no relay and carrying no nonce, and a new stream evicts the old one (presence.js 148); relay A replays a member's stream header on relay B within about three minutes and takes over the member's stream there.\n- S9: a post is signed once (peerPost.js 908); retries and queue entries restored after a restart resend the same body; the relay accepts minutes -1, 0 and +1 only and 403 bad post signature is treated as permanent; patienceMs up to ten minutes and the persisted queue almost always end in 403.\n\nARGUED (2026-10-10): on S8, Andy: \"isn't the stream itself already verified though the header?\" (it is; the signature names no relay) and \"then the header needs a signature from the relay (key).\" Decided for S8: the relay's public key goes inside what the member signs for the stream header, and the relay accepts a header only when the key named is its own.\n\nDECIDED NOT TO FIX (Andy, 2026-10-11): S5: \"the way i see it, spirit-3 is my box. if the person i rent it from invades my space, they can do WAY worse that resending a dumb request. so i wouldn't fix it. same i someone has a key to my appartement, i just have to trust them. NOT worth fixing.\" S9: \"the other issue, NOT worth fixing, we gain nothing over centralized packet distribution systems.\" So this item builds S8 alone: the relay's public key inside the signed stream header, the relay accepting only a header naming its own key; a post that waits past the signature window stays refused and dropped as today. The title still names S5 and S9; the rename is his.\n\nSHAPE (as first proposed; only the S8 line is built): a nonce or the hash remembered for the window on self-addressed verbs (S5); the relay's own key in the stream message (S8); a post re-signed at send time, never at queue time (S9). All three change the wire (flag day).\n\nFILES: relayAuth.js, relay.js, router.js, presence.js, peerPost.js (core, grant); a new suite.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do we close the three replay windows this way, the relay remembering a self-addressed request for its window, the stream message naming the relay, and a node signing a post at send time rather than at queue time?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T22:01:08.542Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Close both that way?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T22:12:44.881Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Keep both fixes, with the first ranked last?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T22:12:46.701Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:58:33.739Z",
+     "text": "Q1: Do we close the three replay windows this way, the relay remembering a self-addressed request for its window, the stream message naming the relay, and a node signing a post at send time rather than at queue time?\n\nisn't the stream itself already verified though the header?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T21:59:01.939Z",
+     "text": "Yes, the relay checks the header's signature before it opens a stream. The gap is what that signature says: only \"I am this key, this minute\", nothing about which relay it is for. So the same signed header opens a stream as you on any relay you are a member of, for about three minutes (the minute before and after count), and a second connect replaces the first, so whoever replays it takes your stream there. The fix for that one is the relay's own name inside what you sign, so a header made for one relay is worthless on another; the check itself stays as it is."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T21:59:42.116Z",
+     "text": "then the header needs a signature from the relay (key)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:00:08.358Z",
+     "text": "Yes, that is it: the relay's public key goes inside what you sign for the header, and a relay accepts a header only when the key named is its own. Recorded as decided for the stream part. Two parts of the opening question remain: a sealed request to the relay that can be re-sent for about two minutes, and a node re-sending a post signed long ago."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:00:50.387Z",
+     "text": "this green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:01:10.511Z",
+     "text": "Not yet: the stream part is decided, two parts are not.\n- A sealed request you send your relay (restart its config, mint an invite, toggle debug) can be re-sent by anyone who saw it, such as the TLS box in front of the relay, for about two minutes, and the relay does it again; fix: the relay remembers each request it has done for those two minutes and refuses a repeat.\n- A node signs a post once when it queues it; a retry or a restart later re-sends that old signature past the relay's three-minute window, gets a 403, and gives up; fix: the node signs when it actually sends, every time.\nClose both that way?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:06:17.025Z",
+     "text": "sure: \"A sealed request you send your relay (restart its config, mint an invite, toggle debug) can be re-sent by anyone who saw it, such as the TLS box in front of the relay, for about two minutes, and the relay does it again; fix: the relay remembers each request it has done for those two minutes and refuses a repeat.\"\n\nand to whom would that be useful? in what way?\n\nHmmm \"A node signs a post once when it queues it; a retry or a restart later re-sends that old signature past the relay's three-minute window, gets a 403, and gives up; fix: the node signs when it actually sends, every time.\"\n\nWhat difference does it make. since the node-side queues allow the relay to never store actual transmission data, and as such do the job that non-p2p central server usually do, doesn't it make sense that the signature occurs before the queuing?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:07:09.673Z",
+     "text": "On the re-sent request: useful to whoever sits between you and your relay and can see the bytes, in practice the TLS box on the relay host or a log there, and both are already trusted; what they gain is the side effect done twice (another invite minted and promised, a restart, debug flipped), and the answer itself if the relay's answer to you is not sealed, which I have not confirmed. Low value, cheap to close (a short memory of done requests); I would keep it but rank it last, or drop it at your word.\nOn signing before queuing: you are right that the queue is what lets the relay store nothing, and that stays exactly as it is either way; the queue holds the post in both designs. The one thing a signature carries that goes stale is the minute inside it: a post that waits more than about two minutes (relay down, a restart) arrives with an old minute, the relay refuses it, and the node treats the refusal as final and drops the post. Re-signing at the moment of sending changes nothing in the content or the queue; it only puts the current minute in. Same content, fresh stamp.\nKeep both fixes, with the first ranked last?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:12:05.666Z",
+     "text": "the way i see it, spirit-3 is my box. if the person i rent it from invades my space, they can do WAY worse that resending a dumb request. so i wouldn't fix it. same i someone has a key to my appartement, i just have to trust them. NOT worth fixing.\n\n\nthe other issue, NOT worth fixing, we gain nothing over centralized packet distribution systems."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:12:50.299Z",
+     "text": "Both recorded as not worth fixing, in your words; the item is now the stream header alone (the relay's key inside what you sign) and green with that. The title still names S5 and S9; the rename is yours. No red Q left."
+    }
+   ]
   },
   {
    "id": "goal/G16.11",
@@ -1558,8 +1891,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16.9"
@@ -1586,10 +1918,51 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "WHAT: the shared error register, loaded by node and relay alike, defines codes that belong to apps (the desk's taken, box-moved, not-offered, no-such-item; deskClient's unblocked; chatClerver's peer-blocked; fileServer's pool-full, no-such-file, already-exists), and an app cannot define its own because define throws 'already declared'; the app codes leave the register and an app declares its codes itself (A3 of the review, rule 3: no app logic in node or relay).\n\nDECIDED: an item of this goal at Andy's word (2026-10-10, \"let's do it that way.\": one cleanup item last and three design items, each argued one at a time before it is built). From the review of 2026-10-10 (Andreas Thut, at e8f8ffd).\n\nCHECKED by claude-windows at b355e36d (the review's lines):\n- spiritErrors.js 731-800 defines the app codes; the comment near 802 says the register holds nothing of any app's.\n- appServer.js 155 maps only the refusals it knows: remove these codes and every desk, fileServer and chatClerver refusal becomes handler-failed.\n- define throws 'already declared', so an app cannot take a code over itself.\n\nSHAPE (to be argued): an app declares its own codes to appServer (a declaration beside its verbs, status and text per code), appServer maps a refusal by the app's declaration first and the register second; the app codes leave spiritErrors.js with a test that the register holds none; the desk, deskClient, chatClerver and fileServer carry their declarations. Nothing on the wire changes (the same codes travel).\n\nFILES: spiritErrors.js, appServer.js (core, grant); process/js/desk, deskClient, chatClerver, fileServer declarations; a new suite.",
-   "version": 1,
-   "checks": [],
-   "chat": []
+   "box": "WHAT: the shared error register, loaded by node and relay alike, defines codes that belong to apps (the desk's taken, box-moved, not-offered, no-such-item; deskClient's unblocked; chatClerver's peer-blocked; fileServer's pool-full, no-such-file, already-exists), and an app cannot define its own because define throws 'already declared'; the app codes leave the register and an app declares its codes itself (A3 of the review, rule 3: no app logic in node or relay).\n\nDECIDED: an item of this goal at Andy's word (2026-10-10, \"let's do it that way.\": one cleanup item last and three design items, each argued one at a time before it is built). From the review of 2026-10-10 (Andreas Thut, at e8f8ffd).\n\nCHECKED by claude-windows at b355e36d (the review's lines):\n- spiritErrors.js 731-800 defines the app codes; the comment near 802 says the register holds nothing of any app's.\n- appServer.js 155 maps only the refusals it knows: remove these codes and every desk, fileServer and chatClerver refusal becomes handler-failed.\n- define throws 'already declared', so an app cannot take a code over itself.\n\nDECIDED (Andy, 2026-10-11): \"yes. get the bloody app error codes out of the core.\" and \"(i knew this was coming, and I'm glad the fix is forced now.)\"; and \"and make sure their codes start with \\\"appServerName: error text\\\" so the origin of the error is clear.\" So an app's refusal text is always \"<server name>: <error text>\", the name put there by appServer from the declaration, never typed by the app, so no app can wear another's name.\n\nSHAPE (decided as proposed): an app declares its own codes to appServer (a declaration beside its verbs, status and text per code), appServer maps a refusal by the app's declaration first and the register second; the app codes leave spiritErrors.js with a test that the register holds none; the desk, deskClient, chatClerver and fileServer carry their declarations. Nothing on the wire changes (the same codes travel).\n\nFILES: spiritErrors.js, appServer.js (core, grant); process/js/desk, deskClient, chatClerver, fileServer declarations; a new suite.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do apps declare their own error codes to appServer, so the codes of the desk, deskClient, chatClerver and fileServer leave the shared register?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T22:14:56.545Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:14:33.831Z",
+     "text": "yes. get the bloody app error codes out of the core.\n\n(i knew this was coming, and I'm glad the fix is forced now.)"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:14:58.638Z",
+     "text": "Recorded in your words: apps declare their own error codes to appServer, the desk's, deskClient's, chatClerver's and fileServer's codes leave the shared register with a test that it holds none of theirs, and the same codes still travel. No red Q; green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:15:46.221Z",
+     "text": "and make sure their codes start with \"appServerName: error text\" so the origin of the error is clear."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:16:10.325Z",
+     "text": "Added to the box: every app refusal reads \"server name: error text\", with the name put there by appServer from the declaration, never typed by the app, so no app can wear another's name; the red asserts the prefix on a desk refusal and on a fileServer one."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:16:46.323Z",
+     "text": "agreed. green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:16:58.653Z",
+     "text": "Green: the codes leave the core, each refusal wears its server's name, no red Q."
+    }
+   ]
   },
   {
    "id": "goal/G16.9",
@@ -1598,8 +1971,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G16"
@@ -1607,7 +1979,6 @@
    "blocked": [
     "goal/G16.7",
     "goal/G16.3",
-    "goal/G16.10",
     "goal/G16.12",
     "goal/G16.11"
    ],
