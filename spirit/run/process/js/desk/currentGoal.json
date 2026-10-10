@@ -1,8 +1,8 @@
 {
- "change": 28966,
+ "change": 28967,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T19:20:21.840Z",
+ "writtenAt": "2026-10-10T19:20:23.536Z",
  "items": [
   {
    "id": "goal/G14",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -2002,10 +2002,9 @@
    "id": "goal/G14.7",
    "title": "Levant's desk participation",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
