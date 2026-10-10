@@ -1,8 +1,8 @@
 {
- "change": 28581,
+ "change": 28582,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T17:59:59.407Z",
+ "writtenAt": "2026-10-10T18:00:01.567Z",
  "items": [
   {
    "id": "goal/G14",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -1575,10 +1575,9 @@
    "id": "goal/G14.6",
    "title": "The First Tool: fetch data from the internet.",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
