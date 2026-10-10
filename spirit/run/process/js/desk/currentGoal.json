@@ -1,8 +1,8 @@
 {
- "change": 29121,
+ "change": 29123,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T19:29:46.239Z",
+ "writtenAt": "2026-10-10T19:29:49.773Z",
  "items": [
   {
    "id": "goal/G14",
@@ -38,14 +38,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2281,10 +2279,9 @@
    "id": "goal/G14.8",
    "title": "fs tools for Levant: fs.load, fs.save opened",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
