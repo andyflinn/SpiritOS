@@ -1,8 +1,8 @@
 {
- "change": 29965,
+ "change": 29967,
  "line": 8496,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T22:34:15.581Z",
+ "writtenAt": "2026-10-10T22:34:22.546Z",
  "items": [
   {
    "id": "goal/G16",
@@ -38,12 +38,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 10,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -482,7 +484,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -798,10 +800,9 @@
    "id": "goal/G16.4",
    "title": "The andy check and the app branch leave apiDoor (N2)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
