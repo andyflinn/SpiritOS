@@ -1,8 +1,8 @@
 {
- "change": 27813,
+ "change": 27839,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T15:23:32.187Z",
+ "writtenAt": "2026-10-10T15:30:09.354Z",
  "items": [
   {
    "id": "goal/G14",
@@ -16,7 +16,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3"
+    "goal/G14.3",
+    "goal/G14.4"
    ],
    "go": false,
    "alone": false,
@@ -38,7 +39,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -662,12 +663,9 @@
    "id": "goal/G14.4",
    "title": "The model selector dropdown line.",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "claimed done",
    "with": "claude-windows",
-   "buttons": [
-    "close",
-    "reopen"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G14"
    ],
@@ -675,9 +673,9 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [
     {
@@ -1051,6 +1049,36 @@
      "by": "claude-windows",
      "at": "2026-10-10T15:22:19.713Z",
      "text": "That is what c4a8a392 does, pushed: model.load answers at once, models carries the load state (loading, done, failed with the studio words), the line polls every 2 s until loaded or failed, then drops the hourglass and offers Load again. Red at 27, green.\nFiles: process/js/deskUnsloth/deskUnsloth.js, shell/deskUnslothRemote/deskUnslothRemote.js, spirit/test/deskUnslothModels.js.\nThe box hit its size and is capped (version 12): your lines condensed, the design kept; deskUnsloth on 11111 still runs the first build - restart it, or say go"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:25:04.106Z",
+     "text": "Understood, building it that way: the known list in models.json IS the answer, at once, and a refresh from the studio runs behind each ask so the next one has what the studio said; only the very first ask with no file waits."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T15:25:04.848Z",
+     "text": "the list should return with a cached flag, so the remote can forbid loading until.... unsloth-studio crashed again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:26:01.864Z",
+     "text": "Your Done landed while I built the known-list cache: it is green in my clone but the commit hook refused it, the item is done and nothing is owed on it.\nI am adding the cached flag you ask for: models says cached true until a fresh read of the studio has landed, and the remote forbids Load until then (the list still comes while the studio is down).\nReopen G14.4 for it, or name the next item - proposed title: Model line: the known list, a cached flag, load progress"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T15:29:33.198Z",
+     "text": "we should think of unsloth studio as a state-machine, where we can only sent load-(jobs) that need polled monitoring, this is probably true for all operations. involving chat, load etc... \n\nthroughts?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T15:29:57.686Z",
+     "text": "Agreed, and it is already the shape of the two we have: model.load gives an answer at once and models carries load.state; chat.send gives an id and chat.answer is polled. One rule for every operation: start answers at once with an id and a state, a poll verb says loading, done or failed with the words, nothing lengthy inside one ask.\nThe state machine adds one thing we lack: deskUnsloth serializes, one studio operation at a time (a load while a chat generates is what the studio refuses or dies on), so the remote sees busy and why instead of a crash.\nThat is a design item of this goal, not this done one: name it and I write the box"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T15:30:09.054Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
