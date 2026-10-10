@@ -131,9 +131,17 @@ function ownerCommandIn(arrival, opts) {
 //     (transport/R12: "where a hash must match").
 //
 // THE SHIM: a readable holding the body and a writable catching status and
-// body. It carries no headers and no socket on purpose, so a handler that
-// reaches for them fails ALONE (G3): that one command is refused, and the
-// node and the next command are untouched.
+// body. It carries the two headers the shared body reader needs and no
+// socket, so a handler that reaches for the socket fails ALONE (G3): that
+// one command is refused, and the node and the next command are untouched.
+//
+// THE HEADERS CAME WITH goal/G14.1 (Andy, 2026-10-10: "First we fix the
+// puppet-issue"). Until then the request carried none, and every node verb
+// reads its body through serveCommon.readJsonBody, which begins with the
+// content-length header: it threw before parsing, so every command with a
+// body was answered 400 Invalid JSON body, found live from his node to his
+// puppet with jobs.api. puppetCommands.js holds it; puppetDoor.js never saw
+// it because its handlers read the stream by hand.
 function puppetDoor(opts) {
   const o = opts || {};
   const puppet = o.puppet || puppetIn(o.rootDir, o.log);
@@ -161,7 +169,9 @@ function puppetDoor(opts) {
     return new Promise(function (resolve) {
       const handler = o.handlerFor(verb);
       if (!handler) { resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: verb }); return; }
-      const req = require('stream').Readable.from([JSON.stringify(Object.assign({}, body, { verb: verb }))]);
+      const text = JSON.stringify(Object.assign({}, body, { verb: verb }));
+      const req = require('stream').Readable.from([text]);
+      req.headers = { 'content-type': 'application/json', 'content-length': String(Buffer.byteLength(text, 'utf8')) };
       let status = 200;
       const res = {
         writeHead: function (code) { status = Number(code) || 200; return res; },

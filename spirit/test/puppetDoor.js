@@ -59,8 +59,10 @@ function world(puppetJson) {
       });
     },
     'node.info': function (req, res) { ran.push('node.info'); res.writeHead(200); res.end('{"ok":true}'); },
-    // Reaches for what only a real HTTP request has — the G3 hazard.
-    'contact.headers': function (req, res) { ran.push('contact.headers'); res.end(String(req.headers.host)); },
+    // Reaches for what only a real HTTP request has — the G3 hazard. The
+    // socket, since goal/G14.1: the shim carries the two headers the shared
+    // body reader needs (puppetCommands.js), and still no socket.
+    'contact.headers': function (req, res) { ran.push('contact.headers'); res.end(String(req.socket.remoteAddress)); },
     // Fails LATER, in its promise, as a handler reading its body would.
     'contact.later': function () { ran.push('contact.later'); return Promise.reject(new Error('failed after reading')); },
     // Answers more than a packet can carry, as jobs.list does (42,570 bytes).
@@ -193,7 +195,7 @@ function world(puppetJson) {
     const failed = w.sent[0] && w.sent[0].reply.body;
     await w.arrive(owner.publicKey, command('contact.list', {}));
     if (failed && failed.code === 'handler-failed' && w.ran.indexOf('contact.list') !== -1) {
-      test.check('a handler that reaches for a real request\'s headers fails ALONE: that command is '
+      test.check('a handler that reaches for a real request\'s socket fails ALONE: that command is '
         + 'refused handler-failed, and the next command runs normally (the G3 hazard)');
     } else {
       test.fail('sync failure: answer ' + JSON.stringify(failed) + ', then ran ' + JSON.stringify(w.ran));
