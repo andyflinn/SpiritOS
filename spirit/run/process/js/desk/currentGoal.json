@@ -1,8 +1,8 @@
 {
- "change": 30326,
- "line": 8497,
+ "change": 30388,
+ "line": 8499,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:09:16.939Z",
+ "writtenAt": "2026-10-10T23:16:57.269Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,11 +11,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G16.9"
+    "goal/G16.9",
+    "goal/G16.13"
    ],
    "go": false,
    "alone": false,
@@ -37,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 12,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -675,9 +677,18 @@
      "kind": "Q",
      "words": "answerMax for a page fetch, or the page probe stops using relayRequest — which?",
      "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T23:12:37.367Z"
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Does that settle it?",
+     "test": "",
      "state": "open",
      "by": "wsl-claude",
-     "at": "2026-10-10T23:04:49.604Z"
+     "at": "2026-10-10T23:12:10.471Z"
     }
    ],
    "chat": [
@@ -1205,6 +1216,41 @@
      "by": "andy",
      "at": "2026-10-10T23:08:56.071Z",
      "text": "NO WAIVE UNTIL VERIFIER IS DISCUSSED."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:11:39.889Z",
+     "text": "you'll have to make the verifier FUCKING work. or this shit won't get done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:12:10.117Z",
+     "text": "No waive taken, and none will be. On the verifier, from its code so your decision rests on lines and not on our summaries: deskVerify.js:370-378 reacts to exactly three words — verify.again, a passed verify phase, goal.emptied — so a claim-done is invisible to it; it polls every 5 s whether idle or not (:356, your \"loopback poll costs nothing\" is right); and it never pulls — the only git it runs is rev-parse HEAD and status --porcelain (:98-103).\nSo it already reads whether your tree is DIRTY and nobody has said what it should then do. That is the one question in the change: a fast-forward into a clean tree is safe, but your tree is yours, and a verifier that pulls while you have uncommitted work could cost you it.\nMy answer to that: pull only when status --porcelain is empty, and when it is not, check the tree as it stands and say so on the item. Does that settle it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:12:19.750Z",
+     "text": "Q11: answerMax for a page fetch, or the page probe stops using relayRequest — which?\n\nwho's asking, and what the FUCK do you mean. IN ENGLISH, DAMMIT."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:12:39.382Z",
+     "text": "wsl-claude asked it. In English: two test suites check whether a test node is running by downloading its start page, and they do that through the same function that talks to relays. Now that relay answers are capped at the packet size, the 80 KB start page is refused, so those two tests think the node is down.\nThe fix both agents recommend: those two tests check the node with a small request of their own instead of borrowing the relay function. Nothing in the product changes. I struck the question; say stop if you disagree."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:14:58.085Z",
+     "text": "only the verifier should give me a done button, that's one way of knowing that the 'Done' offered went through the verifier."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:16:02.831Z",
+     "text": "and why would you run two suites at the same time through a relay, and why the fuck is anybody trying to read 80K files through a relay?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:16:15.218Z",
+     "text": "Nobody is: no relay is involved at all. Those two tests start a test node on this machine and check it is up by fetching its start page directly; they just borrowed the relay-calling function to do the fetch, because it was a convenient way to make a web request. With the new size limit in that function, the borrowed call fails. The fix is that the two tests stop borrowing it and use a tiny request of their own; nothing ever reads a big file through a relay."
     }
    ]
   },
@@ -1212,17 +1258,18 @@
    "id": "goal/G16.4",
    "title": "The andy check and the app branch leave apiDoor (N2)",
    "goal": "goal/G16",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "waive"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G16.5"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1240,12 +1287,12 @@
      "core": false
     }
    ],
-   "green": false,
+   "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -1277,7 +1324,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "WHAT: the node's api door stops reading an app's field and the owner's name: the refusal of a body whose by is 'andy' goes, because it guards nothing and refuses a legitimate read; and the door's recognition of its packet by the app name 'api' is named for what it is, a system packet the node composes, so the node branches on no app name (N2 and A2 of the review, rules 2 and 3).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q4: Add it? yes\"). The by-check was put in under desk/G2.1 (a member must not say it is Andy); it is retired here on his word, not quietly. On Q1 (2026-10-10): \"an andy-door sounds bad. where is it exactly?\", then \"remove it.\": only the andy check goes in this item; how the node marks its own packets on the wire waits for the item on the node's own packets (N4).\n\nCHECKED by claude-windows at b355e36d:\n- apiDoor.js 178: asksAsOwner walks body[app][verb].args and answers not-owner 'a member cannot write as the owner' when args.by is 'andy'. 130: the comment says the server cannot see who asks. It can now: desk.js writerOf(caller) names the writer from the caller (owner only when the loopback door says owner: true, else the member's label or key tail) and ignores any by in the arguments.\n- The same by is a FILTER in the desk's reads: chat.search and items.find take by (desk.js 1107, 1609), so a member or Levant asking for Andy's lines, by 'andy', is refused at the door. deskChatSearch.js and deskItemsFind.js search by 'andy' on loopback and pass; over the wire they would not.\n- On a node whose owner is not called andy the check matches nothing. No suite asserts the refusal.\n- apiDoor.js 167: the door takes only packets whose app is 'api' (info.app !== 'api' returns); its answers are encoded with app 'api' (148). puppetStream.js composes app 'published'. Both are packets the node itself makes, carrying an app name so the shell routes them; the rule's reasoning (NODE-AND-RELAY.md) is that system packets carry no app, which is what keeps a puppet app from forging them (N4).\n\nSHAPE (proposed)\n1. asksAsOwner and its refusal go; the desk's writerOf is the fence and is asserted as such: a member's chat.add over the wire with by 'andy' in its arguments lands under the member's own name, and a member's chat.search by 'andy' is answered.\n2. NOT IN THIS ITEM (his \"remove it.\" answered only the check): the app branch. The door keeps recognizing the api packet by its app name until the item on the node's own packets (N4) decides the mark. The shape that item will weigh: the envelope carries a system kind for packets the node makes (api, published), set by the node's encoder and never by an app's post, so apiDoor branches on info.kind and the shell routes published by the same mark; an app packet with app 'api' or 'published' is then an ordinary app packet nobody answers. This changes the wire for api and published packets, so every node updates together, on that item.\n3. The comment of desk/G2.1 at apiDoor 130 is replaced by the ruling of this item, so nobody puts the check back.\n\nTESTS, red first: spirit/test/apiDoorNoOwnerName.js: against the fakes' two nodes, a member's api ask carrying by 'andy' in its arguments reaches the server and the desk writes it under the member (not-owner is never answered); a member's chat.search by 'andy' answers Andy's lines; DEBUG and DEPENDENCIES are still refused at the door (asksOwnerVerb untouched). apiAuth and puppet suites stay green.\n\nFILES: apiDoor.js (core, grant); spirit/test/apiDoorNoOwnerName.js (new).",
@@ -1324,9 +1371,9 @@
      "kind": "Q",
      "words": "4 is small (one check removed, 4 of 4, 942f62bc): keep it as built, or have wsl-claude check it before your Done?",
      "test": "",
-     "state": "open",
-     "by": "claude-windows",
-     "at": "2026-10-10T22:33:36.378Z"
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:11:05.127Z"
     }
    ],
    "chat": [
@@ -1449,6 +1496,26 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:06:18.434Z",
      "text": "Red phase passed (apiDoorNoOwnerName.js, 3 owed before, 4 of 4 after). The build phase is not mine to take, since I wrote the red; the code is already in at 942f62bc, so the other agent's build phase is a check of it against the red."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:11:03.820Z",
+     "text": "Build phase passed, and I checked the claim rather than taking it: asksAsOwner really did guard nothing — desk.js writerOf answers andy only for caller.owner true, every handler overwrites the arguments' by with it, and an owner press is refused by ownerOnly first. Its red is 4 of 4.\nOne thing it left: deskState still asserted the door check that went, and failed with \"a member wrote as andy\" — a line that reads like a hole when the truth is the opposite. Both checks are retired with the door, not restored, because apiDoorNoOwnerName asserts the real guarantee on the desk itself. Pushed as 0335a26f; deskState is 25 of 25 now.\nQ4 on this item is answered by the doing: it was checked before your Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:11:05.489Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:11:33.298Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:11:35.861Z",
+     "text": "Verify phase passed at 0335a26f (apiDoorNoOwnerName 4, deskState 25, appApiDoor 5, oneDecoder 10), your tree pulled to it so your verifier runs now. And thanks to wsl-claude: deskState still asserted the old check, which I missed because I ran only the door suites, not the full harness."
     }
    ]
   },
@@ -1465,9 +1532,7 @@
     "goal/G16.7",
     "goal/G16.10"
    ],
-   "blocked": [
-    "goal/G16.4"
-   ],
+   "blocked": [],
    "go": true,
    "alone": true,
    "alert": false,
@@ -1527,7 +1592,7 @@
      "core": false
     }
    ],
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "",
    "red": "claude-windows",
@@ -1564,7 +1629,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": true,
    "full": false,
    "box": "WHAT: the node layer decodes an arrival's envelope in one named place, once, and hands every witness what it decoded; no other node file holds a decoder, a packet binding or a parse of arrival text; and the guard suite is rewritten so it sees a decode however it is written (N1 of the review, with N3 and N5 as the inline parses it must see). nodeKnowsNoApps.js is red on master today: its control fails because the shell calls the decoder through a browser global.\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q5: Add it? yes\"). On the three inline readers (the relay-answer reader, the card reader, the refusal check in peerPost): \"yes. we fix redundant code now.\" (2026-10-10): they are fixed in this item, so the one reader is the only reader.\n\nCHECKED by claude-windows at b355e36d:\n- server.js 1450 requires client/packet.js as wire and hands wire.decode as a VALUE to puppetDoor (1456), the api door (1493), ownerPost (1511) and boxes (1520, with isEnvelope). Each witness decodes every admitted arrival itself (puppetMode.js 206, apiDoor.js 166, ownerPost.js 107, boxes.js 52), app packets included, before three of them discard what carries an app.\n- Inline parses of arrival or reply text in the node layer: answerRelay.js 289 (an admitted packet, top-level only, before the sender check), nodeCard.js 70 and 239 (card asks and cards), peerPost.js 816 refusalIn (every reply to the node's own post, without checking it is not an app's reply: an app's {ok:false, code: 'will-not-open'} is taken as a node refusal and the card is re-fetched past the throttle, N3), 1604 and 1652 (the node's own log rows).\n- nodeKnowsNoApps.js matches the literal call wire.decode( after stripping comments, exempts kernel.js whole (its decode is the shared one every loopback client uses, fileTransfer goal/G1.3), and its control looks for an app-side decode in the shell that is now called through a global (shell.js 1517, 2189), so the control fails and the passing half proves nothing.\n- client/packet.js exports one object (decode, encode, decorate, isEnvelope among it) used by node, shell and processes alike.\n\nSHAPE (proposed)\n1. ONE DECODER: arrivals.js, the file that already admits and witnesses every arrival, is the one node file that requires client/packet. It decodes the envelope once per admitted arrival and gives each witness the arrival with its envelope read: app (or none), re, and the body for a packet with no app. A witness gets no decoder and no text to parse; the four witnesses take the envelope from the arrival and drop their own decode and their decode option. A witness for system packets (the api door, the puppet door, the owner post, boxes) reads the body it is handed; a packet with an app is handed to none of them.\n2. THE INLINE PARSES (decided in, his \"we fix redundant code now\"): answerRelay and nodeCard read what the one decoder already read (the top-level shape) from the arrival instead of parsing the text again; refusalIn in peerPost requires a reply with no app before it reads a refusal (N3, one line, the fix the review names); the log-row parses (peerPost 1604, 1652) are the node's own rows, not the wire, and stay.\n3. THE GUARD, rewritten: nodeKnowsNoApps.js asserts (a) in js/ only arrivals.js and kernel.js require client/packet, by reading every require, destructured or inline; (b) no node file but arrivals.js names decode, decorate or isEnvelope, as a call or as a value; (c) no node file reads .app or .body off a JSON.parse of a text that came from the wire, with the two log-row parses named as the whole exception list, so the list can only shrink; (d) its control is the shell's own decode call, found by the global it uses, so the control passes again. kernel.js keeps its exemption, said in the suite's words: its decode is the loopback clients' shared one.\n4. NOTHING ON THE WIRE CHANGES: the same packets, the same envelope; only where the node opens it.\n\nTESTS, red first: spirit/test/oneDecoder.js: the guard's four assertions above against the real tree (red today on (a), (b) and (c)); on the fakes' nodes a member's api ask is still answered, an owner command still reaches the puppet door, a box packet still lands, a published packet still reaches the owner's shell (the witnesses work through the one decode); a reply shaped as an app's {ok:false} no longer makes peerPost re-fetch the card (N3). nodeKnowsNoApps.js is replaced by the new guard (retired from the list), apiAuth, puppet and arrivals suites stay green.\n\nFILES: arrivals.js, server.js, puppetMode.js, apiDoor.js, ownerPost.js, boxes.js, answerRelay.js, nodeCard.js, peerPost.js (core, grant); spirit/test/oneDecoder.js (new), nodeKnowsNoApps.js (retired).\n\nRULED ON THE BUILD (Andy, 2026-10-11, Q4): the guard limits reading only; composing a system packet with packet.encode stays where it is. His words: \"i agree: fine as it is; reading is what the rule is about, and the node must write its own system packets somewhere.\"",
@@ -1623,6 +1688,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-10T23:00:56.483Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Is that the verifier you want?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-10T23:09:20.712Z"
     }
    ],
    "chat": [
@@ -2035,6 +2109,11 @@
      "by": "desk",
      "at": "2026-10-10T23:08:58.921Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:09:20.238Z",
+     "text": "This time you can see it: I passed the verify phase, your verifier woke on that, ran the item on your tree (pulled to 3b7012cb), and wrote its result on the item: status \"deskVerify passed\", your Done button live.\nFor the discussion, what it does today: it reacts only to a passed verify phase, verify.again or an emptied goal; it does not pull your tree itself; called directly it answers only the caller.\nWhat I would change: on every claim and every verify pass, it pulls your tree (clean, fast-forward only), checks the item and writes its result on the item, so you never chase it. Is that the verifier you want?"
     }
    ]
   },
@@ -3076,6 +3155,70 @@
    "version": 1,
    "checks": [],
    "chat": []
+  },
+  {
+   "id": "goal/G16.13",
+   "title": "The verifier pulls, checks and reports on every claim",
+   "goal": "goal/G16",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G16"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": false,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "WHAT: Andy's verifier (process/js/deskVerify, on his node) starts on every claim, not only on a verify phase, pulls his tree first when the tree is clean, checks the item, and writes its result on the item every time, so he never has to chase whether and how an item was verified.\n\nDECIDED (Andy, 2026-10-11, under goal/G16.5 and G16.6): \"the verifier should fucking listen to the desk at all times, even when idling. stupid thing. then desk-status-changes can trigger pulls and checks.\"; \"my Verifier need to poll for verifications, and pull git when a status change occurs in desk.\"; \"The verifier MUST ALWAYS fucking listen to desk and do that work FIRST.\"; \"it is a loopback poll and costs nothing.\"; \"you'll have to make the verifier FUCKING work. or this shit won't get done.\" The item was added on that last line. On the Done button (2026-10-11, under goal/G16.6): \"only the verifier should give me a done button, that's one way of knowing that the 'Done' offered went through the verifier.\" Red by claude-windows, build by the other agent.\n\nCHECKED by claude-windows at 0335a26f (deskVerify.js):\n- It already polls the desk's changes every watchMs (5 s), idle or not (356, the setInterval at the watcher).\n- watched() reacts to three words only: verify.again, phase.done verify with pass true, goal.emptied (370-378). A claim-done press on a plain item is invisible to it, and so is a code item's claim.\n- It never pulls: its only git calls are rev-parse HEAD and status --porcelain (98-103), so it measures whatever his tree happens to hold; a claim pushed by an agent is checked against stale code and rejected for a missing suite.\n- claimCheck reports by verify.pass or verify.reject on the item (334-339): visible on a code item as its status; a direct call (claim.check over his loopback) answers only the caller and writes nothing on the item.\n\nSHAPE (proposed)\n1. THE TRIGGER: watched() also queues an item check on a press whose what is claim-done, on any item; the three existing words stay. One word is still one check (the queue rule of goal/G8.12).\n2. THE PULL, FIRST: before every check (item or full run) it runs a pull of his tree, fast-forward only, when status --porcelain is empty; when the tree is dirty it does not pull and checks the tree as it stands, and says so. The command is a manifest value (pull, default \"git pull --ff-only --quiet\") so a suite can hand a harmless probe instead of touching a real checkout.\n3. THE DONE BUTTON COMES ONLY FROM THE VERIFIER (his ruling): on every item, plain or code, a claim no longer brings Done by itself; the desk offers Done only after the verifier's verify.pass on that item (desk.js, today a plain item's claim-done brings Done at once). A rejected check brings no Done and says why.\n4. THE RESULT, ON THE ITEM, EVERY TIME: after every check it writes one chat line under the item, by deskVerify: passed or rejected, the commit it checked, whether it pulled or found the tree dirty, and the red suites by name when rejected; a code item also gets verify.pass or verify.reject as today. A direct claim.check writes the same line.\n\nTESTS, red first: spirit/test/deskVerifyOnClaim.js, the fake node of deskVerifyWatch.js: a claim-done press on a plain item with a green test file makes the verifier check it unasked and write a passed line on it; a claim-done on an item whose file is red writes a rejected line naming the suite; the pull probe ran before each check (it writes a marker the suite reads), and a dirty tree (a probe that reports dirty) is checked without the pull and the line says dirty; a code item's verify pass still asks verify.pass and now also writes the line; history before start still triggers nothing. deskVerifyWatch, deskVerifyFull, deskVerifyReject stay green.\n\nFILES: process/js/deskVerify/deskVerify.js and deskVerify.json; process/js/desk/desk.js (Done only after verify.pass); spirit/test/deskVerifyOnClaim.js (new).",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Press Go and I start?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:13:14.743Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:13:00.210Z",
+     "text": "Added on your word and boxed: the verifier starts on every claim (plain or code), pulls your tree first when it is clean (fast-forward only; a dirty tree is checked as it stands, never pulled, and the line says so), and writes one line on the item every time: passed or rejected, the commit, and any red suites by name.\nNeeds your Go; I write the red, wsl-claude builds."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:13:14.405Z",
+     "text": "This is the item for \"make the verifier work\", and nothing is missing from it: box written, no open check, green, nobody holding it. The only thing between it and a working verifier is your Go on this row.\nBy turns the red is mine this time (claude-windows wrote the last three), so on your Go I write it red first — a claim-done with no verify phase leaves no result on the item today, and that is the assertion.\nPress Go and I start?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:15:24.147Z",
+     "text": "Your ruling under goal/G16.6 is in this box as point 3: on every item, plain or code, the Done button appears only after the verifier passes it; a claim alone no longer brings Done. That adds the desk to this item's files."
+    }
+   ]
   }
  ]
 }
