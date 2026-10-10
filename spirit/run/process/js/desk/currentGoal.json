@@ -1,8 +1,8 @@
 {
- "change": 28923,
+ "change": 28966,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T19:04:36.958Z",
+ "writtenAt": "2026-10-10T19:20:21.840Z",
  "items": [
   {
    "id": "goal/G14",
@@ -17,7 +17,6 @@
    "blocking": [],
    "blocked": [
     "goal/G14.3",
-    "goal/G14.7",
     "goal/G14.8"
    ],
    "go": false,
@@ -40,12 +39,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2001,10 +2002,11 @@
    "id": "goal/G14.7",
    "title": "Levant's desk participation",
    "goal": "goal/G14",
-   "status": "claimed done",
+   "status": "done",
    "with": "claude-windows",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G14"
@@ -2281,8 +2283,8 @@
    "id": "goal/G14.8",
    "title": "fs tools for Levant: fs.load, fs.save opened",
    "goal": "goal/G14",
-   "status": "running",
-   "with": "",
+   "status": "building: red green on the build, full harness running",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G14"
@@ -2390,11 +2392,11 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": true,
-   "full": false,
-   "box": "WHAT: the fs tools Levant needs to work on files, through the same mechanism as every tool: the node's fs namespace described to agents and deskUnsloth describing it. Reading gets a verb of its own (fs.load, new), writing is opened (fs.save described), and search, stat and annotations come along since they are described already. Nothing else of the dynamic provision, no commit road yet.\n\nDECIDED (Andy, 2026-10-10)\n- \"i kind of agree that the fs subsystem in the api is the most appropriate road to getting Levant on board\"; \"you make the box. for now we just add the necessary fs tools.\"\n- The tool configurator in deskUnslothRemote and the full dynamic provision (every described namespace and server, the commit through pushOrigin) are their own items after this one.\n- On the write gate refusing an app's own entry script (Q1): \"the file scope in desk restricts what can be commited on his side. and it is set to shell/textEditor/\", and \"he should be able to write the code.\" So the gate gets its one exception: an entry script or manifest is writable when its folder is one the owner opened on that node.\n- On fs.load (Q2): \"i'm more inclined to deny URL fetch, and allow loadFile, it's much narrower.\" Yes to the verb; the url read is not the road.\n- \"net_fetch will be removed for Levant.\": deskUnsloth names desk and fs and no longer net; js/net/fetch.json stays the node's description for agents in general; the configurator (its own item) is the switch later.\n\nCHECKED (2026-10-10, at e5671029)\n- The node's fs namespace (server.js, introSpector.claim 'fs'): fs.search {q}, fs.stat {path}, fs.annotations {path}, fs.save {path, content}, fs.delete {path}, fs.annotate {path, payload}. No read verb: a read is the static GET of a path. Described to agents today (js/fs/*.json): search, stat, annotations; the fs AGENTS.md says the writes open \"one at a time\".\n- Every fs verb goes through spirit.core.fs, which asks fileServable or fileWritable first (kernel.js): readable is anything under the run folder but relay-state and sidecars; writable is the roots shell, media, published, preferences.json and a process's own state folder, and NEVER an app's own entry script (shell/<name>/<name>.js) or a manifest, for every caller, no exception since 2026-09-13.\n- So fs.save cannot write shell/textEditor/textEditor.js today: the gate's refusal is unconditional. His ruling opens it (above).\n- Levant's desk scope (spirit/run/shell/textEditor/) fences his COMMITS: the commit hook is installed in 11111's clone (commit-msg, post-commit, pre-push) and refuses a staged file outside the scope the desk holds. The node knows no scope: its fence for WRITES is the writable roots and the entry-script refusal.\n- deskUnsloth describes the namespaces it names (net, desk today); adding fs is one name; tools are named fs_load, fs_save, fs_search, fs_stat, fs_annotations.\n\nSHAPE (proposed)\n1. fs.load {path} -> {path, text}: a new node verb in the fs namespace, the file's text through spirit.core.fs.loadFile (fileServable decides), 404 by name when there is none; its file js/fs/load.json. A NEW NODE VERB: his yes on the verb itself (Q2); one agent, so no peer review is possible, said plainly.\n2. js/fs/save.json describes fs.save: \"Write a file by path under a writable root (shell, media, published); never an app's own entry script or a manifest; the path's folders are made\". The fs AGENTS.md line about the writes changes to say save is open.\n3. deskUnsloth names desk and fs as its tool namespaces and drops net (his ruling): describe(fs) through the loopback door; the tool results are the verb's answers (a file's text cut to the tool room with the cut said; a refusal of the gate in the node's words). Levant's tools after this item: desk_* and fs_load, fs_save, fs_search, fs_stat, fs_annotations.\n4. THE GATE'S ONE EXCEPTION (his ruling; kernel.js fileWritable, core): an app's entry script or manifest is writable when its folder is named in relay-state/sources.json on that node, {folders: [\"shell/textEditor/\"]}, the owner's file, read on every write, absent meaning nothing opened (Q3: by hand now, from the Remote later). Every other path keeps the refusal of 2026-09-13; a sidecar is never written this way.\n5. Not in this item: fs.delete and fs.annotate (undescribed, later at his word); the commit road (the hook in his clone already fences it to the scope); the configurator.\n\nTESTS, the red first: spirit/test/deskUnslothFs.js: the node's fs family lists load and save (introSpector.family against js/fs with the declared list) and fs.load answers a served file's text and 404 for none, refuses relay-state (a real node from the harness fakes, as serverSurface boots one); the object with the node route: describe(fs) gives fs_load, fs_save, fs_search, fs_stat, fs_annotations with parameters typed from the declarations; run fs_load hands the text back cut to the room, run fs_save writes under shell, is refused by name on an entry script with no sources.json, and writes the entry script once sources.json names its folder (and still refuses one outside the named folders, and every manifest and sidecar outside them); the process carries the fs tools in its call and no net tool. deskUnslothTools, deskUnslothDesk, deskUnslothModels, deskUnslothSwitch, deskUnslothContext, serverSurface, everyVerb and introSpectorNode stay green.\n\nFILES: spirit/run/js/kernel.js (the gate's exception, core), spirit/run/js/server.js (fs.load, core), spirit/run/js/fs/load.json and save.json (new, core), spirit/run/js/fs/AGENTS.md (one line); process/js/deskUnsloth/deskUnsloth.js and its manifest; spirit/test/deskUnslothFs.js (new).",
-   "version": 3,
+   "full": true,
+   "box": "WHAT: the fs tools Levant needs to work on files, through the same mechanism as every tool: the node's fs namespace described to agents and deskUnsloth describing it. Reading gets a verb of its own (fs.load, new), writing is opened (fs.save described), and search, stat and annotations come along since they are described already. Nothing else of the dynamic provision, no commit road yet.\n\nDECIDED (Andy, 2026-10-10)\n- \"i kind of agree that the fs subsystem in the api is the most appropriate road to getting Levant on board\"; \"you make the box. for now we just add the necessary fs tools.\"\n- The tool configurator in deskUnslothRemote and the full dynamic provision (every described namespace and server, the commit through pushOrigin) are their own items after this one.\n- On the write gate refusing an app's own entry script (Q1): \"the file scope in desk restricts what can be commited on his side. and it is set to shell/textEditor/\", and \"he should be able to write the code.\" So the gate gets its one exception: an entry script or manifest is writable when its folder is one the owner opened on that node.\n- On fs.load (Q2): \"i'm more inclined to deny URL fetch, and allow loadFile, it's much narrower.\" Yes to the verb; the url read is not the road.\n- \"net_fetch will be removed for Levant.\": deskUnsloth names desk and fs and no longer net; js/net/fetch.json stays the node's description for agents in general; the configurator (its own item) is the switch later.\n- On the gate (Q3): \"you mean the writing? How do YOU write core stuff? i would say: we only protect intrinsic apps, and they are already gated by the commit hooks as \"core\"?\"; \"the whole story of protecting app sources came from a time when we had the stupid AI app-builder, which is gone now\"; \"strike the red Q and i press go\". Read as B: the gate's two refusing lines go; an intrinsic app is protected by the hook, which counts its files as core and refuses a commit without his grant; \"he should have directory search, too\" (fs.search comes along).\n\nCHECKED (2026-10-10, at e5671029)\n- The node's fs namespace (server.js, introSpector.claim 'fs'): fs.search {q}, fs.stat {path}, fs.annotations {path}, fs.save {path, content}, fs.delete {path}, fs.annotate {path, payload}. No read verb: a read is the static GET of a path. Described to agents today (js/fs/*.json): search, stat, annotations; the fs AGENTS.md says the writes open \"one at a time\".\n- Every fs verb goes through spirit.core.fs, which asks fileServable or fileWritable first (kernel.js): readable is anything under the run folder but relay-state and sidecars; writable is the roots shell, media, published, preferences.json and a process's own state folder, and NEVER an app's own entry script (shell/<name>/<name>.js) or a manifest, for every caller, no exception since 2026-09-13.\n- So fs.save cannot write shell/textEditor/textEditor.js today: the gate's refusal is unconditional. His ruling opens it (above).\n- Levant's desk scope (spirit/run/shell/textEditor/) fences his COMMITS: the commit hook is installed in 11111's clone (commit-msg, post-commit, pre-push) and refuses a staged file outside the scope the desk holds. The node knows no scope: its fence for WRITES is the writable roots and the entry-script refusal.\n- deskUnsloth describes the namespaces it names (net, desk today); adding fs is one name; tools are named fs_load, fs_save, fs_search, fs_stat, fs_annotations.\n\nSHAPE (proposed)\n1. fs.load {path} -> {path, text}: a new node verb in the fs namespace, the file's text through spirit.core.fs.loadFile (fileServable decides), 404 by name when there is none; its file js/fs/load.json. A NEW NODE VERB: his yes on the verb itself (Q2); one agent, so no peer review is possible, said plainly.\n2. js/fs/save.json describes fs.save: \"Write a file by path under a writable root (shell, media, published); never an app's own entry script or a manifest; the path's folders are made\". The fs AGENTS.md line about the writes changes to say save is open.\n3. deskUnsloth names desk and fs as its tool namespaces and drops net (his ruling): describe(fs) through the loopback door; the tool results are the verb's answers (a file's text cut to the tool room with the cut said; a refusal of the gate in the node's words). Levant's tools after this item: desk_* and fs_load, fs_save, fs_search, fs_stat, fs_annotations.\n4. THE GATE OPENS (his ruling; kernel.js fileWritable, core): the two lines refusing an app's entry script and a manifest for every caller (2026-09-13, the old app-builder's guard) go; any app source or manifest is writable within the writable roots, as every other file there. What stays: the roots themselves, relay-state out of reach, a sidecar never written but through annotate. The fence for the intrinsic apps is the commit hook: their files are core (coreFiles.js) and a commit without his grant is refused. textEditor.js on Levant's node is therefore his to write and, within his scope, to commit.\n5. Not in this item: fs.delete and fs.annotate (undescribed, later at his word); the commit road (the hook in his clone already fences it to the scope); the configurator.\n\nTESTS, the red first: spirit/test/deskUnslothFs.js: the node's fs family lists load and save (introSpector.family against js/fs with the declared list) and fs.load answers a served file's text and 404 for none, refuses relay-state (a real node from the harness fakes, as serverSurface boots one); the object with the node route: describe(fs) gives fs_load, fs_save, fs_search, fs_stat, fs_annotations with parameters typed from the declarations; run fs_load hands the text back cut to the room, run fs_save writes under shell, writes an app's entry script and manifest there too (the gate open), and is still refused outside the writable roots, under relay-state and on a sidecar; the process carries the fs tools in its call and no net tool; the kernel's own suite for the write gate is updated to the open rule. deskUnslothTools, deskUnslothDesk, deskUnslothModels, deskUnslothSwitch, deskUnslothContext, serverSurface, everyVerb and introSpectorNode stay green.\n\nFILES: spirit/run/js/kernel.js (the gate's exception, core), spirit/run/js/server.js (fs.load, core), spirit/run/js/fs/load.json and save.json (new, core), spirit/run/js/fs/AGENTS.md (one line); process/js/deskUnsloth/deskUnsloth.js and its manifest; spirit/test/deskUnslothFs.js (new).\n",
+   "version": 4,
    "checks": [
     {
      "number": "G1",
@@ -2437,9 +2439,9 @@
      "kind": "G",
      "words": "core grant: spirit/run/js/fs/AGENTS.md, spirit/run/js/fs/load.json, spirit/run/js/fs/save.json, spirit/run/js/kernel.js, spirit/run/js/server.js",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-10T18:50:47.190Z"
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T19:04:51.981Z"
     }
    ],
    "chat": [
@@ -2557,6 +2559,36 @@
      "by": "claude-windows",
      "at": "2026-10-10T19:04:33.993Z",
      "text": "Q3 struck, with B as your lines read (the gate story was the old builder, the hook protects intrinsic as core): the two refusing lines in fileWritable go, any app source and manifest is writable within the roots, an intrinsic commit still needs your grant at the hook, sidecars stay untouched. Say A if you meant the gate to keep refusing intrinsic; else Go is yours."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:04:52.384Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:18:11.738Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:18:30.319Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:18:41.700Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:19:00.391Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T19:19:24.665Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
