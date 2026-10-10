@@ -1,8 +1,8 @@
 {
- "change": 27133,
+ "change": 27136,
  "line": 8495,
  "goal": "goal/G13",
- "writtenAt": "2026-10-10T11:47:51.738Z",
+ "writtenAt": "2026-10-10T11:48:43.371Z",
  "items": [
   {
    "id": "goal/G13",
@@ -35,7 +35,7 @@
    "half": true,
    "full": true,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -578,10 +578,9 @@
    "id": "goal/G13.2",
    "title": "appFaceApp as a process; the face machinery leaves the node",
    "goal": "goal/G13",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
