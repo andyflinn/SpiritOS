@@ -1,8 +1,8 @@
 {
- "change": 30260,
+ "change": 30267,
  "line": 8497,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:04:37.212Z",
+ "writtenAt": "2026-10-10T23:04:54.985Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,14 +37,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 12,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -519,8 +518,8 @@
     }
    ],
    "green": false,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -555,7 +554,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 3,
    "half": true,
    "full": false,
    "box": "WHAT: every HTTP body the node or the relay reads off a socket is collected as Buffers and decoded once at the end, so a multi-byte character split across two TCP chunks arrives whole; today each chunk is turned into a string on its own and the split character becomes U+FFFD, a request then fails its signature with a spurious 403, and a reply, which no signature covers until goal/G16.1, arrives changed and nobody notices (R1 of the review).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q6: Add it? yes\"). On the studio call (2026-10-10): \"on the wire to unsloth studio, all is permitted, deskUnsloth is responsible to keep the request bodies to desk, and the streams to \\\"owner\\\" and UI within packet limits.\" So that reach needs no exemption and no tally entry; deskUnsloth owns what it sends on and keeps it under the packet caps. The four readers were discussed one at a time (\"THIS IS NOT A ONE-ANSWER\"); his rulings, 2026-10-10: \"4. yes. the relayRequest must copy raw bytes only. if it doesn't fix it. now.\"; \"3. serveCommon. yes. one single piece of shared code must ensure that raw bytes are copied. precisely.\"; \"2. same practise odered. ideally through a shared kernel.js utility or similar.\"; \"1. already decided and defined\". The rule behind it, his, 2026-10-10: \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" R5 folded in on that rule: \"yes. just make sure it's fixed.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- relayRequest.js 80: the node's one hop to a relay collects the answer with chunks += c (a string from the start) and resolves text: chunks. Every relay answer the node reads passes here.\n- serveCommon.js 173: readJsonBody, the body reader of node and relay alike, does body += chunk after counting Buffer.byteLength(chunk) against the cap (the cap counts bytes correctly; the join does not).\n- kernel.js 625: the node-side fetch in the kernel does data += chunk the same way; deskUnsloth.js 214 (the studio call) raw += c as well. The desk's own readers go through appServer, not read here.\n- Node's Buffer.concat(chunks).toString('utf8') decodes once over the whole body and never splits a character; a chunk is a Buffer when no encoding is set on the stream, so the fix is in the join, not the stream.\n\nSHAPE (decided)\n1. ONE SHARED UTILITY in kernel.js, the file node and processes both load: readBody(stream) collects the raw chunks as Buffers and decodes once at the end, Buffer.concat(list).toString('utf8'), answering a promise of the text; it takes an optional byte cap and refuses by name when the raw bytes pass it, counting Buffer.byteLength per chunk before the push, so readJsonBody keeps its cap exactly as today.\n2. THREE READERS USE IT and keep no reading of their own: relayRequest (the outbound socket, node and relay), serveCommon.readJsonBody (the one door's body reader, node and relay), and the kernel's own jobs.report (a process reading its node's answer). The studio call in deskUnsloth is off this item (his ruling 1).\n3. BYTES COUNTED (R5, folded): the relay's four size checks that compare text.length against MAX_ROUTED_TEXT (relay.js 2701, 4063, 4181, 4250) compare Buffer.byteLength(text, 'utf8') instead, so a non-ASCII text is refused at the cap it names and not at the HTTP body cap.\n4. Nothing on the wire changes; oneDoor's tally does not move (no new require of http anywhere).\n\nTESTS, red first: spirit/test/bodiesJoinedOnce.js: kernel exports readBody and a body whose four-byte character (an emoji) is split across two writes with a pause between them comes back exact (red today: no such utility); relayRequest resolves the exact text of such an answer from a local server (red today: U+FFFD in it); readJsonBody of serveCommon parses the exact string of such a request and still refuses a body one byte over its cap; jobs.report hands back such an answer whole; the three files hold no chunk-to-string join of their own (the grep for the idiom under them is empty); a routed text whose byte count passes MAX_ROUTED_TEXT while its character count does not (accents or emoji) is refused 413 too big by the relay, and relay.js compares no text length against that cap any more.\n\nFILES: kernel.js, relayRequest.js, serveCommon.js, relay.js (core, grant); spirit/test/bodiesJoinedOnce.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S10: relayRequest has no socket timeout, no response size cap and no error handler, so a partner or a relay can stream an endless body into RAM or hold sockets open; the shared readBody takes the cap and relayRequest sets a timeout and an error handler, refusing by name.\n- The proxy's reply (his net.fetch question under the goal): handleGenericProxy reads an outside reply whole with no cap; it reads through the same readBody with a cap and refuses by name past it.\n- Low: the carry branch runs before the text type and size checks (relay.js 4126 vs 4178); the checks come first.\n\nRULED ON THE BUILD (Andy, 2026-10-11): on the relay answer, \"and answer from a relay is ALWAYS bounded by MAX_PAYLOAD. how the hell could it be otherwise?\" and \"no shell bundle ever comes through relays.\": relayRequest refuses an answer above limits.BODY_MAX by name, no figure of its own. On the proxy reply, \"agreed. no number at all.\": the proxy passes the outside reply straight through to the asker as it arrives, unread and undecoded, so it holds nothing and needs no limit (his 2026-09-22 words, \"size limits would break the proxy facility real quick\", stand).",
@@ -668,6 +667,15 @@
      "state": "open",
      "by": "claude-windows",
      "at": "2026-10-10T23:02:55.067Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "answerMax for a page fetch, or the page probe stops using relayRequest — which?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:04:49.604Z"
     }
    ],
    "chat": [
@@ -1170,6 +1178,11 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:02:54.630Z",
      "text": "It already listens to the desk every 5 seconds, even idle; what it lacks is two reactions: it wakes on only three words (a verify pass, verify.again, a goal emptied), never on a plain item's claim, and it never pulls your tree before checking.\nThe fix is both: a claim on any item (plain or code) makes it pull your tree, fast-forward only, and check that item.\nOne item for that, \"The verifier pulls and checks on every claim\", in this goal or a desk goal: add it?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:04:49.229Z",
+     "text": "Both your rulings are built, not committed yet, because each hits something you should decide. Proxy: the reply is piped straight to the asker now, unread, holding nothing — but the red asserts the cap you just removed (bodiesJoinedOnce checks for PROXY_REPLY_MAX), so it reads 10 of 11 and its failure line is now false. The red is claude-windows', not mine to rewrite.\nRelay answer at limits.BODY_MAX is in. You said \"no shell bundle ever comes through relays\" and that is true — but relayRequest is also how the suites probe a node is up with GET /, and spirit/run/index.html is 80,435 bytes against BODY_MAX 23,552, so testHome and shellRename now read the node as down.\nTwo suites pass opts.answerMax for a page fetch, or the page probe stops using relayRequest — which?"
     }
    ]
   },
@@ -1177,11 +1190,9 @@
    "id": "goal/G16.4",
    "title": "The andy check and the app branch leave apiDoor (N2)",
    "goal": "goal/G16",
-   "status": "closed",
+   "status": "claimed done, 942f62bc",
    "with": "claude-windows",
-   "buttons": [
-    "reopen"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G16.5"
    ],
@@ -1189,7 +1200,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -1425,7 +1436,9 @@
     "goal/G16.7",
     "goal/G16.10"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G16.4"
+   ],
    "go": true,
    "alone": false,
    "alert": false,
