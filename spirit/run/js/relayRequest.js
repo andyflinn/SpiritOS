@@ -34,6 +34,7 @@
 const http = require('http');
 const https = require('https');
 const spirit = require('./kernel.js');
+const limits = require('./limits.js');
 
 // ── WHAT THE ANSWER MAY COST, AND HOW LONG IT MAY TAKE (goal/G16.6) ──
 //
@@ -49,15 +50,17 @@ const spirit = require('./kernel.js');
 // the socket. 30 s is `peerPost`'s own patience (kernel.js), so a hop that
 // outlives it is already past the point where its caller gave up.
 //
-// THE CAP IS A STATED NUMBER, not a derived one, and the honest note is
-// that nothing underlying bounds it: a relay's own answers are packets
-// and fit BODY_MAX many times over, but this same function is how the
-// node and the suites fetch a PAGE from a node (`GET /`), and the shell
-// bundle alone is 148 KB today. So: 1 MiB, which clears the largest file
-// this tree serves four times over and refuses the 4 MB nobody has a use
-// for. A caller that knows better passes `opts.answerMax`.
+// AND THE SIZE IS limits.BODY_MAX, WHICH IS NOT THIS FILE'S NUMBER TO
+// CHOOSE. A first build picked 1 MiB of its own, reasoning that this
+// function also fetches a node's PAGES and the shell bundle is 148 KB.
+// Andy ruled it out, 2026-10-11: "and answer from a relay is ALWAYS
+// bounded by MAX_PAYLOAD. how the hell could it be otherwise?" and "no
+// shell bundle ever comes through relays." So the bound is the one the
+// wire already has, and a second figure beside it was the bug being
+// repeated — limits.js exists because two numbers for one rule is the bug.
+// A caller that knows better passes `opts.answerMax`, which is how the
+// suites fetch a local node's page through this same function.
 const RELAY_ANSWER_DEADLINE_MS = 30000;
-const RELAY_ANSWER_MAX = 1048576;
 
 function isLoopbackHost(hostname) {
   var h = String(hostname || '').toLowerCase();
@@ -85,7 +88,7 @@ function assertRelayUrl(relayUrl) {
 function relayRequest(relayUrl, method, pathname, bodyObj, extraHeaders, opts) {
   var o = opts && typeof opts === 'object' ? opts : {};
   var timeoutMs = Number(o.timeoutMs) > 0 ? Number(o.timeoutMs) : RELAY_ANSWER_DEADLINE_MS;
-  var answerMax = Number(o.answerMax) > 0 ? Number(o.answerMax) : RELAY_ANSWER_MAX;
+  var answerMax = Number(o.answerMax) > 0 ? Number(o.answerMax) : limits.BODY_MAX;
   return new Promise(function (resolve, reject) {
     var target;
     try { target = assertRelayUrl(relayUrl + pathname); }
@@ -211,7 +214,6 @@ module.exports = {
   pipeRequest: pipeRequest,
   relayRequest: relayRequest,
   RELAY_ANSWER_DEADLINE_MS: RELAY_ANSWER_DEADLINE_MS,
-  RELAY_ANSWER_MAX: RELAY_ANSWER_MAX,
   assertRelayUrl: assertRelayUrl,
   isLoopbackHost: isLoopbackHost,
 };

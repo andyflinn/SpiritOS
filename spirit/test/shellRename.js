@@ -30,7 +30,24 @@ const { execSync, spawn } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
 const auth = require('../run/js/relayAuth.js');
-const { relayRequest } = require('../run/js/relayRequest.js');
+// IS IT LISTENING? A LIVENESS PROBE, NOT A PAGE FETCH (goal/G16.6).
+// This asked relayRequest for GET / and read its status. Since a relay
+// answer is bounded by limits.BODY_MAX (Andy, 2026-10-11: "an answer from
+// a relay is ALWAYS bounded by MAX_PAYLOAD"), the 80 KB start page is
+// refused and a running node reads as down. A probe wants the status line
+// and nothing else, so it asks for that itself and reads no body.
+function listening(port) {
+  return new Promise(function (resolve) {
+    const req = require('http').request(
+      { host: '127.0.0.1', port: port, path: '/', method: 'GET' },
+      // The status is the whole answer: the body is thrown away unread, so
+      // the page's size is nothing to do with this.
+      function (res) { const ok = res.statusCode === 200; res.destroy(); resolve(ok); }
+    );
+    req.on('error', function () { resolve(false); });
+    req.end();
+  });
+}
 
 const OWED = 'OWED by slim/G1.1: ';
 const RUN = path.join(__dirname, '..', 'run');
@@ -88,7 +105,7 @@ async function nodeWith(leftovers, already) {
     let up = false;
     for (let i = 0; i < 80 && !up; i++) {
       await sleep(250);
-      try { up = (await relayRequest('http://127.0.0.1:' + port, 'GET', '/', null)).status === 200; } catch (e) { up = false; }
+      up = await listening(port);
     }
     await sleep(500);
     kid.kill();

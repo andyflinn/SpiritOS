@@ -601,23 +601,25 @@ const proxyList = require('./proxyList');
 // No size limit either: "size limits would break the proxy facility real
 // quick." The answer is relayed whole, as before.
 //
-// ── AND THAT LAST LINE WAS SUPERSEDED ON 2026-10-10 (goal/G16.6) ──────
+// ── AND IT STILL HAS NO NUMBER, BUT IT NO LONGER HOLDS (goal/G16.6) ───
 //
-// His 2026-09-22 words above are kept because they are the warning this
-// cap has to clear, not a position to be quietly dropped: a cap set tight
-// DOES break the facility, and that is what he was refusing. What the
-// review of 2026-10-10 found is the other end of it — no bound at all
-// means a page past this door names any URL and whatever that host
-// chooses to stream lands in the node's RAM entire, which is one request
-// taking the node down. The decision of goal/G16.6 is a bound that is
-// loose enough to be invisible to the work he does through it.
+// The review of 2026-10-10 found the other end of his 2026-09-22 ruling:
+// reading the reply WHOLE with no bound means a page past this door names
+// any URL and whatever that host chooses to stream lands in the node's
+// RAM entire, which is one request taking the node down. A first build
+// answered that with a cap of 32 MiB. Andy ruled the cap out and named
+// the better fix, 2026-10-11: "agreed. no number at all."
 //
-// THE NUMBER IS MINE, not derived and not his: 32 MiB, chosen as roughly
-// a hundred times the largest reply this proxy has carried (a Grok review
-// at high reasoning, the call named in the comment above). It is in one
-// place, named, so moving it is a one-line decision rather than an
-// archaeology exercise — wsl-claude, and owed his word.
-const PROXY_REPLY_MAX = 32 * 1024 * 1024;
+// SO IT HOLDS NOTHING. The outside reply is handed to the asker as it
+// arrives — unread, undecoded, never collected — and a body of any size
+// costs this node one socket's buffer rather than its length in RAM.
+// There is nothing left for a limit to protect, which is why his
+// 2026-09-22 words stand unqualified: "size limits would break the proxy
+// facility real quick."
+//
+// The status and the content type cross with it, because the caller owns
+// all response-shape parsing (the comment above) and a reply relabelled
+// application/json by this door was a lie whenever it was not.
 
 function handleGenericProxy(req, res) {
   readJsonBody(req).then((body) => {
@@ -668,23 +670,19 @@ function handleGenericProxy(req, res) {
 
     const lib = target.protocol === 'https:' ? https : http;
     const out = lib.request(target, { method: method, headers: headers }, (reply) => {
-      // THE OUTSIDE REPLY IS CAPPED (goal/G16.6). It was read whole with
-      // no bound at all: a page past this door could name any URL, and
-      // whatever that host chose to stream came into the node's RAM
-      // entire. The one reader bounds it and names the refusal; past the
-      // cap the socket is cut, so the refusal does not cost what it
-      // refused.
-      spirit.core.readBody(reply, {
-        max: PROXY_REPLY_MAX,
-        code: 'proxy-reply-too-large',
-        message: 'proxy reply too large',
-      }).then(
-        (text) => { answer(reply.statusCode, text); },
-        (e) => {
-          if (e && e.code === 'proxy-reply-too-large') answer(502, JSON.stringify({ error: 'proxy reply too large', max: PROXY_REPLY_MAX }));
-          else answer(502, JSON.stringify({ error: 'proxy target unreachable' }));
-        }
-      );
+      // STRAIGHT THROUGH, HOLDING NOTHING (goal/G16.6, his "no number at
+      // all"). The reply is piped to the asker as it arrives, so this door
+      // never has the body in hand and there is no size for it to refuse.
+      if (answered) { reply.resume(); return; }
+      answered = true;
+      const type = String(reply.headers['content-type'] || 'application/octet-stream');
+      res.writeHead(reply.statusCode, { 'Content-Type': type });
+      reply.pipe(res);
+      // A BREAK MID-BODY CANNOT BE SAID IN THE BODY. The head is already
+      // written and bytes are already the caller's, so the only honest
+      // report left is ending the response — the caller sees a short read,
+      // which is what happened.
+      reply.on('error', () => { try { res.end(); } catch (e) { /* gone */ } });
     });
     // The caller's own patience, when it names one. None otherwise.
     if (typeof body.timeoutMs === 'number' && body.timeoutMs > 0) {
