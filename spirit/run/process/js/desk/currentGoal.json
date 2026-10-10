@@ -1,8 +1,8 @@
 {
- "change": 28053,
+ "change": 28121,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T16:26:53.859Z",
+ "writtenAt": "2026-10-10T16:44:24.782Z",
  "items": [
   {
    "id": "goal/G14",
@@ -16,8 +16,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3",
-    "goal/G14.4"
+    "goal/G14.3"
    ],
    "go": false,
    "alone": false,
@@ -39,13 +38,12 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -664,9 +662,12 @@
    "id": "goal/G14.4",
    "title": "The model selector dropdown line.",
    "goal": "goal/G14",
-   "status": "waiting for deskVerify",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -676,7 +677,7 @@
    "alert": false,
    "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
@@ -743,9 +744,9 @@
    ],
    "asks": 0,
    "half": true,
-   "full": false,
-   "box": "WHAT: two pieces of deskUnslothRemote for the chosen target (this node or the puppet). THE MODEL LINE under the switch: a dropdown of the models the studio has cached locally, each entry with its capability icons, the loaded one selected by default; a Load button when the chosen model is not loaded, the running mark when it is; the icons; small print with the flavor (quant) and the size in GB. THE CHAT BOX, sticky at the bottom edge of the panel, on the node that hosts deskUnsloth only: a title line with the model's info, a fixed-height scrolling display a quarter of the window high, an input line with a Send button; Enter sends; one line only.\n\nRULINGS (Andy, 2026-10-10, capped; his words were in versions 1 to 11)\n- The dropdown shows only models the studio has cached locally, the loaded one by default; each entry carries its capability icons \"as far as you know it\".\n- Selecting loads nothing (\"changing the selection only will bring more detailed info\"); the Load button alone loads, shown for any model not loaded; the running mark in its place when loaded.\n- ICON.VIEW for vision, THINK and MUSIC; \"then show vision always\".\n- deskUnsloth \"should cache the model list with all capabilities\", so more is known of models not loaded; then \"deskUnloth should REALLY cache the know list....\": the known list IS the answer, at once, refreshed behind it.\n- The chat box is shown only on the node that hosts deskUnsloth.\n- After the first build, live: the Load press died (the studio's load blocks); with no model loaded the selector did not show; the studio crashed; a failed load left the hourglass: \"your UI must release the hour-glass status. and allow another loading attempt.\"; \"deskUnloth must respond to all queries immediately, the remote need's to poll for status of a load, until it is known to have failed or succeeded.\"\n- Q1 (does choosing load it): no. Q2 (does deskUnsloth chat with what Load loaded): closed on his \"green? (after removing red Q)\" with yes, his to overturn.\n\nTODAY (read live 2026-10-10, Unsloth Studio 2026.10.3 at 127.0.0.1:8888 on the puppet box, bearer key from connection.json)\n- GET api/models/cached-gguf: the cached list (13), repo_id, size_bytes, task, has_vision; 1 to 2 s. GET v1/models: every model known with quant and loaded, 15 to 18 s live (it probes its ollama entries). GET api/inference/status: of the loaded model, active_model, loaded, supports_reasoning, is_vision, is_audio; 0.3 s. Per-model routes (models/config, check-vision) are 2 to 4 s each and contradict cached-gguf on vision: not used.\n- POST api/inference/load {model_path} BLOCKS until the model is in (minutes) and swaps the loaded one; GET api/inference/load-progress gives phase, bytes, fraction meanwhile; GET api/train/hardware gives VRAM used/total per GPU.\n- All of it is loopback on the puppet box: only deskUnsloth can read it. A process answers jobs.api within DOOR_WAIT_MS, 12 s (appClient.js): nothing lengthy may be waited for in one ask.\n- The icon table has no RUNNING: ON is the green circle, LOADING the hourglass.\n\nSHAPE (built)\n1. deskUnsloth models {} -> {active, cached, load, models: [{id, loaded, quant, bytes, task, vision, reasoning, audio}]}: THE KNOWN LIST, models.json in the state folder, answered at once, and a refresh from the studio running behind it (one at a time) so the next ask has what the studio said; only the first ask ever, with no file, waits for the studio. A refresh reads cached-gguf (the list, size, task, vision), inference/status (active, loaded, and reasoning/audio for the loaded one), v1/models capped at 5 s (quant), and keeps what was known where the studio is silent: a quant once seen, the flags learned while a model was loaded. A failing status or v1/models means nothing loaded, the list still comes. `cached` is true until a refresh has landed within 10 s (his ruling: \"the list should return with a cached flag, so the remote can forbid loading until....\"): the line withholds Load on a cached answer and asks again every 2 s until the studio has been heard from.\n2. deskUnsloth model.load {id}: fires POST load and answers {model, loaded: false} AT ONCE; configuration.json's model follows (rewritten by the process that owns it) and the next call names it. `load` in models is the last load's {model, state loading/done/failed, error}, so a refusal is seen the moment the studio says so.\n3. deskUnsloth chat.send {lines} -> {id} at once, the model asked with the preamble and the lines under the room; chat.answer {id} -> {done, text}, polled by the page each second. Two asks because of the 12 s wall.\n4. The app, the model line: the same one function as the switch (jobs.api here, owner.command on the puppet). Entries \"id icons mark\"; a changed selection only redraws; Load asks model.load then polls models every 2 s until loaded (ON) or failed (the words shown, Load offered again) or the studio unreadable; LOADING meanwhile; small print \"quant · GB\".\n5. The app, the chat box: drawn only where its own node answers the state ask (on the owner's node that ask is app-not-served); it asks its own node only; the page keeps the transcript.\n\nTESTS: spirit/test/deskUnslothModels.js (27): a fake studio (cached-gguf, v1/models held late, status erring when nothing is loaded, a blocking load, one refused load, load-progress, chat/completions) and the fake node of deskUnslothSwitch.js; models merged and cached, model.load at once with the configuration following and the failure said, chat.send/chat.answer, the app's pure functions (asks per target, the line, the entry, load-over). deskUnslothSwitch.js and deskUnslothContext.js stay green.\n\nFILES: process/js/deskUnsloth/deskUnsloth.js and its manifest; shell/deskUnslothRemote/deskUnslothRemote.js; the new suite; no core file.\n\nPROPOSED, NOT BUILT: a load.progress verb (load-progress, which model is in, VRAM per GPU) shown in the small print while a load runs.\n\nNOT IN THIS ITEM: VRAM and hardware beyond that, the monitor and its queue, the configuration editor, restart, the puppets list. Each a later item of this goal.",
-   "version": 13,
+   "full": true,
+   "box": "WHAT: two pieces of deskUnslothRemote for the chosen target (this node or the puppet). THE MODEL LINE under the switch: a dropdown of the models the studio has cached locally, each entry with its capability icons, the loaded one selected by default; a Load button when the chosen model is not loaded, the running mark when it is; the icons; small print with the flavor (quant) and the size in GB. THE CHAT BOX, sticky at the bottom edge of the panel, on the node that hosts deskUnsloth only: a title line with the model's info, a fixed-height scrolling display a quarter of the window high, an input line with a Send button; Enter sends; one line only.\n\nRULINGS (Andy, 2026-10-10, capped; his words were in versions 1 to 11)\n- The dropdown shows only models the studio has cached locally, the loaded one by default; each entry carries its capability icons \"as far as you know it\".\n- Selecting loads nothing (\"changing the selection only will bring more detailed info\"); the Load button alone loads, shown for any model not loaded; the running mark in its place when loaded.\n- ICON.VIEW for vision, THINK and MUSIC; \"then show vision always\".\n- deskUnsloth \"should cache the model list with all capabilities\", so more is known of models not loaded; then \"deskUnloth should REALLY cache the know list....\": the known list IS the answer, at once, refreshed behind it.\n- The chat box was shown only on the node that hosts deskUnsloth; lifted after goal/G14.5's stream: \"so we should be able to run chat on 65432 just by removing the check\", \"stop! why, this should only be a change to the UI\", \"go.\" - the chat box is drawn for any target whose state answered, and the send goes through the chosen target.\n- After the first build, live: the Load press died (the studio's load blocks); with no model loaded the selector did not show; the studio crashed; a failed load left the hourglass: \"your UI must release the hour-glass status. and allow another loading attempt.\"; \"deskUnloth must respond to all queries immediately, the remote need's to poll for status of a load, until it is known to have failed or succeeded.\"\n- Q1 (does choosing load it): no. Q2 (does deskUnsloth chat with what Load loaded): closed on his \"green? (after removing red Q)\" with yes, his to overturn.\n\nTODAY (read live 2026-10-10, Unsloth Studio 2026.10.3 at 127.0.0.1:8888 on the puppet box, bearer key from connection.json)\n- GET api/models/cached-gguf: the cached list (13), repo_id, size_bytes, task, has_vision; 1 to 2 s. GET v1/models: every model known with quant and loaded, 15 to 18 s live (it probes its ollama entries). GET api/inference/status: of the loaded model, active_model, loaded, supports_reasoning, is_vision, is_audio; 0.3 s. Per-model routes (models/config, check-vision) are 2 to 4 s each and contradict cached-gguf on vision: not used.\n- POST api/inference/load {model_path} BLOCKS until the model is in (minutes) and swaps the loaded one; GET api/inference/load-progress gives phase, bytes, fraction meanwhile; GET api/train/hardware gives VRAM used/total per GPU.\n- All of it is loopback on the puppet box: only deskUnsloth can read it. A process answers jobs.api within DOOR_WAIT_MS, 12 s (appClient.js): nothing lengthy may be waited for in one ask.\n- The icon table has no RUNNING: ON is the green circle, LOADING the hourglass.\n\nSHAPE (built)\n1. deskUnsloth models {} -> {active, cached, load, models: [{id, loaded, quant, bytes, task, vision, reasoning, audio}]}: THE KNOWN LIST, models.json in the state folder, answered at once, and a refresh from the studio running behind it (one at a time) so the next ask has what the studio said; only the first ask ever, with no file, waits for the studio. A refresh reads cached-gguf (the list, size, task, vision), inference/status (active, loaded, and reasoning/audio for the loaded one), v1/models capped at 5 s (quant), and keeps what was known where the studio is silent: a quant once seen, the flags learned while a model was loaded. A failing status or v1/models means nothing loaded, the list still comes. `cached` is true until a refresh has landed within 10 s (his ruling: \"the list should return with a cached flag, so the remote can forbid loading until....\"): the line withholds Load on a cached answer and asks again every 2 s until the studio has been heard from.\n2. deskUnsloth model.load {id}: fires POST load and answers {model, loaded: false} AT ONCE; configuration.json's model follows (rewritten by the process that owns it) and the next call names it. `load` in models is the last load's {model, state loading/done/failed, error}, so a refusal is seen the moment the studio says so.\n3. deskUnsloth chat.send {lines} -> {id} at once, the model asked with the preamble and the lines under the room; chat.answer {id} -> {done, text}, polled by the page each second. Two asks because of the 12 s wall.\n4. The app, the model line: the same one function as the switch (jobs.api here, owner.command on the puppet). Entries \"id icons mark\"; a changed selection only redraws; Load asks model.load then polls models every 2 s until loaded (ON) or failed (the words shown, Load offered again) or the studio unreadable; LOADING meanwhile; small print \"quant · GB\".\n5. The app, the chat box: drawn for any target whose state answered; the send goes through the chosen target (jobs.api here, owner.command on the puppet) and the answer arrives as the published object's chat {id, done, text} down the stream (goal/G14.5); the page keeps the transcript.\n\nTESTS: spirit/test/deskUnslothModels.js (27): a fake studio (cached-gguf, v1/models held late, status erring when nothing is loaded, a blocking load, one refused load, load-progress, chat/completions) and the fake node of deskUnslothSwitch.js; models merged and cached, model.load at once with the configuration following and the failure said, chat.send/chat.answer, the app's pure functions (asks per target, the line, the entry, load-over). deskUnslothSwitch.js and deskUnslothContext.js stay green.\n\nFILES: process/js/deskUnsloth/deskUnsloth.js and its manifest; shell/deskUnslothRemote/deskUnslothRemote.js; the new suite; no core file.\n\nPROPOSED, NOT BUILT: a load.progress verb (load-progress, which model is in, VRAM per GPU) shown in the small print while a load runs.\n\nNOT IN THIS ITEM: VRAM and hardware beyond that, the monitor and its queue, the configuration editor, restart, the puppets list. Each a later item of this goal.",
+   "version": 14,
    "checks": [
     {
      "number": "Q1",
@@ -1125,6 +1126,81 @@
      "by": "claude-windows",
      "at": "2026-10-10T15:43:00.848Z",
      "text": "Cause of the hanging shell on 65432: the Remote polled models every 2 s on an interval, twice over, each ask through the owner door taking up to 20 s, so posts piled up from your shell, the relay refused busy, Desk starved and 11111 read as unreachable.\nFixed and pushed, ff2dfd3f: one ask in flight, every poll waits for its answer then 5 s, nothing asked once the panel is gone.\nNow: close the Remote on 65432 and reload that shell; pull your clone before opening it again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:27:49.147Z",
+     "text": "Read on your node: deskVerify runs there in desk mode, idle, nothing queued. It starts a check only on a verify pass, a verify.again or a goal emptied, and its first walk after a restart is history: your restart after the pull made my verify pass on this item history, so it sat waiting; a claim on an item without phases (G14.5) never reaches it at all.\nI sent verify.again for this item now; the gap itself (a claim-done on a plain item asks the verifier) is a desk issue for the next batch."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:30:17.064Z",
+     "text": "did we drop all the polling and listen to deskUnsloth publishing/stream now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:30:32.605Z",
+     "text": "Yes, at eca62251: the Remote asks state and models once when it opens or the target changes, then only listens to deskUnsloth published object (local, or streamed from the puppet, one handler); no load poll, no cached re-ask, no chat poll, only a 2-minute give-up if a chat answer never comes.\nIt shows after both nodes restart (server.js changed) and the shells reload."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:35:31.966Z",
+     "text": "so can chat now run on 65432 as well?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:35:49.532Z",
+     "text": "Not as built: the chat box is drawn only on the hosting node, your ruling of this item, and sends to its own node. The wall that kept it there is gone, chat.send answers at once through the owner door and the answer comes down the stream, so it can run on 65432 with one small change: the chat sends through the chosen target like the switch, and draws on both nodes.\nLift the ruling and I fold it in"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:36:27.281Z",
+     "text": "put chat get's its event now from the deskUnsloth stream right?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:36:40.746Z",
+     "text": "Right: the chat answer arrives as the published object chat {id, done, text}, on the hosting node through the page own stream, on 65432 through the puppet stream to your page; only the send itself is an ask (chat.send, answered at once with the id)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:37:28.437Z",
+     "text": "so we should be able to run chat on 65432 just by removing the check (is deskUnsloth on same node)?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:37:43.936Z",
+     "text": "Almost: two lines, not one. The check goes (the box is drawn for any target whose state answered), and the send goes through the chosen target like the switch (today it is pinned to its own node). The answer comes down the stream either way.\nSay go and I fold both into this item"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:38:37.154Z",
+     "text": "stop! why, this should only be a change to the UI"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:38:51.929Z",
+     "text": "It is: both lines are in the Remote script alone (the check that hides the box, and the send that is pinned to its own node); nothing in deskUnsloth, nothing in the node."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:39:15.501Z",
+     "text": "go."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:41:15.147Z",
+     "text": "commit 99118975adf557243a80f572f7772d160a75aecf: goal/G14.4: the chat box runs on the master too\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothModels.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:41:20.021Z",
+     "text": "Pushed, 99118975: the chat box draws for any target whose state answered and sends through the chosen target; two lines in the Remote script, nothing else. deskUnslothModels 37 green; your lines are in the box (version 14).\nFiles: shell/deskUnslothRemote/deskUnslothRemote.js, spirit/test/deskUnslothModels.js.\nTo see it on 65432: pull, restart both nodes (G14.5 changed server.js), reload the shells."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:43:58.987Z",
+     "text": "hell ya, it worked!"
     }
    ]
   },
