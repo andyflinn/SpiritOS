@@ -1,8 +1,8 @@
 {
- "change": 27604,
+ "change": 27605,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T13:42:24.091Z",
+ "writtenAt": "2026-10-10T13:42:26.130Z",
  "items": [
   {
    "id": "goal/G14",
@@ -38,7 +38,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -346,10 +346,9 @@
    "id": "goal/G14.2",
    "title": "A shell app skelleton with a connect/disconnect switch for Levant",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
