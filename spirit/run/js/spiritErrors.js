@@ -72,14 +72,16 @@ var BY_CODE = Object.create(null);
 var BY_TEXT = Object.create(null);
 var BY_PREFIX = [];
 
+let code = 0;
+
 // `texts` are the exact sentences the tree emits today. `prefixes` are
 // for sentences built at runtime ("gave up after 3 attempt(s)").
 // `alsoStatus` records a status the same condition is ALSO emitted with,
 // which is always an inconsistency worth knowing about rather than a
 // feature.
-function define(code, e) {
+function define(dummy, e) {
   var entry = {
-    code: code,
+    code: ++dummy,
     status: e.status,
     text: e.texts ? e.texts[0] : (e.prefixes ? e.prefixes[0] : code),
     texts: e.texts || [],
