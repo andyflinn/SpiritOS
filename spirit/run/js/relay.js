@@ -60,6 +60,14 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 // socket. The pair is what makes the relay's exposure a number rather
 // than a hope — neither is meaningful alone, and raising one without the
 // other moves the worst case linearly.
+// AND IT IS COUNTED IN BYTES (R5 of the review of 2026-10-10, goal/G16.6).
+// Andy, 2026-10-10: "in a max_BYTE environment, BYTES must be copied.
+// BYTES must be counted. that's a rule." Every check against this cap used
+// `text.length`, which counts UTF-16 units, so a text of accents or kanji
+// passed a cap it was over and was refused later by the HTTP body cap
+// instead — at a different number, under a different name. The five checks
+// compare `Buffer.byteLength(text, 'utf8')` now, which is the unit
+// PAYLOAD_MAX is written in (limits.js, "the payload cap is BYTES").
 var MAX_ROUTED_TEXT = limits.PAYLOAD_MAX;
 
 // How many members one turn of a search walk offers before handing the
@@ -77,7 +85,8 @@ var SEARCH_PAGE = 1000;
 //
 // 32 x 418 worst-case bytes = 13376, inside the 16266 a packet leaves
 // after its own envelope. PAYLOAD_MAX is the PACKET — the encoded
-// envelope, which is what packet.js and MAX_ROUTED_TEXT both measure.
+// envelope, which is what packet.js and MAX_ROUTED_TEXT both measure, in
+// bytes at both ends since goal/G16.6.
 // `from`, `to` and `sig` sit OUTSIDE it and are covered by
 // WIRE_HEADROOM in BODY_MAX, so they must not be subtracted here.
 // Doing so once reserved room inside the packet for things that are
@@ -2269,7 +2278,7 @@ function createRelay(rootDir, deps) {
     if (typeof text !== 'string' || !text) {
       return Promise.resolve({ ok: false, status: 400, error: 'text required' });
     }
-    if (text.length > MAX_ROUTED_TEXT) {
+    if (Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
       return Promise.resolve({ ok: false, status: 413, error: 'too big' });
     }
 
@@ -2698,7 +2707,7 @@ function createRelay(rootDir, deps) {
     if (!from || !to || typeof body !== 'string' || !body || !sig) {
       return { ok: false, status: 400, error: 'forward needs from, to, text and sig' };
     }
-    if (body.length > MAX_ROUTED_TEXT) {
+    if (Buffer.byteLength(body, 'utf8') > MAX_ROUTED_TEXT) {
       return { ok: false, status: 413, error: 'too big' };
     }
 
@@ -4060,7 +4069,7 @@ function createRelay(rootDir, deps) {
       if (typeof text !== 'string' || !text) {
         return { ok: false, status: 400, error: 'text required' };
       }
-      if (text.length > MAX_ROUTED_TEXT) {
+      if (Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
         return { ok: false, status: 413, error: 'too big' };
       }
       var selfHash = auth.requestHash(selfSigned);
@@ -4109,6 +4118,19 @@ function createRelay(rootDir, deps) {
       }
       answerSelf(selfHash, text, who);
       return withStatus(opened, selfHash);
+    }
+
+    // THE TEXT IS JUDGED BEFORE ANYBODY CARRIES IT (the Low of the review
+    // of 2026-10-10, folded into goal/G16.6). These two checks sat below
+    // the carry branch, so a text that was missing, not a string, or over
+    // the cap was handed to a partner first and refused only if it came
+    // back — paying a hop, and the partner's own refusal, for a packet
+    // this relay already knew it would not route.
+    if (typeof text !== 'string' || !text) {
+      return { ok: false, status: 400, error: 'text required' };
+    }
+    if (Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
+      return { ok: false, status: 413, error: 'too big' };
     }
 
     var target = deviceIdentity(toToken);
@@ -4175,12 +4197,7 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 404, error: 'no such peer' };
     }
 
-    if (typeof text !== 'string' || !text) {
-      return { ok: false, status: 400, error: 'text required' };
-    }
-    if (text.length > MAX_ROUTED_TEXT) {
-      return { ok: false, status: 413, error: 'too big' };
-    }
+    // The text was judged above, before the carry branch.
 
     // The message that VERIFIED, not a yes/no — the ±1 minute window
     // means three strings could have made this signature and the hash
@@ -4247,7 +4264,7 @@ function createRelay(rootDir, deps) {
     var who = deviceIdentity(fromToken);
     if (!who) return { ok: false, status: 403, error: 'no such identity' };
     if (!hash) return { ok: false, status: 400, error: 'hash required' };
-    if (typeof text === 'string' && text.length > MAX_ROUTED_TEXT) {
+    if (typeof text === 'string' && Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
       return { ok: false, status: 413, error: 'too big' };
     }
 

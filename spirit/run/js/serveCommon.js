@@ -159,20 +159,18 @@ function readJsonBody(req, opts) {
       return;
     }
 
-    let body = '';
-    let seen = 0;
-    req.on('data', chunk => {
-      // Bytes, not characters — Content-Length is bytes, and a multi-byte
-      // body would otherwise be measured smaller than it arrives.
-      seen += Buffer.byteLength(chunk);
-      req[BODY_BYTES] = seen;
-      if (seen > max) {
-        tooBig();
-        return;
-      }
-      body += chunk;
-    });
-    req.on('end', () => {
+    // ONE READER, AND IT COPIES BYTES (goal/G16.6). This loop used to do
+    // `body += chunk`, which counted the bytes correctly and then joined
+    // the body wrongly: a character split across two chunks became
+    // U+FFFD, so a signed request failed its signature with a spurious
+    // 403. The cap behaviour is unchanged — refused at the first chunk
+    // past `max`, the socket destroyed, 413 — and the running total is
+    // still kept on the request, because the node's door answers how much
+    // it read even when it refused (`bodyBytes`).
+    spirit.core.readBody(req, {
+      max: max,
+      onBytes: seen => { req[BODY_BYTES] = seen; },
+    }).then(body => {
       if (!body) {
         resolve({});
         return;
@@ -182,8 +180,10 @@ function readJsonBody(req, opts) {
       } catch (err) {
         reject(err);
       }
+    }, err => {
+      if (err && err.statusCode === 413) tooBig();
+      else reject(err);
     });
-    req.on('error', reject);
   });
   req[BODY_PROMISE] = reading;
   return reading;

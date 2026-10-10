@@ -160,7 +160,77 @@ if (isNode()) {
   const ROOT_DIR = path.join(__dirname, '..');
   const DEFAULT_SPIRIT_PORT = 65432;
   const SPIRIT_PORT = DEFAULT_SPIRIT_PORT;
-  
+
+  // ── ONE BODY READER: BYTES COPIED, BYTES COUNTED (goal/G16.6) ────────
+  //
+  //   Andy, 2026-10-10: "in a max_BYTE environment, BYTES must be copied.
+  //   BYTES must be counted. that's a rule." And on where it belongs:
+  //   "one single piece of shared code must ensure that raw bytes are
+  //   copied. precisely", "ideally through a shared kernel.js utility or
+  //   similar."
+  //
+  // WHAT WAS WRONG. Every reader did `body += chunk`, which decodes each
+  // TCP chunk on its own. A character wider than one byte — any emoji,
+  // any accent, any kanji — split across two chunks became two U+FFFD,
+  // and the body was no longer the body that was sent. On a REQUEST that
+  // is a spurious 403, because the signature is over the real bytes; on a
+  // REPLY it is silent corruption, since nothing signs a reply until
+  // goal/G16.1. The cap was already counted in bytes correctly
+  // (`Buffer.byteLength`); it was the JOIN that lied, not the count.
+  //
+  // So the chunks are kept as Buffers and decoded ONCE over the whole
+  // body, which cannot split a character because there is nothing left to
+  // split it against. It is in kernel.js because kernel.js is the file
+  // the node, a process and the relay all load already.
+  //
+  // `max` refuses by name at the first chunk that passes it and STOPS
+  // READING — a body refused for its size must not go on arriving, or the
+  // refusal costs what it was refusing (serveCommon's own reasoning, kept).
+  // `code` and `message` let a caller name its own refusal: the relay hop
+  // says `relay-answer-too-large`, the proxy says its reply is too large,
+  // and a caller that names neither gets `413 body-too-large`.
+  // `onBytes` is called with the running total as each chunk lands, for
+  // the one caller that must answer how much it has read even when it
+  // refused (serveCommon.bodyBytes, read by the node's door).
+  spirit.core.readBody = function (stream, opts) {
+    const o = opts && typeof opts === 'object' ? opts : {};
+    const max = Number(o.max) > 0 ? Number(o.max) : Infinity;
+    return new Promise(function (resolve, reject) {
+      let chunks = [];
+      let seen = 0;
+      let done = false;
+      function refuse(err) {
+        if (done) return;
+        done = true;
+        chunks = null;
+        if (typeof stream.destroy === 'function') stream.destroy();
+        reject(err);
+      }
+      stream.on('data', function (c) {
+        if (done) return;
+        const buf = Buffer.isBuffer(c) ? c : Buffer.from(c);
+        seen += buf.length;
+        if (typeof o.onBytes === 'function') o.onBytes(seen);
+        if (seen > max) {
+          const err = new Error(String(o.message || 'body too large'));
+          err.statusCode = 413;
+          err.code = String(o.code || 'body-too-large');
+          err.bytes = seen;
+          err.max = max;
+          refuse(err);
+          return;
+        }
+        chunks.push(buf);
+      });
+      stream.on('end', function () {
+        if (done) return;
+        done = true;
+        resolve(Buffer.concat(chunks).toString('utf8'));
+      });
+      stream.on('error', function (e) { refuse(e); });
+    });
+  };
+
   spirit.core.node = {
     const:{
       ROOT_DIR:ROOT_DIR,
@@ -621,15 +691,16 @@ if (isNode()) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
         }, res => {
-          let data = '';
-          res.on('data', chunk => data += chunk);
-          res.on('end', () => {
+          // The node's answer read through the one reader (goal/G16.6):
+          // a job reporting an emoji got it back as U+FFFD whenever the
+          // answer's chunks fell mid-character.
+          spirit.core.readBody(res).then(data => {
             try {
               resolve(data ? JSON.parse(data) : null);
             } catch (err) {
               resolve(null);
             }
-          });
+          }, () => resolve(null));
         });
         req.on('error', reject);
         req.end(body);
