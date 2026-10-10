@@ -923,6 +923,7 @@ function classifyAnswer(answer) {
 function byCode(code) { return BY_CODE[code] || null; }
 
 module.exports = {
+  define: define,
   classify: classify,
   classifyAnswer: classifyAnswer,
   byCode: byCode,
