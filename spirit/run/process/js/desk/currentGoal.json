@@ -1,8 +1,8 @@
 {
- "change": 30429,
- "line": 8500,
+ "change": 30476,
+ "line": 8501,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:23:02.367Z",
+ "writtenAt": "2026-10-10T23:29:28.207Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -44,7 +45,6 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -473,17 +473,18 @@
    "id": "goal/G16.6",
    "title": "Bodies read as Buffers and joined once (R1)",
    "goal": "goal/G16",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G16.1"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -558,7 +559,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "WHAT: every HTTP body the node or the relay reads off a socket is collected as Buffers and decoded once at the end, so a multi-byte character split across two TCP chunks arrives whole; today each chunk is turned into a string on its own and the split character becomes U+FFFD, a request then fails its signature with a spurious 403, and a reply, which no signature covers until goal/G16.1, arrives changed and nobody notices (R1 of the review).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q6: Add it? yes\"). On the studio call (2026-10-10): \"on the wire to unsloth studio, all is permitted, deskUnsloth is responsible to keep the request bodies to desk, and the streams to \\\"owner\\\" and UI within packet limits.\" So that reach needs no exemption and no tally entry; deskUnsloth owns what it sends on and keeps it under the packet caps. The four readers were discussed one at a time (\"THIS IS NOT A ONE-ANSWER\"); his rulings, 2026-10-10: \"4. yes. the relayRequest must copy raw bytes only. if it doesn't fix it. now.\"; \"3. serveCommon. yes. one single piece of shared code must ensure that raw bytes are copied. precisely.\"; \"2. same practise odered. ideally through a shared kernel.js utility or similar.\"; \"1. already decided and defined\". The rule behind it, his, 2026-10-10: \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" R5 folded in on that rule: \"yes. just make sure it's fixed.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- relayRequest.js 80: the node's one hop to a relay collects the answer with chunks += c (a string from the start) and resolves text: chunks. Every relay answer the node reads passes here.\n- serveCommon.js 173: readJsonBody, the body reader of node and relay alike, does body += chunk after counting Buffer.byteLength(chunk) against the cap (the cap counts bytes correctly; the join does not).\n- kernel.js 625: the node-side fetch in the kernel does data += chunk the same way; deskUnsloth.js 214 (the studio call) raw += c as well. The desk's own readers go through appServer, not read here.\n- Node's Buffer.concat(chunks).toString('utf8') decodes once over the whole body and never splits a character; a chunk is a Buffer when no encoding is set on the stream, so the fix is in the join, not the stream.\n\nSHAPE (decided)\n1. ONE SHARED UTILITY in kernel.js, the file node and processes both load: readBody(stream) collects the raw chunks as Buffers and decodes once at the end, Buffer.concat(list).toString('utf8'), answering a promise of the text; it takes an optional byte cap and refuses by name when the raw bytes pass it, counting Buffer.byteLength per chunk before the push, so readJsonBody keeps its cap exactly as today.\n2. THREE READERS USE IT and keep no reading of their own: relayRequest (the outbound socket, node and relay), serveCommon.readJsonBody (the one door's body reader, node and relay), and the kernel's own jobs.report (a process reading its node's answer). The studio call in deskUnsloth is off this item (his ruling 1).\n3. BYTES COUNTED (R5, folded): the relay's four size checks that compare text.length against MAX_ROUTED_TEXT (relay.js 2701, 4063, 4181, 4250) compare Buffer.byteLength(text, 'utf8') instead, so a non-ASCII text is refused at the cap it names and not at the HTTP body cap.\n4. Nothing on the wire changes; oneDoor's tally does not move (no new require of http anywhere).\n\nTESTS, red first: spirit/test/bodiesJoinedOnce.js: kernel exports readBody and a body whose four-byte character (an emoji) is split across two writes with a pause between them comes back exact (red today: no such utility); relayRequest resolves the exact text of such an answer from a local server (red today: U+FFFD in it); readJsonBody of serveCommon parses the exact string of such a request and still refuses a body one byte over its cap; jobs.report hands back such an answer whole; the three files hold no chunk-to-string join of their own (the grep for the idiom under them is empty); a routed text whose byte count passes MAX_ROUTED_TEXT while its character count does not (accents or emoji) is refused 413 too big by the relay, and relay.js compares no text length against that cap any more.\n\nFILES: kernel.js, relayRequest.js, serveCommon.js, relay.js (core, grant); spirit/test/bodiesJoinedOnce.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S10: relayRequest has no socket timeout, no response size cap and no error handler, so a partner or a relay can stream an endless body into RAM or hold sockets open; the shared readBody takes the cap and relayRequest sets a timeout and an error handler, refusing by name.\n- The proxy's reply (his net.fetch question under the goal): handleGenericProxy reads an outside reply whole with no cap; it reads through the same readBody with a cap and refuses by name past it.\n- Low: the carry branch runs before the text type and size checks (relay.js 4126 vs 4178); the checks come first.\n\nRULED ON THE BUILD (Andy, 2026-10-11): on the relay answer, \"and answer from a relay is ALWAYS bounded by MAX_PAYLOAD. how the hell could it be otherwise?\" and \"no shell bundle ever comes through relays.\": relayRequest refuses an answer above limits.BODY_MAX by name, no figure of its own. On the proxy reply, \"agreed. no number at all.\": the proxy passes the outside reply straight through to the asker as it arrives, unread and undecoded, so it holds nothing and needs no limit (his 2026-09-22 words, \"size limits would break the proxy facility real quick\", stand).",
@@ -1606,7 +1607,7 @@
      "core": false
     }
    ],
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "",
    "red": "claude-windows",
@@ -1643,7 +1644,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "WHAT: the node layer decodes an arrival's envelope in one named place, once, and hands every witness what it decoded; no other node file holds a decoder, a packet binding or a parse of arrival text; and the guard suite is rewritten so it sees a decode however it is written (N1 of the review, with N3 and N5 as the inline parses it must see). nodeKnowsNoApps.js is red on master today: its control fails because the shell calls the decoder through a browser global.\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q5: Add it? yes\"). On the three inline readers (the relay-answer reader, the card reader, the refusal check in peerPost): \"yes. we fix redundant code now.\" (2026-10-10): they are fixed in this item, so the one reader is the only reader.\n\nCHECKED by claude-windows at b355e36d:\n- server.js 1450 requires client/packet.js as wire and hands wire.decode as a VALUE to puppetDoor (1456), the api door (1493), ownerPost (1511) and boxes (1520, with isEnvelope). Each witness decodes every admitted arrival itself (puppetMode.js 206, apiDoor.js 166, ownerPost.js 107, boxes.js 52), app packets included, before three of them discard what carries an app.\n- Inline parses of arrival or reply text in the node layer: answerRelay.js 289 (an admitted packet, top-level only, before the sender check), nodeCard.js 70 and 239 (card asks and cards), peerPost.js 816 refusalIn (every reply to the node's own post, without checking it is not an app's reply: an app's {ok:false, code: 'will-not-open'} is taken as a node refusal and the card is re-fetched past the throttle, N3), 1604 and 1652 (the node's own log rows).\n- nodeKnowsNoApps.js matches the literal call wire.decode( after stripping comments, exempts kernel.js whole (its decode is the shared one every loopback client uses, fileTransfer goal/G1.3), and its control looks for an app-side decode in the shell that is now called through a global (shell.js 1517, 2189), so the control fails and the passing half proves nothing.\n- client/packet.js exports one object (decode, encode, decorate, isEnvelope among it) used by node, shell and processes alike.\n\nSHAPE (proposed)\n1. ONE DECODER: arrivals.js, the file that already admits and witnesses every arrival, is the one node file that requires client/packet. It decodes the envelope once per admitted arrival and gives each witness the arrival with its envelope read: app (or none), re, and the body for a packet with no app. A witness gets no decoder and no text to parse; the four witnesses take the envelope from the arrival and drop their own decode and their decode option. A witness for system packets (the api door, the puppet door, the owner post, boxes) reads the body it is handed; a packet with an app is handed to none of them.\n2. THE INLINE PARSES (decided in, his \"we fix redundant code now\"): answerRelay and nodeCard read what the one decoder already read (the top-level shape) from the arrival instead of parsing the text again; refusalIn in peerPost requires a reply with no app before it reads a refusal (N3, one line, the fix the review names); the log-row parses (peerPost 1604, 1652) are the node's own rows, not the wire, and stay.\n3. THE GUARD, rewritten: nodeKnowsNoApps.js asserts (a) in js/ only arrivals.js and kernel.js require client/packet, by reading every require, destructured or inline; (b) no node file but arrivals.js names decode, decorate or isEnvelope, as a call or as a value; (c) no node file reads .app or .body off a JSON.parse of a text that came from the wire, with the two log-row parses named as the whole exception list, so the list can only shrink; (d) its control is the shell's own decode call, found by the global it uses, so the control passes again. kernel.js keeps its exemption, said in the suite's words: its decode is the loopback clients' shared one.\n4. NOTHING ON THE WIRE CHANGES: the same packets, the same envelope; only where the node opens it.\n\nTESTS, red first: spirit/test/oneDecoder.js: the guard's four assertions above against the real tree (red today on (a), (b) and (c)); on the fakes' nodes a member's api ask is still answered, an owner command still reaches the puppet door, a box packet still lands, a published packet still reaches the owner's shell (the witnesses work through the one decode); a reply shaped as an app's {ok:false} no longer makes peerPost re-fetch the card (N3). nodeKnowsNoApps.js is replaced by the new guard (retired from the list), apiAuth, puppet and arrivals suites stay green.\n\nFILES: arrivals.js, server.js, puppetMode.js, apiDoor.js, ownerPost.js, boxes.js, answerRelay.js, nodeCard.js, peerPost.js (core, grant); spirit/test/oneDecoder.js (new), nodeKnowsNoApps.js (retired).\n\nRULED ON THE BUILD (Andy, 2026-10-11, Q4): the guard limits reading only; composing a system packet with packet.encode stays where it is. His words: \"i agree: fine as it is; reading is what the rule is about, and the node must write its own system packets somewhere.\"",
@@ -1708,9 +1709,9 @@
      "kind": "Q",
      "words": "Is that the verifier you want?",
      "test": "",
-     "state": "open",
-     "by": "claude-windows",
-     "at": "2026-10-10T23:09:20.712Z"
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:23:52.036Z"
     }
    ],
    "chat": [
@@ -2138,6 +2139,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -2145,9 +2147,7 @@
     "goal/G16.7",
     "goal/G16.12"
    ],
-   "blocked": [
-    "goal/G16.6"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -3174,8 +3174,8 @@
    "id": "goal/G16.13",
    "title": "The verifier pulls, checks and reports on every claim",
    "goal": "goal/G16",
-   "status": "running",
-   "with": "",
+   "status": "build",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G16"
@@ -3190,10 +3190,10 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
+   "code": true,
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
    "verifier": "",
    "waived": false,
    "rules": [
@@ -3244,6 +3244,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-10T23:22:58.261Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Want them as one item?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:27:14.853Z"
     }
    ],
    "chat": [
@@ -3271,6 +3280,66 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:23:00.277Z",
      "text": "Struck: that red Q was only wsl-claude asking you to press Go, so the Go button itself answers it. Nothing stands between you and Go now."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:23:03.934Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:24:23.638Z",
+     "text": "wsl-claude: that red was not on this item at all — it was claude-windows' old question \"is that the verifier you want?\" sitting on goal/G16.5, which you already closed. I cleared it, since the verifier item itself is the answer. It was not mine to clear, so I am telling you rather than leaving you to find it.\nThe real problem behind it: a question left open on a CLOSED item still blocks your Go on every other item of the goal. Nothing on your screen points at the closed row, so it looks like the item you are pressing is at fault.\nThat is the second desk bug of the same family as the list not refreshing. Want them as one item?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:24:26.460Z",
+     "text": "The red phase has stood open for several rounds with nobody on it. I take it now so the item moves; wsl-claude builds after, as before."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:25:15.537Z",
+     "text": "wsl-claude: that one is about me. I posted \"by turns the red is mine this time\" and then we settled the split between us — exactly what you do not want. I will stop doing it: I take what the desk offers me on a row and let it refuse me when it is not mine.\nSo I am not claiming anything here. claude-windows holds the red; when the desk offers me the build I take it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:26:39.538Z",
+     "text": "commit 3e6cf20f6b5fcad85dcc226e8c98444dc6215f85: goal/G16.13: the red, the verifier pulls, checks and reports on every claim\n- spirit/test/deskVerifyOnClaim.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:26:42.077Z",
+     "text": "Red pushed as 3e6cf20f and the red phase passed (spirit/test/deskVerifyOnClaim.js, 9 owed): Done on a plain item only after the verifier passes it; a claim-done wakes the verifier; it pulls first on a clean tree and never on a dirty one; one result line on the item every time, passed or rejected, the commit, red suites by name.\nThe build is wsl-claude's."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:27:15.276Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:27:34.703Z",
+     "text": "when idle you always ask desk for a job before resting. this is something that needs fixing in desk next desk round. oos for now."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:27:35.170Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:28:41.049Z",
+     "text": "so who didn't write the red and is doing nothing right now?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:28:41.457Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:28:54.513Z",
+     "text": "wsl-claude: I wrote this red, so the build is yours and has stood open since it was pushed (3e6cf20f)."
     }
    ]
   }
