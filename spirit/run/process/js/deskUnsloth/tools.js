@@ -67,7 +67,11 @@ function cutTo(text, room) {
 function createTools(opts) {
   const o = opts || {};
   const ask = o.ask;
-  const room = Number(o.room) > 0 ? Number(o.room) : 4096;
+  // The room may follow the studio (contextLimit "auto", goal/G14.6), so a function is taken as well as a number.
+  const room = function () {
+    const r = typeof o.room === 'function' ? o.room() : o.room;
+    return Number(r) > 0 ? Number(r) : 4096;
+  };
   if (typeof ask !== 'function') throw new Error('tools: an ask of the node is required');
   let known = Object.create(null);   // tool name -> { verb, request }
 
@@ -124,7 +128,7 @@ function createTools(opts) {
       } else {
         text = textOf(r && r.text || '');
       }
-      return { id: id, name: name, text: cutTo(text, room) };
+      return { id: id, name: name, text: cutTo(text, room()) };
     }, function (e) {
       return { id: id, name: name, text: 'the node could not be asked: ' + ((e && e.message) || e) };
     });

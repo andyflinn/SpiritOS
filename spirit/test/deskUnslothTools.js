@@ -39,8 +39,11 @@ const RUN = path.join(ROOT, 'spirit', 'run');
 const AGENT = path.join(RUN, 'process', 'js', 'deskUnsloth', 'deskUnsloth.js');
 const TOOLS = path.join(RUN, 'process', 'js', 'deskUnsloth', 'tools.js');
 const FETCH_DESCRIPTION = 'Fetch a page from the internet by url: GET unless method says otherwise; the owner proxy list decides which sites and which keys';
-const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', contextLimit: 2000, answerTokens: 100, bytesPerToken: 4 };
-const PROMPT_ROOM = (CONFIGURATION.contextLimit - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken;
+// contextLimit "auto" (Andy, 2026-10-10: "lets assume "auto" is most appropriate for now"): the limit is the
+// studio's context_length of the loaded model, STUDIO_CONTEXT below, read with the known list; the rooms follow it.
+const STUDIO_CONTEXT = 2000;
+const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', contextLimit: 'auto', answerTokens: 100, bytesPerToken: 4 };
+const PROMPT_ROOM = (STUDIO_CONTEXT - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken;
 const TOOL_ROOM = Math.floor(PROMPT_ROOM / 4);
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -102,7 +105,7 @@ const studioServer = http.createServer(function (req, res) {
     const p = req.url.split('?')[0];
     if (p === '/api/models/cached-gguf') return answer(200, { cached: [] });
     if (p === '/v1/models') return answer(200, { object: 'list', data: [] });
-    if (p === '/api/inference/status') return answer(200, { active_model: CONFIGURATION.model, loaded: [CONFIGURATION.model], supports_tools: true });
+    if (p === '/api/inference/status') return answer(200, { active_model: CONFIGURATION.model, loaded: [CONFIGURATION.model], supports_tools: true, context_length: STUDIO_CONTEXT });
     if (p === '/v1/chat/completions' && req.method === 'POST') {
       studio.chats.push(body);
       const step = script.length ? script.shift() : { text: 'nothing scripted' };
@@ -241,6 +244,20 @@ async function suite() {
   const tree = await doorUp(client, 10000);
   if (!tree) { test.fail(OWED + 'deskUnsloth never answered api on its pipe (' + short((out.stderr + out.stdout).slice(0, 200)) + ')'); return; }
   function ask(verb, args) { const a = {}; a[verb] = args || {}; return client.ask({ deskUnsloth: a }).then(function (r) { return r.body || {}; }); }
+  // THE ROOM FOLLOWS THE STUDIO with contextLimit "auto": the known list is read once (models), which carries the
+  // studio's context_length; then a page over a quarter of (2000 - 100) * 4 bytes comes back cut to that room.
+  await ask('models', {});
+  await sleep(300);
+  script = [{ toolCalls: [toolCall('room-1', 'net_fetch', { url: 'https://big.test/' })] }, { text: 'seen the big page' }];
+  studio.chats.length = 0;
+  const sRoom = await ask('chat.send', { lines: [{ role: 'user', text: 'read the big page' }] });
+  let aRoom = {};
+  for (let i = 0; i < 80; i++) { aRoom = await ask('chat.answer', { id: sRoom.id }); if (aRoom.done) break; await sleep(100); }
+  const roomCall = studio.chats[1];
+  const roomTool = roomCall && Array.isArray(roomCall.messages) ? roomCall.messages.filter(function (m) { return m.role === 'tool'; })[0] : null;
+  const roomBytes = roomTool ? Buffer.byteLength(String(roomTool.content), 'utf8') : -1;
+  if (roomTool && roomBytes <= TOOL_ROOM + 200 && roomBytes > TOOL_ROOM / 2 && /cut/.test(String(roomTool.content))) test.check('with contextLimit auto the tool room follows the studio\'s context_length: the big page came back cut to ' + roomBytes + ' bytes of room ' + TOOL_ROOM);
+  else test.fail(OWED + 'with contextLimit auto the tool result was ' + roomBytes + ' bytes against a room of ' + TOOL_ROOM + ' (' + short(roomTool && roomTool.content) + ')');
   script = [
     { toolCalls: [toolCall('call-1', 'net_fetch', { url: 'https://example.test/' })] },
     { text: 'The page says: Example Domain, for use in illustrative examples.' },

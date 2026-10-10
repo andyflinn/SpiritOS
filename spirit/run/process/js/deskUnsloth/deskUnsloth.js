@@ -64,12 +64,20 @@ const PREAMBLE = String(CONFIGURATION.preamble || '');
 // THE MODEL FOLLOWS A LOAD (goal/G14.4): model.load rewrites configuration.json and this with it, so the next call
 // names what the studio now serves. Everything else in the configuration is still read once.
 let MODEL = String(CONFIGURATION.model || '');
-const CONTEXT_LIMIT = Number(CONFIGURATION.contextLimit) || 0;
+// THE CONTEXT LIMIT: a number, or "auto" (goal/G14.6; Andy, 2026-10-10, seeing 1 % context use in the studio:
+// "lets assume "auto" is most appropriate for now, and we'll get more nit-picky as we learn more"): auto is the
+// studio's context_length of the loaded model, read with every refresh of the known list (inference/status), and
+// the configured fallback until it has been read once.
+const CONTEXT_AUTO = String(CONFIGURATION.contextLimit).toLowerCase() === 'auto' || !Number(CONFIGURATION.contextLimit);
+const CONTEXT_FALLBACK = 8192;
+let CONTEXT_LIMIT = CONTEXT_AUTO ? CONTEXT_FALLBACK : Number(CONFIGURATION.contextLimit);
+let studioContext = 0;
+function contextLimit() { return CONTEXT_AUTO && studioContext > 0 ? studioContext : CONTEXT_LIMIT; }
 const ANSWER_TOKENS = Number(CONFIGURATION.answerTokens) || 0;
 const BYTES_PER_TOKEN = Number(CONFIGURATION.bytesPerToken) || 4;
 // HIS FORMULA (goal/G10.3): the room for the whole prompt is what is left of the context once the answer has its
-// own, in bytes, at bytesPerToken each.
-const PROMPT_ROOM = Math.max(0, (CONTEXT_LIMIT - ANSWER_TOKENS) * BYTES_PER_TOKEN);
+// own, in bytes, at bytesPerToken each. A function since the limit may follow the studio.
+function promptRoom() { return Math.max(0, (contextLimit() - ANSWER_TOKENS) * BYTES_PER_TOKEN); }
 
 // ── THE DESK, THROUGH THIS NODE'S deskClient (goal/G10.3 point 1) ─────
 //
@@ -163,7 +171,7 @@ function callFor(id) {
         if (itemBox) head.push('THE ITEM ' + id + '\n' + itemBox);
         // THE WINDOW: the newest lines that fit. Everything but the chat is owed to the call, so the chat takes
         // whatever room is left and the oldest line goes first (his "rolling window ... the oldest dropped").
-        let room = PROMPT_ROOM - bytes(system) - head.reduce(function (s, t) { return s + bytes(t); }, 0);
+        let room = promptRoom() - bytes(system) - head.reduce(function (s, t) { return s + bytes(t); }, 0);
         const window = [];
         for (let i = chat.length - 1; i >= 0; i--) {
           const line = String(chat[i].by || '') + ': ' + String(chat[i].text || '');
@@ -224,11 +232,11 @@ function studio(method, pathname, body, timeoutMs) {
 //   come from the node's own description of its verbs (tools.js: describe), the first being net.fetch; the model
 //   calls one, this runs it through the node (tools.js: run) and asks the model again with the result, at most
 //   TOOL_ROUNDS times, then the model's last text is the answer. Nothing hand-written here about any tool.
-const TOOL_ROOM = Math.floor(PROMPT_ROOM / 4);
+function toolRoom() { return Math.floor(promptRoom() / 4); }
 const TOOL_ROUNDS = 3;
 const tools = require('./tools').createTools({
   ask: function (verb, args) { return spirit.core.ask(verb, args, NODE_URL); },
-  room: TOOL_ROOM,
+  room: toolRoom,
 });
 
 function argumentsOf(call) {
@@ -340,6 +348,8 @@ function fetchModels() {
       const st = got[2] || {};
       const active = String(st.active_model || '');
       const loadedList = Array.isArray(st.loaded) ? st.loaded.map(String) : [];
+      // The loaded model's context, for contextLimit "auto".
+      if (Number(st.context_length) > 0) studioContext = Number(st.context_length);
       const was = {};
       ((readKnown() || {}).models || []).forEach(function (m) { if (m && m.id) was[m.id] = m; });
       const list = cached.map(function (c) {
@@ -471,7 +481,7 @@ const answers = Object.create(null);
 function chatSend(lines) {
   const id = require('crypto').randomBytes(8).toString('hex');
   const system = PREAMBLE;
-  let room = PROMPT_ROOM - bytes(system);
+  let room = promptRoom() - bytes(system);
   const window = [];
   for (let i = lines.length - 1; i >= 0; i--) {
     const role = lines[i].role === 'assistant' ? 'assistant' : 'user';
@@ -666,7 +676,7 @@ appServer.serve({
   },
 }, { dependencies: [] });
 
-say(PERSONA + ' is at the desk, model ' + MODEL + ', context ' + CONTEXT_LIMIT + ' tokens');
+say(PERSONA + ' is at the desk, model ' + MODEL + ', context ' + (CONTEXT_AUTO ? 'auto (the studio\'s, ' + CONTEXT_FALLBACK + ' until read)' : CONTEXT_LIMIT + ' tokens'));
 // The first state goes out at once, from what is known. The studio is not read until somebody asks models (the
 // Remote does when it opens): at the desk alone, deskUnsloth speaks to the studio for chat and nothing else
 // (goal/G10.3, deskUnslothContext.js).
