@@ -1,8 +1,8 @@
 {
- "change": 27984,
+ "change": 28051,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T16:10:43.918Z",
+ "writtenAt": "2026-10-10T16:26:50.166Z",
  "items": [
   {
    "id": "goal/G14",
@@ -17,8 +17,7 @@
    "blocking": [],
    "blocked": [
     "goal/G14.3",
-    "goal/G14.4",
-    "goal/G14.5"
+    "goal/G14.4"
    ],
    "go": false,
    "alone": false,
@@ -1131,9 +1130,12 @@
    "id": "goal/G14.5",
    "title": "Build puppet-to-master Stream.",
    "goal": "goal/G14",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -1141,7 +1143,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -1223,7 +1225,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "WHAT: a stream from a puppet to its master: the master subscribes to one of the puppet's servers, and from then on every object that server publishes reaches the master's pages as it reaches the puppet's own, so the Remote polls nothing.\n\nRULINGS (Andy, 2026-10-10)\n- His sketch: \"a puppet has a special, puppet command: stream (which starts a stream of posts to the master); the master that sends this to a puppet, then throws the streamed events into the node-broadcast for it's apps\".\n- \"inside the puppet, the publisher then publishes to the master as well. Let's make sure this is the most simple thing possible.\"\n- \"publish-over-peer-post will be slow. so the master needs to select/filter at the source what he needs, he should be able to send a \"subscribe to deskUnsloth\", or a master stream should only contain appServer events.\"\n- Then: \"hmm, puppets are usually specialized, let's drop the specific app stream mechanism for now, and just send all app Server events. the other can be done later if this proves to much.\"\n- And: \"only while the master is live and reachable.\"\n- And: \"so deskUnsloth keeps a state, and publishes changes, it's own api are more like event-delivery to deskUnsloth\"\n\nCHECKED (2026-10-10, at ff2dfd3f)\n- The publisher is one point in the node: appServer.publish calls jobs.report {app}; the node keeps the object on the job record (jobs.js, under the PAYLOAD_MAX gate) and emits job-updated, which server.js writes to every open page's event stream; the shell hands it to the app named after the process (deliverPublished, api.onPublished). Nothing of it crosses to another node.\n- The puppet (11111) is a contact of the master, acquired as a relay member: its packets pass the master's front door and reach the page as packet events. A node posts with peer.post; the puppet's owner key is relay-state/owner.json.\n- A puppet command is owner.command carrying a node verb through the owner door (puppetMode.puppetDoor runs the loopback handler). A new node verb needs his yes on the verb itself.\n- The relay queues per target and refuses busy; a post per published object of one server is a handful a minute, a post per log line would not be.\n- Publishers today: deskUnsloth (its state object, to be built with this item), desk and deskVerify (rules, runs), fileServer (transfer progress), chatClerver (every line). On the puppet: deskUnsloth and pushOrigin.\n\nSHAPE (proposed on his rulings; no new verb)\n1. NO SUBSCRIPTION: a puppet streams every server's published objects to its owner, always; nothing to switch on, no verb, nothing kept. Nothing else is streamed: no logs, no job states. A filter at the source is the later item \"if this proves to much\".\n2. THE FORWARD, at the one point: where the node sets job.app and the node is a puppet (owner.json names another key), it also posts {module, app} to its owner as a packet named published, fire and forget (no wait, no retry), and ONLY WHILE THE MASTER IS LIVE AND REACHABLE: the same route check owner.command makes before a command (the route to the key, unreachable or without a relay means no post, no log line, nothing queued; the next change tries again). A post the relay refuses is one line in the node's log. Over PAYLOAD_MAX never reaches this point. SERIALIZED AT THE SOURCE (his question, 2026-10-10: \"and the appServer publisings will be serialized at their source? they are peerposts after all.\"): one post to the owner in flight at a time; a module that publishes again while a post is out has only its newest object kept, posted when the one out returns (latest wins per module, order kept across modules), so a burst collapses and the relay never sees two posts from one puppet at once.\n3. THE MASTER SIDE, at its one point: a packet named published from a contact is written to every open page stream as event published {from, module, app}, beside job-updated; the shell hands it to api.onPublished handlers of that module's app with the sender's key, so the Remote subscribes one way on both nodes and tells the puppet's object by `from`. Not from a stranger: the front door already drops those.\n4. deskUnsloth KEEPS ONE STATE and publishes it on every change: {connected, persona, model, active, cached, load, models: [...], chat: {id, done, text}} (what state, models and chat.answer answer today). Its verbs are deliveries that change that state: connect {on}, model.load {id}, chat.send {lines}; each answers at once as today and the change arrives as the next published object. The read verbs state, models and chat.answer stay for a one-shot ask (a tool, a test), the Remote asks none of them: it draws from the published object, on either node, from the first one in.\n\nTESTS, the red first: spirit/test/puppetStream.js: a fake owner and a real puppet node world (as puppetDoor.js builds one): a published object of any server on the puppet is posted to the owner once per change, as a packet named published with module and app; nothing is posted for a log line or a job state, nothing by a node that is not a puppet, nothing while the owner's route says unreachable (and nothing queued for later), and a post the relay refuses is said in the log and not retried; posts are serialized: with the owner slow, five publishes of one module in a row reach it as the first and the last, one at a time; the master side turns such a packet from a contact into a published event on its page stream with from, module and app, and a stranger's is not; deskUnsloth publishes its state on connect/disconnect, load and refresh (deskUnslothModels.js grows); the Remote's one handler takes a local published object and a streamed one alike.\n\nFILES: spirit/run/js/jobs.js or server.js (the forward at the publish point) and the arrivals side in server.js (the published event) - core, grants; process/js/deskUnsloth/deskUnsloth.js; shell/deskUnslothRemote/deskUnslothRemote.js; spirit/run/js/client/shell.js (onPublished with from) - core; the new suite.\n\nNOT IN THIS ITEM: streaming logs or job states; a filter at the source (later, \"if this proves to much\"); a puppets list on the master.",
@@ -1243,9 +1245,45 @@
      "kind": "G",
      "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/jobs.js, spirit/run/js/server.js",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-10T16:02:30.563Z"
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T16:10:51.518Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T16:13:09.402Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T16:13:10.711Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/puppetStream.js (new: the two halves of the stream, as ownerPost.js holds the owner door)",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T16:13:12.231Z"
+    },
+    {
+     "number": "T1",
+     "kind": "T",
+     "words": "the red: puppetStream (12) and deskUnslothModels grown to 37",
+     "test": "spirit/test/puppetStream.js",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-10T16:24:52.681Z"
     }
    ],
    "chat": [
@@ -1343,6 +1381,101 @@
      "by": "claude-windows",
      "at": "2026-10-10T16:10:28.064Z",
      "text": "Green: serialization is in the box (version 9), nothing open, Go is offered."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:10:51.868Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:11:41.498Z",
+     "text": "Taken. Three grants on the item: server.js (the wiring at the publish point and the page stream), shell.js (the published event to onPublished with the sender), and a new core file puppetStream.js holding both halves as a factory, as ownerPost.js holds the owner door; jobs.js stays untouched.\nWriting the red now."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:13:12.620Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:14:30.308Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:15:50.385Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:17:42.377Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:18:43.645Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:19:54.730Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:21:43.397Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:22:35.152Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:22:56.393Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:23:11.824Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:23:25.536Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:24:13.843Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:24:31.081Z",
+     "text": "commit eca622519b33fb99738d56cd716bf279fc02713f: goal/G14.5: a puppet streams what its servers publish to its master\n- spirit/run/js/client/shell.js\n- spirit/run/js/puppetStream.js\n- spirit/run/js/server.js\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothModels.js\n- spirit/test/puppetStream.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:24:36.240Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T16:24:47.932Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T16:24:58.148Z",
+     "text": "Built and pushed, eca62251: puppetStream.js (the forward at the publish point, serialized, only while the owner is reachable), server.js wiring, shell.js routing a published packet to onPublished with the sender, deskUnsloth publishing its state on every change, the Remote drawing from it with no poll left. puppetStream 12 and deskUnslothModels 37 green; the boot and node suites green (the harness fakes copy tracked files only, so the new core file had to be tracked first).\nFiles: spirit/run/js/puppetStream.js, server.js, client/shell.js; process/js/deskUnsloth/deskUnsloth.js; shell/deskUnslothRemote/deskUnslothRemote.js; spirit/test/puppetStream.js, deskUnslothModels.js.\nTo see it: pull both clones, restart both nodes (server.js changed) and reload the shells"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T16:26:47.795Z",
+     "text": "daeng, the verifier doesn't run anything for what we've been doing for a while now...."
     }
    ]
   }
