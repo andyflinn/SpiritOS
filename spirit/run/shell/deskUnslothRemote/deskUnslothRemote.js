@@ -22,10 +22,10 @@
 // THE PUPPETS come from puppets.json in this app's own folder, for now: {"puppets": [{name, key}]}. A node with no
 // such file offers this node alone — which is what the same app shows when it opens on the puppet itself.
 //
-// THE CHAT BOX IS DRAWN ONLY WHERE deskUnsloth RUNS: the app knows because its own node answers the state ask (on
-// the owner's node that ask is app-not-served). It speaks to deskUnsloth on its own node, never through the owner
-// door, in two asks: chat.send gives an id at once, chat.answer is asked every second until done — a process answers
-// within 12 s (appClient DOOR_WAIT_MS) and a model answer can take longer.
+// THE CHAT BOX IS DRAWN FOR ANY TARGET WHOSE STATE ANSWERED, the hosting node and the puppet alike (Andy,
+// 2026-10-10, "go." on running the chat on 65432; until then it was the hosting node's alone). The send is one
+// ask through the chosen target, chat.send answering an id at once; the answer arrives as the published object's
+// chat {id, done, text} down the stream (goal/G14.5), on either node.
 //
 // NO TICK: `render` is left undefined. The state and the models are read when the app opens, when the target
 // changes and after a press; a load in progress is re-asked every two seconds until the studio is done, and a chat
@@ -72,9 +72,11 @@ function deskUnslothRemoteAnswerOf(target, r) {
   return said.body && typeof said.body === 'object' ? said.body : { ok: false, error: 'the puppet answered nothing' };
 }
 
-// The chat never crosses the owner door: it is this node's deskUnsloth or nothing.
-function deskUnslothRemoteChatAskFor(verb, args) {
-  return deskUnslothRemoteAskFor({ kind: 'node' }, verb, args);
+// THE CHAT FOLLOWS THE TARGET TOO (Andy, 2026-10-10, lifting his earlier ruling that the chat box shows on the
+// hosting node only: "so we should be able to run chat on 65432 just by removing the check", "go."). The send is
+// the one ask, through the same function as the switch; the answer comes down the stream on either node.
+function deskUnslothRemoteChatAskFor(target, verb, args) {
+  return deskUnslothRemoteAskFor(target, verb, args);
 }
 
 function deskUnslothRemoteAsk(target, verb, args) {
@@ -310,11 +312,10 @@ function deskUnslothRemoteLoadState() {
     deskUnslothRemoteBusy = false;
     deskUnslothRemoteSay(said && said.ok === false ? (said.error || said.code || 'no answer') : '', true);
     deskUnslothRemoteDraw();
-    if (deskUnslothRemoteTarget.kind === 'node') {
-      // THIS NODE HOSTS deskUnsloth when its own state ask is answered: then, and only then, the chat box.
-      deskUnslothRemoteLocal = !!(said && said.ok !== false);
-      deskUnslothRemoteDrawChat();
-    }
+    // THE CHAT BOX IS DRAWN FOR ANY TARGET WHOSE STATE ANSWERED (his "go." of 2026-10-10 on running the chat on
+    // 65432): the hosting node and the puppet alike.
+    deskUnslothRemoteLocal = !!(said && said.ok !== false);
+    deskUnslothRemoteDrawChat();
     return said;
   });
 }
@@ -387,11 +388,12 @@ function deskUnslothRemoteChatSend() {
   deskUnslothRemoteTranscript.push({ role: 'user', text: text });
   deskUnslothRemoteChatBusy = true;
   deskUnslothRemoteDrawChatLines();
-  var payload = deskUnslothRemoteChatAskFor('chat.send', { lines: deskUnslothRemoteTranscript.slice() });
+  var target = deskUnslothRemoteTarget;
+  var payload = deskUnslothRemoteChatAskFor(target, 'chat.send', { lines: deskUnslothRemoteTranscript.slice() });
   var rest = {};
   Object.keys(payload).forEach(function (k) { if (k !== 'verb') rest[k] = payload[k]; });
   deskUnslothRemoteApi.verb(payload.verb, rest).then(function (r) {
-    var said = deskUnslothRemoteAnswerOf({ kind: 'node' }, r);
+    var said = deskUnslothRemoteAnswerOf(target, r);
     if (!said || said.ok === false || !said.id) throw new Error((said && (said.error || said.code)) || 'the chat was refused');
     // THE ANSWER ARRIVES AS A PUBLISHED OBJECT (goal/G14.5): chat {id, done, text}, taken by
     // deskUnslothRemoteApplyPublished. Nothing is polled; a chat that never comes back is let go after a while.

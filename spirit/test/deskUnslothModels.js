@@ -462,10 +462,13 @@ async function suite() {
   const t5 = takes && takes({ kind: 'puppet', key: KEY }, { from: 'MCowBQYDK2VwAyEAother' });
   if (t1 === true && t2 === true && t3 === false && t4 === false && t5 === false) test.check('the Remote takes a local object for this node and a streamed one from the chosen puppet, nothing else');
   else test.fail(OWED + 'takesPublished answered ' + short([t1, t2, t3, t4, t5]));
+  // The chat follows the target (Andy, 2026-10-10, "go." on running the chat on 65432): jobs.api on this node,
+  // owner.command on the puppet, the same function as the switch.
   const chatAsk = ctx.deskUnslothRemoteChatAskFor;
-  const c1 = chatAsk && chatAsk('chat.send', { lines: [] });
-  if (c1 && c1.verb === 'jobs.api' && c1.ask.deskUnsloth['chat.send']) test.check('the chat asks its own node only: jobs.api, never owner.command');
-  else test.fail(OWED + 'the chat ask: ' + short(c1));
+  const c1 = chatAsk && chatAsk({ kind: 'node' }, 'chat.send', { lines: [] });
+  const c2 = chatAsk && chatAsk({ kind: 'puppet', key: KEY }, 'chat.send', { lines: [] });
+  if (c1 && c1.verb === 'jobs.api' && c1.ask.deskUnsloth['chat.send'] && c2 && c2.verb === 'owner.command' && c2.to === KEY && c2.body.ask.deskUnsloth['chat.send']) test.check('the chat send follows the target: jobs.api on this node, owner.command on the puppet');
+  else test.fail(OWED + 'the chat asks: ' + short([c1, c2]));
 }
 
 suite().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(async function () {
