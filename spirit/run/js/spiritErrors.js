@@ -86,7 +86,9 @@ let nextId = 0;
 // `alsoStatus` records a status the same condition is ALSO emitted with,
 // which is always an inconsistency worth knowing about rather than a
 // feature.
-function define(code, e) {
+function define(name, e) {
+  // The argument as a string, whatever was passed (Andy, 2026-10-10: "just toString() the argument, done.").
+  var code = String(name);
   if (BY_CODE[code]) throw new Error('spiritErrors: ' + code + ' is already declared');
   var entry = {
     code: code,
