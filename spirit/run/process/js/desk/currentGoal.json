@@ -1,8 +1,8 @@
 {
- "change": 28582,
+ "change": 28660,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T18:00:01.567Z",
+ "writtenAt": "2026-10-10T18:12:29.729Z",
  "items": [
   {
    "id": "goal/G14",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -2000,24 +2000,92 @@
    "id": "goal/G14.7",
    "title": "Levant's desk participation",
    "goal": "goal/G14",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G14"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/chat.add.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/check.add.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.box.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.chat.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.checks.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.get.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.status.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.take.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/items.search.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/work.open.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/tools.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothDesk.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -2025,18 +2093,126 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
+   "box": "WHAT: Levant takes part in Desk as the agents do: through the same tools mechanism as goal/G14.6, the desk's useful verbs are described to agents by a verb file each, deskUnsloth turns them into tools and runs a tool call through its node's deskClient, so Levant can search items, read a box, its checks and its chat, post under an item, take an item, set its status word and put a question on it, under Andy's grants and the desk's rules. His first use: consulting on his own project, this goal.\n\nDECIDED (Andy, 2026-10-10, under goal/G14.6)\n- \"can we give it the API for desk? those parts that make it usefull?\" and \"i want it to participate in desk usefully and get those small-scoped tasks.\"\n- \"he can consult on the deskSloth project\"; \"he'll tell us which additional tools he needs\" (a missing tool is a line from him under an item, and each becomes a verb file; \"these entries can be tracked by git. i don't see a risk there.\").\n- The files-in-scope half (the textEditor scope: read, write, search under the scope folder on its own node, a commit through pushOrigin) is the item after this one.\n- \"you write the box, that'll be the best complete round.\"\n- On the grant (the key of the ollama agent node holds the whole desk on his node, since the desk work began): \"this is, Levant is restricted by the tools we give him.\" The verb files are the restriction, not the grant.\n- The first set of verbs (items.search, item.get, item.box, item.checks, item.chat, chat.add, item.take, item.status, check.add, work.open): \"agreed.\" Not all: a third of the desk's verbs are his alone, and every tool rides on every call; the other agent verbs are one file each, later.\n\nCHECKED (2026-10-10, at 0d4f6bb9)\n- The desk describes no verb to agents today: desk.AGENTS.introspect answers an empty list; process/js/desk holds no verb file; its AGENTS.md is the rules. A process server's family reads the files beside its script (introSpector.family: <verb>.json with a description, a dotted stem allowed), so item.get.json beside desk.js describes item.get, and the file answers as is (request and reply are the server's own to put in the file; nothing is filled in from code as on the node).\n- deskUnsloth reaches the desk through its node's deskClient: deskClient.desk {verb, json} is one ask of the desk server on the node the owner named, over peerPost, through the desk node's api door, which admits a verb when the caller's key is granted the app whole or app.verb (apiDoor stripTree); deskClient's own node key is Levant's identity at the desk, and the desk writes under that key's profile.\n- The desk's verbs and their requests, read in desk.js: items.search {text, currentGoalOnly, goalsOnly, includeClosed}; item.get {id}; item.box {id}; item.checks {id}; item.chat {id}; chat.add {id, text}; item.take {id}; item.status {id, word}; check.add {id, kind, words, test}; work.open {}. Others (box.write, press, phase.take, item.add, rule.*) exist and are not described in this item.\n- The loop of goal/G14.6 runs any tool describe listed, generic by name; a namespace's transport is the one thing it does not know yet: net goes to the node's loopback door, desk must go through deskClient.\n- deskUnsloth already posts the model's final text under the item it was addressed in (goal/G10.3); a tool chat.add is a post anywhere else.\n\nSHAPE (agreed)\n1. THE VERB FILES, process/js/desk/<verb>.json, one each for the first set: items.search, item.get, item.box, item.checks, item.chat, chat.add, item.take, item.status, check.add, work.open; each a description in plain words with what the answer carries, and request as the server declares it, so describe types the parameters. desk.AGENTS.introspect then lists them.\n2. tools.js learns the transports, nothing else: describe(namespace) and run(call) ask through a route for the namespace: net by the node's loopback door (as today), desk by jobs.api {deskClient: {desk: {verb, json}}}, the same asks deskUnsloth makes for the desk already. The tool name stays the verb with its dot as an underscore (desk_item_get); the tools of both namespaces go with every call.\n3. THE SYSTEM MESSAGE tells the model what deskUnsloth does for it: its final text is posted under the item it was addressed in, so chat.add is for another item or an extra line; a tool result that the desk refused (not granted, no such item, the rules) comes back in the desk's words.\n4. THE GRANT: Levant's key must be granted the desk verbs on Andy's node (the api door admits app whole or app.verb); the desk's own rules then apply as to any agent (AGENTS.md goes with every call already).\n5. Nothing in the node, nothing in appServer, nothing in the desk's code.\n\nTESTS, the red first: spirit/test/deskUnslothDesk.js: the verb files exist and the family of process/js/desk lists them (introSpector.family against the real folder); against a fake node whose deskClient answers desk asks (AGENTS.introspect, AGENTS.<verb>, item.get, chat.add, item.take...): describe(desk) gives the tools from the files with parameters typed from their requests; a desk tool call goes out as jobs.api deskClient.desk {verb, json} with the model's arguments and the answer comes back as text; a refusal in the desk's words; the loop in the process carries both namespaces' tools and runs a desk call; the final text is still posted under the item. deskUnslothTools, deskUnslothModels, deskUnslothSwitch and deskUnslothContext stay green.\n\nFILES: process/js/desk/<verb>.json (ten new files, the desk's); process/js/deskUnsloth/tools.js, deskUnsloth.js and its manifest; spirit/test/deskUnslothDesk.js (new).\n\nNOT IN THIS ITEM: files in its scope and commits (the item after); box.write, press, phase.take and the rules as tools (later, at his word); a tool on the Remote's side; an MCP server.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is the first set of desk verbs for Levant right: items.search, item.get, item.box, item.checks, item.chat, chat.add, item.take, item.status, check.add, work.open",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T18:10:29.099Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
      "at": "2026-10-10T17:53:20.504Z",
      "text": "Added on your word under goal/G14. The design so far, from G14.6: the desk verbs that matter get a verb file each and describe(desk) turns them into tools; run routes a desk tool through deskClient.desk, so the desk gate and your grants decide; Levant reads items, boxes and chat, posts under an item, takes an item and claims done, and asks for a missing tool in a line.\nI write the box from that unless you want to sketch it first"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T18:01:15.455Z",
+     "text": "you write the box, that'll be the best complete round."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T18:03:28.005Z",
+     "text": "Box written (version 1): your lines, the checked facts (the desk describes no verb today, a verb file beside desk.js does it, deskClient is the road and the api door the gate), the shape (ten verb files, tools.js learns the two transports, the system message says the final text is posted for it, your grant on the desk), the red suite and the files.\nQ1 on the item: the first set of verbs, yours to strike or add."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T18:05:30.600Z",
+     "text": "all desk verbs for Levant?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T18:05:57.115Z",
+     "text": "Not all: of the desk 45 verbs a third are yours alone (press, rename, delete, scope, profile, session, verify.pass and reject, rule versions) and the desk refuses them to any agent, and every tool rides on every call, about a hundred tokens each, so the list is prompt room and time per call.\nThe first set is what an agent uses in a sitting; the other agent verbs (box.write, box.take and release, phase.take and done, check.set, item.files.add, line.take, verify.again, chat.search, items.find, rules.search, rule.get, log.search, pending.get) are one file each, added when you want him to have them.\nFirst set as proposed, or name additions"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T18:08:16.793Z",
+     "text": "ah, i tried grant, can you make sure i didn't mess up, although it refused my grant, (already granted)"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T18:08:45.717Z",
+     "text": "this is, Levant is restricted by the tools we give him."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T18:08:56.724Z",
+     "text": "Nothing messed up: on your node the key of the ollama agent node holds one grant, the path desk, the whole app; that is what deskClient uses today for Levant lines, and the api door lets any desk verb through on it, the AGENTS family too. The refusal said already granted because it was there since the desk work began."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T18:09:11.640Z",
+     "text": "Recorded: the verb files are the restriction, the grant stays the whole desk; what has no file is no tool."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T18:09:36.456Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T18:09:51.785Z",
+     "text": "Not yet: Q1 is open, the first set of verbs; say as proposed, or name additions, and it is green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T18:10:14.890Z",
+     "text": "Q1: Is the first set of desk verbs for Levant right: items.search, item.get, item.box, item.checks, item.chat, chat.add, item.take, item.status, check.add, work.open\n\nagreed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T18:10:30.972Z",
+     "text": "Green: the first set agreed and in the box, nothing open; Go is yours."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T18:12:29.285Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
