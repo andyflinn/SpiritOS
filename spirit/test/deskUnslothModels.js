@@ -62,6 +62,7 @@ async function until(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < (
 let loaded = LOADED;
 const LOAD_MS = 1500;
 let v1HoldMs = 0;
+let studioDown = false;
 const studio = { calls: [], chats: [] };
 const BROKEN = 'unsloth/Qwen-Image-2.1-GGUF';
 const CACHED = [
@@ -88,6 +89,8 @@ const studioServer = http.createServer(function (req, res) {
     studio.calls.push({ method: req.method, url: req.url, auth: String(req.headers.authorization || ''), body: body });
     function answer(status, obj) { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); }
     const p = req.url.split('?')[0];
+    // THE STUDIO DOWN (Andy: "unsloth-studio crashed again"): every route refused while `studioDown`.
+    if (studioDown) { req.socket.destroy(); return; }
     if (p === '/api/models/cached-gguf') return answer(200, { cached: CACHED });
     // v1/models DAWDLES when told to (14.9 s live on 2026-10-10, the studio probing its ollama entries): the fake
     // holds it V1_HOLD_MS, longer than a process may take to answer, and models must still come, without quant.
@@ -195,6 +198,17 @@ function loadApp() {
 
 test.startTest('goal/G14.4: the model line and the chat box');
 
+// THE KNOWN LIST IS ANSWERED AT ONCE and refreshed behind the answer (Andy: "deskUnloth should REALLY cache the
+// know list....", "deskUnloth must respond to all queries immediately"), so what the studio just changed shows on a
+// later ask: these ask again until the answer says what is expected, or give up.
+let askModels = null;
+async function modelsWhen(pred, ms) {
+  const t0 = Date.now();
+  let got = {};
+  while (Date.now() - t0 < (ms || 8000)) { got = await askModels(); if (pred(got)) return got; await sleep(150); }
+  return got;
+}
+
 async function suite() {
   await new Promise(function (r) { studioServer.listen(0, '127.0.0.1', r); });
   await new Promise(function (r) { node.listen(0, '127.0.0.1', r); });
@@ -208,6 +222,7 @@ async function suite() {
   const tree = await doorUp(client, 10000);
   if (!tree) { test.fail(OWED + 'deskUnsloth never answered api on its pipe (' + JSON.stringify((out.stderr + out.stdout).slice(0, 200)) + ')'); return; }
   function ask(verb, args) { const a = {}; a[verb] = args || {}; return client.ask({ deskUnsloth: a }).then(function (r) { return r.body || {}; }); }
+  askModels = function () { return ask('models', {}); };
 
   test.subHeading('1. models: the cached list, merged');
   const verbs = Object.keys(tree).sort();
@@ -227,13 +242,27 @@ async function suite() {
   if (studioAsked.indexOf('/api/models/cached-gguf') !== -1 && studioAsked.indexOf('/v1/models') !== -1 && studioAsked.indexOf('/api/inference/status') !== -1 && studio.calls.every(function (c) { return c.auth === 'Bearer studio-key'; }) && studioAsked.every(function (u) { return u.indexOf('/api/models/config') === -1; })) test.check('three studio calls with the connection\'s key, and no per-model config call');
   else test.fail(OWED + 'studio asked ' + short(studioAsked));
 
+  test.subHeading('1a. the known list is answered at once, from the file');
+  let knownFile = null;
+  try { knownFile = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')); } catch (e) { knownFile = null; }
+  if (knownFile && Array.isArray(knownFile.models) && knownFile.models.length === 3 && knownFile.active === LOADED) test.check('models.json in the state folder holds the list as answered: three models, the active one');
+  else test.fail(OWED + 'models.json reads ' + short(knownFile));
+  studio.calls.length = 0;
+  const ta = Date.now();
+  const ma = await ask('models', {});
+  const atOnceMs = Date.now() - ta;
+  await sleep(300);
+  if (atOnceMs < 600 && Array.isArray(ma.models) && ma.models.length === 3 && studio.calls.some(function (c) { return c.url.split('?')[0] === '/api/models/cached-gguf'; })) test.check('a second ask is answered from the file in ' + atOnceMs + ' ms, and a refresh from the studio runs behind it');
+  else test.fail(OWED + 'the second ask took ' + atOnceMs + ' ms, answered ' + short(ma) + ', studio asked ' + short(studio.calls.map(function (c) { return c.url; })));
+
   test.subHeading('1b. with no model loaded, the list still comes');
   loaded = '';
-  const m0 = await ask('models', {});
+  const m0 = await modelsWhen(function (g) { return g.active === '' && Array.isArray(g.models) && g.models.every(function (m) { return !m.loaded; }); }, 6000);
   const q0 = (m0.models || []).filter(function (m) { return m.id === LOADED; })[0];
   if (m0.active === '' && Array.isArray(m0.models) && m0.models.length === 3 && m0.models.every(function (m) { return m.loaded === false && m.audio === false; }) && q0 && q0.reasoning === true && (m0.models || []).filter(function (m) { return m.id !== LOADED; }).every(function (m) { return m.reasoning === false; })) test.check('with the studio\'s status an error, models still lists the three cached models, none loaded, active empty; the first model keeps the reasoning flag learned while it was loaded');
   else test.fail(OWED + 'with no model loaded, models answered ' + short(m0));
   loaded = LOADED;
+  await modelsWhen(function (g) { return g.active === LOADED; }, 6000);
 
   test.subHeading('1c. a dawdling v1/models does not take the ask past the wall');
   v1HoldMs = appClient.DOOR_WAIT_MS + 3000;
@@ -246,6 +275,8 @@ async function suite() {
   // never seen shows none this time: the image model's quant comes only from v1/models, and that was late.
   if (slowMs < appClient.DOOR_WAIT_MS && Array.isArray(ms.models) && ms.models.length === 3 && q2 && q2.loaded === true && q2.quant === 'UD-Q2_K_XL' && ms.active === LOADED && img2) test.check('with v1/models held ' + v1HoldMs + ' ms, models still answers in ' + slowMs + ' ms: the list, the loaded flag from status, the quant from the cache');
   else test.fail(OWED + 'with v1/models held, models answered in ' + slowMs + ' ms: ' + short(ms));
+  // The refresh behind that answer is still waiting on the held v1/models; let it finish before the next part.
+  await sleep(v1HoldMs + 500);
   v1HoldMs = 0;
 
   test.subHeading('2. model.load: the studio loads it, the configuration follows, the next call names it');
@@ -262,12 +293,12 @@ async function suite() {
   if (conf && conf.model === OTHER && conf.persona === CONFIGURATION.persona && conf.preamble === CONFIGURATION.preamble && conf.contextLimit === CONFIGURATION.contextLimit) test.check('configuration.json now names the new model and keeps everything else');
   else test.fail(OWED + 'configuration.json reads ' + short(conf));
   await until(function () { return loaded === OTHER; }, LOAD_MS + 2000);
-  const m2 = await ask('models', {});
+  const m2 = await modelsWhen(function (g) { return g.active === OTHER; }, 6000);
   const o2 = (m2.models || []).filter(function (m) { return m.id === OTHER; })[0];
-  if (m2.active === OTHER && o2 && o2.loaded === true && o2.vision === true && o2.audio === true) test.check('once the studio is done, models shows the new one loaded and active, with its flags');
+  if (m2.active === OTHER && o2 && o2.loaded === true && o2.vision === true && o2.audio === true) test.check('once the studio is done, a later ask shows the new one loaded and active, with its flags');
   else test.fail(OWED + 'models after the load: ' + short(m2));
   const m3 = await ask('models', {});
-  if (JSON.stringify(m3) === JSON.stringify(m2)) test.check('the list is the studio\'s every time: two asks in a row read the same studio and agree');
+  if (JSON.stringify(m3.models) === JSON.stringify(m2.models) && m3.active === m2.active) test.check('the known list is what was last read: two asks in a row agree');
   else test.fail(OWED + 'two asks disagree: ' + short(m2) + ' vs ' + short(m3));
 
   test.subHeading('2a. a load that fails is said, so the line can let go of the hourglass');
@@ -278,8 +309,7 @@ async function suite() {
   if (lb.model === BROKEN && lb.loaded === false && failed && mf.load && mf.load.model === BROKEN && mf.load.state === 'failed' && /llama-server exited/.test(mf.load.error)) test.check('model.load of a model the studio refuses answers at once, and models then carries load {model, state: failed, error} with the studio\'s words');
   else test.fail(OWED + 'a failing load: model.load ' + short(lb) + ', models.load ' + short(mf.load));
   const lr = await ask('model.load', { id: OTHER });
-  let mr = {};
-  for (let i = 0; i < 40; i++) { mr = await ask('models', {}); if (mr.load && mr.load.state !== 'loading') break; await sleep(200); }
+  const mr = await modelsWhen(function (g) { return g.load && g.load.state !== 'loading' && (g.models || []).some(function (m) { return m.id === OTHER && m.loaded; }); }, LOAD_MS + 6000);
   if (lr.model === OTHER && mr.load && mr.load.model === OTHER && mr.load.state === 'done' && (mr.models || []).some(function (m) { return m.id === OTHER && m.loaded; })) test.check('another attempt is allowed after a failure: the next load runs and models says done');
   else test.fail(OWED + 'the attempt after a failure: ' + short(lr) + ', models.load ' + short(mr.load));
 
@@ -289,16 +319,18 @@ async function suite() {
   // quant, are remembered in models.json; after a swap back the other model keeps them.
   let learnedFile = null;
   try { learnedFile = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')); } catch (e) { learnedFile = null; }
-  if (learnedFile && learnedFile.models && learnedFile.models[OTHER] && learnedFile.models[OTHER].audio === true && learnedFile.models[LOADED] && learnedFile.models[LOADED].reasoning === true) test.check('models.json in the state folder holds what was learned: the first model\'s reasoning, the second\'s audio');
+  const lf = function (id) { return ((learnedFile && learnedFile.models) || []).filter(function (m) { return m.id === id; })[0]; };
+  if (lf(OTHER) && lf(OTHER).audio === true && lf(LOADED) && lf(LOADED).reasoning === true) test.check('models.json holds what was learned: the first model\'s reasoning, the second\'s audio');
   else test.fail(OWED + 'models.json reads ' + short(learnedFile));
   loaded = LOADED;
   v1HoldMs = appClient.DOOR_WAIT_MS + 3000;
-  const m4 = await ask('models', {});
-  v1HoldMs = 0;
+  const m4 = await modelsWhen(function (g) { return g.active === LOADED; }, 8000);
   const o4 = (m4.models || []).filter(function (m) { return m.id === OTHER; })[0];
   const q4 = (m4.models || []).filter(function (m) { return m.id === LOADED; })[0];
-  if (o4 && o4.loaded === false && o4.vision === true && o4.audio === true && o4.reasoning === false && o4.quant === 'Q4_1' && q4 && q4.loaded === true && q4.reasoning === true && q4.quant === 'UD-Q2_K_XL') test.check('with the first model loaded again and v1/models late, the other keeps its audio flag and its quant from the cache, and the loaded one its quant too');
+  if (o4 && o4.loaded === false && o4.vision === true && o4.audio === true && o4.reasoning === false && o4.quant === 'Q4_1' && q4 && q4.loaded === true && q4.reasoning === true && q4.quant === 'UD-Q2_K_XL') test.check('with the first model loaded again and v1/models late, the other keeps its audio flag and its quant, and the loaded one its quant too');
   else test.fail(OWED + 'after the swap back: ' + short([o4, q4]));
+  await sleep(v1HoldMs + 500);
+  v1HoldMs = 0;
   studio.chats.length = 0;
   nextQueue.push([]);
   await sleep(600);
@@ -332,6 +364,25 @@ async function suite() {
   if (gone.ok === false || gone.done === false) test.check('an unknown id is not an answer');
   else test.fail(OWED + 'an unknown id answered ' + short(gone));
 
+  test.subHeading('3b. the cached flag: the list comes from the file while the studio is down, and says so');
+  // Andy, 2026-10-10: "the list should return with a cached flag, so the remote can forbid loading until....
+  // unsloth-studio crashed again." A restart with the file present and the studio down: the first answer is the
+  // known list, cached true; once the studio answers again a later ask says cached false.
+  await stop();
+  studioDown = true;
+  start();
+  const tree2 = await doorUp(client, 10000);
+  if (!tree2) { test.fail(OWED + 'deskUnsloth did not come back on its pipe for the cached-flag part'); return; }
+  const td = Date.now();
+  const md = await ask('models', {});
+  const downMs = Date.now() - td;
+  if (md.cached === true && Array.isArray(md.models) && md.models.length === 3 && downMs < 3000) test.check('with the studio down, models answers the known list from the file in ' + downMs + ' ms, cached true');
+  else test.fail(OWED + 'with the studio down, models answered in ' + downMs + ' ms: ' + short(md));
+  studioDown = false;
+  const mu = await modelsWhen(function (g) { return g.cached === false; }, 8000);
+  if (mu.cached === false && Array.isArray(mu.models) && mu.models.length === 3) test.check('once the studio answers again, a later ask says cached false');
+  else test.fail(OWED + 'after the studio came back, models answered ' + short(mu));
+
   test.subHeading('4. the app\'s functions');
   const ctx = loadApp();
   if (!ctx || ctx.error) { test.fail(OWED + 'deskUnslothRemote.js ' + (ctx ? 'failed to load: ' + ctx.error : 'missing')); return; }
@@ -356,6 +407,13 @@ async function suite() {
   const O2 = optionFor && optionFor({ id: LOADED, loaded: true, quant: '', bytes: 1, task: 'text-generation', vision: false, reasoning: true, audio: false });
   if (O1 === OTHER + ' 👁️🎵' && O2 === LOADED + ' 🤔 🟢') test.check('each dropdown entry reads the id, its capability icons and, loaded, the running mark');
   else test.fail(OWED + 'the dropdown entries read ' + short([O1, O2]));
+  const canLoad = ctx.deskUnslothRemoteCanLoad;
+  const cl1 = canLoad && canLoad({ cached: true, models: [] }, { id: OTHER, loaded: false });
+  const cl2 = canLoad && canLoad({ cached: false, models: [] }, { id: OTHER, loaded: false });
+  const cl3 = canLoad && canLoad({ cached: false, models: [] }, { id: LOADED, loaded: true });
+  const cl4 = canLoad && canLoad({ ok: false, error: 'no answer' }, { id: OTHER, loaded: false });
+  if (cl1 === false && cl2 === true && cl3 === false && cl4 === false) test.check('Load is offered only for a model not loaded and only when the answer is not cached: the studio has just been heard from');
+  else test.fail(OWED + 'canLoad answered ' + short([cl1, cl2, cl3, cl4]));
   const loadOver = ctx.deskUnslothRemoteLoadOver;
   const ov1 = loadOver && loadOver({ active: LOADED, load: { model: BROKEN, state: 'failed', error: 'llama-server exited with code 1' }, models: [{ id: BROKEN, loaded: false }] }, BROKEN);
   const ov2 = loadOver && loadOver({ active: LOADED, load: { model: BROKEN, state: 'loading', error: '' }, models: [{ id: BROKEN, loaded: false }] }, BROKEN);

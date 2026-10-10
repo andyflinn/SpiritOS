@@ -194,11 +194,11 @@ function deskUnslothRemoteDrawModels() {
       (loading
         ? '<span id="dur-mark" title="loading">' + deskUnslothRemoteIcon('LOADING') + '</span>'
         : (line.load
-          ? '<button type="button" id="dur-load">Load</button>'
+          ? '<button type="button" id="dur-load"' + (deskUnslothRemoteCanLoad(got, model) ? '' : ' disabled title="the studio has not answered yet"') + '>Load</button>'
           : '<span id="dur-mark" title="running">' + line.mark + '</span>')) +
       '<span id="dur-icons">' + line.icons.join(' ') + '</span>' +
     '</div>' +
-    '<div class="job-manifest-note" id="dur-small">' + escape(line.small) + (loading ? ' · loading…' : '') + '</div>';
+    '<div class="job-manifest-note" id="dur-small">' + escape(line.small) + (loading ? ' · loading…' : '') + (got.cached && !loading ? ' · from what was known; asking the studio…' : '') + '</div>';
   document.getElementById('dur-model').addEventListener('change', function (e) {
     // A CHANGED SELECTION SENDS NOTHING (his ruling): it only redraws the line for that model.
     deskUnslothRemoteChosen = e.target.value;
@@ -209,13 +209,32 @@ function deskUnslothRemoteDrawModels() {
   deskUnslothRemoteDrawChatTitle();
 }
 
+var deskUnslothRemoteFreshTries = 0;
 function deskUnslothRemoteLoadModels() {
   if (!deskUnslothRemoteTarget) return Promise.resolve();
-  return deskUnslothRemoteAsk(deskUnslothRemoteTarget, 'models', {}).then(function (said) {
+  var target = deskUnslothRemoteTarget;
+  return deskUnslothRemoteAsk(target, 'models', {}).then(function (said) {
+    if (target !== deskUnslothRemoteTarget) return said;
     deskUnslothRemoteModels = said;
     deskUnslothRemoteDrawModels();
+    // A CACHED ANSWER IS ASKED AGAIN after a moment, until the studio has been heard from (or it has not answered
+    // ten times over: then the line stays as known, Load withheld, and the next open asks again).
+    if (said && said.cached && !deskUnslothRemoteLoadTimer && deskUnslothRemoteFreshTries < 10) {
+      deskUnslothRemoteFreshTries++;
+      setTimeout(function () { if (target === deskUnslothRemoteTarget) deskUnslothRemoteLoadModels(); }, 2000);
+    } else if (said && !said.cached) {
+      deskUnslothRemoteFreshTries = 0;
+    }
     return said;
   });
+}
+
+// MAY LOAD BE OFFERED: only for a model not loaded, and only when the models answer is not `cached` — the studio
+// has been heard from just now (Andy, 2026-10-10: "the list should return with a cached flag, so the remote can
+// forbid loading until.... unsloth-studio crashed again."). A cached answer is re-asked after a moment until the
+// refresh behind it has landed.
+function deskUnslothRemoteCanLoad(got, model) {
+  return !!(got && got.ok !== false && !got.cached && model && !model.loaded);
 }
 
 // IS THE LOAD OVER, from one models answer: loaded, or failed with the studio's words, or the studio unreadable.

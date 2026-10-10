@@ -247,57 +247,94 @@ function askModel(messages) {
 // comes from inference/status, 0.3 s live, which names the active model and lists the loaded ones.
 const QUANT_WAIT_MS = 5000;
 
-// THE CACHE OF WHAT WAS LEARNED (Andy, 2026-10-10: "deskUnsloth should cache the model list with all capabilities,
-// you'll be able to show more info earlier, and more info from cache, for not-loaded models."). The studio says
-// reasoning and audio only of the loaded model, and the quant only when v1/models is quick, so models.json in the
-// state folder keeps, per model, the quant once seen and the two flags learned while it was the loaded one. The
-// list itself is never from the cache: cached-gguf is fresh every ask, the cache only fills in what the studio
-// does not say this time. Vision is the studio's, shown for every model ("then show vision always").
+// THE KNOWN LIST IS THE CACHE, AND THE ANSWER (Andy, 2026-10-10: "deskUnsloth should cache the model list with all
+// capabilities, you'll be able to show more info earlier, and more info from cache, for not-loaded models.", then
+// "deskUnloth should REALLY cache the know list....", and "deskUnloth must respond to all queries immediately").
+// models.json in the state folder holds the last list as it was answered: every model with its quant, size, task,
+// vision, and the reasoning and audio flags learned while it was the loaded one. A models ask is answered FROM THE
+// FILE AT ONCE, and a refresh from the studio runs behind it (one at a time): the next ask has what the studio said.
+// Only the very first ask, with no file yet, waits for the studio. The studio says reasoning and audio only of the
+// loaded model and the quant only when v1/models is quick, so a refresh keeps what was known where the studio is
+// silent this time. Vision is the studio's, for every model ("then show vision always").
 const MODELS_FILE = 'models.json';
-function readLearned() {
-  try { return JSON.parse(fs.readFileSync(path.join(STATE, MODELS_FILE), 'utf8')).models || {}; } catch (e) { return {}; }
+let known = null;       // {active, models: [...]} as last answered, or null before the file is read
+let refreshing = null;  // the one refresh in flight
+// THE CACHED FLAG (Andy, 2026-10-10: "the list should return with a cached flag, so the remote can forbid loading
+// until.... unsloth-studio crashed again."): an answer is `cached` until a refresh from the studio has landed
+// within FRESH_MS, so the remote offers Load only when the studio has just been heard from. A list from the file
+// with the studio down is still a list, and says so.
+const FRESH_MS = 10000;
+let refreshedAt = 0;
+
+function readKnown() {
+  if (known) return known;
+  try { known = JSON.parse(fs.readFileSync(path.join(STATE, MODELS_FILE), 'utf8')); } catch (e) { known = null; }
+  if (!known || !Array.isArray(known.models)) known = null;
+  return known;
 }
-function writeLearned(learned) {
-  try { fs.writeFileSync(path.join(STATE, MODELS_FILE), JSON.stringify({ models: learned }, null, 2) + '\n'); } catch (e) { say('models.json could not be written: ' + e.message); }
+function writeKnown(next) {
+  known = next;
+  try { fs.writeFileSync(path.join(STATE, MODELS_FILE), JSON.stringify(next, null, 2) + '\n'); } catch (e) { say('models.json could not be written: ' + e.message); }
 }
 
-function models() {
+function fetchModels() {
   const nothing = function () { return {}; };
   return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS).catch(nothing), studio('GET', '/api/inference/status').catch(nothing)])
     .then(function (got) {
       const cached = Array.isArray(got[0] && got[0].cached) ? got[0].cached : [];
-      const known = {};
-      (Array.isArray(got[1] && got[1].data) ? got[1].data : []).forEach(function (m) { if (m && m.id) known[String(m.id)] = m; });
+      const byId = {};
+      (Array.isArray(got[1] && got[1].data) ? got[1].data : []).forEach(function (m) { if (m && m.id) byId[String(m.id)] = m; });
       const st = got[2] || {};
       const active = String(st.active_model || '');
       const loadedList = Array.isArray(st.loaded) ? st.loaded.map(String) : [];
-      const learned = readLearned();
-      let changed = false;
+      const was = {};
+      ((readKnown() || {}).models || []).forEach(function (m) { if (m && m.id) was[m.id] = m; });
       const list = cached.map(function (c) {
         const id = String(c.repo_id || '');
-        const k = known[id] || {};
-        const was = learned[id] || {};
+        const k = byId[id] || {};
+        const w = was[id] || {};
         const loaded = id === active || loadedList.indexOf(id) !== -1 || k.loaded === true;
-        const quant = String(k.quant || was.quant || '');
-        // The flags are the studio's while this model is loaded, and what was learned of it otherwise.
-        const reasoning = loaded ? st.supports_reasoning === true : was.reasoning === true;
-        const audio = loaded ? st.is_audio === true : was.audio === true;
-        const now = { quant: quant, reasoning: loaded ? reasoning : was.reasoning === true, audio: loaded ? audio : was.audio === true, learnedLoaded: loaded || was.learnedLoaded === true };
-        if (JSON.stringify(now) !== JSON.stringify(was)) { learned[id] = now; changed = true; }
         return {
           id: id,
           loaded: loaded,
-          quant: quant,
+          quant: String(k.quant || w.quant || ''),
           bytes: Number(c.size_bytes) || 0,
           task: String(c.task || ''),
           vision: c.has_vision === true,
-          reasoning: reasoning,
-          audio: audio,
+          // The flags are the studio's while this model is loaded, and what was learned of it otherwise.
+          reasoning: loaded ? st.supports_reasoning === true : w.reasoning === true,
+          audio: loaded ? st.is_audio === true : w.audio === true,
         };
       });
-      if (changed) writeLearned(learned);
-      return { active: active, load: { model: load.model, state: load.state, error: load.error }, models: list };
+      return { active: active, models: list };
     });
+}
+
+function refreshModels() {
+  if (refreshing) return refreshing;
+  refreshing = fetchModels().then(function (next) {
+    refreshing = null;
+    refreshedAt = Date.now();
+    writeKnown(next);
+    return next;
+  }, function (e) {
+    refreshing = null;
+    say('the studio\'s model list could not be read: ' + e.message);
+    throw e;
+  });
+  return refreshing;
+}
+
+function models() {
+  const loadNow = { model: load.model, state: load.state, error: load.error };
+  const have = readKnown();
+  if (have) {
+    refreshModels().catch(function () { /* said above; the known list stands */ });
+    return { active: String(have.active || ''), cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS), load: loadNow, models: have.models };
+  }
+  return refreshModels().then(function (next) {
+    return { active: next.active, cached: false, load: loadNow, models: next.models };
+  });
 }
 
 // model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:
@@ -517,7 +554,7 @@ appServer.serve({
   },
   // THE MODEL LINE AND THE CHAT BOX (goal/G14.4): what deskUnslothRemote reads and presses.
   models: {
-    request: {}, reply: { active: '', load: { model: '', state: '', error: '' }, models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
+    request: {}, reply: { active: '', cached: true, load: { model: '', state: '', error: '' }, models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
     handler: function () { return models(); },
   },
   'model.load': {
