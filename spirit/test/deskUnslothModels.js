@@ -19,7 +19,9 @@
 //      v1/models, vision from cached-gguf, reasoning and audio only on the loaded model; active named.
 //   1b. with no model loaded the studio's status is an error: the cached list still comes, nothing loaded.
 //   1c. a dawdling v1/models (14.9 s live) does not take the ask past the 12 s wall: the list comes, loaded from
-//       status, the quant empty that time.
+//       status, the quant empty that time (unless the cache knows it, 2b).
+//   2b. the cache, his ruling: models.json keeps the quant once seen and the reasoning and audio flags learned
+//       while a model was loaded; a model no longer loaded keeps them, and a late v1/models costs no quant.
 //   2. deskUnsloth model.load {id}: posts the studio's load for that id and answers AT ONCE, not waiting for the
 //      studio's blocking load (minutes; a process must answer within 12 s), rewrites configuration.json's model,
 //      and the next chat call names the new model.
@@ -224,7 +226,8 @@ async function suite() {
   test.subHeading('1b. with no model loaded, the list still comes');
   loaded = '';
   const m0 = await ask('models', {});
-  if (m0.active === '' && Array.isArray(m0.models) && m0.models.length === 3 && m0.models.every(function (m) { return m.loaded === false && m.reasoning === false && m.audio === false; })) test.check('with the studio\'s status an error, models still lists the three cached models, none loaded, active empty');
+  const q0 = (m0.models || []).filter(function (m) { return m.id === LOADED; })[0];
+  if (m0.active === '' && Array.isArray(m0.models) && m0.models.length === 3 && m0.models.every(function (m) { return m.loaded === false && m.audio === false; }) && q0 && q0.reasoning === true && (m0.models || []).filter(function (m) { return m.id !== LOADED; }).every(function (m) { return m.reasoning === false; })) test.check('with the studio\'s status an error, models still lists the three cached models, none loaded, active empty; the first model keeps the reasoning flag learned while it was loaded');
   else test.fail(OWED + 'with no model loaded, models answered ' + short(m0));
   loaded = LOADED;
 
@@ -234,7 +237,10 @@ async function suite() {
   const ms = await ask('models', {});
   const slowMs = Date.now() - ts;
   const q2 = (ms.models || []).filter(function (m) { return m.id === LOADED; })[0];
-  if (slowMs < appClient.DOOR_WAIT_MS && Array.isArray(ms.models) && ms.models.length === 3 && q2 && q2.loaded === true && q2.quant === '' && ms.active === LOADED) test.check('with v1/models held ' + v1HoldMs + ' ms, models still answers in ' + slowMs + ' ms: the list, the loaded flag from status, the quant empty this time');
+  const img2 = (ms.models || []).filter(function (m) { return m.id === 'unsloth/Qwen-Image-2.1-GGUF'; })[0];
+  // The quant seen in 1 is remembered (2b), so the loaded one still shows it; a model whose quant the cache has
+  // never seen shows none this time: the image model's quant comes only from v1/models, and that was late.
+  if (slowMs < appClient.DOOR_WAIT_MS && Array.isArray(ms.models) && ms.models.length === 3 && q2 && q2.loaded === true && q2.quant === 'UD-Q2_K_XL' && ms.active === LOADED && img2) test.check('with v1/models held ' + v1HoldMs + ' ms, models still answers in ' + slowMs + ' ms: the list, the loaded flag from status, the quant from the cache');
   else test.fail(OWED + 'with v1/models held, models answered in ' + slowMs + ' ms: ' + short(ms));
   v1HoldMs = 0;
 
@@ -257,8 +263,25 @@ async function suite() {
   if (m2.active === OTHER && o2 && o2.loaded === true && o2.vision === true && o2.audio === true) test.check('once the studio is done, models shows the new one loaded and active, with its flags');
   else test.fail(OWED + 'models after the load: ' + short(m2));
   const m3 = await ask('models', {});
-  if (JSON.stringify(m3) === JSON.stringify(m2)) test.check('nothing is kept: two asks in a row read the same studio and agree');
+  if (JSON.stringify(m3) === JSON.stringify(m2)) test.check('the list is the studio\'s every time: two asks in a row read the same studio and agree');
   else test.fail(OWED + 'two asks disagree: ' + short(m2) + ' vs ' + short(m3));
+
+  test.subHeading('2b. the cache: what was learned of a model stays once it is no longer loaded');
+  // Andy, 2026-10-10: "deskUnsloth should cache the model list with all capabilities, you'll be able to show more
+  // info earlier, and more info from cache, for not-loaded models." The studio's flags for the loaded one, and the
+  // quant, are remembered in models.json; after a swap back the other model keeps them.
+  let learnedFile = null;
+  try { learnedFile = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')); } catch (e) { learnedFile = null; }
+  if (learnedFile && learnedFile.models && learnedFile.models[OTHER] && learnedFile.models[OTHER].audio === true && learnedFile.models[LOADED] && learnedFile.models[LOADED].reasoning === true) test.check('models.json in the state folder holds what was learned: the first model\'s reasoning, the second\'s audio');
+  else test.fail(OWED + 'models.json reads ' + short(learnedFile));
+  loaded = LOADED;
+  v1HoldMs = appClient.DOOR_WAIT_MS + 3000;
+  const m4 = await ask('models', {});
+  v1HoldMs = 0;
+  const o4 = (m4.models || []).filter(function (m) { return m.id === OTHER; })[0];
+  const q4 = (m4.models || []).filter(function (m) { return m.id === LOADED; })[0];
+  if (o4 && o4.loaded === false && o4.vision === true && o4.audio === true && o4.reasoning === false && o4.quant === 'Q4_1' && q4 && q4.loaded === true && q4.reasoning === true && q4.quant === 'UD-Q2_K_XL') test.check('with the first model loaded again and v1/models late, the other keeps its audio flag and its quant from the cache, and the loaded one its quant too');
+  else test.fail(OWED + 'after the swap back: ' + short([o4, q4]));
   studio.chats.length = 0;
   nextQueue.push([]);
   await sleep(600);

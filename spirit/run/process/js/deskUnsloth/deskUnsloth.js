@@ -246,6 +246,21 @@ function askModel(messages) {
 // (it took 14.9 s live, probing the studio's ollama entries, and the whole ask died at 12 s). The loaded flag
 // comes from inference/status, 0.3 s live, which names the active model and lists the loaded ones.
 const QUANT_WAIT_MS = 5000;
+
+// THE CACHE OF WHAT WAS LEARNED (Andy, 2026-10-10: "deskUnsloth should cache the model list with all capabilities,
+// you'll be able to show more info earlier, and more info from cache, for not-loaded models."). The studio says
+// reasoning and audio only of the loaded model, and the quant only when v1/models is quick, so models.json in the
+// state folder keeps, per model, the quant once seen and the two flags learned while it was the loaded one. The
+// list itself is never from the cache: cached-gguf is fresh every ask, the cache only fills in what the studio
+// does not say this time. Vision is the studio's, shown for every model ("then show vision always").
+const MODELS_FILE = 'models.json';
+function readLearned() {
+  try { return JSON.parse(fs.readFileSync(path.join(STATE, MODELS_FILE), 'utf8')).models || {}; } catch (e) { return {}; }
+}
+function writeLearned(learned) {
+  try { fs.writeFileSync(path.join(STATE, MODELS_FILE), JSON.stringify({ models: learned }, null, 2) + '\n'); } catch (e) { say('models.json could not be written: ' + e.message); }
+}
+
 function models() {
   const nothing = function () { return {}; };
   return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS).catch(nothing), studio('GET', '/api/inference/status').catch(nothing)])
@@ -256,24 +271,32 @@ function models() {
       const st = got[2] || {};
       const active = String(st.active_model || '');
       const loadedList = Array.isArray(st.loaded) ? st.loaded.map(String) : [];
-      return {
-        active: active,
-        models: cached.map(function (c) {
-          const id = String(c.repo_id || '');
-          const k = known[id] || {};
-          const loaded = id === active || loadedList.indexOf(id) !== -1 || k.loaded === true;
-          return {
-            id: id,
-            loaded: loaded,
-            quant: String(k.quant || ''),
-            bytes: Number(c.size_bytes) || 0,
-            task: String(c.task || ''),
-            vision: c.has_vision === true,
-            reasoning: loaded && st.supports_reasoning === true,
-            audio: loaded && st.is_audio === true,
-          };
-        }),
-      };
+      const learned = readLearned();
+      let changed = false;
+      const list = cached.map(function (c) {
+        const id = String(c.repo_id || '');
+        const k = known[id] || {};
+        const was = learned[id] || {};
+        const loaded = id === active || loadedList.indexOf(id) !== -1 || k.loaded === true;
+        const quant = String(k.quant || was.quant || '');
+        // The flags are the studio's while this model is loaded, and what was learned of it otherwise.
+        const reasoning = loaded ? st.supports_reasoning === true : was.reasoning === true;
+        const audio = loaded ? st.is_audio === true : was.audio === true;
+        const now = { quant: quant, reasoning: loaded ? reasoning : was.reasoning === true, audio: loaded ? audio : was.audio === true, learnedLoaded: loaded || was.learnedLoaded === true };
+        if (JSON.stringify(now) !== JSON.stringify(was)) { learned[id] = now; changed = true; }
+        return {
+          id: id,
+          loaded: loaded,
+          quant: quant,
+          bytes: Number(c.size_bytes) || 0,
+          task: String(c.task || ''),
+          vision: c.has_vision === true,
+          reasoning: reasoning,
+          audio: audio,
+        };
+      });
+      if (changed) writeLearned(learned);
+      return { active: active, models: list };
     });
 }
 
