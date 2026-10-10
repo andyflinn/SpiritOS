@@ -61,7 +61,9 @@ const CONNECTION = readOrDie(CONNECTION_FILE);
 
 const PERSONA = String(CONFIGURATION.persona || 'agent');
 const PREAMBLE = String(CONFIGURATION.preamble || '');
-const MODEL = String(CONFIGURATION.model || '');
+// THE MODEL FOLLOWS A LOAD (goal/G14.4): model.load rewrites configuration.json and this with it, so the next call
+// names what the studio now serves. Everything else in the configuration is still read once.
+let MODEL = String(CONFIGURATION.model || '');
 const CONTEXT_LIMIT = Number(CONFIGURATION.contextLimit) || 0;
 const ANSWER_TOKENS = Number(CONFIGURATION.answerTokens) || 0;
 const BYTES_PER_TOKEN = Number(CONFIGURATION.bytesPerToken) || 4;
@@ -178,38 +180,146 @@ function callFor(id) {
   });
 }
 
-// ── THE MODEL: one OpenAI chat completion, the connection's url and key ──
-function askModel(messages) {
-  const url = new URL(String(CONNECTION.url || '').replace(/\/+$/, '') + '/chat/completions');
-  const body = JSON.stringify({ model: MODEL, messages: messages, max_tokens: ANSWER_TOKENS });
+// ── THE STUDIO: one http ask of it, the connection's url and key ──────
+//
+// The connection's url is the OpenAI root (…/v1); the studio's own api sits beside it at the host root (…/api/…),
+// read live 2026-10-10 (Unsloth Studio 2026.10.3, openapi.json). One function for both: a path from the host root.
+const STUDIO_URL = String(CONNECTION.url || '').replace(/\/+$/, '').replace(/\/v1$/, '');
+
+function studio(method, pathname, body) {
+  const url = new URL(STUDIO_URL + pathname);
+  const text = body === undefined ? '' : JSON.stringify(body);
   const lib = url.protocol === 'https:' ? https : http;
   return new Promise(function (resolve, reject) {
+    const headers = { Authorization: 'Bearer ' + String(CONNECTION.key || '') };
+    if (text) { headers['Content-Type'] = 'application/json'; headers['Content-Length'] = Buffer.byteLength(text); }
     const req = lib.request({
       hostname: url.hostname,
       port: url.port || (url.protocol === 'https:' ? 443 : 80),
       path: url.pathname + url.search,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + String(CONNECTION.key || ''),
-        'Content-Length': Buffer.byteLength(body),
-      },
+      method: method,
+      headers: headers,
     }, function (res) {
       let raw = '';
       res.on('data', function (c) { raw += c; });
       res.on('end', function () {
         let got = null;
-        try { got = JSON.parse(raw); } catch (e) { return reject(new Error('the model did not answer JSON')); }
-        const choice = got && Array.isArray(got.choices) ? got.choices[0] : null;
-        const content = choice && choice.message ? String(choice.message.content || '') : '';
-        if (!content) return reject(new Error('the model answered nothing'));
-        resolve(content);
+        try { got = JSON.parse(raw); } catch (e) { return reject(new Error('the studio did not answer JSON at ' + pathname)); }
+        if (res.statusCode >= 400) return reject(new Error('the studio refused ' + pathname + ': ' + res.statusCode + ' ' + raw.slice(0, 120)));
+        resolve(got);
       });
     });
     req.on('error', reject);
-    req.write(body);
+    if (text) req.write(text);
     req.end();
   });
+}
+
+// ── THE MODEL: one OpenAI chat completion ─────────────────────────────
+function askModel(messages) {
+  return studio('POST', '/v1/chat/completions', { model: MODEL, messages: messages, max_tokens: ANSWER_TOKENS }).then(function (got) {
+    const choice = got && Array.isArray(got.choices) ? got.choices[0] : null;
+    const content = choice && choice.message ? String(choice.message.content || '') : '';
+    if (!content) throw new Error('the model answered nothing');
+    return content;
+  });
+}
+
+// ── THE STUDIO'S MODELS, AND A LOAD (goal/G14.4) ──────────────────────
+//
+//   Andy, 2026-10-10: "The dropdown will only show models that unsloth has cached locally." "The [Load] button will
+//   only be displayed if the models is not running, otherwise that spot shows the RUNNING icon." On choosing: "No.
+//   because the loading process is lengthy, changing the selection only will bring more detailed info."
+//
+// models: the cached list (api/models/cached-gguf: size, task, vision), each with its quant and loaded flag from
+// v1/models, and reasoning and audio from inference/status for the loaded one, false for the rest: the studio has
+// no cheap, consistent answer for an unloaded model (api/models/config takes 3.6 s each and contradicted
+// cached-gguf on vision). Three studio calls per ask, nothing kept.
+function models() {
+  return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models'), studio('GET', '/api/inference/status')])
+    .then(function (got) {
+      const cached = Array.isArray(got[0] && got[0].cached) ? got[0].cached : [];
+      const known = {};
+      (Array.isArray(got[1] && got[1].data) ? got[1].data : []).forEach(function (m) { if (m && m.id) known[String(m.id)] = m; });
+      const st = got[2] || {};
+      const active = String(st.active_model || '');
+      return {
+        active: active,
+        models: cached.map(function (c) {
+          const id = String(c.repo_id || '');
+          const k = known[id] || {};
+          const loaded = k.loaded === true || id === active;
+          return {
+            id: id,
+            loaded: loaded,
+            quant: String(k.quant || ''),
+            bytes: Number(c.size_bytes) || 0,
+            task: String(c.task || ''),
+            vision: c.has_vision === true,
+            reasoning: loaded && st.supports_reasoning === true,
+            audio: loaded && st.is_audio === true,
+          };
+        }),
+      };
+    });
+}
+
+// model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:
+// configuration.json is rewritten by this process, the one that owns it, and MODEL with it, so the next call names
+// what the studio serves. Answered at once; models says when the studio is done.
+function loadModel(id) {
+  return studio('POST', '/api/inference/load', { model_path: id }).then(function () {
+    const file = path.join(STATE, CONFIGURATION_FILE);
+    let conf = {};
+    try { conf = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { conf = Object.assign({}, CONFIGURATION); }
+    conf.model = id;
+    fs.writeFileSync(file, JSON.stringify(conf, null, 2) + '\n');
+    MODEL = id;
+    say('loading ' + id + '; the configuration names it from now on');
+    return { model: id, loaded: false };
+  });
+}
+
+// ── THE CHAT BOX'S CALLS (goal/G14.4) ──────────────────────────────────
+//
+//   Andy, 2026-10-10: a chat box "sticky, at the bottom of the window (panel)", "Enter = send, one line only",
+//   "the chat will only be shown on the node that hosts deskUnsloth....".
+//
+// TWO ASKS, NOT ONE: an ask of this process through jobs.api is answered within DOOR_WAIT_MS, 12 s (appClient.js),
+// and a model answer can take longer. So chat.send takes the page's transcript, answers an id at once and asks the
+// model; chat.answer {id} says whether it is done and hands the text over. The page keeps the transcript; this keeps
+// only the answers in flight, and forgets one ANSWER_KEEP_MS after it is done.
+const ANSWER_KEEP_MS = 10 * 60 * 1000;
+const answers = Object.create(null);
+
+function chatSend(lines) {
+  const id = require('crypto').randomBytes(8).toString('hex');
+  const system = PREAMBLE;
+  let room = PROMPT_ROOM - bytes(system);
+  const window = [];
+  for (let i = lines.length - 1; i >= 0; i--) {
+    const role = lines[i].role === 'assistant' ? 'assistant' : 'user';
+    const content = String(lines[i].text || '');
+    const cost = bytes(content);
+    if (cost > room) break;
+    room -= cost;
+    window.unshift({ role: role, content: content });
+  }
+  const messages = [{ role: 'system', content: system }].concat(window);
+  answers[id] = { done: false, text: '', at: Date.now() };
+  askModel(messages).then(function (content) {
+    answers[id] = { done: true, text: content, at: Date.now() };
+  }, function (e) {
+    answers[id] = { done: true, text: '(the model did not answer: ' + e.message + ')', at: Date.now() };
+  });
+  Object.keys(answers).forEach(function (k) { if (answers[k].done && Date.now() - answers[k].at > ANSWER_KEEP_MS) delete answers[k]; });
+  return { id: id };
+}
+
+function chatAnswer(id) {
+  const a = answers[String(id)];
+  if (!a) throw { refusal: 'bad-request', extra: { why: 'no such answer' } };
+  return { done: a.done, text: a.text };
 }
 
 // ── THE ANSWER, IN LINES UNDER THE ROOM (goal/G10.3 point 8) ──────────
@@ -351,6 +461,23 @@ appServer.serve({
   state: {
     request: {}, reply: { connected: true, persona: '', model: '' },
     handler: function () { return { connected: connected, persona: PERSONA, model: MODEL }; },
+  },
+  // THE MODEL LINE AND THE CHAT BOX (goal/G14.4): what deskUnslothRemote reads and presses.
+  models: {
+    request: {}, reply: { active: '', models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
+    handler: function () { return models(); },
+  },
+  'model.load': {
+    request: { id: '' }, reply: { model: '', loaded: true },
+    handler: function (a) { return loadModel(String(a.id)); },
+  },
+  'chat.send': {
+    request: { lines: [{ role: '', text: '' }] }, reply: { id: '' },
+    handler: function (a) { return chatSend(Array.isArray(a.lines) ? a.lines : []); },
+  },
+  'chat.answer': {
+    request: { id: '' }, reply: { done: true, text: '' },
+    handler: function (a) { return chatAnswer(a.id); },
   },
 }, { dependencies: [] });
 
