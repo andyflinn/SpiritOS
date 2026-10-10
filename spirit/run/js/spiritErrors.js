@@ -72,17 +72,25 @@ var BY_CODE = Object.create(null);
 var BY_TEXT = Object.create(null);
 var BY_PREFIX = [];
 
-let code = 0;
+// THE NUMBER IS ASSIGNED HERE, NEVER CHOSEN (Andy, 2026-10-10, bc28b883: "the code should be
+// auto-assigned, or there will be duplicates", "with no interface change"). The interface the
+// tree has is the NAME: every caller looks a refusal up by it (byCode, appClient, appServer,
+// the relay, the face). So the name stays `code`; the number comes beside it as `id`, counting
+// up in declaration order so no two entries share one; and a second define of a name already
+// declared is refused rather than shadowing the first, which is the duplicate a process
+// declaring its own refusals (define is exported) could otherwise slip into the node's set.
+let nextId = 0;
 
 // `texts` are the exact sentences the tree emits today. `prefixes` are
 // for sentences built at runtime ("gave up after 3 attempt(s)").
 // `alsoStatus` records a status the same condition is ALSO emitted with,
 // which is always an inconsistency worth knowing about rather than a
 // feature.
-function define(dummy, e) {
-
+function define(code, e) {
+  if (BY_CODE[code]) throw new Error('spiritErrors: ' + code + ' is already declared');
   var entry = {
-    code: ++code,
+    code: code,
+    id: ++nextId,
     status: e.status,
     text: e.texts ? e.texts[0] : (e.prefixes ? e.prefixes[0] : code),
     texts: e.texts || [],
