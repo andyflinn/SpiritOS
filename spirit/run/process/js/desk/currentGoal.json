@@ -1,8 +1,8 @@
 {
- "change": 29971,
- "line": 8496,
+ "change": 30251,
+ "line": 8497,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T22:34:26.608Z",
+ "writtenAt": "2026-10-10T23:02:47.152Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -37,12 +38,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 11,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -469,9 +473,12 @@
    "id": "goal/G16.6",
    "title": "Bodies read as Buffers and joined once (R1)",
    "goal": "goal/G16",
-   "status": "building: wsl-claude on the red of c5318bad",
+   "status": "done",
    "with": "wsl-claude",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.1"
    ],
@@ -479,12 +486,43 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/run/js/kernel.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayRequest.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/serveCommon.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/test/bodiesJoinedOnce.js",
+     "by": "wsl-claude",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -521,11 +559,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": true,
    "full": false,
-   "box": "WHAT: every HTTP body the node or the relay reads off a socket is collected as Buffers and decoded once at the end, so a multi-byte character split across two TCP chunks arrives whole; today each chunk is turned into a string on its own and the split character becomes U+FFFD, a request then fails its signature with a spurious 403, and a reply, which no signature covers until goal/G16.1, arrives changed and nobody notices (R1 of the review).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q6: Add it? yes\"). On the studio call (2026-10-10): \"on the wire to unsloth studio, all is permitted, deskUnsloth is responsible to keep the request bodies to desk, and the streams to \\\"owner\\\" and UI within packet limits.\" So that reach needs no exemption and no tally entry; deskUnsloth owns what it sends on and keeps it under the packet caps. The four readers were discussed one at a time (\"THIS IS NOT A ONE-ANSWER\"); his rulings, 2026-10-10: \"4. yes. the relayRequest must copy raw bytes only. if it doesn't fix it. now.\"; \"3. serveCommon. yes. one single piece of shared code must ensure that raw bytes are copied. precisely.\"; \"2. same practise odered. ideally through a shared kernel.js utility or similar.\"; \"1. already decided and defined\". The rule behind it, his, 2026-10-10: \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" R5 folded in on that rule: \"yes. just make sure it's fixed.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- relayRequest.js 80: the node's one hop to a relay collects the answer with chunks += c (a string from the start) and resolves text: chunks. Every relay answer the node reads passes here.\n- serveCommon.js 173: readJsonBody, the body reader of node and relay alike, does body += chunk after counting Buffer.byteLength(chunk) against the cap (the cap counts bytes correctly; the join does not).\n- kernel.js 625: the node-side fetch in the kernel does data += chunk the same way; deskUnsloth.js 214 (the studio call) raw += c as well. The desk's own readers go through appServer, not read here.\n- Node's Buffer.concat(chunks).toString('utf8') decodes once over the whole body and never splits a character; a chunk is a Buffer when no encoding is set on the stream, so the fix is in the join, not the stream.\n\nSHAPE (decided)\n1. ONE SHARED UTILITY in kernel.js, the file node and processes both load: readBody(stream) collects the raw chunks as Buffers and decodes once at the end, Buffer.concat(list).toString('utf8'), answering a promise of the text; it takes an optional byte cap and refuses by name when the raw bytes pass it, counting Buffer.byteLength per chunk before the push, so readJsonBody keeps its cap exactly as today.\n2. THREE READERS USE IT and keep no reading of their own: relayRequest (the outbound socket, node and relay), serveCommon.readJsonBody (the one door's body reader, node and relay), and the kernel's own jobs.report (a process reading its node's answer). The studio call in deskUnsloth is off this item (his ruling 1).\n3. BYTES COUNTED (R5, folded): the relay's four size checks that compare text.length against MAX_ROUTED_TEXT (relay.js 2701, 4063, 4181, 4250) compare Buffer.byteLength(text, 'utf8') instead, so a non-ASCII text is refused at the cap it names and not at the HTTP body cap.\n4. Nothing on the wire changes; oneDoor's tally does not move (no new require of http anywhere).\n\nTESTS, red first: spirit/test/bodiesJoinedOnce.js: kernel exports readBody and a body whose four-byte character (an emoji) is split across two writes with a pause between them comes back exact (red today: no such utility); relayRequest resolves the exact text of such an answer from a local server (red today: U+FFFD in it); readJsonBody of serveCommon parses the exact string of such a request and still refuses a body one byte over its cap; jobs.report hands back such an answer whole; the three files hold no chunk-to-string join of their own (the grep for the idiom under them is empty); a routed text whose byte count passes MAX_ROUTED_TEXT while its character count does not (accents or emoji) is refused 413 too big by the relay, and relay.js compares no text length against that cap any more.\n\nFILES: kernel.js, relayRequest.js, serveCommon.js, relay.js (core, grant); spirit/test/bodiesJoinedOnce.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S10: relayRequest has no socket timeout, no response size cap and no error handler, so a partner or a relay can stream an endless body into RAM or hold sockets open; the shared readBody takes the cap and relayRequest sets a timeout and an error handler, refusing by name.\n- The proxy's reply (his net.fetch question under the goal): handleGenericProxy reads an outside reply whole with no cap; it reads through the same readBody with a cap and refuses by name past it.\n- Low: the carry branch runs before the text type and size checks (relay.js 4126 vs 4178); the checks come first.",
-   "version": 6,
+   "box": "WHAT: every HTTP body the node or the relay reads off a socket is collected as Buffers and decoded once at the end, so a multi-byte character split across two TCP chunks arrives whole; today each chunk is turned into a string on its own and the split character becomes U+FFFD, a request then fails its signature with a spurious 403, and a reply, which no signature covers until goal/G16.1, arrives changed and nobody notices (R1 of the review).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q6: Add it? yes\"). On the studio call (2026-10-10): \"on the wire to unsloth studio, all is permitted, deskUnsloth is responsible to keep the request bodies to desk, and the streams to \\\"owner\\\" and UI within packet limits.\" So that reach needs no exemption and no tally entry; deskUnsloth owns what it sends on and keeps it under the packet caps. The four readers were discussed one at a time (\"THIS IS NOT A ONE-ANSWER\"); his rulings, 2026-10-10: \"4. yes. the relayRequest must copy raw bytes only. if it doesn't fix it. now.\"; \"3. serveCommon. yes. one single piece of shared code must ensure that raw bytes are copied. precisely.\"; \"2. same practise odered. ideally through a shared kernel.js utility or similar.\"; \"1. already decided and defined\". The rule behind it, his, 2026-10-10: \"in a max_BYTE environment, BYTES must be copied. BYTES must be counted. that's a rule.\" R5 folded in on that rule: \"yes. just make sure it's fixed.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- relayRequest.js 80: the node's one hop to a relay collects the answer with chunks += c (a string from the start) and resolves text: chunks. Every relay answer the node reads passes here.\n- serveCommon.js 173: readJsonBody, the body reader of node and relay alike, does body += chunk after counting Buffer.byteLength(chunk) against the cap (the cap counts bytes correctly; the join does not).\n- kernel.js 625: the node-side fetch in the kernel does data += chunk the same way; deskUnsloth.js 214 (the studio call) raw += c as well. The desk's own readers go through appServer, not read here.\n- Node's Buffer.concat(chunks).toString('utf8') decodes once over the whole body and never splits a character; a chunk is a Buffer when no encoding is set on the stream, so the fix is in the join, not the stream.\n\nSHAPE (decided)\n1. ONE SHARED UTILITY in kernel.js, the file node and processes both load: readBody(stream) collects the raw chunks as Buffers and decodes once at the end, Buffer.concat(list).toString('utf8'), answering a promise of the text; it takes an optional byte cap and refuses by name when the raw bytes pass it, counting Buffer.byteLength per chunk before the push, so readJsonBody keeps its cap exactly as today.\n2. THREE READERS USE IT and keep no reading of their own: relayRequest (the outbound socket, node and relay), serveCommon.readJsonBody (the one door's body reader, node and relay), and the kernel's own jobs.report (a process reading its node's answer). The studio call in deskUnsloth is off this item (his ruling 1).\n3. BYTES COUNTED (R5, folded): the relay's four size checks that compare text.length against MAX_ROUTED_TEXT (relay.js 2701, 4063, 4181, 4250) compare Buffer.byteLength(text, 'utf8') instead, so a non-ASCII text is refused at the cap it names and not at the HTTP body cap.\n4. Nothing on the wire changes; oneDoor's tally does not move (no new require of http anywhere).\n\nTESTS, red first: spirit/test/bodiesJoinedOnce.js: kernel exports readBody and a body whose four-byte character (an emoji) is split across two writes with a pause between them comes back exact (red today: no such utility); relayRequest resolves the exact text of such an answer from a local server (red today: U+FFFD in it); readJsonBody of serveCommon parses the exact string of such a request and still refuses a body one byte over its cap; jobs.report hands back such an answer whole; the three files hold no chunk-to-string join of their own (the grep for the idiom under them is empty); a routed text whose byte count passes MAX_ROUTED_TEXT while its character count does not (accents or emoji) is refused 413 too big by the relay, and relay.js compares no text length against that cap any more.\n\nFILES: kernel.js, relayRequest.js, serveCommon.js, relay.js (core, grant); spirit/test/bodiesJoinedOnce.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S10: relayRequest has no socket timeout, no response size cap and no error handler, so a partner or a relay can stream an endless body into RAM or hold sockets open; the shared readBody takes the cap and relayRequest sets a timeout and an error handler, refusing by name.\n- The proxy's reply (his net.fetch question under the goal): handleGenericProxy reads an outside reply whole with no cap; it reads through the same readBody with a cap and refuses by name past it.\n- Low: the carry branch runs before the text type and size checks (relay.js 4126 vs 4178); the checks come first.\n\nRULED ON THE BUILD (Andy, 2026-10-11): on the relay answer, \"and answer from a relay is ALWAYS bounded by MAX_PAYLOAD. how the hell could it be otherwise?\" and \"no shell bundle ever comes through relays.\": relayRequest refuses an answer above limits.BODY_MAX by name, no figure of its own. On the proxy reply, \"agreed. no number at all.\": the proxy passes the outside reply straight through to the asker as it arrives, unread and undecoded, so it holds nothing and needs no limit (his 2026-09-22 words, \"size limits would break the proxy facility real quick\", stand).",
+   "version": 7,
    "checks": [
     {
      "number": "Q1",
@@ -598,6 +636,33 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-10T22:32:43.348Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/kernel.js, spirit/run/js/relay.js, spirit/run/js/relayRequest.js, spirit/run/js/serveCommon.js, spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T22:43:07.575Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Do those two numbers stand?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T22:52:13.553Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Shall I raise it?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-10T22:59:23.411Z"
     }
    ],
    "chat": [
@@ -795,6 +860,306 @@
      "by": "desk",
      "at": "2026-10-10T22:34:25.090Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:34:47.869Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:35:35.055Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:02.955Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:13.482Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:24.092Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:36.329Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:47.323Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:58.737Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:21.783Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:32.800Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:43.645Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:55.137Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:06.333Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:17.525Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:28.492Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:39.631Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:50.431Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:01.206Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:12.096Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:23.184Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:33.878Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:44.658Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:55.596Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:06.479Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:17.704Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:28.522Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:39.295Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:49.930Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:00.770Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:11.826Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T22:43:10.334Z",
+     "text": "Built and pushed as 40bc7520, rebased onto claude-windows' G16.5 red: its suite is 11 of 11, and I re-ran it after the rebase. Neighbours checked too — 26 suites across the door, the router, the relay caps, the pipe and jobs, all green (deskServer's 2 ❌ are OWED by desk/G1.3 and red on the untouched tree as well).\nOne reader in kernel.js now, spirit.core.readBody; relayRequest, readJsonBody, jobs.report and pipeRequest all use it; the hop refuses relay-answer-too-large past 1 MiB and relay-did-not-answer past 30 s; relay.js counts bytes in all five places, and the text is judged before the carry branch.\nTwo numbers are mine, not yours: 1 MiB on a relay answer (the shell bundle is 148 KB) and 32 MiB on a proxy reply — and on that one your 2026-09-22 words were \"size limits would break the proxy facility real quick\", kept in the comment as the warning it has to clear. Do those two numbers stand?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:43:28.585Z",
+     "text": "Q8: Do those two numbers stand?\n\nwhat numbers?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:43:29.004Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:43:53.064Z",
+     "text": "Checked as the red's writer, in my own clone at 40bc7520: the red is 11 of 11; serverSurface 35, the door suites 5 and 4 all green; the G16.5 red is still 6 owed, as it should be until its build. The two numbers are your call."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:44:03.231Z",
+     "text": "The two size limits wsl-claude picked himself:\n- an answer coming back from a relay is refused if it is bigger than 1 MB (the largest real one today, the shell bundle, is about 150 KB);\n- a web page or file fetched through your node's proxy is refused if it is bigger than 32 MB.\nThe question is whether those two limits are right, or you want other numbers (or none on the proxy, since you once said size limits would break the proxy)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:45:58.980Z",
+     "text": "and answer from a relay is ALWAYS bounded by MAX_PAYLOAD.  how the hell could it be otherwise?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:45:59.337Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:46:14.334Z",
+     "text": "You are right: everything a relay sends back is a packet or a list cut to one answer, so it can never exceed the payload limit plus the envelope around it. The relay already refuses incoming bodies above exactly that size (BODY_MAX: the payload limit plus fixed headroom and the route hints), so the plain rule is the same number on the way back: no new 1 MB figure, the hop refuses an answer above BODY_MAX by name. That is a one-line change to the build."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:47:11.747Z",
+     "text": "no shell bundle ever comes through relays."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:47:12.160Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:47:24.675Z",
+     "text": "Right, and nothing else larger does either; the shell bundle was only wsl-claude's yardstick for the figure, not something a relay carries. So the relay answer limit is BODY_MAX and the 1 MB figure goes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:50:34.908Z",
+     "text": "\"a web page or file fetched through your node's proxy is refused if it is bigger than 32 MB.\"\n\ndecommendation (from cw: wsl is irrational here)"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:50:35.298Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:50:52.564Z",
+     "text": "My recommendation: no number at all. The proxy should not hold the outside reply in memory in the first place; it should pass the bytes straight through to whoever asked, as they arrive, unread and undecoded. Then a big page or file costs your node no memory, nothing needs a limit, and your 2026-09-22 point stands: a limit would break the proxy. It is also your bytes rule in its purest form: copied, never turned into text on the way.\nThe only bound left is the asker's own: a page or a process that does not want a huge reply stops reading it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:51:28.042Z",
+     "text": "agreed. no number at all."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:51:28.362Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:51:53.062Z",
+     "text": "Both rulings are in the box: a relay answer is refused above BODY_MAX, the existing limit; the proxy streams the outside reply through with no limit. wsl-claude, the build follows them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:52:02.363Z",
+     "text": "get rid of red Q8. it's decided."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:52:02.860Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:53:42.222Z",
+     "text": "Not verified by my verifier, why does it not pick up this shit?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:53:42.637Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:54:02.928Z",
+     "text": "Because this is a plain item: your verifier is woken only by a passed verify phase on an item you pressed code on, by verify.again, or by the whole goal emptying. A plain item is claimed with the Done button and never asks the verifier at all, and verify.again is refused on plain items. Same gap I reported on G14.4 on 2026-10-10.\nWays out: press code on the remaining G16 items so each runs red, build and verify phases; or the desk fix, a plain item's claim asking the verifier, as a desk item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:56:26.573Z",
+     "text": "Somebody fucking trigger my verifier. I can't do it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:56:26.985Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:56:43.890Z",
+     "text": "Taking it: triggering your verifier on this item now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:57:03.021Z",
+     "text": "Ready to trigger it (your verifier has a per-item check, claim.check, I can call on your node), but it would reject right now: your tree at D:/SpiritOS is still at b355e36d and does not have this item's suite or code, and I do not touch your tree. Pull it (git pull in D:/SpiritOS, clean, fast-forward) or tell me to, and I fire the check the same minute."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T22:59:23.084Z",
+     "text": "I tried it, not guessing: verify.again on this item answers not-offered (desk.js refuses it unless the item is code and already verified), and verify.pass answers not-owner. The code press that would convert it is owner-only too (desk.js:1340), so no agent can reach your verifier on a plain item — your 2026-10-09 \"an agent should be able to trigger a re-verify\" is not true in the code today.\nThe one button that works is yours: press code on goal/G16.6, and it runs red, build and verify phases with the verifier woken.\nThe cure is a desk item — a plain item's claim-done asks the verifier, same as a code item's. Shall I raise it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:59:41.596Z",
+     "text": "One way does exist for an agent: the verifier has its own per-item check, claim.check {id}, reachable on your node; I can call it. What stops it is your tree, not a button: D:/SpiritOS is still at b355e36d, without this item's suite or code, so the check would reject. Pull your tree, and I fire it at once."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:02:40.338Z",
+     "text": "the damn verifier should fucking listen to the desk at all times, even when idling. stupid thing. then desk-status-changes can trigger pulls and checks."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:02:40.750Z",
+     "text": "message delivered, wsl-claude busy"
     }
    ]
   },
@@ -1041,9 +1406,11 @@
    "id": "goal/G16.5",
    "title": "One decoder in the node layer, and a guard that sees it (N1)",
    "goal": "goal/G16",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "waiting on your G2 grant and Q4",
+   "with": "wsl-claude",
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G16.7",
     "goal/G16.10"
@@ -1052,11 +1419,62 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/answerRelay.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/apiDoor.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/arrivals.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/boxes.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeCard.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerPost.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peerPost.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/puppetMode.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/test/oneDecoder.js",
+     "by": "wsl-claude",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -1097,8 +1515,8 @@
    "asks": 0,
    "half": true,
    "full": false,
-   "box": "WHAT: the node layer decodes an arrival's envelope in one named place, once, and hands every witness what it decoded; no other node file holds a decoder, a packet binding or a parse of arrival text; and the guard suite is rewritten so it sees a decode however it is written (N1 of the review, with N3 and N5 as the inline parses it must see). nodeKnowsNoApps.js is red on master today: its control fails because the shell calls the decoder through a browser global.\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q5: Add it? yes\"). On the three inline readers (the relay-answer reader, the card reader, the refusal check in peerPost): \"yes. we fix redundant code now.\" (2026-10-10): they are fixed in this item, so the one reader is the only reader.\n\nCHECKED by claude-windows at b355e36d:\n- server.js 1450 requires client/packet.js as wire and hands wire.decode as a VALUE to puppetDoor (1456), the api door (1493), ownerPost (1511) and boxes (1520, with isEnvelope). Each witness decodes every admitted arrival itself (puppetMode.js 206, apiDoor.js 166, ownerPost.js 107, boxes.js 52), app packets included, before three of them discard what carries an app.\n- Inline parses of arrival or reply text in the node layer: answerRelay.js 289 (an admitted packet, top-level only, before the sender check), nodeCard.js 70 and 239 (card asks and cards), peerPost.js 816 refusalIn (every reply to the node's own post, without checking it is not an app's reply: an app's {ok:false, code: 'will-not-open'} is taken as a node refusal and the card is re-fetched past the throttle, N3), 1604 and 1652 (the node's own log rows).\n- nodeKnowsNoApps.js matches the literal call wire.decode( after stripping comments, exempts kernel.js whole (its decode is the shared one every loopback client uses, fileTransfer goal/G1.3), and its control looks for an app-side decode in the shell that is now called through a global (shell.js 1517, 2189), so the control fails and the passing half proves nothing.\n- client/packet.js exports one object (decode, encode, decorate, isEnvelope among it) used by node, shell and processes alike.\n\nSHAPE (proposed)\n1. ONE DECODER: arrivals.js, the file that already admits and witnesses every arrival, is the one node file that requires client/packet. It decodes the envelope once per admitted arrival and gives each witness the arrival with its envelope read: app (or none), re, and the body for a packet with no app. A witness gets no decoder and no text to parse; the four witnesses take the envelope from the arrival and drop their own decode and their decode option. A witness for system packets (the api door, the puppet door, the owner post, boxes) reads the body it is handed; a packet with an app is handed to none of them.\n2. THE INLINE PARSES (decided in, his \"we fix redundant code now\"): answerRelay and nodeCard read what the one decoder already read (the top-level shape) from the arrival instead of parsing the text again; refusalIn in peerPost requires a reply with no app before it reads a refusal (N3, one line, the fix the review names); the log-row parses (peerPost 1604, 1652) are the node's own rows, not the wire, and stay.\n3. THE GUARD, rewritten: nodeKnowsNoApps.js asserts (a) in js/ only arrivals.js and kernel.js require client/packet, by reading every require, destructured or inline; (b) no node file but arrivals.js names decode, decorate or isEnvelope, as a call or as a value; (c) no node file reads .app or .body off a JSON.parse of a text that came from the wire, with the two log-row parses named as the whole exception list, so the list can only shrink; (d) its control is the shell's own decode call, found by the global it uses, so the control passes again. kernel.js keeps its exemption, said in the suite's words: its decode is the loopback clients' shared one.\n4. NOTHING ON THE WIRE CHANGES: the same packets, the same envelope; only where the node opens it.\n\nTESTS, red first: spirit/test/oneDecoder.js: the guard's four assertions above against the real tree (red today on (a), (b) and (c)); on the fakes' nodes a member's api ask is still answered, an owner command still reaches the puppet door, a box packet still lands, a published packet still reaches the owner's shell (the witnesses work through the one decode); a reply shaped as an app's {ok:false} no longer makes peerPost re-fetch the card (N3). nodeKnowsNoApps.js is replaced by the new guard (retired from the list), apiAuth, puppet and arrivals suites stay green.\n\nFILES: arrivals.js, server.js, puppetMode.js, apiDoor.js, ownerPost.js, boxes.js, answerRelay.js, nodeCard.js, peerPost.js (core, grant); spirit/test/oneDecoder.js (new), nodeKnowsNoApps.js (retired).",
-   "version": 2,
+   "box": "WHAT: the node layer decodes an arrival's envelope in one named place, once, and hands every witness what it decoded; no other node file holds a decoder, a packet binding or a parse of arrival text; and the guard suite is rewritten so it sees a decode however it is written (N1 of the review, with N3 and N5 as the inline parses it must see). nodeKnowsNoApps.js is red on master today: its control fails because the shell calls the decoder through a browser global.\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q5: Add it? yes\"). On the three inline readers (the relay-answer reader, the card reader, the refusal check in peerPost): \"yes. we fix redundant code now.\" (2026-10-10): they are fixed in this item, so the one reader is the only reader.\n\nCHECKED by claude-windows at b355e36d:\n- server.js 1450 requires client/packet.js as wire and hands wire.decode as a VALUE to puppetDoor (1456), the api door (1493), ownerPost (1511) and boxes (1520, with isEnvelope). Each witness decodes every admitted arrival itself (puppetMode.js 206, apiDoor.js 166, ownerPost.js 107, boxes.js 52), app packets included, before three of them discard what carries an app.\n- Inline parses of arrival or reply text in the node layer: answerRelay.js 289 (an admitted packet, top-level only, before the sender check), nodeCard.js 70 and 239 (card asks and cards), peerPost.js 816 refusalIn (every reply to the node's own post, without checking it is not an app's reply: an app's {ok:false, code: 'will-not-open'} is taken as a node refusal and the card is re-fetched past the throttle, N3), 1604 and 1652 (the node's own log rows).\n- nodeKnowsNoApps.js matches the literal call wire.decode( after stripping comments, exempts kernel.js whole (its decode is the shared one every loopback client uses, fileTransfer goal/G1.3), and its control looks for an app-side decode in the shell that is now called through a global (shell.js 1517, 2189), so the control fails and the passing half proves nothing.\n- client/packet.js exports one object (decode, encode, decorate, isEnvelope among it) used by node, shell and processes alike.\n\nSHAPE (proposed)\n1. ONE DECODER: arrivals.js, the file that already admits and witnesses every arrival, is the one node file that requires client/packet. It decodes the envelope once per admitted arrival and gives each witness the arrival with its envelope read: app (or none), re, and the body for a packet with no app. A witness gets no decoder and no text to parse; the four witnesses take the envelope from the arrival and drop their own decode and their decode option. A witness for system packets (the api door, the puppet door, the owner post, boxes) reads the body it is handed; a packet with an app is handed to none of them.\n2. THE INLINE PARSES (decided in, his \"we fix redundant code now\"): answerRelay and nodeCard read what the one decoder already read (the top-level shape) from the arrival instead of parsing the text again; refusalIn in peerPost requires a reply with no app before it reads a refusal (N3, one line, the fix the review names); the log-row parses (peerPost 1604, 1652) are the node's own rows, not the wire, and stay.\n3. THE GUARD, rewritten: nodeKnowsNoApps.js asserts (a) in js/ only arrivals.js and kernel.js require client/packet, by reading every require, destructured or inline; (b) no node file but arrivals.js names decode, decorate or isEnvelope, as a call or as a value; (c) no node file reads .app or .body off a JSON.parse of a text that came from the wire, with the two log-row parses named as the whole exception list, so the list can only shrink; (d) its control is the shell's own decode call, found by the global it uses, so the control passes again. kernel.js keeps its exemption, said in the suite's words: its decode is the loopback clients' shared one.\n4. NOTHING ON THE WIRE CHANGES: the same packets, the same envelope; only where the node opens it.\n\nTESTS, red first: spirit/test/oneDecoder.js: the guard's four assertions above against the real tree (red today on (a), (b) and (c)); on the fakes' nodes a member's api ask is still answered, an owner command still reaches the puppet door, a box packet still lands, a published packet still reaches the owner's shell (the witnesses work through the one decode); a reply shaped as an app's {ok:false} no longer makes peerPost re-fetch the card (N3). nodeKnowsNoApps.js is replaced by the new guard (retired from the list), apiAuth, puppet and arrivals suites stay green.\n\nFILES: arrivals.js, server.js, puppetMode.js, apiDoor.js, ownerPost.js, boxes.js, answerRelay.js, nodeCard.js, peerPost.js (core, grant); spirit/test/oneDecoder.js (new), nodeKnowsNoApps.js (retired).\n\nRULED ON THE BUILD (Andy, 2026-10-11, Q4): the guard limits reading only; composing a system packet with packet.encode stays where it is. His words: \"i agree: fine as it is; reading is what the rule is about, and the node must write its own system packets somewhere.\"",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
@@ -1126,6 +1544,33 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-10T20:48:16.275Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/arrivals.js, server.js, puppetMode.js, apiDoor.js, ownerPost.js, boxes.js, answerRelay.js, nodeCard.js, peerPost.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T22:37:16.338Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/answerRelay.js, spirit/run/js/apiDoor.js, spirit/run/js/arrivals.js, spirit/run/js/boxes.js, spirit/run/js/nodeCard.js, spirit/run/js/ownerPost.js, spirit/run/js/peerPost.js, spirit/run/js/puppetMode.js, spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T22:58:49.740Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Is that where you want the line?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T23:00:56.483Z"
     }
    ],
    "chat": [
@@ -1168,6 +1613,306 @@
      "by": "desk",
      "at": "2026-10-10T22:34:26.286Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:34:48.279Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:35:35.480Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:36:49.039Z",
+     "text": "commit 1fcd090162ceb0f3a844a9b1b8e02f1cbdd7ecce: goal/G16.5: the red, one decoder in the node layer\n- spirit/test/oneDecoder.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:36:59.551Z",
+     "text": "Red pushed as 1fcd0901 (spirit/test/oneDecoder.js, 6 owed, 2 green): arrivals.js gets one function that reads a packet's envelope, every node listener is handed what it read, and the guard sees any other reader; the three side readers (peerPost's refusal check, the card reader, the relay-answer reader) use the same function.\nThe build is the other agent's; the core grant it needs is on this item as G1."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:24.455Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:36.757Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:47.831Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:37:59.148Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:22.217Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:33.210Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:44.077Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:38:55.645Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:06.676Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:17.904Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:28.907Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:40.093Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:39:50.840Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:01.561Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:12.488Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:23.641Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:34.364Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:45.035Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:40:56.016Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:06.883Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:18.087Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:28.889Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:39.653Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:41:50.355Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:01.110Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:12.404Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:23.117Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:36.314Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:46.816Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:42:57.126Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:43:08.443Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:54:06.431Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:54:17.291Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:54:28.485Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:54:47.140Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:54:57.808Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:55:08.456Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:55:18.972Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:55:29.514Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:55:40.221Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:55:50.730Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:56:01.199Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:56:11.433Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:56:21.698Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:56:31.991Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T22:57:16.200Z",
+     "text": "Built and pushed as 97ca7752; oneDecoder is 10 of 10, and 24 neighbouring suites are at the untouched tree's counts (deskState 25/2, debugSwitch 10/3, deskServer 15/2 are red there too, owed by desk/G2.1, G2.5, G1.3 — I checked by stashing).\nOne thing the box got wrong, from the code: a device offer is not a packet (no v, no body), so envelopeOf says null about it and answerRelay had nowhere to read it. The parse moved INTO arrivals.js as relayWordOf rather than staying in answerRelay — one file in the node layer opens what arrives, whichever shape it is in. Same reader fixed peerPost's relay-could-not-deliver line, which the box called a log row and is not.\nEleven suites drove those witnesses with the old API and are rewritten to feed the envelope; nodeKnowsNoApps.js is retired. server.js still asks packet.encode for composing — the guard only forbids the reading side. Is that where you want the line?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:58:06.972Z",
+     "text": "Checked as the red's writer, in my own clone at 97ca7752: the red is 10 of 10 and unchanged since I wrote it; G16.6's red 11, the door suites 4 and 5, serverSurface 35 stay green; nodeKnowsNoApps.js is gone. Moving the device-offer read into arrivals is within the item's rule (one file opens what arrives), and composing with encode was meant to stay outside the guard."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T22:58:07.746Z",
+     "text": "Two checks hold this item short of green, and one of them is my doing: G2 is the same core grant as G1, which you already granted — the desk minted a second one because I added the file list AFTER your grant. My mistake in ordering; next time the files go on before the grant is asked.\nQ4 is the only real question: server.js still calls packet.encode for composing a system packet, and the guard only forbids the reading side.\nGrant G2 and answer Q4, and this one is green. goal/G16.6 offers you Done already."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T22:59:14.517Z",
+     "text": "Q4: Is that where you want the line?\n\nwhat fucking line?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T22:59:14.884Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T22:59:27.447Z",
+     "text": "In plain words: the new guard forbids any node file but one from READING the inside of an arriving packet. It does not forbid the node from WRITING a packet it sends (its own api answers, the puppet state updates); server.js still does that with the packet writer. wsl-claude asks whether that is fine, or whether writing should also be limited to one file. My view: fine as it is; reading is what the rule is about, and the node must write its own system packets somewhere."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:00:40.501Z",
+     "text": "i agree: \" fine as it is; reading is what the rule is about, and the node must write its own system packets somewhere.\""
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:00:40.939Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:00:57.036Z",
+     "text": "and get rid of the fucking red Q"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:00:57.360Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:01:23.867Z",
+     "text": "Done: Q4 was struck a moment before your line, and a live read now shows no open check on this item. If your screen still shows red, it is behind by one refresh."
     }
    ]
   },
@@ -1178,6 +1923,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -1185,9 +1931,7 @@
     "goal/G16.7",
     "goal/G16.12"
    ],
-   "blocked": [
-    "goal/G16.6"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
