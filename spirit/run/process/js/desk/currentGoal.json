@@ -1,8 +1,8 @@
 {
- "change": 31919,
+ "change": 31920,
  "line": 8505,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T02:33:00.637Z",
+ "writtenAt": "2026-10-11T02:33:03.034Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -4465,10 +4465,9 @@
    "id": "goal/G16.12",
    "title": "Replay windows on the relay's signatures (S5, S8, S9)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
