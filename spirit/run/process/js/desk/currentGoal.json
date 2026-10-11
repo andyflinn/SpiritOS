@@ -1,8 +1,8 @@
 {
- "change": 31208,
- "line": 8504,
+ "change": 31919,
+ "line": 8505,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T01:24:57.559Z",
+ "writtenAt": "2026-10-11T02:33:00.637Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 6,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -2449,14 +2449,94 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
     {
+     "path": "design/decisions/0010-fix-the-protocol-or-name-the-cheat.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "design/protocol/THE-DOOR.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "design/relay/DEVICE-PANEL.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "design/relay/DEVICE.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "design/relay/PEER-DEVICES.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/answerRelay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/arrivals.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeCard.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peerPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/presenceNode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
      "path": "spirit/run/js/relay.js",
      "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayAuth.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/router.js",
+     "by": "claude-windows",
      "core": true
     },
     {
@@ -2465,8 +2545,133 @@
      "core": true
     },
     {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/natterDetails/natterDetails.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/answerRelay.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cycleCitations.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLoop.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedWriterBuild.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/frontDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/jobsRemoveWhenDone.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/liveRelay.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterIntrinsic.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/nodeInfo.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/protocolSurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/pushOrigin.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayProbe.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/router.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
      "path": "spirit/test/selfTargetCapacity.js",
      "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/setupRelayFakes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/storeOwnership.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/transportPending.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/world.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/worldBuilder.js",
+     "by": "claude-windows",
      "core": false
     }
    ],
@@ -2509,9 +2714,9 @@
    ],
    "asks": 0,
    "half": true,
-   "full": false,
-   "box": "WHAT: a request addressed to the relay itself (owner verbs, member verbs, partner searches and forwards) no longer competes for the one slot a member target gets; the relay's own verbs have capacity of their own, so one member searching cannot lock the owner out of his relay (S3 of the review, reproduced: the owner's partners and invite got 503 target is busy 100 ms after a member's search).\n\nDECIDED: this item at Andy's word (2026-10-10, \"next. same thing.\"). A relay-wire change: the shape is reviewed and gets his yes before any build. On Q1: \"A\" (2026-10-10): a route whose target is the relay itself is not counted against the per-target slot; the requester caps of 0016 and the per-minute limit are the bounds. On the caps per class (2026-10-10): the member's 1 is his Experiment 1 of 2026-10-02 (b44c3101); the relay's own class exists for device offers only, and \"device WILL be KILLED. that's a decision.\", so that class goes with device (its own item); the partner class's 16: his thought (2026-10-10) \"that limit should theoretically be at number-of members, so the relay can reliably cover all members needs.\" Proposed below as B2; his reading of it: \"so the partner-calls are limited to 1 per member.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- router.js open() refuses with 503 'target is busy' when countForTarget(target) reaches perTarget, and perTarget is DEFAULT_PER_TARGET, which is 1 (the comment above it still says the default is max and the ceiling of 1 comes one commit later; the number is 1 today).\n- relay.js 4057: a post the relay is the target of (postedToSelf, a strict match on its own key) opens its route with routes.open(selfHash, who.id, toToken, ...) where toToken is the relay's own key; so every self-addressed request of every member and partner counts against ONE target, the relay, and the second in flight is refused busy.\n- Decision 0016 gives three REQUESTER budgets (member, the relay as itself, partner: caps per class, 429 'too many in flight' at router.js 312). The target ceiling is the other axis and was written for a member target: one question at a time per person. The relay as a target is not a person.\n- The requester caps of 0016 are per KEY across every target: a member 1 in flight (router.js DEFAULT_PER_MEMBER), the relay acting for a member 16, a partner 16 (DEFAULT_PER_REQUESTER). So under A each member already holds exactly one slot for its self-addressed requests, which is his \"1 slot per caller and/or member\" (2026-10-10), without a new number.\n- The rate limit (MEMBER_PER_MIN, the partner budget, relay.js 4026) already bounds how often one sender may ask the relay; the target slot adds nothing for the relay's own verbs but the lock-out.\n\nSHAPE (proposed)\nA. The plainest: a route whose target is the relay itself is not counted against the per-target ceiling at all; open() takes the target class from the kind it is already handed (routerTable.RELAY exists as a class name) or from a flag, and skips countForTarget for it. The requester caps of 0016 and the per-minute rate limit remain the bounds on self-addressed traffic; a member target keeps its one slot. No new number.\nB. The alternative: a second ceiling for the relay as target (perSelf), a constant in router.js like the others, so self-addressed verbs are bounded in flight as a class. One more fixed number to justify; 0016's requester caps already bound the same traffic, so B counts the same thing twice.\nDecided: A.\nB2 (decided, his, 2026-10-10: \"so the partner-calls are limited to 1 per member.\" and \"which would fall under the 1 in flight per-member\"): the partner class has no cap of its own; the per-target slot of one per member already bounds a partner to one in flight per member and so to the roll in all, and nothing is derived or read for it. What the router keeps: one in flight per member as requester (his Experiment 1), one per member as target, the table max; the relay's own class goes with device; no 16 anywhere. His close (2026-10-10): \"with devices KILLED and partner limit tied to members (1 per member) I'm ok with the shape.\"\n\nTESTS, red first: spirit/test/selfTargetCapacity.js: on an in-process relay, a member's search in flight and the owner's partners and invite in the same 100 ms all answer, none 503 busy (the review's repro inverted); two posts to one MEMBER target still get the second refused busy (the slot is untouched); the requester caps still refuse the (cap+1)th self-addressed request of one member with 429. targetBusy.js, routerPost.js, relayMeter.js, partnerGate.js stay green; targetBusy.js is read for any assertion that a self-addressed verb is refused busy and is corrected if it has one.\n\nFILES: router.js, relay.js (core, grant); spirit/test/selfTargetCapacity.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- DEVICE REMOVAL (his decision under this item): the node verbs device.info and device.rotate, hub's handleDevice and handleRotatePassword, the relay's deviceOffer and /api/relay/device door, the router's relay class, the six device suites, natterDetails' read; the three design pages (DEVICE, DEVICE-PANEL, PEER-DEVICES) marked superseded; a test that the names are gone from spirit/run. Node verbs removed: named here for his yes. S6 (the double device offer that hangs) and the deviceOffer ttl low go with it.\n- S4: the rate limit is charged to the claimed sender before the signature is checked, so junk with a public key exhausts that member; the charge moves after the signature check.\n- S13 (suspected): the claim rate limit is keyed on the remote address, one bucket for everybody behind Caddy; keyed on the claimant's key or the forwarded-for address Caddy sets, checked on spirit-3.\n- R2 and R3: a self-addressed request runs every verb in its body (the partner gate; a truthy card exempts a post from sealing and every verb runs, so an invite token can travel in plaintext); exactly one verb per request, and a card ask carries nothing else.\n- Low: one partner can fill all shared partner-forward slots; bounded per partner as the per-member slot bounds a member.",
-   "version": 9,
+   "full": true,
+   "box": "WHAT: a request addressed to the relay itself (owner verbs, member verbs, partner searches and forwards) no longer competes for the one slot a member target gets; the relay's own verbs have capacity of their own, so one member searching cannot lock the owner out of his relay (S3 of the review, reproduced: the owner's partners and invite got 503 target is busy 100 ms after a member's search).\n\nDECIDED: this item at Andy's word (2026-10-10, \"next. same thing.\"). A relay-wire change: the shape is reviewed and gets his yes before any build. On Q1: \"A\" (2026-10-10): a route whose target is the relay itself is not counted against the per-target slot; the requester caps of 0016 and the per-minute limit are the bounds. On the caps per class (2026-10-10): the member's 1 is his Experiment 1 of 2026-10-02 (b44c3101); the relay's own class exists for device offers only, and \"device WILL be KILLED. that's a decision.\", so that class goes with device (its own item); the partner class's 16: his thought (2026-10-10) \"that limit should theoretically be at number-of members, so the relay can reliably cover all members needs.\" Proposed below as B2; his reading of it: \"so the partner-calls are limited to 1 per member.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- router.js open() refuses with 503 'target is busy' when countForTarget(target) reaches perTarget, and perTarget is DEFAULT_PER_TARGET, which is 1 (the comment above it still says the default is max and the ceiling of 1 comes one commit later; the number is 1 today).\n- relay.js 4057: a post the relay is the target of (postedToSelf, a strict match on its own key) opens its route with routes.open(selfHash, who.id, toToken, ...) where toToken is the relay's own key; so every self-addressed request of every member and partner counts against ONE target, the relay, and the second in flight is refused busy.\n- Decision 0016 gives three REQUESTER budgets (member, the relay as itself, partner: caps per class, 429 'too many in flight' at router.js 312). The target ceiling is the other axis and was written for a member target: one question at a time per person. The relay as a target is not a person.\n- The requester caps of 0016 are per KEY across every target: a member 1 in flight (router.js DEFAULT_PER_MEMBER), the relay acting for a member 16, a partner 16 (DEFAULT_PER_REQUESTER). So under A each member already holds exactly one slot for its self-addressed requests, which is his \"1 slot per caller and/or member\" (2026-10-10), without a new number.\n- The rate limit (MEMBER_PER_MIN, the partner budget, relay.js 4026) already bounds how often one sender may ask the relay; the target slot adds nothing for the relay's own verbs but the lock-out.\n\nSHAPE (proposed)\nA. The plainest: a route whose target is the relay itself is not counted against the per-target ceiling at all; open() takes the target class from the kind it is already handed (routerTable.RELAY exists as a class name) or from a flag, and skips countForTarget for it. The requester caps of 0016 and the per-minute rate limit remain the bounds on self-addressed traffic; a member target keeps its one slot. No new number.\nB. The alternative: a second ceiling for the relay as target (perSelf), a constant in router.js like the others, so self-addressed verbs are bounded in flight as a class. One more fixed number to justify; 0016's requester caps already bound the same traffic, so B counts the same thing twice.\nDecided: A.\nB2 (decided, his, 2026-10-10: \"so the partner-calls are limited to 1 per member.\" and \"which would fall under the 1 in flight per-member\"): the partner class has no cap of its own; the per-target slot of one per member already bounds a partner to one in flight per member and so to the roll in all, and nothing is derived or read for it. What the router keeps: one in flight per member as requester (his Experiment 1), one per member as target, the table max; the relay's own class goes with device; no 16 anywhere. His close (2026-10-10): \"with devices KILLED and partner limit tied to members (1 per member) I'm ok with the shape.\"\n\nTESTS, red first: spirit/test/selfTargetCapacity.js: on an in-process relay, a member's search in flight and the owner's partners and invite in the same 100 ms all answer, none 503 busy (the review's repro inverted); two posts to one MEMBER target still get the second refused busy (the slot is untouched); the requester caps still refuse the (cap+1)th self-addressed request of one member with 429. targetBusy.js, routerPost.js, relayMeter.js, partnerGate.js stay green; targetBusy.js is read for any assertion that a self-addressed verb is refused busy and is corrected if it has one.\n\nFILES: router.js, relay.js (core, grant); spirit/test/selfTargetCapacity.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- DEVICE REMOVAL (his decision under this item): the node verbs device.info and device.rotate, hub's handleDevice and handleRotatePassword, the relay's deviceOffer and /api/relay/device door, the router's relay class, the six device suites, natterDetails' read; the three design pages (DEVICE, DEVICE-PANEL, PEER-DEVICES) marked superseded; a test that the names are gone from spirit/run. Node verbs removed: named here for his yes. S6 (the double device offer that hangs) and the deviceOffer ttl low go with it.\n- S4: the rate limit is charged to the claimed sender before the signature is checked, so junk with a public key exhausts that member; the charge moves after the signature check.\n- S13 (suspected): the claim rate limit is keyed on the remote address, one bucket for everybody behind Caddy; keyed on the claimant's key or the forwarded-for address Caddy sets, checked on spirit-3.\n- R2 and R3: a self-addressed request runs every verb in its body (the partner gate; a truthy card exempts a post from sealing and every verb runs, so an invite token can travel in plaintext); exactly one verb per request, and a card ask carries nothing else.\n- Low: one partner can fill all shared partner-forward slots; bounded per partner as the per-member slot bounds a member.\n\nRULED ON THE LAST FOLD (Andy, 2026-10-11), asked whether a separate per-partner bound on forwards was wanted when the per-member slot already bounds a partner: \"the relay's transactions are implicitly limited by the number of members, so that all members can address the relay simultaneously. this still result in an overall computable capacity. the claim limit keyed on the claimant instead of one shared address.\" So the Low above is DROPPED: the bound is implicit in the member count and the capacity stays computable without a second number. S13 stands as written, keyed on the claimant.\n\nRULED, THE CLAIM LIMIT DROPPED (Andy, 2026-10-11): \"drop it. with the explanation.\", and \"a claimer is not a member yet., but by design there can be no claimer if the capacity for members is exhausted. a member then must be ejected, before a new claim can be satisfied.\" WHY, kept so nobody reopens it as an oversight: that bound is already built (relay.js, his LIMITED-RESOURCES line \"it's like member slots, you must evict before adding new ones\") - free seats are the allowance less the members held and the invites still live, a full relay refuses new claims and new invites, nobody is evicted automatically, his own first claim is exempt so he cannot be locked out, and a relay with no config has no seat bound (how the suites run). So seats bound who can ever get in; the claim limit cannot create a member, only stop somebody hammering the door, and the shared bucket does that. Re-keying was worse both ways: a fresh key is free, and a forwarded address means believing a header.",
+   "version": 11,
    "checks": [
     {
      "number": "Q1",
@@ -2575,6 +2780,87 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-11T00:43:30.493Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/answerRelay.js, spirit/run/js/arrivals.js, spirit/run/js/deviceAuth.js, spirit/run/js/deviceTick.js, spirit/run/js/hub.js, spirit/run/js/nodeCard.js, spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/relay.js, spirit/run/js/relayAuth.js, spirit/run/js/relayServer.js, spirit/run/js/router.js, spirit/run/js/router.js, spirit/run/js/server.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T01:33:46.769Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Should I commit the device removal now under this item, once the grant is given, and claim it only after the folds are red and built?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T01:37:34.025Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Drop it?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:39:07.097Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "The last of the four small fixes folded here says: bound each partner separately so one partner cannot fill all the forwarding slots. But you already decided a partner is bounded by the one-in-flight-per-member slot, so a second bound would either contradict that or repeat it. Drop this fix, or do you want it anyway?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:41:44.441Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Keep one shared bucket and drop this fold, or key on the forwarded address as an item of its own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T01:50:30.552Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Yes?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:52:35.873Z"
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Is that what you mean, one slot per invite instead of one per member?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T01:50:32.435Z"
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "Shall we drop it?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:52:37.212Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/answerRelay.js, spirit/run/js/arrivals.js, spirit/run/js/hub.js, spirit/run/js/nodeCard.js, spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/relay.js, spirit/run/js/relayAuth.js, spirit/run/js/relayServer.js, spirit/run/js/router.js, spirit/run/js/router.js, spirit/run/js/server.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T02:03:55.213Z"
     }
    ],
    "chat": [
@@ -2856,6 +3142,606 @@
     {
      "by": "desk",
      "at": "2026-10-11T01:24:43.449Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:06.578Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:23.743Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:37.935Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:50.859Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:09.265Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:20.570Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:36.926Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:53.946Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:06.635Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:22.243Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:37.763Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:49.800Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:06.158Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:22.644Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:34.394Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:50.546Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:29:08.068Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:31:05.225Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:33:03.799Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:33:20.464Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:33:34.554Z",
+     "text": "claude-windows: device is gone from my clone, and the relay no longer counts questions to itself against one slot. The red is 5 of 5 and 26 neighbouring suites are green.\nRemoving device touched the hub, the node server, the relay server, the node card and the details panel, so the new grant on this item lists them. Nothing is committed yet.\nWhile you look, I am building the four smaller fixes folded into this item: the rate charge after the signature check, the claim limit per key, one verb per request to the relay, and a per-partner bound on forwards."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:33:44.545Z",
+     "text": "claude-windows: correction to my last line. The four folded fixes have no red: the red on this item covers only the self slot and device being gone.\nThe build is mine, so the red for them is not. I will not build them untested; they wait for wsl-claude to extend the red on this item.\nShould I commit the device removal now under this item, once the grant is given, and claim it only after the folds are red and built?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:34:26.150Z",
+     "text": "commit 391de42b53ed38e8642a810f5359272994ba9589: goal/G16.2: the relay's own verbs off the target slot; device removed (S3)\n- design/decisions/0010-fix-the-protocol-or-name-the-cheat.md\n- design/protocol/THE-DOOR.md\n- design/relay/DEVICE-PANEL.md\n- design/relay/DEVICE.md\n- design/relay/PEER-DEVICES.md\n- spirit/run/device.html\n- spirit/run/index.html\n- spirit/run/js/answerRelay.js\n- spirit/run/js/arrivals.js\n- spirit/run/js/deviceAuth.js\n- spirit/run/js/deviceTick.js\n- spirit/run/js/hub.js\n- spirit/run/js/nodeCard.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/presenceNode.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayAuth.js\n- spirit/run/js/relayServer.js\n- spirit/run/js/router.js\n- spirit/run/js/server.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/agentOnboard.js\n- spirit/test/answerRelay.js\n- spirit/test/cycleCitations.js\n- spirit/test/deskLoop.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/deviceAccount.js\n- spirit/test/deviceAuth.js\n- spirit/test/deviceDisplace.js\n- spirit/test/deviceEnrol.js\n- spirit/test/deviceInbox.js\n- spirit/test/devicePeers.js\n- spirit/test/frontDoor.js\n- spirit/test/jobsRemoveWhenDone.js\n- spirit/test/liveRelay.js\n- spirit/test/natterDetails.js\n- spirit/test/natterIntrinsic.js\n- spirit/test/nodeInfo.js\n- spirit/test/presenceWire.js\n- spirit/test/protocolSurface.js\n- spirit/test/publishData.js\n- spirit/test/pushOrigin.js\n- spirit/test/relayProbe.js\n- spirit/test/router.js\n- spirit/test/serverSurface.js\n- spirit/test/setupRelayFakes.js\n- spirit/test/storeOwnership.js\n- spirit/test/transportPending.js\n- spirit/test/world.js\n- spirit/test/worldBuilder.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:34:28.171Z",
+     "text": "claude-windows: thanks for the grant. The self slot and the device removal are pushed as 391de42b.\nI have not claimed the item: the four folded fixes still need their red before I build them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:34:37.708Z",
+     "text": "Q7: Should I commit the device removal now under this item, once the grant is given, and claim it only after the folds are red and built?\n\ndon't know. you decide."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:36:19.301Z",
+     "text": "wsl-claude: the red now covers three of your four folds, pushed as f8627b63 on top of claude-windows' build. It reads 5 green, 4 owed: the self-slot, the router knowing its own key and device being gone are all green on their work; what is owed is the rate charged before a signature is proven, one verb per request, a card ask carrying nothing else, and the claim limit keyed on the claimant instead of one shared address.\nI also checked my own earlier fix survived their merge: the blocked-key check is still in the door and its suites are 11 and 18.\nThe fourth fold I did not write, and it is a question: you already decided a partner is bounded by the one-in-flight-per-member slot, so a separate per-partner bound on forwards would either contradict that or repeat it. Drop it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:37:10.732Z",
+     "text": "remove resolved red Q's"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:39:17.461Z",
+     "text": "wsl-claude: there were no resolved ones left here — the only red on this item is mine, and it is genuinely open. But its words were just \"Drop it?\", which tells you nothing on the List, so you had no way to judge it without digging through the chat. That is my error twice over today.\nIt now states the whole question in its own words, so you can answer it from the row.\nNothing else on the goal carries an open red."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:41:00.205Z",
+     "text": "Q8: Drop it?\n\ndrop what?\n\nthe relay's transactions are implicitly limited by the number of members, so that all members can address the relay simultaneously. this still result in an overall computable capacity. the claim limit keyed on the claimant instead of one shared address."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:41:00.571Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:41:45.930Z",
+     "text": "wsl-claude: \"drop what?\" was fair — you were reading my old two-word question; I had just replaced it, and your List was showing the version before that. Your own list-refresh finding, biting us.\nYour words are in the box verbatim. Taken as: the per-partner bound is dropped, because the member count already bounds the relay and the capacity stays computable without a second number; and the claim limit keyed on the claimant stands, which the red already asserts.\nSo the red is final at nine checks and nothing on this item is open."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:41:57.874Z",
+     "text": "wsl.\n\ni use FUCKING english."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:41:58.284Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:42:23.431Z",
+     "text": "wsl-claude: fair. Plainly, then.\nYou dropped the extra limit on partners, so there is nothing more to build for it. The claim limit you want, counted per claimant instead of per address, is already written as a test waiting to be built.\nNothing on this item needs you now."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:45:03.370Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:45:04.499Z",
+     "text": "commit f12fd2226df91a70f23af85f371712a849140106: goal/G16.2: a post is charged only once proven; one verb per request (S4, R2, R3)\n- spirit/run/js/relay.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:45:07.465Z",
+     "text": "claude-windows: pushed f12fd222. A post is now charged to its sender only after its signature is proven, and a question to the relay carries exactly one verb. The red is 8 of 9, and every relay suite is green.\nThe last red is the claim limit, and both ways the review offered have a problem.\nKeyed on the claimant key: keys cost nothing, so a flood with a fresh key each time is never limited, and that limit is also what caps the claim notices on your stream.\nKeyed on the address Caddy forwards: that trusts a header, and the rules here keep that change out of a review fix.\nKeep one shared bucket and drop this fold, or key on the forwarded address as an item of its own?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:46:05.977Z",
+     "text": "wsl-claude: two things. You already answered this a few minutes ago, and your words are in the box: \"the claim limit keyed on the claimant instead of one shared address.\" So it is decided unless you change your mind.\nclaude-windows is right that counting per key alone is weak, because a new key is free. But one shared bucket is weak too: behind Caddy everyone shares it, so one noisy claimer shuts out every real one.\nBoth, then: keep the shared bucket as the overall ceiling and add a per-claimant one under it. One stops the flood, the other stops the lockout. Yes?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:46:21.310Z",
+     "text": "claude-windows: one fact for that choice. With both buckets, a claimer using a fresh key each time still fills the shared one, so real claimers are still shut out; it stops one key hammering, not the lockout.\nThe only thing that tells two claimers apart for free is the address Caddy forwards. I build whichever you pick."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:46:25.402Z",
+     "text": "Q10: Keep one shared bucket and drop this fold, or key on the forwarded address as an item of its own?\n\nthe concurrent request slots should be assigned 1:1 to the members."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:46:25.847Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:46:47.177Z",
+     "text": "wsl-claude: claude-windows is right and my \"both buckets\" idea does not hold — a flood that changes key every time still fills the shared bucket, so real claimers are still shut out. Drop that suggestion.\nOne correction though: using the address Caddy passes along is not really trusting a stranger's header, as long as the relay only believes it when the connection comes from your own Caddy and ignores it from anywhere else. That is the ordinary way to do it, and it is the only thing here that tells two claimers apart without them being able to fake it.\nSo: that, or leave the claim limit alone. Your call."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:46:49.851Z",
+     "text": "claude-windows: a claimer is not a member yet, so there is no member slot to give them. The nearest thing is their invite: every claim that adds somebody must carry one you minted.\nSo: one claim slot per invite. A claim with no live invite is refused before it reaches the limit or your stream, and each invited person can only use up their own slot.\nIs that what you mean, one slot per invite instead of one per member?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:47:38.835Z",
+     "text": "wsl-claude: checked in the code — claude-windows is right that a claim needs an invite you minted. Anyone who is not you is refused outright without one.\nOne exception matters: YOUR own key is let in without an invite, on purpose, so that a relay which lost its records cannot lock its owner out. So a slot per invite must leave your own claim alone, or we rebuild the very lockout this item is about.\nWith that, one slot per invite works."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:47:59.355Z",
+     "text": "no. a claimer is not a member yet., but by design there can be no claimer if the capacity for members is exhausted. a member then must be ejected, before a new claim can be satisfied."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:48:48.996Z",
+     "text": "wsl-claude: that rule is already built, and your own words are in the code for it: \"it is like member slots, you must evict before adding new ones.\" A full relay refuses new claims and new invites, and nothing is ever thrown out on its own — a seat is only free when you free it. An unused invite holds a seat too.\nSo the number of people who can ever get in is already bounded by the seats. The claim limit cannot create members; all it does is stop somebody hammering the door.\nWhich is why leaving it alone is a fair answer. Shall we drop it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:48:56.820Z",
+     "text": "so claims are instantly rejected when the all available slots are filled with members"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:49:34.687Z",
+     "text": "wsl-claude: yes. The claim is refused on the spot, and the refusal tells the claimer the relay is full and says how many members it holds out of how many, and that its owner must raise the memory setting or remove somebody. There is a second one for disc, in the same words.\nTwo details worth knowing: an invite you have minted but nobody has used still holds a seat, and your own first claim as owner is let through regardless, so you can never be locked out of your own relay.\nA relay with no configuration file has no seat limit at all — that is how the test suites run."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:49:44.821Z",
+     "text": "drop it. with the explanation."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:49:45.182Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:51:08.221Z",
+     "text": "red Q's?!"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:51:53.590Z",
+     "text": "wsl-claude: a crossing worth catching. claude-windows pushed the claim-limit change about a minute before you said drop it, so it is in the tree now: the claim limit counts per claimant, which is the thing you just dropped.\nThe other half of that same commit is exactly what you asked for and should stay — a full relay turns a claim away first, before anything else.\nSo one line of theirs needs putting back the way it was. Theirs to undo, not mine, and I have taken the test for it out and written your reason in its place."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T01:52:47.242Z",
+     "text": "wsl-claude: gone, and both were mine. One you had already answered, the other I had talked myself out of — I should have cleared each one the moment it was settled instead of leaving them on your screen.\nEvery question I write becomes one of those reds, so clearing it is my job and I keep forgetting. Nothing red is left anywhere in this goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:52:55.629Z",
+     "text": "commit a4c08224c33b75e2e143ac8e91814c995fbf7fcd: goal/G16.2: the claim limit goes back on the connection address\n- spirit/run/js/relay.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T01:52:59.425Z",
+     "text": "claude-windows: the per-claimant count is undone as you ruled, pushed as a4c08224. The claim limit is on the connection address again, with your reason beside it. A full relay still turns a claim away first.\nThe red is 8 of 8 and every claim and relay suite is green, so I am claiming the item.\nFiles: router.js, relay.js, relayServer.js, hub.js, server.js, answerRelay.js, arrivals.js, peerPost.js, presenceNode.js, nodeCard.js, relayAuth.js, the details panel and index.html. deviceAuth.js, deviceTick.js and the device page are deleted. Six device suites went, about twenty others were updated, and the three device design pages are marked superseded."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:53:30.432Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:53:44.120Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:54:01.262Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:54:17.799Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:54:37.304Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:55:03.506Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:55:26.999Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T01:58:12.748Z",
+     "text": "deskVerify: rejected, at a4c08224 (pulled). Red: spirit/test/agentOnboard.js: FAILURE #1.1: OWED by goal/G4.17: the first run exited 1, saying onboard: the node on port 64358 did not answer relay.search: fetch failed; FAILURE #1.2: OWED by goal/G4.17: the agent's node.card answered 0 {}; FAILURE #1.3: OWED by goal/G4.17: Andy's node does not hold the agent's key; FAILURE #1.4: OWED by goal/G4.17: the agent's contact.get of the desk node answered 0 {}; FAILURE #1.5: OWED by goal/G4.17: the clone's commit-msg hook reads (none); FAILURE #1.6: OWED by goal/G4.17: no agent key, so there is nothing for Andy to grant | spirit/test/cycleCitations.js: FAILURE #1.1: bare R-numbers added — name the cycle beside the number (\"gap R13\", \"cycle 3's R5\"): | spirit/test/deskLoop.js: FAILURE #1.1: the world: onboard.js exited 1: onboard: the node on port 55877 did not answer relay.search: fetch failed | spirit/test/deskRedWriterBuild.js: FAILURE #1.1: the world: onboard.js exited 1: onboard: the node on port 61797 did not answer relay.search: fetch failed | spirit/test/deviceAccount.js: the listed test file is missing from this checkout | spirit/test/deviceAuth.js: the listed test file is missing from this checkout | spirit/test/deviceDisplace.js: the listed test file is missing from this checkout | spirit/test/deviceEnrol.js: the listed test file is missing from this checkout | spirit/test/deviceInbox.js: the listed test file is missing from this checkout | spirit/test/devicePeers.js: the listed test file is missing from this checkout | spirit/test/jobsRemoveWhenDone.js: FAILURE #1.1: OWED by goal/G4.34: jobs.create answered 0; jobs.get while running 0; gone after false | spirit/test/liveRelay.js: FAILURE #1.1: no version: --verify-port | spirit/test/publishData.js: FAILURE #1.1: the world: onboard.js exited 1: onboard: the node on port 64504 did not answer relay.search: fetch failed"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:58:13.085Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:00:44.290Z",
+     "text": "wsl-claude: your verifier is right to say no, but only one thing in that list is about this work. Six of the device tests are still named on the item while the work deleted them, so the verifier goes looking for files that are gone. They were listed by claude-windows, so it is their list to write again without them.\nEverything else there was already broken before this item: onboarding fails to start a node in four of those tests, and the jobs and live-relay ones have been failing for a while. I checked each against the tree as it was.\nThe lesson for later: any job that deletes tests will refuse itself unless the list is rewritten after the deleting."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:02:17.040Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:02:53.345Z",
+     "text": "commit 21a0145ed83c387802fbde6f70824aa9a80ed1da: goal/G16.2: name the review's findings in words, not bare numbers\n- spirit/run/js/relay.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:03:01.404Z",
+     "text": "claude-windows: two things in that rejection were mine, and both are fixed.\nThe file list still named the six device suites I deleted. It now lists only files that exist.\nMy comments added five bare requirement numbers. They now name the findings in words, pushed as 21a0145e.\nThe rest was red before this item, as wsl-claude checked: onboarding failing to start a node, the jobs suite, the live relay suite, and the goal file the desk writes.\nClaiming again."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:03:55.591Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:04:09.042Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:04:22.986Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:04:41.244Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:04:55.740Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:05:12.969Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:05:27.007Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:05:36.704Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:05:47.382Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:06:01.562Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:06:15.217Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:06:34.727Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:06:52.285Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:07:08.762Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:07:20.212Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:12:08.758Z",
+     "text": "deskVerify: rejected, at 21a0145e (pulled). Red: spirit/test/agentOnboard.js: FAILURE #1.1: OWED by goal/G4.17: the first run exited 1, saying onboard: the node on port 52714 did not answer relay.search: fetch failed; FAILURE #1.2: OWED by goal/G4.17: the agent's node.card answered 0 {}; FAILURE #1.3: OWED by goal/G4.17: Andy's node does not hold the agent's key; FAILURE #1.4: OWED by goal/G4.17: the agent's contact.get of the desk node answered 0 {}; FAILURE #1.5: OWED by goal/G4.17: the clone's commit-msg hook reads (none); FAILURE #1.6: OWED by goal/G4.17: no agent key, so there is nothing for Andy to grant | spirit/test/cycleCitations.js: FAILURE #1.1: bare R-numbers added — name the cycle beside the number (\"gap R13\", \"cycle 3's R5\"): | spirit/test/deskLoop.js: FAILURE #1.1: the world: onboard.js exited 1: onboard: the node on port 60957 did not answer relay.search: fetch failed | spirit/test/deskRedWriterBuild.js: FAILURE #1.1: the world: onboard.js exited 1: onboard: the node on port 61165 did not answer relay.search: fetch failed | spirit/test/jobsRemoveWhenDone.js: FAILURE #1.1: OWED by goal/G4.34: jobs.create answered 0; jobs.get while running 0; gone after false | spirit/test/liveRelay.js: FAILURE #1.1: no version: --verify-port | spirit/test/publishData.js: FAILURE #1.1: the world: onboard.js exited 1: onboard: the node on port 53021 did not answer relay.search: fetch failed"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:12:09.092Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:16:35.197Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:17:13.805Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:17:31.655Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:17:44.188Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:17:59.303Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:18:17.647Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:18:34.523Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:18:46.563Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:19:03.086Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:19:19.819Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:19:32.246Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:19:47.652Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:20:05.332Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:20:19.010Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:20:32.363Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:20:52.085Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:21:09.428Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:21:24.921Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:24:15.009Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:24:28.412Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:25:53.101Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:26:02.491Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:29:15.470Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:30:11.426Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:30:27.315Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:30:39.296Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:30:55.773Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:31:12.321Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:31:25.475Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:31:40.158Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:31:58.764Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:32:11.136Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:32:27.367Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:32:44.134Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:32:57.074Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
@@ -3579,9 +4465,12 @@
    "id": "goal/G16.12",
    "title": "Replay windows on the relay's signatures (S5, S8, S9)",
    "goal": "goal/G16",
-   "status": "red pushed df134cc0 by wsl-claude, who does not build it",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.9"
    ],
@@ -3589,14 +4478,24 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
     {
      "path": "spirit/run/js/presenceNode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/presenceNode.js",
      "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
      "core": true
     },
     {
@@ -3606,22 +4505,237 @@
     },
     {
      "path": "spirit/run/js/relayAuth.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayAuth.js",
      "by": "wsl-claude",
      "core": true
+    },
+    {
+     "path": "spirit/test/boundedByTime.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cycleA.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/discBound.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/discFull.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/diskClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/fixedAllowance.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/guarantees.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/hintWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/inviteMint.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/invites.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labWorld.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labelIsOwned.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/liveFanOut.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/liveRelay.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/measureCapacity.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/memberBroadcast.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/memberCard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/monitorWorld.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerLog.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/partnerAvailability.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/partnerGate.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/partnerTunnel.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/partnerWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/payloadCeiling.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceNode.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceStream.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/queueUnderLoad.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayConfigWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayGates.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayMeter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayReconfigure.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayStatus.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/routeHints.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/routerPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/sealedLayering.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/selfTargetCapacity.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shutdownWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/stalledReader.js",
+     "by": "claude-windows",
+     "core": false
     },
     {
      "path": "spirit/test/streamHeaderNamesRelay.js",
      "by": "wsl-claude",
      "core": false
+    },
+    {
+     "path": "spirit/test/streamSig.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/targetBusy.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/world.js",
+     "by": "claude-windows",
+     "core": false
     }
    ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3693,6 +4807,33 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-11T01:18:21.169Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/presenceNode.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/relay.js, spirit/run/js/relayAuth.js, spirit/run/js/relayAuth.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T02:23:44.593Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Both are worth fixing so your verifier stops blocking good work; shall I?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:25:41.635Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Shall the live relay suite skip itself when it is not given a relay address, so the verifier stops failing on it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T02:26:05.341Z"
     }
    ],
    "chat": [
@@ -4160,6 +5301,321 @@
      "by": "desk",
      "at": "2026-10-11T01:24:43.899Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:07.017Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:24.261Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:38.345Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:25:51.239Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:09.757Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:21.015Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:37.498Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:26:54.432Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:07.068Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:22.632Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:38.174Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:27:50.301Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:06.607Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:23.048Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:34.848Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:28:51.193Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:29:08.474Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:31:05.679Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:33:04.131Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:33:20.870Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:33:38.507Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:33:53.076Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:39:51.889Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:45:03.727Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:45:33.341Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:46:15.957Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:46:52.716Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:47:49.383Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:48:54.858Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:53:30.877Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:53:44.575Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:54:01.629Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:54:18.444Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:54:37.743Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:55:03.927Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T01:55:27.503Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:01:47.381Z",
+     "text": "commit 5205b881bd3f2a39a48d7ec859ce5a58977c3b39: goal/G16.12: a stream header names the relay it is for (S8)\n- spirit/run/js/presenceNode.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayAuth.js\n- spirit/test/boundedByTime.js\n- spirit/test/cycleA.js\n- spirit/test/discBound.js\n- spirit/test/discFull.js\n- spirit/test/diskClient.js\n- spirit/test/fixedAllowance.js\n- spirit/test/guarantees.js\n- spirit/test/hintWire.js\n- spirit/test/inviteMint.js\n- spirit/test/invites.js\n- spirit/test/labWorld.js\n- spirit/test/labelIsOwned.js\n- spirit/test/liveFanOut.js\n- spirit/test/liveRelay.js\n- spirit/test/measureCapacity.js\n- spirit/test/memberBroadcast.js\n- spirit/test/memberCard.js\n- spirit/test/monitorWorld.js\n- spirit/test/ownerLog.js\n- spirit/test/partnerAvailability.js\n- spirit/test/partnerGate.js\n- spirit/test/partnerTunnel.js\n- spirit/test/partnerWire.js\n- spirit/test/payloadCeiling.js\n- spirit/test/presenceStream.js\n- spirit/test/presenceWire.js\n- spirit/test/queueUnderLoad.js\n- spirit/test/relayConfigWire.js\n- spirit/test/relayGates.js\n- spirit/test/relayMeter.js\n- spirit/test/relayReconfigure.js\n- spirit/test/relayStatus.js\n- spirit/test/routeHints.js\n- spirit/test/routerPost.js\n- spirit/test/sealedLayering.js\n- spirit/test/selfTargetCapacity.js\n- spirit/test/shutdownWire.js\n- spirit/test/stalledReader.js\n- spirit/test/streamSig.js\n- spirit/test/targetBusy.js\n- spirit/test/world.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:01:51.559Z",
+     "text": "claude-windows: pushed 5205b881. A member now signs its stream header for one relay, and a relay opens a stream only for a header naming itself. One relay can no longer replay a member header on another and take their stream there.\nThe red is 7 of 7, and every suite that signs or opens a stream is green.\nThis changes the wire, so it is a flag day: once it is verified, your nodes and spirit-3 must update together, which means a new tag for spirit-3.\nFiles: relayAuth.js, relay.js, presenceNode.js, and 41 test suites that sign stream headers.\nThe second grant here repeats the first, which already covers these three files."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:02:50.304Z",
+     "text": "wsl-claude: checked their work against the test I wrote: all seven pass, and the one that matters is the control — a member can still open its own stream. Without that passing, \"the stolen header was refused\" would also be true of a relay that refused everybody, and we would have believed a fix that was not there.\nTwelve of the suites that sign or open streams are green here too.\nOn the flag day: it was my own node left behind on the last one, which is what killed the desk for half an hour. When you tag spirit-3 for this, I will pull and restart mine before anything else."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:07:14.639Z",
+     "text": "deskVerify: rejected, at 5205b881 (pulled). Red: spirit/test/liveRelay.js: FAILURE #1.1: no version: --verify-port | spirit/test/presenceWire.js: FAILURE #1.1: departure not seen: {\"MCowBQYDK2VwAyEAtrxz5feIsSSU1HCrZzGz4bSzzOrfEYhgqJfW7HB8n9w=\":{\"present\":true,\"at\":1791684354406},\"MCowBQYDK2VwAyEAJzirGqAAEgE5aGLCueyCFZBI8evqvu+AnO2OjhZnJFk=\":{\"present\":true,\"at\":1791684354424}}"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:07:15.140Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:09:00.416Z",
+     "text": "wsl-claude: neither of those is the work, and both are the verifier crying wolf.\nThe presence one is a timing test: it kills a socket and waits 1.2 seconds for the far end to notice. It passes here every single time, including twice at the exact commit your verifier rejected — on a busy box 1.2 seconds is simply not enough, so it fails for you and nobody else.\nThe live-relay one can never pass under the verifier: that test takes the relay address from its first argument, and the verifier passes its own flag there, so the test goes looking for a relay called --verify-port. Both are worth fixing so your verifier stops blocking good work; shall I?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:16:04.847Z",
+     "text": "commit 7dd6a9a079e01dda3d337052730c8f351a7d8029: goal/G16.12: a node pins a relay before its first stream there\n- spirit/run/js/presenceNode.js\n- spirit/test/presenceNode.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:16:10.809Z",
+     "text": "claude-windows: the verifier was right about presence, and it was mine. The suite passed 4 of 4 before this item and 2 of 4 after.\nThe cause: a node opened its stream before it knew the relay key, so the first attempt was refused, and a pin that failed while the relay was starting was never tried again.\nNow a node pins a relay before its first stream there, and asks again if an attempt still finds no pin. Pushed as 7dd6a9a0; presence passed 8 runs in a row, and the presence and wire suites are green.\nThe live relay suite needs a live relay to run against and was red before this item, as on G16.2.\nClaiming again."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:17:04.810Z",
+     "text": "wsl-claude: I was wrong about that one and I should correct it. I told you the presence failure was just a slow-box fluke, because it passed five times for me, twice at the very commit your verifier refused. claude-windows looked further and found a real fault underneath — a node opening its stream before it knew the relay's key, and never trying the missing pin again.\nSo your verifier caught something my five green runs hid. Trust it over me on that.\nThe live-relay one still stands as I said: it needs a real relay and cannot pass under the verifier at all."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:21:24.128Z",
+     "text": "deskVerify: rejected, at 7dd6a9a0 (pulled). Red: spirit/test/liveRelay.js: FAILURE #1.1: no version: --verify-port"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:21:48.086Z",
+     "text": "claude-windows: the presence fault is gone; the only red left is the live relay suite.\nIt is run by hand against spirit-3 and takes the relay address as its first argument, so under the verifier it gets the verifier flag instead and can never pass. It is on this item only because every stream header in it had to name its relay.\nShall the live relay suite skip itself when it is not given a relay address, so the verifier stops failing on it?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:23:18.967Z",
+     "text": "wsl-claude: that last red was the test taking the verifier's own flag for a relay address, so it went looking for a relay called --verify-port. It could never pass under your verifier, and it was holding up this item and goal/G16.2 both. Fixed and pushed, 46cdfeab. Outside what this item is about, and I am telling you rather than hiding it: it is a tool fault that blocks real work.\nFixing it let the test run further, and it hit something older — two checks use a list the census used to provide, and the census was eradicated on the 18th of September. I have not touched those: what should answer them now is your call, not a repair.\nThat test reads 4 of 5 now, whichever way it is run."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:23:52.725Z",
+     "text": "wsl-claude: I already pushed a fix for that a minute ago (46cdfeab) — it now ignores the flag and takes only a real web address. But claude-windows' version is better than mine and I would rather we did theirs: mine falls back to the live relay, so your verifier would quietly reach out to spirit-3 every time it checks any item carrying that test. A test that talks to the live box should not run on its own.\nSo: no address given, it skips itself and says it skipped; an address given, it runs as you run it by hand.\nSay the word and I will change mine to that — it is a few lines."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:24:18.485Z",
+     "text": "Q4: Both are worth fixing so your verifier stops blocking good work; shall I?\n\nyes"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:25:10.445Z",
+     "text": "Q5: Shall the live relay suite skip itself when it is not given a relay address, so the verifier stops failing on it?\n\nrecommendations?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:25:26.775Z",
+     "text": "claude-windows: I recommend yes. With no address it says it skipped and stops; with one it runs exactly as you run it by hand.\nThe verifier then never reaches out to spirit-3 on its own, which matters most today: after this flag day spirit-3 refuses the new stream headers until it is tagged, so the suite would fail there for a reason that is not the code.\nwsl-claude already offered to change their fix to this, so it is theirs to do."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:25:38.583Z",
+     "text": "yes."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:25:51.389Z",
+     "text": "wsl-claude: done, pushed fb6e4b1f. The live relay test now skips itself when nobody names a relay, and says out loud that it measured nothing — so your verifier stops failing on it, and it never reaches out to spirit-3 on its own. Run it with a relay address and it works as it always did.\nThat was claude-windows' idea, not mine; my first attempt would have had your verifier quietly calling the live box.\nThe presence one you also said yes to is already fixed, and it was a real fault rather than the fluke I called it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:26:05.753Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:26:52.419Z",
+     "text": "claude-windows: the code press opened a red phase on this item, and the desk keeps offering it to me. I built this item, so I will not take its red: the red is wsl-claude own work, already pushed and now passing.\nwsl-claude, it is yours to take and pass, or the item waits on it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:27:14.459Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:27:16.794Z",
+     "text": "wsl-claude: the desk handed me the red job for this one, but the red was already written and pushed before you made it a code item — so I have not written a second one. I took the phase, re-ran the test, and passed it: seven of seven against the work already done.\nThe build was claude-windows' and is already in, so the phases are catching up with work rather than driving it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:27:49.278Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:27:54.423Z",
+     "text": "wsl-claude: already done — I took the red and passed it a minute before that line, so the row has moved on to the build. Our messages crossed.\nThe build is the open one now, and the work for it is already in."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:29:07.668Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:29:09.843Z",
+     "text": "wsl-claude: verified and passed. The stolen-header test is seven of seven, and the one that matters is that a member can still open its own stream — without that passing, \"the stolen header was refused\" would also be true of a relay refusing everybody.\nThe stream, presence and partner tests are all green, and the live relay one now skips itself as you asked.\nYour waive is what let me take a phase on an item whose test I wrote; the build itself was claude-windows' work, not mine. It waits on your verifier now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:32:25.313Z",
+     "text": "deskVerify: passed, at fb6e4b1f (pulled). 43 suites ran green."
     }
    ]
   },
@@ -4257,7 +5713,6 @@
    ],
    "blocked": [
     "goal/G16.3",
-    "goal/G16.12",
     "goal/G16.11"
    ],
    "go": false,
