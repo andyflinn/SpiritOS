@@ -89,6 +89,7 @@ relay-state/
 session.json
 
 loop.json
+configuration.json
 
 # Relay Chat's remembered view (chat 6): who was selected, which filter,
 # and how far each conversation had been read. Same class as
