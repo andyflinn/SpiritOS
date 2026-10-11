@@ -74,7 +74,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   process.exit(0);
 }
 
-common.verifyStartupCwd('js/server.js');
+// The node spawns jobs from process/ and serves the shell from shell/, so
+// it alone demands them (goal/G16.9: the relay's check asks for neither).
+common.verifyStartupCwd('js/server.js', ['shell', 'js', 'process']);
 
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 
@@ -290,9 +292,21 @@ function handleSseConnection(req, res) {
     res.write('event: relay-event\ndata: ' + JSON.stringify(row) + '\n\n');
   });
 
-  const offArrival = arrivals.subscribe((message) => {
-    res.write('event: packet\ndata: ' + JSON.stringify(message) + '\n\n');
-  });
+  // A SERVER IS NOT A PAGE (goal/G16.9). A page subscribes: it is handed
+  // the backlog and marks what it takes, so the owner sees each line once.
+  // A loopback server awaiting one reply (kernel's spirit.peerPost says so
+  // with X-Spirit-Reader: server) witnesses instead: it sees each new
+  // packet, gets no backlog and marks nothing taken, or every post it
+  // made would eat the owner's waiting lines. It is written the page's
+  // shape, without the envelope a witness is handed, so both readers parse
+  // one wire.
+  const asServer = req.headers['x-spirit-reader'] === 'server';
+  const writePacket = (message) => {
+    const plain = Object.assign({}, message);
+    delete plain.envelope;
+    res.write('event: packet\ndata: ' + JSON.stringify(plain) + '\n\n');
+  };
+  const offArrival = asServer ? arrivals.witness(writePacket) : arrivals.subscribe(writePacket);
 
   // A CONTACT RENAMED, so every label showing that key redraws (goal/G4.13).
   // The node's own event, its name its own: Andy, 2026-10-03, "leave node

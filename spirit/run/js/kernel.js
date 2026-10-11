@@ -717,6 +717,21 @@ if (isNode()) {
     },
   };
 
+  // ── THE NODE'S STREAM, READ AS A SERVER (goal/G16.9) ────────────────
+  //
+  // The event stream marks every waiting arrival taken when a PAGE opens
+  // it, because a page catching up must see what it missed exactly once.
+  // A loopback server awaiting one reply is not a page: when peerPost
+  // opened the stream like one, every post by the desk, chatClerver or
+  // the fileServer took the owner's whole backlog and threw it away, and
+  // his next page open replayed nothing. So a server says what it is, and
+  // the node reads arrivals to it as a witness (server.js, the events
+  // route): it sees each new packet, is handed no backlog and marks
+  // nothing taken.
+  function openServerStream(base) {
+    return fetch(base + '/api/events', { headers: { 'X-Spirit-Reader': 'server' } });
+  }
+
   // ── ASK A PEER AND AWAIT THE ANSWER (fileTransfer goal/G1.3) ─────────
   //
   //   Andy: "should be done via the spirit object, no?" — and the
@@ -729,7 +744,8 @@ if (isNode()) {
   // the fileServer asks through it — a second hand-rolled copy is how
   // answers get missed. One post through the node's peer.post, then the
   // answer-post whose `re` matches that post's hash, read off the node's
-  // event stream. The stream is opened BEFORE the post, so an answer
+  // event stream as a server, never as a page (openServerStream above).
+  // The stream is opened BEFORE the post, so an answer
   // quicker than the post's own reply is not missed.
   //
   // Resolves with the answer's body. A refused post resolves {ok: false,
@@ -750,7 +766,7 @@ if (isNode()) {
     const packet = require('./client/packet.js');
     const made = packet.encode(app, body);
     if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
-    return fetch(base + '/api/events').then(function (r) {
+    return openServerStream(base).then(function (r) {
       const reader = r.body.getReader();
       const dec = new TextDecoder();
       let buf = '';

@@ -4556,10 +4556,17 @@ function createRelay(rootDir, deps) {
 
     var mem = {};
     try { mem = process.memoryUsage(); } catch (e) { mem = {}; }
+    var snap = snapshot();
 
     return !!presentNow.send(ownerKey, 'relay-status', relayStatus.report({
       partners: partners(),
-      snapshot: snapshot(),
+      snapshot: snap,
+      // THE SEATS, handed to the report by name (goal/G16.9). The snapshot
+      // has carried them since they were built, but relayStatus reads
+      // `seats` off its own argument, so the owner's live report never had
+      // them: the one number that says the relay is full did not arrive.
+      // Absent, as in the snapshot, on a relay with no configuration.
+      seats: snap.seats,
       present: presentNow.present(),
       routes: routes.size(),
       // WHAT THIS BOX ACTUALLY MOVED, so the governor in CAPACITY.md can

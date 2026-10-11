@@ -61,8 +61,12 @@ const DECLARED = {
   // of the factory. The gate went red immediately and named the three.
   // A declaration nobody checks is a declaration that drifts from the
   // thing it describes, and this one drifted before it was committed.
+  //
+  // NO `answer` SINCE goal/G16.2: the only request a node answered itself
+  // was the relay's device offer, and device enrolment was removed, so the
+  // node wires no answer hook any more.
   'server.js': [
-    'rootDir', 'request', 'store', 'checkTunnel', 'answer', 'admit',
+    'rootDir', 'request', 'store', 'checkTunnel', 'admit',
     'keepCard', 'sealKeyFor', 'noteSeen', 'remember', 'onArrival',
     'traffic', 'stats',
   ],

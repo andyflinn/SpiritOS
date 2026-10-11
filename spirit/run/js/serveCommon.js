@@ -30,14 +30,16 @@ const MIME_TYPES = spirit.core.const.MIME_TYPES;
 // error, easy to mistake for a real bug in the spawned script itself.
 // Fail loud and immediately instead.
 //
-// A relay spawns no jobs, and runs it anyway: the check predates the
-// split, and a relay started from the wrong place was refused before it.
-function verifyStartupCwd(entry) {
+// A relay spawns no jobs and loads neither shell/ nor process/, so it
+// must not be refused for lacking them (goal/G16.9): each entry point
+// names the folders IT needs, and the default is only js/, which both
+// run from. The node passes its own longer list (server.js).
+function verifyStartupCwd(entry, requiredDirs) {
   var cwd = process.cwd();
   var errors = [];
 
-  var REQUIRED_DIRS = ['shell', 'js', 'process'];
-  var missing = REQUIRED_DIRS.filter(function (name) {
+  var needed = Array.isArray(requiredDirs) && requiredDirs.length ? requiredDirs : ['js'];
+  var missing = needed.filter(function (name) {
     try { return !fs.statSync(path.join(cwd, name)).isDirectory(); }
     catch (err) { return true; }
   });

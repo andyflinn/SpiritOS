@@ -25,11 +25,13 @@ const auth = require('./relayAuth');
 // The hint bound and the tunnel predicate (cycle 2) — one file for the
 // relay, the node and the page, so all three agree what fits.
 const limits = require('./limits.js');
-// The address book, for one question only: may this key be COUNTED.
-// Admission is the front door's answer and arrives as `verdict`; whether
-// a sender's numbers move is a fact about the book — see the rules at the
-// stats call below, which came from the ring's countInbound.
-const contactBook = require('./contacts');
+// The address book (contacts.js) is asked one question only, may this
+// key be COUNTED, and it is required where that is asked, below, not
+// here. A relay builds its own peerPost (relayServer.js, the partner
+// router) and passes no stats, so it never reaches that question; loading
+// the book at the top carried the node's contact code onto every relay
+// (goal/G16.9). The lazy require is the same seam contacts.js uses for
+// its own store.
 const nodeCard = require('./nodeCard');
 // The one sealing implementation (cycle 10, R4). oneDoor.js asserts it is
 // the only one in the tree — two seal functions differing in one detail
@@ -1482,6 +1484,9 @@ function createPeerPost(opts) {
     // returning above: an over-budget stranger leaves no trace but a
     // refusal in the log.
     if (stats) {
+      // Only a node passes stats, so only a node loads the book (see the
+      // note at the top of this file).
+      var contactBook = require('./contacts');
       var seen = null;
       try { seen = contactBook.byPublicKey(rootDir, body.from); }
       catch (e) { seen = null; }

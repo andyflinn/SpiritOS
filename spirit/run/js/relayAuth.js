@@ -540,7 +540,16 @@ function saveIdentity(rootDir, id) {
   fs.mkdirSync(dir, { recursive: true });
   protectDir(dir);
   const file = path.join(dir, 'identity.json');
-  fs.writeFileSync(file, JSON.stringify(id, null, 2));
+  // WHOLE OR NOT AT ALL (goal/G16.9). Written in place, a crash part-way
+  // left a file ensureIdentity cannot read, so it minted a NEW key and
+  // every allow entry naming this relay or node named one that no longer
+  // existed. A temp file in the same folder, renamed over the old one, is
+  // atomic on one filesystem, as ownerBadge.writeRelays does. The temp is
+  // made private before it holds the key, and protected again after.
+  const tmp = file + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(id, null, 2), { mode: 0o600 });
+  protectFile(tmp);
+  fs.renameSync(tmp, file);
   protectFile(file);
 }
 
