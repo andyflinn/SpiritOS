@@ -1,14 +1,14 @@
 {
- "change": 33198,
+ "change": 33200,
  "line": 8510,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T05:25:57.059Z",
+ "writtenAt": "2026-10-11T05:25:59.523Z",
  "items": [
   {
    "id": "goal/G16",
    "title": "Node and relay split: the review of 2026-10-10",
    "goal": "",
-   "status": "",
+   "status": "full run started",
    "with": "",
    "buttons": [
     "close"
@@ -35,7 +35,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -7469,10 +7469,9 @@
    "id": "goal/G16.9",
    "title": "The rest: placement notes and small fixes",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
