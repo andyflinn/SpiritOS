@@ -1,8 +1,8 @@
 {
- "change": 32279,
- "line": 8507,
+ "change": 32489,
+ "line": 8510,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T03:09:02.076Z",
+ "writtenAt": "2026-10-11T04:08:58.409Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -37,7 +38,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -4437,28 +4438,272 @@
    "id": "goal/G16.8",
    "title": "Ownership never by invite: the first-claim path goes",
    "goal": "goal/G16",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.3",
     "goal/G16.11"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
+   "files": [
+    {
+     "path": "bash/RELAY-HOST.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/face-install",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/install-units",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/invites.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayAuth.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/natter/natter.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appServerWorlds.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/budgetChain.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cycleA.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLoop.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedWriterBuild.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/discBound.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/discFull.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/firstOwner.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/fixedAllowance.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/hintWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/identityPerception.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/inviteLock.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/inviteMint.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/inviteRedeem.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/invites.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labLifecycle.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labPersistence.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labRefusals.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labWorld.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labelShape.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/measureCapacity.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/notASuite.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerAtInstall.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerClaim.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerFile.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/ownerToken.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/partnerWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/queueUnderLoad.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/refusalCodes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayConfigWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayGates.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayReconfigure.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shutdownWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/targetBusy.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/world.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/worldBuilder.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -4490,12 +4735,94 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 3,
    "half": false,
    "full": false,
    "box": "WHAT: a relay's owner is set when the relay is installed and in no other way; the relay's first-claim path and its owner-invite checks, a fallback for a token nothing mints any more, are deleted with a test that they are gone, and the relay install gets the one step that writes the owner file from the key it is given, as the face install does. A claim over the wire is always a member's claim with a member invite.\n\nDECIDED (Andy, 2026-10-10, under goal/G16.3): \"the relays should do first-claim, it should happen at install time. that's the only \\\"safe\\\" way.\" then \"NOT first claim i mean\"; \"KILL the dead code / fallback. this type of stuff is always coming back to bite us.\"; \"yes. ownership CANNOT be achieved via invite.\"\n\nCHECKED by claude-windows at b355e36d:\n- The owner is relay-state/owner.json, read by relayAuth (readOwner) and written by writeOwner; it survives bash/update (RELAY-HOST.md). becomeOwner (relay.js 1441) is its only writer in code, and it runs only from the first-claim branch.\n- relay.js claimAttempt 1585-1604: a relay with no owner takes a signed claim that redeems an owner invite (invites.isOwnerInvite) and becomes owned; 1658-1660 a leftover owner invite is refused for a member claim; 1759 the owner invite burned. invites.js 97 says the owner invite is \"minted by install.js over SSH\"; no install.js exists in the tree, so nothing mints one and the branch cannot be taken on a real box. The comments at 1572-1575 and relayAuth.js 381, 541 describe that dead path.\n- bash/face-install takes the owner's public key as its first argument and writes owner.json for the face. The relay's install (install-units, start) has no such step: an operator writes owner.json by hand.\n- Suites that drive the first claim with an owner invite exist (relayOwnerClaim and friends are found by the grep for isOwnerInvite and ownerInvite under spirit/test) and go with the path.\n\nSHAPE (proposed)\n1. DELETE: the firstOwner branch of claimAttempt, becomeOwner, invites.isOwnerInvite and the owner kind of invite, the leftover-owner-invite refusal, the comments naming install.js; the register's 'owner invite required' texts. A claim on a relay with no owner is refused by name: 'relay has no owner', since a relay is owned before it serves.\n2. INSTALL: bash/install-units (or the relay's start) takes OWNER_KEY the way face-install does and writes relay-state/owner.json from it, refusing to start a relay with no owner file; RELAY-HOST.md says so in one paragraph where the owner file is named.\n3. The lock 0003 promised (after first-claim-is-owner a new owner cannot be claimed) holds by absence: there is no path.\n4. Nothing on the wire changes but a refusal text; the flag day of goal/G16.1 covers the tree.\n\nTESTS, red first: spirit/test/ownerAtInstall.js: the relay's module exports no owner-invite kind and the register has no 'owner invite required'; a claim on a relay with no owner file is refused 'relay has no owner' and writes no owner file; a member claim with a member invite on an owned relay still works; install-units (dry run, as the units suites do it) writes owner.json from OWNER_KEY and refuses without one; the grep for the deleted names under spirit/run is empty. The owner-invite suites are retired from the list.\n\nFILES: relay.js, invites.js, relayAuth.js, spiritErrors.js (core, grant); bash/install-units, bash/RELAY-HOST.md; spirit/test/ownerAtInstall.js (new), the retired suites.",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "This item says nothing mints the owner token any more. That is wrong: install.js is in the tree and mints it. Do you still want the invite path gone?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:16:06.079Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q under this item: do you still want the invite path gone, with the install step built first?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:16:07.355Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/invites.js, spirit/run/js/relay.js, spirit/run/js/relayAuth.js, spirit/run/js/relayServer.js, spirit/run/js/spiritErrors.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T03:23:35.829Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/invites.js, spirit/run/js/relay.js, spirit/run/js/relayAuth.js, spirit/run/js/relayServer.js, spirit/run/js/spiritErrors.js, spirit/run/shell/natter/natter.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T03:44:08.361Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "md line under this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T03:49:00.113Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Shall I rewrite it to say the owner is written at install, under this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T03:49:02.092Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-11T03:54:22.704Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Shall I add it to this goal as the item A fresh node has a usable key from first boot?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-11T03:55:34.743Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "stale: wsl-claude holds the verify of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -4506,6 +4833,236 @@
      "by": "desk",
      "at": "2026-10-11T03:09:01.727Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:09:47.236Z",
+     "text": "wsl: I have taken this one and I write the test first, before anything is deleted. One new file, spirit/test/ownerAtInstall.js, no touching of the real code by me.\nIt will demand four things: a relay with no owner refuses a claim outright, nothing can make a relay owned over the wire, a normal member invite still works, and the relay install writes the owner from the key it is handed and will not start without one.\nThat test goes red on purpose. The deleting is the next pair of hands."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:09:58.013Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:10:46.931Z",
+     "text": "wsl: before I write anything, a premise in this box is wrong and it is the one the whole item rests on.\nThe box says nothing mints the owner token any more, so the code is dead. It is not dead. install.js sits in the root of the repo, it was there when this was checked, and it is the program that makes the owner token for a fresh public relay. You asked for it yourself, quoted in its own header. So the invite path is the only way a new relay gets an owner today.\nI am not saying do not do it. I am saying the order matters: if the path goes before the install writes the owner file, a new relay cannot be owned at all. And install.js has to go with it, and it is not on the list.\nQ under this item: do you still want the invite path gone, with the install step built first?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:14:42.294Z",
+     "text": "wsl: your note answers my question, I think. install.js hands out an invite so the first claim becomes owner, and that IS ownership by invite, which is the thing you are killing. So it is not a reason to keep the path: it goes with it, and the install writes the owner file straight from the key you hand it, the way the face install already does. Say so if I have that backwards and I will stop.\nOn your wider point, I can list every leftover fallback from the moves to the database, the same shape as this one, so you can see the size of it before you decide anything."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:15:35.363Z",
+     "text": "Q1: This item says nothing mints the owner token any more. That is wrong: install.js is in the tree and mints it. Do you still want the invite path gone?\n\nthe invite path to ownership MUST be gone. it is a security gap, from the time of install until the time of first claim."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:16:11.925Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:16:21.412Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:17:29.391Z",
+     "text": "wsl: understood, and it is bigger than the box says. The invite is not only how a real relay gets an owner: it is how the test world makes every relay it builds. Two helper files do that, and 29 of our test files lean on them.\nSo the work is: the install writes the owner file, install.js goes, the wire path goes, and the test world owns a relay by writing that file instead of handing itself a token. If the last part is left out, a few hundred tests go red at once and none of it is a real fault.\nI am folding that into this item rather than splitting it, and my test will demand it. Nothing I write touches the real code."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:21:46.875Z",
+     "text": "commit 156dd32c34407ce90c009141d491947cc261721d: goal/G16.8 red: ownership never by invite, the owner is written at install\n- spirit/test/ownerAtInstall.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:21:53.556Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:22:01.087Z",
+     "text": "wsl: the test is in, 156dd32c, written before anything was deleted. Fifteen things it wants, five it already guards.\nIt shows your gap for real: with a token in hand a stranger takes an unowned relay and the relay writes him down as the owner. That is the window from install to first claim, in a test.\nIt also guards the other side: the owner still claims his own box and a normal member still gets in with a normal invite. Whoever builds this must not break those. The building is the next pair of hands, not mine."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:22:25.123Z",
+     "text": "claude-windows: taking the build. The red asks for fifteen things, and I start with the files above. Core files among them need your grant before I commit."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:44:15.629Z",
+     "text": "claude-windows: built in my clone, not committed yet. The red is 20 of 20, and about seventy suites are green, the slow onboarding ones included.\nA relay with no owner now refuses every claim. The owner named at install claims his own box, and members still join with an invite. install.js is gone, and install-units takes OWNER_KEY and refuses to run without one. spirit-3 automatic updates never run install-units, so they are not affected.\nThe second grant here adds one file, the Natter claim screen, which still told people to run install.js.\nTwo stale texts stay outside this item: AGENT.md still says a new relay takes the owner invite from install.js, and a few design pages name install.js. Shall I correct the AGENT.md line under this item?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:44:45.362Z",
+     "text": "commit 2010cbdb22f2e3bd00dd43750bef72ab4ff29099: goal/G16.8: ownership never by invite; the owner is written at install\n- bash/RELAY-HOST.md\n- bash/face-install\n- bash/install-units\n- install.js\n- spirit/run/js/invites.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayAuth.js\n- spirit/run/js/relayServer.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/shell/natter/natter.js\n- spirit/test/agentOnboard.js\n- spirit/test/appServerWorlds.js\n- spirit/test/budgetChain.js\n- spirit/test/cycleA.js\n- spirit/test/deskLoop.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/discBound.js\n- spirit/test/discFull.js\n- spirit/test/firstOwner.js\n- spirit/test/fixedAllowance.js\n- spirit/test/hintWire.js\n- spirit/test/identityPerception.js\n- spirit/test/inviteLock.js\n- spirit/test/inviteMint.js\n- spirit/test/inviteRedeem.js\n- spirit/test/invites.js\n- spirit/test/labLifecycle.js\n- spirit/test/labPersistence.js\n- spirit/test/labRefusals.js\n- spirit/test/labWorld.js\n- spirit/test/labelShape.js\n- spirit/test/measureCapacity.js\n- spirit/test/notASuite.js\n- spirit/test/ownerClaim.js\n- spirit/test/ownerFile.js\n- spirit/test/ownerToken.js\n- spirit/test/partnerWire.js\n- spirit/test/presenceWire.js\n- spirit/test/publishData.js\n- spirit/test/queueUnderLoad.js\n- spirit/test/refusalCodes.js\n- spirit/test/relayConfigWire.js\n- spirit/test/relayGates.js\n- spirit/test/relayReconfigure.js\n- spirit/test/shutdownWire.js\n- spirit/test/targetBusy.js\n- spirit/test/world.js\n- spirit/test/worldBuilder.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:44:51.540Z",
+     "text": "claude-windows: thanks for the grant. Pushed as 2010cbdb and the build phase is passed, so the verify is next.\nThe AGENT.md question above still stands."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:46:36.351Z",
+     "text": "Q3: md line under this item?\n\nenglish?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:46:54.529Z",
+     "text": "claude-windows: sorry, the desk cut my question in half. Plainly:\nThe file every agent reads first still says a new relay gets its owner from an invite made by install.js. After tonight that sentence is false, so the next agent would believe the old way.\nIt is one line. Shall I rewrite it to say the owner is written at install, under this item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:47:36.260Z",
+     "text": "yes. rewrite it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:47:36.635Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:48:21.456Z",
+     "text": "commit 6ce5afa79231ceb485365daa2b79c2dbff76d9d6: goal/G16.8: AGENT.md says the owner is written at install, never claimed\n- AGENT.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:48:28.678Z",
+     "text": "claude-windows: rewritten and pushed as 6ce5afa7. AGENT.md now says the owner is written at install by install-units with OWNER_KEY, that a relay with no owner refuses every claim, and that there is no owner invite and no install.js. It also names the owner file by its real name, owner.json, where it still said allow.json."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:48:36.146Z",
+     "text": "and the red Q's?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:48:36.542Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:49:04.380Z",
+     "text": "claude-windows: cleared. Both were mine, the same question twice, and your yes answered them. I should have cleared them when I pushed the rewrite. Nothing red is open on this item now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:50:03.868Z",
+     "text": "claude-windows: on the chicken and egg, two facts from the code.\nA node makes its own key the first time it starts, with no relay at all, so the owner key always exists before the relay does: start your node, copy its public key, install the relay with it. The face install already works that way.\nspirit-3 is safe as it is: it already has its owner file, its updates never run install-units, and the new code reads the file that is there.\nWhere it bites is a brand-new relay for somebody whose node has never run. They have to start their node first, and the install has to tell them so."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:52:58.791Z",
+     "text": "That's not what I'm talking about. I'm talking about the very first relay shipped, let's say via gitHub, what happens with the user-node is: it will be useless, until there is a relay to connect to. The user wont even be able to play with the apps on it. even though they'll be useful without and internet connection or a relay connection."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:52:59.224Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:53:21.444Z",
+     "text": "claude-windows: understood, taking it. I will start a brand-new node with no relay at all and see what works and what does not, then report here."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:53:49.488Z",
+     "text": "l be stuck in natter"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:53:49.892Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:54:22.256Z",
+     "text": "claude-windows: you are right, and what I told you earlier was wrong. I started a brand-new node with no relay and checked.\nIt does write a key at first start, but with an empty name, and the code that loads the key refuses a key with no name. So the node acts as if it has no key at all: anything signed refuses with this node has no key yet, until it claims a seat on a relay, which is where a name gets set.\nIt serves its page, and local things that need no key answer, like the contacts search. Anything that needs its own key does not.\nSo today a fresh node cannot be a relay owner, because it has no usable key before it has a relay. G16.8 makes that circle real for a first relay.\nProposed item: a fresh node has its own key and works offline before any relay. Add it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:55:16.054Z",
+     "text": "there's no reason for a node not to generate a key on first boot."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:55:16.528Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:55:34.394Z",
+     "text": "claude-windows: agreed, and today the node does make one; it is only thrown away because its name is empty. The fix is small: the key counts without a name.\nShall I add it to this goal as the item A fresh node has a usable key from first boot?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:58:39.453Z",
+     "text": "What should happen is: A persisten message in shell somewhere: \"this would be WAY more fun if you were connected, with a link to the alpha-onboarding site....\"  likely \"noderoutes.net\""
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:58:40.384Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:00:22.199Z",
+     "text": "commit 9d0426bb7218cf824a62bdb96f6f6229afe9a9b4: goal/G16.8: the red pins the no-owner refusal and the OWNER_KEY name\n- spirit/test/ownerAtInstall.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:00:40.584Z",
+     "text": "no, make another goal, not for today, with this as a topic. that way it'll be remembered."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:00:45.149Z",
+     "text": "wsl: verify passed. My test is twenty of twenty and the thirty-three other tests he touched are all green.\nI also broke the work on purpose, three ways, and each break showed up where it should: taking out the new refusal, renaming the owner key in the install script, and stopping the test world writing the owner file. Then I put everything back.\nTwo of the breaks slipped past MY test at first, not his work. My checks were too loose: one accepted any refusal at all, the other matched a name too sloppily. I tightened both and they bite now, 9d0426bb. His build was never at fault.\nOne thing of my own to own: my node stopped answering halfway through and I restarted it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:01:31.803Z",
+     "text": "claude-windows: made it: goal/G17, A fresh node works before it has a relay. Its box holds your four lines word for word, what I found on the fresh node, and the topics to design later. Nothing in it is for today."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:02:26.444Z",
+     "text": "add a new goal, with the bare fact, PLUS, the discussion of the owner-node persistent liveness, for which i do have a crazy idea, as well."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:03:21.498Z",
+     "text": "wsl: that is in. The new goal, G17, now holds both: the bare fact that a fresh node is useless until it has a relay, in your words, and the owner node liveness as a topic beside it, with your idea left for you to bring.\nIt is one goal, not two, because the second half is the same problem seen from the other end: the relay is owned by a node that is not always running. If you wanted them apart, say so and I will split it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:06:11.555Z",
+     "text": "one goal only: it will point toward a comprehensive rollout."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:06:47.090Z",
+     "text": "wsl: one goal it is, and your reason is in its box: it points at a comprehensive rollout, so the liveness belongs in it rather than beside it. Nothing to split."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:08:27.884Z",
+     "text": "deskVerify: passed, at 9d0426bb (pulled). 39 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:08:45.312Z",
+     "text": "claude-windows: one fact for when you close it. spirit-3 still runs the old claim path until its next tag. This one is not a flag day: nodes do not change, and spirit-3 already has its owner file, so the tag can come whenever you like."
     }
    ]
   },
@@ -4516,14 +5073,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G16.9"
    ],
-   "blocked": [
-    "goal/G16.8"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -6028,14 +6584,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G16.9"
    ],
-   "blocked": [
-    "goal/G16.8"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
