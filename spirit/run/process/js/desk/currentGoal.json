@@ -1,8 +1,8 @@
 {
- "change": 32271,
+ "change": 32279,
  "line": 8507,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T03:08:43.239Z",
+ "writtenAt": "2026-10-11T03:09:02.076Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -38,15 +37,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4441,23 +4437,20 @@
    "id": "goal/G16.8",
    "title": "Ownership never by invite: the first-claim path goes",
    "goal": "goal/G16",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G16.3",
     "goal/G16.11"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -4467,7 +4460,36 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -4479,6 +4501,11 @@
      "by": "claude-windows",
      "at": "2026-10-10T20:38:09.271Z",
      "text": "Box written: the first-claim branch, the owner kind of invite and their checks go with a test that they are gone; a claim on a relay with no owner is refused by name; the relay install takes the owner key as the face install does and writes the owner file, refusing to start without one. A relay-wire refusal text changes, under the flag day of goal/G16.1."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T03:09:01.727Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
