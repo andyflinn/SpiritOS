@@ -30,17 +30,24 @@ const FAKES = path.join(
 );
 const SUBJECT = path.join(FAKES, 'lw-lab-bella', 'spirit', 'run');
 
-// THE RELAY TO MEASURE, AND NOT A FLAG BY MISTAKE. This read argv[2]
-// outright, so when deskVerify spawns a suite as `node <file> --verify-port
-// <port>` this went looking for a relay called "--verify-port" and failed
-// every time — a suite the verifier could never pass, which rejected every
-// item that listed it. Only a bare argument naming a web address is taken.
+// THE RELAY TO MEASURE, AND ONLY IF SOMEBODY NAMED ONE.
+//
+// This read argv[2] outright, so when deskVerify spawns a suite as
+// `node <file> --verify-port <port>` it went looking for a relay called
+// "--verify-port" and failed every time: a suite the verifier could never
+// pass, which rejected every item that listed it.
+//
+// A first fix here took any web-address argument and otherwise fell back to
+// spirit-3 — which would have had the verifier quietly reach out to the LIVE
+// relay every time it checked any item carrying this file. claude-windows'
+// shape is the right one and this is it (Andy, 2026-10-11: "yes"): unnamed,
+// the suite skips itself and says so; named, it runs as a person runs it.
 const RELAY = (function () {
   for (var i = 2; i < process.argv.length; i += 1) {
     var a = String(process.argv[i] || '');
     if (/^https?:\/\//.test(a)) return a;
   }
-  return 'https://spirit.andyflinn.com';
+  return '';
 }());
 
 function get(url, headers) {
@@ -55,9 +62,17 @@ function parsed(answer) {
   try { return JSON.parse(answer.text); } catch (e) { return null; }
 }
 
-test.startTest('The live relay — ' + RELAY);
+test.startTest('The live relay — ' + (RELAY || 'not given, skipping'));
 
 async function run() {
+  // NOTHING MEASURED, AND IT SAYS SO. A skip that reported nothing at all
+  // would be an all-green suite that proves nothing, which is worse than a
+  // red; this states plainly that it measured nothing and why.
+  if (!RELAY) {
+    test.check('skipped: no relay address given, so nothing was measured — run it with a relay url to test a live box');
+    test.reportSuccessFailureCount();
+    return;
+  }
   test.subHeading('It is there, and it is the code we think it is');
 
   const version = parsed(await get(RELAY + '/api/version'));
