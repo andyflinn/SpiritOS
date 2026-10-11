@@ -33,8 +33,8 @@
 // travels, and a claim only ever adds a MEMBER's relay to this list. Section 6 asserts that reading.
 //
 // WHAT IS ASSERTED
-//   1. THE LIST IS NODE STATE: the node reads and seeds relay-state/relays.json, and a list planted in the
-//      app's folder is not read. The app's file is gone from the tree.
+//   1. THE LIST IS NODE STATE: the node reads and seeds relay-state/relays.json with the TWO relays he named,
+//      and a list planted in the app's folder is not read. The app's file is gone from the tree.
 //   2. THE TWO APPROVED VERBS EXIST AND NO THIRD ONE DOES: server.js claims relay.search and relay.remove, and
 //      claims no relay.add.
 //   3. NO NODE FILE REACHES INTO THE APP'S FOLDER for this any more.
@@ -97,15 +97,27 @@ test.subHeading('1. the node seeds and reads relay-state/relays.json, not the ap
   if (!there(path.join(root, APP_FILE))) test.check('and writes nothing into the Natter app\'s folder');
   else test.fail(OWED + 'a fresh node still wrote ' + APP_FILE + ': the app\'s folder decides where this node talks');
 
+  // TWO ROWS, BY HIS DECISION OF 2026-10-11 — he reversed his own earlier "initialize with
+  // spirit.andyflinn.com only" after proposing it himself: "why don't we just hard-code initialize it with two
+  // relays spirit.andyflinn.com and noderoutes.net, one of them will always work, so the node on first start
+  // will write that file, then it is initialized with at least one valid relay ?", with the reason
+  // "noderoutes.net will not update as often as spirit" — a steadier box is the better fallback. Asked whether
+  // one or two, he answered: "i say two."
   const got = rows(path.join(root, STATE_FILE));
-  if (Array.isArray(got) && got.length === 1 && got[0] && got[0].url) {
-    test.check('seeded with exactly one row, as he asked ("initialize with spirit.andyflinn.com only")');
+  const urls = Array.isArray(got) ? got.map(function (r) { return String((r && r.url) || ''); }) : [];
+  if (urls.length === 2 && urls.every(function (u) { return /^https:\/\//.test(u); })) {
+    test.check('seeded with the two relays he named: ' + short(urls.join(', ')));
   } else {
-    test.fail(OWED + 'the seeded list is not one row: ' + short(got));
+    test.fail(OWED + 'the seeded list is not his two rows: ' + short(got));
+  }
+  if (urls.some(function (u) { return /noderoutes\.net/.test(u); }) && urls.some(function (u) { return /spirit\.andyflinn\.com/.test(u); })) {
+    test.check('and both names are the ones he gave, so neither box is the only way in');
+  } else {
+    test.fail(OWED + 'the seed does not name both spirit.andyflinn.com and noderoutes.net: ' + short(urls.join(', ')));
   }
 
-  if (Array.isArray(seeded) && seeded.length === 1) test.check('and ensureRelays hands that row back to its caller');
-  else test.fail(OWED + 'ensureRelays did not return the seeded row: ' + short(seeded));
+  if (Array.isArray(seeded) && seeded.length === 2) test.check('and ensureRelays hands both rows back to its caller');
+  else test.fail(OWED + 'ensureRelays did not return the seeded rows: ' + short(seeded));
 }
 
 // A list planted in the app's folder must not steer the node. This is the hole in its own words: an app writes
