@@ -225,8 +225,10 @@ function assemble(s) {
       const home = tmpHome(name);
       auth.saveIdentity(home, who.id);
       fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
+      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+      fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
       fs.writeFileSync(
-        path.join(home, 'shell', 'natter', 'relays.json'),
+        path.join(home, 'relay-state', 'relays.json'),
         JSON.stringify((urls || ['http://relay']).map(function (u) {
           return { label: 'lab', url: u };
         }), null, 2)
@@ -247,8 +249,10 @@ function assemble(s) {
       const home = tmpHome('owner');
       auth.saveIdentity(home, owner);
       fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
+      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+      fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
       fs.writeFileSync(
-        path.join(home, 'shell', 'natter', 'relays.json'),
+        path.join(home, 'relay-state', 'relays.json'),
         JSON.stringify((urls || ['http://relay']).map(function (u) {
           return { label: 'lab', url: u };
         }), null, 2)

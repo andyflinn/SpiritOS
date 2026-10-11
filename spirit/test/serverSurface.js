@@ -178,10 +178,11 @@ fs.writeFileSync(
 // wrong and this is the consequence landing somewhere else.
 //
 // 127.0.0.1:1 is refused by the kernel with no name lookup. The list is
-// non-empty on purpose: relay.claim below is asserted to refuse a url
-// that is NOT on it, which needs a list to not be on.
+// non-empty on purpose, so the relay verbs below have a row to answer about.
+// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+fs.mkdirSync(path.join(nodeRoot, 'relay-state'), { recursive: true });
 fs.writeFileSync(
-  path.join(nodeRoot, 'shell', 'natter', 'relays.json'),
+  path.join(nodeRoot, 'relay-state', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]),
   'utf8'
 );
@@ -635,13 +636,11 @@ freePort()
       // covered where its refusals are.
       //
       // IT IS NOT THE ONLY ONE, which this said until 2026-09-16.
-      // relay.partnerCheck reaches the network too, and unlike
-      // relay.claim nothing gates it first: handleClaim goes through
-      // withChosenRelay, so a url on no Natter list is refused before a
-      // socket is opened, while partnerCheck fetches whatever it is
-      // handed — necessarily, since a partner's relay is somewhere this
-      // node has never been. See the note on it below for what believing
-      // this sentence cost.
+      // relay.partnerCheck reaches the network too, and since goal/G16.3
+      // so does relay.claim: a claim is what puts a relay on the node's
+      // list, so it aims at a named url whether or not the node lists it.
+      // Both are handed 127.0.0.1:1 below for that reason. See the note on
+      // partnerCheck for what believing otherwise cost.
       ['POST', '/api/spirit', { verb: 'jobs.search' }],
       ['POST', '/api/spirit', { verb: 'jobs.get', key: 'job_1' }],
       ['POST', '/api/spirit', { verb: 'fs.search', q: 'shell/*' }],
@@ -692,11 +691,15 @@ freePort()
       ['POST', '/api/spirit', { verb: 'owner.boxSearch' }],
       ['POST', '/api/spirit', { verb: 'owner.boxGet', key: 'no-such-box' }],
       ['POST', '/api/spirit', { verb: 'owner.command', to: 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '=', command: 'contact.list' }],
-      // A url on no Natter list, so this is refused before any network is
-      // touched — the ReferenceError was at the CALL, which happens
-      // either way.
-      ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
+      // goal/G16.3: a claim aims at a url the node does not list yet (the
+      // claim is what lists it), so it is handed 127.0.0.1:1, refused by
+      // the kernel with no name lookup — the ReferenceError this guards
+      // was at the CALL, which happens either way.
+      ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://127.0.0.1:1', name: 'x' }],
       ['POST', '/api/spirit', { verb: 'relay.search', name: 'x' }],
+      // goal/G16.3. Posted with no key, which it refuses: reachable, and
+      // the node's list is left as it was.
+      ['POST', '/api/spirit', { verb: 'relay.remove' }],
       ['POST', '/api/spirit', { verb: 'relay.get', key: 'https://nowhere.invalid' }],
       // cycle 11's R6. Reads what the node already wrote as reports
       // arrived; reaches no network, so unlike its neighbour it cannot

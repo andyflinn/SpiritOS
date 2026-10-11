@@ -18,8 +18,10 @@
 //   T5 a leftover whose name already exists in shell/ is kept, not
 //      overwritten, and said
 // A git mv carries only tracked files. What a live node keeps in app/ is
-// gitignored (natter's relays, contacts' prefs, fixList's fixes, the AI
-// status), so without T4 Andy's node would come up without its relays.
+// gitignored (natter's session, contacts' prefs, fixList's fixes, the AI
+// status), so without T4 Andy's node would come up without its binding.
+// (The leftover was natter's relays.json until goal/G16.3 made the relay
+// list node state, relay-state/relays.json; session.json is natter's own.)
 
 const fs = require('fs');
 const os = require('os');
@@ -117,7 +119,7 @@ async function nodeWith(leftovers, already) {
 }
 
 const LEFTOVERS = {
-  'natter/relays.json': '{"relays":["OLD-RELAYS"]}',
+  'natter/session.json': '{"relays":["OLD-RELAYS"]}',
   'contacts/prefs.json': '{"prefs":"OLD-PREFS"}',
   'fixList/fixes.md': 'OLD-FIXES',
   'shared/aiStatus.json': '{"status":"OLD-AI"}',
@@ -160,12 +162,12 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
 
   // ── T5 ──────────────────────────────────────────────────────────────
   test.subHeading('T5: a leftover whose name already exists in shell/ is kept, not overwritten, and said');
-  const n5 = await nodeWith({ 'natter/relays.json': '{"relays":["OLD-RELAYS"]}' }, { 'natter/relays.json': '{"relays":["NEW-RELAYS"]}' });
+  const n5 = await nodeWith({ 'natter/session.json': '{"relays":["OLD-RELAYS"]}' }, { 'natter/session.json': '{"relays":["NEW-RELAYS"]}' });
   const up5 = await n5.start();
-  const shellKept = read(path.join(n5.run, 'shell', 'natter', 'relays.json')) === '{"relays":["NEW-RELAYS"]}';
-  const oldKept = read(path.join(n5.run, 'app', 'natter', 'relays.json')) === '{"relays":["OLD-RELAYS"]}';
-  const said5 = n5.said[0].indexOf('natter/relays.json') !== -1;
-  if (up5 && shellKept && oldKept && said5) test.check('shell/natter/relays.json keeps its own content, the old one stays in app/, and the node names it');
+  const shellKept = read(path.join(n5.run, 'shell', 'natter', 'session.json')) === '{"relays":["NEW-RELAYS"]}';
+  const oldKept = read(path.join(n5.run, 'app', 'natter', 'session.json')) === '{"relays":["OLD-RELAYS"]}';
+  const said5 = n5.said[0].indexOf('natter/session.json') !== -1;
+  if (up5 && shellKept && oldKept && said5) test.check('shell/natter/session.json keeps its own content, the old one stays in app/, and the node names it');
   else test.fail(OWED + 'up ' + up5 + '; shell/ copy untouched ' + shellKept + '; old one still in app/ ' + oldKept + '; named ' + said5);
   try { fs.rmSync(n5.scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {

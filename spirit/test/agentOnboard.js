@@ -16,7 +16,7 @@
 // THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
 //   1  node spirit/run/process/js/desk/onboard.js <port of the agent's own node> <name:token>, run in the agent's
 //      clone (the port as commitCheck install takes it; posted in Desk 2026-10-04). name is the invite's label and
-//      the seat's name. The relay is the one row of the node's shell/natter/relays.json.
+//      the seat's name. The relay is the one row of the node's relay-state/relays.json (goal/G16.3).
 //   2  Exit 0 only when the desk read answered. Without Andy's desk grant: a non-zero exit, and its words name the
 //      grant. Run again after the grant, it finishes: a second run is not refused for the seat it already holds.
 //   3  The desk node's key is the relay's owner key (GET /api/relay/key answers ownerKey).
@@ -32,7 +32,7 @@
 //   (deskClient.js 409); a fresh deskClient starts at now (findNow, deskClient.js 279-281), so the agents that wrote
 //   before it joined are not in its "others"; the desk's changes verb carries each record's key (desk.js 913-916),
 //   readable only once granted, so the other agents are blocked by the run that follows the grant.
-// LEFT OPEN, not asserted: a fresh clone has no shell/natter/relays.json (it is not tracked), so the relay's url must
+// LEFT OPEN, not asserted: a fresh clone has no relay-state/relays.json (it is not tracked), so the relay's url must
 //   come from somewhere; this suite writes the row as a configured node would have it. No verb releases a seat from
 //   a node: a member leaves by an owner-verb post of {removePeer: {key: its own}} to the relay (relay.js 3599-3604);
 //   how offboard.js sends it is the builder's.
@@ -109,8 +109,9 @@ function plant(name) {
   return home;
 }
 function pointAt(home, relayUrl) {
-  fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'spirit', url: relayUrl }], null, 2));
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'spirit', url: relayUrl }], null, 2));
 }
 
 (async function () {

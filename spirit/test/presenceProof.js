@@ -64,8 +64,9 @@ function node() {
   const home = tmpHome();
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
-  fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'a', url: RELAY }, { label: 'b', url: RELAY_B }]));
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'a', url: RELAY }, { label: 'b', url: RELAY_B }]));
   [RELAY, RELAY_B].forEach(function (u) { relayKeys.seat(home, u, 'me'); relayKeys.accept(home, u, RELAYKEY); });
   const book = {}; book[JOHN] = true; book[BERT] = true;
   const noted = [];

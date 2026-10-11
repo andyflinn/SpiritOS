@@ -38,7 +38,9 @@ test.startTest('apiAuth/G1.3: the allow-table is two tables in node.db, and no p
 
 const root = setupRelayFakes('authTables').andy;
 const DB = path.join(root, 'relay-state', 'node.db');
-fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
+// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
 // The fake's node.db survives between runs; this suite plants exact rows.
 ['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {

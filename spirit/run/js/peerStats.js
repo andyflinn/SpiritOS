@@ -4,8 +4,15 @@
 // Personal node only. Per-peer packet counters. Never uploaded. Never on the relay.
 //
 // A contactBook row is a human decision. These numbers are not.
-// They live in app/contacts/peerfile-<key>.json via peerFile.js so
-// bytesHeld already includes them.
+// One file per peer, named by peerFile.js, in relay-state/peerStats/.
+//
+// NODE STATE, NOT AN APP'S (goal/G16.3, folded in from A4 of the review of
+// 2026-10-10): they were written into the Contacts app's own folder, where
+// any shell app could write them through fs and where they counted towards
+// the bytes held for a peer. They are this node's bookkeeping, so they live
+// with the node's other state, which the fs gate refuses to every app.
+// Contacts still reads them the way it always did, as fields on the rows
+// its search and get verbs answer with (hub.buildPeople).
 //
 // unansweredInbound increments on inbound, zeros on outbound.
 // days[] is a 14-day ring of {day, in, out}. Rates are window sums / 14
@@ -21,14 +28,14 @@ const peerFile = require('./peerFile');
 
 const WINDOW_DAYS = 14;
 const SEEN_CAP = 200;
-const DIR = ['shell', 'contacts'];
+const DIR = ['relay-state', 'peerStats'];
 
-function contactsDir(rootDir) {
+function statsDir(rootDir) {
   return path.join(rootDir, DIR[0], DIR[1]);
 }
 
 function statsPath(rootDir, publicKey) {
-  return path.join(contactsDir(rootDir), peerFile.fileName(publicKey));
+  return path.join(statsDir(rootDir), peerFile.fileName(publicKey));
 }
 
 function todayUTC(now) {
@@ -72,7 +79,7 @@ function readRow(rootDir, publicKey) {
 }
 
 function writeRow(rootDir, row) {
-  var dir = contactsDir(rootDir);
+  var dir = statsDir(rootDir);
   fs.mkdirSync(dir, { recursive: true });
   var file = statsPath(rootDir, row.peerPublicKey);
   var tmp = file + '.tmp';

@@ -29,8 +29,9 @@ const SLOTS = gradedSearch.SLOTS;
 function makeHome() {
   const H = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-searchmem-'));
   auth.saveIdentity(H, auth.generateIdentity('me'));
-  fs.mkdirSync(path.join(H, 'shell', 'natter'), { recursive: true });
-  fs.writeFileSync(path.join(H, 'shell', 'natter', 'relays.json'),
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(H, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(H, 'relay-state', 'relays.json'),
     JSON.stringify([{ url: RELAY, label: 'A' }]));
   relayKeys.accept(H, RELAY, 'RELAYKEY-A');
   return H;

@@ -111,7 +111,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publishdata-'));
 const kids = [];
 function startNode(home, port, extra) { const k = spawn(process.execPath, ['js/server.js', '--port', String(port)].concat(extra || []), { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] }); kids.push(k); return k; }
 function plant(name) { const h = path.join(scratch, name, 'spirit', 'run'); plantRun.plantRunTree(h); return h; }
-function pointAt(home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true }); fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'spirit', url: url }])); }
+// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+function pointAt(home, url) { fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true }); fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'spirit', url: url }])); }
 
 (async function () {
   if (!fs.existsSync(PUBLISH)) { test.fail(OWED + 'there is no spirit/run/process/js/deskClient/publishData.js; sections 2 and 3 cannot run'); return; }

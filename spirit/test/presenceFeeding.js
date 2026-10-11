@@ -70,8 +70,9 @@ function node() {
   const home = tmpHome('node');
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
-  fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'a', url: RELAY }]));
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'a', url: RELAY }]));
   relayKeys.seat(home, RELAY, 'me');
   relayKeys.accept(home, RELAY, RELAYKEY);
   const book = {}; book[JOHN] = true; book[BERT] = true;
@@ -95,8 +96,9 @@ function node() {
 function hubHome(relays) {
   const H = tmpHome('hub');
   auth.saveIdentity(H, auth.generateIdentity('me'));
-  fs.mkdirSync(path.join(H, 'shell', 'natter'), { recursive: true });
-  fs.writeFileSync(path.join(H, 'shell', 'natter', 'relays.json'), JSON.stringify(relays));
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(H, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(H, 'relay-state', 'relays.json'), JSON.stringify(relays));
   relays.forEach(function (r) { relayKeys.accept(H, r.url, r.key); });
   return H;
 }

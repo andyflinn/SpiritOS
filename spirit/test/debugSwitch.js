@@ -123,7 +123,9 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   // ── THE NODE ────────────────────────────────────────────────────────
   test.subHeading('the node answers node.debug, off after a restart');
   const root = setupRelayFakes('debugSwitch').andy;
-  fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
   const claimed = new RegExp("^ {4}'node\\.debug':", 'm').test(fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8'));
   if (claimed) test.check('node.debug is claimed in server.js, so the owner door reaches it too');
   else test.fail(OWED + 'node.debug is not claimed in server.js');

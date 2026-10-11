@@ -284,7 +284,9 @@ define('reply-too-big', {
 
 define('no-relay-url', {
   status: 503, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['no relay url in shell/natter/relays.json'],
+  // The path left the text with the list itself (goal/G16.3): the list is
+  // the node's own state now, and the wire must not name a file that is gone.
+  texts: ['no relay url in the relay list of this node'],
 });
 define('not-connected', {
   status: 503, presence: NONE, retry: 'after', fault: 'node',
@@ -373,7 +375,7 @@ define('job-not-found', {
 define('no-such-relay', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such relay'],
-  note: 'relay.get named a url that is not in relays.json: removed since the search that found it, or never added (puppets/G2).',
+  note: 'relay.get or relay.remove named a url that is not in this node\'s relay list: removed since the search that found it, or never added (puppets/G2).',
 });
 define('no-such-box', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
@@ -720,7 +722,21 @@ define('device-not-now', {
 });
 define('url-not-listed', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['url not in shell/natter/relays.json'],
+  // No path, for the reason no-relay-url gives (goal/G16.3).
+  texts: ['url not in the relay list of this node'],
+});
+// relay.remove refusing the last public relay (goal/G16.3): the rule the
+// Natter screen always obeyed (ownerBadge.canRemoveRelay), asked by the node
+// too now that the node is the list's only writer.
+define('last-public-relay', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['this node must keep one public relay'],
+});
+// relay.remove refusing noderoutes.net (goal/G16.3, Andy: "we'll remove the
+// option to delete noderoutes.net"): the steady relay every node keeps.
+define('kept-relay', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['noderoutes.net is kept on every node'],
 });
 
 // ── INVITES ──────────────────────────────────────────────────────────

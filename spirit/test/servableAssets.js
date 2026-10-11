@@ -126,19 +126,19 @@ expectWritable('shell/natter/natter.js (app entry script, goal/G14.8)', 'shell/n
 expectLoads('shell/natter/natter.json (manifest)', 'shell/natter/natter.json');
 expectWritable('shell/natter/natter.json (manifest, goal/G14.8)', 'shell/natter/natter.json');
 
-// NATter's address book is ordinary scoped app data, written via
-// api.fs.saveFile('relays.json', …) and read by hub.js to find the relay
-// to dial. It must stay both readable and writable — locking it in a
-// "protect everything the relay work added" sweep would break NATter and
-// leave /api/hub/* answering 503 with no relay url.
+// Natter's own data is ordinary scoped app data, written via api.fs. It
+// must stay both readable and writable — locking it in a "protect
+// everything the relay work added" sweep would break Natter. It was
+// relays.json until goal/G16.3 moved the node's relay list into node state
+// (relay-state/relays.json, refused to every app); captions.json, what
+// this browser calls each relay, is the part that stayed the app's.
 //
 // SERVABLE, NOT LOADED: the gate is what this asserts, and it is a
-// question about the path. relays.json is gitignored (a fresh clone has
-// none — see .gitignore), so loading it passed only on a working copy
-// that happened to hold one, and went red on the first fresh checkout
-// (WSL, 2026-09-19).
-expectServable('shell/natter/relays.json (app data)', 'shell/natter/relays.json');
-expectWritable('shell/natter/relays.json (app data)', 'shell/natter/relays.json');
+// question about the path. The file is gitignored (a fresh clone has
+// none — see .gitignore), so loading it would pass only on a working copy
+// that happened to hold one (WSL, 2026-09-19).
+expectServable('shell/natter/captions.json (app data)', 'shell/natter/captions.json');
+expectWritable('shell/natter/captions.json (app data)', 'shell/natter/captions.json');
 
 // ---- process scripts: readable, never writable ----
 // Job Selector/Job Monitor list them, the Code Viewer shows them; writes are already

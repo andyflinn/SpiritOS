@@ -96,8 +96,9 @@ function plant(name) {
   return home;
 }
 function pointAt(home, relayUrl) {
-  fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'spirit', url: relayUrl }], null, 2));
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'spirit', url: relayUrl }], null, 2));
 }
 function handed(log) {
   try { return fs.readFileSync(log, 'utf8').split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { return []; }

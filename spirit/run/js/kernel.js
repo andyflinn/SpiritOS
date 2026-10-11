@@ -382,7 +382,7 @@ if (isNode()) {
   // verdict no matter how it is spelled.
   //
   // Note this deliberately resolves rather than rejecting dot segments
-  // outright: './index.html' and 'shell/./natter/relays.json' are legitimate
+  // outright: './index.html' and 'shell/./natter/session.json' are legitimate
   // and have to keep working (pathJail.js and pathCanonicalization.js both
   // assert it). Canonicalize, then check — don't blanket-refuse.
   function canonicalPath(filePath) {

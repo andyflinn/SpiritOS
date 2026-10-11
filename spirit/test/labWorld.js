@@ -354,8 +354,10 @@ function createWorld(opts) {
       // relays" from outside it.
       auth.saveIdentity(node.home, id);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
+      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+      fs.mkdirSync(path.join(node.home, 'relay-state'), { recursive: true });
       fs.writeFileSync(
-        path.join(node.home, 'shell', 'natter', 'relays.json'),
+        path.join(node.home, 'relay-state', 'relays.json'),
         JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
       );
       // AND THE SEAT (2026-09-18). This lab claims by posting STRAIGHT AT
@@ -417,8 +419,10 @@ function createWorld(opts) {
       const contactBook = require('../run/js/contacts.js');
       auth.saveIdentity(node.home, owner);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
+      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+      fs.mkdirSync(path.join(node.home, 'relay-state'), { recursive: true });
       fs.writeFileSync(
-        path.join(node.home, 'shell', 'natter', 'relays.json'),
+        path.join(node.home, 'relay-state', 'relays.json'),
         JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
       );
       relayKeys.seat(node.home, relay.url, ownerName);

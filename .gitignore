@@ -138,29 +138,11 @@ minted.json
 # file about a peer.
 **/peerfile-*.json
 
-# THIS NODE'S OWN RELAY LIST. Same class as session.json above and
-# ignored for the same reason: it is what one box has decided about where
-# it keeps its mail, and it is meaningless in another clone.
-#
-#   Andy: "i want all my nodes on labMaster page to only be updated via
-#   github, jazz's binding to spirit-3 keeps getting trashed."
-#
-# It was TRACKED, and that is the file that fights a `git pull`. A lab
-# node bound to spirit-3 has a relays.json of its own; `git reset --hard
-# origin/master` — which is how the public relay updates itself
-# (install/kamerata/update.sh) — reverts it, and the node comes back
-# pointing somewhere else. Every other piece of a node's state survives
-# an update because git never had it. This one did not, alone.
-#
-# It had already cost once from the other direction: labPopulate rewrites
-# it during a lab run, so a reflexive `git add -A` ships a loopback relay
-# as everybody's default.
-#
-# WHAT A FRESH CLONE LOSES is a list of relays it has never spoken to.
-# That is not a loss: an unbound node showing Natter's add-a-relay row is
-# what an unbound node is, and a list shipped in git was the box
-# pretending to know somewhere it had never been.
-spirit/run/shell/natter/relays.json
+# The node's relay list lives in relay-state/relays.json since goal/G16.3 (ignored with relay-state/ above).
+# What this node's browser calls each relay — Natter's private captions,
+# the one part of the old relays.json that is the app's (goal/G16.3). One
+# box's display words, meaningless in another clone.
+spirit/run/shell/natter/captions.json
 # Desk's own log (AGENTS-UI.md): Andy's conversation with the agents, kept
 # by the app in its own folder because "they must keep their own logs".
 # His words, never pushed.
@@ -169,16 +151,12 @@ spirit/run/shell/natter/relays.json
 # can say which commit it came from. Never a checkout, so never tracked.
 spirit/run/build.json
 
-# Transient: labPopulate copies relays.json here before putting a lab
-# row in front of it, and --down restores from it. Never a committed file —
-# staged once by reflex, it made git ls-files name a path that the teardown
-# had already deleted, and every lab node then failed to build.
-spirit/run/shell/natter/relays.json.before-lab
-# And the binding, backed up the same way for a better reason: session.json
-# is what firstRun() reads, so a node that loses it opens to Natter alone
+# labPopulate's relays.json.before-lab backup lives in relay-state too since goal/G16.3.
+# labPopulate also backs up the binding, session.json, which
+# firstRun() reads, so a node that loses it opens to Natter alone
 # and behaves like a stranger to itself with its identity, contacts, relays
-# and mail all still there. Ignored for the same hard reason as the line
-# above — missingFromCopy uses --exclude-standard, so an untracked backup
+# and mail all still there. Ignored because missingFromCopy uses
+# --exclude-standard, so an untracked backup
 # refuses every lab build until it is deleted.
 spirit/run/shell/natter/session.json.before-lab
 NEXT_PROMPT.md

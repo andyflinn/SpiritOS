@@ -60,7 +60,21 @@ function mountApp(options) {
   const opts = options || {};
   const doc = fakeDocument();
   const log = [];
-  const store = { 'relays.json': JSON.stringify(opts.relays === undefined ? SEEDED : opts.relays) };
+  const store = {};
+  // THE NODE'S LIST, not a file in this app's store (goal/G16.3): Natter
+  // reads it through the probe, so the probe below answers with it. A
+  // fixture that names only rows lists exactly those relays; one that
+  // names relays lists those, and a row for a relay the node does not
+  // list is not answered — the node probes only what it lists. A claim
+  // the dialog reports adds its relay, as the node's handleClaim does.
+  const nodeList = (opts.relays !== undefined ? opts.relays
+    : opts.rows ? opts.rows.map(function (r) { return { label: r.label, url: r.url }; })
+    : SEEDED).map(function (r) { return { label: r.label, url: r.url }; });
+  function probeRows() {
+    return nodeList.map(function (r) {
+      return (opts.rows || []).filter(function (row) { return row.url === r.url; })[0] || { url: r.url, label: r.label };
+    });
+  }
 
   // A BOUND FIXTURE NOW HAS THE FILE, because the file is the answer.
   //
@@ -97,7 +111,7 @@ function mountApp(options) {
     // empty screen. The real door refuses an unclaimed verb; so does
     // this one.
     if (verb === 'relay.status') {
-      payload = { rows: opts.rows || [], ownedUrls: opts.ownedUrls || [], mustPick: !!opts.mustPick };
+      payload = { rows: probeRows(), ownedUrls: opts.ownedUrls || [], mustPick: !!opts.mustPick };
     } else if (url.indexOf('/api/hub/') === 0) {
       // Still a path, still the wire: contact and post have not folded.
       payload = {};
@@ -192,6 +206,12 @@ function mountApp(options) {
     // row names with which params is the whole of what the click does.
     callDialog: function (id, params) {
       called.push({ id: id, params: params });
+      // A claim the screen made lists its relay on the node (goal/G16.3).
+      const said = opts.dialogResult;
+      if (said && said.claimed && params && params.url &&
+          !nodeList.some(function (r) { return r.url === params.url; })) {
+        nodeList.push({ label: params.url, url: params.url });
+      }
       // What the screen decided. A dialog that decided nothing answers
       // null, and costs this list nothing.
       return Promise.resolve(opts.dialogResult || null);
@@ -254,16 +274,20 @@ test.startTest('Natter — where this node gets its name');
 function theAddButtonActuallyAdds() {
   test.subHeading('Add puts a relay on the list, and says it did');
 
+  // ADD IS A CLAIM since goal/G16.3: the list is the node's own state, no
+  // verb adds to it, and a claim that succeeds is what lists a relay. So
+  // this asserted a row written to the app's relays.json, and asserts now
+  // that Add opens the relay's own screen to claim on, that the claim is
+  // what put the relay on the list, and that the app wrote no list at all.
   const app = mountApp({
     label: 'andy',
     relays: [{ label: 'spirit', url: 'https://spirit.example' }],
-    // The relay being added ANSWERS, and holds no row for this key —
-    // which is the case a person is actually in the moment after they
-    // add somewhere they have been invited but not yet claimed.
     rows: [
       { url: 'https://spirit.example', label: 'spirit', status: 200, owned: true },
-      { url: 'https://relay-b.example', label: 'lab', status: 200, owned: false, claimed: false },
+      { url: 'https://relay-b.example', label: 'lab', status: 200, owned: false, claimed: true, claimedLabel: 'andy' },
     ],
+    // The relay's screen took a seat, as natterDetails reports a claim.
+    dialogResult: { changed: true, url: 'https://relay-b.example', claimed: 'andy' },
   });
 
   return settle().then(function () {
@@ -271,22 +295,29 @@ function theAddButtonActuallyAdds() {
     el(app, 'natter-url').value = 'https://relay-b.example';
     el(app, 'natter-add').fire('click');
 
-    return settle().then(function () {
-      let saved = [];
-      try { saved = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { saved = []; }
-      const added = saved.filter(function (r) { return r.url === 'https://relay-b.example'; })[0];
+    return settle().then(settle).then(function () {
+      const opened = app.called.filter(function (c) {
+        return c.id === 'shell/natterDetails' && c.params && c.params.url === 'https://relay-b.example';
+      });
+      if (opened.length === 1) test.check('Add opens that relay\'s own screen, where the claim is');
+      else test.fail('dialogs called: ' + JSON.stringify(app.called));
 
-      if (added && added.label === 'public Lab Relay') {
-        test.check('the relay is written to relays.json, under the private label typed');
+      const list = el(app, 'natter-tbody').innerHTML;
+      if (/relay-b\.example/.test(list) && /public Lab Relay/.test(list)) {
+        test.check('the claim put the relay on the list, under the private label typed');
       } else {
-        test.fail('relays.json: ' + JSON.stringify(saved));
+        test.fail('list after the claim: ' + list);
+      }
+
+      if (app.store['relays.json'] === undefined) {
+        test.check('and the app wrote no relay list of its own: the list is the node\'s');
+      } else {
+        test.fail('the app wrote relays.json: ' + app.store['relays.json']);
       }
 
       // AND THE LINE FINISHES. "asking it now…" with no ending is the
-      // same fault natterDetails had this morning: a progress message
-      // that cannot complete is indistinguishable from a hang. This
-      // fixture answers the probe with a row this node holds no seat on,
-      // so the settled text must say THAT rather than still be asking.
+      // same fault natterDetails had: a progress message that cannot
+      // complete is indistinguishable from a hang.
       const said = el(app, 'natter-status').textContent;
       if (/added/.test(said) && !/asking it now/.test(said)) {
         test.check('and the row says so, and the line finishes rather than saying "asking" for ever');
@@ -294,22 +325,40 @@ function theAddButtonActuallyAdds() {
         test.fail('status said: "' + said + '"');
       }
 
-      // THE THREE OUTCOMES ARE THE THREE THE DOT DRAWS, said in words,
-      // because a fresh row is exactly the moment somebody does not yet
-      // know what the colours mean. This one answered and holds no seat.
-      if (/no seat/.test(said)) {
-        test.check('and names which of the three it is — reachable, but no seat yet');
+      // THE OUTCOME IS NAMED, because the claim is the whole of adding now.
+      if (/seat/.test(said)) {
+        test.check('and names the outcome — a seat held there');
       } else {
         test.fail('the outcome was not named: "' + said + '"');
       }
+    });
+  }).then(function () {
+    // A SCREEN CLOSED WITHOUT A CLAIM ADDS NOTHING, and says so.
+    const none = mountApp({
+      label: 'andy',
+      relays: [{ label: 'spirit', url: 'https://spirit.example' }],
+      rows: [{ url: 'https://spirit.example', label: 'spirit', status: 200, owned: true }],
+    });
+    return settle().then(function () {
+      el(none, 'natter-label').value = 'lab';
+      el(none, 'natter-url').value = 'https://relay-c.example';
+      el(none, 'natter-add').fire('click');
+      return settle().then(settle).then(function () {
+        const said = el(none, 'natter-status').textContent;
+        const list = el(none, 'natter-tbody').innerHTML;
+        if (/not added/.test(said) && !/relay-c\.example/.test(list)) {
+          test.check('and a screen closed without a claim adds nothing, and says so');
+        } else {
+          test.fail('said "' + said + '", list ' + list);
+        }
+      });
     });
   });
 }
 
 // THE SAME RULE THE WIRE ENFORCES, asked before a round trip is spent.
 // hub.assertRelayUrl refuses anything but https, or http to loopback —
-// so a node that saved an http URL to a public host would hold a row it
-// could never use.
+// so a claim aimed at an http URL on a public host could never succeed.
 function addRefusesAUrlTheWireWouldRefuse() {
   test.subHeading('And it refuses a URL the node could never actually use');
 
@@ -325,12 +374,12 @@ function addRefusesAUrlTheWireWouldRefuse() {
     el(app, 'natter-add').fire('click');
 
     return settle().then(function () {
-      let saved = [];
-      try { saved = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { saved = []; }
-      if (saved.length === 1 && /https/.test(el(app, 'natter-status').textContent)) {
-        test.check('http to a public host is refused, and the list is unchanged');
+      // goal/G16.3: nothing is saved by the app any more, so "refused" is
+      // that no claim screen was opened for it.
+      if (app.called.length === 0 && /https/.test(el(app, 'natter-status').textContent)) {
+        test.check('http to a public host is refused, and no claim is offered on it');
       } else {
-        test.fail('saved ' + saved.length + ', said "' + el(app, 'natter-status').textContent + '"');
+        test.fail('opened ' + JSON.stringify(app.called) + ', said "' + el(app, 'natter-status').textContent + '"');
       }
 
       // BUT LOOPBACK IS FINE, because that is a lab relay and the wire
@@ -340,12 +389,10 @@ function addRefusesAUrlTheWireWouldRefuse() {
       el(app, 'natter-add').fire('click');
 
       return settle().then(function () {
-        let after = [];
-        try { after = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { after = []; }
-        if (after.some(function (r) { return r.url === 'http://127.0.0.1:43425'; })) {
+        if (app.called.some(function (c) { return c.params && c.params.url === 'http://127.0.0.1:43425'; })) {
           test.check('while http to 127.0.0.1 is allowed — that is what a lab relay is');
         } else {
-          test.fail('a loopback lab relay was refused: ' + JSON.stringify(after));
+          test.fail('a loopback lab relay was refused: ' + JSON.stringify(app.called));
         }
       });
     });

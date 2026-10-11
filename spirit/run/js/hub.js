@@ -326,7 +326,7 @@ function markMine(rootDir, text) {
   return JSON.stringify(parsed);
 }
 
-// Claim, send and inbox still speak to the first Natter row: one browser,
+// Claim, send and inbox still speak to the first listed relay: one browser,
 // one session, one mailbox at a time. Minting is the call that had to stop
 // doing that — see handleInvite.
 function loadRelayUrl(rootDir) {
@@ -634,8 +634,8 @@ function handleMatches(rootDir, peers, handle) {
 // second poller — or a stale tab — would have been a second answer.
 //
 // ONE FILE, AND IT IS THE NODE'S. It was app/contacts/prefs.json, which
-// was wrong twice over (Andy: "shell/contacts/prefs.json is the wrong place
-// for that file, it's a node-global").
+// was wrong twice over (Andy, of that file: "... is the wrong place for
+// that file, it's a node-global").
 //
 // Wrong as a LOCATION: who this node will hear from is a fact about its
 // front door, not about one app. Contacts draws the radios; it does not
@@ -1009,7 +1009,7 @@ function createHub(rootDir) {
   function withRelay(res, fn) {
     var url = loadRelayUrl(rootDir);
     if (!url) {
-      fail(res, 503, 'no relay url in shell/natter/relays.json');
+      fail(res, 503, 'no relay url in the relay list of this node');
       return;
     }
     try { assertRelayUrl(url); }
@@ -1039,6 +1039,30 @@ function createHub(rootDir) {
     return guarded(res, chosen.url, fn);
   }
 
+  // ── A CLAIM IS HOW A RELAY GETS ONTO THE LIST (goal/G16.3) ──────────
+  //
+  //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+  //   list relays and remove relay, with a successful claim adding its
+  //   relay? yes."
+  //
+  // So a NAMED url is aimed at even when this node does not list it yet —
+  // the claim is what lists it. Refusing an unlisted url here, as the mint
+  // doors still do through chooseUrl, would leave no way onto the list at
+  // all, because there is no verb that adds one. The url still has to pass
+  // assertRelayUrl, and relay.claim is a loopback verb, so the only caller
+  // that can aim it is this node's own browser. With no url named, the old
+  // fallback stands: the only listed relay, or a refusal.
+  function withClaimRelay(res, wanted, fn) {
+    var named = ownerBadge.normalizeUrl(wanted);
+    if (!named) return withChosenRelay(res, '', fn);
+    try { assertRelayUrl(named); }
+    catch (e) {
+      fail(res, 503, String(e.message || e));
+      return;
+    }
+    return guarded(res, named, fn);
+  }
+
   // CLAIMING HAPPENS ON ONE RELAY, AND NOW IT SAYS WHICH.
   //
   // This used `withRelay` — relays.json[0], whatever the caller meant —
@@ -1054,9 +1078,9 @@ function createHub(rootDir) {
   // (2026-09-15) the aim has to be real.
   //
   // Not a new switch — the switch is `ownerBadge.chooseUrl`, which has
-  // decided this for three other doors since invites landed. A url that
-  // is on no Natter list is refused there, so a stale tab cannot aim a
-  // signed claim at a relay this node does not list. With nothing wanted
+  // decided this for three other doors since invites landed. Since
+  // goal/G16.3 a NAMED url is the one exception (withClaimRelay above):
+  // the claim is what lists a relay, so it cannot require one. With nothing wanted
   // it still falls back to the only row when there is only one, which is
   // exactly what every existing caller relied on.
   // ── AND A NODE THAT JUST CLAIMED MUST CONNECT ────────────────────────
@@ -1084,7 +1108,7 @@ function createHub(rootDir) {
     var presence = deps && deps.presence;
     var probe = deps && deps.probe;
     readJsonBody(req).then(function (body) {
-      withChosenRelay(res, body && body.url, function (url) {
+      withClaimRelay(res, body && body.url, function (url) {
         // FIRST CONTACT, STATED. This is the node's own claim: it has no
         // pin for this relay — the claim is how it gets one — so the
         // fetch-and-trust path is correct here and says so rather than
@@ -1099,8 +1123,22 @@ function createHub(rootDir) {
             // AFTER THE ANSWER IS WRITTEN, never before: a claim that
             // worked must be reported even if opening a stream does not,
             // and connecting is not what the caller asked about.
+            var marked = markMine(rootDir, r.text);
             res.writeHead(r.status, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(markMine(rootDir, r.text));
+            res.end(marked);
+
+            // A SEAT HELD IS A RELAY USED (goal/G16.3): a new seat, or a 409
+            // that is this node's own key already sitting there, which is
+            // the answer Natter also reads as success. Either way the relay
+            // goes on the node's own list, and the probe cache is dropped so
+            // the next relay.search sees it.
+            var mineAlready = false;
+            try { mineAlready = r.status === 409 && !!JSON.parse(marked).mine; }
+            catch (e) { mineAlready = false; }
+            if ((r.status >= 200 && r.status < 300) || mineAlready) {
+              try { ownerBadge.addRelay(rootDir, url, ''); probeCache = null; }
+              catch (e) { /* the claim stands; the list is written on the next claim */ }
+            }
 
             if (r.status >= 200 && r.status < 300) {
               // ── WRITE THE SEAT DOWN, HERE, WHERE IT IS KNOWN ────────
@@ -1797,7 +1835,7 @@ function createHub(rootDir) {
       // found is recorded rather than inferred later.
       var wantedUrl = String((body && body.url) || '').trim().replace(/\/+$/, '');
       var target = wantedUrl || loadRelayUrl(rootDir);
-      if (!target) { fail(res, 503, 'no relay url in shell/natter/relays.json'); return; }
+      if (!target) { fail(res, 503, 'no relay url in the relay list of this node'); return; }
       try { assertRelayUrl(target); }
       catch (e) { fail(res, 503, String(e.message || e)); return; }
 
@@ -2799,7 +2837,8 @@ function createHub(rootDir) {
   //   status.
   //
   // relay.status answered every relay whole. The probe it ran asks every
-  // relay in relays.json for its key; a search and the handful of gets a
+  // relay on this node's own list (relay-state/relays.json, goal/G16.3)
+  // for its key; a search and the handful of gets a
   // screen then makes share ONE probe, kept for PROBE_FRESH_MS, so a page
   // painting three relays does not probe each of them four times.
   var PROBE_FRESH_MS = 3000;
@@ -2840,6 +2879,22 @@ function createHub(rootDir) {
       return { ok: true, status: 200, items: r.items, more: r.more, mustPick: !!summary.mustPick,
         name: String((body && body.name) || '') };
     });
+  }
+
+  // ── relay.remove: ONE RELAY OFF THIS NODE'S LIST (goal/G16.3) ────────
+  //
+  //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+  //   list relays and remove relay, with a successful claim adding its
+  //   relay? yes."
+  //
+  // The key is the url, the same key relay.search hands out. The seat on
+  // that relay is not touched: this is the node no longer using it, not
+  // the node leaving it. Refused when it would leave no public relay
+  // (ownerBadge.canRemoveRelay), the rule Natter's screen already obeyed.
+  function relayRemove(body) {
+    var out = ownerBadge.removeRelay(rootDir, String((body && body.key) || ''));
+    if (out.ok) probeCache = null;
+    return out;
   }
 
   function relayGet(body, deps) {
@@ -2924,6 +2979,7 @@ function createHub(rootDir) {
     chooseRoute: chooseRoute,
     handleStatus: handleStatus,
     relaySearch: relaySearch,
+    relayRemove: relayRemove,
     relayGet: relayGet,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,

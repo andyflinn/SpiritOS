@@ -541,9 +541,9 @@ function updateNode(id) {
 // stated as paths because this has to MOVE them rather than merely not
 // overwrite them. Everything else in a home is code and comes from git.
 const NODE_STATE = [
+  // The relay list is in here since goal/G16.3 (relay-state/relays.json).
   path.join('spirit', 'run', 'relay-state'),
   path.join('spirit', 'run', 'shell', 'natter', 'session.json'),
-  path.join('spirit', 'run', 'shell', 'natter', 'relays.json'),
   path.join('spirit', 'run', 'shell', 'natter', 'minted.json'),
   // relayChat's entry stood here until 2026-09-25, when the app left for
   // its own repo. `carryState` skips what is not there, so it would have
@@ -966,7 +966,8 @@ function liveWorldPaths() {
   const run = path.join(WORK_HOME);
   return {
     identity: path.join(run, 'relay-state', 'identity.json'),
-    relays: path.join(run, 'shell', 'natter', 'relays.json'),
+    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+    relays: path.join(run, 'relay-state', 'relays.json'),
     session: path.join(run, 'shell', 'natter', 'session.json'),
     // The home itself, for the seat record — see liveWorldReport.
     home: run,
@@ -1341,7 +1342,8 @@ async function buildLiveWorld(body) {
   //
   // A row on spirit-3 and a stream to spirit-3 are different things, and
   // neither is "properly bound" on its own. This is the second.
-  const theirRelays = path.join(peer.home, 'shell', 'natter', 'relays.json');
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  const theirRelays = path.join(peer.home, 'relay-state', 'relays.json');
   const theirRows = readJson(theirRelays, []).filter(function (r) { return r && r.url; });
   const theirOthers = theirRows.filter(function (r) { return r.url !== LIVE_RELAY; });
   const theirFirst = theirRows.length > 0 && theirRows[0].url === LIVE_RELAY;

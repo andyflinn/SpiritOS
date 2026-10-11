@@ -1,13 +1,21 @@
 // Dynamically loaded by index.html's discoverDynamicApps (see natter.json
 // for the id/name/icon this app is already declared under before this
-// script ever runs). Maintains a simple list of known relay URLs — Server
-// #3's future public-IP hub nodes, for eventual peer-to-peer connections.
-// v0 is deliberately just a list: add/remove/view, one label + one URL
-// per entry, nothing else — no liveness checking, no key material, no
-// connection logic. Stored under this app's own scoped folder
-// (app/natter/relays.json, a fixed filename) via api.fs, not shell-wide
-// preferences — this is this app's own data, not a shell display setting.
-var RELAYS_FILENAME = 'relays.json';
+// script ever runs). Shows the relays this node uses, one label + one URL
+// per row, and is where a node gets onto a relay.
+//
+// THE LIST IS THE NODE'S, NOT THIS APP'S (goal/G16.3). It was this app's
+// file, relays.json, read and written through api.fs — so an app decided
+// where the node claims, connects and searches. The node keeps it in its
+// own state now and this app only asks, through relay.search (by way of
+// spirit.core.relays.status). Taking a row off is the node's relay.remove;
+// no control here offers it today (the Remove panel went on 2026-09-13,
+// see natterCanRemove). There is no verb that adds one; a claim that
+// succeeds is what adds a relay, so Add opens the relay's own screen to
+// claim on.
+//
+//   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+//   list relays and remove relay, with a successful claim adding its
+//   relay? yes."
 
 // The shell's own marks, so ★ here is the same ★ that means "this node
 // owns it" on the row above and in Relay Chat's To list.
@@ -52,7 +60,7 @@ var NATTER_SESSION_FILE = 'session.json';
 
 // The primary caption — what this node calls itself, and what the shell
 // puts in the window title. Derived, never stored independently: it is
-// the first relay in relays.json order that we hold a binding for. Front
+// the first relay in the node's list order that we hold a binding for. Front
 // of the list is already this tree's notion of primary (hub.loadRelayUrl,
 // and labMaster deliberately moves spirit-3 to the front for it).
 var natterMyName = '';
@@ -70,15 +78,42 @@ var natterBindings = Object.create(null);
 // array of labels, nothing reads it, and a node that downgrades should
 // find it where it left it.
 
-function natterLoadRelays(api) {
-  var raw = api.fs.loadFile(RELAYS_FILENAME);
-  if (raw == null) return [];
-  try {
-    var parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    return [];
-  }
+// The node's list, as relay.search and relay.get answered it, poured into
+// the one array every function here was handed. Refilled IN PLACE, because
+// that array is shared by reference with the click handlers mount wired
+// up — a new array would leave them reading the list as it was at mount.
+function natterFillRelays(relays, rows) {
+  relays.length = 0;
+  (rows || []).forEach(function (row) {
+    if (row && row.url) relays.push({ label: natterCaptions[row.url] || row.label || '', url: row.url });
+  });
+  return relays;
+}
+
+// ── THE PRIVATE LABEL STAYS THIS APP'S ──────────────────────────────
+//
+// What you call a relay is display, it never leaves this node, and it
+// decides nothing about where the node talks — so it is the one part of
+// the old relays.json that is rightly this app's data, in this app's
+// folder. The list itself is the node's (goal/G16.3), and a claim, which
+// is what adds a relay, carries no caption for it. url -> label.
+var NATTER_CAPTIONS_FILE = 'captions.json';
+var natterCaptions = Object.create(null);
+
+function natterLoadCaptions(api) {
+  natterCaptions = Object.create(null);
+  var held = null;
+  try { held = JSON.parse(api.fs.loadFile(NATTER_CAPTIONS_FILE) || 'null'); }
+  catch (e) { held = null; }
+  if (!held || typeof held !== 'object') return;
+  Object.keys(held).forEach(function (url) {
+    if (typeof held[url] === 'string' && held[url]) natterCaptions[url] = held[url];
+  });
+}
+
+function natterSaveCaption(api, url, label) {
+  natterCaptions[url] = label;
+  return Promise.resolve(api.fs.saveFile(NATTER_CAPTIONS_FILE, JSON.stringify(natterCaptions, null, 2) + '\n'));
 }
 
 // The rule itself lives in js/ownerBadge.js, whose isomorphic half the
@@ -279,7 +314,7 @@ function natterLabelFor(relays, url) {
 //
 // It did not propagate, and nothing was broken: the roll carried the
 // new name to the browser and NOTHING DREW IT. Every caption came from
-// relays.json — the reader's private shorthand — so a relay could
+// the relay list — the reader's private shorthand — so a relay could
 // publish a name and no screen would ever show it.
 //
 // PUBLISHED FIRST, LOCAL SECOND, and that order is the opposite of a
@@ -290,8 +325,8 @@ function natterLabelFor(relays, url) {
 // standing in until it had one.
 //
 // The local label is not lost and not overridden anywhere it was typed:
-// it is still what relays.json holds, still what the Add row wrote, and
-// still what shows for a relay that has never been named.
+// it is still what this app's captions hold (or the node's list, for a
+// relay given none), and still what shows for a relay never named.
 function natterRelayName(relays, url) {
   var badge = natterBadgeByUrl[url];
   var published = (badge && badge.roll && badge.roll.relayLabel) || '';
@@ -304,12 +339,15 @@ function natterOpenRelay(api, container, relays, url) {
   // send, nor read — and the list is the only thing that knows how long
   // it is. A screen that counted rows would be a second place for that
   // rule to live, and a second place is where it drifts.
-  api.callDialog('shell/natterDetails', {
+  //
+  // RETURNED since goal/G16.3, so Add can say how the claim it opened for
+  // ended: the claim is what put the relay on the node's list, or nothing did.
+  return api.callDialog('shell/natterDetails', {
     url: url,
     label: natterMyName,
     // WHAT THIS LIST CALLS IT, for the dialog's own title. The screen is
-    // handed one subject and never reads relays.json — the caption is
-    // the list's to know, the same way canRemove was.
+    // handed one subject and never searches the relay list — the caption
+    // is the list's to know, the same way canRemove was.
     relayLabel: natterRelayName(relays, url),
     // `autoAdd` WAS HANDED IN HERE and is gone with the panel that read
     // it (Andy: "another panel, 'When somebody new joins' makes no sense
@@ -322,11 +360,11 @@ function natterOpenRelay(api, container, relays, url) {
     // ever looked at it. No newcomer was ever added or not added because
     // of that radio.
   }).then(function (result) {
-    if (!result) return;
-    // REMOVAL IS RETURNED, NOT DONE. relays.json is this app's file —
-    // the screen's own api.fs is scoped to its folder — so the screen
-    // says what it decided and this performs it, under the same guard
-    // that has always stood here.
+    if (!result) return result;
+    // REMOVAL IS RETURNED, NOT DONE: the screen says what it decided and
+    // this performs it. No screen returns one today; when one does, the
+    // node performs it through relay.remove (goal/G16.3), which asks the
+    // same canRemoveRelay guard that has always stood here.
     // `result.renamed` WAS HANDLED HERE and is gone with the panel that
     // produced it: renaming moved to Info, which posts one label to every
     // relay at once (Andy: "i have no idea which 'relay' contains which
@@ -343,11 +381,13 @@ function natterOpenRelay(api, container, relays, url) {
     // seat taken on a relay this node had no row on is not a caption
     // moving, it is a membership appearing, and the file has to say so
     // before the next probe has anything to adopt.
+    // A CLAIM ALSO LISTS THE RELAY now (goal/G16.3): the node put it on its
+    // own list as the claim succeeded, and natterBind's probe reads it back.
     if (result.claimed) {
-      natterBind(api, container, relays, url, result.claimed);
-      return;
+      return natterBind(api, container, relays, url, result.claimed).then(function () { return result; });
     }
     if (result.changed) natterProbe(api, container, relays);
+    return result;
   });
 }
 
@@ -380,7 +420,10 @@ function natterOpenRelay(api, container, relays, url) {
 // So: always ask. natterCheckBinding writes back whatever relays report
 // for this key, which is how a node with no file recovers its bindings
 // by itself.
-function natterProbe(api, container, relays) {
+// `first` is mount's own call: the list is not known until this answers,
+// so the session is read again against it — a file from before 2026-09-15
+// carries its one label onto the first LISTED relay (natterLoadSession).
+function natterProbe(api, container, relays, first) {
   var label = natterMyName || '';
 // relay.status is gone (puppets/G2): the page kernel's relays.status
   // asks relay.search and relay.get and hands back the same shape.
@@ -391,6 +434,13 @@ function natterProbe(api, container, relays) {
       rows.forEach(function (row) {
         if (row && row.url) natterBadgeByUrl[row.url] = row;
       });
+      // THE LIST ITSELF COMES FROM THE NODE (goal/G16.3), on the same
+      // answer as the badges: the rows relay.search found are the relays
+      // this node uses.
+      natterFillRelays(relays, rows);
+      natterRelaysCache = relays;
+      if (first) natterLoadSession(api, relays);
+      natterPaintBind(api, relays);
       natterCheckBinding(api, relays, rows);
       natterRenderList(container, api, relays);
     })
@@ -443,7 +493,7 @@ function natterPaintBind(api, relays) {
   //   Andy: "when somebody else has their own relay, it should land on
   //   natter, and offer the addition of a new relay or using spirit-3."
   //
-  // relays.json ships with spirit-3 in it, so `relays.length` is one on
+  // The list starts with spirit-3 in it, so `relays.length` is one on
   // a fresh node and the ONLY control that could add your own relay was
   // hidden — behind claiming a seat on somebody else's first. An unbound
   // node has exactly two things it might want to do and this screen
@@ -475,8 +525,10 @@ function natterPaintBind(api, relays) {
       // install, from the key its installer was given, and that key claims
       // with no invite. This said to claim with the token install.js
       // printed; install.js and that token are gone.
-      '<strong>Use a relay you already have.</strong> Add it below, then open its row ' +
-      'and claim: it was installed with this node’s public key as its owner, so no token is needed.' +
+      // ADD IS A CLAIM since goal/G16.3: the relay goes on the list when the
+      // claim on it succeeds, so the copy says one step, not two.
+      '<strong>Use a relay you already have.</strong> Add it below and claim on it: ' +
+      'it was installed with this node’s public key as its owner, so no token is needed.' +
       '<br><br>' +
       '<strong>Or take a seat on somebody else’s.</strong> Open a relay in the list below ' +
       'and claim there, with the invite name and the token they read out to you. ' +
@@ -487,7 +539,7 @@ function natterPaintBind(api, relays) {
       // into two routes, and natterBind caught it.
       '<strong>If you have no invite yet, ask countinn@gmail.com, ' +
       'he will give you one within 24 hours.</strong>'
-    : 'This node has no relay listed yet. Add one above (for example https://spirit.andyflinn.com), then open it and claim a seat.';
+    : 'This node has no relay listed yet. Add one above (for example https://spirit.andyflinn.com) and claim a seat on it: a claim that succeeds is what lists it.';
 }
 
 
@@ -623,7 +675,7 @@ function natterPrimaryLabel(relays) {
     if (held && held.label) return held.label;
   }
   // A binding on a relay no longer listed still names this node — losing
-  // a row from relays.json is not losing the seat it pointed at.
+  // a row from the relay list is not losing the seat it pointed at.
   var any = Object.keys(natterBindings)[0];
   return (any && natterBindings[any].label) || '';
 }
@@ -847,8 +899,11 @@ function natterCheckBinding(api, relays, rows) {
 
 spirit.shell.activateApp({
   mount: function (container, api) {
-    var relays = natterLoadRelays(api);
+    // EMPTY UNTIL THE NODE ANSWERS (goal/G16.3): the list is asked of the
+    // node by the probe below, which fills this same array.
+    var relays = [];
     natterRelaysCache = relays;
+    natterLoadCaptions(api);
 
     // ── WHAT THE RELAY SAYS, WITHOUT BEING ASKED ────────────────────
     //
@@ -940,7 +995,7 @@ spirit.shell.activateApp({
     // natterCheckBinding is called from inside it, on the rows it already
     // fetched.
     //
-    natterProbe(api, container, relays);
+    natterProbe(api, container, relays, true);
 
     // THE CLAIM HANDLER STOOD HERE and went with the form it drove. It
     // is app/natterDetails/ndClaim now, where it can name the relay it
@@ -1002,48 +1057,32 @@ spirit.shell.activateApp({
         return;
       }
 
-      // PUSHED, THEN SAVED, THEN POPPED IF THE SAVE FAILED. The list on
-      // screen and the list on disk must not disagree, and the failure
-      // path is the one that decides that.
-      relays.push({ label: label, url: url });
-      Promise.resolve(api.fs.saveFile(RELAYS_FILENAME, JSON.stringify(relays, null, 2) + '\n'))
-        .then(function () {
-          labelInput.value = '';
-          urlInput.value = '';
-          natterStatus('added — asking it now…');
-          natterRelaysCache = relays;
-          natterRenderList(container, api, relays);
-          // Ask it straight away. A row that sat white until the next
-          // visit would leave somebody wondering whether Add worked,
-          // which is the question this whole comment is about.
-          //
-          // AND SAY WHAT CAME BACK. "asking it now…" with no end is the
-          // same fault natterDetails had this morning — a progress line
-          // that cannot finish looks identical to a hang, and the person
-          // reading it has no way to tell which they are looking at.
-          //
-          // The three outcomes are the three the dot draws, said in
-          // words, because a fresh row is exactly the moment somebody
-          // does not yet know what the colours mean.
-          return natterProbe(api, container, relays).then(function () {
-            var badge = natterBadgeByUrl[url];
-            if (!badge || !Number(badge.status)) {
-              natterStatus('added, but it did not answer — check the address');
-              return;
-            }
-            if (badge.owned || badge.claimed) {
-              natterStatus('added, and you have a seat there');
-              return;
-            }
-            // ANSWERED, AND YOU ARE NOT ON IT. The useful half: it is
-            // reachable, so the next step is a claim rather than a
-            // correction.
-            natterStatus('added — it answered, and you have no seat yet. Open it to claim one.');
+      // ── ADD IS A CLAIM (goal/G16.3) ────────────────────────────────
+      //
+      // This pushed a row and saved this app's relays.json. The list is the
+      // node's now and no verb adds to it: the node lists a relay when a
+      // claim on it succeeds. So Add opens that relay's own screen, where
+      // the claim form is, and the line below says how it ended — a
+      // progress line that cannot finish looks identical to a hang.
+      natterStatus('claim a seat on it to add it — a claim that succeeds puts it on this list');
+      Promise.resolve(natterOpenRelay(api, container, relays, url))
+        .then(function (result) {
+          if (!(result && result.claimed)) {
+            natterStatus('not added — a relay joins this list when a claim on it succeeds');
+            return;
+          }
+          // The caption typed is this app's to keep, under the url the
+          // node now lists.
+          return natterSaveCaption(api, url, label).then(function () {
+            labelInput.value = '';
+            urlInput.value = '';
+            relays.forEach(function (row) { if (row.url === url) row.label = label; });
+            natterRenderList(container, api, relays);
+            natterStatus('added, and you have a seat there');
           });
         })
         .catch(function (err) {
-          relays.pop();
-          natterStatus('could not save: ' + ((err && err.message) || 'unknown'));
+          natterStatus('could not open it: ' + ((err && err.message) || 'unknown'));
         });
     });
 

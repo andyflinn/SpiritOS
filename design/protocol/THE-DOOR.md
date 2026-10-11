@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**54 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**55 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -148,6 +148,7 @@ his words, which keeps the harness red until the verb is gone.
 - `relay.get` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `relay.partnerCheck` — before the rule (2026-09-27)
 - `relay.record` — before the rule (2026-09-27)
+- `relay.remove` — Andy, 2026-10-10: "Q4: Do you approve two new commands on the node, list relays and remove relay, with a successful claim adding its relay? yes." (Desk, goal/G16.3)
 - `relay.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 
 **Inside the node, not on this door.** A booted app (`nodeApps.js`) is
@@ -200,7 +201,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**103 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**96 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

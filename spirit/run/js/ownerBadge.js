@@ -1,6 +1,6 @@
 'use strict';
 
-// The owner badge, and nothing more: for each URL in app/natter/relays.json,
+// The owner badge, and nothing more: for each URL in this node's relay list,
 // does a signed GET /api/relay/status come back 200 with a report?
 //
 // That is the whole definition (DICTIONARY.md, "Owner badge"; CYCLE-A.md).
@@ -107,18 +107,42 @@ function canRemoveRelay(relays, url) {
   // the safe half of being wrong.
   if (!Array.isArray(relays)) return false;
   var going = String(url || '');
+  // THE FLOOR (goal/G16.3): noderoutes.net is never removed, whatever else
+  // is listed. Andy: "we'll remove the option to delete noderoutes.net".
+  if (normalizeUrl(going) === normalizeUrl(KEPT_RELAY.url)) return false;
   return relays.some(function (row) {
     var u = String((row && row.url) || row || '');
     return u !== going && isPublicRelay(u);
   });
 }
 
-// Natter rows, in file order, deduped by URL. A row with no url is not a
+// ── THE LIST IS THE NODE'S OWN STATE (goal/G16.3) ────────────────────
+//
+// It was the Natter app's file: writable through fs by any shell app, so
+// an app decided where this node claims, connects and searches, and a
+// node whose Natter folder was emptied quietly pointed at Andy's relay
+// again. It lives in relay-state now, beside identity.json, where the fs
+// write gate refuses every app and every page. The node is its only
+// writer: ensureRelays seeds it, a successful claim adds to it (addRelay)
+// and relay.remove takes from it (removeRelay).
+//
+//   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+//   list relays and remove relay, with a successful claim adding its
+//   relay? yes."
+//
+// NO MIGRATION from the old file, on purpose: moving a node's existing
+// list over is asked of Andy separately, and the node does not read the
+// app's folder even once.
+function relaysPath(rootDir) {
+  return path.join(rootDir, 'relay-state', 'relays.json');
+}
+
+// Rows, in file order, deduped by URL. A row with no url is not a
 // mailbox; a malformed file is no mailboxes, never a throw, because the
 // browser asks for this on every claim.
 function loadRelays(rootDir) {
   var raw;
-  try { raw = fs.readFileSync(path.join(rootDir, 'shell', 'natter', 'relays.json'), 'utf8'); }
+  try { raw = fs.readFileSync(relaysPath(rootDir), 'utf8'); }
   catch (e) { return []; }
   var list;
   try { list = JSON.parse(raw); }
@@ -157,10 +181,17 @@ function configuredUrls(rootDir) {
 // is created once, into a gap, and from then on it belongs to whoever
 // runs the box. Nothing ever overwrites it again.
 //
-// ONE RELAY, NOT TWO. A node must not be left without a working public
-// relay (canRemoveRelay above), and one is what that rule asks for. The
-// second row was a second thing to explain on a screen somebody is
-// seeing for the first time.
+// TWO RELAYS (goal/G16.3, Andy, 2026-10-11): "i say two." spirit for
+// development and noderoutes.net for the actual site: "i own the domain
+// name. and i'll use spirit for development and noderoutes.net for the
+// actual site." and "noderoutes.net will not update as often as spirit".
+// One of them always works, so a first start is never left with none. It
+// replaces the earlier choice of one row, which was about a first screen
+// having less to explain.
+//
+// AND noderoutes.net CANNOT BE REMOVED: "we'll remove the option to delete
+// noderoutes.net". It is the steady fallback every node keeps; removeRelay
+// refuses it by name.
 //
 // ABSENCE ONLY. An EMPTY list is not a gap — it is a state, and one the
 // UI already refuses to create, since Natter will not let the last
@@ -170,20 +201,66 @@ function configuredUrls(rootDir) {
 // Said plainly because it is a real choice and not a detail: this points
 // a brand-new node at ANDY'S relay. It was already true when the file
 // was tracked, and with one row rather than two it is less true than it
-// was — but anybody forking this tree should change this line, and
+// was — but anybody forking this tree should change these lines, and
 // nothing else, to point their nodes somewhere of their own.
 var FIRST_RELAY = { label: 'spirit', url: 'https://spirit.andyflinn.com' };
+var KEPT_RELAY = { label: 'noderoutes', url: 'https://noderoutes.net' };
+var SEED_RELAYS = [FIRST_RELAY, KEPT_RELAY];
 
 function ensureRelays(rootDir) {
-  var file = path.join(rootDir, 'shell', 'natter', 'relays.json');
+  var file = relaysPath(rootDir);
   if (fs.existsSync(file)) return loadRelays(rootDir);
-  try {
-    fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, JSON.stringify([FIRST_RELAY], null, 2) + '\n');
-  } catch (e) {
-    return [];
-  }
+  try { writeRelays(rootDir, SEED_RELAYS); }
+  catch (e) { return []; }
   return loadRelays(rootDir);
+}
+
+// Temp file and rename, so a crash leaves the old list or the new one and
+// never half of either — the discipline the other relay-state files use.
+function writeRelays(rootDir, rows) {
+  var file = relaysPath(rootDir);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  var tmp = file + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(rows, null, 2) + '\n');
+  fs.renameSync(tmp, file);
+}
+
+// A SUCCESSFUL CLAIM IS WHAT ADDS A RELAY (goal/G16.3, Andy's Q4 above).
+// There is no verb for adding one: his yes covered two verbs, and a relay
+// gets onto the list by a claim on it succeeding. Appended, so the first
+// row stays first — hub.loadRelayUrl still reads order. A url already
+// listed is left where it is, label and all.
+function addRelay(rootDir, url, label) {
+  var u = normalizeUrl(url);
+  if (!u) return loadRelays(rootDir);
+  var rows = loadRelays(rootDir);
+  if (rows.some(function (r) { return r.url === u; })) return rows;
+  rows.push({ label: String(label || '') || u, url: u });
+  writeRelays(rootDir, rows);
+  return loadRelays(rootDir);
+}
+
+// relay.remove's whole effect, under the rule the screen has always
+// obeyed (canRemoveRelay): the node keeps one public relay. Asked here as
+// well as in the browser, because the node is the list's only writer and
+// a rule enforced only by a screen is a suggestion.
+function removeRelay(rootDir, url) {
+  var u = normalizeUrl(url);
+  var rows = loadRelays(rootDir);
+  if (!u) return { ok: false, status: 400, error: 'key required' };
+  if (!rows.some(function (r) { return r.url === u; })) {
+    return { ok: false, status: 404, error: 'no such relay' };
+  }
+  // The kept relay, by name (Andy above: "we'll remove the option to
+  // delete noderoutes.net").
+  if (u === normalizeUrl(KEPT_RELAY.url)) {
+    return { ok: false, status: 409, error: 'noderoutes.net is kept on every node' };
+  }
+  if (!canRemoveRelay(rows, u)) {
+    return { ok: false, status: 409, error: 'this node must keep one public relay' };
+  }
+  writeRelays(rootDir, rows.filter(function (r) { return r.url !== u; }));
+  return { ok: true, status: 200, key: u };
 }
 
 // statusPath STOOD HERE, and it was the badge:
@@ -380,13 +457,13 @@ function chooseUrl(urls, wanted) {
   var w = normalizeUrl(wanted);
   if (w) {
     if (urls.indexOf(w) === -1) {
-      return { ok: false, status: 403, error: 'url not in shell/natter/relays.json' };
+      return { ok: false, status: 403, error: 'url not in the relay list of this node' };
     }
     return { ok: true, url: w };
   }
   if (urls.length === 1) return { ok: true, url: urls[0] };
   if (urls.length === 0) {
-    return { ok: false, status: 503, error: 'no relay url in shell/natter/relays.json' };
+    return { ok: false, status: 503, error: 'no relay url in the relay list of this node' };
   }
   return { ok: false, status: 400, error: 'pick a relay url' };
 }
@@ -402,10 +479,14 @@ if (isNode) {
     isPublicRelay: isPublicRelay,
     loadRelays: loadRelays,
     ensureRelays: ensureRelays,
+    addRelay: addRelay,
+    removeRelay: removeRelay,
     configuredUrls: configuredUrls,
     // The one row a node writes itself, exported so a test can assert the
     // default without repeating the string it is checking for.
     FIRST_RELAY: FIRST_RELAY,
+    KEPT_RELAY: KEPT_RELAY,
+    SEED_RELAYS: SEED_RELAYS,
     // `statusPath`, `readBadge`, `ownedFrom`, `claimedLabelFrom` and
     // `censusFacts` STOOD HERE (R3, then 2026-09-19): see where they stood.
     summarize: summarize,

@@ -96,7 +96,8 @@ async function partA() {
 async function partB() {
   test.subHeading('B. the commit check refuses the red writer\'s build and raises a red grant request');
   const plant = function (name) { const h = path.join(scratch, name, 'spirit', 'run'); plantRun.plantRunTree(h); return h; };
-  const pointAt = function (home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true }); fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'spirit', url: url }])); };
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  const pointAt = function (home, url) { fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true }); fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'spirit', url: url }])); };
   const startNode = function (home, port, extra) { const k = spawn(process.execPath, ['js/server.js', '--port', String(port)].concat(extra || []), { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] }); kids.push(k); return k; };
 
   const relayHome = plant('relay');

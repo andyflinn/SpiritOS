@@ -38,7 +38,8 @@ function tmpHome(tag) {
 }
 
 function writeRelays(home, rows) {
-  var dir = path.join(home, 'shell', 'natter');
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  var dir = path.join(home, 'relay-state');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'relays.json'), JSON.stringify(rows, null, 2));
 }
@@ -153,8 +154,9 @@ test.startTest('Cycle A — owner badge, mailbox picker, mint goes where it was 
   }
 
   const broken = tmpHome('broken');
-  fs.mkdirSync(path.join(broken, 'shell', 'natter'), { recursive: true });
-  fs.writeFileSync(path.join(broken, 'shell', 'natter', 'relays.json'), '{ not json');
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(broken, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(broken, 'relay-state', 'relays.json'), '{ not json');
   if (ownerBadge.loadRelays(broken).length === 0 && ownerBadge.loadRelays(tmpHome('none')).length === 0) {
     test.check('a broken or missing relays.json is no mailboxes, not a throw');
   } else {

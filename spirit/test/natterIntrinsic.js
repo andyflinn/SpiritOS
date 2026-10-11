@@ -148,10 +148,9 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
           if (rel === 'shell/natter/session.json') {
             return sessionLabel ? JSON.stringify({ label: sessionLabel, boundAt: '2026-09-07T00:00:00.000Z' }) : null;
           }
-          // The shipped seed, unless a test is asking what happens
-          // without one. `null` here means the file is gone, which is
-          // the case the escape hatch exists for.
-          if (rel === 'shell/natter/relays.json' && relaysRaw !== undefined) return relaysRaw;
+          // The relay list's branch stood here. goal/G16.3 made the list
+          // node state (relay-state/relays.json), which no shell reads
+          // through fs, so `relaysRaw` is kept only as a slot callers pass.
           try { return readRun(rel); } catch (e) { return null; }
         },
         saveFile: function (rel, content) {
@@ -2488,9 +2487,11 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // never been." It passed only on a working copy that held one, and
   // crashed on the first fresh checkout (WSL, 2026-09-19). What is true of
   // every clone is that git does not carry it.
+  // goal/G16.3: the list is node state, relay-state/relays.json, now; the
+  // old path is asked about too, so neither comes back into git.
   let tracked = '';
   try {
-    tracked = require('child_process').execSync('git ls-files shell/natter/relays.json',
+    tracked = require('child_process').execSync('git ls-files relay-state/relays.json shell/natter/relays.json',
       { cwd: RUN_DIR, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch (e) { tracked = 'git unavailable'; }
   if (tracked === '') {

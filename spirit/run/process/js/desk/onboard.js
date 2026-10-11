@@ -57,7 +57,7 @@ async function main() {
   // 1. THE SEAT. A fresh node has no key until its first claim makes one, so the key is read after it.
   const relays = await ask('relay.search', { q: '' });
   const rows = ok(relays) && Array.isArray(relays.body.items) ? relays.body.items : [];
-  if (rows.length !== 1) end(1, 'onboard: the node must list exactly one relay (shell/natter/relays.json); it lists ' + rows.length);
+  if (rows.length !== 1) end(1, 'onboard: the node must list exactly one relay (relay-state/relays.json, goal/G16.3); it lists ' + rows.length);
   const url = String(rows[0].key);
   const got = await ask('relay.get', { key: url });
   const row = (ok(got) && got.body.relay) || {};

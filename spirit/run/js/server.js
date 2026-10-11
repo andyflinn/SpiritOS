@@ -43,7 +43,7 @@ const contactBook = require('./contacts');
 // a packet arrived on into the relay KEY a route is made of.
 const relayKeys = require('./relayKeys');
 // Where this node keeps its mail. Required here for one call at boot:
-// a node with no relays.json is given one.
+// a node with no relay list (relay-state/relays.json) is given one.
 const ownerBadge = require('./ownerBadge');
 // Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
 // again later would report whatever is on disk now, which is the lie
@@ -1268,6 +1268,9 @@ contactBook.syncMarks(ROOT_DIR);
   //
   // BEFORE PRESENCE, which is the reason it is here and not later: the
   // relay list is what presenceNode dials, a few lines below.
+  //
+  // NODE STATE since goal/G16.3: relay-state/relays.json, not the Natter
+  // app's folder, so no app decides where this node talks.
   try { ownerBadge.ensureRelays(ROOT_DIR); }
   catch (e) { /* nor a relay list */ }
 
@@ -2069,6 +2072,14 @@ contactBook.syncMarks(ROOT_DIR);
     // serves a search and the gets that follow it (hub.js, PROBE_FRESH_MS).
     'relay.search': { request: { q: '', name: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, mustPick: false, name: '' }, handler: proxyVerb(function (b) { return hub.relaySearch(b); }) },
     'relay.get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { presence: presence }); }) },
+    // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by the url
+    // relay.search hands out. The list is node state and the node its only
+    // writer; there is no relay.add, because a successful relay.claim is
+    // what adds one.
+    //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
+    //   list relays and remove relay, with a successful claim adding its
+    //   relay? yes."
+    'relay.remove': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayRemove(b); }) },
     // WHAT A RELAY HAS SAID OVER TIME, beside what it says now —
     // cycle 11's R6. `relay.status` probes; this reads what was already
     // written as the reports arrived, so it reaches no network at all —

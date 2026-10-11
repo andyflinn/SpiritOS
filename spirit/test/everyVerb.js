@@ -37,7 +37,9 @@ const BOOT_TIMEOUT_MS = 10000;
 const root = setupRelayFakes('everyVerb').andy;
 // No real relay: relays.json is tracked, so the fakes carry the production
 // list (serverSurface.js explains the cost of forgetting this).
-fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'),
+// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 
 // For fs.search's gate: a private file the search must never name, and a

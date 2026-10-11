@@ -771,8 +771,10 @@ function theFirstRelay() {
   }
 
   const first = ownerBadge.ensureRelays(home);
-  if (first.length === 1 && first[0].url === ownerBadge.FIRST_RELAY.url) {
-    test.check('and boot gives it one — a single public relay, not a pair');
+  // TWO since goal/G16.3 (Andy, 2026-10-11: "i say two."): spirit for
+  // development and noderoutes.net for the actual site.
+  if (first.length === 2 && first[0].url === ownerBadge.FIRST_RELAY.url && first[1].url === ownerBadge.KEPT_RELAY.url) {
+    test.check('and boot gives it his two: spirit first, noderoutes.net beside it');
   } else {
     test.fail('first: ' + JSON.stringify(first));
   }
@@ -791,8 +793,10 @@ function theFirstRelay() {
   // restart, or it would be a git-carried file wearing different clothes
   // — which is the exact thing it was written to stop being.
   const mine = [{ label: 'mine', url: 'https://elsewhere.example' }];
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
   fs.writeFileSync(
-    path.join(home, 'shell', 'natter', 'relays.json'),
+    path.join(home, 'relay-state', 'relays.json'),
     JSON.stringify(mine, null, 2)
   );
   const again = ownerBadge.ensureRelays(home);
@@ -807,7 +811,9 @@ function theFirstRelay() {
   // to remove the last public relay (canRemoveRelay), so a node with an
   // empty list got there some other way, and boot quietly deciding for it
   // would be this file overruling something it cannot see the reason for.
-  fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), '[]');
+  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), '[]');
   if (ownerBadge.ensureRelays(home).length === 0) {
     test.check('but an emptied list is left empty, because empty is an answer and absent is not');
   } else {

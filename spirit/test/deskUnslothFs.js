@@ -69,7 +69,9 @@ function post(url, body) {
 const nodeRoot = setupRelayFakes('deskUnslothFs').andy;
 fs.mkdirSync(path.join(nodeRoot, 'relay-state'), { recursive: true });
 fs.writeFileSync(path.join(nodeRoot, 'relay-state', 'identity.json'), JSON.stringify({ name: 'sentinel', privateKey: 'SENTINEL-must-never-be-read' }), 'utf8');
-fs.writeFileSync(path.join(nodeRoot, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
+// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+fs.mkdirSync(path.join(nodeRoot, 'relay-state'), { recursive: true });
+fs.writeFileSync(path.join(nodeRoot, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 const ENTRY = 'shell/textEditor/textEditor.js';
 const MANIFEST = 'shell/textEditor/textEditor.json';
 let child = null;

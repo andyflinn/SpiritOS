@@ -203,8 +203,14 @@ function ndPanel(id, mark, title, inner, extraClass) {
 // spinner's face. See ndReportHtml.
 var ndAsked = false;
 
+// THE NODE ANSWERED, AND THIS RELAY IS NOT ON ITS LIST (goal/G16.3). Not a
+// failure: Natter's Add opens this screen for a relay the node does not
+// list yet, because a claim that succeeds is what lists it — there is no
+// verb that adds one. So this screen offers the claim, and says why.
+var ndUnlisted = false;
+
 // This relay's answer to "add newcomers to my contacts". Handed in by
-// Natter, which owns relays.json; absent reads as ON, because an owner
+// Natter, which showed the relay list; absent reads as ON, because an owner
 // who wrote an invite already decided they want to reach that person.
 
 // ONE DOOR, AND THE VERB IS THE ARGUMENT. This took a path until
@@ -257,6 +263,7 @@ function ndBody() { return document.getElementById('nd-body'); }
 // So: always ask.
 function ndLoad() {
   ndAsked = false;
+  ndUnlisted = false;
 // relay.status is gone (puppets/G2): the page kernel's relays.status
   // asks relay.search and relay.get and hands back the same shape.
   return spirit.core.relays.status(ndLabel || '').then(function (r) { return r && r.body; })
@@ -264,6 +271,9 @@ function ndLoad() {
       ndAsked = true;
       var rows = (data && data.rows) || [];
       ndBadge = rows.filter(function (row) { return row && row.url === ndUrl; })[0] || null;
+      // An answer that names other relays and not this one is the node
+      // saying "not on my list" — only when the answer is a real one.
+      ndUnlisted = !ndBadge && !!(data && Array.isArray(data.rows));
       // ── AND THE OTHER RELAYS, WHICH WERE FETCHED AND THROWN AWAY ────
       //
       //   Andy: "i can fetch the roll of all relays I'm connected to,
@@ -398,6 +408,12 @@ function ndReportHtml() {
   if (!ndBadge) {
     if (!ndAsked) {
       return '<div class="stat-tile wide"><div class="job-log-empty">asking that relay…</div></div>';
+    }
+    if (ndUnlisted) {
+      return '<div class="stat-tile wide"><div class="job-log-empty">' +
+        ndEscapeHtml(ndUrl) + ' is not on this node’s relay list yet. ' +
+        'Claim a seat on it below: a claim that succeeds is what puts it on the list.' +
+        '</div></div>';
     }
     return '<div class="stat-tile wide"><div class="job-log-empty">' +
       'This node could not get an answer about ' + ndEscapeHtml(ndUrl) + '. ' +
@@ -557,8 +573,13 @@ function ndGovernorFacts(report) {
 // invites that is a form that wastes a person's time. `status` is the
 // same "did it answer" test natterCheckBinding uses.
 function ndClaimHtml() {
-  if (!ndBadge || ndBadge.owned || ndBadge.claimed) return '';
-  if (!Number(ndBadge.status)) return '';
+  // An unlisted relay has no badge — the node probes only what it lists —
+  // and the claim is the one way onto the list (goal/G16.3), so it is
+  // offered without one.
+  if (!ndUnlisted) {
+    if (!ndBadge || ndBadge.owned || ndBadge.claimed) return '';
+    if (!Number(ndBadge.status)) return '';
+  }
   return ndPanel('claim', ndIcon.POINTRIGHT, 'Claim a seat on this relay',
     // ── THE ORDER IS THE ORDER OF THE PHONE CALL ────────────────────
     //
@@ -852,7 +873,7 @@ function ndOwnerGroupHtml(inner) {
 // moves this node's own row and every member has it. This moves the
 // BOX's caption, and only the owner may.
 //
-// Nor is it the caption in your relays.json — that one is yours, local,
+// Nor is it the caption in your relay list — that one is yours, local,
 // and nobody else ever sees it. This is what the relay publishes about
 // itself, so every member's screen can show it.
 function ndRelayLabelHtml() {
@@ -1451,6 +1472,10 @@ function ndRender() {
 // can be here — the screen is which relay, so the claim is aimed rather
 // than landing on relays.json[0].
 //
+// AND THE URL NEED NOT BE LISTED YET (goal/G16.3): the claim is what puts
+// a relay on the node's own list, so hub.handleClaim aims at a named url
+// whether or not the node lists it.
+//
 // RETURNED, NOT RECORDED, like the mint below:
 // session.json is Natter's file and api.fs here is scoped to this app's
 // own folder. The screen says what the relay agreed to; Natter writes it
@@ -1856,7 +1881,7 @@ spirit.shell.activateApp({
     ndUrl = (params && params.url) || '';
     ndLabel = (params && params.label) || '';
     // The list's caption for this relay. It is the list's to know — this
-    // screen is handed one subject and never reads relays.json.
+    // screen is handed one subject and never searches the relay list.
     ndRelayLabel = (params && params.relayLabel) || '';
     ndBadge = null;
     // Opening a second relay must show "asking" again, not the previous

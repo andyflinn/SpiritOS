@@ -45,8 +45,9 @@ const WORK_RUN = path.join(__dirname, '..', 'run');
 const WORK_PORT = 65432;
 const WORK_URL = 'http://127.0.0.1:' + WORK_PORT;
 const MASTER = require('./labMaster/labPaths').MASTER;
-const RELAYS = path.join(WORK_RUN, 'shell', 'natter', 'relays.json');
-const BACKUP = path.join(WORK_RUN, 'shell', 'natter', 'relays.json.before-lab');
+// goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+const RELAYS = path.join(WORK_RUN, 'relay-state', 'relays.json');
+const BACKUP = path.join(WORK_RUN, 'relay-state', 'relays.json.before-lab');
 
 // THE FILE THAT SAYS THIS NODE KNOWS WHO IT IS, and it is the one that
 // mattered most while being the one nothing protected.
@@ -590,7 +591,8 @@ async function up(scenarioName) {
 
     // And their node learns about it, so it holds a stream there too and
     // shows up in everyone's presence rather than only in a roster.
-    const theirRelays = path.join(peer.node.home, 'shell', 'natter', 'relays.json');
+    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+    const theirRelays = path.join(peer.node.home, 'relay-state', 'relays.json');
     let rows = [];
     try { rows = JSON.parse(fs.readFileSync(theirRelays, 'utf8')); } catch (e) { rows = []; }
     if (!rows.some(function (r) { return r && r.url === LIVE_RELAY; })) {

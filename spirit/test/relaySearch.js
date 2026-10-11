@@ -134,7 +134,9 @@ const ROWS = [
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaysearch-'));
     fs.mkdirSync(path.join(root, 'shell', 'natter'), { recursive: true });
     fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-    fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'probe', url: 'http://127.0.0.1:9' }]));
+    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
+    fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'probe', url: 'http://127.0.0.1:9' }]));
     const hub = require('../run/js/hub.js').createHub(root);
     return Promise.all(['*', '', 'probe'].map(function (q) { return hub.relaySearch({ q: q, name: '' }); })).then(function (rs) {
       const keys = rs.map(function (r) { return ((r && r.items) || []).map(function (i) { return i.key; }); });

@@ -4,8 +4,8 @@
 //
 // A contactBook row is what a human decided about a key. These numbers are
 // not a decision, so they do not live on the row: they are a sidecar per
-// peer, under app/contacts/, named by peerFile so that bytesHeld already
-// counts them as part of what that contact costs.
+// peer, named by peerFile, in the node's own state (relay-state/peerStats/
+// since goal/G16.3 — node bookkeeping, not the Contacts app's data).
 //
 // What is under test here is the counting itself, and the three things
 // that keep it honest:
@@ -199,7 +199,7 @@ test.subHeading('Days are the grain, and the ring is bounded');
   }
 }
 
-test.subHeading('One file per peer, where peerFile says and where bytesHeld looks');
+test.subHeading('One file per peer, named by peerFile, in the node\'s own state');
 
 {
   const home = tmpHome();
@@ -209,13 +209,11 @@ test.subHeading('One file per peer, where peerFile says and where bytesHeld look
   const bertPath = peerStats.statsPath(home, BERT);
   const rel = path.relative(home, bertPath).split(path.sep);
 
-  // Under app/contacts/ and named by peerFile: both halves matter.
-  // hub.js's bytesHeldByPeer walks app/ for the peerfile- prefix and
-  // asks peerFile whose it is, so a sidecar counts toward what that
-  // contact costs without hub.js being told this module exists.
-  if (rel.length === 3 && rel[0] === 'shell' && rel[1] === 'contacts' &&
+  // goal/G16.3: under relay-state/peerStats/, node state the fs gate keeps
+  // from every app, and still named by peerFile so the name says whose.
+  if (rel.length === 3 && rel[0] === 'relay-state' && rel[1] === 'peerStats' &&
       rel[2] === peerFile.fileName(BERT)) {
-    test.check('a sidecar is app/contacts/ plus the name peerFile gives it');
+    test.check('a sidecar is relay-state/peerStats/ plus the name peerFile gives it');
   } else {
     test.fail('path: ' + rel.join('/'));
   }
@@ -256,7 +254,8 @@ test.subHeading('Nothing counted is nothing, not an error');
   // A file somebody edited by hand, or half-written by a crash. It must
   // read as "nothing counted" rather than throw, because the caller is
   // the inbox path and an exception there would stop mail arriving.
-  fs.mkdirSync(path.join(home, 'shell', 'contacts'), { recursive: true });
+  // goal/G16.3: the counters' folder is relay-state/peerStats now.
+  fs.mkdirSync(path.dirname(peerStats.statsPath(home, BERT)), { recursive: true });
   fs.writeFileSync(peerStats.statsPath(home, BERT), '{ not json');
   const salvaged = peerStats.readSummary(home, BERT, NOON);
   if (salvaged.unansweredInbound === 0 && salvaged.inboundPerDay === 0) {

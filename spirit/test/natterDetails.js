@@ -615,6 +615,34 @@ function anUnboundNodeCanStillClaim() {
   });
 }
 
+// A RELAY THE NODE DOES NOT LIST YET IS OFFERED THE CLAIM (goal/G16.3).
+// The list is the node's own state, no verb adds to it, and a claim that
+// succeeds is what lists a relay — so Natter's Add opens this screen for a
+// url the node's answer does not name, and the claim must be on it.
+function aRelayNotYetListedIsOfferedTheClaim() {
+  test.subHeading('A relay this node does not list yet is offered the claim that lists it');
+
+  const app = mountApp({
+    label: '',
+    url: THEIRS,
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true }],
+  });
+
+  return settle().then(function () {
+    const body = app.open('claim').body().innerHTML;
+    if (/nd-claim-go/.test(body)) {
+      test.check('the claim form is there, though the node has no badge for this relay');
+    } else {
+      test.fail('an unlisted relay was shown: ' + body.slice(0, 300));
+    }
+    if (/not on this node’s relay list yet/.test(body) && !/could not get an answer/.test(body)) {
+      test.check('and it says why: not listed yet, rather than unreachable');
+    } else {
+      test.fail('the unlisted relay was explained as: ' + body.slice(0, 300));
+    }
+  });
+}
+
 // A claim posted at a relay that did not answer fails at the router with
 // nothing learned. Offering the form is offering to waste somebody's
 // time, and `status` is the same "did it answer" test the binding check
@@ -1935,6 +1963,7 @@ ownedMailbox()
   .then(revokingAimsByLabel)
   .then(claimIsOfferedOnlyWhereThereIsNoSeat)
   .then(anUnboundNodeCanStillClaim)
+  .then(aRelayNotYetListedIsOfferedTheClaim)
   .then(aRelayThatIsDownOffersNoClaim)
   .then(thePartnerPanelChecksBeforeItAdds)
   .then(aRefusedCheckPromotesNobody)

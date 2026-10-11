@@ -157,9 +157,9 @@ expectEverySpellingUnwritable('js/relayAuth.js', 'js/relayAuth.js');
 // ---- the fix must not over-correct ----
 // Canonicalizing must not turn into "deny anything that isn't already
 // canonical". A non-canonical spelling of a LEGITIMATE path has to keep
-// working — pathJail.js already asserts './index.html' loads, and
-// app/natter/relays.json has to stay both readable and writable or
-// /api/hub/* loses the relay url it dials. These cases fail if the gates
+// working — pathJail.js already asserts './index.html' loads, and an
+// app's own data has to stay both readable and writable or the app breaks.
+// These cases fail if the gates
 // are fixed by blanket-rejecting dot segments instead of resolving them.
 test.subHeading('Legitimate paths still work in non-canonical spellings');
 [
@@ -187,11 +187,12 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
 });
 
 // app/ data must stay writable in a non-canonical spelling too, for the
-// same reason: relays.json is ordinary app data hub.js depends on.
-if (fileWritable('shell/./natter/relays.json') === true) {
-  test.check('"shell/./natter/relays.json" is still writable (app data, not an entry script)');
+// same reason. It was relays.json; goal/G16.3 made the relay list node
+// state, so Natter's own captions.json is the app data asked about.
+if (fileWritable('shell/./natter/captions.json') === true) {
+  test.check('"shell/./natter/captions.json" is still writable (app data, not an entry script)');
 } else {
-  test.fail('"shell/./natter/relays.json" should still be writable — the write gate is now over-blocking');
+  test.fail('"shell/./natter/captions.json" should still be writable — the write gate is now over-blocking');
 }
 
 test.reportSuccessFailureCount();
