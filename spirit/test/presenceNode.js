@@ -617,6 +617,10 @@ async function run() {
     });
     seatEveryRelay(pinHome, 'pinner');
     await P.start(keyDoor);
+    // ON A FIRST MEETING THE OPEN FOLLOWS THE PIN (goal/G16.12): the stream
+    // header names the relay's key, so a never-pinned relay is pinned first.
+    // One turn of the loop lets that settle.
+    await new Promise(function (r) { setImmediate(r); });
 
     if (pinned.length && opened.length && pinned.length === opened.length) {
       test.check('every relay it opens a stream to is pinned as well — ' + pinned.length + ' of ' + opened.length);
@@ -644,6 +648,7 @@ async function run() {
     });
     seatEveryRelay(deafHome, 'pinner2');
     await D.start(keyDoor);
+    await new Promise(function (r) { setImmediate(r); });
     if (deafOpened.length) {
       test.check('and a relay whose roll will not answer still gets its stream opened');
     } else {

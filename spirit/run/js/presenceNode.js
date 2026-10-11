@@ -398,8 +398,27 @@ function createPresence(opts) {
     // presence is for, and a roll that is slow to answer must not delay
     // it. The pin lands before anything can be posted down the stream,
     // because a post needs the stream to be open at the far end first.
+    //
+    // EXCEPT ON A FIRST MEETING (goal/G16.12). The stream header names the
+    // relay's key, so with no pin yet the first attempt could only be
+    // refused. Then the connect waits for the pin, with a placeholder
+    // holding the url so a second openTo or a stop() in that gap is
+    // honoured. Once pinned (relayKeys keeps it), it is immediate again.
+    if (pin && !relayKeys.pinned(rootDir, url)) {
+      var waiting = { close: function () { waiting.closed = true; } };
+      streams[url] = waiting;
+      pinRelay(url).then(function () {
+        if (waiting.closed || streams[url] !== waiting) return;
+        streams[url] = connect(url);
+      });
+      return;
+    }
     pinRelay(url);
-    streams[url] = openStream({
+    streams[url] = connect(url);
+  }
+
+  function connect(url) {
+    return openStream({
       url: streamUrl(url, identity.publicKey),
       // SIGNED PER ATTEMPT, not once. streamMessage carries a unix
       // minute and is checked ±1, so a signature captured at connect
@@ -414,11 +433,13 @@ function createPresence(opts) {
       // the header is good.
       //
       // FOR THIS RELAY ONLY (goal/G16.12): the header names the key pinned
-      // for this url, so no other relay can replay it. Looked up per attempt:
-      // until the pin lands the attempt is refused and the reconnect loop
-      // tries again, which is the plainest wait there is.
+      // for this url, so no other relay can replay it. Looked up per
+      // attempt. An attempt that finds no pin yet (a first meeting, or a
+      // pin that failed while the relay was still starting) asks for one
+      // again and is refused; the reconnect loop's next attempt has it.
       headers: function () {
         var relayKey = relayKeys.pinned(rootDir, url) || '';
+        if (!relayKey) pinRelay(url);
         return {
           'X-Spirit-Sig': auth.sign(
             identity.privateKey,
