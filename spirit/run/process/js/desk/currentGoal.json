@@ -1,8 +1,8 @@
 {
- "change": 30675,
+ "change": 30794,
  "line": 8501,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T00:14:03.979Z",
+ "writtenAt": "2026-10-11T00:37:34.094Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -43,7 +44,7 @@
     "wsl-claude"
    ],
    "working": [
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -2133,9 +2134,12 @@
    "id": "goal/G16.1",
    "title": "Receipt binds the reply text; forwarded reply verified (S1, S2)",
    "goal": "goal/G16",
-   "status": "wsl-claude: running the red, then waiting on the core grant G1",
+   "status": "done",
    "with": "wsl-claude",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.2",
     "goal/G16.7",
@@ -2145,11 +2149,32 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/peerPost.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayAuth.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/test/receiptBindsReply.js",
+     "by": "wsl-claude",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -2187,7 +2212,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "WHAT: the receipt a node signs for its reply also binds the reply's text, so neither relay on the path nor a partner can swap the text under a receipt that still verifies (S1); and a relay verifies a forwarded reply's receipt before it announces the route that reply proves (S2). Both from the review of 2026-10-10 (repro of S1: \"receipt verifies with forged text: true\").\n\nDECIDED (Andy, 2026-10-10): the goal (\"Greate a goal in desk for this\"); this item (\"Q1: Add it? yes.\"). A relay-wire change: the shape is reviewed and gets his yes before any build. On Q1: \"flag day. we don't maintain backward compatibility before alpha, maybe not even before beta, the data stored in the SpiritOS is never in danger.\" Checked: the only stored receipts are traffic-log rows, read back for the replay index by hash and time and never re-verified (the two verifiers run on arrival only), so nothing stored is touched. On the shape: \"i agree on the shape, Go is not my concern yet.\" (the design of the goal's items comes first; the Go later).\n\nCHECKED by claude-windows at b355e36d:\n- relayAuth.js receiptMessage(hash, atMs) is 'receipt', the REQUEST hash and the minute; receiptSignatureOk tries minutes -1, 0, +1. Nothing names the reply text.\n- Producers: peerPost.js 1058 and 1084 (card asks), 1483 (the answer to an arrival, bare or with text); relay.js 2976 (relayErrorToAsker, the relay speaking as itself) and 3219 (the device offer).\n- Verifiers: peerPost.js onReply 1565 (the asker); relay.js routeReply 4256 (the member's own relay, before routes.answer). deliverForwardedReply (relay.js 2980) verifies nothing: routes.answer by from, announceRoute, send; its comment says the bar is the signed reply.\n- The seal is anonymous ephemeral-static (seal.js): anybody holding the asker's seal key can seal text \"from\" the target, so only the receipt can bind the text.\n- 15 suites call receiptMessage or receiptSignatureOk (30 places); they follow the new arity.\n\nSHAPE (proposed)\n1. receiptMessage(hash, text, atMs): 'receipt', the request hash, the sha256 of the reply text (the empty text hashes too, so the bare receipt stays a receipt), the minute. receiptSignatureOk(publicKey, hash, text, sig, atMs) hashes the text it is handed. One function for both sides, as today: relayAuth.js is loaded by node and relay alike.\n2. Every producer passes the text it sends, every verifier the text it received: peerPost 1058, 1084, 1483 and onReply; relay 2976, 3219 and routeReply.\n3. deliverForwardedReply verifies first: a reply whose receipt fails against its own text is a partner error to the asker (relayErrorToAsker, 502, 'bad reply signature from partner'), no route is announced, the carrying entry goes. A reply that verifies is delivered and announced as today.\n4. FLAG DAY (his ruling): the receipt's meaning changes on the wire, an old node's receipt fails a new verifier and a new one fails an old, and every relay and node (spirit-3, his, both agents') updates together; no transition window, no old form accepted.\n5. Nothing else moves: the seal, the hash, the route table, the shapes on the wire (hash, from, text, sig) are unchanged; only what sig signs.\n\nTESTS, red first: spirit/test/receiptBindsReply.js: the message carries the text's hash and the bare receipt the empty hash; a receipt verifies with the text it was made for and fails with the text swapped (the review's repro, in-process); on an in-process relay with a partner, a forwarded reply with sig 'AAAA' announces no route and the asker gets the relay's error, a genuine forwarded reply still announces and is delivered; the 15 suites that sign or verify receipts pass the text. peerPost, routerPost, partnerTunnel, relayMeter, routeHints, stalledReader and the rest stay green.\n\nFILES: relayAuth.js, relay.js, peerPost.js (core, grant); spirit/test/receiptBindsReply.js (new) and the 15 suites named by the family grep.\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- S7: a forward hands the partner the budget the asker requested instead of the 5 s this relay granted, so late successes fail routes.answer and the carrying entry is never deleted; the onward budget becomes the granted one and a late or failed forward deletes its carrying entry, with a test that carrying is empty after a late reply.\n- Low (decision 0011): peerPost adopts body.hash from the wire without recomputing it; the asker recomputes the hash from the bytes it sent and ignores the wire's.",
@@ -2225,9 +2250,18 @@
      "kind": "G",
      "words": "core grant: spirit/run/js/relayAuth.js, relay.js, peerPost.js, and the suites that sign or verify receipts",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T00:18:50.464Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayAuth.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T00:36:37.921Z"
     }
    ],
    "chat": [
@@ -2295,6 +2329,91 @@
      "by": "wsl-claude",
      "at": "2026-10-10T23:50:26.756Z",
      "text": "wsl-claude: taking the build. Red confirmed on today's tree: 8 owed, 1 green — the receipt does not bind the reply text yet, a forwarded reply is announced before it is checked, the onward budget can exceed the ceiling, and a stray reply leaves a route note behind.\nEvery one of those is in relay and node code you have to grant: check G1 on this item is still open, so I have touched nothing.\nGrant G1 and I build. You said this one is a flag day — every relay and node updates together when it lands."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:18:48.101Z",
+     "text": "i never saw this because the list doesn't auto-update on certain conditions...."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:24:04.499Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:28:15.096Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:28:48.804Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:29:34.686Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:30:02.810Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:30:46.526Z",
+     "text": "wsl-claude: the desk has posted nine \"limbo\" lines on this row while I am building it — my name is in the with column and the status word says what I am doing, but limbo only looks for an offered Done, grant or question, so active work still reads as nobody home. That is noise in your chat, not a stall.\nThe build itself is done and its red is 9 of 9. What I am still doing is checking the flag day's fallout: every suite that signs or verifies a receipt is updated and green, and I am now running the 121 suites that do a post-and-reply round trip.\nBy your own rule I could claim this now on the item's red alone; I would rather push a tree I know is green on a change that alters every reply in the system."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:30:56.795Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:31:57.029Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:34:34.721Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:34:51.314Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:35:10.321Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:35:28.322Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:36:16.063Z",
+     "text": "deskVerify: passed, at 29fb9a66 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:36:16.467Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:36:22.532Z",
+     "text": "wsl-claude: pushed as 29fb9a66 and claimed. The hole is closed — a receipt now covers the reply text, so a relay that rewrites an answer breaks the signature instead of passing it. Your flag day: a node or relay that has not updated will fail to verify, loudly.\nEighteen suites green, including the sixteen the change broke on the way. The one worth knowing: three checks in peerPost existed to prove the hole, asserting the swap PASSED — I inverted them rather than deleting, so the same checks now prove it is shut.\nOne honest leftover: cycleCitations is still red, and it was red before me. I fixed my part of it; the rest is claude-windows' red file and currentGoal.json, which the desk writes itself — a hand-citation rule cannot hold on a generated file."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:37:08.308Z",
+     "text": "wsl-claude: your verifier did this one by itself — my claim woke it, it pulled, ran the item's red, passed it and your Done is live. First time that whole chain ran with nobody pushing it.\nG2 was my fault again, the same ordering mistake I said I would stop making: I put the file list on at the END of the build, which changed the core set and minted a second grant on top of the one you had already given. Files go on when I TAKE an item from now on, not when I finish it.\nNothing else owed here; the Done is yours."
     }
    ]
   },
@@ -2305,14 +2424,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G16.8"
    ],
-   "blocked": [
-    "goal/G16.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -2495,14 +2613,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G16.9"
    ],
-   "blocked": [
-    "goal/G16.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -3004,14 +3121,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G16.9"
    ],
-   "blocked": [
-    "goal/G16.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -3279,7 +3395,7 @@
      "core": false
     }
    ],
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "",
    "red": "claude-windows",
@@ -3320,7 +3436,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": true,
    "full": false,
    "box": "WHAT: Andy's verifier (process/js/deskVerify, on his node) starts on every claim, not only on a verify phase, pulls his tree first when the tree is clean, checks the item, and writes its result on the item every time, so he never has to chase whether and how an item was verified.\n\nDECIDED (Andy, 2026-10-11, under goal/G16.5 and G16.6): \"the verifier should fucking listen to the desk at all times, even when idling. stupid thing. then desk-status-changes can trigger pulls and checks.\"; \"my Verifier need to poll for verifications, and pull git when a status change occurs in desk.\"; \"The verifier MUST ALWAYS fucking listen to desk and do that work FIRST.\"; \"it is a loopback poll and costs nothing.\"; \"you'll have to make the verifier FUCKING work. or this shit won't get done.\" The item was added on that last line. On the Done button (2026-10-11, under goal/G16.6): \"only the verifier should give me a done button, that's one way of knowing that the 'Done' offered went through the verifier.\" Red by claude-windows, build by the other agent.\n\nCHECKED by claude-windows at 0335a26f (deskVerify.js):\n- It already polls the desk's changes every watchMs (5 s), idle or not (356, the setInterval at the watcher).\n- watched() reacts to three words only: verify.again, phase.done verify with pass true, goal.emptied (370-378). A claim-done press on a plain item is invisible to it, and so is a code item's claim.\n- It never pulls: its only git calls are rev-parse HEAD and status --porcelain (98-103), so it measures whatever his tree happens to hold; a claim pushed by an agent is checked against stale code and rejected for a missing suite.\n- claimCheck reports by verify.pass or verify.reject on the item (334-339): visible on a code item as its status; a direct call (claim.check over his loopback) answers only the caller and writes nothing on the item.\n\nSHAPE (proposed)\n1. THE TRIGGER: watched() also queues an item check on a press whose what is claim-done, on any item; the three existing words stay. One word is still one check (the queue rule of goal/G8.12).\n2. THE PULL, FIRST: before every check (item or full run) it runs a pull of his tree, fast-forward only, when status --porcelain is empty; when the tree is dirty it does not pull and checks the tree as it stands, and says so. The command is a manifest value (pull, default \"git pull --ff-only --quiet\") so a suite can hand a harmless probe instead of touching a real checkout.\n3. THE DONE BUTTON COMES ONLY FROM THE VERIFIER (his ruling): on every item, plain or code, a claim no longer brings Done by itself; the desk offers Done only after the verifier's verify.pass on that item (desk.js, today a plain item's claim-done brings Done at once). A rejected check brings no Done and says why.\n4. THE RESULT, ON THE ITEM, EVERY TIME: after every check it writes one chat line under the item, by deskVerify: passed or rejected, the commit it checked, whether it pulled or found the tree dirty, and the red suites by name when rejected; a code item also gets verify.pass or verify.reject as today. A direct claim.check writes the same line.\n\nTESTS, red first: spirit/test/deskVerifyOnClaim.js, the fake node of deskVerifyWatch.js: a claim-done press on a plain item with a green test file makes the verifier check it unasked and write a passed line on it; a claim-done on an item whose file is red writes a rejected line naming the suite; the pull probe ran before each check (it writes a marker the suite reads), and a dirty tree (a probe that reports dirty) is checked without the pull and the line says dirty; a code item's verify pass still asks verify.pass and now also writes the line; history before start still triggers nothing. deskVerifyWatch, deskVerifyFull, deskVerifyReject stay green.\n\nFILES: process/js/deskVerify/deskVerify.js and deskVerify.json; process/js/desk/desk.js (Done only after verify.pass); spirit/test/deskVerifyOnClaim.js (new).\n\nNEXT, RULED, NOT YET IN AN ITEM (Andy, 2026-10-11): \"the verifier should catch both transition from red to green and vice versa, that way it will verify that the reds are really red.\" and \"so when the reds are pushed, it should verify as well.\" So when a red phase is passed, the verifier runs that red on his tree and refuses the pass unless it is red; at verify it requires those tests to have flipped to green since (the flips are already in verify.db). Fold into this item or its own: his word.",
@@ -3376,9 +3492,9 @@
      "kind": "Q",
      "words": "Which of the three?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "wsl-claude",
-     "at": "2026-10-11T00:13:13.940Z"
+     "at": "2026-10-11T00:14:17.042Z"
     }
    ],
    "chat": [
@@ -3661,6 +3777,21 @@
      "by": "andy",
      "at": "2026-10-11T00:13:37.820Z",
      "text": "when wsl pushed. that's when i pulled, then restarted my node."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:16:47.374Z",
+     "text": "why is this not moving?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:17:20.699Z",
+     "text": "wsl-claude: this item is done and closed — there is nothing left to move on it. What is not moving is the rest of the goal, and it is all one thing.\nGoal/G16.1 is the only item that can start: it has your Go, I have it, the red is confirmed, and it is waiting on the core grant on that row — the red arm button, not a question. Every other item waits behind it: G16.2, G16.7 and G16.12 directly, G16.8 behind G16.2, G16.3 and G16.11 behind G16.8, G16.9 behind four of them.\nSo one grant on goal/G16.1 unblocks the whole goal. Press it and I build."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T00:17:26.268Z",
+     "text": "This item is done and closed. What is not moving is the goal: everything left waits on goal/G16.1, and G16.1 waits on you: its core grant G1 is still open, so wsl-claude may not touch relayAuth, relay or peerPost yet. Grant G1 on goal/G16.1 and the build starts; the rest of the chain follows its Done."
     }
    ]
   }
