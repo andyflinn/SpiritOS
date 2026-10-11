@@ -44,8 +44,9 @@
 //      entry then names a relay that no longer exists.
 //
 // LEFT ALONE ON PURPOSE, and not owed here: hub.js's read of the Contacts app's old prefs file, a known
-// deprecation that expires at alpha; and R4, the DEBUG monitor copying pass-through text to the owner, which is
-// his decision of 2026-09-26 and stays.
+// deprecation that expires at alpha; and the DEBUG monitor copying pass-through text to the owner, which is his
+// decision of 2026-09-26 and stays. (Named by what it says rather than by its number in the review: a bare
+// requirement number is ambiguous across cycles, and spirit/test/cycleCitations.js is right to refuse one.)
 //
 // rule/11: through testSupport only; in-process modules, a child process for the require graph, temp homes of
 // this suite's own, no ports and no node.
