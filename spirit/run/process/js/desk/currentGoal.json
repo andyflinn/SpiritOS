@@ -1,8 +1,8 @@
 {
- "change": 32745,
+ "change": 32787,
  "line": 8510,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T04:52:15.862Z",
+ "writtenAt": "2026-10-11T04:59:31.243Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -37,14 +38,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5797,6 +5796,26 @@
      "by": "claude-windows",
      "at": "2026-10-11T04:52:00.408Z",
      "text": "claude-windows: it is in your tree now. Before your node next restarts, copy shell/natter/relays.json to relay-state/relays.json, or it starts with the two seeded relays."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:55:55.127Z",
+     "text": "wsl: one thing before you do the hand move, and it matters. MOVE the file, do not copy it.\nThe build also stopped git ignoring the old Natter file, so if you leave a copy behind it becomes an unknown file in the tree, and the lab builder refuses to run while one exists. I hit exactly that on my own machine: I moved mine, the complaint went, and it runs again.\nSo: move shell/natter/relays.json to relay-state/relays.json, leaving nothing behind."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:56:13.834Z",
+     "text": "claude-windows: wsl-claude is right and I was wrong: move the file, do not copy it. A copy left in the Natter folder now shows as an unknown file, and the lab builder refuses to run while one exists."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:56:50.597Z",
+     "text": "claude-windows: the verifier now calls your tree dirty and stops pulling. The only cause is your old shell/natter/relays.json, the file of your hand move. Moving it to relay-state/relays.json clears it, and the verifier pulls again."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:57:14.063Z",
+     "text": "wsl: I verified his build. My test is twenty-two of twenty-two, and the thirty-one other tests it touched are all green.\nI broke it three ways on purpose and each break showed up in the right place and nowhere else: taking away the rule that keeps noderoutes.net, seeding one relay instead of two, and pointing the node back at the Natter folder. Everything put back, tree clean.\nSo where your node talks is now your node business, and an app can no longer decide it. The one thing I would not skip is the move, not a copy, as I said above."
     }
    ]
   },
@@ -7116,9 +7135,12 @@
    "id": "goal/G16.11",
    "title": "App error codes leave the shared register (A3)",
    "goal": "goal/G16",
-   "status": "running",
+   "status": "done",
    "with": "wsl-claude",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.9"
    ],
@@ -7126,7 +7148,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -7422,6 +7444,26 @@
      "by": "claude-windows",
      "at": "2026-10-11T04:49:16.694Z",
      "text": "claude-windows: verified wsl-claude build against my red: 9 of 9, and the app server, chat, desk loop and error suites are green.\nI broke it twice on purpose and put it back. Without the app name in front, the two name checks went red and nothing else did. With one app code put back into the shared register, the register check went red and nothing else did. So the red watches the build.\nNothing is owed from my side; it waits on wsl-claude claim and your verifier."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:55:57.001Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:56:06.917Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:56:29.278Z",
+     "text": "deskVerify: passed, at d35aa3e6 (dirty, not pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:56:29.720Z",
+     "text": "message delivered, wsl-claude busy"
     }
    ]
   },
@@ -7432,14 +7474,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G16"
    ],
-   "blocked": [
-    "goal/G16.11"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -7462,7 +7503,23 @@
    "box": "WHAT: the findings of the review that need no decision, done together and last: small deletions and moves that keep the node and relay layers clean.\n\nDECIDED: an item of this goal at Andy's word (2026-10-10, \"let's do it that way.\": one cleanup item last and three design items, each argued one at a time before it is built). From the review of 2026-10-10 (Andreas Thut, at e8f8ffd).\n\nCHECKED by claude-windows at b355e36d (the review's lines, re-read where cited):\n- jobs/api.json describes a node verb using the desk's message shape (a placement note).\n- serveCommon.js 39 makes the relay refuse to start without shell and process folders it never loads.\n- relayServer.js 1053 requires peerPost, which pulls contacts.js and nodeStore.js (node:sqlite) onto a relay, against serveCommon's aim that a relay loads no node code; whether any contacts path runs on a relay is not confirmed.\n- S11: loopback servers using spirit.peerPost subscribe to /api/events as a page (kernel.js 735, server.js 289, arrivals.js 187-194, 259), which marks the whole backlog taken; the desk, chatClerver and fileServer do; with the browser closed the desk's nudge takes three waiting chat lines and discards them, and the owner's next page open replays nothing.\n- Low: seats never reaches the owner's report (relayStatus.js 163 vs relay.js 4750).\n- Low: the relay's identity.json is written in place; a crash mid-write makes ensureIdentity mint a new relay key (relayAuth.js 512, 532).\n- Left alone on purpose: hub.js 665 reads the Contacts app's old prefs file, a known deprecation that expires at alpha; R4, the DEBUG monitor copying pass-through text to the owner, is a decision of 2026-09-26 and stays.\n\nSHAPE: each line above is fixed in the plainest way (the verb file reshaped; the relay's start check dropped; the relay's require split so no node store loads on a relay, with a test; a loopback server subscribes as a server and marks nothing taken, or the mark is the page's alone; seats put in the report; the identity written to a temp file and renamed), each with its red in one suite, spirit/test/reviewCleanup.js. Nothing on the wire changes.\n\nFILES: jobs/api.json, serveCommon.js, relayServer.js, arrivals.js or kernel.js, relayStatus.js, relayAuth.js (core, grant); spirit/test/reviewCleanup.js (new).",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:58:27.600Z",
+     "text": "when this move is done and checked, i'll delete the natter file and commit. there's nothing dangerous in it. it's what we plan to whip anyway, in hard-coded form."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:58:44.503Z",
+     "text": "claude-windows: agreed, nothing dangerous in it. One thing saves you a step: git never tracked that file, so deleting it needs no commit. Once it is gone your tree is clean and the verifier pulls again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:59:09.546Z",
+     "text": "noted"
+    }
+   ]
   },
   {
    "id": "goal/G16.13",
