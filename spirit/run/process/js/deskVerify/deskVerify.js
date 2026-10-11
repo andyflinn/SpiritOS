@@ -318,7 +318,20 @@ function suitesOf(id) {
 function claimCheck(id) {
   // The tab reads the run from what this publishes, so the end of a check says idle however it ended (goal/G8.12).
   const idle = function () { running = { id: '', suite: '', since: '' }; stopped = false; sayIdle(); };
-  return claimCheckRun(id).then(function (r) { idle(); return r; }, function (e) { idle(); throw e; });
+  // AND A CHECK THAT BREAKS STILL SAYS SO (goal/G16.13, found by claude-windows: "your
+  // verifier now shows nothing running and the item still says waiting, with no result
+  // line, so the run that ended or was stopped wrote nothing"). The line is the whole
+  // point of this item — he must never have to guess whether a check happened — so the
+  // one path that wrote nothing is the one that most needed to.
+  return claimCheckRun(id).then(function (r) { idle(); return r; }, function (e) {
+    idle();
+    const port = Number(spirit.core.node.const.SPIRIT_PORT);
+    const text = 'deskVerify: the check of ' + String(id) + ' broke before it finished: ' + ((e && e.message) || e)
+      + '. Nothing was measured, so this is not a pass.';
+    return spirit.core.ask('jobs.api', { ask: { desk: { 'chat.add': { id: String(id), text: text } } } },
+      'http://127.0.0.1:' + port).catch(function () { /* said on stderr below */ })
+      .then(function () { throw e; });
+  });
 }
 function claimCheckRun(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
