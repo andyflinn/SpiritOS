@@ -80,7 +80,7 @@ function assemble(s) {
     s.relays.forEach(function (name) {
       // Claimed, and NOT written into the relay's home — the owner's key
       // belongs in the owner's NODE home, which is what ownerHome()
-      // below builds and what deviceTick and the hub read.
+      // below builds and what the hub reads.
       // With the owner invite, minted in process (cycle 3, Part B: an
       // unclaimed relay takes no other first claim). See ownerClaim.js.
       const claimed = claimOwner(boxes[name], owner, s.owner, '10.0.0.1');
@@ -236,8 +236,8 @@ function assemble(s) {
       return home;
     },
 
-    // The owner's own node home, for suites about the device window and
-    // the hub rather than about peers.
+    // The owner's own node home, for suites about the hub rather than
+    // about peers.
     ownerHome: function (urls) {
       if (!owner) return null;
       const home = tmpHome('owner');

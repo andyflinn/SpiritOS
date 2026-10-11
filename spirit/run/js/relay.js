@@ -97,27 +97,8 @@ var SEARCH_PAGE = 1000;
 // SEARCH_SLOTS MOVED to peerSearch.SLOTS — the cap is part of the
 // ranking question, not the relay's, and a second copy here is how
 // the two would disagree about what a page is.
-// WHAT THE ONE REFUSAL IS CALLED, and how long this relay will hold a
-// browser's POST while the node answers.
-//
-// Both came from deviceHandshake.js, which was the RAM slot and the
-// sixty-six seconds that had to outlast a sixty-second poll. There is no
-// poll: an answer arrives in a round trip — 365ms through spirit-3 — and
-// this is the backstop for a node that stops mid-exchange, not a window
-// anybody waits out.
-//
-// The word stays deliberately incurious. The route says `not now` to a
-// bad password, an unknown identity and a flood alike: it faces the
-// internet and owes it no detail.
-var DEVICE_REFUSAL = 'not now';
-var ROUTE_WAIT_MS = 15000;
-// Ten a minute per identity, which is what deviceHandshake.js allowed and
-// is still the right number: a person pressing a button spends one, and
-// the page itself no longer retries except on a 429. It is NAMED in the
-// refusal — the one thing this route ever says precisely — because it is
-// temporary and a page that knows it is rate-limited waits rather than
-// gives up. Everything else gets `not now`.
-var DEVICE_PER_MIN = 10;
+// DEVICE ENROLMENT WAS REMOVED by goal/G16.2 (Andy: "device WILL be
+// KILLED. that's a decision."), and with it the relay posting as itself.
 // ── WHAT A LABEL MAY BE ──────────────────────────────────────────────
 //
 // The rule moved to js/fieldRules.js on 2026-09-15 and this requires it.
@@ -187,7 +168,7 @@ var CLAIM_PER_MIN = 10;
 // to bound a runaway and to be invisible to a person: ten a second is far
 // past human, and far below what a loop can do.
 //
-// NAMED IN THE REFUSAL, like DEVICE_PER_MIN above — a page that knows it
+// NAMED IN THE REFUSAL — a page that knows it
 // is rate-limited waits, where `not now` makes it guess.
 // ── TWO BUDGETS, BECAUSE A PARTNER'S POST IS A MEMBER'S DEMAND ───────
 //
@@ -329,19 +310,11 @@ function createRelay(rootDir, deps) {
   }
   var ownerKey = auth.loadOwner(rootDir);
   var claimHits = Object.create(null);
-  // Enrolment attempts, per identity being enrolled. The limit lived in
-  // deviceHandshake.js and came back here when that file went, because
-  // the thing it bounds did not go anywhere: /api/relay/device is a
-  // public POST carrying a password guess, and now every one of them
-  // costs a post to the node as well. Keyed by TARGET rather than by
-  // caller — the caller is whoever the internet sent, and what needs a
-  // ceiling is how often one person's node can be made to answer.
-  var deviceHits = Object.create(null);
   // Posts routed, per sender key. The sender is the identity that was
   // RESOLVED, never a name they chose — the reasoning is in the note on
   // `rateOk` below, and it is why the old per-name limit was worthless.
   // TWO POOLS, TWO BUCKETS. Keyed on the resolved sender either way — a
-  // member key, a device key, or a partner's relay key — never on
+  // member key or a partner's relay key — never on
   // anything the sender chose.
   var memberHits = Object.create(null);
   var partnerHits = Object.create(null);
@@ -465,11 +438,6 @@ function createRelay(rootDir, deps) {
     };
   }
 
-  // THE RAM SLOT IS GONE, and so is the poll that read it. An offer is
-  // no longer parked for a node to come and find: it is posted to the
-  // node on the stream it already holds, and answered in a round trip.
-  // What waits now is the browser's own POST, held in `awaitingReply`
-  // below and keyed by the hash of the request made on its behalf.
   // Who is holding a stream open right now. In RAM, never persisted —
   // presence is true only while a socket is open (PRESENCE.md §4).
   var presentNow = presence.createRegistry();
@@ -482,7 +450,9 @@ function createRelay(rootDir, deps) {
   // from relay-state/config.json; a limit an owner can widen is not a
   // limit (2026-09-21), and it bounds what a PARTNER may aim at a member,
   // so it protects parties other than the owner.
-  var routes = routerTable.createRouter();
+  // ITS OWN KEY GOES IN (goal/G16.2): a question to the relay itself is not
+  // counted against the per-target slot a member gets (router.js, selfKey).
+  var routes = routerTable.createRouter({ selfKey: relayPublicKey() || '' });
 
   // ── A FIXED ALLOWANCE, AND A GAUGE THAT READS IT (cycle 8) ──────────
   //
@@ -2110,27 +2080,9 @@ function createRelay(rootDir, deps) {
   // "it owes an argument rather than a classification". It owes nothing
   // now; it is not there.
 
-  // Install (or replace) this owner's device key on the owner record.
-  //
-  // Signed by the HOUSE key, never by the current device: a device that
-  // could name its successor would only have to be borrowed once. The
-  // house key is the one thing that stays at home.
-  //
-  // The bytes are their own message (deviceAuth.setDeviceMessage), so a
-  // captured `status` signature — which the owner makes constantly, for
-  // every roll — cannot be replayed as "install this key". That is
-  // asserted in deviceInbox.js rather than left to reading.
-  //
-  // No peer row is written and no label is claimed. A second row wearing
-  // `andy` made the ring's label resolution ambiguous and stopped the
-  // owner's own inbox resolving at all
-  // (design/reviews/2026-09-10-owner-devices.md). The ring is gone and
-  // this wire addresses keys, so the hazard is historical — the rule it
-  // produced is not, and B2 below is why.
-  // B2: any identity installs its OWN device, proved with its OWN row
-  // key. The owner still lands in allow.json; a peer lands on its row in
-  // the routing table. Two rooms, one rule — nobody installs a key on a row
-  // they cannot sign for.
+  // WHO A TOKEN IS: the owner, or a member with a row. The general identity
+  // lookup every route uses; the name is older than the device enrolment
+  // that goal/G16.2 removed, and has nothing to do with it any more.
   function deviceIdentity(token) {
     var t = String(token == null ? '' : token).trim();
 
@@ -2155,201 +2107,17 @@ function createRelay(rootDir, deps) {
     };
   }
 
-  // AN OMITTED TOKEN IS NOBODY. B1 resolved it to the owner so the bare
-  // /device page kept working; B3 gave every page a key in its address
-  // and Andy retired that page, which leaves this a way to enrol without
-  // naming anyone — an implicit identity in a design whose whole point is
-  // that identity is explicit. So it refuses, like any other token that
+  // AN OMITTED TOKEN IS NOBODY: it refuses, like any other token that
   // resolves to no row.
   function deviceIdentityOr(token) {
     return deviceIdentity(token);
   }
 
-  // installDevice() STOOD HERE, and `body.setDevice` with it.
-  //
-  // A relay does not keep a device key any more. The binding between a
-  // device and its node is the NODE's — its relay-state/device.json — and
-  // the copy a relay used to hold was read in exactly two places, both
-  // inside the ring, neither of which any client ever exercised.
-  //
-  // So enrolment is now what it always described itself as: the relay
-  // carries the browser's offer to the owning node (deviceOffer, below),
-  // the node compares the password it alone holds, and the node writes
-  // the binding down. The relay learns whether it was accepted and
-  // nothing else.
-  //
-  // See deviceAuth.js for the whole reasoning, including the three
-  // hazards this deletes rather than fixes.
+  // deviceOffer, and the relay's own post() that carried it, were removed
+  // by goal/G16.2 with the device enrolment they served.
 
-  function deviceOffer(token, password, devicePublicKey) {
-    var who = deviceIdentityOr(token);
-    if (!who) {
-      return Promise.resolve({
-        ok: false, status: 403, error: DEVICE_REFUSAL,
-      });
-    }
-
-    // THE FLOOD GATE, and it comes before the post rather than after: the
-    // whole point is that a caller cannot make this relay spend a post on
-    // somebody's node by asking often enough.
-    //
-    // After the identity check, and that order is load-bearing for the
-    // same reason it is at the claim path — a bucket keyed by
-    // caller-chosen input grows when a stranger reaches it, so a stranger
-    // must not reach it.
-    if (!rateOk(deviceHits, who.id, DEVICE_PER_MIN)) {
-      return Promise.resolve({
-        ok: false, status: 429, error: 'too many device attempts',
-      });
-    }
-    // A DEVICE ENROLMENT IS AN ORDINARY POST, and the relay is the one
-    // making it. Everything specific to devices is these few lines;
-    // everything else is `post` below, the same act this relay performs
-    // for any peer.
-    //
-    // NOT AN APP PACKET, and that is a rule rather than a shortcut. The
-    // app envelope lives inside `text` precisely so a relay never learns
-    // it: change the envelope and no relay in the world needs updating.
-    // A relay that could parse one would have made the envelope part of
-    // the relay protocol.
-    //
-    // This is not app-to-app traffic anyway. It is the relay speaking to
-    // a node about the node's own enrolment — protocol, like the answer
-    // `device-pending` has always given — so it gets the relay's own
-    // shape, which the relay is entitled to read because it wrote the
-    // question. Reading the answer to your own question is not learning
-    // somebody else's format.
-    var wrapped = JSON.stringify({
-      relay: 'device-offer',
-      password: password,
-      devicePublicKey: devicePublicKey,
-    });
-
-    // WHOSE ENROLMENT THIS WAS, carried back with the yes.
-    //
-    // The page has to sign as somebody once it is enrolled, and it was
-    // being told the wrong somebody: the answer named
-    // `snapshot().owner` — this RELAY's owner — so every device page on
-    // the box came back "signed in as andy", including bella's. Andy saw
-    // it the first time two enrolments ran back to back.
-    //
-    // True when it was written, and quietly false since B2. The bare
-    // /device page enrolled the owner and nobody else, so the owner's
-    // label was the only answer there was. B2 gave every identity with a
-    // row its own page and its own slot, and this line did not follow.
-    //
-    // It is the label of the identity that was ENROLLED, which is the
-    // one `who` has been holding since the first line of this function.
-    function named(answer) {
-      if (!answer || !answer.ok) return answer;
-      answer.name = who.label;
-      return answer;
-    }
-
-    // DELIVER OR REFUSE, with nothing behind it any more. post() draws
-    // that line for every post this relay makes, and an enrolment is one:
-    // a node holding no stream cannot answer, and saying so at once is
-    // the whole of decision 0006. The poll that used to catch this case
-    // is gone, and with it the only thing on this box that still waited.
-    return post(who.id, wrapped).then(deviceAnswerFrom).then(named);
-  }
-
-  // THE RELAY POSTING AS ITSELF.
-  //
-  // Andy: "the relay already had a spirit style post with reply
-  // implemented, in the relaying... you could have a generic function on
-  // the relay that presents the exact same interface as the personal
-  // node side."
-  //
-  // That is this, and it is deliberately the same shape as
-  // peerPost.post() on a node — sign, hash, register, deliver, wait —
-  // because it is the same act. What the relay does when it proxies
-  // somebody else's post (routePost, below) and what it does when it
-  // makes one of its own differ in exactly two places: who signed it,
-  // and where the answer goes.
-  //
-  // The relay signs with its own key. Not ceremony: for a device
-  // enrolment there IS no end-to-end signature to carry, because the
-  // browser has no identity yet — that being the thing it is enrolling —
-  // so the relay vouching for it is the only attestation there can be.
-  // A hop is not an origin, and TLS can only speak to the hop.
-  function post(toKey, text) {
-    var mine = auth.loadIdentity(rootDir);
-    if (!mine || !mine.privateKey) {
-      return Promise.resolve({ ok: false, status: 503, error: 'this relay has no identity' });
-    }
-    if (typeof text !== 'string' || !text) {
-      return Promise.resolve({ ok: false, status: 400, error: 'text required' });
-    }
-    if (Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
-      return Promise.resolve({ ok: false, status: 413, error: 'too big' });
-    }
-
-    // DELIVER OR REFUSE, AND REFUSE INSTANTLY (0006). The same line
-    // routePost draws, for the same reason, and drawn here rather than
-    // in the caller so that every post this relay makes obeys it.
-    if (!presentNow.isPresent(toKey)) {
-      return Promise.resolve({ ok: false, status: 503, error: 'peer not reachable' });
-    }
-
-    var signed = auth.postMessage(mine.publicKey, toKey, text);
-    var sig = auth.sign(mine.privateKey, signed);
-    var hash = auth.requestHash(signed);
-
-    // REGISTERED BEFORE IT IS SENT, the rule the whole router turns on:
-    // nothing leaves until the thing that will match its answer exists.
-    var waiting = new Promise(function (resolve) {
-      awaitingReply[hash] = {
-        resolve: resolve,
-        timer: setTimeout(function () {
-          if (!awaitingReply[hash]) return;
-          delete awaitingReply[hash];
-          // Named, because cancel() refuses a hash that is not this
-          // requester's — the same rule that stops one node cancelling
-          // another's route.
-          routes.cancel(hash, mine.publicKey);
-          resolve({ ok: false, status: 504, hash: hash, error: 'no answer yet' });
-        }, ROUTE_WAIT_MS),
-      };
-    });
-
-    // RELAY CLASS, AND THIS IS THE CALL THAT PROVED THE SPLIT NECESSARY.
-    // Every post this relay makes on a member's behalf opens under ONE
-    // key — its own — so on a shared budget the relay's second concurrent
-    // self-post is refused by its own cap. `devicePeers` makes two
-    // deviceOffer calls to two different members and would fail at a
-    // ceiling of 1. A member is one person; this relay acts for all of
-    // them at once, and the two cannot share a number (0016).
-    var opened = routes.open(hash, mine.publicKey, toKey, function () {
-      // NO HASH IS SENT, exactly as in routePost: the target derives it
-      // from the bytes it holds, which is what makes it evidence rather
-      // than an echo.
-      return presentNow.send(toKey, 'request', {
-        from: mine.publicKey,
-        to: toKey,
-        text: text,
-        sig: sig,
-      });
-    }, null, routerTable.RELAY);
-    if (!opened.ok) {
-      settleHere(hash, {
-        ok: false, status: opened.status || 503,
-        error: opened.error || 'could not be sent',
-      });
-    }
-
-    return waiting;
-  }
-
-  // Answers this relay is waiting for, by the hash of the request it
-  // made. Not a second router table — the router's own table holds the
-  // route; this holds only what is waiting at the near end of it, which
-  // for a relay is never a socket.
-  var awaitingReply = Object.create(null);
-
-  // A PARTNER'S POST, HELD OPEN FOR ITS ANSWER (R13). By hash, like
-  // awaitingReply, and for the same reason: what waits at this end is a
-  // connection, not a socket. Settles with the reply packet a stream would
+  // A PARTNER'S POST, HELD OPEN FOR ITS ANSWER (R13). By hash: what waits
+  // at this end is a connection, not a socket. Settles with the reply packet a stream would
   // have carried — {hash, from, text, sig}, signed by this relay — or, when
   // the time this relay granted runs out, with the refusal the partner
   // would otherwise have learnt from its own timer.
@@ -2378,41 +2146,6 @@ function createRelay(rootDir, deps) {
     return true;
   }
 
-  function settleHere(hash, answer) {
-    var slot = awaitingReply[hash];
-    if (!slot) return false;
-    delete awaitingReply[hash];
-    if (slot.timer) clearTimeout(slot.timer);
-    slot.resolve(answer);
-    return true;
-  }
-
-  // WHAT THE NODE SAID, TURNED BACK INTO WHAT THE BROWSER ASKED.
-  //
-  // The node answers with a packet, because that is what an answer is on
-  // this wire. This is the relay reading a reply to a request it made
-  // itself — which is the one payload it is entitled to open, having
-  // written the question.
-  //
-  // Anything it cannot read is a no. A page that gets `not now` tries
-  // again; a page told yes on the strength of an answer nobody could
-  // parse would be enrolled against a node that never agreed.
-  function deviceAnswerFrom(answer) {
-    if (!answer || !answer.ok) {
-      return { ok: false, status: answer && answer.status, error: DEVICE_REFUSAL };
-    }
-    var said = null;
-    try { said = JSON.parse(answer.text); } catch (e) { said = null; }
-    // THE SHAPE IS PART OF THE CHECK. The bare receipt every node sends
-    // for every request is an empty string, and an empty string must not
-    // read as consent — a browser told yes on the strength of an answer
-    // nobody composed would be enrolled against a node that never
-    // agreed.
-    if (!said || said.relay !== 'device-answer' || said.accepted !== true) {
-      return { ok: false, status: 403, error: DEVICE_REFUSAL };
-    }
-    return { ok: true, status: 200, devicePublicKey: said.devicePublicKey || '' };
-  }
   // A PEER RENAMES ITSELF, and nobody else can do it for them.
   //
   //   Andy: "after enrollment the public label of an ID is property of
@@ -2667,7 +2400,7 @@ function createRelay(rootDir, deps) {
   //
   //   OWNER VERBS      monitor, invite, revoke, removing SOMEBODY ELSE
   //                    the house key, and nothing else
-  //   OWN-ROW VERBS    setDevice, removing YOURSELF
+  //   OWN-ROW VERBS    removing YOURSELF
   //                    any identity with a row, acting on that row
   //
   // The proof in both cases is the same signature — the post's — checked
@@ -2739,9 +2472,9 @@ function createRelay(rootDir, deps) {
       return presentNow.send(target.id, 'request', {
         from: from, to: to, text: body, sig: sig,
       });
-      // PARTNER CLASS. This opens under THIS relay's key like a device
-      // offer does, but the traffic is a partner's, and 0016 keeps the
-      // two apart: a partner is another box whose behaviour we do not
+      // PARTNER CLASS. This opens under THIS relay's key, but the
+      // traffic is a partner's, and 0016 keeps it apart from a
+      // member's: a partner is another box whose behaviour we do not
       // control, so it must not be able to spend the budget this relay
       // needs to serve its own members.
     }, { answer: answerPartner, from: from, at: String(viaKey || '') }, routerTable.PARTNER);
@@ -4055,7 +3788,7 @@ function createRelay(rootDir, deps) {
     // the cheap-to-expensive order the rest of this function keeps: a
     // flood must not be able to make this box verify signatures.
     //
-    // KEYED ON THE RESOLVED SENDER — a member key, a device key or a
+    // KEYED ON THE RESOLVED SENDER — a member key or a
     // partner's relay key — never on anything the sender chose. The note
     // on the old send limit is the reason, and is worth not relearning:
     // "30 sends per minute per name, with the name chosen by the sender,
@@ -4064,8 +3797,8 @@ function createRelay(rootDir, deps) {
     // client does."
     //
     // 429, and it NAMES THE NUMBER. Everything else this route says is
-    // deliberately incurious; this is the exception, for the same reason
-    // DEVICE_PER_MIN is — it is temporary, and a client that knows the cap
+    // deliberately incurious; this is the exception, because
+    // it is temporary, and a client that knows the cap
     // waits instead of guessing.
     var fromPartner = !!who.partner;
     var pool = fromPartner ? partnerHits : memberHits;
@@ -4323,24 +4056,11 @@ function createRelay(rootDir, deps) {
       bytes: typeof text === 'string' ? Buffer.byteLength(text, 'utf8') : 0, hash: hash,
     });
 
-    // THE ONE ASYMMETRY IN THE WHOLE ARRANGEMENT.
-    //
-    // Every other requester is a node holding a stream, and the answer
-    // is pushed down it. When the requester is THIS RELAY — which it is
-    // for a device enrolment, where the relay posts on a browser's
-    // behalf — there is no stream to push to, because a relay does not
-    // hold one to itself. Its far end is a browser holding a POST open.
-    //
-    // So the answer resolves that instead. Same hash, same table, same
-    // `answer()` check that the replier is the target; only the last
-    // hop differs, and it differs because the thing waiting is a
-    // connection rather than a socket.
     // ── A REPLY TO SOMETHING A PARTNER ASKED FOR ─────────────────────
     //
     // The member answered a packet that arrived through a partner, so the
     // reply does not go down a stream — it goes back up the tunnel, as
-    // the answer to the partner's own post. Same asymmetry as the device
-    // case below, and for the same reason: the requester here is this
+    // the answer to the partner's own post: the requester here is this
     // relay, which holds no stream to itself.
     //
     // THE MEMBER'S REPLY TRAVELS WHOLE. Its text and its signature over
@@ -4381,16 +4101,6 @@ function createRelay(rootDir, deps) {
       if (carried.at && carried.from) {
         presentNow.send(who.id, 'route', { key: carried.from, at: carried.at });
       }
-      return { ok: true, status: 200, delivered: true };
-    }
-
-    if (awaitingReply[hash]) {
-      settleHere(hash, {
-        ok: true, status: 200, hash: hash,
-        from: who.id,
-        text: typeof text === 'string' ? text : '',
-        sig: sig,
-      });
       return { ok: true, status: 200, delivered: true };
     }
 
@@ -4962,8 +4672,7 @@ function createRelay(rootDir, deps) {
   //
   // WHERE IT WAS ASKED, the asker is told now rather than at its
   // deadline, in whichever way that asker waits: a partner through the
-  // tunnel's own answer, this relay's own post by settling it here, and a
-  // member or partner holding a stream by a reply signed by this relay.
+  // tunnel's own answer, and a member or partner holding a stream by a reply signed by this relay.
   // `peer not reachable` is the word, and it is literally true from this
   // moment — they are absent. The REASON goes to the owner's monitor and
   // not onto the wire: the asker can do nothing different about a peer
@@ -4986,10 +4695,6 @@ function createRelay(rootDir, deps) {
       var refusal = { ok: false, status: 503, error: 'peer not reachable' };
       if (r.carry && typeof r.carry.answer === 'function') {
         r.carry.answer(refusal);
-      } else if (awaitingReply[r.hash]) {
-        settleHere(r.hash, {
-          ok: false, status: 503, hash: r.hash, error: 'peer not reachable',
-        });
       } else {
         replyAsRelay(r.hash, r.requester, 503, 'peer not reachable');
       }
@@ -5076,11 +4781,6 @@ function createRelay(rootDir, deps) {
     // owner's stream.
     monitoring: function () { return monitoring; },
     monitorFilter: function () { return monitorFilter; },
-    // The whole device surface, now that the slot and its two verbs are
-    // gone: one call, which posts the offer to the node and resolves when
-    // the node answers. Nothing here reads the password — it is a string
-    // this relay carries and does not compare.
-    deviceOffer: deviceOffer,
     // The presence wire. streamOpen is the gated entry a route may call;
     // the registry below is in-process and ungated, for tests that drive
     // it directly.
@@ -5098,14 +4798,6 @@ function createRelay(rootDir, deps) {
     // drive the cut rather than recompute it — the number and the rule
     // have to be the same ones the wire gets.
     matchBudget: function () { return MATCH_BUDGET; },
-    // Does anybody here hold this key or label? Answers a LABEL, never a
-    // key and never a device key — the routing layer needs to know an
-    // identity exists and what to call it, and nothing more. Everything
-    // it could return is already public at /api/relay/who.
-    deviceIdentityPublic: function (token) {
-      var who = deviceIdentity(token);
-      return who ? { label: who.label, owner: !!who.owner } : null;
-    },
   };
 }
 

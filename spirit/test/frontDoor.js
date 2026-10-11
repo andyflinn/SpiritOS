@@ -153,24 +153,25 @@ async function theRelayIsKnownIfAccepted() {
 
   // THE EXCEPTION THE INBOX PATH NEVER NEEDED. listenSet's own comment
   // says "the mailbox needs no exception here" — true of a path relay
-  // traffic never arrived on. A relay posts HERE in its own name to
-  // carry a device enrolment, and a relay is not a contact.
+  // traffic never arrived on. A relay that posts HERE in its own name is
+  // not a contact. (Its device-offer was removed by goal/G16.2; the
+  // front door's rule for an accepted relay stands.)
   const relayId = auth.generateIdentity('relay');
   const impostor = auth.generateIdentity('not-a-relay');
 
   const N = nodeWith({});
   relayKeys.accept(N.home, RELAY, relayId.publicKey);
 
-  await N.router.onRequest(RELAY, arriving(relayId, N.me, '{"relay":"device-offer"}'));
+  await N.router.onRequest(RELAY, arriving(relayId, N.me, '{"relay":"probe"}'));
   if (N.arrived.length === 1) {
-    test.check('an accepted relay is heard, so an enrolment it carries is not refused at the door');
+    test.check('an accepted relay is heard, so what it posts in its own name is not refused at the door');
   } else {
     test.fail('relay refused: ' + N.arrived.length);
   }
 
   // And only one that was accepted. Without relayKeys, "is this a relay?"
   // could only be answered by asking the thing that wants in.
-  await N.router.onRequest(RELAY, arriving(impostor, N.me, '{"relay":"device-offer"}'));
+  await N.router.onRequest(RELAY, arriving(impostor, N.me, '{"relay":"probe"}'));
   if (N.arrived.length === 1) {
     test.check('and a key claiming to be a relay, which this node never accepted, is not');
   } else {
@@ -339,16 +340,16 @@ async function theFloor() {
 async function theAnswerIsGatedToo() {
   test.subHeading('And the one verb that ACTS on a request is gated with the rest');
 
-  // `answer` is what decides a device enrolment. Composing an answer for
-  // a sender this node would not hear from would put the front door's
-  // judgement behind the only verb that does anything.
+  // `answer` is peerPost's hook for acting on a request. Composing an
+  // answer for a sender this node would not hear from would put the front
+  // door's judgement behind the only hook that does anything.
   const asked = [];
   const stranger = auth.generateIdentity('nobody');
   const N = nodeWith({ answer: function (item) { asked.push(item.from); return 'x'; } });
 
-  await N.router.onRequest(RELAY, arriving(stranger, N.me, '{"relay":"device-offer"}'));
+  await N.router.onRequest(RELAY, arriving(stranger, N.me, '{"relay":"probe"}'));
   if (asked.length === 0) {
-    test.check('a stranger never reaches the answerer, so cannot drive an enrolment');
+    test.check('a stranger never reaches the answerer, so cannot drive what it decides');
   } else {
     test.fail('answerer was asked about a stranger');
   }

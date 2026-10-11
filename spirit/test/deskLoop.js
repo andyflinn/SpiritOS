@@ -122,7 +122,7 @@ function handed(log) {
   pointAt(andyHome, relayUrl);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);
-  await waitFor(function () { return verb(andyPort, { verb: 'device.info' }).then(function (r) { return r.status === 200; }); }, 15000);
+  await waitFor(function () { return verb(andyPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
   const ownerInvite = mintOwnerInvite(relayHome, 'andy');
   const owned = await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy', invite: ownerInvite.token, inviteLabel: 'andy' });
   if (!(owned.status >= 200 && owned.status < 300)) { test.fail('the world: the owner claim answered ' + owned.status + ' ' + short(owned.body)); return; }
@@ -136,7 +136,7 @@ function handed(log) {
   pointAt(agentHome, relayUrl);
   const agentPort = await freePort();
   startNode(agentHome, agentPort);
-  await waitFor(function () { return verb(agentPort, { verb: 'device.info' }).then(function (r) { return r.status === 200; }); }, 15000);
+  await waitFor(function () { return verb(agentPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
   const clone = path.join(scratch, 'clone');
   fs.mkdirSync(clone, { recursive: true });
   spawnSync('git', ['init', '-q'], { cwd: clone });

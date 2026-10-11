@@ -3352,12 +3352,12 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
   }
 }
 
-test.subHeading('The device panel holds no live fact, so nothing watches it');
+test.subHeading('Relay Details holds no live fact, and the device panel is gone');
 
-// READ FROM shell/natterDetails. The panel left the list and became a
-// dialog, and these checks followed it — a test that stays behind when
-// its subject moves passes against a file that no longer has the
-// behaviour, which is the loudest kind of quiet.
+// READ FROM shell/natterDetails. The device panel these checks were
+// written for was removed by goal/G16.2 (Andy: "device WILL be KILLED.
+// that's a decision."); what stays is that the dialog runs no timer, and
+// that nothing of the panel is left behind.
 //
 // WHAT THEY GUARD CHANGED ON 2026-09-12. They used to hold a poll
 // honest: that it asked the shell whether this screen was on top, that
@@ -3376,9 +3376,8 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
 {
   const natter = readRun('shell/natterDetails/natterDetails.js');
 
-  // NOTHING REPEATS. The panel shows a password and an address; neither
-  // can change while somebody reads them, so there is nothing for a timer
-  // to keep true. Anchored on the calls, because the file explains the
+  // NOTHING REPEATS. Nothing on the dialog can change while somebody
+  // reads it, so there is nothing for a timer to keep true. Anchored on the calls, because the file explains the
   // deletion in prose and a check a comment can satisfy guards nothing.
   const repeats = /setInterval\s*\(/.test(natter) || /setTimeout\s*\(/.test(natter);
   if (!repeats) {
@@ -3413,132 +3412,14 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
     test.fail('the window grew back: ' + fossils.map(function (f) { return f[0]; }).join(', '));
   }
 
-  // ONE CONTROL, and it copies. There were two once — Copy and
-  // "Listening off" — and the second was chrome nobody could act on,
-  // because copying was what actually opened the window. Andy: "I never
-  // realized that I had to start listening with the listening button."
-  //
-  // Counted at the delegation rather than in the markup: the markup can
-  // carry a class nothing listens for, but a branch here is a button in
-  // the hand.
-  // TWO NOW, AND THE SECOND ONE EARNS IT (2026-09-15).
-  //
-  //   Andy: "rotate password must be a UI element in the device-fold in
-  //   the relay detail"
-  //
-  // The claim above was never "one button" for its own sake — it was that
-  // "Listening off" was CHROME NOBODY COULD ACT ON, a control that did
-  // not do the thing it named. Rotate is the opposite: a verb that has
-  // existed and been reachable since device support landed, with nothing
-  // on any screen to press.
-  //
-  // So the rule this asserts is unchanged in substance — every control in
-  // this panel does something — and the count moves with the honest
-  // arrival of a second one.
-  const branches = natter.match(/closest\(\s*['"]\.natter-dev-/g) || [];
-  if (branches.length === 2 && /navigator\.clipboard/.test(natter) && /device\.rotate/.test(natter)) {
-    test.check('two controls, and both act: one copies the password, one replaces it');
-  } else {
-    test.fail(branches.length + ' device click branches, expected 2 (copy and rotate)');
-  }
-
-  // AND IT SAYS WHEN IT FAILED. A copy button that fails quietly sends
-  // somebody to the other device to paste whatever was there before.
-  const copyAt = natter.indexOf('function ndDeviceCopy(');
-  const copyBody = copyAt === -1 ? '' : natter.slice(copyAt, natter.indexOf('\n}', copyAt));
-  if (/could not copy/.test(copyBody) && /copied/.test(copyBody)) {
-    test.check('and says which of the two happened, rather than going quiet');
-  } else {
-    test.fail('ndDeviceCopy reports nothing: ' + copyBody.slice(0, 200));
-  }
-
-  // THE ADDRESS IS NOT ON THE PAGE AT ALL NOW, which supersedes the
-  // check that stood here — that the elision was governed by a named
-  // constant rather than a literal buried in a slice.
-  //
-  //   Andy: "since the link to the device URL is already shortened in the
-  //   link, may as well put a button in its place [open your device in
-  //   your browser] or sumfin."
-  //
-  // A middle-elided URL was a shorter thing that still looked like an
-  // address and could be read as neither. So the assertion is now the
-  // stronger one: the visible caption is a sentence, and the shortener is
-  // gone rather than left sitting unused where it reads as a decision.
+  // THE DEVICE PANEL IS GONE (goal/G16.2): no control, no verb, no
+  // address. Comments stripped first, so the note saying it was removed
+  // cannot fail the check.
   const code0 = natter.replace(/(^|[^:])\/\/.*$/gm, '$1');
-  if (!/ndShortUrl|ND_LINK_CHARS/.test(code0)) {
-    test.check('the address is off the page entirely, and its shortener went with it');
+  if (!/natter-dev-|device\.info|device\.rotate|ndDevice|\/device'/.test(code0)) {
+    test.check('and nothing of the device panel is left: no control, no device verb, no device page link');
   } else {
-    test.fail('ndShortUrl / ND_LINK_CHARS survive with nothing rendering them');
-  }
-
-  if (/natter-dev-link[^]{0,400}?Open the device page/.test(natter)) {
-    test.check('and the link says what pressing it does instead of naming where it goes');
-  } else {
-    test.fail('the device link has no plain caption');
-  }
-
-  // STILL AN ANCHOR, not a button that calls window.open. A popup blocker
-  // can eat window.open; it cannot eat a click on a link — and the
-  // right-click menu is how the address reaches a phone that is not
-  // signed into this browser.
-  if (/<a class="cancel-btn natter-dev-link"/.test(natter) && !/window\.open/.test(code0)) {
-    test.check('and it is still a link, so Copy link address still reaches the phone');
-  } else {
-    test.fail('the device link became a scripted open');
-  }
-
-  // ── AND THE RED ONE IS LAST ON THAT LINE ───────────────────────────
-  //
-  //   Andy: "it be even better if the New password button was at the end
-  //   of the URL line."
-  //
-  // It was on a line of its own below, where the eye had already stopped.
-  // Order is the assertion because order is the request: copy, open,
-  // replace — left to right in the order somebody does them, with the
-  // destructive one at the end rather than first under a thumb.
-  const row = natter.slice(natter.indexOf('natter-dev-row'));
-  const copyAtRow = row.indexOf('natter-dev-copy');
-  const linkAtRow = row.indexOf('natter-dev-link');
-  const rotateAtRow = row.indexOf('natter-dev-rotate"');
-  if (copyAtRow !== -1 && linkAtRow > copyAtRow && rotateAtRow > linkAtRow) {
-    test.check('copy, open, then replace — the destructive one at the end of the line');
-  } else {
-    test.fail('device controls are out of order: ' +
-      [copyAtRow, linkAtRow, rotateAtRow].join(', '));
-  }
-
-  // And what is hidden is only the DISPLAY. The href carries the whole
-  // address: a key in a URL is a locator, not a credential — every one of
-  // them is public at /api/relay/who already — so shortening it is about
-  // the panel being readable, and a link that went to the short form
-  // would go nowhere.
-  if (/href="' \+ full \+ '"/.test(natter) && /title="' \+ full \+ '"/.test(natter)) {
-    test.check('while the link itself, and its title, carry the address whole');
-  } else {
-    test.fail('the link does not use the full address');
-  }
-
-  // THE TWO REMINDERS, which are Andy's, and are both about the OTHER
-  // device — which is why they are the ones forgotten at the moment they
-  // matter.
-  if (/bookmark that page/i.test(natter) && /password manager/i.test(natter)) {
-    test.check('and the panel says to bookmark that page and to save the password');
-  } else {
-    test.fail('a reminder is missing from the panel');
-  }
-
-  // target="_new" is not a standard keyword, and the tab must not get a
-  // handle on the shell that opened it.
-  //
-  // Comments stripped first, because the file names _new in prose to say
-  // why it is not used — and a check its own explanation can fail is the
-  // /api/hub/peer trap wearing the other face.
-  const code = natter.replace(/(^|[^:])\/\/.*$/gm, '$1');
-  if (/target="_blank"' \+\s*\n?\s*' rel="noopener"|target="_blank" rel="noopener"/.test(code) &&
-      !/target="?_new/.test(code)) {
-    test.check('and the link out opens a tab that cannot reach back');
-  } else {
-    test.fail('device link target is wrong');
+    test.fail('device panel code survives in natterDetails.js');
   }
 }
 
@@ -3557,28 +3438,11 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
     test.fail('orphaned device styles: ' + gone.join(', '));
   }
 
-  // NOTHING IN THIS PANEL MOVES, which is why there is no
-  // prefers-reduced-motion rule to check any more. The heartbeat said "the
-  // poll is alive"; a panel with no state to report has nothing to say by
-  // pulsing.
-  const devCss = css.slice(css.indexOf("Natter's device panel"));
-  const panelCss = devCss.slice(0, devCss.indexOf('</style>'));
-  if (!/animation:/.test(panelCss)) {
-    test.check('and nothing in the panel animates, because nothing in it is live');
+  // AND THE PANEL'S OWN STYLES WENT WITH IT (goal/G16.2).
+  if (css.indexOf('natter-dev-') === -1 && css.indexOf("Natter's device panel") === -1) {
+    test.check('and no CSS is left for the removed device panel');
   } else {
-    test.fail('the device panel still animates something');
-  }
-
-  // THE LINK HAS TO LOOK LIKE THE BUTTONS IT SITS BETWEEN, and it cannot
-  // inherit that: `#app-content button` does not reach an <a>, so the
-  // shape is repeated for it deliberately. Without this the row is two
-  // buttons with a bare blue underline between them — which is the state
-  // the caption change would otherwise have left behind.
-  if (/#app-content a\.natter-dev-link\s*\{[^}]*min-height:\s*44px/.test(css) &&
-      /#app-content a\.natter-dev-link\s*\{[^}]*background:/.test(css)) {
-    test.check('and the link carries the button shape, since an <a> inherits none of it');
-  } else {
-    test.fail('.natter-dev-link is not shaped like the buttons beside it');
+    test.fail('device panel styles survive in index.html');
   }
 }
 

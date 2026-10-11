@@ -1547,10 +1547,9 @@ function createPeerPost(opts) {
     var sizingSig = auth.sign(id.privateKey, auth.receiptMessage(hash, ''));
     return Promise.resolve()
       .then(function () {
-        // NOT ANSWERED UNLESS ADMITTED. `answer` is what decides a device
-        // enrolment, and composing an answer for a sender this node would
-        // not hear from would put the front door's judgement behind the
-        // one verb that acts on a request.
+        // NOT ANSWERED UNLESS ADMITTED. Composing an answer for a sender
+        // this node would not hear from would put the front door's
+        // judgement behind the one hook that acts on a request.
         if (!answer || (verdict !== 'known' && verdict !== 'admit')) return '';
         return answer(item);
       })

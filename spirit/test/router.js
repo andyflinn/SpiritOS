@@ -158,17 +158,13 @@ function run() {
 
   test.subHeading('Three budgets, because they are three populations');
 
-  // Decision 0016. A member is one person; this relay acts for ALL of its
-  // members at once; a partner is another box whose behaviour we do not
-  // control. Sharing one number between them is what makes a ceiling of 1
-  // unswitchable, because the relay posts under its OWN key every time it
-  // acts for somebody (a device offer, a partner forward) — so its second
-  // concurrent self-post is refused by the member cap.
-  //
-  // This is the check that says a member ceiling of 1 does not starve the
-  // relay's own work, which is the whole reason the split exists.
+  // Decision 0016. A member is one person; a partner is another box whose
+  // behaviour we do not control. A partner forward opens under the relay's
+  // OWN key for everybody at once, so sharing the member cap of 1 would
+  // refuse its second concurrent forward. (The RELAY class, for device
+  // offers, was removed by goal/G16.2.)
   {
-    const R = router.createRouter({ max: 100, maxPerRequester: { member: 1, relay: 4, partner: 2 } });
+    const R = router.createRouter({ max: 100, maxPerRequester: { member: 1, partner: 2 } });
 
     const first = R.open('m1', 'alice', 'tgt', function () { return true; }, null, router.MEMBER);
     const second = R.open('m2', 'alice', 'tgt2', function () { return true; }, null, router.MEMBER);
@@ -178,24 +174,21 @@ function run() {
       test.fail('member: ' + JSON.stringify(first) + ' / ' + JSON.stringify(second));
     }
 
-    // THE POINT. Same key, different class — the relay acting for a member
-    // is not that member spending their own slot.
-    const r1 = R.open('r1', 'alice', 'tgt3', function () { return true; }, null, router.RELAY);
-    const r2 = R.open('r2', 'alice', 'tgt4', function () { return true; }, null, router.RELAY);
-    if (r1.ok && r2.ok) {
-      test.check('and the relay still gets its own budget, on the same key, at a member cap of 1');
+    // Same key, different class — a partner forward is not that member
+    // spending their own slot, and it is capped in its own class.
+    const p1 = R.open('p1', 'alice', 'tgt5', function () { return true; }, null, router.PARTNER);
+    const p2 = R.open('p2', 'alice', 'tgt6', function () { return true; }, null, router.PARTNER);
+    const p3 = R.open('p3', 'alice', 'tgt7', function () { return true; }, null, router.PARTNER);
+    if (p1.ok && p2.ok && p3.ok === false && p3.status === 429 && p3.kind === router.PARTNER) {
+      test.check('a partner gets its own budget on the same key, is capped in its own class, and the refusal names which');
     } else {
-      test.fail('relay class: ' + JSON.stringify(r1) + ' / ' + JSON.stringify(r2));
+      test.fail('partner: ' + JSON.stringify(p1) + ' / ' + JSON.stringify(p2) + ' / ' + JSON.stringify(p3));
     }
 
-    // And a partner cannot spend what the relay needs for its members.
-    R.open('p1', 'alice', 'tgt5', function () { return true; }, null, router.PARTNER);
-    R.open('p2', 'alice', 'tgt6', function () { return true; }, null, router.PARTNER);
-    const p3 = R.open('p3', 'alice', 'tgt7', function () { return true; }, null, router.PARTNER);
-    if (p3.ok === false && p3.status === 429 && p3.kind === router.PARTNER) {
-      test.check('a partner is capped in its own class, and the refusal names which');
+    if (router.KINDS.length === 2 && router.RELAY === undefined) {
+      test.check('there are two requester classes; the device-only RELAY class is gone (goal/G16.2)');
     } else {
-      test.fail('partner: ' + JSON.stringify(p3));
+      test.fail('classes: ' + JSON.stringify(router.KINDS));
     }
   }
 
@@ -219,19 +212,21 @@ function run() {
       test.fail('OWED by Andy\'s experiment 1 (2026-10-02): default caps ' + JSON.stringify(R.caps)
         + ', second ' + JSON.stringify(second) + ', other ' + JSON.stringify(other));
     }
-    // The relay acting for its members, and a partner forwarding in, post
-    // under the relay's own key for everybody at once: they keep the
-    // budgets they had, or the member ceiling would starve the relay's own
-    // work (the three-budgets block above says why).
-    const r1 = R.open('d4', 'relayKey', 'tgt4', function () { return true; }, null, router.RELAY);
-    const r2 = R.open('d5', 'relayKey', 'tgt5', function () { return true; }, null, router.RELAY);
-    if (R.caps.relay === router.DEFAULT_PER_REQUESTER && R.caps.partner === router.DEFAULT_PER_REQUESTER && r1.ok && r2.ok) {
-      test.check('and the relay\'s own class and the partner class keep their budget of ' + router.DEFAULT_PER_REQUESTER);
+    // A partner forwarding in posts under the relay's own key for
+    // everybody at once: it keeps the budget it had, or the member ceiling
+    // would starve it (the block above says why).
+    const r1 = R.open('d4', 'relayKey', 'tgt4', function () { return true; }, null, router.PARTNER);
+    const r2 = R.open('d5', 'relayKey', 'tgt5', function () { return true; }, null, router.PARTNER);
+    if (R.caps.partner === router.DEFAULT_PER_REQUESTER && r1.ok && r2.ok) {
+      test.check('and the partner class keeps its budget of ' + router.DEFAULT_PER_REQUESTER);
     } else {
-      test.fail('relay and partner classes: ' + JSON.stringify(R.caps) + ' / ' + JSON.stringify(r2));
+      test.fail('partner class: ' + JSON.stringify(R.caps) + ' / ' + JSON.stringify(r2));
     }
+    // The live relay passes only its own key (selfKey, goal/G16.2): no cap
+    // option, so the defaults above are still the numbers it runs.
     const live = require('fs').readFileSync(require('path').join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
-    if (/createRouter\(\s*\)/.test(live)) test.check('relay.js creates its router with no options, so these defaults are what a live relay runs');
+    const made = live.match(/routerTable\.createRouter\((.*)\);/);
+    if (made && !/max|ttl/i.test(made[1])) test.check('relay.js creates its router with no cap options, so these defaults are what a live relay runs');
     else test.fail('relay.js no longer creates its router with the defaults; assert the numbers where it now sets them');
   }
 
@@ -242,7 +237,7 @@ function run() {
   {
     const R = router.createRouter({ max: 100, maxPerRequester: 9 });
     R.open('c1', 'bob', 't1', function () { return true; }, null, router.MEMBER);
-    R.open('c2', 'bob', 't2', function () { return true; }, null, router.RELAY);
+    R.open('c2', 'bob', 't2', function () { return true; }, null, router.PARTNER);
     if (R.countFor('bob') === 2 && R.countFor('bob', router.MEMBER) === 1) {
       test.check('countFor sees every class; countFor with a class sees one');
     } else {
@@ -254,7 +249,7 @@ function run() {
   // changed underneath it.
   {
     const R = router.createRouter({ max: 100, maxPerRequester: 2 });
-    if (R.caps.member === 2 && R.caps.relay === 2 && R.caps.partner === 2
+    if (R.caps.member === 2 && R.caps.partner === 2
         && R.maxPerRequester === 2) {
       test.check('a plain number sets every class, exactly as it did before');
     } else {

@@ -25,7 +25,10 @@ const NODE_NAMES = ['relay', 'andy', 'bert'];
 function setupRelayFakes(owner) {
   const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', { cwd: REPO_ROOT, encoding: 'utf8' })
     .split('\n')
-    .filter(Boolean);
+    .filter(Boolean)
+    // A tracked file deleted in the working tree and not yet committed is
+    // not there to copy (goal/G16.2 deleted device.html this way).
+    .filter((relPath) => fs.existsSync(path.join(REPO_ROOT, relPath)));
 
   const targets = {};
   NODE_NAMES.forEach((name) => {

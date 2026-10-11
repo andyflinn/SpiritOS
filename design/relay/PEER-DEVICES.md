@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-10-11 (goal/G16.2): the device enrolment was removed from the tree on Andy's decision "device WILL be KILLED. that's a decision."
+
 # Peer devices — every identity brings its own browsers
 
 **Status: designed, not built. Verified against `756013b` (2026-09-10).**

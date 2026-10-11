@@ -1,109 +1,33 @@
 'use strict';
 
 // spirit/run/js/answerRelay.js
-// What this node answers when the RELAY is the one asking.
+// What this node knows about the RELAYS it talks to: each one's own public
+// key, fetched from the relay, checked against the pin (relayKeys.js), and
+// the key a post to it is sealed to.
 //
-// Almost every request arriving on a node's stream comes from a peer and
-// carries that peer's signature end to end — the relay is a road, not a
-// party, and is never trusted with the contents.
-//
-// A device enrolment is the exception, and it has to be. The thing
-// making the request is a browser that has no identity yet — that being
-// precisely what it is enrolling — so there IS no end-to-end signature
-// to carry. The relay takes the browser's POST, verifies what it can,
-// and posts it on as itself. Its signature is the only attestation
-// available.
-//
-// Andy: "the personal node didn't know to verify the origin of the
-// request with the public key of the relay."
-//
-// It does now, and that check is the whole reason this file exists:
-//
-//   FROM MUST BE THE RELAY'S OWN KEY, and the relay's own key means the
-//   one the relay this request ARRIVED ON publishes about itself.
-//
-// Not any relay. Not a key that was handed over in the request. The
-// roll key of the socket it came down, fetched from that relay and
-// compared. A request from anyone else is somebody else's traffic and
-// gets the plain receipt every request gets.
-//
-// THE SENDER IS THE DISCRIMINATOR, not an app name. There is no `app`
-// field in what the relay sends and there must not be: the app envelope
-// lives inside `text` so no relay ever learns it (spirit/test/packet.js).
-// A relay is not an app. What identifies its traffic is that the relay
-// signed it.
+// It once also answered the relay's device-offer request; that went with
+// the device enrolment, removed by goal/G16.2. The name stays.
 
-const deviceTick = require('./deviceTick');
 const relayKeys = require('./relayKeys');
 const auth = require('./relayAuth');
-// The node layer's one reading of what arrived (N1, goal/G16.5).
-const arrivals = require('./arrivals');
 
-// ── WHAT A RELAY MAY SPEND ON THIS NODE'S PASSWORD ───────────────────
-//
-// Grok, reviewing DEVICE.md: `DEVICE_PER_MIN` binds callers of the
-// relay's own `deviceOffer` and does nothing about a crooked relay, while
-// `deviceTick.answerOffer` had no counter, no backoff and no delay. So
-// the only thing rate-limiting password guesses against a node was the
-// box that benefits from not doing it.
-//
-// Andy's ruling settles the shape rather than moving the limit: "all
-// servers, node and relay, must be designed to survive… it is the
-// responsibility of the node-code to safeguard itself, same goes for the
-// satellite." A SERVER DOES NOT DELEGATE ITS OWN SURVIVAL — so both
-// sides keep a counter, defending different things. The relay's protects
-// the relay from its callers. This one protects the node from its relays.
-//
-// FAILURES, NOT ATTEMPTS, and keyed by the relay it arrived on (Grok).
-// Counting attempts would throttle somebody enrolling three devices in a
-// minute, which is a thing people do; counting failures throttles
-// guessing, which is the thing this is for. Five is generous for a
-// mistyped paste and tight for a search.
-//
-// In RAM and per process: a guessing budget is not a thing to persist,
-// and a restart resetting it costs nothing next to a password of 128 hex
-// characters.
-var ENROL_FAILS_PER_MIN = 5;
-var ENROL_WINDOW_MS = 60000;
-
-// opts: { rootDir, request, urls }
+// opts: { rootDir, request, onKeyChanged }
 //
 // `request` is the same primitive peerPost uses, so this reaches a relay
-// exactly the way everything else does. `urls` is a function rather than
-// a list, because which relays this node holds a row on is answered by
-// presence and changes while the process runs.
+// exactly the way everything else does.
 function createAnswerer(opts) {
   opts = opts || {};
   var rootDir = opts.rootDir;
-  var urlsFn = typeof opts.urls === 'function' ? opts.urls : function () { return []; };
   // Told when a relay answers with a key other than the one on record.
   // Optional, and unwired today: refusing is the safety property and
   // surfacing it to a person is a panel that does not exist yet. The hook
   // is here so that when it does, nothing in this file has to change.
   var onKeyChanged = typeof opts.onKeyChanged === 'function' ? opts.onKeyChanged : null;
 
-  // relay url -> timestamps of refused enrolments. See the constants
-  // above for why this is failures rather than attempts.
-  var enrolFails = Object.create(null);
-  function enrolBudgetLeft(url) {
-    var cutoff = Date.now() - ENROL_WINDOW_MS;
-    var list = (enrolFails[url] || []).filter(function (t) { return t > cutoff; });
-    if (list.length) enrolFails[url] = list; else delete enrolFails[url];
-    return list.length < ENROL_FAILS_PER_MIN;
-  }
-  function noteEnrolFail(url) {
-    var list = enrolFails[url] || [];
-    list.push(Date.now());
-    enrolFails[url] = list;
-  }
-
   // TWO CONVENTIONS WEAR THE SAME SIGNATURE, and mixing them is a bug
   // that looks like a refusal. `relayRequest` answers { status, text };
-  // deviceTick and everything below want the text already parsed, and
-  // hub wraps it for exactly that reason. Both are
-  // (url, method, path, body, headers), so nothing catches the swap —
-  // the first live enrolment came back "not now" in 126ms, which is the
-  // round trip working perfectly and the answer being wrong.
+  // everything below wants the text already parsed. Both are
+  // (url, method, path, body, headers), so nothing catches the swap.
   //
   // Converted once, here, so this file has one kind of request in it.
   function asJson(url, method, pathname, body, headers) {
@@ -282,63 +206,7 @@ function createAnswerer(opts) {
       .catch(function () { return ''; });
   }
 
-  // Returns the reply text, or '' for "not mine" — which leaves the
-  // plain receipt peerPost would have sent anyway.
-  function answer(item) {
-    if (!item || !item.from || !item.relay) return Promise.resolve('');
-
-    // THE ONE READER, NOT A PARSE OF ITS OWN (N1, goal/G16.5). A device
-    // offer is the relay's own shape and not a packet — no `v`, no `body`
-    // (relay.js: "a relay that could parse one would have made the
-    // envelope part of the relay protocol") — so `envelopeOf` says null
-    // about it, correctly, and `relayWordOf` is the reading it needs.
-    var asked = arrivals.relayWordOf(item.text);
-    // Everything else on this wire is an app packet, and this node is
-    // not the one that reads those.
-    if (!asked || asked.relay !== 'device-offer') return Promise.resolve('');
-
-    return relayKey(item.relay).then(function (key) {
-      // THE CHECK. Without it, any peer could post a device offer and
-      // drive this node's enrolment — the password would still have to
-      // be right, but a stranger would be free to spend guesses against
-      // it and to occupy the slot while doing so.
-      if (!key || item.from !== key) return '';
-
-      // AND THE BUDGET, before the password is compared. Over it, this
-      // node stops answering that relay's enrolments for the rest of the
-      // minute — which is the only thing a node can do about a relay
-      // that will not limit itself.
-      //
-      // The empty answer is the same refusal a wrong password gets, on
-      // purpose: telling a relay "you are being throttled" tells a
-      // crooked one exactly when to resume.
-      if (!enrolBudgetLeft(item.relay)) return '';
-
-      return deviceTick.answerOffer(rootDir, asked).then(function (decided) {
-        // A refusal is what gets counted. A successful enrolment spends
-        // nothing, so somebody attaching several devices in a minute is
-        // never throttled for it.
-        if (!decided || !decided.accepted) noteEnrolFail(item.relay);
-        // The reply is the relay's own shape, not a packet, for the same
-        // reason the question was: this is protocol between a node and
-        // its relay, and the relay must be able to read it without ever
-        // learning what an app envelope looks like.
-        return JSON.stringify({
-          relay: 'device-answer',
-          accepted: !!decided.accepted,
-          devicePublicKey: decided.accepted ? decided.devicePublicKey : '',
-        });
-      });
-    }).catch(function () {
-      // A failure to decide is not a yes. Saying nothing leaves the bare
-      // receipt, which the relay reads as a refusal — the browser is
-      // told to try again rather than enrolled against a node that never
-      // agreed.
-      return '';
-    });
-  }
-
-  return { answer: answer, relayKey: relayKey, relaySealKey: relaySealKey, relaySealKeyByKey: relaySealKeyByKey };
+  return { relayKey: relayKey, relaySealKey: relaySealKey, relaySealKeyByKey: relaySealKeyByKey };
 }
 
 module.exports = { createAnswerer: createAnswerer };

@@ -338,10 +338,8 @@ function ensureDescription(rootDir, now) {
 // on a rename (relay.setRelayLabel) — so a node names itself under the
 // same law a mailbox does, rather than under whatever this file felt like.
 //
-// A NAME IS REQUIRED, and the refusal is not cosmetic: deviceTick declines
-// enrolment outright when `id.name` is empty, so a node that let somebody
-// clear this field would break phone attachment from a text box that said
-// nothing about phones.
+// A NAME IS REQUIRED. (The device enrolment that once refused a node with
+// an empty `id.name` was removed by goal/G16.2; the rule stands.)
 function setName(rootDir, text) {
   const id = auth.loadIdentity(rootDir);
   if (!id) return { ok: false, status: 409, error: 'this node has no key yet' };

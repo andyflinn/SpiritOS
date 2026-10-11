@@ -40,7 +40,7 @@ const read = (rel) => {
 test.startTest('The transport cycle, what is still owed');
 
 const shell = read('spirit/run/js/client/shell.js');
-const answerRelay = read('spirit/run/js/answerRelay.js');
+const server = read('spirit/run/js/server.js');
 const trafficLog = read('spirit/run/js/trafficLog.js');
 
 test.subHeading('the transport cycle R12 — an app can reply, and a reply is the only evidence of being delivered');
@@ -58,16 +58,17 @@ test.subHeading('the transport cycle R12 — an app can reply, and a reply is th
 //
 // TWO ABSENCES, MEASURED, and either one alone makes the reply impossible:
 // deliverPackets discards the handler's return value, so an app has no way to
-// say anything back; and answerRelay answers '' for everything that is not a
-// device-offer, so the reply is empty even if an app produced one.
+// say anything back; and the node wires no `answer` into peerPost (server.js;
+// the one it had, answerRelay's device-offer reply, was removed by
+// goal/G16.2), so the reply is empty even if an app produced one.
 {
   const discards = /listeners\.slice\(\)\.forEach\(function \(fn\) \{ fn\(/.test(shell)
     && !/return\s+(?:fn|handlerResult|reply)/.test(shell);
-  const onlyDeviceOffer = /device-offer/.test(answerRelay);
+  const noAnswer = !/^\s*answer:\s*\S/m.test(server);
   test.awaiting('transport/R12', 'a handler return value that becomes the reply',
-    !discards && !onlyDeviceOffer,
-    'deliverPackets (client/shell.js) drops what a handler returns, and answerRelay.answer '
-    + 'gives back an empty string for anything that is not a device-offer — so an app cannot '
+    !discards && !noAnswer,
+    'deliverPackets (client/shell.js) drops what a handler returns, and server.js hands '
+    + 'peerPost no `answer` at all — so an app cannot '
     + 'say "I have it" even to itself. The receipt proves ARRIVAL AND HANDLING and must not '
     + 'claim a human looked: nothing on the wire can prove that, and a mechanism claiming to '
     + 'would be the two checkmarks this requirement exists to refuse',

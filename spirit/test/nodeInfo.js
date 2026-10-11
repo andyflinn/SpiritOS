@@ -200,10 +200,9 @@ function theRules() {
     test.fail('fresh: ' + JSON.stringify(fresh));
   }
 
-  // EMPTY IS A LEGAL DESCRIPTION and an illegal name. The asymmetry is
-  // not tidiness: deviceTick refuses enrolment outright when `id.name` is
-  // empty, so a text box that could clear it would break phone attachment
-  // from a screen that says nothing about phones.
+  // EMPTY IS A LEGAL DESCRIPTION and an illegal name. (The device
+  // enrolment that once refused an empty name was removed by goal/G16.2;
+  // nodeCard.setName still refuses one.)
   const cleared = nodeCard.setDescription(home, '');
   if (cleared.ok) {
     test.check('a description may be cleared — not having written one is an ordinary state');
@@ -306,7 +305,7 @@ function theScreen() {
 
     if (/info-name/.test(app.container.innerHTML) &&
         !/password/.test(app.container.innerHTML)) {
-      test.check('and no password on it — that screen is device.info\'s and not this one');
+      test.check('and no password on it');
     } else {
       test.fail('markup: ' + app.container.innerHTML.slice(0, 200));
     }

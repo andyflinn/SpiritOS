@@ -24,8 +24,6 @@ const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 const packet = require('../run/js/client/packet.js');
-// The device page's URL spelling — see the device-link check below.
-const deviceAuth = require('../run/js/deviceAuth');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'natterDetails', 'natterDetails.js');
@@ -123,28 +121,11 @@ function revokeTarget(label, out) {
   return node;
 }
 
-function copyTarget(out) {
-  const panel = {
-    querySelector: function (selector) {
-      return selector === '.natter-dev-out' ? out : null;
-    },
-  };
-  const node = { getAttribute: function () { return null; } };
-  node.closest = function (selector) {
-    if (selector === '.natter-dev-copy') return node;
-    if (selector === '.natter-device') return panel;
-    return null;
-  };
-  return node;
-}
-
-// opts: { rows, device, label, canRemove }
+// opts: { rows, label, canRemove }
 // A click lands on the bar, and the app reads data-fold off it via
 // closest(). The fake element answers both.
 // Which bars are inside "Managing my relay". Named rather than inferred,
-// because the group's membership is a decision — the device panel is
-// deliberately NOT in it, being about this node rather than this relay —
-// and a list that guessed would stop noticing when that line moves.
+// because the group's membership is a decision, and a list that guessed would stop noticing when that line moves.
 // `'invites'` STOOD BESIDE `'invite'` and is gone with the panel: minting
 // and what has been minted are one bar now (Andy: "the two invite blocks
 // should be one single invite block").
@@ -214,8 +195,6 @@ function mountApp(opts) {
       // would have proved, so a test can drive both outcomes without a
       // second relay.
       text = JSON.stringify(opts.partnerCheck || { ok: false, error: 'no fixture' });
-    } else if (verb === 'device.info') {
-      text = JSON.stringify(opts.device || {});
     } else if (url.indexOf('/api/hub/post') === 0) {
       // What the node answers a post with: peerPost's own settle, whose
       // `text` is the packet envelope the far end replied in.
@@ -264,9 +243,8 @@ function mountApp(opts) {
     },
   };
 
-  // setInterval is injected, as natterBind did for the panel's poll. The
-  // device panel re-asks the hub every two seconds, and a real interval
-  // here keeps node's event loop alive after the assertions are done —
+  // setInterval is injected, as natterBind did for the panel's poll. A
+  // real interval here keeps node's event loop alive after the assertions are done —
   // the suite passes and then hangs forever, which is a worse failure
   // than a red line because nothing says why.
   let intervalsStarted = 0;
@@ -919,14 +897,11 @@ function theOwnerGroupFolds() {
       test.fail('owner panels drawn while the group is shut');
     }
 
-    // THE DEVICE PANEL IS NOT A MEMBER. It is about attaching a device
-    // to THIS NODE — a member with no relay of their own has one — so it
-    // stays outside, among the things you are rather than the things you
-    // run.
-    if (/natter-device/.test(shut)) {
-      test.check('while the device panel stays outside — that is this node, not this relay');
+    // THE DEVICE PANEL IS GONE (goal/G16.2), inside the group or out.
+    if (!/natter-device/.test(shut)) {
+      test.check('and there is no device panel — the device enrolment was removed (goal/G16.2)');
     } else {
-      test.fail('the device panel went into the owner group');
+      test.fail('the device panel is still drawn');
     }
 
 
@@ -1506,24 +1481,11 @@ function someoneElsesMailbox() {
       test.fail('member view: ' + panel);
     }
 
-    // B2: a mailbox this node HAS takes its device, owned or not. Gating
-    // this on the star would keep the feature at the owner for want of
-    // one word, which is exactly where it sat until B2.
-    if (/natter-device/.test(panel)) {
-      test.check('and still offers the device panel, because a member has a slot too');
+    // The device panel was removed by goal/G16.2, for members as for owners.
+    if (!/natter-device/.test(panel)) {
+      test.check('and offers no device panel — the device enrolment was removed (goal/G16.2)');
     } else {
-      test.fail('no device panel for a member: ' + panel);
-    }
-
-    // No star on it, though. ★ means owned everywhere in this app and in
-    // Relay Chat's To list — one mark, one meaning — and a member seeing
-    // it on a panel that has nothing to do with owning would be the mark
-    // starting to mean two things.
-    const device = panel.slice(panel.indexOf('natter-device'));
-    if (device.indexOf(spirit.core.const.ICON.STAR) === -1 && device.indexOf('★') === -1) {
-      test.check('and wears no star, which means owned and only that');
-    } else {
-      test.fail('the device panel wore the owned mark: ' + device.slice(0, 160));
+      test.fail('a device panel for a member: ' + panel);
     }
   });
 }
@@ -1537,8 +1499,8 @@ function aStrangersMailbox() {
   return settle().then(function () {
     app.open('relay');
     const panel = app.body().innerHTML;
-    // Neither owned nor claimed: this node cannot put a device there and
-    // showing the panel would be chrome nobody can act on.
+    // Neither owned nor claimed: showing the invite panel would be chrome
+    // nobody can act on.
     if (panel.indexOf('natter-device') === -1 && panel.indexOf('natter-inv-go') === -1) {
       test.check('and a mailbox this node has no row on offers neither');
     } else {
@@ -1547,166 +1509,11 @@ function aStrangersMailbox() {
   });
 }
 
-function theDevicePanel() {
-  test.subHeading('Attaching one of my own devices');
-
-  // A LONG KEY ON PURPOSE. The address is a host plus 58 characters of
-  // base64url plus `/device`, and what this panel had to stop doing was
-  // printing all of it — so a short fake key would test the wrong thing.
-  const KEY = 'MCowBQYDK2VwAyEAbella+key/with+slashes+and+padding+to+be+long=';
-
-  const app = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', owned: true }],
-    // THE REPORT ARRIVES SEPARATELY NOW (R3). It sat on the row while
-    // the badge was a signed status GET and the report was that
-    // request's body. The relay pushes it down the stream instead, and
-    // it reaches the browser under `relayStatus`, keyed by url.
-    //
-    // The SHAPE moved with it: `peers` is a count here, where the
-    // owner-only report carried the roster itself — and `messages` is
-    // gone, because R8 deleted the ring and a row reading "Messages 0"
-    // would suggest the question still applies.
-    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1, key: 'RELAYKEY' } },
-    device: { password: 'p'.repeat(128), publicKey: KEY },
-  });
-
-  return settle().then(function () {
-    app.open('device');
-    const panel = app.body().innerHTML;
-
-    // NOTHING TO SWITCH ON. Andy: "no backstop, no 'listening mode' on
-    // the personal node. the ability to setup one-device-for-all-peers
-    // just IS." The panel had a toggle, four moods and a two-second
-    // repaint, all of them about a poll — and this is the check that
-    // stops any of it coming back, because none of it would go red.
-    const ICONS = spirit.core.const.ICON;
-    if (panel.indexOf('data-device-toggle') === -1 &&
-        panel.indexOf('data-mood') === -1 &&
-        panel.indexOf(ICONS.BLUE_CIRCLE) === -1 &&
-        panel.indexOf(ICONS.RED_CIRCLE) === -1 &&
-        !/listen/i.test(panel)) {
-      test.check('there is no switch, no state and no word about listening');
-    } else {
-      test.fail('the window came back: ' +
-        panel.slice(panel.indexOf('natter-device'), panel.indexOf('natter-device') + 400));
-    }
-
-    // WHERE TO OPEN IT. `/<key>/device` names whose enrolment this is,
-    // which is what lets a relay answer per identity rather than one for
-    // the box. Base64url — the same bytes, `-` and `_` for `+` and `/` —
-    // because a `/` in a path segment is not in the segment.
-    // Built with deviceAuth.keyToUrl, not with a copy of it. A suite
-    // that respells the rule cannot notice the rule changing, and this
-    // check exists precisely to hold the app and the relay to one
-    // spelling of the same URL.
-    const target = 'https://spirit.example/' + deviceAuth.keyToUrl(KEY) + '/device';
-    if (panel.indexOf('href="' + target + '"') !== -1) {
-      test.check('the link GOES to this identity in base64url, not to the bare /device');
-    } else {
-      test.fail('device link target: ' + (/href="https:\/\/spirit[^"]*/.exec(panel) || [''])[0]);
-    }
-
-    // AND DOES NOT SHOW IT AT ALL. This supersedes the check that stood
-    // here — that the text was a middle-elided version of the address,
-    // shorter than the whole and with the key taken out of the middle.
-    //
-    //   Andy: "since the link to the device URL is already shortened in
-    //   the link, may as well put a button in its place [open your device
-    //   in your browser] or sumfin."
-    //
-    // A shortened address is still an address on the page, and one that
-    // can be read for neither what it is nor where it goes. What the link
-    // says now is what pressing it does. NO PART OF THE ADDRESS is in the
-    // caption — asserted against the key rather than against a length,
-    // because a caption that happened to contain it would be the failure.
-    const shown = /<a class="cancel-btn natter-dev-link"[^>]*>([^<]*)<\/a>/.exec(panel);
-    if (shown && shown[1].indexOf('http') === -1 &&
-        shown[1].indexOf(KEY.slice(20, 40)) === -1 && /\w/.test(shown[1])) {
-      test.check('and says what pressing it does instead: "' + shown[1].trim() + '"');
-    } else {
-      test.fail('displayed link text: ' + JSON.stringify(shown && shown[1]));
-    }
-
-    // The whole address is still ONE hover away, and still one right-click
-    // from the clipboard — which is the part that matters, since the phone
-    // it is for cannot be handed this browser's clipboard.
-    const title = /title="(https:\/\/[^"]*)"/.exec(panel);
-    if (title && title[1] === target) {
-      test.check('and the full address is on the title, so nothing is lost by dropping it');
-    } else {
-      test.fail('title: ' + JSON.stringify(title && title[1]));
-    }
-
-    // THE TWO REMINDERS, which are Andy's and are both about the OTHER
-    // device — which is why they are the ones forgotten at the moment
-    // they matter.
-    if (/bookmark/i.test(panel) && /password manager/i.test(panel)) {
-      test.check('and the panel below says to bookmark that page and save the password');
-    } else {
-      test.fail('the reminders are not both there');
-    }
-
-    // ONE BUTTON, and it copies. It used to also open the window, because
-    // there were once two buttons and the copy was the one that opened it
-    // — which nobody could guess.
-    const out = { textContent: '' };
-    // FOUND FROM THE CONTAINER, not from the button. Copying is the click
-    // that disarms New password, and disarming repaints the panel — so a
-    // span captured before the clipboard answers is detached by the time
-    // there is anything to write in it, and the message lands in a DOM
-    // nobody is looking at.
-    app.body().parts['.natter-dev-out'] = out;
-    app.body().fire('click', { target: copyTarget(out) });
-
-    return settle().then(function () {
-      if (/copied/.test(out.textContent)) {
-        test.check('and the one button puts the password on the clipboard');
-      } else {
-        test.fail('clipboard word: ' + out.textContent);
-      }
-
-      // THE PASSWORD IS NOT ON THE PAGE. It goes to the clipboard and
-      // from there into a password manager; 128 characters of hex printed
-      // in a panel is a secret sitting on a screen for no reason.
-      if (panel.indexOf('p'.repeat(64)) === -1) {
-        test.check('and the password itself is nowhere in the markup');
-      } else {
-        test.fail('the password was printed on the page');
-      }
-
-      // ── AND IT STILL SAYS SO AFTER A REPAINT ──────────────────────
-      //
-      // The case: New password is armed, and the next press is Copy. That
-      // click disarms, disarming repaints the whole screen, and the span
-      // the message was going to lands in the bin — so the copy happens
-      // and the panel says nothing, which is indistinguishable from a
-      // copy that failed.
-      //
-      // The repaint is MODELLED here rather than assumed: the container's
-      // `.natter-dev-out` becomes a different object mid-flight, exactly
-      // as innerHTML replaces the element. A handler that captured the
-      // old one writes to the old one and this fails.
-      const fresh = { textContent: '' };
-      app.body().parts['.natter-dev-out'] = fresh;
-      app.body().fire('click', { target: copyTarget({ textContent: '' }) });
-
-      return settle().then(function () {
-        if (/copied/.test(fresh.textContent)) {
-          test.check('and says so into the panel that is on the screen now, not the one it was handed');
-        } else {
-          test.fail('the message went to the replaced span: ' +
-            JSON.stringify(fresh.textContent));
-        }
-      });
-    });
-  });
-}
-
-// A panel that asks the hub once and never again. The poll it replaced
-// re-asked every two seconds for as long as the screen was up, and the
-// only reason it did was to keep a sentence about the poll true.
+// THE DEVICE PANEL WAS REMOVED by goal/G16.2 with the device enrolment
+// (Andy: "device WILL be KILLED. that's a decision."). What is left to
+// assert is that the screen no longer asks the node for a device at all.
 function thePanelAsksOnce() {
-  test.subHeading('And asks once, because nothing it shows can change');
+  test.subHeading('And never asks the node about a device');
 
   const app = mountApp({
     rows: [{ url: OWNED, label: 'spirit', owned: true }],
@@ -1720,18 +1527,18 @@ function thePanelAsksOnce() {
     // gone, because R8 deleted the ring and a row reading "Messages 0"
     // would suggest the question still applies.
     relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1, key: 'RELAYKEY' } },
-    device: { password: 'p'.repeat(128), publicKey: 'k' },
   });
 
   return settle().then(function () {
     return settle().then(function () {
       const asks = app.log.filter(function (c) {
-        return c.url.indexOf('/api/spirit') === 0 && /device.info/.test(String(c.body || ''));
+        return c.url.indexOf('/api/spirit') === 0 && /"device\./.test(String(c.body || ''));
       });
-      if (asks.length === 1) {
-        test.check('one ask for the password and the key, and no timer behind it');
+      const html = app.body().innerHTML;
+      if (asks.length === 0 && html.indexOf('natter-device') === -1 && app.intervals() === 0) {
+        test.check('no device verb is asked, no device panel is drawn, and no timer runs');
       } else {
-        test.fail('asked ' + asks.length + ' times');
+        test.fail('device asks ' + asks.length + ', intervals ' + app.intervals());
       }
     });
   });
@@ -1825,7 +1632,6 @@ function panelsFoldAndAreMarked() {
   const app = mountApp({
     rows: [{ url: OWNED, label: 'spirit', owned: true, status: 200,
       report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } }],
-    device: { password: 'hunter2', publicKey: 'KEY' },
   });
 
   return settle().then(function () {
@@ -1840,29 +1646,32 @@ function panelsFoldAndAreMarked() {
     // moved to Info — this fixture drew one fewer. The number was never
     // the assertion: `bodies === 0` is, and the bar count is only there
     // so "every panel is shut" cannot pass on a screen with no panels.
-    if (bars >= 2 && bodies === 0) {
+    // `>= 1` since the device panel went (goal/G16.2).
+    if (bars >= 1 && bodies === 0) {
       test.check('the screen arrives with every panel shut — ' + bars + ' bars, no bodies');
     } else {
       test.fail('bars ' + bars + ' bodies ' + bodies);
     }
 
     // THE MARKS. One meaning each, which is the whole reason they are on
-    // the bar: a column of SHUT bars is still readable.
-    const deviceBar = shutAll.slice(shutAll.indexOf('Add one of my own devices') - 200,
-      shutAll.indexOf('Add one of my own devices'));
-    if (deviceBar.indexOf(ICON.LINK) !== -1) {
-      test.check('the device panel wears ' + ICON.LINK + ' — a thing to do, not a warning');
+    // the bar: a column of SHUT bars is still readable. (The device panel
+    // and its ICON.LINK bar were removed by goal/G16.2; the relay panel's
+    // bar carries the check now.)
+    const relayBar = shutAll.slice(Math.max(0, shutAll.indexOf('What this relay says') - 200),
+      shutAll.indexOf('What this relay says'));
+    if (relayBar.indexOf(ICON.INFO) !== -1) {
+      test.check('the relay panel wears ' + ICON.INFO + ' — information, not a warning');
     } else {
-      test.fail('device bar: ' + deviceBar.slice(-120));
+      test.fail('relay bar: ' + relayBar.slice(-120));
     }
 
-    app.open('device');
+    app.open('relay');
     const oneOpen = app.body().innerHTML;
     if ((oneOpen.match(/class="nd-panel-body"/g) || []).length === 1 &&
-        oneOpen.indexOf('natter-dev-copy') !== -1) {
+        oneOpen.indexOf('natter-inv-go') === -1) {
       test.check('pressing a bar opens that one, and only that one');
     } else {
-      test.fail('after opening device: ' +
+      test.fail('after opening relay: ' +
         (oneOpen.match(/class="nd-panel-body"/g) || []).length + ' bodies');
     }
 
@@ -1871,8 +1680,7 @@ function panelsFoldAndAreMarked() {
     app.open('invite');
     const swapped = app.body().innerHTML;
     if ((swapped.match(/class="nd-panel-body"/g) || []).length === 1 &&
-        swapped.indexOf('natter-inv-go') !== -1 &&
-        swapped.indexOf('natter-dev-copy') === -1) {
+        swapped.indexOf('natter-inv-go') !== -1) {
       test.check('and opening another shuts the first — never two at once');
     } else {
       test.fail('after swapping: ' + swapped.slice(0, 300));
@@ -1888,10 +1696,10 @@ function panelsFoldAndAreMarked() {
     }
 
     // THE MARK FOLLOWS. A shut panel must not look like an empty one.
-    app.open('device');
+    app.open('relay');
     const marked = app.body().innerHTML;
-    const openBar = marked.slice(marked.indexOf('Add one of my own devices') - 200,
-      marked.indexOf('Add one of my own devices'));
+    const openBar = marked.slice(Math.max(0, marked.indexOf('What this relay says') - 200),
+      marked.indexOf('What this relay says'));
     if (openBar.indexOf(ICON.POINTDOWN) !== -1) {
       test.check('an open bar points down and a shut one points right');
     } else {
@@ -2141,7 +1949,6 @@ ownedMailbox()
   .then(mintingNamesThisMailbox)
   .then(someoneElsesMailbox)
   .then(aStrangersMailbox)
-  .then(theDevicePanel)
   .then(thePanelAsksOnce)
   .then(openingAnotherMailboxLetsGoOfTheLast)
   .then(panelsFoldAndAreMarked)

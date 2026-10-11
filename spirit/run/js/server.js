@@ -836,10 +836,9 @@ const server = http.createServer((req, res) => {
   // answered question.
   //
   // ONE THING THE ROUTES CARRIED THAT THE VERBS MUST KEEP: the loopback
-  // gate at the top of this handler is what let `device.info` answer a
-  // door password in the clear. It is not per-route and never was, so
-  // the fold did not move it — but a verb is easier to add than a route
-  // was, and a verb that answers a secret is still answering it to
+  // gate at the top of this handler. It is not per-route and never was,
+  // so the fold did not move it — but a verb is easier to add than a
+  // route was, and a verb that answers a secret is still answering it to
   // whatever can reach this port.
 
 
@@ -854,12 +853,9 @@ const server = http.createServer((req, res) => {
   // relay.streamSignatureFrom, and the stream route above that calls it.
 
   // expandKeys STOOD HERE. It turned `?key=a&key=b` or `?key=a,b` into a
-  // list for the roll's narrow form, and normalised the device page's
-  // url-safe spelling through deviceAuth.keyFromUrl so a page holding one
-  // could ask about itself without converting it back.
+  // list for the roll's narrow form.
   //
-  // Both callers are gone: the device page asks the relay nothing, and the
-  // roll route it served was deleted the same day. Narrowing was the
+  // Its callers are gone: the roll route it served was deleted. Narrowing was the
   // intermediate strategy and it is not the one that finished the job —
   // "a narrower cheat is a defended one" (0012).
 
@@ -964,8 +960,8 @@ const server = http.createServer((req, res) => {
     //   post               peer.post
     //   peer  {action}     contact.block / .unblock / .accept / .label
     //   unknown-senders    contact.senders (GET) / contact.setSenders
-    //   device             device.info
-    //   rotate-password    device.rotate
+    //   device             removed by goal/G16.2
+    //   rotate-password    removed by goal/G16.2
     //
     // Two are not on that list because they were deleted rather than
     // moved. `POST /api/hub/send` went on 2026-09-13 and `GET
@@ -1276,19 +1272,6 @@ contactBook.syncMarks(ROOT_DIR);
   // the note where reconcileMembers stood in hub.js. A new member becomes a
   // contact on the claim event instead — onOwnerEvent, below.
 
-  // The device window, if it was left open. The flag has always survived
-  // a restart in relay-state/device.json; until now nothing read it at
-  // startup, so every restart shut the door without saying so — and the
-  // owner of that door is routinely nowhere near this machine
-  // (design/relay/DEVICE-PANEL.md section 7). A power cut must not cost a
-  // flight home.
-  //
-  // Personal mode only. A --relay has no device of its own to enrol and
-  // must never poll anybody.
-  // NOTHING TO RESUME. This asked the node to reopen a device window
-  // that had been left open across a restart — the window is gone, and
-  // an offer now arrives on a stream rather than being waited for.
-
   // Presence: one held connection to every relay this node holds a ROW
   // on — not only the ones it owns, since B2 gave every identity its own
   // standing on a relay. The connection's existence IS the presence,
@@ -1314,25 +1297,12 @@ contactBook.syncMarks(ROOT_DIR);
   // 0006 deletes. A guard that only holds while the surrounding code stays
   // where it is, is not a guard: which is why, since cycle 0, a relay is a
   // different startup module that never loads trafficLog.js at all.
-  // WHAT THIS NODE ANSWERS WHEN ITS RELAY ASKS.
-  //
-  // Almost everything on that stream is a peer's request and gets the
-  // plain receipt. The exception is a device enrolment, which the relay
-  // posts as itself because the browser doing the enrolling has no
-  // identity yet — and answerRelay is where that is checked against the
-  // key of the relay it arrived on before anything is acted on.
-  //
-  // `urls` is a function because which relays this node holds a row on
-  // is presence's answer and changes while the process runs — and
-  // because presence does not exist yet on this line.
+  // THE RELAYS' OWN KEYS, pinned on first use (answerRelay.relayKey) and
+  // the key a post to each is sealed to. It no longer answers any request:
+  // the device-offer it answered was removed by goal/G16.2.
   const answerer = require('./answerRelay').createAnswerer({
     rootDir: ROOT_DIR,
     request: require('./hub').relayRequest,
-    urls: function () {
-      const me = require('./relayAuth').loadIdentity(ROOT_DIR);
-      if (!me || !me.publicKey || !presence) return [];
-      return presence.relaysNaming(me.publicKey);
-    },
   });
 
   peerRouter = require('./peerPost').createPeerPost({
@@ -1345,7 +1315,6 @@ contactBook.syncMarks(ROOT_DIR);
     // A node cannot know whether a packet will be tunnelled, so it refuses
     // at compose one that would not fit once wrapped (cycle 2, SURFACE §8).
     checkTunnel: true,
-    answer: answerer.answer,
     // WHO THIS NODE WILL HEAR FROM. The same question listenSet has
     // always answered for the `inbox` read, asked on the path packets
     // actually arrive on — which until now asked nobody.
@@ -1952,28 +1921,8 @@ contactBook.syncMarks(ROOT_DIR);
     // LOCAL: this node's own disk.
   }, { wire: false });
 
-  // ── STAGE 4a — device (2026-09-15) ─────────────────────────────────
-  //
-  // LOCAL, and I had this wrong once. I called `device` two-party because
-  // the password exists so a phone can attach — but the second party
-  // never touches THIS call: they hit /api/relay/device on the relay.
-  // The purpose is two-party; the operation reads a file on this box.
-  // The namespace follows the operation, because what a caller needs to
-  // know is whether being offline can fail it.
-  //
-  // `device.rotate` has no caller, and that is NOT the remove-peer gap
-  // wearing another hat:
-  //
-  //   Andy: "rotate-password is standing in line with device support
-  //   with a js-support framework."
-  //
-  // It is waiting for named work, not forgotten by accident. Worth the
-  // distinction — a verb nobody remembered and a verb ahead of its own
-  // UI look identical from a grep, and only one of them is a defect.
-  introSpector.claim(loopbackVerbs, 'device', 'hub.js', {
-    'device.info': { request: {}, reply: { password: '', publicKey: '', devicePublicKey: '' }, handler: function (rq, rs) { hub.handleDevice(rq, rs); } },
-    'device.rotate': { request: {}, reply: { ok: true, password: '', devicesDetached: false, devicePublicKey: '' }, handler: function (rq, rs) { hub.handleRotatePassword(rq, rs, readJsonBody); } },
-  }, { wire: false });
+  // THE `device` NAMESPACE STOOD HERE and was removed by goal/G16.2 with
+  // the device enrolment (Andy: "device WILL be KILLED. that's a decision.").
 
   // ── node (2026-09-16) ──────────────────────────────────────────────
   //
@@ -1991,8 +1940,7 @@ contactBook.syncMarks(ROOT_DIR);
   // being offline cannot fail any of these, which is what `wire: false`
   // promises a caller.
   //
-  // "More to come" is Andy's, and is why this is a namespace rather than
-  // two verbs bolted onto `device`.
+  // "More to come" is Andy's, and is why this is a namespace.
   introSpector.claim(loopbackVerbs, 'node', 'hub.js', {
     'node.card': { request: {}, reply: { ok: true, name: '', description: '', publicKey: '', descriptionMax: 0 }, handler: function (rq, rs) { hub.handleNodeCard(rq, rs); } },
     // THE NODE'S OWN DEBUG (desk/G2.5), shaped like relay.debug: {debug: {}} reads,

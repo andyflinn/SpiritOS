@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-10-11 (goal/G16.2): the device enrolment was removed from the tree on Andy's decision "device WILL be KILLED. that's a decision."
+
 # What a device is
 
 **Status: design, not built. Against `4a0d51e` (2026-09-12).

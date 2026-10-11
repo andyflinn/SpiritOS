@@ -357,7 +357,7 @@ it.
 | | |
 |---|---|
 | `POST /api/relay/claim` · `claimMessage` | **you cannot post to a relay you have no row on.** Permanently outside. |
-| `POST /api/relay/device` | posted by a browser that has **no identity yet** — that is the thing it is asking for |
+| ~~POST /api/relay/device~~ | removed 2026-10-11 by goal/G16.2 with the device enrolment (Andy: *"device WILL be KILLED. that's a decision."*) |
 
 > ### The census exemption is too broad — corrected 2026-09-17
 >

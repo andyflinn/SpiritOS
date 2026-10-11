@@ -373,25 +373,18 @@ function createPresence(opts) {
 
   // WHO THAT RELAY IS, established BEFORE the stream carries anything.
   //
-  // A device enrolment arrives as a post from the relay in its own name,
-  // and hub.frontDoor admits it only if this node has accepted that
-  // relay's key (relayKeys.js). The pin used to be established lazily,
-  // by answerRelay on the first enrolment — which deadlocked: the door
-  // refused the offer because nothing was pinned, so the code that pins
-  // never ran, so nothing was ever pinned. A node could never accept its
-  // first enrolment.
-  //
-  // It belongs here for a reason stronger than fixing that. AN OFFER CAN
-  // ONLY ARRIVE ON A STREAM THIS NODE ALREADY HOLDS, so pinning as the
-  // stream opens is not merely earlier — it is exactly sufficient. There
-  // is no window in which an offer can arrive unpinned.
+  // A post from the relay in its own name is admitted by hub.frontDoor
+  // only if this node has accepted that relay's key (relayKeys.js), and
+  // a post to the relay is sealed to the key learned in the same answer.
+  // ANYTHING FROM A RELAY CAN ONLY ARRIVE ON A STREAM THIS NODE ALREADY
+  // HOLDS, so pinning as the stream opens is exactly sufficient. (It was
+  // first needed for the device enrolment, removed by goal/G16.2.)
   //
   // Trust on FIRST use and only first. A relay answering a key other than
   // the one on record keeps carrying peer traffic — that is signed end to
   // end and it cannot forge any of it — and loses only its standing as a
-  // PARTY, which is the one thing its own key buys. Proportionate: a
-  // substituted relay stops being able to drive an enrolment and does not
-  // take the node offline.
+  // PARTY, which is the one thing its own key buys. Proportionate: it
+  // does not take the node offline.
   function pinRelay(url) {
     if (!pin) return Promise.resolve();
     return Promise.resolve()

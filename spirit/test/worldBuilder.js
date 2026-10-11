@@ -189,7 +189,7 @@ function run() {
   const node = L.ownerHome();
   const onNode = auth.loadIdentity(node);
   if (onNode && onNode.publicKey === L.owner.publicKey) {
-    test.check('and the owner\'s key is on the owner\'s node, where deviceTick reads it');
+    test.check('and the owner\'s key is on the owner\'s node, where the hub reads it');
   } else {
     test.fail('owner home identity: ' + JSON.stringify(onNode && onNode.name));
   }

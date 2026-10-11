@@ -668,8 +668,6 @@ freePort()
       ['POST', '/api/spirit', { verb: 'fs.save' }],
       ['POST', '/api/spirit', { verb: 'fs.delete' }],
       ['POST', '/api/spirit', { verb: 'fs.annotate' }],
-      ['POST', '/api/spirit', { verb: 'device.info' }],
-      ['POST', '/api/spirit', { verb: 'device.rotate' }],
       // This node's own two fields. `setName` is posted with no name,
       // which its own rule refuses — a refusal proves the handler was
       // REACHABLE just as well as a success does, and this sweep asks

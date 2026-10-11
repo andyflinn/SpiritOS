@@ -31,7 +31,6 @@ const SURFACE = [
   ['GET', '/api/relay/key'],
   ['GET', '/api/relay/stream'],
   ['POST', '/api/relay/claim'],
-  ['POST', '/api/relay/device'],
   ['POST', '/api/relay/post'],
   ['POST', '/api/relay/reply'],
 
@@ -47,6 +46,8 @@ const SURFACE = [
   ['POST', '/api/relay/monitor'],
   ['POST', '/api/relay/remove-peer'],
   ['POST', '/api/relay/set-device'],
+  // The device enrolment's own door, removed by goal/G16.2.
+  ['POST', '/api/relay/device'],
 
   // And the ring, deleted 2026-09-15 (R8). These two moved from the live
   // list above to this one on that day, which is the whole value of

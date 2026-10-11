@@ -110,7 +110,7 @@ async function partB() {
   pointAt(andyHome, relayUrl);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);
-  await waitFor(function () { return verb(andyPort, { verb: 'device.info' }).then(function (r) { return r.status === 200; }); });
+  await waitFor(function () { return verb(andyPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); });
   const oi = mintOwnerInvite(relayHome, 'andy');
   await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy', invite: oi.token, inviteLabel: 'andy' });
   const deskPipe = appClient.createAppClient({ rootDir: andyHome });
@@ -131,7 +131,7 @@ async function partB() {
   pointAt(agentHome, relayUrl);
   const agentPort = await freePort();
   startNode(agentHome, agentPort);
-  await waitFor(function () { return verb(agentPort, { verb: 'device.info' }).then(function (r) { return r.status === 200; }); });
+  await waitFor(function () { return verb(agentPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); });
   spawnSync('git', ['config', 'user.email', 'test@example'], { cwd: clone });
   spawnSync('git', ['config', 'user.name', 'test'], { cwd: clone });
   const mi = invites.add(relayHome, { label: 'gemma', days: 1 });

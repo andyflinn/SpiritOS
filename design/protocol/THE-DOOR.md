@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**56 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**54 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -90,10 +90,6 @@ his words, which keeps the harness red until the verb is gone.
 - `contact.senders` — before the rule (2026-09-27)
 - `contact.setSenders` — before the rule (2026-09-27)
 - `contact.unblock` — before the rule (2026-09-27)
-
-**`device.*`** — a second machine of your own
-- `device.info` — before the rule (2026-09-27)
-- `device.rotate` — before the rule (2026-09-27)
 
 **`fs.*`** — files, inside this node's own tree
 - `fs.annotate` — before the rule (2026-09-27)

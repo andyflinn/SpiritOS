@@ -576,7 +576,8 @@ function ensureIdentity(rootDir, name) {
 //   allow.json in keys mode is the owner record, so a device key there
 //   was a full copy of the owner's authority — the decision, not an
 //   oversight. Reversed on 2026-09-12: checkOwner below takes the HOUSE
-//   KEY ONLY, and a relay holds no device key at all now (deviceAuth.js).
+//   KEY ONLY, and a relay holds no device key at all now (the device
+//   enrolment itself was removed by goal/G16.2).
 //
 //   A KEYLESS RELAY HAS NOTHING TO CHECK AGAINST. open and names mode
 //   had no per-peer key, so both gates waved reads through. (checkClaim

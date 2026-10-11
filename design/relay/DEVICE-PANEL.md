@@ -1,3 +1,5 @@
+> SUPERSEDED 2026-10-11 (goal/G16.2): the device enrolment was removed from the tree on Andy's decision "device WILL be KILLED. that's a decision."
+
 # The "Add one of my own devices" panel
 
 **Status: SUPERSEDED on 2026-09-12. Sections 1–7 describe a panel that no

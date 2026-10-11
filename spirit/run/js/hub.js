@@ -80,7 +80,6 @@ function learnPresence(rootDir, toKey, answer) {
 }
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
-const deviceAuth = require('./deviceAuth');
 // What this node says about itself — the same two fields a stranger is
 // answered with, so the screen that edits them and the wire that sends
 // them cannot drift.
@@ -753,9 +752,10 @@ function listenSet(rootDir) {
 //
 // THE EXCEPTION THE INBOX DID NOT NEED. listenSet's own comment says "the
 // mailbox needs no exception here", which was true of a path relay
-// traffic never travelled. This is not that path: a relay posts here in
-// its own name to carry a device enrolment, and a relay is not a contact
-// — its key is in no contactBook. relayKeys.js is what makes that answerable
+// traffic never travelled. This is not that path: a relay may post here
+// in its own name, and a relay is not a contact — its key is in no
+// contactBook. (The device enrolment it once carried was removed by
+// goal/G16.2.) relayKeys.js is what makes that answerable
 // without trusting whatever claims to be a relay, because it holds the
 // keys this node has actually accepted.
 //
@@ -1450,47 +1450,6 @@ function createHub(rootDir) {
   // bounded, and reaches no app before a decision, whatever this says.
   // That is in code, in peerPost, and there is deliberately no route to
   // it.
-  // A NEW DOOR PASSWORD. POST only: this changes something, and a GET
-  // that rotated a secret would fire on a page reload.
-  //
-  // It answers with the new password, because the caller is this node's
-  // own loopback browser and the whole point is to put it on somebody's
-  // clipboard. Nothing else on this box hands a secret back, and it is
-  // worth being explicit that this one does and why.
-  //
-  // WHAT IT DOES NOT DO is detach a device already attached — that is
-  // revocation, a different verb, and this route performs one of the two.
-  // The answer says so, so a caller cannot build a "remove my devices"
-  // button on top of it by accident.
-  function handleRotatePassword(req, res, readJsonBody) {
-    readJsonBody(req).then(function () {
-      var doc = deviceAuth.rotatePassword(rootDir);
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({
-        ok: true,
-        password: doc.password,
-        // Said out loud in the answer rather than left to the caller to
-        // know: every request depending on the old password is now
-        // refused, and any device already attached is still attached.
-        //
-        // SO THIS IS NOT THE RED BUTTON, and the field exists to stop
-        // anybody believing it is. Rotating shuts the DOOR; it does not
-        // touch the devices already inside, on this node or on any relay.
-        //
-        // Nothing detaches a device today. setDevicePublicKey(root, null)
-        // would clear this node's own record and is never called with
-        // null; the relays hold the key independently; and relay's
-        // installDevice refuses an empty key, so "forget my device" is
-        // not expressible as a request. See the note on the one-slot rule
-        // in relay.js for the shape the button will need.
-        devicesDetached: false,
-        devicePublicKey: doc.devicePublicKey || '',
-      }));
-    }).catch(function () {
-      fail(res, 400, 'bad body');
-    });
-  }
-
   // ── READ AND WRITE ARE TWO FUNCTIONS NOW ────────────────────────────
   //
   // This was one handler that branched on `req.method`, because one path
@@ -1963,35 +1922,8 @@ function createHub(rootDir) {
     });
   }
 
-  // ---- THE POLL AND THE WINDOW ARE GONE --------------------------------
-  //
-  // Andy: "no backstop, no listening mode on the personal node. the
-  // ability to setup one-device-for-all-peers just IS."
-  //
-  // What stood here was a 60-second timer asking every relay whether
-  // anybody was enrolling, and a flag deciding whether it ran at all. It
-  // was never a design: device cycle 2 landed 2026-09-10 and presence on
-  // the 11th, so when the handshake was built there was no stream to push
-  // down and polling was the only mechanism there was.
-  //
-  // An offer now arrives on the stream this node already holds, and is
-  // answered in a round trip — 365ms through spirit-3, against 0-60
-  // seconds of waiting for the next pass. answerRelay.js decides; nothing
-  // here asks anybody anything.
-  //
-  // The window went with it. It cost a timer on every node forever and
-  // bought thin protection: it never guarded the password, only meant an
-  // attacker holding one had to catch a window somebody opened — and
-  // somebody who holds the password can wait for the next. One slot
-  // remains, so an intrusion displaces the real device and is visible.
-
-  // WHAT THE PANEL NEEDS, and it is now two facts and a list.
-  //
-  // `listening` and `lastEvent` went with the timer. Both described a
-  // poll: whether it was running, and what its last pass did. There is no
-  // pass. A node with a password can be enrolled to, always, and there is
-  // nothing about that state worth reporting because there is no other
-  // state.
+  // THE DEVICE POLL, ITS WINDOW AND ITS PANEL HANDLERS STOOD HERE. The
+  // device enrolment they served was removed by goal/G16.2.
 
   // ── THE ROSTER SWEEP STOOD HERE, AND IS GONE (2026-09-19) ────────────
   //
@@ -2042,19 +1974,6 @@ function createHub(rootDir) {
     } catch (e) { return null; }
   }
 
-  function handleDevice(req, res) {
-    var doc = deviceAuth.ensurePassword(rootDir);
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({
-      password: doc.password,
-      // Whose page to open, and it is this node's own public key. Public
-      // already — every relay's /api/relay/who hands it to anyone — and
-      // the panel needs it to build the per-key link.
-      publicKey: (auth.loadIdentity(rootDir) || {}).publicKey || '',
-      devicePublicKey: doc.devicePublicKey || '',
-    }));
-  }
-
   // ── WHAT THIS NODE SAYS ABOUT ITSELF, AT HOME ────────────────────────
   //
   //   Andy: "i want an intrinsic app info, in which, for now the user can
@@ -2065,11 +1984,6 @@ function createHub(rootDir) {
   // needs a req/res pair and that module must not learn what one is: it is
   // required by peerPost, which is the wire path, and a file that answers
   // both sides of a question should not also be holding an HTTP response.
-  //
-  // WHY NOT device.info, which already hands back this node's public key:
-  // that verb is about the PASSWORD — what a phone needs to attach. These
-  // are about what a stranger is told. Sharing a verb would mean a screen
-  // for editing your description had a password in its response body.
   function handleNodeCard(req, res) {
     var card = nodeCard.read(rootDir);
     if (!card) { fail(res, 409, 'this node has no key yet'); return; }
@@ -3024,8 +2938,6 @@ function createHub(rootDir) {
     // for itself now — see the note where they stood.
     handleUnknownSenders: handleUnknownSenders,
     handleSendersRead: handleSendersRead,
-    handleRotatePassword: handleRotatePassword,
-    handleDevice: handleDevice,
     handleNodeCard: handleNodeCard,
     adoptClaim: adoptClaim,
     handleNodeName: handleNodeName,

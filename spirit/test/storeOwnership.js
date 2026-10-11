@@ -62,12 +62,15 @@ const STORES = [
   // node upgrading in place is a case somebody decided rather than a file
   // that quietly stops being read — `who` was the roll's word, and this
   // book exists precisely to not be the roll.
-  { file: 'device.json', owner: 'deviceAuth.js', what: 'the door password and device slot' },
 ];
 
 // A store nobody should have any more. Named so its return would be a
 // failure with a reason rather than a silent second copy.
 const RETIRED = [
+  {
+    file: 'device.json',
+    why: 'the door password and device slot, owned by deviceAuth.js; the device enrolment was removed by goal/G16.2',
+  },
   {
     file: 'pendingArrivals.json',
     why: 'the backlog folded into traffic.json — a row that is admitted and not yet takenAt IS the backlog',

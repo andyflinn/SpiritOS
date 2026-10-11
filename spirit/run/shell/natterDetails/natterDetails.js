@@ -197,18 +197,6 @@ function ndPanel(id, mark, title, inner, extraClass) {
     '</div>';
 }
 
-// THE PASSWORD AND THE KEY, and there is nothing else left to hold.
-//
-// It used to keep a window's state too — open or shut, which relays were
-// being asked, what the last pass did — and all of that described a poll
-// that no longer exists. Andy: "no backstop, no 'listening mode' on the
-// personal node. the ability to setup one-device-for-all-peers just IS."
-//
-// Both are still READ rather than assumed: a password is minted on first
-// ask, so it does not exist until something asks, and a node that has not
-// claimed anywhere has no key yet.
-var ndDevice = { password: '', publicKey: '', loaded: false };
-
 // HAS THE QUESTION COME BACK? Not "was the answer good" — just whether
 // this screen is still waiting. It is the difference between a spinner
 // and a result, and without it every failure on this screen wore the
@@ -309,17 +297,6 @@ function ndLoad() {
       ndRender();
     })
     .catch(function () { ndAsked = true; ndRender(); });
-}
-
-function ndReadDevice() {
-  //  until 2026-09-15. One door, verb in the body.
-  return ndAsk('device.info')
-    .then(function (d) {
-      ndDevice.password = (d && d.password) || '';
-      ndDevice.publicKey = (d && d.publicKey) || '';
-      ndDevice.loaded = true;
-    })
-    .catch(function () { /* the panel simply says it could not ask */ });
 }
 
 // ---- the three blocks ------------------------------------------------
@@ -1328,162 +1305,6 @@ function ndInvitePanel() {
     'natter-mint natter-invites');
 }
 
-function ndDeviceHost() {
-  try { return new URL(ndUrl).origin; }
-  catch (e) { return String(ndUrl || ''); }
-}
-
-// WHERE TO OPEN IT. `/<key>/device` names whose enrolment this is, which
-// is what lets a relay hold a slot per identity rather than one for the
-// box. Base64url, matching deviceAuth.keyToUrl — the same bytes, `-` and
-// `_` for `+` and `/`, padding dropped, because a `/` in a path segment
-// is not in the segment at all.
-//
-// Falls back to the bare `/device` when this node has no key yet, which
-// the relay still reads as the owner.
-function ndDeviceUrl(host) {
-  var key = ndDevice.publicKey;
-  if (!key) return host + '/device';
-  var seg = String(key).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return host + '/' + seg + '/device';
-}
-
-// ND_LINK_CHARS and ndShortUrl stood here until 2026-09-17. THIS CORRECTS
-// AN EARLIER NOTE: they existed because Andy asked for the URL to be
-// hidden and the displayed length to be a number somebody could turn, and
-// a middle-elided address was the answer to that as stated.
-//
-// It was the wrong answer to the question underneath it. The address is a
-// host, 58 characters of base64url and `/device` — elide the middle and
-// what is left is not a shorter address, it is a label that looks like an
-// address and can be read for neither. A control saying what pressing it
-// does is smaller than any elision and answers the actual question.
-//
-//   Andy: "since the link to the device URL is already shortened in the
-//   link, may as well put a button in its place."
-//
-// NOTHING WAS LOST WITH IT. The href and the title still carry the
-// address whole, so hovering still reveals it and right-click still
-// copies it — which is how it reaches a phone that cannot be handed a
-// clipboard. See ndDeviceHtml.
-
-// WHAT TO DO WITH IT, in the order it is done, and it does not change.
-//
-// This panel used to have four moods and a line that repainted every two
-// seconds — whether the window was open, which relays were being asked,
-// how long ago the last pass ran and what it did. Every one of those was
-// about the poll. There is no poll and there is no window: the relay
-// hands the offer to this node on the connection it already holds, and
-// the node answers in the same round trip.
-//
-// So the panel is static, and that is the feature rather than a
-// simplification. There is no state here a person can get wrong, nothing
-// to arm before walking to the other room, and nothing to watch.
-//
-// The two reminders are Andy's, and both are about the OTHER device
-// rather than this one, which is why they are easy to forget at the
-// moment they matter.
-function ndDeviceBubbleHtml() {
-  return '<div>Open that link on the other device — phone, tablet, a second ' +
-      'browser — paste the password into the one field there, and press ' +
-      '<strong>Add this device</strong>. It takes about a second.</div>' +
-    '<div><strong>While you are there, bookmark that page.</strong> Its address ' +
-      'carries your key, and it is not one anybody could retype.</div>' +
-    '<div><strong>And let that browser\'s password manager memorise the ' +
-      'password</strong> when it offers to, so it reaches your other devices of ' +
-      'the same browser brand without passing through anything else.</div>' +
-    '<div class="muted">The password does not expire and there is nothing to ' +
-      'switch on here — a node with a password can always be enrolled to. Anybody ' +
-      'holding it can add a device to this node, so keep it where you keep ' +
-      'passwords. Adding a device replaces the one before it.</div>';
-}
-
-// Adding one of Andy's own handhelds, from the screen that names the
-// relay it will be added through — the same reasoning that killed the
-// mint picker.
-//
-// Relays this node HAS, which since B2 is not the same as ones it owns. A
-// peer owns no relay and still holds a row there, so gating this on the
-// star would keep the feature at the owner for want of one word — which
-// is exactly where it sat until B2.
-//
-// Still not every relay: one this node has no claim on cannot carry its
-// enrolment, and showing the panel there would be chrome nobody can act
-// on (AGENT.md — do not show chrome that is not useful in that state).
-function ndDeviceHtml() {
-  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
-  var target = ndDeviceUrl(ndDeviceHost());
-  var full = ndEscapeHtml(target);
-  // NO STAR, unlike the Invite panel above. ★ means "you own this relay"
-  // everywhere in this app and in Relay Chat's To list — one mark, one
-  // meaning. Invite is genuinely owner-only and keeps it; since B2 this
-  // panel is not, and a peer seeing the owned mark on a panel that has
-  // nothing to do with owning would be the mark starting to mean two
-  // things.
-  //
-  // 🔗 instead, because that is what this panel hands you: a link to open
-  // somewhere else. It says "a thing to do" where ⚠️ says "something is
-  // wrong", which is what lets a reader tell two folded bars apart.
-  // ── THREE CONTROLS, ONE LINE, IN THE ORDER YOU USE THEM ───────────
-  //
-  //   Andy: "it be even better if the New password button was at the end
-  //   of the URL line.... and since the link to the device URL is already
-  //   shortened in the link, may as well put a button in its place [open
-  //   your device in your browser] or sumfin."
-  //
-  // The address was never readable. It is a host, 58 characters of
-  // base64url and `/device`, elided in the middle on purpose — so what
-  // sat on this line was a label pretending to be information, and the
-  // one destructive control on the panel sat on a second line below it
-  // where the eye had already stopped.
-  //
-  // Copy, open, replace: left to right in the order somebody does them,
-  // with the red one last. STILL AN ANCHOR, not a button that calls
-  // window.open — right-click still offers Copy link address, which is
-  // how the address gets to a phone that is not signed into anything, and
-  // a popup blocker cannot eat a click on a link.
-  return ndPanel('device', ndIcon.LINK, 'Add one of my own devices',
-    '<div class="natter-dev-row">' +
-      '<button type="button" class="cancel-btn natter-dev-copy">' +
-        ndIcon.KEY + ' Copy password</button>' +
-      // _blank with rel="noopener", not target="_new" — the latter is not
-      // a standard keyword, and the new tab must not get a handle on the
-      // shell. The title carries the address in full: it is a LOCATOR and
-      // not a credential (deviceAuth.js), public at /api/relay/who
-      // already, so hiding it is about the page not being readable rather
-      // than about the address being secret.
-      '<a class="cancel-btn natter-dev-link" href="' + full + '" target="_blank"' +
-        ' rel="noopener" title="' + full + '">' +
-        ndIcon.LINK + ' Open the device page</a>' +
-      // ── ROTATE, WHERE THE PASSWORD IS ─────────────────────────────
-      //
-      //   Andy: "rotate password must be a UI element in the device-fold
-      //   in the relay detail"
-      //
-      // The verb has existed and been reachable since device support
-      // landed, with nothing on any screen to press — waiting on named
-      // work rather than forgotten. This is the screen that shows the
-      // password, so it is the screen that replaces it.
-      //
-      // ARMED, like Remove and Revoke: rotating invalidates a word that
-      // may already be half-typed into a phone across the room. Not
-      // destructive of anything permanent — a new one is minted on the
-      // next ask — but it breaks something in flight. Andy: "the red
-      // frame helps me to notice."
-      '<button type="button" class="cancel-btn natter-dev-rotate">' +
-        ndIcon.WARNING + ' New password</button>' +
-    '</div>' +
-    // WHAT JUST HAPPENED, under the controls rather than between them.
-    // Two of the three say something back, and a message sitting between
-    // two buttons pushes the third one sideways as you use the panel.
-    '<div class="natter-dev-row natter-dev-note">' +
-      '<span class="natter-dev-out muted"></span>' +
-      '<span class="natter-dev-rotate-out muted"></span>' +
-    '</div>' +
-    '<div class="stat-tile nested natter-dev-bubble">' +
-      ndDeviceBubbleHtml() +
-    '</div>', 'natter-device');
-}
 // "Take this relay off the list" stood here until 2026-09-13.
 //
 //   Andy: "the 'Take this relay off the list' should be gone for now.
@@ -1586,11 +1407,6 @@ function ndRender() {
     // to "did that work" is the row that appears under the form — and
     // adjacency could not deliver it, because either of the two could be
     // the one that is shut.
-    //
-    // The device panel is NOT in here, and that is the line the group
-    // draws. It is about attaching a device to THIS NODE — a member with
-    // no relay of their own has one too — so it stays outside, among the
-    // things you ARE rather than the things you RUN.
     // ── REACH IS NOT ADMINISTRATION ──────────────────────────────────
     //
     //   Andy: "'On Partner relays' is inside the 'Managing my Relay'
@@ -1601,17 +1417,16 @@ function ndRender() {
     // member now, and the panel renders for anyone bound here — and then
     // the fold above it hid the result from everybody but the owner.
     //
-    // The same line the device panel draws, two comments up: this is
-    // about who you can SEE from here, not about running the box. A
-    // member with no relay of their own has reach; they have nothing to
+    // This is about who you can SEE from here, not about running the box.
+    // A member with no relay of their own has reach; they have nothing to
     // manage.
     ndOwnerGroupHtml(
       ndRelayLabelHtml() +
       ndInvitePanel() +
 
       ndPartnersHtml()
-    ) +
-    ndDeviceHtml();
+    );
+    // The device panel was removed by goal/G16.2 with the device enrolment.
   ndMountPartnerPick();
 }
 
@@ -1866,86 +1681,6 @@ function ndMint(button) {
   });
 }
 
-// COPYING THE PASSWORD, and it is now the only thing this panel does.
-//
-// It used to be half of a control that also opened a window, because
-// there were once two buttons and the copy was the one that opened it,
-// which nobody could guess (Andy — "I never realized I had to start
-// listening"). There is no window to open. One button, one meaning.
-//
-// The clipboard is the whole transport: the password goes from this
-// screen into a browser's password manager on the other device and syncs
-// from there, which is why 128 characters costs nothing to use.
-// A NEW WORD FOR THE PHONE. `device.rotate` — local, so it cannot fail
-// for being offline, which is why nothing here handles unreachability.
-//
-// Two presses about the same button, the way Revoke and Remove are: the
-// old password stops working the instant this lands, and somebody may be
-// halfway through typing it on another device.
-function ndDeviceRotate(button) {
-  var panel = button.closest('.natter-device');
-  var out = panel.querySelector('.natter-dev-rotate-out');
-
-  if (button.getAttribute('data-armed') !== 'yes') {
-    button.setAttribute('data-armed', 'yes');
-    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
-    button.textContent = 'Replace the password?';
-    out.textContent = 'the word now on this screen stops working';
-    return Promise.resolve();
-  }
-
-  button.disabled = true;
-  return ndPost('device.rotate').then(function (r) {
-    button.disabled = false;
-    button.removeAttribute('data-armed');
-    button.textContent = ndIcon.WARNING + ' New password';
-    if (r.status < 200 || r.status >= 300) {
-      out.textContent = 'could not replace it: ' + r.status + ' ' + r.text;
-      return;
-    }
-    // RE-ASKED, not patched from the answer. The screen shows what the
-    // node says, and device.info is what says it — the same rule the
-    // rename panel follows.
-    out.textContent = 'replaced — the new word is above';
-    return ndReadDevice().then(function () { ndRender(); });
-  });
-}
-
-function ndDeviceCopy(button) {
-  // FOUND AGAIN AFTER THE CLIPBOARD ANSWERS, never held across it.
-  //
-  // Copying is the click that disarms New password, and disarming
-  // repaints the whole screen — so a span captured before the await is a
-  // detached node by the time there is anything to write in it, and the
-  // message goes into a DOM nobody is looking at. Silent, and only in the
-  // one case where somebody armed the red button and then reached for the
-  // password instead: the exact shape of bug that cost three tries at
-  // removing a seat.
-  // Through ndBody, the one handle on this screen that survives a
-  // repaint — the panel and every button in it are replaced, and the
-  // container is not.
-  function says(text) {
-    var body = ndBody();
-    var out = body && body.querySelector('.natter-dev-out');
-    if (out) out.textContent = text;
-  }
-
-  says('');
-  var copy = ndDevice.password && navigator.clipboard && navigator.clipboard.writeText
-    ? navigator.clipboard.writeText(ndDevice.password)
-    : Promise.reject(new Error('no clipboard'));
-  return copy.then(function () {
-    says('password copied');
-  }, function () {
-    // Said out loud rather than silently doing nothing. A copy button
-    // that fails quietly sends somebody to the other device to paste
-    // whatever was on the clipboard before.
-    says(ndDevice.password
-      ? 'could not copy — this browser refused the clipboard'
-      : 'no password on this node yet');
-  });
-}
-
 spirit.shell.activateApp({
 
   // Structure only. Everything about WHICH mailbox belongs in open(),
@@ -2062,12 +1797,6 @@ spirit.shell.activateApp({
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }
 
-      var copyBtn = target.closest('.natter-dev-copy');
-      if (copyBtn) { ndDeviceCopy(copyBtn); return; }
-
-      var rotateBtn = target.closest('.natter-dev-rotate');
-      if (rotateBtn) { ndDeviceRotate(rotateBtn); return; }
-
     });
 
     // ENTER IS THE BUTTON. One text field with one button beside it is a
@@ -2122,9 +1851,7 @@ spirit.shell.activateApp({
   // last subject has to be let go of.
   //
   // The shell can promise that open() runs; it cannot know what is stale
-  // inside. The device poll is the example: it is keyed to nothing and
-  // would happily go on painting one mailbox's panel while another
-  // mailbox's screen is up.
+  // inside.
   open: function (params) {
     ndUrl = (params && params.url) || '';
     ndLabel = (params && params.label) || '';
@@ -2140,18 +1867,14 @@ spirit.shell.activateApp({
     // A half-armed Remove must mean two presses about the SAME mailbox.
     // Arming it for one and then opening another has to disarm — the
     // shell can promise open() runs, it cannot know what is stale here.
-    ndDevice.loaded = false;
     ndOpenPanel = '';
 
     ndSetTitle();
     ndRender();
-    // The password first, then the badge — the panel needs both to paint,
-    // and ndLoad is the one that calls ndRender when it lands. No `render`
+    // ndLoad is the one that calls ndRender when it lands. No `render`
     // hook and nothing to restart on the way back onto the screen: this
-    // dialog holds no live fact, which is the whole of what changed here.
-    ndReadDevice().then(function () {
-      return ndLoad();
-    });
+    // dialog holds no live fact.
+    ndLoad();
   },
 
 });

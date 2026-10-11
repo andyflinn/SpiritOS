@@ -17,24 +17,18 @@
 // make — a held stream through a proxy, a round trip with real latency,
 // a build stamp, a migration that already happened on somebody's disk.
 //
-// WHAT IT WILL NOT DO: touch Andy's own device slot. The subject is a
-// lab peer, because enrolling displaces whatever device that identity
-// had, and doing that to the phone in somebody's pocket to prove a
-// point is not a trade worth making. His identity is READ, to sign, and
-// never written — the same rule labPopulate carries.
+// The device enrolment sections went with the device enrolment, removed
+// by goal/G16.2.
 
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const deviceAuth = require('../run/js/deviceAuth');
 
-const RUN = path.join(__dirname, '..', 'run');
 const FAKES = path.join(
   process.env.TEMP || process.env.TMPDIR || '/tmp', 'spiritos-relay-fakes'
 );
 const SUBJECT = path.join(FAKES, 'lw-lab-bella', 'spirit', 'run');
-const LAB = 'http://127.0.0.1:' + require('./labMaster/labPaths').labPort(25);
 
 const RELAY = process.argv[2] || 'https://spirit.andyflinn.com';
 
@@ -46,22 +40,8 @@ function get(url, headers) {
     .catch(function (e) { return { status: 0, text: String(e.message || e) }; });
 }
 
-function post(url, body) {
-  return fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  }).then(function (r) {
-    return r.text().then(function (t) { return { status: r.status, text: t }; });
-  }).catch(function (e) { return { status: 0, text: String(e.message || e) }; });
-}
-
 function parsed(answer) {
   try { return JSON.parse(answer.text); } catch (e) { return null; }
-}
-
-function deviceDoc() {
-  return JSON.parse(fs.readFileSync(path.join(SUBJECT, 'relay-state', 'device.json'), 'utf8'));
 }
 
 test.startTest('The live relay — ' + RELAY);
@@ -160,105 +140,9 @@ async function run() {
     return;
   }
 
-  test.subHeading('An enrolment, end to end, at real latency');
-
-  // A FRESH SUBJECT HAS NO device.json. The password is minted on first
-  // ask — the panel's GET /api/hub/device is what asks in the product —
-  // so a node that has never had a device opened on it has nothing to
-  // read. This used to pass only because a PREVIOUS run of this file had
-  // left one behind, which is a test depending on its own history.
-  //
-  // Minted here the way the panel would, so the suite works on a lab
-  // rebuilt thirty seconds ago.
-  deviceAuth.ensurePassword(SUBJECT);
-
-  const before = deviceDoc().devicePublicKey || '';
-  const impostorKey = auth.generateIdentity('impostor-device').publicKey;
-
-  // THE NEGATIVE FIRST, because a positive that passes while this also
-  // passes proves nothing. A peer posting the identical offer, with a
-  // password that is genuinely the subject's — everything right except
-  // being the relay.
-  const me = auth.loadIdentity(RUN);
-  if (me && me.privateKey) {
-    const tried = parsed(await post('http://127.0.0.1:65432/api/spirit', {
-      verb: 'peer.post',
-      to: subject.publicKey,
-      via: RELAY,
-      text: JSON.stringify({
-        relay: 'device-offer',
-        password: deviceDoc().password,
-        devicePublicKey: impostorKey,
-      }),
-    }));
-    const composed = tried && typeof tried.text === 'string' && tried.text.length > 0;
-    // NORMALISED ON BOTH SIDES. `before` turns a missing key into '', and
-    // this did not — so on a subject that has never had a device the
-    // comparison was null === '' and the negative failed for no reason.
-    //
-    // The second place in this file that depended on its own history: it
-    // passed for months because a PREVIOUS run had always left a device
-    // key behind. A suite that only works on a lab it has already touched
-    // is a suite that cannot be trusted the first time it matters.
-    if (!composed && (deviceDoc().devicePublicKey || '') === before) {
-      test.check('a PEER posting that offer gets a bare receipt, and changes nothing');
-    } else {
-      test.fail('a peer was answered: ' + JSON.stringify(tried && tried.text));
-    }
-  } else {
-    test.fail('no local identity to post an impostor request with');
-  }
-
-  // And now the real one, the way the device page does it.
-  const phone = auth.generateIdentity('live-suite-browser');
-  const started = Date.now();
-  const said = await post(RELAY + '/api/relay/device', {
-    name: subject.publicKey,
-    password: deviceDoc().password,
-    devicePublicKey: phone.publicKey,
-  });
-  const took = Date.now() - started;
-  const answer = parsed(said);
-
-  if (said.status === 200 && answer && answer.ok) {
-    test.check('the browser POST is answered in ' + took + 'ms, against 0-60s of polling');
-  } else {
-    test.fail('enrolment: ' + said.status + ' ' + said.text.slice(0, 120));
-  }
-
-  // THE NAME. It said the relay's OWNER for every page on the box —
-  // "signed in as andy", for bella. The page has to sign as somebody and
-  // it has to be the right somebody.
-  if (answer && answer.name === subject.name) {
-    test.check('and it names ' + subject.name + ', whose device it is');
-  } else {
-    test.fail('named "' + (answer && answer.name) + '", expected "' + subject.name + '"');
-  }
-
-  if (deviceDoc().devicePublicKey === phone.publicKey) {
-    test.check('and the node wrote the new key down, displacing the old');
-  } else {
-    test.fail('node holds: ' + String(deviceDoc().devicePublicKey).slice(-12));
-  }
-
-  test.subHeading('A device opens nothing on a relay, anywhere');
-
-  // THIS SECTION READ THE OTHER WAY ROUND. It was "one device, every
-  // relay that identity is on": the enrolled browser could read its
-  // owner's inbox on the relay that enrolled it AND on one it had never
-  // spoken to, because a device belongs to the identity rather than to a
-  // box. That fanned out through the relay's copy of a device key.
-  //
-  // A relay holds no device key since 2026-09-13 (the binding is the
-  // node's — deviceAuth.js), and R8 deleted the inbox route it read on
-  // 2026-09-15. So the live claim inverts, and what it confirms now is
-  // the negative the in-process suites assert (deviceInbox.js,
-  // deviceEnrol.js): a device key proves nothing to a relay.
-  //
-  // Worth keeping against a REAL box rather than deleting: "the gate is
-  // gone" and "the gate is still there on the deployed code" look
-  // identical from here, and spirit-3 is the only thing that can tell
-  // them apart.
+  // THE DEVICE ENROLMENT SECTIONS STOOD HERE ("An enrolment, end to end",
+  // "A device opens nothing on a relay"), removed by goal/G16.2. What a
+  // real relay still owes is that the identity's own key opens its stream.
   async function canOpen(where, id) {
     const r = await get(
       where + '/api/relay/stream?key=' + encodeURIComponent(subject.publicKey),
@@ -267,38 +151,17 @@ async function run() {
     return r.status === 200;
   }
 
-  if (!(await canOpen(RELAY, phone))) {
-    test.check('the enrolled browser opens nothing here, where it enrolled');
-  } else {
-    test.fail('an enrolled device opened the wire on the relay that enrolled it');
-  }
-
-  const elsewhere = RELAY === LAB ? null : LAB;
-  if (elsewhere) {
-    const reachable = (await get(elsewhere + '/api/relay/key')).status === 200;
-    if (!reachable) {
-      test.check('(the other relay is not up, so the second box is not checked)');
-    } else if (!(await canOpen(elsewhere, phone))) {
-      test.check('and nothing on ' + elsewhere + ' either');
-    } else {
-      test.fail('the device opened the wire on ' + elsewhere);
-    }
-  }
-
-  // AND THE HOUSE KEY STILL DOES, or the checks above pass on a relay
-  // that is simply refusing everybody.
   if (await canOpen(RELAY, subject)) {
-    test.check('while the identity’s own key still opens it, so this is not a box refusing everyone');
+    test.check('the identity’s own key opens its stream on the real relay');
   } else {
-    test.fail('the house key could not open the wire either');
+    test.fail('the house key could not open the wire');
   }
 
-  // ── The six node-side fixes, against a real relay ────────────────
+  // ── Node-side pinning, against a real relay ──────────────────────
   //
-  // Added after Grok's review of DEVICE.md. Each of these is node-side,
-  // so spirit-3 needed no change for them — but the thing each one
-  // reasons about is a REAL relay's real key, and a fake that agrees
-  // with itself is how the two-conventions bug shipped.
+  // Each of these is node-side, but the thing each one reasons about is
+  // a REAL relay's real key, and a fake that agrees with itself is how
+  // the two-conventions bug shipped.
 
   test.subHeading('The relay it accepted, and one that answers differently');
 
@@ -337,16 +200,10 @@ async function run() {
     // node-side, so this exercises exactly the code that matters.
     const impostorKey = auth.generateIdentity('other-relay').publicKey;
     relayKeys.accept(meeting, RELAY, impostorKey);
-    const A = answerRelay.createAnswerer({
-      rootDir: meeting,
-      request: require('../run/js/hub').relayRequest,
-      urls: function () { return [RELAY]; },
-    });
     const changes = [];
     const B = answerRelay.createAnswerer({
       rootDir: meeting,
       request: require('../run/js/hub').relayRequest,
-      urls: function () { return [RELAY]; },
       onKeyChanged: function (url, had, got) { changes.push({ had: had, got: got }); },
     });
     const key = await B.relayKey(RELAY);
@@ -357,13 +214,12 @@ async function run() {
     }
 
     // THE FRONT DOOR AND THE REAL RELAY KEY. This is the exception the
-    // inbox path never needed: a relay posts in its own name to carry an
-    // enrolment, and a relay is not a contact. If frontDoor got this
-    // wrong, every enrolment would be refused at the door — so it is
-    // checked against the key spirit-3 actually publishes, not a fixture.
+    // inbox path never needed: a relay may post in its own name, and a
+    // relay is not a contact — checked against the key spirit-3 actually
+    // publishes, not a fixture.
     relayKeys.accept(meeting, RELAY, realKey);
     if (hub.frontDoor(meeting, realKey) === 'known') {
-      test.check("the front door knows spirit-3's own key, so an enrolment it carries is not refused");
+      test.check("the front door knows spirit-3's own key, so what it posts in its own name is not refused");
     } else {
       test.fail('frontDoor on the real relay key: ' + hub.frontDoor(meeting, realKey));
     }
@@ -373,64 +229,6 @@ async function run() {
       test.check('and refuses a key claiming to be a relay that this node never accepted');
     } else {
       test.fail('impostor relay key: ' + hub.frontDoor(meeting, impostorKey));
-    }
-  }
-
-  test.subHeading('A rotated password, against the real device route');
-
-  {
-    // THE ANSWER TO GROK'S BEST FINDING, tested where it matters. A relay
-    // is handed the enrolment password in cleartext, so one legitimate
-    // enrolment leaves a crooked relay holding it. Rotation is the only
-    // available answer, and this is it happening over the wire.
-    //
-    // The subject is lab-bella, never Andy: enrolling displaces whatever
-    // device that identity had.
-    const before = deviceDoc().password;
-    const rotated = deviceAuth.rotatePassword(SUBJECT);
-    const phone = auth.generateIdentity('post-rotation-phone');
-
-    if (rotated.password && rotated.password !== before) {
-      test.check('the password rotates to a different one');
-    } else {
-      test.fail('rotation did not change it');
-    }
-
-    // The old one is dead on the real route. Refused as `not now`, the
-    // same word every other cause gets — the relay faces the internet and
-    // owes it no detail.
-    const stale = await post(RELAY + '/api/relay/device', {
-      name: subject.name, password: before, devicePublicKey: phone.publicKey,
-    });
-    if (stale.status !== 200) {
-      test.check('and the OLD password is refused by the real relay (' + stale.status +
-        ') — a captured one is a dead string');
-    } else {
-      test.fail('the old password still enrolled: ' + stale.text.slice(0, 120));
-    }
-
-    // And the new one works, so this is not a check that simply breaks
-    // enrolment.
-    const fresh = await post(RELAY + '/api/relay/device', {
-      name: subject.name, password: rotated.password, devicePublicKey: phone.publicKey,
-    });
-    const freshBody = parsed(fresh);
-    if (fresh.status === 200 && freshBody && freshBody.ok) {
-      test.check('while the new one enrols normally, end to end');
-    } else {
-      test.fail('new password refused: ' + fresh.status + ' ' + fresh.text.slice(0, 120));
-    }
-
-    // WHAT ROTATION IS NOT. A device already attached stays attached —
-    // that is revocation, a different verb. Checked because a rotate
-    // control that felt like "remove my devices" is the trap the red
-    // button has to avoid.
-    const attached = deviceDoc().devicePublicKey;
-    deviceAuth.rotatePassword(SUBJECT);
-    if (deviceDoc().devicePublicKey === attached) {
-      test.check('and rotating again leaves the attached device attached — not revocation');
-    } else {
-      test.fail('rotation detached a device');
     }
   }
 

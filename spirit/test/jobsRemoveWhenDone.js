@@ -93,7 +93,7 @@ const kids = [];
       return { status: r.status, body: b };
     }, function () { return { status: 0, body: {} }; });
   };
-  await waitFor(function () { return ask({ verb: 'device.info' }).then(function (r) { return r.status === 200; }); }, 15000);
+  await waitFor(function () { return ask({ verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
   // A SECOND, SLOWER SCRIPT, so the job can be seen before it ends. AND jobs.get, not jobs.list: this node has no
   // jobs.list verb, and the first version of this section asked it, read an empty answer as "gone", and passed vacuously
   // (wsl-claude, found 2026-10-05 writing the red of goal/G4.33). jobs.get {key} answers 200 while the job exists, 404 once

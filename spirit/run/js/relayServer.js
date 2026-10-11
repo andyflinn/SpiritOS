@@ -28,9 +28,6 @@ const relayConfig = require('./relayConfig');
 const relayLimits = require('./relayLimits');
 const spirit = require('./kernel');
 const createRelay = require('./relay');
-// For keyFromUrl only — translating a URL segment back to the stored key
-// form. No secret reaches this side of the wire.
-const deviceAuth = require('./deviceAuth');
 // Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
 // again later would report whatever is on disk now, which is the lie
 // this is meant to catch.
@@ -387,65 +384,8 @@ const relay = createRelay.createRelay(undefined, {
 // peer who claimed, the relay is the box.
 require('./relayAuth').ensureIdentity(ROOT_DIR, 'relay');
 
-// The browser's half. This request is HELD — the relay does not answer
-// until the personal node has been posted to and replied, or the wait
-// runs out. It used to be held past a poll; it is now held for a round
-// trip, which is under a second when the node is there.
-//
-// Nothing here reads the password: it is carried to the node and the node
-// compares it (DEVICE-CYCLE2.md).
-function handleDeviceOffer(req, res) {
-  readJsonBody(req).then(function (body) {
-    // The name may be absent, and is on the bare /device page: relay.js
-    // resolves an omitted one to the owner label, which is who that page
-    // enrols. A per-key page sends its own segment, which is decoded to
-    // the stored key form here — the one place that translation happens.
-    const asked = (body && body.name) || '';
-    const asKey = deviceAuth.keyFromUrl(asked);
-    return relay.deviceOffer(
-      asKey && relay.deviceIdentityPublic(asKey) ? asKey : asked,
-      body && body.password,
-      body && body.devicePublicKey
-    );
-  }).then(function (result) {
-    if (!result || !result.ok) {
-      deviceRefusal(res, result && result.status);
-      return;
-    }
-    // THE ENROLLED IDENTITY'S label goes back with the yes, because from
-    // here the page has to sign as somebody: every line it sends is
-    // `send\n<from>\nrelay\n<text>`, and `from` is whoever this device
-    // now belongs to.
-    //
-    // It said the relay's OWNER until 2026-09-12, and that was true
-    // when it was written — the bare /device page enrolled the owner and
-    // nobody else, so there was only one answer it could be. B2 gave
-    // every identity with a row its own /<key>/device page and its own
-    // slot, and this did not follow: every page on the box came back
-    // "signed in as andy", bella's included.
-    //
-    // Nothing is given away by saying it: this answer only ever follows a
-    // password the node itself accepted. An empty name simply leaves the
-    // page unable to sign, which is the honest outcome for an enrolment
-    // that named nobody.
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({
-      ok: true,
-      devicePublicKey: result.devicePublicKey,
-      // WHOEVER WAS ENROLLED, which is not the same as whoever owns this
-      // relay. It read `snapshot().owner` and therefore said "andy" to
-      // every page on the box, bella's included.
-      name: result.name || '',
-    }));
-  }).catch(function () {
-    deviceRefusal(res, 403);
-  });
-}
-
-// handleSetDevice STOOD HERE, and POST /api/relay/set-device with it.
-// Enrolment is a post now — relay.answerSelf, body.setDevice — because
-// installing a key on your own row was never an owner verb and so could
-// never have gone through a door only the owner may knock on.
+// handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
+// goal/G16.2 with the device enrolment.
 
 // ── A CLAIM ARRIVES SEALED (cycle 10, R9) ───────────────────────────
 //
@@ -523,40 +463,12 @@ function handleRelayClaim(req, res) {
   });
 }
 
-// `/<key>/device`, and nothing else beneath `/<key>/`. A CLOSED set of
-// surfaces, deliberately: if an arbitrary suffix resolved to a file, the
-// URL would be building a filesystem path out of input a stranger picked,
-// which is where directory traversal lives. Shared assets stay at the
-// root, where they are literals and belong to nobody.
-//
-// Returns the stored-form key, or '' — the caller still has to ask the
-// relay whether anybody owns it.
-const DEVICE_PAGE_PATH = /^\/([A-Za-z0-9_-]{16,512})\/device$/;
-function devicePageKey(pathname) {
-  const m = DEVICE_PAGE_PATH.exec(pathname || '');
-  if (!m) return '';
-  return deviceAuth.keyFromUrl(m[1]);
-}
-
 function isRelayPublicPath(method, pathname) {
   if (pathname === '/' || pathname === '/index.html' || pathname === '/relay.html' || pathname === '/favicon.svg') {
     return method === 'GET';
   }
-  // The enroll page, and ONLY addressed by whose it is. The bare /device
-  // is gone from a relay (Andy, 2026-09-11: "should /device still work?
-  // I think not"): it meant "the owner" by implication, which is the one
-  // thing the key-addressed form removes. Two ways to reach one page is
-  // drift waiting to happen, and the implicit one names nobody.
-  //
-  // /device.html goes with it, for the same reason and by the same
-  // reasoning that made it public in the first place — it is the same
-  // page without an identity.
-  //
-  // Unlisted rather than hidden: nothing links to these, they carry
-  // noindex, and they are reachable by anyone who types one. What
-  // protects them is the password and the window, not obscurity. The key
-  // in the path is a LOCATOR, and holding one grants nothing.
-  if (method === 'GET' && devicePageKey(pathname)) return true;
+  // The device page (/<key>/device) and POST /api/relay/device were
+  // removed by goal/G16.2 with the device enrolment.
   // ── WHO THIS RELAY IS, AND NOTHING ELSE (2026-09-18) ───────────────
   //
   //   Andy: "the first two are easily replaced with GET /api/relay/key
@@ -581,7 +493,6 @@ function isRelayPublicPath(method, pathname) {
   // cannot identify is one you cannot harden. What it gives away is a
   // commit id for code the repository already holds.
   if (method === 'GET' && pathname === '/api/version') return true;
-  if (method === 'POST' && pathname === '/api/relay/device') return true;
   if (method === 'POST' && pathname === '/api/relay/claim') return true;
   // The router, and now the only way onto this box. Public in the sense
   // the rest is: reachable from the internet, gated inside relay.js by a
@@ -670,28 +581,8 @@ const server = http.createServer((req, res) => {
   // the tombstone in server.js's history and decision 0012: no party may
   // ask a relay for its whole enrolment list.
 
-  // THE DEVICE PAGE. One file for everybody: the key lives only in the
-  // URL, and the page reads it off its own address — nothing is templated
-  // and nothing is generated per person.
-  //
-  // An identity nobody holds is a 404 here rather than a working-looking
-  // form that can never succeed.
-  //
-  // RESTORED 2026-09-12. It was deleted by accident in the same commit
-  // that removed the poll — the cut ran from the `device-pending` route to
-  // the next one and this sat between them, so every keyed device URL
-  // 404'd from that moment. Nothing caught it: no suite asks for the page,
-  // and relayProbe's surface list does not name it. Andy found it by
-  // clicking the link in natterDetails.
-  if (req.method === 'GET' && devicePageKey(pathname)) {
-    if (!relay.deviceIdentityPublic(devicePageKey(pathname))) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('no such identity here');
-      return;
-    }
-    common.sendFile(res, path.join(ROOT_DIR, 'device.html'));
-    return;
-  }
+  // THE DEVICE PAGE (/<key>/device, device.html) was removed by goal/G16.2
+  // with the device enrolment.
 
   // One held connection per identity, carrying who is reachable. The
   // signature is a HEADER for the same reason device-pending's is: a
@@ -897,10 +788,6 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    if (pathname === '/api/relay/device') {
-      handleDeviceOffer(req, res);
-      return;
-    }
   }
 
   // Unreachable while isRelayPublicPath and the branches above agree; a

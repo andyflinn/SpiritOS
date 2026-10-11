@@ -49,8 +49,9 @@ function readOr(file, fallback) {
 // What the tree actually has.
 // ---------------------------------------------------------------------
 
-// Signed formats. The three files that mint bytes for somebody to sign.
-const MESSAGE_FILES = ['relayAuth.js', 'invites.js', 'deviceAuth.js'];
+// Signed formats. The files that mint bytes for somebody to sign
+// (deviceAuth.js went with the device enrolment, goal/G16.2).
+const MESSAGE_FILES = ['relayAuth.js', 'invites.js'];
 const inTree = { messages: [], routes: [] };
 
 MESSAGE_FILES.forEach(function (name) {

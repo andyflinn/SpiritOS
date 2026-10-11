@@ -69,26 +69,22 @@ var DEFAULT_PER_TARGET = 1;
 //   Andy: "we always know that relay side request for relays must be
 //   subject to a separate budget."
 //
-// Decision 0016: member traffic, this relay posting as itself, and
-// traffic forwarded in by a partner are THREE budgets, not one. They are
-// three populations and they answer to three arguments — a member is one
-// person, this relay acts for all of its members at once, and a partner
-// is another box whose behaviour we do not control.
+// Decision 0016: member traffic and traffic forwarded in by a partner are
+// separate budgets. A member is one person, and a partner is another box
+// whose behaviour we do not control.
 //
-// WHY THIS HAD TO COME FIRST. The count is kept per requester KEY, and
-// the relay uses its own key for every post it makes on somebody's
-// behalf — a device offer and a partner forward both open under
-// `mineKey()`. So at a ceiling of 1 the relay's second concurrent
-// self-post is refused by its own cap, and `devicePeers` (two
-// deviceOffer calls to two members) proves it rather than predicting it.
-// Lumping the classes makes the ceiling unswitchable; separating them is
-// what lets it be TRIED.
+// WHY. The count is kept per requester KEY, and a partner forward opens
+// under the relay's own key (`mineKey()`), for everybody at once. Lumping
+// it with the member cap of 1 would refuse the relay's second concurrent
+// forward by its own cap.
+//
+// A third class, RELAY (this relay posting as itself), existed only for
+// the device offers and was removed with them by goal/G16.2.
 //
 // The classes, and nothing else may be passed:
 var MEMBER = 'member';    // a member of this relay, posting for itself
-var RELAY = 'relay';      // this relay, acting for a member (device offers)
 var PARTNER = 'partner';  // forwarded in from a partner relay
-var KINDS = [MEMBER, RELAY, PARTNER];
+var KINDS = [MEMBER, PARTNER];
 
 // A NUMBER STILL MEANS WHAT IT MEANT. `maxPerRequester: 2` sets every
 // class to 2, which is exactly the old behaviour, so nothing that passed
@@ -178,6 +174,15 @@ function createRouter(opts) {
   var perRequester = caps[MEMBER];
   var perTarget = opts.maxPerTarget || DEFAULT_PER_TARGET;
   var ttlMs = opts.ttlMs || DEFAULT_TTL_MS;
+  // THE RELAY'S OWN KEY (goal/G16.2, S3 of the review of 2026-10-10). A route
+  // whose target is this key is a question to the relay itself, and the
+  // per-target slot is a person's ("there is only one of them"); the relay
+  // is not a person, and counting every member's and partner's question to
+  // it against ONE slot let one member searching lock the owner out. Andy,
+  // 2026-10-10, ruling A: such a route is not counted against the per-target
+  // ceiling at all; the requester caps of 0016 and the per-minute limit stay
+  // the bounds. No new number.
+  var selfKey = typeof opts.selfKey === 'string' ? opts.selfKey : '';
 
   // hash -> { requester, target, at, carry, kind }
   var pending = Object.create(null);
@@ -305,10 +310,9 @@ function createRouter(opts) {
     // And per requester, so one peer cannot spend the table on everyone
     // else's behalf — the same fairness B1 established for device slots.
     //
-    // COUNTED WITHIN THE CLASS (0016). This relay's own posts do not
-    // spend a member's budget and a member's do not spend this relay's,
-    // because the two are not the same population: a member is one
-    // person, and this relay acts for all of them at once.
+    // COUNTED WITHIN THE CLASS (0016). A partner's forwards do not
+    // spend a member's budget and a member's do not spend a partner's,
+    // because the two are not the same population.
     if (countFor(requester, cls) >= caps[cls]) {
       return { ok: false, status: 429, error: 'too many in flight', kind: cls };
     }
@@ -332,7 +336,7 @@ function createRouter(opts) {
     // too long. Ordered after the requester's own cap on purpose: when
     // both are over, the caller's own fault is the more useful thing to
     // hear first.
-    if (countForTarget(target) >= perTarget) {
+    if (!(selfKey && target === selfKey) && countForTarget(target) >= perTarget) {
       return {
         ok: false, status: 503, error: 'target is busy',
         busy: true, retryAfterMs: msUntilFreeFor(target),
@@ -477,7 +481,6 @@ module.exports = {
   DEFAULT_TTL_MS: DEFAULT_TTL_MS,
   MIN_USEFUL_MS: MIN_USEFUL_MS,
   MEMBER: MEMBER,
-  RELAY: RELAY,
   PARTNER: PARTNER,
   KINDS: KINDS,
 };

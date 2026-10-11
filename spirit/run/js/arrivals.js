@@ -112,14 +112,12 @@ function envelopeOf(text) {
 
 // ── AND THE RELAY'S OWN WORD, WHICH IS NOT AN ENVELOPE ───────────────
 //
-// A relay speaks to a node about the node's own enrolment in the relay's
-// shape, not an app's: `{relay: 'device-offer', password, devicePublicKey}`
-// (relay.js, and the comment there is a rule — "a relay that could parse
-// one would have made the envelope part of the relay protocol"). It
-// carries no `v` and no `body`, so it is not a packet and `envelopeOf`
-// says null about it, correctly.
+// A relay's own words — its reply about a delivery it could not make —
+// are in the relay's shape, not an app's (a relay that could parse an
+// envelope would have made the envelope part of the relay protocol), so
+// `envelopeOf` says null about them, correctly.
 //
-// It still has to be READ, by answerRelay, and that reading belongs here
+// They still have to be READ, by peerPost, and that reading belongs here
 // for the same reason the envelope does: one file in the node layer opens
 // what arrives. Answers the top-level object, or null when the text is
 // not a JSON object — never a packet's insides, because a packet goes
