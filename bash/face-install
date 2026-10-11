@@ -139,7 +139,9 @@ node -e 'require(process.argv[1] + "/js/includeList.js").add(process.argv[1], "p
 ok "face server on 127.0.0.1:$FACE_PORT, owned by ${OWNER_KEY:0:24}..."
 
 say "install unit $FACE_UNIT"
-( cd "$FACE_DIR" && ./bash/install-units ) || die "install-units failed for the face node"
+# install-units takes the owner too, and writes the same owner.json as above
+# (goal/G16.8: an install refuses without an OWNER_KEY).
+( cd "$FACE_DIR" && OWNER_KEY="$OWNER_KEY" ./bash/install-units ) || die "install-units failed for the face node"
 say "restart and enable"
 ( cd "$FACE_DIR" && ./bash/restart && ./bash/boot-on ) || die "the face node did not start — see above"
 

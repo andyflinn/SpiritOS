@@ -51,7 +51,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
-const { mintOwnerInvite } = require('./ownerClaim.js');
+const { installOwner } = require('./ownerClaim.js');
 const { relayRequest } = require('../run/js/relayRequest.js');
 const invites = require('../run/js/invites.js');
 const relayStore = require('../run/js/relayStore.js');
@@ -119,18 +119,20 @@ function pointAt(home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), {
   // THE WORLD, as agentOnboard builds it: a relay, Andy's node with the desk, an agent joined by onboard.js.
   const relayHome = plant('relay');
   fs.rmSync(path.join(relayHome, 'relay-state'), { recursive: true, force: true });
+  // Andy's node's key goes into the relay's owner.json before the relay starts, as bash/install-units
+  // writes it (goal/G16.8: a relay is owned at install, never over the wire); his node claims with no invite.
+  const andyHome = plant('andy');
+  installOwner(relayHome, andyHome, 'andy');
   const relayPort = await freePort();
   startNode(relayHome, relayPort, ['--relay']);
   const relayUrl = 'http://127.0.0.1:' + relayPort;
   await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); });
-  const andyHome = plant('andy');
   includeList.add(andyHome, 'process/js/desk');
   pointAt(andyHome, relayUrl);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);
   await waitFor(function () { return verb(andyPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); });
-  const oi = mintOwnerInvite(relayHome, 'andy');
-  await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy', invite: oi.token, inviteLabel: 'andy' });
+  await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy' });
   const deskPipe = appClient.createAppClient({ rootDir: andyHome });
   deskPipe.register('desk', appClient.pipePathFor(andyHome, 'desk', process.platform, 'process'));
   const deskAsk = function (v, a) { const q = {}; q[v] = a; return deskPipe.ask({ desk: q }, ANDY).then(function (r) { return r || {}; }, function () { return {}; }); };

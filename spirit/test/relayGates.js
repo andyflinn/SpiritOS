@@ -9,9 +9,10 @@
 //   3. rate limiting is keyed on the CALLER, not on the name the caller
 //      supplies, so rotating the name does not buy a fresh budget;
 //   4. a relay whose allow.json is missing says so at startup. It ran
-//      fully open until cycle 3 (any name, any claimer); since Part B it
-//      is UNCLAIMED, takes only the installer's owner invite, and the
-//      announcement names install.js (firstOwner.js asserts the refusal).
+//      fully open until cycle 3 (any name, any claimer); since goal/G16.8
+//      it takes no claim at all, because the owner is written at install,
+//      and the announcement says UNOWNED and names install-units
+//      (firstOwner.js asserts the refusal).
 //
 // All four were audit findings, fixed in 5c64b17/a1bbac6. 2 and 3 then
 // regressed when peers became key-addressed, and this file is the
@@ -314,7 +315,7 @@ function waitForBoot(port) {
 
 let child = null;
 
-resetState(null); // no owner.json: unclaimed (cycle 3)
+resetState(null); // no owner.json: unowned, refuses every claim (goal/G16.8)
 
 freePort()
   .then(function (port) {
@@ -330,10 +331,10 @@ freePort()
       // Prove it is really up before asking what it announced, so this can
       // never pass by testing a relay that never booted.
       return get(port, '/api/relay/key').then(function () {
-        if (/UNCLAIMED/.test(output) && /install.js/.test(output) && !/this relay is OPEN/.test(output)) {
-          test.check('the relay announced it is UNCLAIMED, and named install.js — not open mode');
+        if (/UNOWNED/.test(output) && /install-units/.test(output) && !/this relay is OPEN/.test(output)) {
+          test.check('the relay announced it is UNOWNED, and named install-units — not open mode');
         } else {
-          test.fail('the relay started without an owner and did not say UNCLAIMED / install.js. Startup output was: ' +
+          test.fail('the relay started without an owner and did not say UNOWNED / install-units. Startup output was: ' +
             JSON.stringify(output.trim()));
         }
       });

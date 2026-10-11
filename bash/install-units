@@ -10,8 +10,51 @@ SRC="$REPO_ROOT/bash/systemd/${UNIT_TEMPLATE}.service"
 [ -f "$SRC" ] || die "missing $SRC"
 
 STATE_DIR="$RUN_DIR/relay-state"
+
+# ── THE OWNER IS WRITTEN HERE, AND ONLY HERE (goal/G16.8) ───────────
+#
+# A relay gets its owner at install time and in no other way: nothing over
+# the wire can make one. Andy: "the relays should do first-claim, it should
+# happen at install time. that's the only \"safe\" way." and "the invite
+# path to ownership MUST be gone. it is a security gap, from the time of
+# install until the time of first claim."
+#
+# So this takes OWNER_KEY — the owner's node public key (MCow...), the way
+# bash/face-install takes its owner — and REFUSES without one: a relay
+# installed unowned would refuse every claim, and nobody could fix that
+# from a node. The file is written by relayAuth.writeOwner, so the format
+# the relay reads has one owner; it is read back through loadOwner, so a
+# key the relay would not accept stops the install here rather than at
+# the first claim.
+#
+# NOT SILENTLY REPLACED: re-running this after changing ramLimitMB must not
+# hand the box to a different key by a typo. Changing the owner is a
+# deliberate act on the box — remove owner.json by hand, then re-run.
+OWNER_KEY="${OWNER_KEY:-}"
+[ -n "$OWNER_KEY" ] || die "no OWNER_KEY given — a relay is owned at install, never by a claim.
+    Run: OWNER_KEY=<the owner node's public key, MCow...> $0"
 mkdir -p "$STATE_DIR"
 chmod 700 "$STATE_DIR"
+HAVE_OWNER=$(node -e 'process.stdout.write(require(process.argv[1] + "/js/relayAuth").loadOwner(process.argv[2]))' \
+  "$RUN_DIR" "$RUN_DIR") || die "could not ask relayAuth.loadOwner for the current owner"
+if [ -n "$HAVE_OWNER" ] && [ "$HAVE_OWNER" != "$OWNER_KEY" ]; then
+  die "relay-state/owner.json already names a different owner (${HAVE_OWNER:0:24}...).
+    Refusing to replace it. To change the owner, remove $STATE_DIR/owner.json by hand and re-run."
+fi
+node -e '
+  var auth = require(process.argv[1] + "/js/relayAuth");
+  var fs = require("fs"), os = require("os"), path = require("path");
+  var key = process.argv[3];
+  var probe = fs.mkdtempSync(path.join(os.tmpdir(), "spirit-owner-"));
+  auth.writeOwner(probe, key);
+  var good = auth.loadOwner(probe) === key;
+  fs.rmSync(probe, { recursive: true, force: true });
+  if (!good) process.exit(2);
+  auth.writeOwner(process.argv[2], key);
+' "$RUN_DIR" "$RUN_DIR" "$OWNER_KEY" \
+  || die "OWNER_KEY is not a public key the relay accepts (an Ed25519 key, MCowBQYDK2VwAyEA...=)"
+chmod 600 "$STATE_DIR/owner.json"
+ok "owner.json names ${OWNER_KEY:0:24}..."
 
 # ── THE MEMORY CAP FOLLOWS THE CONFIGURED FIGURE (cycle 9) ──────────
 #

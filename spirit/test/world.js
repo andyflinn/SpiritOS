@@ -21,7 +21,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 const nodeCard = require('../run/js/nodeCard');
 const { openBody, sealFor } = require('./openReply');
@@ -57,6 +57,9 @@ function assemble(s) {
   const boxes = Object.create(null);
   const homes = Object.create(null);
   const keys = Object.create(null);
+  // THE OWNER IS NAMED BEFORE ANY RELAY IS BUILT, because a relay is owned
+  // at install and reads its owner once, when created (goal/G16.8).
+  const owner = s.owner ? auth.generateIdentity(s.owner) : null;
   s.relays.forEach(function (name) {
     const home = tmpHome(name);
     homes[name] = home;
@@ -70,19 +73,20 @@ function assemble(s) {
     // distinguishes the two would have passed without distinguishing
     // anything. Made before createRelay, which reads the file.
     keys[name] = auth.ensureIdentity(home, 'relay');
+    // owner.json, as bash/install-units writes it — the relay's file naming
+    // its owner's key, not the owner's identity.
+    if (owner) ownHome(home, owner);
     boxes[name] = createRelay(home);
   });
   const first = s.relays[0];
 
-  let owner = null;
-  if (s.owner) {
-    owner = auth.generateIdentity(s.owner);
+  if (owner) {
     s.relays.forEach(function (name) {
-      // Claimed, and NOT written into the relay's home — the owner's key
-      // belongs in the owner's NODE home, which is what ownerHome()
-      // below builds and what the hub reads.
-      // With the owner invite, minted in process (cycle 3, Part B: an
-      // unclaimed relay takes no other first claim). See ownerClaim.js.
+      // Claimed, and the owner's IDENTITY is NOT written into the relay's
+      // home — it belongs in the owner's NODE home, which is what
+      // ownerHome() below builds and what the hub reads. The relay holds
+      // only his key, in owner.json, and he claims with no invite
+      // (goal/G16.8). See ownerClaim.js.
       const claimed = claimOwner(boxes[name], owner, s.owner, '10.0.0.1');
       if (!claimed.ok) throw new Error('owner could not claim ' + name + ': ' + claimed.error);
     });

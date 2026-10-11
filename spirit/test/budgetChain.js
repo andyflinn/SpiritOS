@@ -40,7 +40,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const hub = require('../run/js/hub');
 const buildStamp = require('../run/js/buildStamp');
 const plantRun = require('./plantRun');
@@ -149,6 +149,8 @@ test.subHeading('A partner is handed less than this relay has');
   // (relay.js), so a suite can be the partner and read what it was given
   // without a second process.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bc-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   const seen = [];
   const box = createRelay(home, {
     askPartner: function (url, relayKey, text, budgetMs) {
@@ -157,7 +159,6 @@ test.subHeading('A partner is handed less than this relay has');
     },
   });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'fx');
 
   const alice = auth.generateIdentity('alice');
@@ -208,6 +209,8 @@ test.subHeading('A hop refuses before the wire when the far side could not use i
   // left 100 ms for the partner, and was refused at the far end — after a
   // round trip spent learning something computable here.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bcf-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   const asked = [];
   const box = createRelay(home, {
     askPartner: function (url, relayKey, text, budgetMs) {
@@ -216,7 +219,6 @@ test.subHeading('A hop refuses before the wire when the far side could not use i
     },
   });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'fx');
   const alice = auth.generateIdentity('alice');
   const m = box.mint('owner', 'alice', 7, '');
@@ -292,9 +294,10 @@ test.subHeading('And it crosses the wire, refusal and all');
 
 async function overTheWire() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bcw-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   const box = createRelay(home);
   auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'fx');
   const alice = auth.generateIdentity('alice');
   const m = box.mint('owner', 'alice', 7, '');

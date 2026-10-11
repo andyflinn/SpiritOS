@@ -25,7 +25,7 @@ const { URL } = require('url');
 const test = require('./testSupport.js');
 const { sealFor, openReply } = require('./openReply');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 // Where this node holds a seat — its own record, written at claim.
 const relayKeys = require('../run/js/relayKeys');
@@ -43,8 +43,8 @@ function writeRelays(home, rows) {
   fs.writeFileSync(path.join(dir, 'relays.json'), JSON.stringify(rows, null, 2));
 }
 
-// A mailbox owned by `id`: an empty box takes the first claim as owner, so
-// after this the key in identity.json is the key in allow.json.
+// A mailbox owned by `id`: owner.json names it before the box is built, as
+// the install does (goal/G16.8), and the owner then claims with no invite.
 function ownedBox(id, name) {
   var home = tmpHome('box');
   // A KEY OF ITS OWN, which a relay needs to be addressable at all: the
@@ -52,8 +52,8 @@ function ownedBox(id, name) {
   // sign the answer. Before decision 0010's second collapse these fixtures
   // never needed one, because minting arrived through a route.
   auth.saveIdentity(home, auth.generateIdentity('relay'));
+  ownHome(home, id);
   var box = createRelay(home);
-  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
   claimOwner(box, id, name, '10.0.0.1');
   return { home: home, box: box };
 }

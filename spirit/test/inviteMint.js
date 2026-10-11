@@ -367,14 +367,14 @@ test.subHeading('A mailbox with no owner key cannot mint');
   // A HAND-WRITTEN INVITE NO LONGER GETS ANYBODY IN HERE. This asserted
   // that it did ("as in cycle 1"): a names-mode allow.json read as open,
   // and the first claim through it — any invite, or none — became the
-  // box's owner. Cycle 3 (Part B) closed that: a box with no owner key is
-  // UNCLAIMED, and the one claim it takes is the installer's owner invite
-  // (0003 amended; D6 eliminated).
+  // box's owner. Cycle 3 (Part B) closed that, and goal/G16.8 closed the
+  // rest: a box with no owner key takes no claim at all, because the owner
+  // is written at install and never over the wire.
   const token = invites.add(home, { label: 'saint', invitedBy: 'andy', days: 7 }).token;
   const saint = auth.generateIdentity('saint');
   const used = box.claim('saint', auth.sign(saint.privateKey, auth.claimMessage('saint')), saint.publicKey, '10.0.0.9', token, 'saint');
-  if (!used.ok && used.status === 403 && used.error === 'owner invite required') {
-    test.check('and an ordinary invite does not get saint in — an unclaimed box takes only the owner invite');
+  if (!used.ok && used.status === 503 && /^relay has no owner/.test(used.error)) {
+    test.check('and an ordinary invite does not get saint in — a box with no owner takes no claim');
   } else {
     test.fail('names claim with invite: ' + JSON.stringify(used));
   }

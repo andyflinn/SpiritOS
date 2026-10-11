@@ -35,7 +35,7 @@ const auth = require('../run/js/relayAuth');
 const limits = require('../run/js/limits');
 const rule = require('../run/js/fieldRules.js');
 const lab = require('./labMaster/ensureMaster.js');
-const { mintOwnerInvite } = require('./ownerClaim');
+const { ownHome } = require('./ownerClaim');
 const { sealedClaimBody } = require('./labWorld');
 
 const RELAY_PORT = require('./labMaster/labPaths').labPort(15);
@@ -104,6 +104,11 @@ async function run() {
     { name: RELAY_NAME, type: 'relay', port: RELAY_PORT , kind: 'fixture' });
   if (made.status !== 201) { test.fail('create: ' + made.status + ' ' + made.text); return; }
 
+  // OWNED BEFORE IT STARTS, as bash/install-units owns a relay (goal/G16.8): `sender` below is named in
+  // owner.json, so its claim needs no invite.
+  const sender = auth.generateIdentity('sender');
+  ownHome(require('path').join(require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME, 'spirit', 'run'), sender);
+
   const started = await lab.api('POST', '/api/nodes/' + RELAY_NAME + '/start', {});
   if (started.status !== 200 || !(await waitServing(10000))) {
     test.fail('the relay never came up on ' + RELAY_PORT);
@@ -143,18 +148,13 @@ async function run() {
   // claim this box has accepted, so `sender` now owns it and holds a
   // row. That matters, and it cost a red line to learn — see there.
   //
-  // WITH THE OWNER INVITE since cycle 3 (Part B): the first claim an
-  // unclaimed relay takes. Its label is the spoken word `sender`; the
-  // caption claimed is the one under test (labels are not identities, R1).
-  const sender = auth.generateIdentity('sender');
-  const ownerInvite = mintOwnerInvite(
-    require('path').join(require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME, 'spirit', 'run'), 'sender');
+  // WITH NO INVITE since goal/G16.8: `sender` is the owner the install
+  // named. The caption claimed is the one under test (labels are not
+  // identities).
   const ordinary = await post('/api/relay/claim', await sealedClaimBody(ORIGIN, sender, {
     name: '../etc: Andy Flinn 🌱',
     publicKey: sender.publicKey,
     sig: auth.sign(sender.privateKey, auth.claimMessage('../etc: Andy Flinn 🌱')),
-    invite: ownerInvite.token,
-    inviteLabel: 'sender',
   }));
   if (ordinary.status === 201) {
     test.check('while spaces, punctuation, emoji and even ../etc are a fine caption — addressing is by key');

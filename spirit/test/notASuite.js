@@ -60,8 +60,8 @@ module.exports = [
   // opening the answer, in one place so twenty suites cannot each grow
   // their own opinion about what a sealed reply looks like.
   'openReply.js',
-  // A helper, not a suite: the first claim with the owner invite (cycle 3,
-  // Part B), in process.
+  // A helper, not a suite: an owned relay the way the install makes one
+  // (goal/G16.8), and the owner's claim on it, in process.
   'ownerClaim.js',
   // A BUILDER, not a suite (cycle 2): the four worlds an app server can
   // find itself in — a relay nobody claimed, a relay with every seat

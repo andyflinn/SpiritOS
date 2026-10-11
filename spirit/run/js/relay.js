@@ -767,9 +767,9 @@ function createRelay(rootDir, deps) {
     return answer;
   }
 
-  function reloadOwner() {
-    ownerKey = auth.loadOwner(rootDir);
-  }
+  // reloadOwner STOOD HERE. Its one caller was the owner writer, which wrote the
+  // owner from a claim; that went with goal/G16.8, and the owner is now
+  // read once, at createRelay, from the file the install wrote.
 
   function ownerLabel() {
     return ownerKey ? labelOf(findByKey(ownerKey)) : '';
@@ -1420,10 +1420,14 @@ function createRelay(rootDir, deps) {
     };
   }
 
-  function becomeOwner(publicKey) {
-    auth.writeOwner(rootDir, publicKey);
-    reloadOwner();
-  }
+  // THE RELAY'S OWNER WRITER STOOD HERE: relay-state/owner.json written on
+  // the strength of a claim. goal/G16.8 removed it, and nothing in the
+  // relay writes the owner file any more — bash/install-units does, before
+  // the relay ever serves. Andy, 2026-10-10: "the relays should do
+  // first-claim, it should happen at install time. that's the only \"safe\"
+  // way." and 2026-10-11: "the invite path to ownership MUST be gone. it is
+  // a security gap, from the time of install until the time of first
+  // claim."
 
   // EVERY ATTEMPT TIDIES UP AFTER ITSELF.
   //
@@ -1569,11 +1573,31 @@ function createRelay(rootDir, deps) {
     // limit cannot create members and only slows somebody hammering the
     // door; and a key is free, so counting per key would not slow them.
     // The owner is never turned away, as below.
-    var firstOwner = !ownerKey;
-    if (!firstOwner && seats.fullForMembers()) return seatsFull();
-    if (!firstOwner && discLimit.full()) return discFull();
+    //
+    // ── AN UNOWNED RELAY TAKES NO CLAIM AT ALL (goal/G16.8) ─────────────
+    //
+    // A relay gets its owner at install time and in no other way: the
+    // install writes relay-state/owner.json from the OWNER_KEY it is given
+    // (bash/install-units). There is no claim, token or invite that makes an
+    // owner over the wire. Andy: "the invite path to ownership MUST be gone.
+    // it is a security gap, from the time of install until the time of first
+    // claim." So a relay with no owner file refuses every claim, with
+    // members or without; the recovery is SSH, never the wire. Do not add a
+    // way in here.
+    if (!ownerKey) {
+      return { ok: false, status: 503, error: store.members.count() > 0
+        ? 'relay has members but no owner — restore owner.json over SSH'
+        : 'relay has no owner — the owner is written at install, not claimed' };
+    }
+    // THE OWNER, named in the owner file, claims his own box without an
+    // invite and is never turned away by a full relay: the one account that
+    // can raise the limit must always be able to get on. The key is only
+    // what the claim says here; the signature just below proves it.
+    var ownerClaim = publicKey === ownerKey;
+    if (!ownerClaim && seats.fullForMembers()) return seatsFull();
+    if (!ownerClaim && discLimit.full()) return discFull();
     if (!publicKey || !sig) {
-      return { ok: false, status: 400, error: firstOwner ? 'first claim needs publicKey and sig' : 'claim needs publicKey and sig' };
+      return { ok: false, status: 400, error: 'claim needs publicKey and sig' };
     }
     if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
       return { ok: false, status: 403, error: 'bad claim signature' };
@@ -1593,91 +1617,52 @@ function createRelay(rootDir, deps) {
     // the existing limit caps the notices too. No second mechanism.
     seen.gate = true;
 
-    // ── UNCLAIMED: THE OWNER INVITE, AND NOTHING ELSE (cycle 3, Part B) ─
+    // ── THE OWNER-INVITE BRANCH STOOD HERE (cycle 3, Part B) ────────────
     //
-    // 0003 amended: FIRST INVITED CLAIM IS OWNER. An unclaimed relay takes
-    // one thing — a signed claim presenting the owner invite install.js
-    // minted over SSH — and refuses every other claim. The pending-owner
-    // name reservation and `open` mode that stood here are gone: a name
-    // with no secret behind it let whoever guessed it take the box.
+    // An unclaimed relay used to take one claim, the one presenting a token
+    // install.js minted, and that claim became the owner. goal/G16.8
+    // removed the branch, that kind of invite and install.js together: an
+    // unowned relay is refused at the gate above, so every claim that gets
+    // here is on a relay that already has its owner.
     //
-    // MEMBERS BUT NO OWNER is not unclaimed, it is broken — allow.json
-    // lost or trashed. relayServer.js refuses to START on it; this refusal
-    // is the same rule for a relay built in process. Recovery is SSH,
-    // never the wire (Andy: "if allow.json is trashed, there is no way of
-    // proving ownership other than ssh, manually replace allow.json").
-    // `firstOwner` is set above, at the gate; the key and its signature are
-    // proven there too.
-    if (firstOwner) {
-      if (store.members.count() > 0) {
-        return { ok: false, status: 503, error: 'relay has members but no owner — restore owner.json over SSH' };
-      }
-      if (!inviteToken || !onInvite) {
-        return { ok: false, status: 403, error: 'owner invite required' };
-      }
-      var ownerInvite = redeem(inviteToken, onInvite);
-      if (!ownerInvite.ok) return ownerInvite;
-      if (!invites.isOwnerInvite(ownerInvite.invite)) {
-        return { ok: false, status: 403, error: 'owner invite required' };
-      }
-      inviteRow = ownerInvite.invite;
-    // A NAMES-MODE BRANCH STOOD HERE and went with the mode on
-    // 2026-09-15 (see relayAuth.loadAllow for why the mode went). It was
-    // the invite's original home: a guest list of bare labels, with a
-    // token as the escape hatch so an owner could let somebody in without
-    // SSH-editing allow.json.
+    // This is the lock 0003 promised: a new key gets on the box only with
+    // a live invite the owner minted for that exact label. The owner
+    // himself needs none — he was named at install (goal/G16.8).
     //
-    // The escape hatch is now the front door. Keys mode has its own
-    // invite lock below — cycle 4 landed, whatever the comment that stood
-    // here said about it not having — so deleting this removes a second
-    // place where a token was consumed, not the feature.
-    } else {
-      // This is the lock 0003 promised: after first-claim-is-owner, a new
-      // key gets on the box only with a live invite the owner minted for
-      // that exact label. It is NOT the first owner's path — firstOwner
-      // is handled above, on the installer's owner invite, because there
-      // is no owner yet to mint an ordinary one.
-      //
-      // Two johns is still two keys; it is now also two invites. The
-      // label is not what is scarce, the token is.
-      //
-      // REDEEMED ON `onInvite`, WRITTEN AS `n`. The invite's label is
-      // proof — the second factor on a token that may be a spoken word —
-      // and the claimer's own `n` is what the row and the roll get.
-      // They were the same string until 2026-09-15; see the note on this
-      // function for why that published the owner's word for somebody.
-      //
-      // A key already in allow.json is not a NEW key — it is the owner,
-      // and the owner is never someone the box has to be invited into.
-      // Without this, a relay whose allow.json outlived its routing table
-      // (a restore, a lost peer record) locks its own owner out: no peer,
-      // so no first-owner path, and no invite, because the only account
-      // that can mint one is the one being refused.
-      if (publicKey !== ownerKey) {
-        if (!inviteToken) {
-          return { ok: false, status: 403, error: 'invite required' };
-        }
-        // THE OTHER HALF OF THE INVITE, and a 400 rather than a 403: this
-        // is a malformed request, not a refused one. A caller that sends
-        // a token and no label is a node that predates R1, and saying so
-        // plainly is the whole point of not falling back — it names what
-        // is wrong instead of quietly enrolling somebody under the
-        // owner's word for them.
-        if (!onInvite) {
-          return { ok: false, status: 400, error: 'invite label required' };
-        }
-        var keysInvite = redeem(inviteToken, onInvite);
-        if (!keysInvite.ok) return keysInvite;
-        // A leftover owner invite makes a member of nobody: the relay
-        // already has its owner, and the token was for that one claim.
-        if (invites.isOwnerInvite(keysInvite.invite)) {
-          return { ok: false, status: 403, error: 'this relay already has an owner' };
-        }
-        inviteRow = keysInvite.invite;
+    // Two johns is still two keys; it is now also two invites. The
+    // label is not what is scarce, the token is.
+    //
+    // REDEEMED ON `onInvite`, WRITTEN AS `n`. The invite's label is
+    // proof — the second factor on a token that may be a spoken word —
+    // and the claimer's own `n` is what the row and the roll get.
+    // They were the same string until 2026-09-15; see the note on this
+    // function for why that published the owner's word for somebody.
+    //
+    // A key already in owner.json is not a NEW key — it is the owner,
+    // and the owner is never someone the box has to be invited into.
+    // Since goal/G16.8 this is how EVERY owner first gets on his box:
+    // the install named him, and no invite exists that could. It also
+    // keeps a relay whose owner.json outlived its roll (a restore, a lost
+    // peer record) from locking its own owner out.
+    if (!ownerClaim) {
+      if (!inviteToken) {
+        return { ok: false, status: 403, error: 'invite required' };
       }
+      // THE OTHER HALF OF THE INVITE, and a 400 rather than a 403: this
+      // is a malformed request, not a refused one. A caller that sends
+      // a token and no label is a node that predates R1, and saying so
+      // plainly is the whole point of not falling back — it names what
+      // is wrong instead of quietly enrolling somebody under the
+      // owner's word for them.
+      if (!onInvite) {
+        return { ok: false, status: 400, error: 'invite label required' };
+      }
+      var keysInvite = redeem(inviteToken, onInvite);
+      if (!keysInvite.ok) return keysInvite;
+      inviteRow = keysInvite.invite;
     }
-    // AN `else` STOOD HERE for `open` mode (auth.checkClaim). There are two
-    // states now, and both are handled above.
+    // AN `else` STOOD HERE for `open` mode (auth.checkClaim). There is one
+    // state now — owned — and it is handled above.
 
     // EVERY ROW HAS A KEY, and this is where that becomes true rather
     // than merely usual.
@@ -1717,10 +1702,9 @@ function createRelay(rootDir, deps) {
     // token spent on a claim the box cannot honour would be a seat lost
     // to nobody.
     //
-    // THE OWNER IS NEVER TURNED AWAY. A first-owner claim goes through
+    // THE OWNER IS NEVER TURNED AWAY. The owner's claim goes through
     // whatever the figure says — a relay that locked out the one account
-    // that could raise its own limit would need SSH to undo a number, and
-    // `firstOwner` is also how an owner returns to a box he already has.
+    // that could raise its own limit would need SSH to undo a number.
     //
     // NOBODY IS EVICTED. Full means no new claims; it never means a row
     // is dropped — design/principles/LIMITED-RESOURCES.md, Andy: "it's
@@ -1740,8 +1724,8 @@ function createRelay(rootDir, deps) {
     // one account that can raise the limit must always be able to get on.
     // Both refusals moved to the gate (goal/G16.2): a full relay has no
     // claimers, so it says so before a claim is proven or counted.
-    if (!firstOwner && seats.fullForMembers()) return seatsFull();
-    if (!firstOwner && discLimit.full()) return discFull();
+    if (!ownerClaim && seats.fullForMembers()) return seatsFull();
+    if (!ownerClaim && discLimit.full()) return discFull();
 
     // Consume BEFORE the write, and only write if the row actually
     // burned. The other order — persist the peer, then consume — leaves a
@@ -1755,9 +1739,8 @@ function createRelay(rootDir, deps) {
         return { ok: false, status: 403, error: 'invite already used' };
       }
     }
-    // The owner invite burned, so this claim IS the owner: allow.json is
-    // written and the relay is in keys mode from here on.
-    if (firstOwner) becomeOwner(publicKey);
+    // THE OWNER WAS WRITTEN HERE, from a burned token, until goal/G16.8:
+    // the owner is written at install, never by a claim.
 
     var peer = {
       // ONE LABEL. `name` stood here carrying the same string, and went
@@ -1769,9 +1752,9 @@ function createRelay(rootDir, deps) {
       // it says when this KEY joined, which stays true whatever the
       // label does later.
       claimedAt: new Date().toISOString(),
-      // `owner: firstOwner` STOOD HERE. A row does not know who owns the
-      // relay (relayStore.js, 2026-09-19): becomeOwner above wrote the one
-      // key that does into allow.json. The claim's ANSWER still says so.
+      // AN OWNER MARK STOOD HERE. A row does not know who owns the
+      // relay (relayStore.js, 2026-09-19): owner.json, written at install,
+      // names the one key that does. The claim's ANSWER still says so.
       //
       // ── AND THE CARD THEY ENROLLED WITH (cycle 10, R5 and R13) ────
       //
@@ -1796,7 +1779,7 @@ function createRelay(rootDir, deps) {
     // above. The map used to be `publicKey || n`, which is how a row
     // could be filed under a label.
     store.members.put(peer);
-    return { ok: true, status: 201, peer: peer, owner: firstOwner };
+    return { ok: true, status: 201, peer: peer, owner: ownerClaim };
   }
 
   // A SLOT WAS TAKEN, OR SOMEBODY TRIED. The owner hears about both.

@@ -6,11 +6,10 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, installedRelay } = require('./ownerClaim');
 const contactBook = require('../run/js/contacts');
 const invites = require('../run/js/invites');
 const world = require('./world');
-const scenario = require('./scenario');
 
 // Bare directories for the node-side checks — a node with an address book
 // and nothing else — and a relay nobody has claimed for the block below,
@@ -101,11 +100,11 @@ test.startTest('Identity vs perception (sticks and stones)');
 }
 
 {
-  const made = world.build(scenario.UNCLAIMED);
+  const annie = auth.generateIdentity('annie');
+  // Installed for annie (goal/G16.8): she claims her own box with no invite.
+  const made = installedRelay(annie);
   const home = made.home;
   const box = made.box;
-  const annie = auth.generateIdentity('annie');
-  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
   const first = claimOwner(box, annie, 'annie');
   if (first.ok) test.check('lab mailbox accepts first signed annie');
   else test.fail('annie claim: ' + JSON.stringify(first));

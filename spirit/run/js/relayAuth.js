@@ -409,9 +409,9 @@ function verify(publicKeyB64, message, sigB64) {
 // clearPendingOwner and relay-state/pending-owner.json, written by
 // install-public-relay.js to reserve the first claim for a NAME. A name
 // with no secret behind it: anybody who guessed it took the box. Replaced
-// in cycle 3 (Part B) by the owner invite that install.js mints — a token,
-// shown once over SSH (NODE-AND-RELAY, "The first claim needs a token";
-// 0003 amended to "first invited claim is owner").
+// in cycle 3 (Part B) by a token install.js minted, and that in turn by
+// goal/G16.8: the owner is written into owner.json at install time
+// (bash/install-units, OWNER_KEY), and nothing over the wire makes one.
 
 // Every owned server keeps its owner's key in relay-state/owner.json, as
 // { owner } (Andy, cleanup/G1.7). No file, or no key in it: no owner.
@@ -568,8 +568,8 @@ function ensureIdentity(rootDir, name) {
 // checkClaim STOOD HERE. Its one job left was `open` mode — "a relay
 // before its first claim takes any claim" — and its one caller was the
 // branch of relay.js claimAttempt that ran when a relay was neither keys
-// nor pending. Both went in cycle 3 (Part B): an unclaimed relay takes
-// only the installer's owner invite, and claimAttempt says so itself.
+// nor pending. Both went in cycle 3 (Part B); since goal/G16.8 an unowned
+// relay takes no claim at all, and claimAttempt says so itself.
 
 // checkSend, checkInboxKey AND checkInbox STOOD HERE — 66 lines, the
 // three gates on the ring, deleted with it by R8 on 2026-09-15.

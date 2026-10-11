@@ -127,9 +127,9 @@ function run() {
   let broke = null;
   try { broke = world.build({ peers: [{ name: 'a' }, { name: 'a2', label: 'a' }], owner: null }); }
   catch (e) { threw = true; }
-  // Two peers wearing one label on an UNCLAIMED box: the first claim
-  // takes the box, the second has no owner to mint it an invite. A real
-  // refusal from relay.js, and it must arrive as one.
+  // Two peers wearing one label on an UNCLAIMED box: a box with no owner
+  // takes no claim at all (goal/G16.8). A real refusal from relay.js, and
+  // it must arrive as one.
   if (!threw && broke && broke.ok === false) {
     test.check('and a relay refusing mid-build comes back as an error, never a stack trace');
   } else {

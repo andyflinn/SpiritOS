@@ -21,13 +21,17 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const { createRelay } = require('../run/js/relay');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 
 function relayWith(config) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-disc-'));
   auth.saveIdentity(home, auth.generateIdentity('relay'));
+  // The owner is named before the box is built, as the install does
+  // (goal/G16.8): a relay reads its owner once, when created.
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   const box = createRelay(home, { config: config });
-  return { home: home, box: box };
+  return { home: home, box: box, owner: owner };
 }
 
 function claimAs(R, name, ownerName) {
@@ -44,7 +48,7 @@ test.subHeading('A relay with room takes members as it always did');
 
 {
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 64, source: 'test' });
-  const owner = auth.generateIdentity('owner');
+  const owner = R.owner;
   claimOwner(R.box, owner, 'owner', 'disc-owner');
   const joined = claimAs(R, 'alice');
   if (joined.out && joined.out.ok) {
@@ -63,7 +67,7 @@ test.subHeading('A full relay refuses the next claim, and says what the owner ca
   // insists it is positive — but it is how the mechanism is driven
   // without writing a thousand members to reach a realistic figure.
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 0.02, source: 'test' });
-  const owner = auth.generateIdentity('owner');
+  const owner = R.owner;
   claimOwner(R.box, owner, 'owner', 'disc-owner');
   const refused = claimAs(R, 'bob');
   if (refused.out && !refused.out.ok && refused.out.status === 507 &&
@@ -95,11 +99,11 @@ test.subHeading('A full relay refuses the next claim, and says what the owner ca
 test.subHeading('The owner is never turned away by the figure');
 
 {
-  // A relay whose limit is already passed, with no owner yet: the first
-  // owner claim must go through, or a number would lock out the one
-  // account that can raise it.
+  // A relay whose limit is already passed, with its owner named at install
+  // but not yet on the roll: his first claim must go through, or a number
+  // would lock out the one account that can raise it.
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 0.02, source: 'test' });
-  const owner = auth.generateIdentity('owner');
+  const owner = R.owner;
   let ok = false;
   try {
     claimOwner(R.box, owner, 'owner', 'disc-owner');
@@ -116,7 +120,7 @@ test.subHeading('The owner\'s report carries both bounds, and which one is bitin
 
 {
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 0.02, source: 'test' });
-  const owner = auth.generateIdentity('owner');
+  const owner = R.owner;
   claimOwner(R.box, owner, 'owner', 'disc-owner');
   const seen = [];
   R.box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, R.box.relayPublicKey())), {
@@ -145,7 +149,7 @@ test.subHeading('The owner\'s report carries both bounds, and which one is bitin
 
 {
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 64, source: 'test' });
-  const owner = auth.generateIdentity('owner');
+  const owner = R.owner;
   claimOwner(R.box, owner, 'owner', 'disc-owner');
   const seen = [];
   R.box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, R.box.relayPublicKey())), {
@@ -170,7 +174,7 @@ test.subHeading('A relay built with no configuration has no disc bound at all');
 
 {
   const R = relayWith(null);
-  const owner = auth.generateIdentity('owner');
+  const owner = R.owner;
   claimOwner(R.box, owner, 'owner', 'disc-owner');
   const joined = claimAs(R, 'carol');
   if (joined.out && joined.out.ok) {

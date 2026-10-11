@@ -75,7 +75,7 @@ const buildStamp = require('../run/js/buildStamp');
 const sseClient = require('../run/js/sseClient');
 const relayStore = require('../run/js/relayStore');
 const nodeStore = require('../run/js/nodeStore');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const { createRelay } = require('../run/js/relay');
 
 // Below 49152, outside Windows' ephemeral range — see presenceWire.js:41.
@@ -361,9 +361,10 @@ function bareNodeRss() {
 
 async function plantedRelay(memberCount) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-live-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   const box = createRelay(home);
   auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'fx-owner');
 
   const ids = [];

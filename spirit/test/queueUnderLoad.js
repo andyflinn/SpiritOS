@@ -61,7 +61,7 @@ const test = require('./testSupport.js');
 const { rememberKeys, sealKeyFor } = require('./openReply');
 const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const hub = require('../run/js/hub');
 const buildStamp = require('../run/js/buildStamp');
 const plantRun = require('./plantRun');
@@ -95,9 +95,10 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 function buildRelay(memberNames) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-qul-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   const box = createRelay(home);
   auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'fx-owner');
   const members = {};
   memberNames.forEach(function (name) {

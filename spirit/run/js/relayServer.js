@@ -144,10 +144,10 @@ catch (e) {
 //
 // Decided (Andy): a relay whose store holds members but whose allow.json
 // has no owner refuses to start — "forcing the owner to ssh and
-// investigate". The alternative is a relay that looks UNCLAIMED with
-// people on it, where whoever holds the next owner invite takes the box
-// and everyone in it. No members and no owner is simply UNCLAIMED, which
-// is the state install.js is for.
+// investigate". Since goal/G16.8 no claim can take an unowned box, but a
+// relay with people on it and nobody answering for them is still broken,
+// not new, so it does not start. No members and no owner is a relay that
+// was never installed: bash/install-units writes owner.json first.
 if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
     relayStore.open(ROOT_DIR).members.count() > 0) {
   refuseToStart('relay-state/relay.db holds ' + relayStore.open(ROOT_DIR).members.count() +
@@ -904,17 +904,15 @@ function restartNow() {
 
 server.listen(port, BIND_HOST, () => {
   console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
-  // UNCLAIMED, SAID OUT LOUD (cycle 3, Part B). There is no `open` mode
-  // any more: a relay with no owner takes exactly one claim, the one
-  // presenting the owner invite install.js mints over SSH. Saying so at
-  // boot is what tells an operator why nobody else can get in. The TOKEN
-  // is never printed here: systemd's journal would keep it (NODE-AND-RELAY,
-  // "The first claim needs a token").
+  // UNOWNED, SAID OUT LOUD. A relay with no owner takes no claim at all:
+  // the owner is written at install time and never over the wire
+  // (goal/G16.8 — Andy: "the relays should do first-claim, it should
+  // happen at install time. that's the only \"safe\" way."). Saying so at
+  // boot is what tells an operator why nobody can get in.
   if (!require('./relayAuth').loadOwner(ROOT_DIR)) {
     console.warn(
-      '    UNCLAIMED — no owner in relay-state/owner.json. The only claim this relay\n' +
-      '    accepts is the owner invite: run `node install.js` over SSH, then claim with\n' +
-      '    the name and token it prints (decision 0003, amended: first invited claim is owner).'
+      '    UNOWNED — no owner in relay-state/owner.json, so this relay refuses every claim.\n' +
+      '    The owner is written at install: OWNER_KEY=<your node\'s public key> ./bash/install-units'
     );
   }
 

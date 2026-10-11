@@ -27,7 +27,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const lab = require('./labMaster/ensureMaster.js');
-const { mintOwnerInvite } = require('./ownerClaim');
+const { ownHome } = require('./ownerClaim');
 const { sealedClaimBody } = require('./labWorld');
 
 const RELAY_PORT = require('./labMaster/labPaths').labPort(19);
@@ -128,6 +128,11 @@ async function run() {
     { name: RELAY_NAME, type: 'relay', port: RELAY_PORT , kind: 'fixture' });
   if (made.status !== 201) { test.fail('create: ' + made.status + ' ' + made.text); return; }
 
+  // OWNED BEFORE IT STARTS, as bash/install-units owns a relay (goal/G16.8): andy's key is in owner.json, and his
+  // claim below needs no invite.
+  const andy = auth.generateIdentity('andy');
+  ownHome(relayHome, andy);
+
   const started = await lab.api('POST', '/api/nodes/' + RELAY_NAME + '/start', {});
   if (started.status !== 200 || !(await waitServing(10000))) {
     test.fail('the relay never came up on ' + RELAY_PORT);
@@ -136,21 +141,16 @@ async function run() {
 
   test.subHeading('Somebody takes a row');
 
-  // FIRST INVITED CLAIM IS THE OWNER (decision 0003, amended in cycle 3):
-  // signed like every other claim, and presenting the owner invite, minted
-  // here into the relay's own relay.db as install.js would over SSH.
-  const andy = auth.generateIdentity('andy');
-  const ownerInvite = mintOwnerInvite(relayHome, 'andy');
+  // THE OWNER'S CLAIM: signed like every other claim, and with no invite,
+  // because owner.json already names his key (goal/G16.8).
   // Sealed, like every claim now (cycle 10, R9).
   const claimed = await post(ORIGIN + '/api/relay/claim', await sealedClaimBody(ORIGIN, andy, {
     name: 'andy',
     publicKey: andy.publicKey,
     sig: auth.sign(andy.privateKey, auth.claimMessage('andy')),
-    invite: ownerInvite.token,
-    inviteLabel: 'andy',
   }));
   if (claimed.status === 201) {
-    test.check('a signed claim takes the row, and the first one owns the box');
+    test.check('a signed claim takes the row, and the key the install named owns the box');
   } else {
     test.fail('claim: ' + claimed.status + ' ' + claimed.text);
   }

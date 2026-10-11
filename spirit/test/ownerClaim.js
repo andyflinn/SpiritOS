@@ -1,43 +1,65 @@
 'use strict';
 
 // spirit/test/ownerClaim.js
-// THE FIRST CLAIM, THE WAY A RELAY NOW TAKES IT — for suites only.
+// AN OWNED RELAY, THE WAY A RELAY NOW GETS ITS OWNER — for suites only.
 //
-// Cycle 3, Part B: an unclaimed relay accepts exactly one claim, the one
-// presenting the owner invite (0003 amended: first invited claim is owner).
-// On a VPS install.js mints it over SSH. Lab and test relays mint it in
-// process — decided, so they never run the installer (NODE-AND-RELAY, "The
-// first claim needs a token", point 5). This is that, in one place.
+// goal/G16.8: a relay is owned at install time and in no other way. On a
+// real box bash/install-units writes relay-state/owner.json from the
+// OWNER_KEY it is given, before the relay ever serves; no claim, token or
+// invite makes an owner over the wire. Andy: "the relays should do
+// first-claim, it should happen at install time. that's the only \"safe\"
+// way." and "the invite path to ownership MUST be gone. it is a security
+// gap, from the time of install until the time of first claim."
 //
-// Until cycle 3 a suite claimed an empty relay with nothing but a signature
-// and became its owner; that is exactly what the relay now refuses.
+// So a suite does what the install does: it WRITES the owner file, and only
+// then builds the relay, because a relay reads its owner once, when it is
+// created. The owner then claims his own box with no invite.
 //
-//   claimOwner(box, identity, label, clientKey)  in process, a createRelay box
-//   mintOwnerInvite(home, label)                 a relay in another process:
-//                                                write the invite into its
-//                                                relay.db, then claim over HTTP
+//   ownHome(home, identity)                       what install-units does:
+//                                                 owner.json names the key.
+//                                                 Call it BEFORE createRelay
+//                                                 (or before the relay
+//                                                 process starts).
+//   claimOwner(box, identity, label, clientKey)   the owner's own claim on a
+//                                                 box built on that home
+//   installedRelay(identity)                      { home, box }: a fresh relay
+//                                                 installed for that owner,
+//                                                 nobody on its roll yet —
+//                                                 where the owner's own claim
+//                                                 can be watched happening
+//   installOwner(relayHome, nodeHome, name)       a relay in ANOTHER process:
+//                                                 the owner node's identity is
+//                                                 made and saved in its home,
+//                                                 and its key written into the
+//                                                 relay's owner.json, before
+//                                                 either starts. The node then
+//                                                 claims with no invite.
+//
+// Until goal/G16.8 this file minted an owner invite and the first claim
+// presenting it became the owner; that path is gone from the relay.
 
 const auth = require('../run/js/relayAuth');
-const invites = require('../run/js/invites');
-const relayStore = require('../run/js/relayStore');
 const nodeCard = require('../run/js/nodeCard');
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
-// For a relay running in ANOTHER process: the row goes into its relay.db,
-// and this process's connection is closed at once, so it holds no handle on
-// a file labMaster will want to delete (Windows refuses, EPERM). The body
-// the claim route takes carries it as `invite` and `inviteLabel`.
-function mintOwnerInvite(home, label) {
-  const row = invites.mintOwner(home, label);
-  relayStore.open(home).close();
-  return row;
+function ownHome(home, identity) {
+  auth.writeOwner(home, identity.publicKey);
 }
 
 function claimOwner(box, identity, label, clientKey) {
-  const home = box.rootDir();
-  const row = invites.mintOwner(home, label);
+  // SAID PLAINLY rather than answered with the relay's refusal: a suite
+  // that built its box before naming the owner gets "relay has no owner",
+  // which is true but does not say which line of the suite to move.
+  const named = box.ownerPublic().ownerKey;
+  if (named !== identity.publicKey) {
+    throw new Error('ownerClaim: this box was not built on a home naming ' + (identity.name || 'that key') +
+      ' as owner — call ownHome(home, identity) before createRelay (goal/G16.8: the owner is written at install)');
+  }
   return box.claim(label,
     auth.sign(identity.privateKey, auth.claimMessage(label)),
-    identity.publicKey, clientKey || '10.0.0.1', row.token, label,
+    identity.publicKey, clientKey || '10.0.0.1', '', '',
     // THE OWNER'S CARD (cycle 10, R5). The owner is the one member who
     // must always be answerable — every owner verb's reply is sealed to
     // the key on this card — so a suite that claimed without one would
@@ -45,4 +67,23 @@ function claimOwner(box, identity, label, clientKey) {
     nodeCard.cardFrom(Object.assign({ name: label }, identity)));
 }
 
-module.exports = { claimOwner: claimOwner, mintOwnerInvite: mintOwnerInvite };
+function installedRelay(identity) {
+  // Required here, not at the top: relay.js is heavy, and the suites that
+  // only want ownHome should not pay for it.
+  const { createRelay } = require('../run/js/relay');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-installed-'));
+  // The mailbox's own key, which is not the owner's, made before
+  // createRelay reads it (world.js does the same).
+  auth.ensureIdentity(home, 'relay');
+  ownHome(home, identity);
+  return { home: home, box: createRelay(home) };
+}
+
+function installOwner(relayHome, nodeHome, name) {
+  const id = auth.generateIdentity(name);
+  auth.saveIdentity(nodeHome, id);
+  ownHome(relayHome, id);
+  return id;
+}
+
+module.exports = { ownHome: ownHome, claimOwner: claimOwner, installedRelay: installedRelay, installOwner: installOwner };

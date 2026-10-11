@@ -30,7 +30,8 @@ It runs exactly two long-lived processes:
 
 systemd unit: `spirit-relay.service`  
 Working directory: `/root/SpiritOS/spirit/run`  
-State that is **not** in git: `spirit/run/relay-state/` (`owner.json`, `relay.db`, `identity.json`)
+State that is **not** in git: `spirit/run/relay-state/` (`owner.json`, `relay.db`, `identity.json`).
+`owner.json` comes from `install-units`, given `OWNER_KEY`.
 
 ---
 
@@ -110,9 +111,22 @@ Does not change anything. First command after SSH.
 
 ### `./bash/install-units`
 
-Copies `bash/systemd/spirit-relay.service` to
+```
+OWNER_KEY=<the owner node's public key, MCow...> ./bash/install-units
+```
+
+Writes `relay-state/owner.json` from `OWNER_KEY`, then copies
+`bash/systemd/spirit-relay.service` to
 `/etc/systemd/system/spirit-relay.service`, rewriting `/root/SpiritOS`
 to this clone’s path, then `daemon-reload`. Does not start the process.
+
+**The owner is set here and nowhere else** (goal/G16.8). No claim, token
+or invite makes an owner over the wire, so a relay with no `owner.json`
+refuses every claim. Without `OWNER_KEY` the script refuses to install.
+It also refuses to replace an `owner.json` that names a different key:
+to change the owner, remove the file by hand and re-run. Once installed
+and started, the owner's node claims the relay with no invite; everyone
+else needs an invite the owner mints.
 
 ### `./bash/start` `stop` `restart`
 
@@ -170,7 +184,7 @@ Let’s Encrypt will fail.
 
 The first-time / cutover script:
 
-1. `install-units`
+1. `install-units` (with `OWNER_KEY` set, as above)
 2. stop `spirit-relay` (so Node leaves public :80)
 3. `firewall` then `tls`
 4. `start` then `boot-on`

@@ -35,7 +35,10 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const lab = require('./labMaster/ensureMaster.js');
-const { mintOwnerInvite } = require('./ownerClaim');
+const { ownHome } = require('./ownerClaim');
+const auth = require('../run/js/relayAuth');
+const invites = require('../run/js/invites');
+const relayStore = require('../run/js/relayStore');
 
 // Inside labMaster's own 65400-65429 range. Distinct from every other
 // lab suite's ports so the harness can run them in the same lane pass —
@@ -132,6 +135,11 @@ async function run() {
   } else {
     test.fail('create avatar: ' + madeAvatar.status + ' ' + madeAvatar.text);
   }
+
+  // OWNED BEFORE IT STARTS, as bash/install-units owns a relay (goal/G16.8): an unowned relay takes no claim,
+  // and the avatar below enrols on an ordinary member invite. The owner is nobody this suite drives.
+  const pingRelayHome = path.join(require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME, 'spirit', 'run');
+  ownHome(pingRelayHome, auth.generateIdentity('pingowner'));
 
   test.subHeading('And it starts, and answers as itself');
 
@@ -274,15 +282,15 @@ async function run() {
       JSON.stringify([{ label: 'ping', url: 'http://127.0.0.1:' + RELAY_PORT }], null, 2)
     );
 
-    // And claim, exactly as Natter does — with the owner invite, since the
-    // relay is unclaimed (cycle 3, Part B). Minted into the relay's own
-    // relay.db, as install.js would; the node carries it as `invite` and
-    // `inviteLabel`, the fields its claim screen fills.
-    const ownerInvite = mintOwnerInvite(path.join(
-      require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME, 'spirit', 'run'), 'pingandy');
+    // And claim, exactly as Natter does — with an invite the relay's owner
+    // minted, written straight into its relay.db; the node carries it as
+    // `invite` and `inviteLabel`, the fields its claim screen fills. Until
+    // goal/G16.8 this was the owner invite; the relay is owned at install now.
+    const memberInvite = invites.add(pingRelayHome, { label: 'pingandy', days: 1 });
+    relayStore.open(pingRelayHome).close();
     const claimed = await hub(AVATAR_PORT, 'POST', '/api/spirit', {
       verb: 'relay.claim', url: 'http://127.0.0.1:' + RELAY_PORT, name: 'ping-andy',
-      invite: ownerInvite.token, inviteLabel: 'pingandy',
+      invite: memberInvite.token, inviteLabel: 'pingandy',
     });
     if (claimed.status >= 200 && claimed.status < 300) {
       test.check('it can take a seat on the fixture relay');

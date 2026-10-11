@@ -91,33 +91,16 @@ function add(rootDir, opts) {
   return row;
 }
 
-// ── THE OWNER INVITE (cycle 3, Part B) ───────────────────────────────
+// ── NO INVITE MAKES AN OWNER (goal/G16.8) ────────────────────────────
 //
-// The one invite an UNCLAIMED relay honours, and the only way a relay gets
-// an owner: minted by install.js over SSH (or in-process by a test
-// fixture), shown once, pasted into the node's claim screen (0003 amended:
-// first invited claim is owner).
-//
-// MARKED, so only it can make an owner. `invitedBy` is a value no spoken
-// label can take (fieldRules's spoken form has no parentheses). Without the
-// mark, a relay whose allow.json was lost while ordinary invites were still
-// live could be claimed by any one of them.
-//
-// ONE AT A TIME: minting another withdraws the last, so an installer run
-// twice leaves one live token, not two.
-const OWNER_INVITE = '(installer)';
-
-function mintOwner(rootDir, label, days) {
-  const store = relayStore.open(rootDir);
-  store.invites.all().forEach(function (row) {
-    if (row.invitedBy === OWNER_INVITE) store.invites.remove(row.token);
-  });
-  return add(rootDir, { label: label, days: days, invitedBy: OWNER_INVITE });
-}
-
-function isOwnerInvite(row) {
-  return !!row && row.invitedBy === OWNER_INVITE;
-}
+// mintOwner, isOwnerInvite and the marked kind of invite they made stood
+// here (cycle 3, Part B): a token install.js printed, which turned the
+// first claim on an unowned relay into its owner. Andy, 2026-10-11: "the
+// invite path to ownership MUST be gone. it is a security gap, from the
+// time of install until the time of first claim." Every invite is a
+// member invite now; the owner is written into relay-state/owner.json by
+// bash/install-units, before the relay serves. Do not bring an owner kind
+// back.
 
 function match(rootDir, token, label) {
   const t = String(token || '').trim();
@@ -204,7 +187,4 @@ module.exports = {
   newToken: newToken,
   normalizeDays: normalizeDays,
   normalizeToken: normalizeToken,
-  mintOwner: mintOwner,
-  isOwnerInvite: isOwnerInvite,
-  OWNER_INVITE: OWNER_INVITE,
 };

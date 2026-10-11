@@ -175,10 +175,6 @@ define('too-many-claims', {
   status: 429, presence: NONE, retry: 'after', fault: 'caller',
   texts: ['too many claims'],
 });
-define('too-many-device-attempts', {
-  status: 429, presence: NONE, retry: 'after', fault: 'caller',
-  texts: ['too many device attempts'],
-});
 define('node-queue-full', {
   status: 503, presence: NONE, retry: 'after', fault: 'node',
   texts: ['this node has too much waiting to send'],
@@ -300,7 +296,10 @@ define('search-failed', {
 });
 define('relay-no-owner', {
   status: 503, presence: NONE, retry: 'no', fault: 'relay',
-  texts: ['relay has members but no owner — restore owner.json over SSH'],
+  texts: ['relay has members but no owner — restore owner.json over SSH',
+    'relay has no owner — the owner is written at install, not claimed'],
+  note: 'A relay is owned at install (bash/install-units, OWNER_KEY), never ' +
+    'over the wire (goal/G16.8), so with no owner file it takes no claim at all.',
 });
 define('relay-no-identity', {
   status: 503, presence: NONE, retry: 'no', fault: 'relay',
@@ -417,6 +416,13 @@ define('no-such-peer', {
 // node from before this cycle posts plaintext and is refused, and the
 // one thing its operator needs to learn is that the box is old rather
 // than broken — so neither of these may ever become a silent drop.
+define('one-verb-per-request', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['one verb per request'],
+  note: 'A question to the relay carries exactly one verb, and a card ask ' +
+    'carries nothing else (goal/G16.2): a second verb would run by riding ' +
+    'along with the first. Send each verb as its own request.',
+});
 define('unsealed-post', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['unsealed posts are refused'],
@@ -618,8 +624,9 @@ define('card-not-newer', {
 });
 define('not-owner', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['not the owner', 'no owner key on this relay', 'the owner cannot be removed',
-    'this relay already has an owner', 'owner invite required'],
+  texts: ['not the owner', 'no owner key on this relay', 'the owner cannot be removed'],
+  // Two texts of the first-claim path left with it (goal/G16.8): no claim
+  // makes an owner, so none is refused for lacking the token that did.
 });
 // ── THE OWNER DOOR INTO A PUPPET (puppets/G7) ─────────────────────
 //
@@ -768,7 +775,7 @@ define('bad-request', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['text required', 'to required', 'verb required', 'peer key required', 'bad hints', 'bad label',
     'bad token', 'claim needs publicKey', 'claim needs publicKey and sig',
-    'first claim needs publicKey and sig', 'forward needs from, to, text and sig',
+    'forward needs from, to, text and sig',
     'hash required', 'hash, requester and target required', 'invite label required',
     'not a lever name', 'partner relay key required', 'partner relay url required',
     'pick a relay url', 'that is the peer’s own key, not their relay’s',

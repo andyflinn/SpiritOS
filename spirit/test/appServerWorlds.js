@@ -48,7 +48,6 @@ const relayStore = require('../run/js/relayStore');
 
 const ensureMaster = require('./labMaster/ensureMaster');
 const labPaths = require('./labMaster/labPaths');
-const { mintOwnerInvite } = require('./ownerClaim');
 const { sealedClaimBody } = require('./labWorld');
 
 // `asb-` for appServerBoundary, so these are identifiable as disposable
@@ -101,7 +100,7 @@ async function answering(url, ms) {
   return false;
 }
 
-async function makeNode(name, type, port, config) {
+async function makeNode(name, type, port, config, ownerKey) {
   const id = PREFIX + name;
   const made = await ensureMaster.api('POST', '/api/nodes',
     { name: id, type: type, port: port, kind: 'fixture' });
@@ -120,10 +119,13 @@ async function makeNode(name, type, port, config) {
     }
   }
 
-  if (config) {
+  // The owner is written before the restart, as bash/install-units writes it before a relay serves
+  // (goal/G16.8): a relay reads its owner once, at start, and no claim can make one.
+  if (config || ownerKey) {
     const dir = path.join(homeOf(id), 'relay-state');
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(config));
+    if (config) fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(config));
+    if (ownerKey) auth.writeOwner(homeOf(id), ownerKey);
     await ensureMaster.api('POST', '/api/nodes/' + id + '/restart');
   }
 
@@ -176,8 +178,8 @@ async function unclaimedRelay() {
 //
 // `members` is how many claims to add AFTER the owner. The owner holds
 // the first seat: a relay is not a relay until it is owned, and the
-// owner's claim is admitted regardless of capacity — `relay.js` reads
-// `if (!firstOwner && …full…)` at both the seat check and the disc
+// owner's claim is admitted regardless of capacity — `relay.js` exempts
+// the key named in owner.json at both the seat check and the disc
 // check, so the one account that can raise the limit can always get on.
 // A recipe that forgets this sends a stranger one claim past the wall it
 // was meant to stop at.
@@ -188,21 +190,19 @@ async function claimedRelay(opts) {
   const port = opts.port || PORT_RELAY;
   const name = opts.name || 'relay';
 
-  const relay = await makeNode(name, 'relay', port, { ramLimitMB: ram });
+  // The owner first, because the install names him (goal/G16.8).
+  const owner = opts.owner || auth.generateIdentity('asbowner');
+  const ownerName = owner.name || 'asbowner';
+  const relay = await makeNode(name, 'relay', port, { ramLimitMB: ram }, owner.publicKey);
   if (!relay.ok) return relay;
   if (!await answering(relay.url + '/api/relay/key')) {
     return { ok: false, error: 'the relay did not answer on ' + relay.url };
   }
 
-  const owner = opts.owner || auth.generateIdentity('asbowner');
-  const ownerName = owner.name || 'asbowner';
-  const ownerInvite = mintOwnerInvite(relay.home, ownerName);
   const claimed = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, owner, {
     name: ownerName,
     publicKey: owner.publicKey,
     sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
-    invite: ownerInvite.token,
-    inviteLabel: ownerName,
     card: nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)),
   }));
   if (!claimed.ok) {

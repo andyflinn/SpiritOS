@@ -24,7 +24,7 @@ const plantRun = require('./plantRun');
 const spiritErrors = require('../run/js/spiritErrors');
 const serveCommon = require('../run/js/serveCommon');
 const peerPost = require('../run/js/peerPost');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const { createRelay } = require('../run/js/relay');
 
 const PORT = 48781;
@@ -87,9 +87,11 @@ async function run() {
 
   {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-codes-relay-'));
+    const owner = auth.generateIdentity('owner');
+    ownHome(home, owner);   // as the install does (goal/G16.8)
     const box = createRelay(home);
     auth.saveIdentity(home, auth.generateIdentity('relay'));
-    claimOwner(box, auth.generateIdentity('owner'), 'owner', 'fx-owner');
+    claimOwner(box, owner, 'owner', 'fx-owner');
     const runDir = path.join(home, 'spirit', 'run');
     plantRun.plantRunTree(runDir);
     fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });

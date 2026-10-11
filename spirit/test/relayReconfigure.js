@@ -24,7 +24,7 @@ const test = require('./testSupport.js');
 const { sealFor, openReply } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const { createRelay } = require('../run/js/relay');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 
 // A box this suite invents: 1 GB, 900 MB of it available, 10 GB free disc.
 const BOX = { totalMB: 1024, availableMB: 900, discTotalMB: 20480, discFreeMB: 10240 };
@@ -43,6 +43,8 @@ function sinkFor(bag) {
 
 function relayWith(config, hands) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-reconf-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const written = [];
   const restarts = [];
@@ -53,7 +55,6 @@ function relayWith(config, hands) {
     restart: function () { restarts.push(true); return { will: true }; },
   }, hands || {});
   const box = createRelay(home, deps);
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'rc-owner');
   // The owner's stream, because the relay's answer to an owner verb comes
   // back as the REPLY to the post that asked — there is no second channel

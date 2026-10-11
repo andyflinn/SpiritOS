@@ -32,7 +32,7 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const limits = require('../run/js/limits');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const hub = require('../run/js/hub');
 const buildStamp = require('../run/js/buildStamp');
 const plantRun = require('./plantRun');
@@ -64,11 +64,12 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 function buildRelay(tag, memberNames) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hw-' + tag + '-'));
+  const owner = auth.generateIdentity('owner' + tag);
+  // The owner is written into owner.json before the relay is built, as
+  // the install does (goal/G16.8; ownerClaim.js), and claims with no invite.
+  ownHome(home, owner);
   const box = createRelay(home);
   auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const owner = auth.generateIdentity('owner' + tag);
-  // The first claim takes the owner invite, minted in process (cycle 3,
-  // Part B; ownerClaim.js). allow.json is written by the claim itself.
   claimOwner(box, owner, 'owner' + tag, 'fx-owner' + tag);
   const members = {};
   (memberNames || []).forEach(function (name) {

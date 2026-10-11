@@ -90,7 +90,6 @@ async function masterUp() {
 // In a harness run, runAll starts labMaster before any lane and stops it
 // after, so no suite owns it; a suite run alone starts and stops its own.
 const lab = require('./labMaster/ensureMaster.js');
-const { mintOwnerInvite } = require('./ownerClaim');
 
 async function ensureMaster() {
   return lab.ensure();
@@ -117,7 +116,7 @@ function homeOf(id) {
 // Written after the home exists and followed by a restart, because
 // relayServer.js reads the file once at startup and both create and
 // recycle have already started the process by the time we get it back.
-async function ensureNode(name, type, port, config) {
+async function ensureNode(name, type, port, config, ownerKey) {
   // labMaster slugs every id (slugName: lowercase, odd characters to
   // '-'), so the id asked back for must be the slug or a camel-cased
   // peer (the auth world's appPeer) creates one row and starts a 404.
@@ -144,7 +143,7 @@ async function ensureNode(name, type, port, config) {
     if (cycled.status !== 200) {
       return { ok: false, error: 'recycle ' + id + ': ' + JSON.stringify(cycled) };
     }
-    await withConfig(id, config);
+    await withConfig(id, config, ownerKey);
     return { ok: true, id: id, port: port, home: homeOf(id) };
   }
 
@@ -156,15 +155,19 @@ async function ensureNode(name, type, port, config) {
   if (started.status !== 200) {
     return { ok: false, error: 'start ' + id + ': ' + JSON.stringify(started) };
   }
-  await withConfig(id, config);
+  await withConfig(id, config, ownerKey);
   return { ok: true, id: id, port: port, home: homeOf(id) };
 }
 
-async function withConfig(id, config) {
-  if (!config) return;
+// THE OWNER IS WRITTEN HERE, before the restart, the way bash/install-units
+// writes it before a relay serves (goal/G16.8): a relay reads its owner once,
+// at start, and no claim can make one.
+async function withConfig(id, config, ownerKey) {
+  if (!config && !ownerKey) return;
   const dir = path.join(homeOf(id), 'relay-state');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(config));
+  if (config) fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(config));
+  if (ownerKey) auth.writeOwner(homeOf(id), ownerKey);
   await master('POST', '/api/nodes/' + id + '/restart');
 }
 
@@ -283,27 +286,25 @@ function createWorld(opts) {
     // ~400% of the bound, the lever pins to the floor, and every member
     // stream is closed on the first tick. That is the Governor working,
     // and it makes the world useless to look at.
-    relay = await ensureNode('relay', 'relay', RELAY_PORT, { ramLimitMB: 128 });
+    // The owner is made first, because the install names him (goal/G16.8).
+    owner = opts.owner || auth.generateIdentity('labowner');
+    relay = await ensureNode('relay', 'relay', RELAY_PORT, { ramLimitMB: 128 }, owner.publicKey);
     if (!relay.ok) return relay;
     relay.url = 'http://127.0.0.1:' + RELAY_PORT;
     if (!await answering(relay.url + '/api/relay/key')) {
       return { ok: false, error: 'lab relay did not answer on ' + relay.url };
     }
 
-    // The relay's owner is the first claim presenting the owner invite
-    // (cycle 3, Part B). Made here rather than borrowed from the work node:
-    // a suite must not need Andy's key, and must never write to his node's
-    // state. The invite is minted into the lab relay's own relay.db, in
-    // process — lab relays never run install.js (NODE-AND-RELAY).
-    owner = opts.owner || auth.generateIdentity('labowner');
+    // The relay's owner was written into its owner.json above, before it
+    // started, as bash/install-units does (goal/G16.8); he now claims his
+    // own box with no invite. Made here rather than borrowed from the work
+    // node: a suite must not need Andy's key, and must never write to his
+    // node's state.
     const ownerName = owner.name || 'labowner';
-    const ownerInvite = mintOwnerInvite(relay.home, ownerName);
     const claimed = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, owner, {
       name: ownerName,
       publicKey: owner.publicKey,
       sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
-      invite: ownerInvite.token,
-      inviteLabel: ownerName,
       // AND THE CARD (cycle 10, R5), as hub.signedClaim sends on a real
       // node: the relay seals its answers to the key on it, so an owner
       // enrolled without one can be told nothing.
@@ -311,7 +312,7 @@ function createWorld(opts) {
     }));
     if (!claimed.ok) {
       return { ok: false, error: 'lab owner could not claim: ' +
-        JSON.stringify(claimed.body) + ' — the relay was not empty' };
+        JSON.stringify(claimed.body) + ' — the relay was not installed for this owner' };
     }
 
     for (let i = 0; i < wanted; i += 1) {

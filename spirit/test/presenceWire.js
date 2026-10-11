@@ -21,7 +21,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 // The node's own record of where it holds a seat — see nodeFor.
 const relayKeys = require('../run/js/relayKeys');
@@ -56,11 +56,12 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 function buildRelayHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-wire-relay-'));
-  const box = createRelay(home);
   const house = auth.generateIdentity('andy');
+  // The owner is written into owner.json before the relay is built, as
+  // the install does (goal/G16.8; ownerClaim.js), and claims with no invite.
+  ownHome(home, house);
+  const box = createRelay(home);
   auth.saveIdentity(home, house);
-  // The first claim takes the owner invite, minted in process (cycle 3,
-  // Part B; ownerClaim.js). allow.json is written by the claim itself.
   claimOwner(box, house, 'andy');
   const bert = auth.generateIdentity('bert');
   const minted = box.mint('andy', 'bert', 7);

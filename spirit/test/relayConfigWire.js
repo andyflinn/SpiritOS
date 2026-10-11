@@ -31,7 +31,7 @@ const hub = require('../run/js/hub');
 const plantRun = require('./plantRun');
 const sseClient = require('../run/js/sseClient');
 const { createRelay } = require('../run/js/relay');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 
 const PORTS = [48741, 48742, 48743, 48744, 48745];
 const kids = [];
@@ -43,8 +43,9 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 // must never be started on the working directory.
 function buildHome() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cfgwire-'));
-  const box = createRelay(home);
   const owner = auth.generateIdentity('andy');
+  ownHome(home, owner);   // as the install does (goal/G16.8)
+  const box = createRelay(home);
   auth.saveIdentity(home, owner);
   claimOwner(box, owner, 'andy');
 

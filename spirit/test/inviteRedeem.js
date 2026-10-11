@@ -3,23 +3,23 @@ const rollOf = require('./rollOf');
 
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, installedRelay } = require('./ownerClaim');
 const invites = require('../run/js/invites');
-// A relay nobody has claimed, which is the only world in which the act of
-// claiming can be watched happening. The claims themselves stay written
-// out below: they are the subject of this file, and a helper that made
-// them would be a helper that hid them.
-const UNCLAIMED = require('./scenario').UNCLAIMED;
-const world = require('./world');
+// A relay installed for its owner with nobody on its roll yet, which is the
+// only world in which the act of claiming can be watched happening. Since
+// goal/G16.8 the install names the owner (ownerClaim.installedRelay), so the
+// owner's key is known before the box is built. The claims themselves stay
+// written out below: they are the subject of this file, and a helper that
+// made them would be a helper that hid them.
 
 test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
 
 {
-  const made = world.build(UNCLAIMED);
+  const andy = auth.generateIdentity('andy');
+  const made = installedRelay(andy);
   const home = made.home;
   const box = made.box;
-  const andy = auth.generateIdentity('andy');
-  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
+  // The owner was named at install (goal/G16.8) and claims with no invite.
   const owner = claimOwner(box, andy, 'andy');
   if (!owner.ok) test.fail('owner: ' + JSON.stringify(owner));
   else test.check('owner claimed');

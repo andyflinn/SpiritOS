@@ -18,7 +18,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const relayStore = require('../run/js/relayStore');
 const { createRelay } = require('../run/js/relay');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 
 function sinkFor(bag) {
   return {
@@ -36,9 +36,10 @@ function sinkFor(bag) {
 
 function relayWith(ramLimitMB) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-allowance-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const box = createRelay(home, { config: { ramLimitMB: ramLimitMB, source: 'test' } });
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'fx-owner');
   return { home: home, box: box, owner: owner };
 }

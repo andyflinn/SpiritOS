@@ -6,7 +6,7 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 const { createRelay } = require('../run/js/relay');
 
@@ -35,17 +35,17 @@ test.startTest('Invites cycle 1 — consume on claim');
 
 {
   const home = tmpHome();
-  const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
+  ownHome(home, andy);   // as the install does (goal/G16.8)
+  const box = createRelay(home);
   const saint = auth.generateIdentity('saint');
 
-  // First claim is owner (decision 0003), and needs no invite because
-  // there is nobody to invite them yet. This is what turns the box to
-  // keys mode.
-  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
+  // The owner is named in owner.json at install (goal/G16.8), so his claim
+  // needs no invite: there is nobody to invite him, and no invite could
+  // make an owner. The box is keys mode from the install on.
   const owner = claimOwner(box, andy, 'andy');
   if (owner.ok && owner.owner) {
-    test.check('first claim is owner, and the box is keys mode from here');
+    test.check('the owner named at install claims, and the answer says owner');
   } else {
     test.fail('owner: ' + JSON.stringify(owner));
   }
@@ -148,8 +148,9 @@ test.subHeading('The invite proves; the claimer names themselves');
 
 {
   const home = tmpHome();
-  const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
+  ownHome(home, andy);   // as the install does (goal/G16.8)
+  const box = createRelay(home);
   claimOwner(box, andy, 'andy');
 
   // An owner inviting somebody they know by phone number — Andy's own
@@ -241,9 +242,10 @@ test.subHeading('The invite proves; the claimer names themselves');
 
 {
   const home = tmpHome();
-  const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
-  claimOwner(box, andy, 'andy');   // the owner invite (cycle 3, Part B)
+  ownHome(home, andy);   // as the install does (goal/G16.8)
+  const box = createRelay(home);
+  claimOwner(box, andy, 'andy');   // named at install, claims with no invite (goal/G16.8)
 
   invites.add(home, {
     label: 'late',
@@ -269,9 +271,10 @@ test.subHeading('The invite proves; the claimer names themselves');
 
 {
   const home = tmpHome();
-  const box = createRelay(home);
   const annie = auth.generateIdentity('annie');
-  const first = claimOwner(box, annie, 'annie');   // the owner invite (cycle 3, Part B)
+  ownHome(home, annie);   // as the install does (goal/G16.8)
+  const box = createRelay(home);
+  const first = claimOwner(box, annie, 'annie');   // named at install, claims with no invite (goal/G16.8)
   // This block used to assert the opposite — that cycle 1 left keys-mode
   // open. Cycle 4 closed it.
   //
@@ -313,8 +316,9 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   const andy = auth.generateIdentity('andy');
   // The relay's own identity: a stream header names it (goal/G16.12).
   auth.saveIdentity(home, auth.generateIdentity('relay'));
+  ownHome(home, andy);   // as the install does (goal/G16.8)
   const box = createRelay(home);
-  claimOwner(box, andy, 'andy');   // the owner invite (cycle 3, Part B)
+  claimOwner(box, andy, 'andy');   // named at install, claims with no invite (goal/G16.8)
 
   function plantExpired(label, token) {
     // Written straight into the store: the mint verb never makes an
@@ -414,11 +418,12 @@ test.subHeading('A claim that is refused after the invite check does not spend i
 // thought had happened.
 {
   const home = tmpHome();
-  const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
+  ownHome(home, andy);   // as the install does (goal/G16.8)
+  const box = createRelay(home);
   const bella = auth.generateIdentity('bella');
 
-  claimOwner(box, andy, 'andy');   // the owner invite (cycle 3, Part B)
+  claimOwner(box, andy, 'andy');   // named at install, claims with no invite (goal/G16.8)
 
   // bella gets on the box legitimately, with her own invite.
   invites.add(home, { label: 'bella', invitedBy: 'andy', days: 7, token: 'tok-bella' });

@@ -471,11 +471,12 @@ function natterPaintBind(api, relays) {
     ? 'This node needs a seat on a public relay before it can do anything else, ' +
       'and there are two ways to get one.' +
       '<br><br>' +
-      // THE OWNER NEEDS A TOKEN TOO since cycle 3 (0003 amended: first
-      // invited claim is owner). This said "claim the owner name with no
-      // token", which an unclaimed relay now refuses.
+      // THE OWNER NEEDS NO TOKEN since goal/G16.8: a relay is owned at
+      // install, from the key its installer was given, and that key claims
+      // with no invite. This said to claim with the token install.js
+      // printed; install.js and that token are gone.
       '<strong>Use a relay you already have.</strong> Add it below, then open its row ' +
-      'and claim with the name and token that <code>node install.js</code> printed on the relay.' +
+      'and claim: it was installed with this node’s public key as its owner, so no token is needed.' +
       '<br><br>' +
       '<strong>Or take a seat on somebody else’s.</strong> Open a relay in the list below ' +
       'and claim there, with the invite name and the token they read out to you. ' +

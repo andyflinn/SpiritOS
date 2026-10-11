@@ -39,7 +39,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
-const { mintOwnerInvite } = require('./ownerClaim.js');
+const { installOwner } = require('./ownerClaim.js');
 const { relayRequest } = require('../run/js/relayRequest.js');
 const invites = require('../run/js/invites.js');
 const relayStore = require('../run/js/relayStore.js');
@@ -112,19 +112,21 @@ function handed(log) {
   // THE WORLD, as agentOnboard builds it.
   const relayHome = plant('relay');
   fs.rmSync(path.join(relayHome, 'relay-state'), { recursive: true, force: true });
+  // Andy's node's key goes into the relay's owner.json before the relay starts, as bash/install-units
+  // writes it (goal/G16.8: a relay is owned at install, never over the wire); his node claims with no invite.
+  const andyHome = plant('andy');
+  installOwner(relayHome, andyHome, 'andy');
   const relayPort = await freePort();
   startNode(relayHome, relayPort, ['--relay']);
   const relayUrl = 'http://127.0.0.1:' + relayPort;
   const relayUp = await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); }, 15000);
   if (!relayUp) { test.fail('the scratch relay never answered /api/relay/key'); return; }
-  const andyHome = plant('andy');
   includeList.add(andyHome, 'process/js/desk');
   pointAt(andyHome, relayUrl);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);
   await waitFor(function () { return verb(andyPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
-  const ownerInvite = mintOwnerInvite(relayHome, 'andy');
-  const owned = await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy', invite: ownerInvite.token, inviteLabel: 'andy' });
+  const owned = await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy' });
   if (!(owned.status >= 200 && owned.status < 300)) { test.fail('the world: the owner claim answered ' + owned.status + ' ' + short(owned.body)); return; }
   const deskPipe = appClient.createAppClient({ rootDir: andyHome });
   deskPipe.register('desk', appClient.pipePathFor(andyHome, 'desk', process.platform, 'process'));

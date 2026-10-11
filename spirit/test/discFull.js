@@ -32,15 +32,16 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const relayStore = require('../run/js/relayStore');
 const { createRelay } = require('../run/js/relay');
-const { claimOwner } = require('./ownerClaim');
+const { claimOwner, ownHome } = require('./ownerClaim');
 
 test.startTest('A relay whose disc will not take a write refuses, and keeps serving');
 
 function build() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-discfull-'));
+  const owner = auth.generateIdentity('owner');
+  ownHome(home, owner);
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const box = createRelay(home, { config: { ramLimitMB: 64, discLimitMB: 64, source: 'test' } });
-  const owner = auth.generateIdentity('owner');
   claimOwner(box, owner, 'owner', 'df-owner');
   return { home: home, box: box, owner: owner };
 }

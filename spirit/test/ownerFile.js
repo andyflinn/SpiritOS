@@ -54,16 +54,21 @@ test.subHeading('one reader and one writer, in relayAuth');
   fs.rmSync(root, { recursive: true, force: true });
 }
 
-test.subHeading('the relay: the first owner claim writes owner.json, and allow.json is never written');
+// goal/G16.8: owner.json is written at install (bash/install-units) and never by a claim. This said the first
+// owner claim wrote it; that path is gone, so the claim is shown refusing, and the install's file is what names him.
+test.subHeading('the relay: no claim writes owner.json, the owner it names claims, and allow.json is never written');
 {
   const made = world.build(UNCLAIMED);
   const home = made.home;
   const id = auth.generateIdentity('andy');
   const sig = auth.sign(id.privateKey, auth.claimMessage('andy'));
-  const ownerInvite = require('../run/js/invites').mintOwner(home, 'andy', 1);
-  const first = made.box.claim('andy', sig, id.publicKey, '10.0.0.1', ownerInvite.token, 'andy');
+  const refused = made.box.claim('andy', sig, id.publicKey, '10.0.0.1');
+  if (!refused.ok && ownerFileOf(home) === null) test.check('a claim on a relay with no owner.json is refused and writes none');
+  else test.fail('a claim on an unowned relay: ' + JSON.stringify({ claim: refused, ownerJson: ownerFileOf(home) }).slice(0, 200));
+  auth.writeOwner(home, id.publicKey);   // what bash/install-units does
+  const first = createRelay(home).claim('andy', sig, id.publicKey, '10.0.0.1');
   const doc = ownerFileOf(home);
-  if (first.ok && first.owner === true && doc && doc.owner === id.publicKey && Object.keys(doc).join() === 'owner') test.check('the owner claim wrote owner.json as { owner: <its key> }');
+  if (first.ok && first.owner === true && doc && doc.owner === id.publicKey && Object.keys(doc).join() === 'owner') test.check('the key the install wrote claims with no invite, and owner.json stays { owner: <its key> }');
   else test.fail(OWED + 'after the owner claim: ' + JSON.stringify({ claim: first, ownerJson: doc }).slice(0, 200));
   if (!fs.existsSync(path.join(home, 'relay-state', 'allow.json'))) test.check('and no allow.json');
   else test.fail(OWED + 'the relay still wrote allow.json');
