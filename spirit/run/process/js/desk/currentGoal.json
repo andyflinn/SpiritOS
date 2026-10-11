@@ -1,8 +1,8 @@
 {
- "change": 31207,
+ "change": 31208,
  "line": 8504,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T01:24:55.526Z",
+ "writtenAt": "2026-10-11T01:24:57.559Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -2864,10 +2864,9 @@
    "id": "goal/G16.7",
    "title": "The held stranger: no delivered receipt, no kept text (B1, B2)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "wsl-claude",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
