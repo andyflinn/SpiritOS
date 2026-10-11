@@ -48,6 +48,11 @@ const FILES = ['AGENT.md', 'CLAUDE.md', 'ANDYS_RULES_FOR_AGENTS.md', 'DICTIONARY
 // voice's words are quoted, never corrected, so its citations are not ours
 // to fix (2026-09-22, the first API review).
 const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'visual', 'grok'];
+// THE DESK'S OWN GOAL FILE IS NEVER JUDGED (goal/G16.2). The desk writes it
+// itself from everybody's words and commits it on every change, so nobody can
+// cite in it by hand. Andy: "the test never considers that file. it's commits
+// mess everything up, and it is node \"product\"".
+const SKIP_FILES = ['spirit/run/process/js/desk/currentGoal.json'];
 
 // ── THE TALLY, AS FOUND ON 2026-09-22 ───────────────────────────────
 // file -> bare citations allowed. May only go down.
@@ -164,6 +169,7 @@ function walk(rel, into) {
   fs.readdirSync(abs).forEach(function (name) {
     if (SKIP_DIRS.indexOf(name) !== -1) return;
     const child = rel + '/' + name;
+    if (SKIP_FILES.indexOf(child) !== -1) return;
     const cst = fs.statSync(path.join(REPO, child));
     if (cst.isDirectory()) walk(child, into);
     else if (/\.(js|md|html|json)$/.test(name)) into.push(child);
