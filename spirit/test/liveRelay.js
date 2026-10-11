@@ -30,7 +30,18 @@ const FAKES = path.join(
 );
 const SUBJECT = path.join(FAKES, 'lw-lab-bella', 'spirit', 'run');
 
-const RELAY = process.argv[2] || 'https://spirit.andyflinn.com';
+// THE RELAY TO MEASURE, AND NOT A FLAG BY MISTAKE. This read argv[2]
+// outright, so when deskVerify spawns a suite as `node <file> --verify-port
+// <port>` this went looking for a relay called "--verify-port" and failed
+// every time — a suite the verifier could never pass, which rejected every
+// item that listed it. Only a bare argument naming a web address is taken.
+const RELAY = (function () {
+  for (var i = 2; i < process.argv.length; i += 1) {
+    var a = String(process.argv[i] || '');
+    if (/^https?:\/\//.test(a)) return a;
+  }
+  return 'https://spirit.andyflinn.com';
+}());
 
 function get(url, headers) {
   return fetch(url, { headers: headers || {} })
