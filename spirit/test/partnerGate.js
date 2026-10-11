@@ -218,7 +218,7 @@ test.subHeading('A partner may search, and gets B members');
     { search: { q: 'be' } });
   const sent = asked.sent;
   if (sent.ok && sent.status === 200 && asked.packet && asked.packet.from === B.key &&
-      auth.receiptSignatureOk(B.key, asked.packet.hash, asked.packet.sig)) {
+      auth.receiptSignatureOk(B.key, asked.packet.hash, asked.packet.text, asked.packet.sig)) {
     test.check('the post is admitted, and answered on itself — signed by B, the receipt verifies');
   } else {
     test.fail('refused: ' + JSON.stringify(sent) + ' / ' + JSON.stringify(asked.packet));

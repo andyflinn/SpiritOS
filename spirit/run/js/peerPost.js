@@ -579,8 +579,16 @@ function createPeerPost(opts) {
           // stream would have carried. It settles through onReply, so the
           // receipt is verified exactly as a streamed one is; nothing about
           // what counts as an answer changes, only which door it came in by.
+          // UNDER THE HASH THIS NODE COMPUTED, NOT THE ONE THE WIRE SENT
+          // (decision 0011, folded into goal/G16.1). `hash` is what we
+          // hashed the post to and what we are waiting on; `body.hash` is
+          // whatever the answer claims. Settling on the claim let a carrier
+          // name which of this node's open posts an answer belonged to.
+          // The receipt is verified against this hash inside onReply, so a
+          // reply for a different post simply fails rather than settling
+          // the wrong one.
           if (body && body.hash && body.from && body.sig && typeof body.text === 'string') {
-            onReply({ hash: body.hash, from: body.from, text: body.text, sig: body.sig });
+            onReply({ hash: hash, from: body.from, text: body.text, sig: body.sig });
             return;
           }
           var granted = body && typeof body.grantedMs === 'number' ? body.grantedMs : 0;
@@ -1069,7 +1077,8 @@ function createPeerPost(opts) {
     });
 
     var text = nodeCard.describe(rootDir);
-    var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash));
+    // The receipt covers the text it answers with (S1, goal/G16.1).
+    var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
     return request(relayUrl, 'POST', '/api/relay/reply', {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
     }).then(function () {
@@ -1095,7 +1104,8 @@ function createPeerPost(opts) {
   // a sender whose cipher key we do not hold is exactly who gets refused.
   function refuse(relayUrl, id, body, hash, status, why) {
     var text = JSON.stringify({ v: 1, body: { ok: false, status: status, error: why } });
-    var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash));
+    // The refusal is a reply too, and its receipt covers it (S1, goal/G16.1).
+    var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
     return request(relayUrl, 'POST', '/api/relay/reply', {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
     }).then(function () { return null; }).catch(function () { return null; });
@@ -1494,7 +1504,13 @@ function createPeerPost(opts) {
     // waiting for. An answerer that hangs is holding somebody's browser
     // open, which is the reason this hook belongs to the node's own code
     // and not to anything an app can register freely.
-    var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash));
+    // THE RECEIPT IS SIGNED LAST NOW (S1, goal/G16.1), because it covers the
+    // reply text and the text is not known yet: the answer is composed below,
+    // may be dropped for not fitting a tunnel, and is then sealed. Signing here
+    // would bind a text that never travelled. Only the SIZE is needed early,
+    // and a signature is a fixed length whatever it signs, so the size check
+    // below measures one signed over nothing.
+    var sizingSig = auth.sign(id.privateKey, auth.receiptMessage(hash, ''));
     return Promise.resolve()
       .then(function () {
         // NOT ANSWERED UNLESS ADMITTED. `answer` is what decides a device
@@ -1513,7 +1529,7 @@ function createPeerPost(opts) {
         // wrapped for the return is not sent. The receipt still goes, with
         // no text: "it arrived, no answer travelled", which is the honest
         // reading of an empty reply. The log records why.
-        if (checkTunnel && text && !limits.fitsWrappedReply(text, id.publicKey, receipt)) {
+        if (checkTunnel && text && !limits.fitsWrappedReply(text, id.publicKey, sizingSig)) {
           note({
             dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
             hash: hash, outcome: 'reply too big to tunnel',
@@ -1528,9 +1544,9 @@ function createPeerPost(opts) {
         // from one side. Sealed back to whoever asked, with the parties
         // in the associated data the other way round.
         //
-        // The receipt is signed over the HASH, not the text, so nothing
-        // about the receipt changes — which is exactly why the layering
-        // puts hashing outside the seal (cycle 10's R11).
+        // The receipt is signed over the hash AND this text since goal/G16.1,
+        // so it is signed below, once `text` is final — after the seal, because
+        // what the far end verifies is what arrives on the wire.
         //
         // THE LOG KEEPS THE WORDS (cycle 10's R14). Written from `text` before it
         // is sealed, because the endpoints keep the plaintext and the
@@ -1555,6 +1571,7 @@ function createPeerPost(opts) {
             text = JSON.stringify(wrapped);
           }
         }
+        var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
         return request(relayUrl, 'POST', '/api/relay/reply', {
           from: id.publicKey, hash: hash, text: text, sig: receipt,
         }).then(function () {
@@ -1576,7 +1593,10 @@ function createPeerPost(opts) {
   // relay cannot manufacture a receipt for a request nobody answered.
   function onReply(body) {
     if (!body || !body.hash || !body.from || !body.sig) return false;
-    if (!auth.receiptSignatureOk(body.from, body.hash, body.sig)) return false;
+    // Against the text it arrived with (S1, goal/G16.1): a receipt that
+    // verified whatever the carrier chose to put in `text` was a proof of the
+    // wrong thing.
+    if (!auth.receiptSignatureOk(body.from, body.hash, body.text, body.sig)) return false;
     // SIGNED BY SOMEBODY OTHER THAN THE TARGET: the relay speaking (cycle
     // 2). A relay that could not deliver, or whose partner refused, tells
     // the asker down the chain with a reply for the same hash signed by

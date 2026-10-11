@@ -174,16 +174,40 @@ function requestHash(message) {
 // "I received exactly those bytes." The hash is INSIDE the signed
 // message rather than beside it: attached alongside a signature over
 // something else, the relay could swap it (ROUTER.md §2).
-function receiptMessage(hash, atMs) {
+//
+// ── AND THE BYTES IT RECEIVED ARE NOT THE BYTES IT SENT BACK (S1) ──
+//
+// The receipt covered the request's hash and a clock minute, and NOTHING
+// about the reply. So a relay carrying an answer could rewrite it and the
+// signature still verified — the review of 2026-10-10 reproduced exactly
+// that: "receipt verifies with forged text: true". Every reply in the
+// system was unauthenticated in content while looking signed, which is
+// worse than unsigned: the asker had a proof, and the proof was of the
+// wrong thing.
+//
+// The reply text's sha256 goes INSIDE the signed message for the same
+// reason the request's hash does. The text itself is not signed over
+// directly, so a receipt stays a fixed-size thing whatever it answers.
+//
+// Andy, 2026-10-10: "flag day. we don't maintain backward compatibility
+// before alpha, maybe not even before beta, the data stored in the
+// SpiritOS is never in danger." So there is no old form accepted here: a
+// node or relay that has not updated fails to verify, which is the
+// loudest and most honest way for a flag day to arrive.
+//
+// THE BARE RECEIPT IS STILL A RECEIPT. A plain "I got it" carries no text,
+// and the empty string hashes like any other, so it has a message of its
+// own that cannot be reused for an answer that says something.
+function receiptMessage(hash, text, atMs) {
   var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
-  return 'receipt\n' + String(hash || '') + '\n' + minute;
+  return 'receipt\n' + String(hash || '') + '\n' + requestHash(String(text == null ? '' : text)) + '\n' + minute;
 }
 
-function receiptSignatureOk(publicKey, hash, sig, atMs) {
+function receiptSignatureOk(publicKey, hash, text, sig, atMs) {
   if (!publicKey || !sig) return false;
   var now = atMs == null ? Date.now() : atMs;
   for (var step = -1; step <= 1; step += 1) {
-    if (verify(publicKey, receiptMessage(hash, now + step * 60000), sig)) return true;
+    if (verify(publicKey, receiptMessage(hash, text, now + step * 60000), sig)) return true;
   }
   return false;
 }

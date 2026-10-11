@@ -241,7 +241,7 @@ async function run() {
     }
     // Signed by the relay, never passed off as john's receipt.
     if (told && told.from === L.box.relayPublicKey() &&
-        auth.receiptSignatureOk(told.from, told.hash, told.sig)) {
+        auth.receiptSignatureOk(told.from, told.hash, told.text, told.sig)) {
       test.check('and the reply is signed by the relay, so the node cannot take it for the target\'s answer');
     } else {
       test.fail('reply signed by ' + (told && told.from));
@@ -263,7 +263,7 @@ async function run() {
     L.box.streamClose(mary.publicKey, marySink, 'stalled');
 
     const answered = L.box.routeReply(bert.publicKey, sent.hash, '{"ack":2}',
-      auth.sign(bert.privateKey, auth.receiptMessage(sent.hash)));
+      auth.sign(bert.privateKey, auth.receiptMessage(sent.hash, '{"ack":2}')));
     if (answered && !answered.ok && answered.status === 404 && answered.error === 'no such request') {
       test.check('the target\'s late answer meets "no such request" rather than a stream that is not there');
     } else {
@@ -289,7 +289,7 @@ async function run() {
 
     const early = annSink.last('reply');
     const answered = L2.box.routeReply(bob.publicKey, sent.hash, '{"ack":3}',
-      auth.sign(bob.privateKey, auth.receiptMessage(sent.hash)));
+      auth.sign(bob.privateKey, auth.receiptMessage(sent.hash, '{"ack":3}')));
     if (!early && answered && answered.ok) {
       test.check('a member whose stream closed can still answer what it read, and nobody was told otherwise first');
     } else {

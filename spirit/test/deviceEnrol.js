@@ -79,7 +79,7 @@ function replyTo(box, id, req, text) {
   );
   return box.routeReply(
     id.publicKey, hash, text,
-    auth.sign(id.privateKey, auth.receiptMessage(hash))
+    auth.sign(id.privateKey, auth.receiptMessage(hash, text))
   );
 }
 

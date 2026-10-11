@@ -122,7 +122,7 @@ function run() {
 
   test.subHeading('Only the target may answer, and only once');
 
-  const impostorSig = auth.sign(L.owner.privateKey, auth.receiptMessage(sent.hash));
+  const impostorSig = auth.sign(L.owner.privateKey, auth.receiptMessage(sent.hash, ''));
   const impostor = L.box.routeReply(L.owner.publicKey, sent.hash, '', impostorSig);
   if (impostor.ok === false && impostor.status === 403) {
     test.check('a member who was not asked cannot answer');
@@ -132,7 +132,7 @@ function run() {
 
   const acked = L.box.routeReply(
     john.publicKey, sent.hash, '{"pong":1}',
-    auth.sign(john.privateKey, auth.receiptMessage(sent.hash))
+    auth.sign(john.privateKey, auth.receiptMessage(sent.hash, '{"pong":1}'))
   );
   if (acked.ok && acked.delivered) {
     test.check('the target acks, and the relay says the answer landed');
@@ -179,7 +179,7 @@ function run() {
 
   // What makes it worth having: the requester can prove WHO answered,
   // without trusting the relay that carried it.
-  if (back && auth.receiptSignatureOk(john.publicKey, back.hash, back.sig)) {
+  if (back && auth.receiptSignatureOk(john.publicKey, back.hash, back.text, back.sig)) {
     test.check('signed by the target, so the relay could not have manufactured it');
   } else {
     test.fail('receipt did not verify');
@@ -187,7 +187,7 @@ function run() {
 
   const twice = L.box.routeReply(
     john.publicKey, sent.hash, '',
-    auth.sign(john.privateKey, auth.receiptMessage(sent.hash))
+    auth.sign(john.privateKey, auth.receiptMessage(sent.hash, ''))
   );
   if (twice.ok === false && twice.status === 404) {
     test.check('and the same request cannot be answered a second time');

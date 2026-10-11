@@ -257,7 +257,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   // derived itself, with the card as the text.
   const card = JSON.stringify({ v: 1, body: { ok: true, name: 'sonny', description: 'a lab node' } });
   const answered = B.box.routeReply(B.people.sonny.publicKey, sent.hash, card,
-    auth.sign(B.people.sonny.privateKey, auth.receiptMessage(sent.hash)));
+    auth.sign(B.people.sonny.privateKey, auth.receiptMessage(sent.hash, card)));
 
   if (answered && answered.ok) {
     test.check('B took sonny’s reply for a request that came from a partner');
@@ -280,7 +280,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   // WHAT SONNY SAID, UNALTERED. Two relays carried it and neither is able
   // to change a word without breaking the receipt.
   const said = back.length ? back[0].data : null;
-  const receiptOk = said && auth.receiptSignatureOk(said.from, said.hash, said.sig);
+  const receiptOk = said && auth.receiptSignatureOk(said.from, said.hash, said.text, said.sig);
 
   if (receiptOk && said.from === B.people.sonny.publicKey) {
     test.check('signed by sonny over the same hash — neither relay could have written it');
@@ -555,7 +555,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   // sonny answers, signing over the hash he derived himself.
   const card2 = JSON.stringify({ v: 1, body: { ok: true, name: 'sonny' } });
   B.box.routeReply(B.people.sonny.publicKey, claimed.hash, card2,
-    auth.sign(B.people.sonny.privateKey, auth.receiptMessage(claimed.hash)));
+    auth.sign(B.people.sonny.privateKey, auth.receiptMessage(claimed.hash, card2)));
   await new Promise(function (r) { setTimeout(r, 0); });
   await new Promise(function (r) { setTimeout(r, 0); });
 

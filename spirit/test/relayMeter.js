@@ -124,7 +124,7 @@ if (first.ok && first.status === 202) {
 // wants — every other post here answers, and so does this one now.
 if (first.ok) {
   R.box.routeReply(R.people.bob.publicKey, first.hash, 'ok',
-    auth.sign(R.people.bob.privateKey, auth.receiptMessage(first.hash)));
+    auth.sign(R.people.bob.privateKey, auth.receiptMessage(first.hash, 'ok')));
 }
 
 // ── A FLOOD THAT IS NOT ALSO A PILE-UP ───────────────────────────────
@@ -145,7 +145,7 @@ function answered(n) {
   const r = post(R.box, R.people.ann, R.people.bob, { n: n });
   if (!r.ok) return r;
   R.box.routeReply(R.people.bob.publicKey, r.hash, 'ok',
-    auth.sign(R.people.bob.privateKey, auth.receiptMessage(r.hash)));
+    auth.sign(R.people.bob.privateKey, auth.receiptMessage(r.hash, 'ok')));
   return r;
 }
 
@@ -185,7 +185,7 @@ const bobsTurn = post(R.box, R.people.bob, R.people.ann, { hello: 1 });
 // relay a verb further down. Left unanswered, this post would still be his.
 if (bobsTurn.ok) {
   R.box.routeReply(R.people.ann.publicKey, bobsTurn.hash, 'ok',
-    auth.sign(R.people.ann.privateKey, auth.receiptMessage(bobsTurn.hash)));
+    auth.sign(R.people.ann.privateKey, auth.receiptMessage(bobsTurn.hash, 'ok')));
 }
 if (bobsTurn.ok) {
   test.check('and it is per sender — one member flooding does not spend another’s budget');

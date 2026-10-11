@@ -214,7 +214,7 @@ function member(w, identity, answers) {
         from: identity.publicKey,
         hash: hash,
         text: 'ok',
-        sig: auth.sign(identity.privateKey, auth.receiptMessage(hash)),
+        sig: auth.sign(identity.privateKey, auth.receiptMessage(hash, 'ok')),
       }).catch(function () { /* the assertion is what arrived, not what landed */ });
     },
   });

@@ -60,7 +60,10 @@ const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
 // socket. The pair is what makes the relay's exposure a number rather
 // than a hope — neither is meaningful alone, and raising one without the
 // other moves the worst case linearly.
-// AND IT IS COUNTED IN BYTES (R5 of the review of 2026-10-10, goal/G16.6).
+// AND IT IS COUNTED IN BYTES (the byte-counting finding of the review of
+// 2026-10-10, goal/G16.6). Cited by what it says rather than by its number:
+// that review is not a cycle, and a bare requirement number names a
+// different thing in each of them (test/cycleCitations.js).
 // Andy, 2026-10-10: "in a max_BYTE environment, BYTES must be copied.
 // BYTES must be counted. that's a rule." Every check against this cap used
 // `text.length`, which counts UTF-16 units, so a text of accents or kanji
@@ -2840,8 +2843,15 @@ function createRelay(rootDir, deps) {
     // WHAT IS LEFT FOR THE FAR SIDE. Undefined stays undefined: a caller
     // that declared no budget is asking this box for its default, and has
     // no opinion to pass on.
+    // AND NEVER MORE TIME THAN THIS RELAY WILL ACTUALLY HOLD THE ROUTE (S7,
+    // goal/G16.1). The budget passed on was the asker's minus one hop, with no
+    // reference to the router's own ceiling — so a generous asker was promised
+    // a window the route table would close first, and the far side spent
+    // effort on a reply that had nowhere to land. The router clamps its own
+    // entry (router.js, Math.min against ttlMs); this clamps what we PROMISE,
+    // so the promise and the table agree.
     var onward = typeof budgetMs === 'number' && budgetMs > 0
-      ? Math.max(0, budgetMs - HOP_MARGIN_MS)
+      ? Math.min(Math.max(0, budgetMs - HOP_MARGIN_MS), routes.ttlMs)
       : undefined;
 
     // AND REFUSE HERE IF THE FAR SIDE COULD NOT USE IT, which is the
@@ -2978,17 +2988,42 @@ function createRelay(rootDir, deps) {
   function replyAsRelay(innerHash, requester, status, error) {
     var mine = auth.loadIdentity(rootDir);
     if (!mine || !mine.privateKey) return false;
+    var errorText = JSON.stringify({ v: 1, body: { ok: false, status: status, error: String(error), relayed: true } });
     return !!presentNow.send(requester, 'reply', {
       hash: innerHash,
       from: mine.publicKey,
-      text: JSON.stringify({ v: 1, body: { ok: false, status: status, error: String(error), relayed: true } }),
-      sig: auth.sign(mine.privateKey, auth.receiptMessage(innerHash)),
+      text: errorText,
+      // The receipt covers the text it carries (S1, goal/G16.1), so even the
+      // relay's own error cannot be swapped for another on the way.
+      sig: auth.sign(mine.privateKey, auth.receiptMessage(innerHash, errorText)),
     });
   }
 
   function deliverForwardedReply(innerHash, reply) {
     var matched = routes.answer(innerHash, reply.from);
-    if (!matched.ok) return false;
+    // A LATE OR STRAY REPLY LEAVES NOTHING BEHIND (S7, goal/G16.1): the
+    // carrying entry was kept until announceRoute or an error cleared it, so a
+    // reply that settled nothing left the hash in the table for the next
+    // answer at that key to be announced against.
+    if (!matched.ok) { delete carrying[innerHash]; return false; }
+
+    // ── AND IT IS PROVEN BEFORE IT IS BROADCAST (S2, goal/G16.1) ────────
+    //
+    // `routes.answer` proves WHO replied, which is what the comment below
+    // said and all it ever checked. It says nothing about WHAT they replied,
+    // and this relay then announced a route on the strength of it. A partner
+    // could carry a reply with the text rewritten and have this box tell
+    // every member, as a fact, which key to reach that peer at.
+    //
+    // The receipt covers the reply text since this item, so the text can be
+    // checked here against the signature the far end made. A reply that fails
+    // is the carrier's misconduct, not the asker's problem: the asker is told
+    // by this relay, in its own name, and no route is announced.
+    if (!auth.receiptSignatureOk(reply.from, innerHash, reply.text || '', reply.sig)) {
+      monitorEvent('refused', reply.from, matched.requester || '', { why: 'bad receipt on a forwarded reply', hash: innerHash, via: 'partner' });
+      relayErrorToAsker(innerHash, matched.requester || '', 502, 'the partner relay carried a reply that does not verify');
+      return false;
+    }
     monitorEvent('reply', reply.from, matched.requester || '', {
     // A SIZE IN THIS SYSTEM IS BYTES. Andy, 2026-09-26: "the payload cap is
     // BYTES. that's the design, and the attitude, of node and relay." It was
@@ -3225,7 +3260,7 @@ function createRelay(rootDir, deps) {
       hash: hash,
       from: mine.publicKey,
       text: reply,
-      sig: auth.sign(mine.privateKey, auth.receiptMessage(hash)),
+      sig: auth.sign(mine.privateKey, auth.receiptMessage(hash, reply)),
     };
     // A PARTNER HOLDS NO STREAM (cycle 8's R13): its answer goes back as
     // the reply to the post it asked with, which is still open, waiting.
@@ -4268,9 +4303,10 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 413, error: 'too big' };
     }
 
-    // Signed over the hash, so the relay cannot manufacture a receipt
-    // for a request nobody answered.
-    if (!auth.receiptSignatureOk(who.publicKey, hash, sig)) {
+    // Signed over the hash AND the reply text (S1, goal/G16.1), so the relay
+    // can neither manufacture a receipt for a request nobody answered nor
+    // carry this one with the answer rewritten.
+    if (!auth.receiptSignatureOk(who.publicKey, hash, text, sig)) {
       return { ok: false, status: 403, error: 'bad receipt signature' };
     }
 

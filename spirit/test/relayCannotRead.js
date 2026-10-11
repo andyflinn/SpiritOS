@@ -54,7 +54,7 @@ const auth = require('../run/js/relayAuth');
 // is refused `too many in flight` and never reaches the switch.
 function answered(w, who, sent) {
   if (!sent || !sent.hash) return null;
-  return w.box.routeReply(who.publicKey, sent.hash, 'ok', auth.sign(who.privateKey, auth.receiptMessage(sent.hash)));
+  return w.box.routeReply(who.publicKey, sent.hash, 'ok', auth.sign(who.privateKey, auth.receiptMessage(sent.hash, 'ok')));
 }
 
 test.startTest('The relay cannot read a sealed post, proved by trying to read it');

@@ -194,16 +194,18 @@ async function run() {
     const verified = auth.postSignatureFor(d.from, d.from, d.to, d.text, d.sig);
     if (!verified) return;
     const hash = auth.requestHash(verified);
+    const replyText = /big/.test(d.text) ? '"'.repeat(Math.ceil(limits.PAYLOAD_MAX / 2)) : JSON.stringify({ v: 1, body: { hello: 'alice' } });
     hub.relayRequest(B.base, 'POST', '/api/relay/reply', {
       // Asked for something 'big', he answers with a reply that fits one
       // hop and not the return tunnel (8,300 quotes, as the post case).
       from: bertrand.publicKey, hash: hash,
+      // The receipt covers this text since goal/G16.1, so it is named once.
       // Quotes escape to two characters each, so half the wire bound in
       // quotes is one bound's worth of JSON — derived rather than typed,
       // since cycle 10's R6 moved that bound and a hardcoded 8,300
       // quietly started fitting.
-      text: /big/.test(d.text) ? '"'.repeat(Math.ceil(limits.PAYLOAD_MAX / 2)) : JSON.stringify({ v: 1, body: { hello: 'alice' } }),
-      sig: auth.sign(bertrand.privateKey, auth.receiptMessage(hash)),
+      text: replyText,
+      sig: auth.sign(bertrand.privateKey, auth.receiptMessage(hash, replyText)),
     }).catch(function () {});
   });
 

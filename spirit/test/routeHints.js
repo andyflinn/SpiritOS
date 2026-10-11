@@ -186,7 +186,7 @@ function answerPending(box, id, inbox) {
     if (!verified) continue;
     const hash = auth.requestHash(verified);
     box.routeReply(id.publicKey, hash, 'ok',
-      auth.sign(id.privateKey, auth.receiptMessage(hash)));
+      auth.sign(id.privateKey, auth.receiptMessage(hash, 'ok')));
   }
   answered.set(inbox, inbox.length);
 }
@@ -407,7 +407,7 @@ async function replyDirection(A, B) {
   }
   const d = req.data;
   const innerHash = auth.requestHash(auth.postSignatureFor(d.from, d.from, d.to, d.text, d.sig));
-  const receipt = auth.sign(B.people.sonny.privateKey, auth.receiptMessage(innerHash));
+  const receipt = auth.sign(B.people.sonny.privateKey, auth.receiptMessage(innerHash, stuffed));
 
   const replied = B.box.routeReply(B.people.sonny.publicKey, innerHash, stuffed, receipt);
   if (!replied.ok && replied.status === 413 && /tunnel/.test(replied.error)) {
@@ -494,11 +494,12 @@ async function replyDirection(A, B) {
       const b = asked[0];
       const hash = auth.requestHash(auth.postSignatureFor(b.from, b.from, b.to, b.text, b.sig));
       const relayId = auth.loadIdentity(A.home);
+      const relayedText = JSON.stringify({ v: 1, body: { ok: false, status: 413, error: 'reply was oversized', relayed: true } });
       asker.onReply({
         hash: hash,
         from: relayId.publicKey,
-        text: JSON.stringify({ v: 1, body: { ok: false, status: 413, error: 'reply was oversized', relayed: true } }),
-        sig: auth.sign(relayId.privateKey, auth.receiptMessage(hash)),
+        text: relayedText,
+        sig: auth.sign(relayId.privateKey, auth.receiptMessage(hash, relayedText)),
       });
       return waiting;
     }).then(function (r) {

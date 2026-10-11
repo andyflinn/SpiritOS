@@ -408,7 +408,7 @@ async function aSwappedCardIsCaught() {
   // it: `routes.answer` takes a reply only from the target. The one who
   // CAN is the carrier itself, because it holds the bytes — and the
   // receipt does not stop it. A reply's signature covers
-  // `receiptMessage(hash, minute)`: the hash and a clock minute, NOT the
+  // `receiptMessage(hash, text, minute)`: the hash, the reply text's sha256 and a clock minute, NOT the
   // text (relayAuth.js). So a relay may replace the card in a reply it
   // forwards and every existing check still passes.
   //
@@ -447,34 +447,38 @@ async function aSwappedCardIsCaught() {
   const said = await P.post('http://relay', target.id.publicKey,
     JSON.stringify({ v: 1, body: { card: true } }));
 
-  // The exchange SUCCEEDED at every level below this cycle: the post was
-  // routed, a reply came back, and its receipt verified. Said out loud
-  // because it is the measure of what was actually wrong.
-  if (said.ok && said.receipt === true) {
-    test.check('the swapped reply passes the receipt check — which is the hole, not a bug in the test');
+  // ── AND SINCE goal/G16.1 THE SWAP DOES NOT GET THIS FAR ─────────────
+  //
+  // These three checks used to assert the hole: that the swapped reply
+  // PASSED the receipt check, and that the carrier's card was then caught
+  // one layer up, by the key it was signed with. The receipt covers the
+  // reply text now (S1), so the swap fails at the signature and the reply
+  // is never handed up at all — there is no card to judge, refused or
+  // otherwise. The later layer still exists and is still right; it simply
+  // is not reached by a text swap any more.
+  //
+  // Inverted rather than deleted, because this is the repro of the defect
+  // the cycle was opened for and it is the one check that would notice the
+  // hole reopening.
+  if (said.ok !== true && said.receipt !== true) {
+    test.check('the swapped reply fails its receipt, so the carrier\'s text never reaches the asker (S1 closed)');
   } else {
-    test.fail('the exchange failed for some other reason: ' + JSON.stringify(said));
+    test.fail('A SWAPPED REPLY STILL VERIFIES: ' + JSON.stringify(said));
   }
 
-  if (said.card && said.card.ok === false && said.card.why === 'wrong key' &&
-      said.card.signedBy === carrier.id.publicKey) {
-    test.check('the answer verified — as the carrier — and is refused for the key it was asked of');
+  if (!said.card) {
+    test.check('and no card is handed up at all, so nothing of the carrier\'s can be read or sealed to');
   } else {
-    test.fail('A SWAPPED CARD PASSED: ' + JSON.stringify(said.card));
+    test.fail('the swapped card still reached the caller: ' + JSON.stringify(said.card));
   }
 
-  if (!said.card || said.card.sealKey === undefined) {
-    test.check('and no seal key is handed up, so nothing can be sealed to the carrier by mistake');
+  // NOTHING IS FILED EITHER, and that is the honest consequence: the
+  // keeper's evidence trail was for a card that verified as somebody else.
+  // A reply that does not verify is not evidence of a card at all.
+  if (kept.length === 0) {
+    test.check('and nothing is filed with the keeper, because a reply that fails its receipt is not a card');
   } else {
-    test.fail('the carrier\'s seal key reached the caller anyway');
-  }
-
-  // KEPT ANYWAY, so an owner can be shown the contradiction. A refusal
-  // nobody can produce afterwards is a refusal the carrier can retry.
-  if (kept.length === 1 && kept[0].toKey === target.id.publicKey) {
-    test.check('the refused card is still handed to the keeper, filed against the key it claimed to be');
-  } else {
-    test.fail('the evidence was dropped: ' + JSON.stringify(kept));
+    test.fail('a card from a failed reply was still filed: ' + JSON.stringify(kept));
   }
 }
 
@@ -700,7 +704,7 @@ async function run() {
   // which is this module's own say-so — exactly the kind of assertion
   // that looks like proof and is not. The signature has to be present,
   // and it has to verify against the target's key.
-  if (answer.sig && auth.receiptSignatureOk(john.id.publicKey, answer.hash, answer.sig)) {
+  if (answer.sig && auth.receiptSignatureOk(john.id.publicKey, answer.hash, answer.text, answer.sig)) {
     test.check('the answer carries the target\'s own signature, not the relay\'s word');
   } else {
     test.fail('receipt not verifiable by the caller: ' + JSON.stringify(answer));
@@ -708,7 +712,7 @@ async function run() {
 
   // And it is THEIRS. A signature that verified against anybody's key
   // would say nothing about who answered.
-  if (!auth.receiptSignatureOk(bert.id.publicKey, answer.hash, answer.sig)) {
+  if (!auth.receiptSignatureOk(bert.id.publicKey, answer.hash, answer.text, answer.sig)) {
     test.check('and against nobody else, so it names who answered');
   } else {
     test.fail('the receipt verified against the wrong key');
@@ -779,7 +783,7 @@ async function run() {
     hash: expected,
     from: bert.id.publicKey,
     text: '',
-    sig: auth.sign(bert.id.privateKey, auth.receiptMessage(expected)),
+    sig: auth.sign(bert.id.privateKey, auth.receiptMessage(expected, '')),
   });
   if (stolen === false) {
     test.check('an answer to a request this node is not waiting on is dropped');
@@ -795,7 +799,7 @@ async function run() {
     // Somebody else's signature over the right hash.
     const bad = bert.P.onReply({
       hash: h, from: john.id.publicKey, text: '',
-      sig: auth.sign(auth.generateIdentity('x').privateKey, auth.receiptMessage(h)),
+      sig: auth.sign(auth.generateIdentity('x').privateKey, auth.receiptMessage(h, '')),
     });
     await sent;
     return bad;

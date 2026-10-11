@@ -161,7 +161,7 @@ function reply(w, target, hash) {
     from: target.publicKey,
     hash: hash,
     text: 'ok',
-    sig: auth.sign(target.privateKey, auth.receiptMessage(hash)),
+    sig: auth.sign(target.privateKey, auth.receiptMessage(hash, 'ok')),
   });
 }
 
