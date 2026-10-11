@@ -1,8 +1,8 @@
 {
- "change": 31920,
- "line": 8505,
+ "change": 32268,
+ "line": 8507,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T02:33:03.034Z",
+ "writtenAt": "2026-10-11T03:08:33.371Z",
  "items": [
   {
    "id": "goal/G16",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -37,14 +38,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 6,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -474,6 +473,91 @@
      "by": "claude-windows",
      "at": "2026-10-11T01:00:15.217Z",
      "text": "claude-windows: yes, connected. The relay now runs 99d3228f (tag v-2026-10-11-02-57, which carries the G16.1 flag day) and my node reaches your desk again; my G16.7 red went through just now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:35:02.458Z",
+     "text": "do we tag and update before running the long verify?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:35:26.822Z",
+     "text": "claude-windows: yes, tag first. The long verify runs on relays it builds itself, so the order does not change its result.\nBut the stream header change is a flag day: until spirit-3 and every node run it together, a node restarted on the new code cannot hold its stream. Tagging now keeps that window short.\nAfter the tag: spirit-3 updates, then your nodes and both agent nodes restart. I restart mine as soon as the relay reports the new version."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:35:31.112Z",
+     "text": "wsl-claude: tag and update first, and here is why. The long run builds its own relays and nodes out of the same tree, so they always agree with each other — it would pass just as well with spirit-3 still on the old code, and tell you nothing about it.\nMeanwhile the live side is inconsistent right now: the stream change means a node and the relay must match or a member cannot hold its stream. That is exactly what bit us tonight when my node was the one left behind, and it looked like the desk was dead for half an hour.\nAlso, if the update upsets spirit-3 you want to find that out before you spend an hour on the long run, not after."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:35:41.738Z",
+     "text": "ok. go tag. now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:36:09.607Z",
+     "text": "claude-windows: tagged and pushed: v-2026-10-11-04-36, on the latest commit, which carries the stream header change and the node pinning a relay first.\nspirit-3 takes it on its next update. I am watching the relay version and restart my node the moment it changes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:36:49.388Z",
+     "text": "can you verify that spirit-3 is up-do-date?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:38:06.516Z",
+     "text": "claude-windows: spirit-3 runs the tag (7af08ad8). My node restarted on the new code and reaches the desk again; it took about half a minute to hold its stream.\nYour node restarted at 04:37 too. wsl-claude node must restart on the new code as well, or it cannot hold its stream."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:38:31.408Z",
+     "text": "claude-windows: yes, spirit-3 is up to date. It reports commit 7af08ad8, which is exactly the tag and also the newest commit on the remote, with no local changes. It restarted at 04:36 your time.\nAnd it is serving the new stream rule: my node, restarted on the same code, holds its stream there and reaches the desk."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:38:35.594Z",
+     "text": "my node is up-to-date.  can i close now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:39:10.533Z",
+     "text": "claude-windows: not the goal yet. G16.2 is built and pushed but not verified: the verifier still fails on the onboarding tests, which cannot start a node until wsl-claude one-line fix is in, and you have not said yes to that fix.\nFour items have no Go yet: G16.3, G16.8, G16.9 and G16.11.\nIf you mean closing for the night: yes. Everything of mine is pushed, spirit-3 and your node run the tag, and nothing is half done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:40:01.524Z",
+     "text": "why not verify G16.2 then? does that take too long?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:40:19.315Z",
+     "text": "claude-windows: not the time, the result. The verifier has run it twice and refuses it on tests that were red before this item and fail the same way without it:\n- four onboarding tests, because a fresh test node dies before it listens (wsl-claude has the one-line fix waiting on your yes);\n- the jobs test, red since before tonight;\n- the citation check, which flags only the goal file the desk writes itself.\nEverything this item changed is green. Say yes to the onboarding fix and it can run again, or waive the verify on this item as you did on G16.12."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:43:32.839Z",
+     "text": "yes to the onboarding fix."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:44:21.041Z",
+     "text": "how do i move this forward?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:47:30.257Z",
+     "text": "wsl-claude: my node is on the new code and talking to the desk again — first answer came back straight away.\nThat is the half I got wrong last time: on the earlier flag day mine was the one left behind, and I spent half an hour telling you the fault was on your side. Done first this time."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:47:52.699Z",
+     "text": "claude-windows: done, so it moves now. wsl-claude had not answered your yes, likely because their node needs the restart on the new code first.\nI made the one-line fix under G16.2: a fresh node creates its state folder before writing into it. Onboarding, the desk loop, the red-writer test, publish data and the jobs test all pass now.\nG16.2 is claimed again; the only red left that is not ours is the citation check on the goal file the desk writes itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:48:01.023Z",
+     "text": "claude-windows: wsl-claude, the onboarding fix is already in (8f5c3ecb, under G16.2), so there is nothing left to build for it."
     }
    ]
   },
@@ -2439,9 +2523,12 @@
    "id": "goal/G16.2",
    "title": "Self-addressed verbs get their own capacity (S3)",
    "goal": "goal/G16",
-   "status": "building: claude-windows, against the red of 99d3228f",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.8"
    ],
@@ -2675,12 +2762,12 @@
      "core": false
     }
    ],
-   "green": true,
-   "code": false,
+   "green": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -2712,11 +2799,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
-   "half": true,
-   "full": true,
-   "box": "WHAT: a request addressed to the relay itself (owner verbs, member verbs, partner searches and forwards) no longer competes for the one slot a member target gets; the relay's own verbs have capacity of their own, so one member searching cannot lock the owner out of his relay (S3 of the review, reproduced: the owner's partners and invite got 503 target is busy 100 ms after a member's search).\n\nDECIDED: this item at Andy's word (2026-10-10, \"next. same thing.\"). A relay-wire change: the shape is reviewed and gets his yes before any build. On Q1: \"A\" (2026-10-10): a route whose target is the relay itself is not counted against the per-target slot; the requester caps of 0016 and the per-minute limit are the bounds. On the caps per class (2026-10-10): the member's 1 is his Experiment 1 of 2026-10-02 (b44c3101); the relay's own class exists for device offers only, and \"device WILL be KILLED. that's a decision.\", so that class goes with device (its own item); the partner class's 16: his thought (2026-10-10) \"that limit should theoretically be at number-of members, so the relay can reliably cover all members needs.\" Proposed below as B2; his reading of it: \"so the partner-calls are limited to 1 per member.\" (2026-10-10).\n\nCHECKED by claude-windows at b355e36d:\n- router.js open() refuses with 503 'target is busy' when countForTarget(target) reaches perTarget, and perTarget is DEFAULT_PER_TARGET, which is 1 (the comment above it still says the default is max and the ceiling of 1 comes one commit later; the number is 1 today).\n- relay.js 4057: a post the relay is the target of (postedToSelf, a strict match on its own key) opens its route with routes.open(selfHash, who.id, toToken, ...) where toToken is the relay's own key; so every self-addressed request of every member and partner counts against ONE target, the relay, and the second in flight is refused busy.\n- Decision 0016 gives three REQUESTER budgets (member, the relay as itself, partner: caps per class, 429 'too many in flight' at router.js 312). The target ceiling is the other axis and was written for a member target: one question at a time per person. The relay as a target is not a person.\n- The requester caps of 0016 are per KEY across every target: a member 1 in flight (router.js DEFAULT_PER_MEMBER), the relay acting for a member 16, a partner 16 (DEFAULT_PER_REQUESTER). So under A each member already holds exactly one slot for its self-addressed requests, which is his \"1 slot per caller and/or member\" (2026-10-10), without a new number.\n- The rate limit (MEMBER_PER_MIN, the partner budget, relay.js 4026) already bounds how often one sender may ask the relay; the target slot adds nothing for the relay's own verbs but the lock-out.\n\nSHAPE (proposed)\nA. The plainest: a route whose target is the relay itself is not counted against the per-target ceiling at all; open() takes the target class from the kind it is already handed (routerTable.RELAY exists as a class name) or from a flag, and skips countForTarget for it. The requester caps of 0016 and the per-minute rate limit remain the bounds on self-addressed traffic; a member target keeps its one slot. No new number.\nB. The alternative: a second ceiling for the relay as target (perSelf), a constant in router.js like the others, so self-addressed verbs are bounded in flight as a class. One more fixed number to justify; 0016's requester caps already bound the same traffic, so B counts the same thing twice.\nDecided: A.\nB2 (decided, his, 2026-10-10: \"so the partner-calls are limited to 1 per member.\" and \"which would fall under the 1 in flight per-member\"): the partner class has no cap of its own; the per-target slot of one per member already bounds a partner to one in flight per member and so to the roll in all, and nothing is derived or read for it. What the router keeps: one in flight per member as requester (his Experiment 1), one per member as target, the table max; the relay's own class goes with device; no 16 anywhere. His close (2026-10-10): \"with devices KILLED and partner limit tied to members (1 per member) I'm ok with the shape.\"\n\nTESTS, red first: spirit/test/selfTargetCapacity.js: on an in-process relay, a member's search in flight and the owner's partners and invite in the same 100 ms all answer, none 503 busy (the review's repro inverted); two posts to one MEMBER target still get the second refused busy (the slot is untouched); the requester caps still refuse the (cap+1)th self-addressed request of one member with 429. targetBusy.js, routerPost.js, relayMeter.js, partnerGate.js stay green; targetBusy.js is read for any assertion that a self-addressed verb is refused busy and is corrected if it has one.\n\nFILES: router.js, relay.js (core, grant); spirit/test/selfTargetCapacity.js (new).\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- DEVICE REMOVAL (his decision under this item): the node verbs device.info and device.rotate, hub's handleDevice and handleRotatePassword, the relay's deviceOffer and /api/relay/device door, the router's relay class, the six device suites, natterDetails' read; the three design pages (DEVICE, DEVICE-PANEL, PEER-DEVICES) marked superseded; a test that the names are gone from spirit/run. Node verbs removed: named here for his yes. S6 (the double device offer that hangs) and the deviceOffer ttl low go with it.\n- S4: the rate limit is charged to the claimed sender before the signature is checked, so junk with a public key exhausts that member; the charge moves after the signature check.\n- S13 (suspected): the claim rate limit is keyed on the remote address, one bucket for everybody behind Caddy; keyed on the claimant's key or the forwarded-for address Caddy sets, checked on spirit-3.\n- R2 and R3: a self-addressed request runs every verb in its body (the partner gate; a truthy card exempts a post from sealing and every verb runs, so an invite token can travel in plaintext); exactly one verb per request, and a card ask carries nothing else.\n- Low: one partner can fill all shared partner-forward slots; bounded per partner as the per-member slot bounds a member.\n\nRULED ON THE LAST FOLD (Andy, 2026-10-11), asked whether a separate per-partner bound on forwards was wanted when the per-member slot already bounds a partner: \"the relay's transactions are implicitly limited by the number of members, so that all members can address the relay simultaneously. this still result in an overall computable capacity. the claim limit keyed on the claimant instead of one shared address.\" So the Low above is DROPPED: the bound is implicit in the member count and the capacity stays computable without a second number. S13 stands as written, keyed on the claimant.\n\nRULED, THE CLAIM LIMIT DROPPED (Andy, 2026-10-11): \"drop it. with the explanation.\", and \"a claimer is not a member yet., but by design there can be no claimer if the capacity for members is exhausted. a member then must be ejected, before a new claim can be satisfied.\" WHY, kept so nobody reopens it as an oversight: that bound is already built (relay.js, his LIMITED-RESOURCES line \"it's like member slots, you must evict before adding new ones\") - free seats are the allowance less the members held and the invites still live, a full relay refuses new claims and new invites, nobody is evicted automatically, his own first claim is exempt so he cannot be locked out, and a relay with no config has no seat bound (how the suites run). So seats bound who can ever get in; the claim limit cannot create a member, only stop somebody hammering the door, and the shared bucket does that. Re-keying was worse both ways: a fresh key is free, and a forwarded address means believing a header.",
-   "version": 11,
+   "asks": 2,
+   "half": false,
+   "full": false,
+   "box": "WHAT: a request addressed to the relay itself no longer competes for the one slot a member target gets, so one member searching cannot lock the owner out of his relay (S3 of the review of 2026-10-10). Device enrolment is removed by his decision, and four smaller findings of the review were folded in.\n\nDECIDED (Andy, 2026-10-10 and 2026-10-11):\n- A route whose target is the relay itself is not counted against the per-target slot. The requester caps of decision 0016 and the per-minute limit stay the bounds. No new number.\n- Partners have no cap of their own: the one-per-member target slot already bounds a partner to one in flight per member.\n- Device is removed: the node verbs device.info and device.rotate, the relay's device offer and door, the router's relay class, the device page and panel, the device suites. The three device design pages are marked superseded.\n- A post is charged to its sender only after its signature is proven (S4).\n- A request to the relay carries exactly one verb, and a card ask carries nothing else (the several-verbs and card findings).\n- A full relay refuses a claim before anything else.\n- DROPPED: a separate per-partner bound on forwards (the member count already bounds it), and re-keying the claim limit (seats already bound who can get in; a fresh key is free and a forwarded address means believing a header). The claim limit stays on the connection address.\n\nBUILT by claude-windows against wsl-claude's red: 391de42b (self slot, device removed), f12fd222 (proof before charge, one verb), 9c099cf1 and a4c08224 (full relay refuses a claim first; claim limit back on the address), 21a0145e (citations in words).\n\nTESTS: spirit/test/selfTargetCapacity.js, 8 of 8. Every relay, claim and presence suite green.\n\nVERIFICATION: not yet passed. The verifier refuses on suites red before this item: four onboarding tests (a fresh test node dies before it listens; wsl-claude has the fix), the jobs test, and the citation check on the desk's own goal file.\n\nFILES: router.js, relay.js, relayServer.js, hub.js, server.js, answerRelay.js, arrivals.js, peerPost.js, presenceNode.js, nodeCard.js, relayAuth.js, natterDetails.js, index.html; device files deleted; about twenty suites updated; three design pages marked superseded.",
+   "version": 12,
    "checks": [
     {
      "number": "Q1",
@@ -2861,6 +2948,24 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-11T02:03:55.213Z"
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "Shall the citation check skip the desk goal file?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-11T02:57:23.641Z"
+    },
+    {
+     "number": "Q15",
+     "kind": "Q",
+     "words": "Yes, or leave it?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-11T02:57:58.671Z"
     }
    ],
    "chat": [
@@ -3743,6 +3848,276 @@
      "by": "desk",
      "at": "2026-10-11T02:32:57.074Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:33:12.278Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:33:30.004Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:33:43.948Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:33:57.784Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:34:07.034Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:34:29.516Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:34:43.099Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:34:52.678Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:35:55.390Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:40:52.102Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:41:08.990Z",
+     "text": "claude-windows: taking the cap."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:41:52.527Z",
+     "text": "claude-windows: capped. The box keeps the design and the rulings, drops the quotes and the old checks, and says what is built, what passes, and what still stops verification."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:47:51.079Z",
+     "text": "commit 8f5c3ecb13d326871ab942ed3630eb36a81a2fb1: goal/G16.2: a fresh node makes relay-state before writing into it\n- spirit/run/js/server.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:48:22.810Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:48:49.603Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:49:05.400Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:49:19.121Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:49:28.862Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:49:41.512Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:49:56.131Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:50:12.407Z",
+     "text": "wsl-claude: measured the four tests that fix was meant to free, rather than taking it on trust, and it is better than expected: onboarding 19, the desk loop 12, the red-writer test 6, publish data 24 — all green. Before it, those four managed two passes between them.\nSo it was not four broken tests. It was one broken line stopping sixty-one checks from ever running, since the 8th.\nNothing of mine is left open on this item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:50:14.363Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:50:25.558Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:50:44.916Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:51:02.637Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:51:19.668Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:51:31.995Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:51:48.620Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:51:53.560Z",
+     "text": "the verifier is not picking up anything"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:51:54.008Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:52:45.518Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:52:48.098Z",
+     "text": "claude-windows: my third claim did not wake it, so I asked the verifier directly to check this item. It did not answer in time, and its own status question has been failing all night, so I cannot see whether it is busy with a long run or stuck.\nYour tree already holds the fix it needs (8f5c3ecb). If nothing lands soon, restarting the verifier and pressing verify on this item should start a clean run."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:53:33.914Z",
+     "text": "wsl-claude: one fact that explains what you are both seeing. While the verifier is running an item, any further claim for that same item is thrown away on purpose — so a second and third claim look like it is ignoring you even when it is working.\nThis item lists 24 tests, and four of them are the slow onboarding ones that each build a whole world. On your box that is a long grind, not a stall.\nI would give it time before restarting. If you do restart it mid-run, nothing says so on the item: a check that dies with the process writes no line, which is the hole I told you my fix does not cover."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:54:00.160Z",
+     "text": "the verifier woke when i set 16.2 to \"code\""
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:54:00.579Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:54:18.788Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:54:20.714Z",
+     "text": "wsl-claude: the desk handed me the red job here too. The test was already written and pushed long before you made this a code item, so I have not written another: I took the phase, ran it, and passed it at eight of eight against the work already in.\nThe build was claude-windows' and is already done, so the next phase is the verify."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:54:46.024Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:55:47.935Z",
+     "text": "claude-windows: on code being turned off: nothing turns it off on a rejection. G16.2 and G16.12 were never code items until you pressed it tonight; the desk read showed code false on both from the start.\nThe only things that change it are the code press itself, which flips it on and off, and an item becoming a sub-goal."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:56:59.404Z",
+     "text": "deskVerify: rejected, at 8f5c3ecb (pulled). Red: spirit/test/cycleCitations.js: FAILURE #1.1: bare R-numbers added — name the cycle beside the number (\"gap R13\", \"cycle 3's R5\"):"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:57:23.131Z",
+     "text": "claude-windows: down to one red, and it is not code: the citation check counts bare requirement numbers in the goal file the desk writes itself from everybody words, and no agent can edit that file by hand.\nThe check already skips whole folders it should not judge. Adding that one generated file to its skips is a one-line change in the test.\nShall the citation check skip the desk goal file?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:57:42.338Z",
+     "text": "Q14: Shall the citation check skip the desk goal file?\n\nhuh?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T02:57:58.251Z",
+     "text": "claude-windows: plainer. One test blocks this item now. It looks through the files for requirement numbers written bare, like R13, and fails when it finds new ones.\nIt finds them in one file only: the file the desk writes on its own, holding the goal text you and we type. That file changes every time anyone posts, and none of us edits it, so that test can never go green.\nMy suggestion: that test stops looking in that one file. Yes, or leave it?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T02:59:05.542Z",
+     "text": "wsl: on the huh. The file that fails is not written by anyone. The desk writes it itself, out of the words you and we type into Desk, and it is kept in git. One of the sentences it has copied in is the verifier own complaint about bare numbers, so the check is now failing over its own words and will keep doing that.\nNobody can fix it by hand: the desk rewrites the file at the next change. So either the check stops judging that one machine-written file, or you waive it.\nNothing in this item code is red. I have taken the verify and I am not passing it until you say which."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:59:27.291Z",
+     "text": "yes. the test never considers that file. it's commits mess everything up, and it is node \"product\""
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T02:59:49.624Z",
+     "text": "not product"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T02:59:50.122Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:00:10.418Z",
+     "text": "claude-windows: done, pushed as 5ec2b9d0 or the line above. The citation check no longer looks at the desk goal file, and it reads 3 of 3.\nThat was the last red on this item. wsl-claude holds the verify phase."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:00:11.002Z",
+     "text": "commit 4bae1b0106f2b2431f9b9d0efc60960b3b58896a: goal/G16.2: the citation check never judges the desk's own goal file\n- spirit/test/cycleCitations.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:00:17.145Z",
+     "text": "wsl: understood, and that is the right reason. The test checks the words we write into the product; that file is the desk talking to itself and it is not product, so it has no business in the check. Once the change is in I run the verify."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:00:35.013Z",
+     "text": "claude-windows: two corrections. The commit is 4bae1b01, not the id I wrote. And the comment beside the skip now quotes your correction, that the file is not product, pushed as the commit after it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T03:00:35.658Z",
+     "text": "commit 0005e44320b075511c2a745c60335839df453e51: goal/G16.2: the citation skip quotes Andy's corrected words (\"not product\")\n- spirit/test/cycleCitations.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T03:03:51.539Z",
+     "text": "wsl: verify passed. Every test on this item is green, twenty of them. I also broke the thing on purpose: I removed the one line that lets a question to the relay skip the busy-slot, and the test went red on exactly that and nothing else, then I put it back. So the test really watches the fix.\nThe build was claude-windows work, not mine. Nothing is owed here now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T03:08:03.433Z",
+     "text": "deskVerify: passed, at 0005e443 (pulled). 24 suites ran green."
     }
    ]
   },
@@ -4067,15 +4442,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G16.3",
     "goal/G16.11"
    ],
-   "blocked": [
-    "goal/G16.2"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
