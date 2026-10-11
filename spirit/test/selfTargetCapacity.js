@@ -167,7 +167,7 @@ test.subHeading('4. the device names are gone from the node and the relay');
 }
 
 
-// ── 5. S4: THE RATE IS CHARGED TO A PROVEN SENDER, NOT A CLAIMED ONE ────
+// ── 5. THE RATE IS CHARGED TO A PROVEN SENDER, NOT A CLAIMED ONE ────────
 //
 // The rate limit is charged before the post's signature is checked, so junk
 // carrying a member's public key spends that member's budget: anyone who
@@ -186,14 +186,17 @@ test.subHeading('5. a post is charged to the sender only once its signature is p
   else test.fail(OWED + 'the rate is charged first: signature at ' + sigAt + ', rate at ' + rateAt);
 }
 
-// ── 6. R2 and R3: ONE VERB PER REQUEST ──────────────────────────────────
+// ── 6. ONE VERB PER REQUEST ─────────────────────────────────────────────
 //
+// (The two findings of the review of 2026-10-10 about this, cited by what they
+// say: that review is not a cycle, and a bare requirement number names a
+// different thing in each of them — test/cycleCitations.js.)
 // answerSelfInner runs a SEQUENCE of independent `if (body && body.x)`
 // blocks, so one request carrying several verbs runs all of them. With a
 // truthy `card` exempting a post from sealing, an invite token can travel in
 // plaintext beside the card ask. One verb per request, and a card ask carries
 // nothing else.
-test.subHeading('6. a request to the relay carries exactly one verb (R2, R3)');
+test.subHeading('6. a request to the relay carries exactly one verb');
 {
   const w = relayWith(['ann']);
   const two = askSelf(w, w.owner, { partners: {}, invite: { name: 'carol', days: 7 } });
