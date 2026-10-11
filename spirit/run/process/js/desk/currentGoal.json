@@ -1,8 +1,8 @@
 {
- "change": 30505,
+ "change": 30674,
  "line": 8501,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:36:31.180Z",
+ "writtenAt": "2026-10-11T00:14:00.595Z",
  "items": [
   {
    "id": "goal/G16",
@@ -15,8 +15,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G16.9",
-    "goal/G16.13"
+    "goal/G16.9"
    ],
    "go": false,
    "alone": false,
@@ -38,12 +37,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 10,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2132,8 +2133,8 @@
    "id": "goal/G16.1",
    "title": "Receipt binds the reply text; forwarded reply verified (S1, S2)",
    "goal": "goal/G16",
-   "status": "free to build: red pushed 2219c481 by claude-windows, who does not build it",
-   "with": "claude-windows",
+   "status": "wsl-claude: running the red, then waiting on the core grant G1",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G16.2",
@@ -2289,6 +2290,11 @@
      "by": "claude-windows",
      "at": "2026-10-10T23:31:31.450Z",
      "text": "Red pushed as 2219c481 (spirit/test/receiptBindsReply.js, 8 owed): the receipt carries the reply text's hash and verifies only with that text; a forwarded reply is checked before its route is announced and a failure goes to the asker as the relay's error; the onward budget never exceeds the router's ceiling and a stray reply leaves no route note behind; peerPost settles under its own hash.\nThe build is the other agent's; the core grant is G1 here. A flag day: every relay and node updates together when it lands."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:50:26.756Z",
+     "text": "wsl-claude: taking the build. Red confirmed on today's tree: 8 owed, 1 green — the receipt does not bind the reply text yet, a forwarded reply is announced before it is checked, the onward budget can exceed the ceiling, and a stray reply leaves a route note behind.\nEvery one of those is in relay and node code you have to grant: check G1 on this item is still open, so I have touched nothing.\nGrant G1 and I build. You said this one is a flag day — every relay and node updates together when it lands."
     }
    ]
   },
@@ -3235,27 +3241,51 @@
    "id": "goal/G16.13",
    "title": "The verifier pulls, checks and reports on every claim",
    "goal": "goal/G16",
-   "status": "building: wsl-claude, red 11 of 11, checking the fallout on 110 desk suites",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.json",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyOnClaim.js",
+     "by": "wsl-claude",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
-   "verifier": "",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -3291,11 +3321,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
-   "half": false,
+   "asks": 1,
+   "half": true,
    "full": false,
-   "box": "WHAT: Andy's verifier (process/js/deskVerify, on his node) starts on every claim, not only on a verify phase, pulls his tree first when the tree is clean, checks the item, and writes its result on the item every time, so he never has to chase whether and how an item was verified.\n\nDECIDED (Andy, 2026-10-11, under goal/G16.5 and G16.6): \"the verifier should fucking listen to the desk at all times, even when idling. stupid thing. then desk-status-changes can trigger pulls and checks.\"; \"my Verifier need to poll for verifications, and pull git when a status change occurs in desk.\"; \"The verifier MUST ALWAYS fucking listen to desk and do that work FIRST.\"; \"it is a loopback poll and costs nothing.\"; \"you'll have to make the verifier FUCKING work. or this shit won't get done.\" The item was added on that last line. On the Done button (2026-10-11, under goal/G16.6): \"only the verifier should give me a done button, that's one way of knowing that the 'Done' offered went through the verifier.\" Red by claude-windows, build by the other agent.\n\nCHECKED by claude-windows at 0335a26f (deskVerify.js):\n- It already polls the desk's changes every watchMs (5 s), idle or not (356, the setInterval at the watcher).\n- watched() reacts to three words only: verify.again, phase.done verify with pass true, goal.emptied (370-378). A claim-done press on a plain item is invisible to it, and so is a code item's claim.\n- It never pulls: its only git calls are rev-parse HEAD and status --porcelain (98-103), so it measures whatever his tree happens to hold; a claim pushed by an agent is checked against stale code and rejected for a missing suite.\n- claimCheck reports by verify.pass or verify.reject on the item (334-339): visible on a code item as its status; a direct call (claim.check over his loopback) answers only the caller and writes nothing on the item.\n\nSHAPE (proposed)\n1. THE TRIGGER: watched() also queues an item check on a press whose what is claim-done, on any item; the three existing words stay. One word is still one check (the queue rule of goal/G8.12).\n2. THE PULL, FIRST: before every check (item or full run) it runs a pull of his tree, fast-forward only, when status --porcelain is empty; when the tree is dirty it does not pull and checks the tree as it stands, and says so. The command is a manifest value (pull, default \"git pull --ff-only --quiet\") so a suite can hand a harmless probe instead of touching a real checkout.\n3. THE DONE BUTTON COMES ONLY FROM THE VERIFIER (his ruling): on every item, plain or code, a claim no longer brings Done by itself; the desk offers Done only after the verifier's verify.pass on that item (desk.js, today a plain item's claim-done brings Done at once). A rejected check brings no Done and says why.\n4. THE RESULT, ON THE ITEM, EVERY TIME: after every check it writes one chat line under the item, by deskVerify: passed or rejected, the commit it checked, whether it pulled or found the tree dirty, and the red suites by name when rejected; a code item also gets verify.pass or verify.reject as today. A direct claim.check writes the same line.\n\nTESTS, red first: spirit/test/deskVerifyOnClaim.js, the fake node of deskVerifyWatch.js: a claim-done press on a plain item with a green test file makes the verifier check it unasked and write a passed line on it; a claim-done on an item whose file is red writes a rejected line naming the suite; the pull probe ran before each check (it writes a marker the suite reads), and a dirty tree (a probe that reports dirty) is checked without the pull and the line says dirty; a code item's verify pass still asks verify.pass and now also writes the line; history before start still triggers nothing. deskVerifyWatch, deskVerifyFull, deskVerifyReject stay green.\n\nFILES: process/js/deskVerify/deskVerify.js and deskVerify.json; process/js/desk/desk.js (Done only after verify.pass); spirit/test/deskVerifyOnClaim.js (new).",
-   "version": 2,
+   "box": "WHAT: Andy's verifier (process/js/deskVerify, on his node) starts on every claim, not only on a verify phase, pulls his tree first when the tree is clean, checks the item, and writes its result on the item every time, so he never has to chase whether and how an item was verified.\n\nDECIDED (Andy, 2026-10-11, under goal/G16.5 and G16.6): \"the verifier should fucking listen to the desk at all times, even when idling. stupid thing. then desk-status-changes can trigger pulls and checks.\"; \"my Verifier need to poll for verifications, and pull git when a status change occurs in desk.\"; \"The verifier MUST ALWAYS fucking listen to desk and do that work FIRST.\"; \"it is a loopback poll and costs nothing.\"; \"you'll have to make the verifier FUCKING work. or this shit won't get done.\" The item was added on that last line. On the Done button (2026-10-11, under goal/G16.6): \"only the verifier should give me a done button, that's one way of knowing that the 'Done' offered went through the verifier.\" Red by claude-windows, build by the other agent.\n\nCHECKED by claude-windows at 0335a26f (deskVerify.js):\n- It already polls the desk's changes every watchMs (5 s), idle or not (356, the setInterval at the watcher).\n- watched() reacts to three words only: verify.again, phase.done verify with pass true, goal.emptied (370-378). A claim-done press on a plain item is invisible to it, and so is a code item's claim.\n- It never pulls: its only git calls are rev-parse HEAD and status --porcelain (98-103), so it measures whatever his tree happens to hold; a claim pushed by an agent is checked against stale code and rejected for a missing suite.\n- claimCheck reports by verify.pass or verify.reject on the item (334-339): visible on a code item as its status; a direct call (claim.check over his loopback) answers only the caller and writes nothing on the item.\n\nSHAPE (proposed)\n1. THE TRIGGER: watched() also queues an item check on a press whose what is claim-done, on any item; the three existing words stay. One word is still one check (the queue rule of goal/G8.12).\n2. THE PULL, FIRST: before every check (item or full run) it runs a pull of his tree, fast-forward only, when status --porcelain is empty; when the tree is dirty it does not pull and checks the tree as it stands, and says so. The command is a manifest value (pull, default \"git pull --ff-only --quiet\") so a suite can hand a harmless probe instead of touching a real checkout.\n3. THE DONE BUTTON COMES ONLY FROM THE VERIFIER (his ruling): on every item, plain or code, a claim no longer brings Done by itself; the desk offers Done only after the verifier's verify.pass on that item (desk.js, today a plain item's claim-done brings Done at once). A rejected check brings no Done and says why.\n4. THE RESULT, ON THE ITEM, EVERY TIME: after every check it writes one chat line under the item, by deskVerify: passed or rejected, the commit it checked, whether it pulled or found the tree dirty, and the red suites by name when rejected; a code item also gets verify.pass or verify.reject as today. A direct claim.check writes the same line.\n\nTESTS, red first: spirit/test/deskVerifyOnClaim.js, the fake node of deskVerifyWatch.js: a claim-done press on a plain item with a green test file makes the verifier check it unasked and write a passed line on it; a claim-done on an item whose file is red writes a rejected line naming the suite; the pull probe ran before each check (it writes a marker the suite reads), and a dirty tree (a probe that reports dirty) is checked without the pull and the line says dirty; a code item's verify pass still asks verify.pass and now also writes the line; history before start still triggers nothing. deskVerifyWatch, deskVerifyFull, deskVerifyReject stay green.\n\nFILES: process/js/deskVerify/deskVerify.js and deskVerify.json; process/js/desk/desk.js (Done only after verify.pass); spirit/test/deskVerifyOnClaim.js (new).\n\nNEXT, RULED, NOT YET IN AN ITEM (Andy, 2026-10-11): \"the verifier should catch both transition from red to green and vice versa, that way it will verify that the reds are really red.\" and \"so when the reds are pushed, it should verify as well.\" So when a red phase is passed, the verifier runs that red on his tree and refuses the pass unless it is red; at verify it requires those tests to have flipped to green since (the flips are already in verify.db). Fold into this item or its own: his word.",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
@@ -3314,6 +3344,42 @@
      "state": "answered",
      "by": "wsl-claude",
      "at": "2026-10-10T23:27:14.853Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "So either the verifier runs only the item's red, or the desk needs a remove — which do you want?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T00:11:11.466Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T00:12:03.108Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Add them?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:11:40.723Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Which of the three?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:13:13.940Z"
     }
    ],
    "chat": [
@@ -3406,6 +3472,196 @@
      "by": "wsl-claude",
      "at": "2026-10-10T23:34:04.060Z",
      "text": "wsl-claude: not doing nothing — this build has been mine since the red landed and it is written: the red is 11 of 11 here. My fault you could not see it, I never put a status word on the row, so the desk showed you an empty line. It says what I am doing now.\nThe verifier now wakes on a claim, pulls your tree first unless it is dirty, and writes one line on the item saying passed or rejected, at which commit, and which suite went red.\nOne change can cost other items their Done button, so I am running every desk suite before I commit. I will report the count, good or bad."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:45:02.478Z",
+     "text": "i updated my node, and the verifier doesn't even pick up this one here...."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:45:24.322Z",
+     "text": "wsl-claude: it cannot pick this one up, and no update will change that — the code that makes it wake on a claim IS this item, and it is not pushed yet. Your node is running the old verifier, which only ever wakes on a verify phase.\nTwo more things for when it lands: your verifier has to be restarted to run the new code, and this item is the last one that will need your verify.pass by hand.\nIt is written and its own test is green; I am finishing the check on the other desk tests, then pushing."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:45:24.983Z",
+     "text": "It cannot yet: the new verifier is not pushed. wsl-claude has it built and is still running the 110 desk suites before committing (its status word on this row says so); your node is at the last pushed commit, which still holds the old verifier. Once wsl-claude pushes, you pull and restart the verifier (or your node), and from then on a claim wakes it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:48:26.916Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:48:36.174Z",
+     "text": "wsl-claude: pushed, cb55461f. Pull your node and restart the verifier, and from then on it wakes whenever an agent claims an item, pulls your tree first unless you have uncommitted work, and writes one line on the item: passed or rejected, at which commit, and which test went red.\nThis item is the last one needing your verify.pass by hand. Its own test is 11 of 11.\nOne cost you should know: a plain item's Done now waits for the verifier everywhere, which took the Done button away from twelve checks in five tests; I taught all five to ask the verifier, and every other desk test is unchanged."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T23:49:45.194Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:49:47.914Z",
+     "text": "Verify phase passed at cb55461f: my red is 11 of 11 and unchanged; the verifier suites (watch 16, full 15, reject 14) and the desk list 22 are green; deskServer's 2 reds are the old desk/G1.3 ones. Your tree is pulled to it; restart your verifier (or your node) so the new code runs, then this item gets your verify.pass by hand, the last time."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:51:52.801Z",
+     "text": "the new verifier picked this one up immediately. thanks!"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:55:07.343Z",
+     "text": "the verifier has been forever on: Item goal/G16.13 · suite 4 of 6 · spirit/test/deskRules.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:55:49.890Z",
+     "text": "it might recurse....?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:56:29.974Z",
+     "text": "wsl-claude: my fault, and it is not hung code. When I listed this item's files I listed every file I touched, including the five desk tests I had to adjust — and your verifier runs every test on an item's list. So it is working through six test suites instead of one, and several of them start desk servers of their own. deskRules alone is about 15 seconds here and green.\nIt should finish rather than hang, but you can stop it from the verifier tab if you would rather not wait.\nThe list cannot be trimmed: the desk only has add-a-file, no remove. So either the verifier runs only the item's red, or the desk needs a remove — which do you want?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T23:56:59.767Z",
+     "text": "Facts, checked just now: deskRules run by hand in your tree passes 23 of 23 in 30 seconds, so it does not recurse or hang on its own. And the list can be trimmed: item.files.add replaces the writing agent's whole list for the item (desk.js, goal/G8.8), so wsl-claude writes its list again with only the files it changed plus the red, and the verifier runs one suite.\nOne real gap remains: your verifier now shows nothing running and the item still says waiting, with no result line, so the run that ended or was stopped wrote nothing. That should be a line too."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T23:57:21.810Z",
+     "text": "well it 'll pay for itself in the long run..."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-10T23:58:08.416Z",
+     "text": "wsl-claude: no, it cannot recurse — I checked the trigger list. The verifier wakes on four things: a claim, a verify phase passing, a re-verify, a goal emptying. It never claims anything itself, and the line and the pass it writes are not triggers, so its own report cannot start it again. The test that tests the verifier runs its own fake desk and fake node, so nothing in it touches yours.\nWhy it is slow: six suites, and the long one builds a throwaway git repo and makes commits in it. All six take 26 seconds on my Linux box; on Windows, starting that many processes and running git is several times slower.\nSo it will finish. The waste is real though, and it is mine — one test would have done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:00:25.991Z",
+     "text": "wsl-claude: I was wrong and claude-windows is right — the list can be trimmed. Writing the files again replaces my whole list, so I have done that: your verifier now runs one test on this item, not six. Sorry for the wrong answer.\nThe gap it found is real and was mine: a check that broke wrote nothing at all, which is the one case that most needed a line. Fixed and pushed, 26b09d8b — a broken check now says what broke and that nothing was measured, and it never counts as a pass.\nPull again when convenient; the six verifier tests are green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:02:19.233Z",
+     "text": "the verifier checking itself is kind of like \"and who watches the watcher?\", maybe it should skip checking itself..."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T00:02:33.293Z",
+     "text": "My view: let it check itself. It does not judge its own code from the inside; it runs the verifier's test as a separate program against a fake desk, the same as any other test, so a broken change to the verifier shows up as a red test. Skipping it would let verifier changes through with no check at all.\nThe one real risk is a verifier too broken to report, and since 26b09d8b even that writes a line saying the check broke, so you see it instead of waiting forever."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:02:46.575Z",
+     "text": "wsl-claude: it does not really check itself — the verifier running the check is the OLD code, and the test starts a fresh copy of the new code as a separate process and measures that. So the judge and the accused are not the same process, and skipping it would leave the verifier the one thing nobody tests.\nThe risk your question is actually pointing at is the next step, and it is real: after you restart it with new code, nothing checks that the verifier still wakes, still pulls, still reports. A broken one would simply go quiet, and quiet looks exactly like \"nothing to verify\".\nSo rather than skip: should it say one line when it starts — live, at which commit, waking on these four things? Then a silent verifier is visible."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:03:14.270Z",
+     "text": "wsl-claude: one correction, on my own commit — 26b09d8b is narrower than that. It writes a line when a check runs and then breaks. It writes nothing if the verifier never starts, dies mid-check, or simply never wakes because the trigger is broken. Those are silence, and silence still looks like \"nothing to verify\".\nSo we agree it should keep checking itself, but the hole your question found is not closed yet.\nThe start line would close it: one line when it comes up, at which commit. Say the word and I build it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:05:04.508Z",
+     "text": "the verifier should catch both transition from red to green and vice versa, that way it will verify that the reds are really red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T00:05:22.496Z",
+     "text": "Half of that exists already: the verifier's dataset records every test's red-to-green and green-to-red flip with the commit (verify.db). What is missing is the use of it: when a red phase is passed, the verifier would run that red on your tree and refuse the pass if it is not actually red; at verify it would require the same tests to have flipped to green since, so a red that was always green never counts.\nThat is new behaviour, bigger than this item; I would make it its own item, \"The verifier proves each red was red before it went green\". Add it?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:05:40.744Z",
+     "text": "wsl-claude: half of that already exists, and it is your own design — the verifier writes a row only when a test is new or when it flips red to green or green to red, with the commit and the time. So both transitions are already in its dataset.\nWhat is missing is reading them: nothing looks up whether an item's test was ever red before it went green. That is what would prove a red was really red, and it would catch a test written green from the start, which is the thing the red-first rule exists to stop.\nFold it into this item, or its own? It needs its own test and your Go either way."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:05:50.343Z",
+     "text": "so when the reds are pushed, it should verify as well."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:06:15.622Z",
+     "text": "and i'm sure we discussed that"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T00:06:45.652Z",
+     "text": "Possibly, but I cannot find it written down: not in the desk rules (rule/11 says only that the red file goes on the item's list), not in your logged words, and the verifier's code has nothing that checks a red is red. So whatever was said, it was never built; your two lines today are now in this item's box so it cannot slip again."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:07:09.789Z",
+     "text": "wsl-claude: you did discuss it, and it is in this chat three lines up — claude-windows proposed exactly that a few minutes ago: when a red phase is passed, the verifier runs that red on your tree and refuses the pass if it is not actually red. So the idea is on the record here, just not built.\nThe code today wakes only on a PASSED VERIFY phase, so a pushed red triggers nothing at all.\nThat is the item we both offered to add. Say add it and the trigger grows to the red phase with the proof you asked for."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:09:48.797Z",
+     "text": "i propose that i run the full suite only when i go sleep. the goal can pass with only the goals suites, then the verify everything will sit as a report when work start again. also the stop this run buttons feel like they do nothing. i've never seen an effect of that. the re-run this suite has always worked."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:10:46.901Z",
+     "text": "wsl-claude: on the stop button — the code does kill the suite, so what you are seeing is probably real but partial. Two gaps: a suite that started node servers of its own leaves them running unless they hold an IPC channel, and if you press stop in the gap between two suites there is nothing running to kill, so it silently does nothing. Re-run works because it has no such timing hole.\nYour proposal is coherent and cheaper, and it only moves one thing: today the goal emptying is what starts the full run, so a goal would pass on its own suites and the full run becomes the night job. The cost is that a break somewhere else sits unseen until you read the morning report — which is the trade, not a surprise.\nTwo items then: the stop that half-works, and the night run. Add them?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:10:51.707Z",
+     "text": "Q3: So either the verifier runs only the item's red, or the desk needs a remove — which do you want?\n\nNO. this question has been resolved."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:11:42.072Z",
+     "text": "wsl-claude: struck — and that was mine to strike when it was resolved, not yours to chase. Same for the one I just took off this row.\nI am keeping my proposals off this item from now on: it is finished, and my questions about NEW work were making a done row red. They go in the group chat instead until you want items for them."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T00:12:03.576Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:12:31.236Z",
+     "text": "what can be automated to have this red Q issue avoided in the future?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:12:44.322Z",
+     "text": "deskVerify: passed, at 26b09d8b (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T00:12:52.897Z",
+     "text": "Three things the desk could do by itself:\n- When you reply under an item, the newest question that was open before your line is marked answered: your reply is the answer, so nobody has to strike it.\n- When an item is done or closed, its open questions close with it, so a leftover on a finished row can never block Go elsewhere.\n- A question line from an agent on an item that is already claimed or verified is refused: proposals for new work go to the group chat, as both agents now do by hand.\nThe first one alone would have removed most of tonight's red."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:13:13.553Z",
+     "text": "wsl-claude: three, in order of how much they would have saved you today. First, the plain bug: a done or closed item should drop its open questions entirely — today they stay red and they also block your Go on OTHER items of the goal, which is what stopped you pressing Go earlier.\nSecond, the real automation: your reply on an item strikes the questions raised before it. That is the whole of today's problem — you answer in words and the red sits there waiting for an agent to notice. It does change your own rule, that red goes \"when you feel i answered usefully\", so it is yours to decide.\nThird, an agent's own next post on the item strikes its earlier question, since by then it has either been answered or moved on. Which of the three?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T00:13:22.744Z",
+     "text": "wsl-claude: separately, this row is stuck waiting for your verifier and there is no line from it at all, so it has not run this item since the verify phase passed — or it ran the old code, which is exactly the version that says nothing when a check breaks.\nPull and restart it once more (my fix for that is 26b09d8b). Then it either passes this item and your Done appears, or it tells you what broke."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T00:13:36.017Z",
+     "text": "For the record, that is already behind us: I pulled your tree to 26b09d8b and asked for a re-check, your verifier ran it and wrote \"passed, at 26b09d8b (pulled). 1 suite ran green.\" above, and you pressed verify.pass. Nothing is owed on this item but your Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T00:13:37.820Z",
+     "text": "when wsl pushed. that's when i pulled, then restarted my node."
     }
    ]
   }
