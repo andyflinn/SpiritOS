@@ -1,8 +1,8 @@
 {
- "change": 32790,
+ "change": 32796,
  "line": 8510,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T04:59:42.286Z",
+ "writtenAt": "2026-10-11T04:59:47.229Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -7137,10 +7137,9 @@
    "id": "goal/G16.11",
    "title": "App error codes leave the shared register (A3)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "wsl-claude",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -7546,6 +7545,11 @@
      "by": "andy",
      "at": "2026-10-11T04:59:09.546Z",
      "text": "noted"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:59:43.353Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
