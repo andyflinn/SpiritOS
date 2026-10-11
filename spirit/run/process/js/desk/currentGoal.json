@@ -1,8 +1,8 @@
 {
- "change": 32744,
+ "change": 32745,
  "line": 8510,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T04:52:12.147Z",
+ "writtenAt": "2026-10-11T04:52:15.862Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -5070,10 +5070,9 @@
    "id": "goal/G16.3",
    "title": "The relay list leaves the Natter folder for node state (A1)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
