@@ -51,7 +51,7 @@ const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'visual', 
 // THE DESK'S OWN GOAL FILE IS NEVER JUDGED (goal/G16.2). The desk writes it
 // itself from everybody's words and commits it on every change, so nobody can
 // cite in it by hand. Andy: "the test never considers that file. it's commits
-// mess everything up, and it is node \"product\"".
+// mess everything up", and it is "not product".
 const SKIP_FILES = ['spirit/run/process/js/desk/currentGoal.json'];
 
 // ── THE TALLY, AS FOUND ON 2026-09-22 ───────────────────────────────
