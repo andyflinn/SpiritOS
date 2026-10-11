@@ -166,4 +166,61 @@ test.subHeading('4. the device names are gone from the node and the relay');
   else test.fail(OWED + left.length + ' device name(s) left: ' + left.slice(0, 6).join(' | '));
 }
 
+
+// ── 5. S4: THE RATE IS CHARGED TO A PROVEN SENDER, NOT A CLAIMED ONE ────
+//
+// The rate limit is charged before the post's signature is checked, so junk
+// carrying a member's public key spends that member's budget: anyone who
+// knows a key can rate-limit its owner off the relay. The charge belongs
+// after the proof. Asserted on the order in the source, deterministically,
+// rather than by sending the 600 posts a minute the cap allows.
+test.subHeading('5. a post is charged to the sender only once its signature is proven (S4)');
+{
+  const src = fs.readFileSync(path.join(RUN, 'js', 'relay.js'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
+  const fn = src.indexOf('function routePost');
+  const body = fn === -1 ? '' : src.slice(fn, src.indexOf('\n  function ', fn + 10));
+  const rateAt = body.search(/rateOk\(/);
+  const sigAt = body.search(/postSignatureFor\(/);
+  if (rateAt !== -1 && sigAt !== -1 && sigAt < rateAt) test.check('the signature is checked before the rate is charged, so junk cannot spend somebody else\'s budget');
+  else test.fail(OWED + 'the rate is charged first: signature at ' + sigAt + ', rate at ' + rateAt);
+}
+
+// ── 6. R2 and R3: ONE VERB PER REQUEST ──────────────────────────────────
+//
+// answerSelfInner runs a SEQUENCE of independent `if (body && body.x)`
+// blocks, so one request carrying several verbs runs all of them. With a
+// truthy `card` exempting a post from sealing, an invite token can travel in
+// plaintext beside the card ask. One verb per request, and a card ask carries
+// nothing else.
+test.subHeading('6. a request to the relay carries exactly one verb (R2, R3)');
+{
+  const w = relayWith(['ann']);
+  const two = askSelf(w, w.owner, { partners: {}, invite: { name: 'carol', days: 7 } });
+  if (two && two.ok === false && two.status === 400) test.check('a request carrying two verbs is refused 400, so no verb runs by riding along with another');
+  else test.fail(OWED + 'a request with two verbs was taken: ' + short(two));
+
+  const w2 = relayWith(['ann']);
+  const withCard = askSelf(w2, w2.people.ann, { card: true, invite: { name: 'carol', days: 7 } });
+  if (withCard && withCard.ok === false) test.check('and a card ask carrying another verb is refused, so nothing travels beside it unsealed');
+  else test.fail(OWED + 'a card ask carried another verb: ' + short(withCard));
+}
+
+// ── 7. S13: THE CLAIM LIMIT IS NOT ONE BUCKET FOR EVERYBODY ─────────────
+//
+// The claim rate limit is keyed on the remote address, and behind Caddy every
+// claimant shares one address — so one bucket for the whole internet: one
+// noisy claimer locks out every real one, and a claimer behind a different
+// proxy is unlimited. Keyed on the claimant instead (its own key, or the
+// address Caddy forwards).
+test.subHeading('7. the claim limit is keyed on the claimant, not on one shared address (S13)');
+{
+  const src = fs.readFileSync(path.join(RUN, 'js', 'relay.js'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
+  const at = src.search(/rateOk\(\s*claimHits\s*,\s*([A-Za-z_$][\w$]*)/);
+  const keyed = at === -1 ? '' : (src.slice(at).match(/rateOk\(\s*claimHits\s*,\s*([A-Za-z_$][\w$]*)/) || ['', ''])[1];
+  if (keyed && !/^clientKey$/.test(keyed)) test.check('the claim bucket is keyed on ' + keyed + ', not on the connection address');
+  else test.fail(OWED + 'the claim bucket is still keyed on the connection address (' + (keyed || 'not found') + ')');
+}
+
 test.reportSuccessFailureCount();
