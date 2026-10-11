@@ -2892,7 +2892,7 @@ function createRelay(rootDir, deps) {
     } };
   }
 
-  // ── ONE VERB PER REQUEST (goal/G16.2, R2 and R3 of the review of
+  // ── ONE VERB PER REQUEST (goal/G16.2: the several-verbs and the card findings of the review of
   // 2026-10-10) ──────────────────────────────────────────────────────────
   //
   // answerSelfInner is a sequence of independent `if (body && body.x)`
@@ -3049,7 +3049,7 @@ function createRelay(rootDir, deps) {
     var parsed = null;
     try { parsed = JSON.parse(String(text || '')); }
     catch (e) { return false; }
-    // A card ask carries NOTHING ELSE (goal/G16.2, R3): it is the one ask
+    // A card ask carries NOTHING ELSE (goal/G16.2, the card finding): it is the one ask
     // allowed unsealed, so anything riding beside it would travel in clear.
     return !!(parsed && !parsed.app && parsed.body && parsed.body.card &&
       typeof parsed.body === 'object' && Object.keys(parsed.body).length === 1);
@@ -3898,7 +3898,7 @@ function createRelay(rootDir, deps) {
       if (Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
         return { ok: false, status: 413, error: 'too big' };
       }
-      // OPENED ONCE, AND ONE VERB (goal/G16.2, R2 and R3): see openSelfAsk
+      // OPENED ONCE, AND ONE VERB (goal/G16.2): see openSelfAsk
       // and selfAskVerbCount. Refused before a route is opened, so a second
       // verb never runs by riding along with the first.
       var asked = openSelfAsk(text, who);
