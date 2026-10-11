@@ -44,6 +44,8 @@
 //      list is written by the node when a claim succeeds.
 //   7. THE PEER COUNTERS COME HOME TOO (A4, folded by his "place all you can into existing items"): node
 //      bookkeeping is no longer written into the Contacts app's folder.
+//   8. ONE RELAY IS A FLOOR: noderoutes.net cannot be removed, the other public relay still can, and a node
+//      holding only the floor cannot empty itself.
 //
 // rule/11: predicates and module reads only; the one disk fixture is a temp rootDir of this suite's own.
 
@@ -238,6 +240,43 @@ test.subHeading('7. node bookkeeping is not written into the Contacts app\'s fol
   const bad = nodeFiles([]).filter(function (f) { return /shell['"\s,\/)\]]*.{0,12}contacts/.test(f.text) && /peerfile|peerStats/.test(f.text); });
   if (!bad.length) test.check('no node file keeps peer counters under the Contacts app');
   else test.fail(OWED + 'peer counters are still written under shell/contacts by: ' + bad.map(function (f) { return f.rel; }).join(', '));
+}
+
+// ── 8. ONE RELAY CANNOT BE DELETED, AND IT IS THE FLOOR ─────────────
+//
+// Andy, 2026-10-11, closing the question of what seeding a second relay costs: "we'll remove the option to
+// delete noderoutes.net". A relay that cannot go is a floor, so the rule that stops somebody deleting their last
+// relay needs no notion of which relay has ever answered — there is always one left by construction.
+//
+// Asserted on canRemoveRelay, the rule the screens ask, rather than on a screen: that is where the floor has to
+// hold, whatever Natter grows later. (No screen offers remove today, so a check on the button would assert
+// nothing.)
+test.subHeading('8. noderoutes.net cannot be removed, so a node always keeps one way in');
+{
+  const pinned = 'https://noderoutes.net';
+  const other = 'https://spirit.andyflinn.com';
+  const both = [{ label: 'noderoutes', url: pinned }, { label: 'spirit', url: other }];
+
+  if (ownerBadge.canRemoveRelay(both, pinned) === false) {
+    test.check('the floor holds: noderoutes.net cannot be removed even with another public relay beside it');
+  } else {
+    test.fail(OWED + 'noderoutes.net can still be removed, so a node can be left with no floor at all');
+  }
+
+  // AND THE OTHER ONE STILL GOES. A floor that froze the whole list would be a different bug: somebody who
+  // joins their own relay must still be able to drop a public one they do not want.
+  if (ownerBadge.canRemoveRelay(both, other) === true) {
+    test.check('and the other public relay can still be removed, so the floor is one row, not the list');
+  } else {
+    test.fail(OWED + 'no public relay can be removed any more: the floor froze the whole list');
+  }
+
+  // A LIST OF ONLY THE FLOOR: nothing to remove, and nothing to be left with.
+  if (ownerBadge.canRemoveRelay([{ label: 'noderoutes', url: pinned }], pinned) === false) {
+    test.check('and a node holding only the floor cannot empty itself');
+  } else {
+    test.fail(OWED + 'a node holding only noderoutes.net could remove it and keep nothing');
+  }
 }
 
 test.reportSuccessFailureCount();
