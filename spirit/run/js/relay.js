@@ -1507,6 +1507,25 @@ function createRelay(rootDir, deps) {
     return (card && card.publicKey === publicKey) ? String(cardText) : '';
   }
 
+  function seatsFull() {
+    return {
+      ok: false,
+      status: 507,
+      error: 'this relay is full: ' + seats.held() + ' of ' + seats.allowance() +
+        ' members, which is what ' + (config && config.ramLimitMB) +
+        ' MB of RAM can serve at once. Its owner must raise ramLimitMB or remove members.',
+    };
+  }
+
+  function discFull() {
+    return {
+      ok: false,
+      status: 507,
+      error: 'this relay is full: its state is at the configured disc limit of ' +
+        discLimit.limitMB() + ' MB. Its owner must raise discLimitMB or remove members.',
+    };
+  }
+
   function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen, claimedCard) {
     var inviteRow = null;
     // ── SIGNED AS SENT, STORED AS NORMALISED ─────────────────────────
@@ -1536,7 +1555,31 @@ function createRelay(rootDir, deps) {
     // A `name reserved` refusal stood here, for the caption `relay`. It
     // went with RESERVED_NAME — see relayAuth.js. A label is a caption,
     // the relay is a key, and nothing a claimer can type reaches it.
-    if (!rateOk(claimHits, clientKey, CLAIM_PER_MIN)) {
+    // ── FULL FIRST, THEN PROVEN, THEN COUNTED (goal/G16.2, S13 of the
+    // review of 2026-10-10) ──────────────────────────────────────────────
+    //
+    // The limit was keyed on the connection address, and behind Caddy every
+    // claimant has the same one: one bucket for the whole internet, so one
+    // noisy claimer locked out every real one. Andy: "the claim limit keyed
+    // on the claimant instead of one shared address." And the bound on how
+    // many claimers there can be is the relay's member capacity: "by design
+    // there can be no claimer if the capacity for members is exhausted. a
+    // member then must be ejected, before a new claim can be satisfied."
+    //
+    // So a full relay refuses before anything else; the claim's signature
+    // is proven next, so the key charged is one the claimer holds (charging
+    // a claimed key is the S4 hole again); and only then is that key
+    // counted. The owner is never turned away, as below.
+    var firstOwner = !ownerKey;
+    if (!firstOwner && seats.fullForMembers()) return seatsFull();
+    if (!firstOwner && discLimit.full()) return discFull();
+    if (!publicKey || !sig) {
+      return { ok: false, status: 400, error: firstOwner ? 'first claim needs publicKey and sig' : 'claim needs publicKey and sig' };
+    }
+    if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
+      return { ok: false, status: 403, error: 'bad claim signature' };
+    }
+    if (!rateOk(claimHits, publicKey, CLAIM_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many claims' };
     }
     // PAST THE GATE, and this line is what bounds the owner's stream.
@@ -1564,16 +1607,11 @@ function createRelay(rootDir, deps) {
     // is the same rule for a relay built in process. Recovery is SSH,
     // never the wire (Andy: "if allow.json is trashed, there is no way of
     // proving ownership other than ssh, manually replace allow.json").
-    var firstOwner = !ownerKey;
+    // `firstOwner` is set above, at the gate; the key and its signature are
+    // proven there too.
     if (firstOwner) {
       if (store.members.count() > 0) {
         return { ok: false, status: 503, error: 'relay has members but no owner — restore owner.json over SSH' };
-      }
-      if (!publicKey || !sig) {
-        return { ok: false, status: 400, error: 'first claim needs publicKey and sig' };
-      }
-      if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
-        return { ok: false, status: 403, error: 'bad claim signature' };
       }
       if (!inviteToken || !onInvite) {
         return { ok: false, status: 403, error: 'owner invite required' };
@@ -1595,12 +1633,6 @@ function createRelay(rootDir, deps) {
     // here said about it not having — so deleting this removes a second
     // place where a token was consumed, not the feature.
     } else {
-      if (!publicKey || !sig) {
-        return { ok: false, status: 400, error: 'claim needs publicKey and sig' };
-      }
-      if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
-        return { ok: false, status: 403, error: 'bad claim signature' };
-      }
       // This is the lock 0003 promised: after first-claim-is-owner, a new
       // key gets on the box only with a live invite the owner minted for
       // that exact label. It is NOT the first owner's path — firstOwner
@@ -1707,24 +1739,10 @@ function createRelay(rootDir, deps) {
     //
     // THE OWNER IS NEVER TURNED AWAY, for the same reason as below: the
     // one account that can raise the limit must always be able to get on.
-    if (!firstOwner && seats.fullForMembers()) {
-      return {
-        ok: false,
-        status: 507,
-        error: 'this relay is full: ' + seats.held() + ' of ' + seats.allowance() +
-          ' members, which is what ' + (config && config.ramLimitMB) +
-          ' MB of RAM can serve at once. Its owner must raise ramLimitMB or remove members.',
-      };
-    }
-
-    if (!firstOwner && discLimit.full()) {
-      return {
-        ok: false,
-        status: 507,
-        error: 'this relay is full: its state is at the configured disc limit of ' +
-          discLimit.limitMB() + ' MB. Its owner must raise discLimitMB or remove members.',
-      };
-    }
+    // Both refusals moved to the gate (goal/G16.2): a full relay has no
+    // claimers, so it says so before a claim is proven or counted.
+    if (!firstOwner && seats.fullForMembers()) return seatsFull();
+    if (!firstOwner && discLimit.full()) return discFull();
 
     // Consume BEFORE the write, and only write if the row actually
     // burned. The other order — persist the peer, then consume — leaves a
