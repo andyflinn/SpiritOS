@@ -1558,18 +1558,17 @@ function createRelay(rootDir, deps) {
     // ── FULL FIRST, THEN PROVEN, THEN COUNTED (goal/G16.2, S13 of the
     // review of 2026-10-10) ──────────────────────────────────────────────
     //
-    // The limit was keyed on the connection address, and behind Caddy every
-    // claimant has the same one: one bucket for the whole internet, so one
-    // noisy claimer locked out every real one. Andy: "the claim limit keyed
-    // on the claimant instead of one shared address." And the bound on how
-    // many claimers there can be is the relay's member capacity: "by design
-    // there can be no claimer if the capacity for members is exhausted. a
-    // member then must be ejected, before a new claim can be satisfied."
+    // The bound on how many claimers there can be is the relay's member
+    // capacity. Andy: "by design there can be no claimer if the capacity for
+    // members is exhausted. a member then must be ejected, before a new
+    // claim can be satisfied." So a full relay refuses before anything else.
     //
-    // So a full relay refuses before anything else; the claim's signature
-    // is proven next, so the key charged is one the claimer holds (charging
-    // a claimed key is the S4 hole again); and only then is that key
-    // counted. The owner is never turned away, as below.
+    // THE CLAIM LIMIT STAYS ON THE CONNECTION ADDRESS. The review (S13)
+    // asked for it per claimant; Andy dropped that: "drop it. with the
+    // explanation." The seats already bound who can ever get in, so this
+    // limit cannot create members and only slows somebody hammering the
+    // door; and a key is free, so counting per key would not slow them.
+    // The owner is never turned away, as below.
     var firstOwner = !ownerKey;
     if (!firstOwner && seats.fullForMembers()) return seatsFull();
     if (!firstOwner && discLimit.full()) return discFull();
@@ -1579,7 +1578,7 @@ function createRelay(rootDir, deps) {
     if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
       return { ok: false, status: 403, error: 'bad claim signature' };
     }
-    if (!rateOk(claimHits, publicKey, CLAIM_PER_MIN)) {
+    if (!rateOk(claimHits, clientKey, CLAIM_PER_MIN)) {
       return { ok: false, status: 429, error: 'too many claims' };
     }
     // PAST THE GATE, and this line is what bounds the owner's stream.
