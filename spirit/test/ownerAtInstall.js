@@ -107,8 +107,17 @@ test.subHeading('1. a claim on a relay with no owner is refused, and makes no ow
   const w = unownedRelay();
   const comer = auth.generateIdentity('stranger');
   const got = w.box.claim('stranger', auth.sign(comer.privateKey, auth.claimMessage('stranger')), comer.publicKey, '10.0.0.9');
-  if (got && got.ok === false) test.check('a claim on an unowned relay is refused: ' + short(got.error));
-  else test.fail(OWED + 'an unowned relay took a claim: ' + short(got));
+  // THE REFUSAL IS PINNED TO ITS OWN REASON, and that is not pedantry. Found while verifying 2010cbdb: with the
+  // no-owner refusal deleted, an unowned relay still refuses — 'invite required', further down the path — so a
+  // check that accepted any refusal passed while the gate it names was gone. The relay must turn a claim away
+  // BECAUSE it has no owner, before the invite question is reached at all.
+  if (got && got.ok === false && /no owner/.test(String(got.error))) {
+    test.check('a claim on an unowned relay is refused for having no owner: ' + short(got.error));
+  } else if (got && got.ok === false) {
+    test.fail(OWED + 'an unowned relay refused for the wrong reason, so the no-owner gate is not there: ' + short(got.error));
+  } else {
+    test.fail(OWED + 'an unowned relay took a claim: ' + short(got));
+  }
 
   if (!there(ownerFileOf(w.home))) test.check('and it wrote no owner file, so nothing was handed the box');
   else test.fail(OWED + 'the claim wrote relay-state/owner.json: ' + short(read(ownerFileOf(w.home))));
@@ -171,7 +180,7 @@ test.subHeading('4. bash/install-units takes the owner key and writes the owner 
   if (!units) {
     test.fail(OWED + 'bash/install-units could not be read');
   } else {
-    if (/OWNER_KEY/.test(units)) test.check('install-units takes an OWNER_KEY, as face-install does');
+    if (/\bOWNER_KEY\b/.test(units)) test.check('install-units takes an OWNER_KEY, as face-install does');
     else test.fail(OWED + 'install-units names no OWNER_KEY: an operator still writes owner.json by hand');
 
     if (/owner\.json/.test(units)) test.check('and writes relay-state/owner.json from it');
@@ -179,7 +188,7 @@ test.subHeading('4. bash/install-units takes the owner key and writes the owner 
 
     // A relay that starts with no owner is the window this item closes, so the script must refuse rather than
     // install one.
-    if (/OWNER_KEY/.test(units) && /\b(die|refuse|exit 1|usage)\b/.test(units)) {
+    if (/\bOWNER_KEY\b/.test(units) && /\b(die|refuse|exit 1|usage)\b/.test(units)) {
       test.check('and refuses to install a relay with no owner key given');
     } else {
       test.fail(OWED + 'install-units does not refuse without an owner key');
@@ -189,7 +198,7 @@ test.subHeading('4. bash/install-units takes the owner key and writes the owner 
     // — today it mentions owner.json only as state that is not in git, which tells an operator nothing about
     // where it comes from.
     const doc = read(path.join(BASH, 'RELAY-HOST.md'));
-    if (/OWNER_KEY/.test(doc) || /install-units[^\n]*owner/i.test(doc)) {
+    if (/\bOWNER_KEY\b/.test(doc) || /install-units[^\n]*owner/i.test(doc)) {
       test.check('RELAY-HOST.md says the install is given the owner key and writes the owner file');
     } else {
       test.fail(OWED + 'RELAY-HOST.md never names OWNER_KEY: it still does not say where owner.json comes from');
