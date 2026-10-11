@@ -119,7 +119,7 @@ test.subHeading('The owner\'s report carries both bounds, and which one is bitin
   const owner = auth.generateIdentity('owner');
   claimOwner(R.box, owner, 'owner', 'disc-owner');
   const seen = [];
-  R.box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), {
+  R.box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, R.box.relayPublicKey())), {
     write: function (chunk) {
       const ev = /event: ([^\n]+)/.exec(chunk);
       const da = /data: ([^\n]+)/.exec(chunk);
@@ -148,7 +148,7 @@ test.subHeading('The owner\'s report carries both bounds, and which one is bitin
   const owner = auth.generateIdentity('owner');
   claimOwner(R.box, owner, 'owner', 'disc-owner');
   const seen = [];
-  R.box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), {
+  R.box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, R.box.relayPublicKey())), {
     write: function (chunk) {
       const ev = /event: ([^\n]+)/.exec(chunk);
       const da = /data: ([^\n]+)/.exec(chunk);

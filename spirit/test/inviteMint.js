@@ -82,8 +82,7 @@ function askMint(r, who, label, days, token) {
 // this wire and not special to minting.
 function heardBy(r, who) {
   const said = [];
-  r.box.streamOpen(who.publicKey,
-    auth.sign(who.privateKey, auth.streamMessage(who.publicKey)), {
+  r.box.streamOpen(who.publicKey, auth.sign(who.privateKey, auth.streamMessage(who.publicKey, r.box.relayPublicKey())), {
       write: function (chunk) {
         const ev = /^event: (.+)$/m.exec(String(chunk));
         const da = /^data: (.+)$/m.exec(String(chunk));

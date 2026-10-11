@@ -114,7 +114,7 @@ function hold(w, identity, onEvent) {
   const s = sseClient.connect({
     url: w.base + '/api/relay/stream?key=' + encodeURIComponent(identity.publicKey),
     headers: function () {
-      return { 'X-Spirit-Sig': auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey)) };
+      return { 'X-Spirit-Sig': auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey, w.box.relayPublicKey())) };
     },
     onEvent: onEvent,
   });

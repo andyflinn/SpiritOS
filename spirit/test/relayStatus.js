@@ -189,10 +189,8 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
     };
   }
 
-  const ownerOpen = relay.streamOpen(owner.publicKey,
-    auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor('andy'));
-  const friendOpen = relay.streamOpen(friend.publicKey,
-    auth.sign(friend.privateKey, auth.streamMessage(friend.publicKey)), sinkFor('bella'));
+  const ownerOpen = relay.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, relay.relayPublicKey())), sinkFor('andy'));
+  const friendOpen = relay.streamOpen(friend.publicKey, auth.sign(friend.privateKey, auth.streamMessage(friend.publicKey, relay.relayPublicKey())), sinkFor('bella'));
 
   if (!ownerOpen.ok || !friendOpen.ok) {
     test.fail('streams did not open: ' + JSON.stringify({ ownerOpen: ownerOpen, friendOpen: friendOpen }));

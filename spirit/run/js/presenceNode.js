@@ -412,11 +412,17 @@ function createPresence(opts) {
       // A HEADER, never the query string: a query lands in every access
       // log the request passes, and the relay refuses one there even when
       // the header is good.
+      //
+      // FOR THIS RELAY ONLY (goal/G16.12): the header names the key pinned
+      // for this url, so no other relay can replay it. Looked up per attempt:
+      // until the pin lands the attempt is refused and the reconnect loop
+      // tries again, which is the plainest wait there is.
       headers: function () {
+        var relayKey = relayKeys.pinned(rootDir, url) || '';
         return {
           'X-Spirit-Sig': auth.sign(
             identity.privateKey,
-            auth.streamMessage(identity.publicKey)
+            auth.streamMessage(identity.publicKey, relayKey)
           ),
         };
       },

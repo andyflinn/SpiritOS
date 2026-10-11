@@ -208,7 +208,7 @@ async function run() {
     const aId = auth.loadIdentity(A.home);
     const refused = await hub.relayRequest(B.base, 'GET',
       '/api/relay/stream?key=' + encodeURIComponent(aId.publicKey), null,
-      { 'X-Spirit-Sig': auth.sign(aId.privateKey, auth.streamMessage(aId.publicKey)) });
+      { 'X-Spirit-Sig': auth.sign(aId.privateKey, auth.streamMessage(aId.publicKey, B.box.relayPublicKey())) });
     let said = null;
     try { said = JSON.parse(refused.text); } catch (e) { said = null; }
     if (refused.status === 403 && said && said.error === 'a partner holds no stream here' &&
@@ -244,7 +244,7 @@ async function run() {
     headers: function () {
       return {
         'X-Spirit-Sig': auth.sign(A.members.alice.privateKey,
-          auth.streamMessage(A.members.alice.publicKey)),
+          auth.streamMessage(A.members.alice.publicKey, A.box.relayPublicKey())),
       };
     },
     onEvent: function (msg) {
@@ -262,7 +262,7 @@ async function run() {
     headers: function () {
       return {
         'X-Spirit-Sig': auth.sign(B.members.bertrand.privateKey,
-          auth.streamMessage(B.members.bertrand.publicKey)),
+          auth.streamMessage(B.members.bertrand.publicKey, B.box.relayPublicKey())),
       };
     },
     onEvent: function () {},

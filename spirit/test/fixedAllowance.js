@@ -51,7 +51,7 @@ function member(R, name) {
 }
 
 function open(box, id, bag) {
-  return box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor(bag || []));
+  return box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sinkFor(bag || []));
 }
 
 test.startTest('The relay manages itself within fixed limits');

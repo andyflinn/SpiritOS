@@ -92,20 +92,27 @@ function claimMessage(name) {
 // The token is a public KEY, not a label. Labels duplicate by design, so
 // a signature naming one identifies nobody on a relay holding two johns
 // (PEER-DEVICES.md, and B2 carried it inward).
-function streamMessage(key, atMs) {
+//
+// AND IT NAMES THE RELAY (goal/G16.12, S8 of the review of 2026-10-10).
+// Without it a relay that saw a member's header could replay it on another
+// relay inside the window and take the member's stream there, because a new
+// stream evicts the old one. Andy: "then the header needs a signature from
+// the relay (key)." So the relay's public key is inside what the member
+// signs, and a relay checks it against its own.
+function streamMessage(key, relayKey, atMs) {
   var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
-  return 'stream\n' + String(key || '') + '\n' + minute;
+  return 'stream\n' + String(key || '') + '\n' + String(relayKey || '') + '\n' + minute;
 }
 
 // Previous, current and next: enough for two clocks a minute apart, in
 // both directions, because the SIGNER may be the one running fast. The
 // ring's inboxSignatureOk had the same window for the same reason, and
 // this is the only one of the pair left.
-function streamSignatureOk(publicKey, key, sig, atMs) {
-  if (!publicKey || !sig) return false;
+function streamSignatureOk(publicKey, key, relayKey, sig, atMs) {
+  if (!publicKey || !sig || !relayKey) return false;
   var now = atMs == null ? Date.now() : atMs;
   for (var step = -1; step <= 1; step += 1) {
-    if (verify(publicKey, streamMessage(key, now + step * 60000), sig)) return true;
+    if (verify(publicKey, streamMessage(key, relayKey, now + step * 60000), sig)) return true;
   }
   return false;
 }

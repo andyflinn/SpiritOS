@@ -4681,7 +4681,9 @@ function createRelay(rootDir, deps) {
     //    owner's house key — owning the relay is not owning a row — and
     //    never a device key, for the reason deviceGate gives: a borrowed
     //    phone must not open the wire its owner is on.
-    if (!auth.streamSignatureOk(who_.publicKey, who_.id, sig)) {
+    //    Over THIS relay's own key (goal/G16.12): a header signed for
+    //    another relay is refused before anything is evicted.
+    if (!auth.streamSignatureOk(who_.publicKey, who_.id, relayPublicKey(), sig)) {
       return { ok: false, status: 403, error: 'bad stream signature' };
     }
 

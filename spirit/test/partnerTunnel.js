@@ -117,8 +117,7 @@ function relayWith(tag, memberNames) {
       nodeCard.cardFrom(Object.assign({ name: name }, id)));
     people[name] = id;
     inboxes[name] = [];
-    box.streamOpen(id.publicKey,
-      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor(inboxes[name]));
+    box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sinkFor(inboxes[name]));
   });
 
   boxes[box.relayPublicKey()] = box;
@@ -416,8 +415,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   B.box.claim('dave', auth.sign(D.people.dave.privateKey, auth.claimMessage('dave')),
     daveKey, null, mintB.invite.token, 'dave');
   // Connected on B too: search answers the connected only (2026-09-19).
-  B.box.streamOpen(daveKey,
-    auth.sign(D.people.dave.privateKey, auth.streamMessage(daveKey)), sinkFor([]));
+  B.box.streamOpen(daveKey, auth.sign(D.people.dave.privateKey, auth.streamMessage(daveKey, B.box.relayPublicKey())), sinkFor([]));
 
   post(A.box, A.people.jazz, A.key, { search: { q: 'dave' } });
   // A real turn of the loop, not a microtask: the fan-out is a Promise.all
@@ -478,8 +476,7 @@ test.subHeading('And sonny’s answer reaches jazz');
     relay.box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')),
       andy.publicKey, 'client-andy-' + tag, minted.invite.token, 'andy');
     // And connected on both: search answers the connected only.
-    relay.box.streamOpen(andy.publicKey,
-      auth.sign(andy.privateKey, auth.streamMessage(andy.publicKey)), sinkFor([]));
+    relay.box.streamOpen(andy.publicKey, auth.sign(andy.privateKey, auth.streamMessage(andy.publicKey, relay.box.relayPublicKey())), sinkFor([]));
   });
 
   post(A.box, A.people.jazz, A.key, { search: { q: 'andy' } });
@@ -537,8 +534,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   const mintL = A.box.mint('ownera', 'listener', 7, '');
   A.box.claim('listener', auth.sign(listener.privateKey, auth.claimMessage('listener')),
     listener.publicKey, 'client-listener', mintL.invite.token, 'listener');
-  A.box.streamOpen(listener.publicKey,
-    auth.sign(listener.privateKey, auth.streamMessage(listener.publicKey)), sinkFor(heard));
+  A.box.streamOpen(listener.publicKey, auth.sign(listener.privateKey, auth.streamMessage(listener.publicKey, A.box.relayPublicKey())), sinkFor(heard));
 
   // jazz posts to sonny through the partnership, naming B -- a claim.
   const claimed = post(A.box, A.people.jazz, B.people.sonny.publicKey,

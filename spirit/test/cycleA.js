@@ -423,8 +423,7 @@ function routerTo(boxes, owner) {
       if (!box) return Promise.resolve({ ok: false, status: 502, error: 'no such relay' });
 
       let answered = '';
-      box.streamOpen(owner.publicKey,
-        auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), {
+      box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, box.relayPublicKey())), {
           write: function (chunk) {
             const ev = /^event: (.+)$/m.exec(String(chunk));
             const da = /^data: (.+)$/m.exec(String(chunk));

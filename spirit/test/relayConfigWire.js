@@ -103,7 +103,7 @@ function askOwner(w, bodyObj) {
     const stop = sseClient.connect({
       url: w.base + '/api/relay/stream?key=' + encodeURIComponent(w.owner.publicKey),
       headers: function () {
-        return { 'X-Spirit-Sig': auth.sign(w.owner.privateKey, auth.streamMessage(w.owner.publicKey)) };
+        return { 'X-Spirit-Sig': auth.sign(w.owner.privateKey, auth.streamMessage(w.owner.publicKey, w.box.relayPublicKey())) };
       },
       onEvent: function (msg) {
         if (answered || msg.event !== 'reply' || !msg.data) return;

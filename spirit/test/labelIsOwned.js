@@ -319,8 +319,7 @@ test.subHeading('And the owner hears about it');
   // to close.
   const L = world.build(SCENARIO);
   const sink = { lines: [], write: function (c) { this.lines.push(String(c)); }, close: function () {} };
-  L.box.streamOpen(L.owner.publicKey,
-    auth.sign(L.owner.privateKey, auth.streamMessage(L.owner.publicKey)), sink);
+  L.box.streamOpen(L.owner.publicKey, auth.sign(L.owner.privateKey, auth.streamMessage(L.owner.publicKey, L.box.relayPublicKey())), sink);
 
   const before = sink.lines.length;
   world.ask(L.box, L.peer('johnA'), { rename: { label: 'johnny' } });

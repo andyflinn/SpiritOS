@@ -88,8 +88,7 @@ function relayWithTwo() {
     box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
       id.publicKey, null, minted.invite.token, name);
     people[name] = id;
-    box.streamOpen(id.publicKey,
-      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor([]));
+    box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sinkFor([]));
   });
 
   return { home: home, box: box, owner: owner, people: people };
@@ -199,8 +198,7 @@ test.subHeading('And the relay can say what it moved, not only what it holds');
 
 const report = (function () {
   const bag = [];
-  R.box.streamOpen(R.owner.publicKey,
-    auth.sign(R.owner.privateKey, auth.streamMessage(R.owner.publicKey)), sinkFor(bag));
+  R.box.streamOpen(R.owner.publicKey, auth.sign(R.owner.privateKey, auth.streamMessage(R.owner.publicKey, R.box.relayPublicKey())), sinkFor(bag));
   const said = bag.filter(function (m) { return m.event === 'relay-status'; });
   return said.length ? said[said.length - 1].data : null;
 })();
@@ -297,8 +295,7 @@ if (asked && asked.ok) {
 
 const after = (function () {
   const bag = [];
-  R.box.streamOpen(R.owner.publicKey,
-    auth.sign(R.owner.privateKey, auth.streamMessage(R.owner.publicKey)), sinkFor(bag));
+  R.box.streamOpen(R.owner.publicKey, auth.sign(R.owner.privateKey, auth.streamMessage(R.owner.publicKey, R.box.relayPublicKey())), sinkFor(bag));
   const said = bag.filter(function (m) { return m.event === 'relay-status'; });
   return said.length ? said[said.length - 1].data : null;
 })();
@@ -389,8 +386,7 @@ test.subHeading('And the relay measures the share of its work that crossed a par
 
 const fresh = (function () {
   const bag = [];
-  R.box.streamOpen(R.owner.publicKey,
-    auth.sign(R.owner.privateKey, auth.streamMessage(R.owner.publicKey)), sinkFor(bag));
+  R.box.streamOpen(R.owner.publicKey, auth.sign(R.owner.privateKey, auth.streamMessage(R.owner.publicKey, R.box.relayPublicKey())), sinkFor(bag));
   const said = bag.filter(function (m) { return m.event === 'relay-status'; });
   return said.length ? said[said.length - 1].data : null;
 })();

@@ -61,7 +61,7 @@ const SCENARIO = {
 function openFor(box, id, sink, atMs) {
   return box.streamOpen(
     id.publicKey,
-    auth.sign(id.privateKey, auth.streamMessage(id.publicKey, atMs)),
+    auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey(), atMs)),
     sink
   );
 }
@@ -204,8 +204,7 @@ function run() {
 
   // Somebody else's key is a perfectly good key and proves nothing here.
   const borrowed = L.box.streamOpen(
-    bert.publicKey,
-    auth.sign(john.privateKey, auth.streamMessage(bert.publicKey)),
+    bert.publicKey, auth.sign(john.privateKey, auth.streamMessage(bert.publicKey, L.box.relayPublicKey())),
     fakeSink()
   );
   if (borrowed && borrowed.ok === false) {
@@ -232,8 +231,7 @@ function run() {
   const zoeLive = fakeSink();
   openFor(L.box, zoe, zoeLive);
   const impostor = L.box.streamOpen(
-    zoe.publicKey,
-    auth.sign(john.privateKey, auth.streamMessage(zoe.publicKey)),
+    zoe.publicKey, auth.sign(john.privateKey, auth.streamMessage(zoe.publicKey, L.box.relayPublicKey())),
     fakeSink()
   );
   if (impostor && impostor.ok === false && !zoeLive.closed &&
@@ -252,8 +250,7 @@ function run() {
   const stranger = auth.generateIdentity('nobody');
   const strangerSink = fakeSink();
   const refused = L.box.streamOpen(
-    stranger.publicKey,
-    auth.sign(stranger.privateKey, auth.streamMessage(stranger.publicKey)),
+    stranger.publicKey, auth.sign(stranger.privateKey, auth.streamMessage(stranger.publicKey, L.box.relayPublicKey())),
     strangerSink
   );
   const grew = L.box.presence.present().indexOf(stranger.publicKey) !== -1;

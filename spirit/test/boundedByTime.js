@@ -151,8 +151,7 @@ function measure(n) {
   // that one arrival cause?
   const bags = R.people.map(function (id) {
     const bag = [];
-    R.box.streamOpen(id.publicKey,
-      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sink(bag));
+    R.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, R.box.relayPublicKey())), sink(bag));
     return bag;
   });
   const before = bags.reduce(function (t, b) { return t + b.length; }, 0);
@@ -162,8 +161,7 @@ function measure(n) {
   const minted = R.box.mint('owner', 'late', 7, '');
   R.box.claim('late', auth.sign(extra.privateKey, auth.claimMessage('late')),
     extra.publicKey, null, minted.invite.token, 'late');
-  R.box.streamOpen(extra.publicKey,
-    auth.sign(extra.privateKey, auth.streamMessage(extra.publicKey)), sink([]));
+  R.box.streamOpen(extra.publicKey, auth.sign(extra.privateKey, auth.streamMessage(extra.publicKey, R.box.relayPublicKey())), sink([]));
   // COUNTED APART, because they are two interfaces with two reasons: the
   // presence broadcast, and the claim announced on route (R28). Lumped, a
   // new per-member cost could hide inside an old one's number.

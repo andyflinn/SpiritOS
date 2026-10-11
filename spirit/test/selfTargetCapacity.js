@@ -54,14 +54,14 @@ function relayWith(names) {
   const heard = {};
   heard.owner = [];
   box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
-  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(heard.owner));
+  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, box.relayPublicKey())), sinkFor(heard.owner));
   const people = {};
   names.forEach(function (name) {
     const id = auth.generateIdentity(name);
     const minted = box.mint('owner', name, 7, '');
     box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)), id.publicKey, null, minted.invite.token, name);
     heard[name] = [];
-    box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor(heard[name]));
+    box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sinkFor(heard[name]));
     people[name] = id;
   });
   return { home: home, box: box, owner: owner, people: people, heard: heard };

@@ -102,7 +102,7 @@ function relayWith(tag, memberNames) {
       id.publicKey, 'fx-' + tag + '-' + name, minted.invite.token, name);
     people[name] = id;
     inboxes[name] = [];
-    box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey)),
+    box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())),
       sinkFor(inboxes[name]));
   }
   boxes[box.relayPublicKey()] = box;

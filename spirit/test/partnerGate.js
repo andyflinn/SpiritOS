@@ -164,8 +164,7 @@ test.subHeading('A partner is admitted, and is not a member');
 
   // And it holds NO stream (R13). It used to, because a reply left by one;
   // now its answer is the reply to its own post.
-  const opened = B.box.streamOpen(A.key,
-    auth.sign(aIdentity.privateKey, auth.streamMessage(A.key)), sinkFor([]));
+  const opened = B.box.streamOpen(A.key, auth.sign(aIdentity.privateKey, auth.streamMessage(A.key, B.box.relayPublicKey())), sinkFor([]));
   if (opened && opened.ok === false && opened.status === 403) {
     test.check('and holds no stream on B — its question and its answer are one post (R13)');
   } else {
@@ -187,8 +186,7 @@ test.subHeading('A stranger relay is refused');
   }
 
   const heard = [];
-  const stream = B.box.streamOpen(stranger.publicKey,
-    auth.sign(stranger.privateKey, auth.streamMessage(stranger.publicKey)), sinkFor(heard));
+  const stream = B.box.streamOpen(stranger.publicKey, auth.sign(stranger.privateKey, auth.streamMessage(stranger.publicKey, B.box.relayPublicKey())), sinkFor(heard));
   if (!stream.ok) {
     test.check('and cannot hold a stream either — the pinned key is the whole proof');
   } else {
@@ -211,7 +209,7 @@ test.subHeading('A partner may search, and gets B members');
   }
   ['bella', 'bertrand'].forEach(function (name) {
     const id = B.members[name];
-    B.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor([]));
+    B.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, B.box.relayPublicKey())), sinkFor([]));
   });
 
   const asked = await askAsRelay(B.box, A.key, aIdentity.privateKey, B.key,
@@ -280,8 +278,7 @@ test.subHeading('A member is unaffected, and still gets its own relay');
 
 {
   const heardByBella = [];
-  B.box.streamOpen(B.members.bella.publicKey,
-    auth.sign(B.members.bella.privateKey, auth.streamMessage(B.members.bella.publicKey)),
+  B.box.streamOpen(B.members.bella.publicKey, auth.sign(B.members.bella.privateKey, auth.streamMessage(B.members.bella.publicKey, B.box.relayPublicKey())),
     sinkFor(heardByBella));
 
   post(B.box, B.members.bella, B.key, { search: { q: 'ber' } });

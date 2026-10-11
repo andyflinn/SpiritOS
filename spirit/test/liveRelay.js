@@ -144,9 +144,13 @@ async function run() {
   // "A device opens nothing on a relay"), removed by goal/G16.2. What a
   // real relay still owes is that the identity's own key opens its stream.
   async function canOpen(where, id) {
+    // The header names the relay it is for (goal/G16.12), so ask that relay
+    // for its key first.
+    const door = parsed(await get(where + '/api/relay/key'));
+    const whereKey = (door && door.relayPublicKey) || '';
     const r = await get(
       where + '/api/relay/stream?key=' + encodeURIComponent(subject.publicKey),
-      { 'X-Spirit-Sig': auth.sign(id.privateKey, auth.streamMessage(subject.publicKey)) }
+      { 'X-Spirit-Sig': auth.sign(id.privateKey, auth.streamMessage(subject.publicKey, whereKey)) }
     );
     return r.status === 200;
   }

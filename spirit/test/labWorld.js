@@ -511,7 +511,7 @@ function createWorld(opts) {
     // harness runs them, so nothing said so; STATE.md in labMaster/ is
     // where that was written down, and this is the fix it was waiting
     // for.
-    const streamSig = auth.sign(ownerId.privateKey, auth.streamMessage(ownerId.publicKey));
+    const streamSig = auth.sign(ownerId.privateKey, auth.streamMessage(ownerId.publicKey, relayKey));
     const wire = relayUrl + '/api/relay/stream?key=' + encodeURIComponent(ownerId.publicKey);
 
     const stop = new AbortController();

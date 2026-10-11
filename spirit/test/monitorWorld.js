@@ -62,8 +62,8 @@ function world() {
   });
 
   const heard = { andy: [], bella: [] };
-  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(heard.andy));
-  box.streamOpen(bella.publicKey, auth.sign(bella.privateKey, auth.streamMessage(bella.publicKey)), sinkFor(heard.bella));
+  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, box.relayPublicKey())), sinkFor(heard.andy));
+  box.streamOpen(bella.publicKey, auth.sign(bella.privateKey, auth.streamMessage(bella.publicKey, box.relayPublicKey())), sinkFor(heard.bella));
 
   return { home: home, box: box, owner: owner, bella: bella, carl: carl, heard: heard };
 }

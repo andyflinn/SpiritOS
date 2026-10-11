@@ -43,8 +43,7 @@ function fakeSink() {
 }
 
 function openStream(box, id, sink) {
-  return box.streamOpen(id.publicKey,
-    auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sink);
+  return box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sink);
 }
 
 function ping(box, from, to, text) {

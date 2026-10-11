@@ -162,8 +162,7 @@ test.subHeading('And it actually travels, through a relay');
   const anna = join(w, 'anna');
   const bert = join(w, 'bert');
 
-  w.box.streamOpen(bert.publicKey,
-    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
+  w.box.streamOpen(bert.publicKey, auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey, w.box.relayPublicKey())),
     { write: function () {}, close: function () {} });
 
   const bertCard = nodeCard.verify(nodeCard.cardFrom(Object.assign({ name: 'bert' }, bert)));

@@ -41,6 +41,8 @@ const MINUTE = 60000;
 // A fixed instant, so a test that runs at 23:59 reads the same as one
 // that runs at noon.
 const NOW = Date.parse('2026-09-08T10:30:20.000Z');
+// The relay the header is for (goal/G16.12): every stream message names one.
+const RK = 'RELAYKEY';
 
 // A keys-mode relay with one claimed peer, which is the only mode where
 // anything is proved at all. `andy` is the owner; the builder names it
@@ -57,7 +59,7 @@ function box() {
 // replaces, and it is deliberate: labels duplicate by design, so a
 // signature naming one identifies nobody on a relay holding two johns.
 function signFor(id, key, atMs) {
-  return auth.sign(id.privateKey, auth.streamMessage(key, atMs));
+  return auth.sign(id.privateKey, auth.streamMessage(key, RK, atMs));
 }
 
 test.startTest('Stream signature — a minute wide, and never in the URL');
@@ -66,17 +68,17 @@ test.subHeading('The bytes say when');
 
 {
   const at = Date.parse('2026-09-08T10:30:20.000Z');
-  if (auth.streamMessage('KEY', at) === 'stream\nKEY\n' + Math.floor(at / 60000)) {
-    test.check('key and unix-minute, decimal and unpadded');
+  if (auth.streamMessage('KEY', RK, at) === 'stream\nKEY\n' + RK + '\n' + Math.floor(at / 60000)) {
+    test.check('key, the relay it is for, and unix-minute, decimal and unpadded');
   } else {
-    test.fail('bytes: ' + JSON.stringify(auth.streamMessage('KEY', at)));
+    test.fail('bytes: ' + JSON.stringify(auth.streamMessage('KEY', RK, at)));
   }
 
   // Every second of the same minute signs the same string; the next
   // minute is a different one. That is the whole of the expiry.
-  const early = auth.streamMessage('KEY', Date.parse('2026-09-08T10:30:00.000Z'));
-  const late = auth.streamMessage('KEY', Date.parse('2026-09-08T10:30:59.999Z'));
-  const next = auth.streamMessage('KEY', Date.parse('2026-09-08T10:31:00.000Z'));
+  const early = auth.streamMessage('KEY', RK, Date.parse('2026-09-08T10:30:00.000Z'));
+  const late = auth.streamMessage('KEY', RK, Date.parse('2026-09-08T10:30:59.999Z'));
+  const next = auth.streamMessage('KEY', RK, Date.parse('2026-09-08T10:31:00.000Z'));
   if (early === late && next !== early) {
     test.check('one string per minute, and a new one at the turn');
   } else {
@@ -90,8 +92,8 @@ test.subHeading('The bytes say when');
   // every roll — the one most likely to be lying around. R3 deleted
   // that verb on 2026-09-15, so the check moved to `claim`, which is now
   // the only other format naming something a caller supplies.
-  if (auth.streamMessage('KEY', at) !== auth.claimMessage('KEY') &&
-      auth.streamMessage('KEY', at).indexOf('claim') === -1) {
+  if (auth.streamMessage('KEY', RK, at) !== auth.claimMessage('KEY') &&
+      auth.streamMessage('KEY', RK, at).indexOf('claim') === -1) {
     test.check('and it is not the bytes any other verb signs');
   } else {
     test.fail('stream and claim share bytes');
@@ -105,7 +107,7 @@ test.subHeading('A minute either side, and no further');
   const key = m.andy.publicKey;
   const sig = signFor(m.andy, key, NOW);
 
-  if (auth.streamSignatureOk(key, key, sig, NOW)) {
+  if (auth.streamSignatureOk(key, key, RK, sig, NOW)) {
     test.check('signed this minute, opened this minute');
   } else {
     test.fail('same minute refused');
@@ -113,16 +115,16 @@ test.subHeading('A minute either side, and no further');
 
   // Two clocks a minute apart is ordinary; either of them may be the
   // fast one, so the window opens both ways.
-  if (auth.streamSignatureOk(key, key, sig, NOW + MINUTE) &&
-      auth.streamSignatureOk(key, key, sig, NOW - MINUTE)) {
+  if (auth.streamSignatureOk(key, key, RK, sig, NOW + MINUTE) &&
+      auth.streamSignatureOk(key, key, RK, sig, NOW - MINUTE)) {
     test.check('and a minute of clock skew, in both directions');
   } else {
-    test.fail('skew: +1 ' + auth.streamSignatureOk(key, key, sig, NOW + MINUTE) +
-      ' -1 ' + auth.streamSignatureOk(key, key, sig, NOW - MINUTE));
+    test.fail('skew: +1 ' + auth.streamSignatureOk(key, key, RK, sig, NOW + MINUTE) +
+      ' -1 ' + auth.streamSignatureOk(key, key, RK, sig, NOW - MINUTE));
   }
 
-  if (!auth.streamSignatureOk(key, key, sig, NOW + 2 * MINUTE) &&
-      !auth.streamSignatureOk(key, key, sig, NOW - 2 * MINUTE)) {
+  if (!auth.streamSignatureOk(key, key, RK, sig, NOW + 2 * MINUTE) &&
+      !auth.streamSignatureOk(key, key, RK, sig, NOW - 2 * MINUTE)) {
     test.check('two minutes out is refused, which is what makes a captured line die');
   } else {
     test.fail('two minutes out still opened the wire');
@@ -132,7 +134,7 @@ test.subHeading('A minute either side, and no further');
   // before it learned to expire. A caller that was never updated does not
   // quietly keep working.
   const old = auth.sign(m.andy.privateKey, 'stream\n' + key);
-  if (!auth.streamSignatureOk(key, key, old, NOW)) {
+  if (!auth.streamSignatureOk(key, key, RK, old, NOW)) {
     test.check('and a permanent token opens nothing');
   } else {
     test.fail('the old permanent token still worked');
@@ -146,13 +148,13 @@ test.subHeading('Somebody else’s key, and no key at all');
   const key = m.andy.publicKey;
   const mallory = auth.generateIdentity('mallory');
 
-  if (!auth.streamSignatureOk(key, key, signFor(mallory, key, NOW), NOW)) {
+  if (!auth.streamSignatureOk(key, key, RK, signFor(mallory, key, NOW), NOW)) {
     test.check('a current signature from the wrong key is still the wrong key');
   } else {
     test.fail('a forged signature opened the wire');
   }
 
-  if (!auth.streamSignatureOk(key, key, '', NOW)) {
+  if (!auth.streamSignatureOk(key, key, RK, '', NOW)) {
     test.check('and no signature opens nothing');
   } else {
     test.fail('an empty signature opened the wire');
@@ -161,7 +163,7 @@ test.subHeading('Somebody else’s key, and no key at all');
   // A signature for one identity is not a signature for another: the key
   // is inside the signed bytes.
   const bert = auth.generateIdentity('bert');
-  if (!auth.streamSignatureOk(key, bert.publicKey, signFor(m.andy, key, NOW), NOW)) {
+  if (!auth.streamSignatureOk(key, bert.publicKey, RK, signFor(m.andy, key, NOW), NOW)) {
     test.check('and a proof for one identity does not open the next one');
   } else {
     test.fail('andy opened bert with his own signature');
@@ -193,7 +195,7 @@ test.subHeading('The gate refuses before it allocates');
 
   // And the real thing opens. Signed for the minute the relay is actually
   // in, because streamOpen reads its own clock.
-  const good = m.box.streamOpen(key, signFor(m.andy, key, Date.now()), function () {});
+  const good = m.box.streamOpen(key, auth.sign(m.andy.privateKey, auth.streamMessage(key, m.box.relayPublicKey())), function () {});
   if (good.ok && good.id === key) {
     test.check('and the row’s own key, signed for this minute, opens the wire');
   } else {

@@ -186,7 +186,7 @@ function member(w, identity, answers) {
     url: w.base + '/api/relay/stream?key=' + encodeURIComponent(identity.publicKey),
     headers: function () {
       return {
-        'X-Spirit-Sig': auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey)),
+        'X-Spirit-Sig': auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey, w.box.relayPublicKey())),
       };
     },
     onEvent: function (msg) {
@@ -239,7 +239,7 @@ function sender(w, identity) {
     url: w.base + '/api/relay/stream?key=' + encodeURIComponent(identity.publicKey),
     headers: function () {
       return {
-        'X-Spirit-Sig': auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey)),
+        'X-Spirit-Sig': auth.sign(identity.privateKey, auth.streamMessage(identity.publicKey, w.box.relayPublicKey())),
       };
     },
     onEvent: function (msg) {

@@ -125,8 +125,7 @@ async function run() {
     null, null, null, nodeCard.cardFrom(Object.assign({ name: 'owner' }, owner)));
 
   const bag = [];
-  box.streamOpen(owner.publicKey,
-    auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(bag));
+  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, box.relayPublicKey())), sinkFor(bag));
 
   async function search() {
     asked.length = 0;
@@ -138,8 +137,7 @@ async function run() {
 
   test.subHeading('No partner holds a stream any more');
 
-  const tried = box.streamOpen(talky.publicKey,
-    auth.sign(talky.privateKey, auth.streamMessage(talky.publicKey)), sinkFor([]));
+  const tried = box.streamOpen(talky.publicKey, auth.sign(talky.privateKey, auth.streamMessage(talky.publicKey, box.relayPublicKey())), sinkFor([]));
   if (tried && tried.ok === false && tried.status === 403 && /partner holds no stream/.test(tried.error)) {
     test.check('a partner relay that dials is refused by name — "a partner holds no stream here"');
   } else {

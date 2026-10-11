@@ -59,7 +59,7 @@ function relayWith(config, hands) {
   // back as the REPLY to the post that asked — there is no second channel
   // and no verb-shaped route (decision 0010).
   const heard = [];
-  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(heard));
+  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, box.relayPublicKey())), sinkFor(heard));
   return { home: home, box: box, owner: owner, written: written, restarts: restarts, heard: heard };
 }
 

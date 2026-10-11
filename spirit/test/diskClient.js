@@ -131,8 +131,7 @@ async function relayCost(fixture) {
   const before = heap();
   const box = createRelay(fixture.home);
   const bag = [];
-  box.streamOpen(fixture.owner.publicKey,
-    auth.sign(fixture.owner.privateKey, auth.streamMessage(fixture.owner.publicKey)), sinkFor(bag));
+  box.streamOpen(fixture.owner.publicKey, auth.sign(fixture.owner.privateKey, auth.streamMessage(fixture.owner.publicKey, box.relayPublicKey())), sinkFor(bag));
   post(box, fixture.owner, box.relayPublicKey(), { search: { q: 'member0004' } });
   await until(function () { return replies(bag) > 0; }, 10000);
   const after = heap();
@@ -181,8 +180,7 @@ async function run() {
   }
 
   const realSink = [];
-  B.box.streamOpen(big.real.publicKey,
-    auth.sign(big.real.privateKey, auth.streamMessage(big.real.publicKey)), sinkFor(realSink));
+  B.box.streamOpen(big.real.publicKey, auth.sign(big.real.privateKey, auth.streamMessage(big.real.publicKey, B.box.relayPublicKey())), sinkFor(realSink));
   let n = replies(B.bag);
   post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'real' } });
   await until(function () { return replies(B.bag) > n; }, 10000);

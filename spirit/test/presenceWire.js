@@ -121,10 +121,15 @@ function nodeFor(id) {
   // kind of claim: a reply arriving on the stream has to settle in the
   // table the post opened, so the two halves are wired here exactly as
   // server.js wires them.
+  // AND THE PIN, as server.js wires it: the stream header names the relay
+  // it is for (goal/G16.12), so the node must know that relay's key before
+  // the relay will open its stream.
+  const answerer = require('../run/js/answerRelay').createAnswerer({ rootDir: home, request: hub.relayRequest });
   const P = presenceNode.createPresence({
     rootDir: home,
     jobs: jobs,
     router: createPeerPost({ rootDir: home, request: hub.relayRequest }),
+    pinRelay: answerer.relayKey,
   });
   opened.push({ close: function () { P.stop(); } });
   // hub.relayRequest is the node's own outbound helper, so the probe is

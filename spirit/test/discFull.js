@@ -176,7 +176,7 @@ function run() {
 
   let held = null;
   try {
-    held = R.box.streamOpen(bob.publicKey, auth.sign(bob.privateKey, auth.streamMessage(bob.publicKey)),
+    held = R.box.streamOpen(bob.publicKey, auth.sign(bob.privateKey, auth.streamMessage(bob.publicKey, R.box.relayPublicKey())),
       { write: function () {}, close: function () {} });
   } catch (e) { held = null; }
   if (held) {

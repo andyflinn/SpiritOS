@@ -139,8 +139,7 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   // ever having disconnected anybody.
   const sinks = joined.map(function () { return sink(); });
   joined.forEach(function (id, i) {
-    w.box.streamOpen(id.publicKey,
-      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinks[i]);
+    w.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, w.box.relayPublicKey())), sinks[i]);
   });
 
   // One inbound route per member, all at once. Nothing answers, so every
@@ -194,8 +193,7 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   }
 
   const back = joined.map(function (id) {
-    return w.box.streamOpen(id.publicKey,
-      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sink());
+    return w.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, w.box.relayPublicKey())), sink());
   });
   const turnedAway = back.filter(function (r) { return r && r.ok === false; });
 
@@ -295,8 +293,7 @@ test.subHeading('GUARANTEE: no relay can read what one node says to another');
   const sealed = JSON.stringify(
     seal.seal(bertCard.sealKey, anna.publicKey, bert.publicKey, plain, Date.now()));
 
-  w.box.streamOpen(bert.publicKey,
-    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
+  w.box.streamOpen(bert.publicKey, auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey, w.box.relayPublicKey())),
     { write: function () {}, close: function () {} });
 
   const sent = post(w, anna, bert, sealed);

@@ -311,6 +311,8 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
 {
   const home = tmpHome();
   const andy = auth.generateIdentity('andy');
+  // The relay's own identity: a stream header names it (goal/G16.12).
+  auth.saveIdentity(home, auth.generateIdentity('relay'));
   const box = createRelay(home);
   claimOwner(box, andy, 'andy');   // the owner invite (cycle 3, Part B)
 
@@ -363,8 +365,7 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   plantExpired('ghost3', 'third-dead-token');
   const live = box.mint('andy', 'anna', 7, 'green-boat');
   const heard = [];
-  box.streamOpen(andy.publicKey,
-    auth.sign(andy.privateKey, auth.streamMessage(andy.publicKey)), {
+  box.streamOpen(andy.publicKey, auth.sign(andy.privateKey, auth.streamMessage(andy.publicKey, box.relayPublicKey())), {
       write: function (chunk) {
         const ev = /^event: (.+)$/m.exec(String(chunk));
         const da = /^data: (.+)$/m.exec(String(chunk));

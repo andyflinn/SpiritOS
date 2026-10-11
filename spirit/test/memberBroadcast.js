@@ -32,7 +32,7 @@ function sinkFor(bag) {
 }
 
 function open(box, id, bag) {
-  return box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor(bag));
+  return box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), sinkFor(bag));
 }
 
 function routesAbout(bag, key) {

@@ -71,6 +71,9 @@ function resetState(ownerKey) {
   require(path.join(relayNode, 'js', 'relayStore.js')).closeAll();
   fs.rmSync(RELAY_STATE, { recursive: true, force: true });
   fs.mkdirSync(RELAY_STATE, { recursive: true });
+  // The relay's own identity, which lives in this folder: a stream header
+  // names it (goal/G16.12), and a real relay always has one.
+  auth.saveIdentity(relayNode, auth.generateIdentity('relay'));
   if (ownerKey) {
     fs.writeFileSync(path.join(RELAY_STATE, 'owner.json'), JSON.stringify({ owner: ownerKey }), 'utf8');
   }
@@ -90,8 +93,7 @@ function fakeSink() {
 
 function openStream(relay, id, sink) {
   return relay.streamOpen(
-    id.publicKey,
-    auth.sign(id.privateKey, auth.streamMessage(id.publicKey)),
+    id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, relay.relayPublicKey())),
     sink
   );
 }

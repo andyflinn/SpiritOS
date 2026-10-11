@@ -436,7 +436,7 @@ async function main() {
       streams.push(sseClient.connect({
         url: base + '/api/relay/stream?key=' + encodeURIComponent(id.publicKey),
         headers: function () {
-          return { 'X-Spirit-Sig': auth.sign(id.privateKey, auth.streamMessage(id.publicKey)) };
+          return { 'X-Spirit-Sig': auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())) };
         },
         onEvent: function () { /* held open */ },
       }));

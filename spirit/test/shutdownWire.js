@@ -178,7 +178,7 @@ async function run() {
   streams.push(sseClient.connect({
     url: A.base + '/api/relay/stream?key=' + encodeURIComponent(amy.publicKey),
     headers: function () {
-      return { 'X-Spirit-Sig': auth.sign(amy.privateKey, auth.streamMessage(amy.publicKey)) };
+      return { 'X-Spirit-Sig': auth.sign(amy.privateKey, auth.streamMessage(amy.publicKey, A.box.relayPublicKey())) };
     },
     retryMs: FLOOR_MS,
     randomImpl: function () { return 1; },
@@ -194,7 +194,7 @@ async function run() {
   streams.push(sseClient.connect({
     url: B.base + '/api/relay/stream?key=' + encodeURIComponent(bella.publicKey),
     headers: function () {
-      return { 'X-Spirit-Sig': auth.sign(bella.privateKey, auth.streamMessage(bella.publicKey)) };
+      return { 'X-Spirit-Sig': auth.sign(bella.privateKey, auth.streamMessage(bella.publicKey, B.box.relayPublicKey())) };
     },
     onEvent: function (msg) { if (msg.event === 'presence') bellaHeard.push(msg.data); },
   }));

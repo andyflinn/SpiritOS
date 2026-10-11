@@ -266,7 +266,7 @@ function assemble(s) {
       // one identifies nobody on a box holding two johns.
       stream: function (name) {
         const who = cast[name] || { id: owner, label: s.owner };
-        return auth.sign(who.id.privateKey, auth.streamMessage(who.id.publicKey));
+        return auth.sign(who.id.privateKey, auth.streamMessage(who.id.publicKey, boxes[first].relayPublicKey()));
       },
     },
   };
@@ -286,8 +286,7 @@ function assemble(s) {
 // nothing here outlives the process.
 function ask(box, id, body) {
   const said = [];
-  box.streamOpen(id.publicKey,
-    auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), {
+  box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey, box.relayPublicKey())), {
       write: function (chunk) {
         const ev = /^event: (.+)$/m.exec(String(chunk));
         const da = /^data: (.+)$/m.exec(String(chunk));

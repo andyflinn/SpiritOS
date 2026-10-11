@@ -92,7 +92,7 @@ async function relayHalf() {
   box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey,
     null, null, null, nodeCard.cardFrom(Object.assign({ name: 'owner' }, owner)));
   const heard = [];
-  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(heard));
+  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey, box.relayPublicKey())), sinkFor(heard));
 
   async function search() {
     const before = heard.filter(function (m) { return m.event === 'reply'; }).length;

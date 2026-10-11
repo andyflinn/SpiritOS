@@ -76,8 +76,7 @@ test.subHeading('THE HASH IS OVER WHAT TRAVELS, which is the ciphertext');
   const w = world();
   const anna = join(w, 'anna');
   const bert = join(w, 'bert');
-  w.box.streamOpen(bert.publicKey,
-    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
+  w.box.streamOpen(bert.publicKey, auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey, w.box.relayPublicKey())),
     { write: function () {}, close: function () {} });
 
   const plaintext = JSON.stringify({ app: 'natter', v: 1, body: { say: 'the layering' } });
@@ -116,8 +115,7 @@ test.subHeading('A SIGNATURE OVER THE PLAINTEXT is refused — sealed first, sig
   const w = world();
   const anna = join(w, 'anna');
   const bert = join(w, 'bert');
-  w.box.streamOpen(bert.publicKey,
-    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
+  w.box.streamOpen(bert.publicKey, auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey, w.box.relayPublicKey())),
     { write: function () {}, close: function () {} });
 
   const plaintext = JSON.stringify({ app: 'natter', v: 1, body: { say: 'wrong order' } });
