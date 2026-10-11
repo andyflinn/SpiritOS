@@ -2849,30 +2849,54 @@ function createRelay(rootDir, deps) {
   // Not what anybody said.
   function fromPartnerBox(who) { return !!(who && who.partner); }
 
-  function answerSelf(hash, text, who) {
-    var mine = auth.loadIdentity(rootDir);
-    var plain = text;
-    if (fromPartnerBox(who)) return guardWrite('owner verb', function () {
-      return answerSelfInner(hash, plain, who);
-    });
+  // OPENED ONCE, IN routePost (goal/G16.2). The question is opened there so
+  // the one-verb rule below can refuse it before a route is opened, and the
+  // opened text is handed here rather than opened a second time. `asked` is
+  // { plain } or { refusal }; a refusal still leaves as an answer, as it
+  // always did.
+  function openSelfAsk(text, who) {
+    if (fromPartnerBox(who)) return { plain: text };
     if (seal.isSealed(text)) {
+      var mine = auth.loadIdentity(rootDir);
       var got = mine && seal.open(mine.sealPrivateKey, who && who.id, mine.publicKey, text);
-      if (!got) return sendSelfAnswer(hash, who, { ok: false, status: 400, error: 'this did not open for me' });
-      plain = got.text;
-    } else if (!isCardAsk(text)) {
-      // The receiver's half of the strict rule, on the relay's own door.
-      // A sender-only check is bypassed by not being the sender, and
-      // "the relay is the one box everybody can reach" is precisely the
-      // door where that matters.
-      return sendSelfAnswer(hash, who, {
-        ok: false, status: 400,
-        // No apostrophe: spiritErrors.js scans these literals out of the
-        // source, and an escaped quote truncates what it reads.
-        error: 'unsealed posts are refused — seal to the cipher key this relay publishes',
-      });
+      if (!got) return { refusal: { ok: false, status: 400, error: 'this did not open for me' } };
+      return { plain: got.text };
     }
+    if (isCardAsk(text)) return { plain: text };
+    // The receiver's half of the strict rule, on the relay's own door.
+    // A sender-only check is bypassed by not being the sender, and
+    // "the relay is the one box everybody can reach" is precisely the
+    // door where that matters.
+    return { refusal: {
+      ok: false, status: 400,
+      // No apostrophe: spiritErrors.js scans these literals out of the
+      // source, and an escaped quote truncates what it reads.
+      error: 'unsealed posts are refused — seal to the cipher key this relay publishes',
+    } };
+  }
+
+  // ── ONE VERB PER REQUEST (goal/G16.2, R2 and R3 of the review of
+  // 2026-10-10) ──────────────────────────────────────────────────────────
+  //
+  // answerSelfInner is a sequence of independent `if (body && body.x)`
+  // blocks, so a body carrying several verbs ran all of them, and a truthy
+  // `card` (the one ask allowed unsealed) let an invite travel in plaintext
+  // beside it. Every own key of a request body is a verb, so a body is one
+  // key or it is refused. Counted here, on the opened text, so the refusal
+  // comes before anything runs.
+  function selfAskVerbCount(plain) {
+    var parsed = null;
+    try { parsed = JSON.parse(String(plain || '')); }
+    catch (e) { return 0; }
+    var body = parsed && parsed.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return 0;
+    return Object.keys(body).length;
+  }
+
+  function answerSelf(hash, asked, who) {
+    if (asked.refusal) return sendSelfAnswer(hash, who, asked.refusal);
     return guardWrite('owner verb', function () {
-      return answerSelfInner(hash, plain, who);
+      return answerSelfInner(hash, asked.plain, who);
     });
   }
 
@@ -3008,7 +3032,10 @@ function createRelay(rootDir, deps) {
     var parsed = null;
     try { parsed = JSON.parse(String(text || '')); }
     catch (e) { return false; }
-    return !!(parsed && !parsed.app && parsed.body && parsed.body.card);
+    // A card ask carries NOTHING ELSE (goal/G16.2, R3): it is the one ask
+    // allowed unsealed, so anything riding beside it would travel in clear.
+    return !!(parsed && !parsed.app && parsed.body && parsed.body.card &&
+      typeof parsed.body === 'object' && Object.keys(parsed.body).length === 1);
   }
 
   function answerSelfInner(hash, text, who) {
@@ -3784,9 +3811,14 @@ function createRelay(rootDir, deps) {
     // packets to its members and not packets to itself is measuring the
     // half of its work that is easiest to measure.
     //
-    // So this is the first thing after the sender is known, which is also
-    // the cheap-to-expensive order the rest of this function keeps: a
-    // flood must not be able to make this box verify signatures.
+    // AFTER THE SIGNATURE, NOT BEFORE IT (goal/G16.2, S4 of the review of
+    // 2026-10-10). It sat first, so a flood could not make this box verify
+    // signatures; but a charge before the proof is a charge to whoever the
+    // sender CLAIMS to be, and junk carrying a member's public key spent
+    // that member's budget: anyone who knew a key could rate-limit its
+    // owner off the relay. Andy folded the fix into G16.2: "the charge moves
+    // after the signature check". So the post is proven first, once, over
+    // the key it is addressed to, and only a proven sender is charged.
     //
     // KEYED ON THE RESOLVED SENDER — a member key or a
     // partner's relay key — never on anything the sender chose. The note
@@ -3800,6 +3832,16 @@ function createRelay(rootDir, deps) {
     // deliberately incurious; this is the exception, because
     // it is temporary, and a client that knows the cap
     // waits instead of guessing.
+    // THE PROOF. Over the key the post is addressed to, as the sender signed
+    // it: this relay's own key for a question to itself, the member's
+    // canonical key for a member, and the token as given for a key this box
+    // does not hold (the carry path signs over the same).
+    var selfAddressed = postedToSelf(toToken);
+    var target = selfAddressed ? null : deviceIdentity(toToken);
+    var signed = auth.postSignatureFor(who.publicKey, who.id,
+      target ? target.id : String(toToken), text, sig);
+    if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
+
     var fromPartner = !!who.partner;
     var pool = fromPartner ? partnerHits : memberHits;
     var perMin = fromPartner ? partnerPerMin() : MEMBER_PER_MIN;
@@ -3831,14 +3873,20 @@ function createRelay(rootDir, deps) {
     // Checked before deviceIdentity is asked about the target, because
     // the relay's own key is deliberately not a row and never will be —
     // publishing it as one would put it in every roll.
-    if (postedToSelf(toToken)) {
-      var selfSigned = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
-      if (!selfSigned) return { ok: false, status: 403, error: 'bad post signature' };
+    if (selfAddressed) {
+      var selfSigned = signed;
       if (typeof text !== 'string' || !text) {
         return { ok: false, status: 400, error: 'text required' };
       }
       if (Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
         return { ok: false, status: 413, error: 'too big' };
+      }
+      // OPENED ONCE, AND ONE VERB (goal/G16.2, R2 and R3): see openSelfAsk
+      // and selfAskVerbCount. Refused before a route is opened, so a second
+      // verb never runs by riding along with the first.
+      var asked = openSelfAsk(text, who);
+      if (asked.plain != null && selfAskVerbCount(asked.plain) > 1) {
+        return { ok: false, status: 400, error: 'one verb per request' };
       }
       var selfHash = auth.requestHash(selfSigned);
       // A PARTNER THAT ASKS IS A PARTNER THAT IS UP (R42). Stamped as an
@@ -3881,10 +3929,10 @@ function createRelay(rootDir, deps) {
       // before it returns.
       if (fromPartner) {
         var heldAnswer = holdForPartner(selfHash, opened.grantedMs);
-        answerSelf(selfHash, text, who);
+        answerSelf(selfHash, asked, who);
         return { ok: true, status: 200, hash: selfHash, held: heldAnswer };
       }
-      answerSelf(selfHash, text, who);
+      answerSelf(selfHash, asked, who);
       return withStatus(opened, selfHash);
     }
 
@@ -3901,7 +3949,7 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 413, error: 'too big' };
     }
 
-    var target = deviceIdentity(toToken);
+    // `target` was resolved above, with the proof.
 
     // ── NOT MINE: ASK THE PARTNERS TO CARRY IT ───────────────────────
     //
@@ -3971,8 +4019,7 @@ function createRelay(rootDir, deps) {
     // means three strings could have made this signature and the hash
     // must be over whichever one did. Recovering it is what lets the
     // minute stay off the wire entirely.
-    var signed = auth.postSignatureFor(who.publicKey, who.id, target.id, text, sig);
-    if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
+    // Proven above, over target.id, before the rate was charged.
 
     // DELIVER OR REFUSE, and refuse instantly (decision 0006). Presence
     // is what makes this answerable at all, and it is why that arc came
