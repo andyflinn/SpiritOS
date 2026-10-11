@@ -786,6 +786,20 @@ function frontDoor(rootDir, from) {
   var key = String(from == null ? '' : from).trim();
   if (!key) return 'drop';
 
+  // ── BLOCKED IS TURNED AWAY FIRST, WHATEVER THE POLICY (S12) ─────────
+  //
+  // This door never asked. Under `acquire` a blocked key therefore fell
+  // through to `admit` and its words reached apps and open pages — the one
+  // verdict the owner had explicitly refused. Blocking already outranks every
+  // way of arriving in the book (contacts.js: "it must outrank every way of
+  // arriving, including a key confirmed by phone"); it has to outrank the
+  // policy too, or the flag means nothing on the transport that matters.
+  // Answered `drop`, which is this door's word for "hear nothing from them".
+  try {
+    var blockedRow = contactBook.byPublicKey(rootDir, key);
+    if (blockedRow && blockedRow.blocked === true) return 'drop';
+  } catch (e) { /* a book that cannot be read decides nothing here */ }
+
   // Itself and everyone it has acquired — the same set the inbox uses,
   // asked here for the first time.
   //

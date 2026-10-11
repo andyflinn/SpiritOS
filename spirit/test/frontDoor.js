@@ -210,12 +210,18 @@ async function thePreference() {
     test.fail('hold: row=' + !!held + ' arrived=' + H.arrived.length);
   }
 
-  // The packet is still filed under hold, with its payload: the operator
-  // asked to be told there is somebody there, which means keeping what
-  // they sent until the decision is made.
-  const kept = H.logged.filter(function (e) { return e.outcome === 'delivered'; });
-  if (kept.length === 1 && kept[0].payload === 'hello') {
-    test.check('and what they sent is kept, because a decision is still to be made about it');
+  // AND WHAT THEY SENT IS NOT KEPT (goal/G16.7, reversing what stood here).
+  // This asserted the opposite — that a held packet is filed WITH its payload,
+  // because the operator asked to be told somebody is there. Andy ruled the
+  // other way, 2026-10-10: "words should be only in the traffic log, if they
+  // will reasonably be seen, the held peers should be receiving an error:
+  // request ignored, and the words not entered in the traffic log." A held
+  // line was sitting in the log in full for a person who had not yet agreed to
+  // hear from its sender; the hold keeps the COUNT, which is the waiting row
+  // above.
+  const kept = H.logged.filter(function (e) { return e.dir === 'in' && e.kind === 'request'; });
+  if (kept.length === 1 && kept[0].outcome === 'held' && !('payload' in kept[0])) {
+    test.check('and what they sent is NOT kept: the row says held and carries no payload');
   } else {
     test.fail('hold log: ' + JSON.stringify(H.logged));
   }

@@ -1102,8 +1102,12 @@ function createPeerPost(opts) {
   // say to anybody and which leaks nothing a sealed post was protecting.
   // Sealing it would be impossible in the case that matters anyway —
   // a sender whose cipher key we do not hold is exactly who gets refused.
-  function refuse(relayUrl, id, body, hash, status, why) {
-    var text = JSON.stringify({ v: 1, body: { ok: false, status: status, error: why } });
+  // `code` names the refusal when the sender is meant to act on which one it
+  // is (goal/G16.7's request-ignored); omitted, the refusal is as it was.
+  function refuse(relayUrl, id, body, hash, status, why, code) {
+    var inner = { ok: false, status: status, error: why };
+    if (code) inner.code = String(code);
+    var text = JSON.stringify({ v: 1, body: inner });
     // The refusal is a reply too, and its receipt covers it (S1, goal/G16.1).
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
     return request(relayUrl, 'POST', '/api/relay/reply', {
@@ -1377,7 +1381,11 @@ function createPeerPost(opts) {
     // handed. The receipt still goes out, below — the bytes did arrive,
     // and a sender who is being ignored is not owed the distinction
     // between "ignored" and "unreachable".
-    if (verdict !== 'drop') arrived.push(item);
+    // AND A HELD ONE KEEPS NOTHING EITHER (B2, goal/G16.7). A held sender is
+    // a row waiting for a person to accept or block it, so the hold keeps the
+    // COUNT and not the words: the item was pushed here for every verdict but
+    // drop, held ones included, and nothing ever trimmed the list.
+    if (verdict !== 'drop' && verdict !== 'hold') arrived.push(item);
 
     // SOMEBODY ELSE'S PACKET, ARRIVING. Logged after it is filed and
     // before the receipt goes out, for the same reason the receipt waits:
@@ -1396,10 +1404,18 @@ function createPeerPost(opts) {
     // after. Without this the log cannot be read back safely, because
     // both look identical as `delivered`.
     var admitted = verdict === 'known' || verdict === 'admit';
-    note(verdict === 'drop'
+    // A HELD ARRIVAL IS LOGGED LIKE AN IGNORED ONE: the fact, not the words
+    // (B2, goal/G16.7). Andy, 2026-10-10: "words should be only in the traffic
+    // log, if they will reasonably be seen, the held peers should be receiving
+    // an error: request ignored, and the words not entered in the traffic log."
+    // The comment below used to say a held packet is logged WITH its payload
+    // and merely not admitted; that is what this item changes, and it is why
+    // `admitted` alone was not enough — a held line sat in the log in full,
+    // readable, for a person who had not yet agreed to hear from its sender.
+    note(verdict === 'drop' || verdict === 'hold'
       ? {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
-        hash: hash, outcome: 'ignored',
+        hash: hash, outcome: verdict === 'hold' ? 'held' : 'ignored',
       }
       : {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
@@ -1510,6 +1526,24 @@ function createPeerPost(opts) {
     // would bind a text that never travelled. Only the SIZE is needed early,
     // and a signature is a fixed length whatever it signs, so the size check
     // below measures one signed over nothing.
+    // ── A HELD SENDER IS TOLD, AND NOT THROUGH THE ANSWER PATH (B1) ────
+    //
+    // It used to get the bare receipt a delivered post gets, so its own side
+    // settled the line as DELIVERED while the words were going nowhere. Andy,
+    // 2026-10-10: "the held peers should be receiving an error: request
+    // ignored" — which supersedes the design's open line that a hold must not
+    // be disclosed (NODE-AND-RELAY.md).
+    //
+    // It goes as the plain refusal above rather than as an answer, because an
+    // answer is SEALED to the sender and a held stranger is exactly whose
+    // cipher key this node does not hold: threading it through the answer path
+    // produced an empty reply, which is the delivered-looking receipt again.
+    // A dropped sender keeps today's silence: being ignored is not owed the
+    // distinction between ignored and unreachable.
+    if (verdict === 'hold') {
+      return refuse(relayUrl, id, body, hash, 403, 'this node ignored the request', 'request-ignored')
+        .then(function () { return item; });
+    }
     var sizingSig = auth.sign(id.privateKey, auth.receiptMessage(hash, ''));
     return Promise.resolve()
       .then(function () {
