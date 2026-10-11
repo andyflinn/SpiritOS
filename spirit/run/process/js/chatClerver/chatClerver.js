@@ -314,4 +314,10 @@ appServer.serve({
       return { items: out.items, more: out.more };
     },
   },
-});
+// ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
+// register the node and the relay load. appServer puts "chatClerver: " in
+// front of the text.
+}, { codes: {
+  // goal/G4.6: a line to a key the node's contact book marks blocked; the node's block outranks.
+  'peer-blocked': { status: 409, text: 'that peer is blocked on this node' },
+} });

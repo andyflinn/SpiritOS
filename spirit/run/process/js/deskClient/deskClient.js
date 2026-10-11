@@ -545,4 +545,11 @@ appServer.serve({
     },
   },
 // What a peer needs granted here (apiAuth/G1.10): the desk's node, the one verb it nudges with.
-}, { dependencies: ['deskClient.changed'] });
+//
+// ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
+// register the node and the relay load. appServer puts "deskClient: " in
+// front of the text.
+}, { dependencies: ['deskClient.changed'], codes: {
+  // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
+  'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
+} });

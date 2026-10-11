@@ -73,9 +73,58 @@ function matches(proto, value, more) {
   return typeof value === typeof proto;
 }
 
+// ── AN APP'S OWN CODES (goal/G16.11) ─────────────────────────────────
+//
+// The shared register is loaded by the node and the relay alike, so a code
+// that belongs to one app has no business in it. Andy, 2026-10-11: "yes.
+// get the bloody app error codes out of the core." And on the text: "and
+// make sure their codes start with \"appServerName: error text\" so the
+// origin of the error is clear."
+//
+// So an app declares its codes to serve(), each with a status and a text,
+// and THE NAME IN FRONT IS PUT HERE, never typed by the app: an app cannot
+// wear another's name by writing it into its own text.
+//
+// Module-level because one process is one app server: serve() runs once,
+// before anything listens, and declares that server's codes for the life of
+// the process. A second call would be a second server in one process, which
+// the pipe argument already forbids.
+const declared = Object.create(null);
+let declaredBy = '';
+
+function declareCodes(name, codes) {
+  declaredBy = String(name || '');
+  if (codes === undefined || codes === null) return;
+  if (!isPlain(codes)) throw new Error('appServer: codes must be an object of {code: {status, text}}');
+  Object.keys(codes).forEach(function (code) {
+    const row = codes[code];
+    if (!/^[a-z][a-z0-9-]*$/.test(code)) throw new Error('appServer: "' + code + '" is not a code name');
+    if (!isPlain(row) || typeof row.text !== 'string' || !row.text || typeof row.status !== 'number') {
+      throw new Error('appServer: code "' + code + '" needs status (a number) and text (a string)');
+    }
+    // A CODE THE REGISTER ALREADY OWNS STAYS THE REGISTER'S. The shared
+    // ones (bad-request and its kind) are the node's and the relay's answer
+    // too, and an app redefining one would make the same code mean two
+    // things on one box.
+    if (errors.byCode(code)) throw new Error('appServer: code "' + code + '" is the shared register\'s and cannot be declared');
+    declared[code] = { status: row.status, text: row.text };
+  });
+}
+
+// Is this a code this server may refuse by name — its own, or the shared
+// register's? Used by the pass-through below, so a handler can throw either.
+function knownCode(code) { return !!declared[code] || !!errors.byCode(code); }
+
 // The one error shape (D12), built from the catalogue so no text is
-// invented here.
+// invented here — or from this app's own declaration, with its name in
+// front so the origin of the error is clear.
 function refusal(code, extra) {
+  const own = declared[code];
+  if (own) {
+    const out = { ok: false, code: code, error: declaredBy + ': ' + own.text };
+    if (extra) out.extra = extra;
+    return { status: own.status, body: out };
+  }
   const e = errors.byCode(code);
   const out = { ok: false, code: code, error: e ? e.text : code };
   if (extra) out.extra = extra;
@@ -152,7 +201,7 @@ function createAppServer(verbs, opts) {
       // (D12), so an app can say line-too-large rather than handler-failed.
       // Its own key, not e.code: a system error's code (ENOENT) must never
       // pass for a refusal. Anything else a handler throws stays handler-failed.
-      if (e && typeof e.refusal === 'string' && errors.byCode(e.refusal)) return marked(refusal(e.refusal, Object.assign({ verb: name }, e.extra && typeof e.extra === 'object' ? e.extra : {})));
+      if (e && typeof e.refusal === 'string' && knownCode(e.refusal)) return marked(refusal(e.refusal, Object.assign({ verb: name }, e.extra && typeof e.extra === 'object' ? e.extra : {})));
       return marked(refusal('handler-failed', { verb: name }));
     });
   }
@@ -393,11 +442,20 @@ function serve(verbs, opts) {
     console.error(e.message);
     process.exit(2);
   }
+  // THE NAME FIRST, because this server's own codes wear it (goal/G16.11),
+  // and the declaration lands before anything listens so a malformed one
+  // stops the start the way a malformed dependency does.
+  const name = path.basename(String(argv[1] || 'server'), '.js');
+  try {
+    declareCodes(name, opts && opts.codes);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(2);
+  }
   const s = createAppServer(verbs, opts && typeof opts.fallback === 'function' ? { fallback: opts.fallback } : undefined);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
-  const name = path.basename(String(argv[1] || 'server'), '.js');
   const srv = s.listen(pipe, function () {
     publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
       return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };

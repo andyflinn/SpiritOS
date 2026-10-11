@@ -2208,4 +2208,21 @@ appServer.serve({
 // The bundle a peer user needs (apiAuth/G1.10, DEPENDENCIES): the agents'
 // protocol spans most of this table — searches, reads, writes, presses,
 // changes — so the minimum is the app itself, one app-level grant-shape.
-}, { dependencies: ['desk'] });
+//
+// ── THE DESK'S OWN REFUSALS (goal/G16.11) ───────────────────────────
+//
+// These four were defined in the shared register, which the node and the
+// relay both load. Andy, 2026-10-11: "yes. get the bloody app error codes
+// out of the core." They are declared here now, beside the verbs that
+// raise them; appServer puts "desk: " in front of each text, so the origin
+// of a refusal is plain and no other app can wear this name. The codes
+// themselves are unchanged, so nothing on the wire moved.
+}, { dependencies: ['desk'], codes: {
+  // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
+  // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
+  'taken': { status: 409, text: 'taken by another agent' },
+  // An alteration written against a box version that has moved on (desk/G2.1).
+  'box-moved': { status: 409, text: 'the box has changed since that version' },
+  'not-offered': { status: 409, text: 'that press is not offered for this item now' },
+  'no-such-item': { status: 404, text: 'no such item' },
+} });

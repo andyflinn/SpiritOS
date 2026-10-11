@@ -372,7 +372,21 @@ const server = appServer.serve({
       return { deleted: true };
     },
   },
-});
+// ── ITS OWN REFUSALS (goal/G16.11) ──────────────────────────────────
+//
+// These three were defined in the shared register, which the node and the
+// relay both load. Andy, 2026-10-11: "yes. get the bloody app error codes
+// out of the core." Declared here now, beside the code that enforces them;
+// appServer puts "fileServer: " in front of each text. The codes are
+// unchanged, so nothing on the wire moved.
+}, { codes: {
+  // Andy: "make the limit 32. that's enough. we'll find a method later to clean up that folder." The store holds
+  // at most 32 files, complete or partial; a push or fetch past that is refused, never queued.
+  'pool-full': { status: 409, text: 'the file pool is full' },
+  'no-such-file': { status: 404, text: 'no such file' },
+  // Andy, on pulling onto a path where a different file sits: "fail: already exists."
+  'already-exists': { status: 409, text: 'a different file already exists at that path' },
+} });
 
 // Every grant on fileServer.<from> becomes one on fileServer.<to>, through the node's own loopback auth verbs
 // (server.js jobs.authSearch, jobs.authGrant, jobs.authRevoke); no auth verb of its own. Run outside a node (no

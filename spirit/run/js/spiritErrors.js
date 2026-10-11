@@ -738,10 +738,8 @@ define('invite-not-found', { status: 403, texts: ['invite not found'] });
 // ── NOT FOUND AND CONFLICT ───────────────────────────────────────────
 
 define('no-row', { status: 404, texts: ['no row for that key'] });
-// A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that item
-// before the taker's, is refused by this name. Andy: "an item can 'take' my message and be the only one to answer
-// after that".
-define('taken', { status: 409, texts: ['taken by another agent'] });
+// `taken` STOOD HERE and went with the app codes (goal/G16.11). It is the desk's,
+// and the desk declares it to appServer itself.
 // apiAuth (G1.2, G1.4): the gate's refusals and jobs.auth's.
 define('not-granted', { status: 403, texts: ['not granted to this caller'] });
 define('already-granted', { status: 409, texts: ['already granted'] });
@@ -755,15 +753,21 @@ define('key-claimed', { status: 409, texts: ['key already claimed'] });
 define('slot-held', { status: 409, texts: ['this name is held by another id'] });
 define('minting-incomplete', { status: 409, retry: 'after', texts: ['minting incomplete'] });
 define('name-reserved', { status: 409, texts: ['name reserved by a live invite'] });
-// The desk server (desk/G2.1): an alteration written against a box version that has
-// moved on, a press the item does not offer now, and an id no session names.
-define('box-moved', { status: 409, texts: ['the box has changed since that version'] });
-define('not-offered', { status: 409, texts: ['that press is not offered for this item now'] });
-define('no-such-item', { status: 404, texts: ['no such item'] });
-// deskClient (goal/G3.9, rule 1): the agent's wait is refused while another agent's key is not blocked on its node.
-define('unblocked', { status: 409, texts: ['another agent is not blocked on this node'] });
-// The chatClerver (goal/G4.6): a line to a key the node's contact book marks blocked; the node's block outranks.
-define('peer-blocked', { status: 409, texts: ['that peer is blocked on this node'] });
+// ── NINE APP CODES STOOD HERE, AND LEFT (goal/G16.11) ───────────────
+//
+// box-moved, not-offered and no-such-item (the desk's), unblocked
+// (deskClient's) and peer-blocked (the chatClerver's) were defined in this
+// register, which the node and the relay both load. A3 of the review of
+// 2026-10-10 named it, and Andy, 2026-10-11: "yes. get the bloody app error
+// codes out of the core." Each app now declares its own codes to appServer,
+// which puts the server's name in front of the text so the origin is clear.
+// Nothing on the wire changed: the same codes travel.
+//
+// `taken` left from NOT FOUND AND CONFLICT above, and the fileServer's
+// pool-full, no-such-file and already-exists from their own section below.
+//
+// A code in this register cannot be declared by an app (appServer
+// declareCodes refuses it), so one code never means two things on one box.
 
 // ── A MALFORMED REQUEST ──────────────────────────────────────────────
 //
@@ -784,27 +788,13 @@ define('bad-request', {
   prefixes: ['policy must be one of:'],
 });
 
-// ── THE FILESERVER'S REFUSALS (fileTransfer goal/G1) ─────────────
+// ── THE FILESERVER'S REFUSALS LEFT TOO (goal/G16.11) ─────────────
 //
-// Andy: "make the limit 32. that's enough. we'll find a method later to
-// clean up that folder." The store holds at most 32 files, complete or
-// partial; a push or fetch past that is refused, never queued.
-define('pool-full', {
-  status: 409, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['the file pool is full'],
-  note: 'Delete a file to make room; nothing was stored.',
-});
-define('no-such-file', {
-  status: 404, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['no such file'],
-  note: 'This fileServer holds no file by that id.',
-});
-// Andy, on pulling onto a path where a different file sits: "fail: already exists."
-define('already-exists', {
-  status: 409, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['a different file already exists at that path'],
-  note: 'pull never overwrites; the file at the path is untouched.',
-});
+// pool-full, no-such-file and already-exists were defined here. They are the
+// fileServer's own, and it declares them to appServer now, with its name in
+// front of the text. His limit ("make the limit 32. that's enough.") and his
+// line on a pull onto an occupied path ("fail: already exists.") live with the
+// declaration, in the server that enforces them.
 
 // AN APP SERVER'S OWN REFUSALS STOOD HERE (cycle 2): seven codes written
 // for faceServer.js, four of them states only a stranger would ever reach.
