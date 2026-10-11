@@ -104,6 +104,10 @@ const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || s
     environment = { PORT:port }
   }
   
+  // THE FOLDER FIRST (goal/G16.2, with Andy's yes to wsl-claude's finding): a fresh tree has no relay-state, and a
+  // write into a missing folder threw before the node listened, so every test that starts a fresh node saw nothing
+  // answer.
+  fs.mkdirSync(path.dirname(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE), { recursive: true });
   fs.writeFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, JSON.stringify(environment, null, 2), 'utf8');
 }
 
