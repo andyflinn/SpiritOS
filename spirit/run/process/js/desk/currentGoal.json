@@ -1,8 +1,8 @@
 {
- "change": 32489,
+ "change": 32490,
  "line": 8510,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T04:08:58.409Z",
+ "writtenAt": "2026-10-11T04:09:01.543Z",
  "items": [
   {
    "id": "goal/G16",
@@ -38,7 +38,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -4438,10 +4438,9 @@
    "id": "goal/G16.8",
    "title": "Ownership never by invite: the first-claim path goes",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
