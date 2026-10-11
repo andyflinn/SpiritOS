@@ -209,21 +209,26 @@ test.subHeading('6. a request to the relay carries exactly one verb');
   else test.fail(OWED + 'a card ask carried another verb: ' + short(withCard));
 }
 
-// ── 7. S13: THE CLAIM LIMIT IS NOT ONE BUCKET FOR EVERYBODY ─────────────
+// ── THE CLAIM LIMIT IS NOT ASSERTED, AND THAT IS A DECISION ─────────────
 //
-// The claim rate limit is keyed on the remote address, and behind Caddy every
-// claimant shares one address — so one bucket for the whole internet: one
-// noisy claimer locks out every real one, and a claimer behind a different
-// proxy is unlimited. Keyed on the claimant instead (its own key, or the
-// address Caddy forwards).
-test.subHeading('7. the claim limit is keyed on the claimant, not on one shared address (S13)');
-{
-  const src = fs.readFileSync(path.join(RUN, 'js', 'relay.js'), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '').split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
-  const at = src.search(/rateOk\(\s*claimHits\s*,\s*([A-Za-z_$][\w$]*)/);
-  const keyed = at === -1 ? '' : (src.slice(at).match(/rateOk\(\s*claimHits\s*,\s*([A-Za-z_$][\w$]*)/) || ['', ''])[1];
-  if (keyed && !/^clientKey$/.test(keyed)) test.check('the claim bucket is keyed on ' + keyed + ', not on the connection address');
-  else test.fail(OWED + 'the claim bucket is still keyed on the connection address (' + (keyed || 'not found') + ')');
-}
+// A check stood here for S13: the claim rate limit is keyed on the connection
+// address, and behind Caddy every claimant shares one bucket. Andy dropped it,
+// 2026-10-11 — "drop it. with the explanation." — and the explanation is his:
+// "a claimer is not a member yet., but by design there can be no claimer if
+// the capacity for members is exhausted. a member then must be ejected, before
+// a new claim can be satisfied."
+//
+// That bound is already built (relay.js seats, from his LIMITED-RESOURCES
+// line "it's like member slots, you must evict before adding new ones"): free
+// seats are the allowance less the members held AND the invites still live, a
+// full relay refuses new claims and new invites, and nobody is evicted
+// automatically. So seats bound who can ever get in; the claim limit cannot
+// create a member, only stop somebody hammering the door, and one shared
+// bucket does that well enough.
+//
+// Re-keying was worse both ways, which is why it is not merely deferred: a
+// fresh key costs nothing, so per-key counting never stops a flood, and a
+// forwarded address means believing a header. Written down so a later session
+// does not read the gap as an oversight and build it anyway.
 
 test.reportSuccessFailureCount();
