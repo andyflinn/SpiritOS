@@ -111,15 +111,26 @@ async function run() {
   if (brow && brow.blocked === true) test.check('and its row stays blocked');
   else test.fail(OWED + 'the blocked row changed: ' + short(brow));
 
-  // ── 5. KNOWN MEANS ACCEPTED ─────────────────────────────────────────────
-  test.subHeading('5. under acquire, heard once is not known');
+  // ── 5. AND UNDER `acquire`, ONE MESSAGE IS ACCEPTANCE ───────────────────
+  //
+  // This asserted the opposite: that heard once is not known, from the folded
+  // Low "known means accepted, not heard once". Built literally it stopped
+  // `acquire` acquiring — a newcomer was never promoted, so every later
+  // message of theirs was rationed as a stranger's and their row read waiting.
+  // Put to Andy rather than guessed, and he settled it, 2026-10-11: "by
+  // \"acquire\" you mean when my policy is \"add them\"? yes then the first
+  // contact should result in them being a full contact."
+  //
+  // So the Low is about the HOLD setting, where a row waits for a person to
+  // say yes; `acquire` means add them, and it does.
+  test.subHeading('5. under acquire, one message makes them a full contact');
   const visitor = auth.generateIdentity('visitor');
   const A = nodeWith('acquire');
   await A.router.onRequest(RELAY, sealedPost(visitor, A.me, 'hello'));
-  if (A.arrived.length === 1) test.check('acquire still admits the stranger\'s line');
+  if (A.arrived.length === 1) test.check('acquire admits the stranger\'s line');
   else test.fail('acquire did not admit: ' + A.arrived.length);
-  if (hub.frontDoor(A.home, visitor.publicKey) !== 'known') test.check('and the front door does not call them known after one message');
-  else test.fail(OWED + 'one message under acquire made the stranger known');
+  if (hub.frontDoor(A.home, visitor.publicKey) === 'known') test.check('and the front door calls them known from then on, which is what "add them" means');
+  else test.fail(OWED + 'one message under acquire did not make the stranger a contact: ' + hub.frontDoor(A.home, visitor.publicKey));
 }
 
 run().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
