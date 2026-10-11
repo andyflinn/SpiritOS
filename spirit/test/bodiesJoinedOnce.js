@@ -1,12 +1,12 @@
 'use strict';
 
 // spirit/test/bodiesJoinedOnce.js
-// goal/G16.6: bytes copied, bytes counted (R1, R5, S10 and the proxy reply of the review of 2026-10-10). Written
+// goal/G16.6: bytes copied, bytes counted (the review of 2026-10-10: chunks glued as text, sizes counted in characters, S10 and the proxy reply). Written
 // first, red on today's code; claude-windows wrote it and builds it. Andy's rule, 2026-10-10: "in a max_BYTE
 // environment, BYTES must be copied. BYTES must be counted. that's a rule." His rulings on the readers: "4. yes. the
 // relayRequest must copy raw bytes only. if it doesn't fix it. now."; "3. serveCommon. yes. one single piece of shared
 // code must ensure that raw bytes are copied. precisely."; "2. same practise odered. ideally through a shared
-// kernel.js utility or similar."; R5: "yes. just make sure it's fixed."
+// kernel.js utility or similar."; on sizes counted in characters: "yes. just make sure it's fixed."
 //
 // WHAT IS ASSERTED
 //   1. kernel.js carries readBody(stream, {max}): raw chunks collected, decoded once; a four-byte character split
