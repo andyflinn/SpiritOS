@@ -236,3 +236,6 @@ console.log(JSON.stringify(JSON.parse(r.text)
 spirit/run/process/js/deskVerify/verify.db*
 
 spirit/run/process/js/deskUnsloth/connection.json
+
+#
+#
