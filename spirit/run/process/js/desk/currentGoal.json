@@ -1,8 +1,8 @@
 {
- "change": 32501,
+ "change": 32744,
  "line": 8510,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T04:10:24.170Z",
+ "writtenAt": "2026-10-11T04:52:12.147Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,12 +37,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5068,9 +5070,12 @@
    "id": "goal/G16.3",
    "title": "The relay list leaves the Natter folder for node state (A1)",
    "goal": "goal/G16",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G16.9"
    ],
@@ -5078,11 +5083,247 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": ".gitignore",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "design/protocol/THE-DOOR.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/kernel.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerBadge.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peerStats.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/desk/onboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskClient/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/natter/natter.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/natterDetails/natterDetails.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/authTables.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cycleA.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/debugSwitch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLoop.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedWriterBuild.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothFs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/everyVerb.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/htmlEscaping.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/jobsAuth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labLifecycle.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labMaster/BONES.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labMaster/labMaster.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labPopulate.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labWorld.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterBind.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterIntrinsic.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/nodeInfo.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/pathCanonicalization.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerStats.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceFeeding.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceNode.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceProof.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceReconcile.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayListIsNodeState.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relaySearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/searchMemory.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/servableAssets.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/sharedLimit.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellRename.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/world.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -5121,10 +5362,10 @@
     }
    ],
    "asks": 0,
-   "half": true,
-   "full": true,
-   "box": "WHAT: the list of relays a node uses (where it claims, acquires, shows presence and searches peers) becomes the node's own state, read and written through node verbs, and leaves the Natter app's folder; Natter becomes a face over those verbs (A1 of the review, rule 3: no app logic in node or relay).\n\nDECIDED: this item at Andy's word (2026-10-10, \"Q3: Add it? yes\"). On the first claim (2026-10-10): \"the relays should do first-claim, it should happen at install time. that's the only \\\"safe\\\" way.\" and \"NOT first claim i mean\": the relay does no first claim at all; then, told that owner.json at install is already the way and the first-claim branch and owner-invite checks are dead code for a token nobody mints: \"KILL the dead code / fallback. this type of stuff is always coming back to bite us.\"; \"yes. ownership CANNOT be achieved via invite.\" (the item added: goal/G16.8). So the owner of a relay is set when the relay is installed, and no first claim travels over the wire; proposed as its own item of this goal (a relay-wire path removed). New node verbs need peer review and his yes on each verb (one agent: said plainly, no second reviewer is possible). His yes on the two verbs, 2026-10-10: \"Q4: Do you approve two new commands on the node, list relays and remove relay, with a successful claim adding its relay? yes.\" So relay.search and relay.remove are approved; relay.add is not built; a successful relay.claim adds its relay to the list.\n\nCHECKED by claude-windows at b355e36d:\n- ownerBadge.js loadRelays reads shell/natter/relays.json (rows {label, url}, deduped by url); ensureRelays writes [FIRST_RELAY] (spirit.andyflinn.com) when the file is missing, and server.js 1241 calls it at every boot. So a node whose Natter folder is renamed or emptied silently points at Andy's relay again.\n- Readers of that list: hub.js (claim, acquire, peer.search: 998, 1827 and the comments around 1030, 1428, 1807), presenceNode.js (presence), server.js (boot), ownerBadge (the badge and url-not-listed at 383, 389).\n- Writers: Natter, through api.fs.saveFile of its own relays.json (natter.js RELAYS_FILENAME, the Add row and the removal); nothing else writes rows, nothing in the node offers a verb for it.\n- The path is in two error texts of the shared register, matched on the wire: no-relay-url ('no relay url in shell/natter/relays.json') and url-not-listed ('url not in shell/natter/relays.json') (spiritErrors.js 289, 714).\n- The node's relay namespace today: relay.status, relay.claim {url, name, invite, inviteLabel} and the rest of the claim is done in hub.js; no verb lists, adds or removes a relay.\n- Tests that plant or assert the file: serverSurface.js (writes a nowhere row so no suite probes the public relay), everyVerb.js, pathCanonicalization.js and servableAssets.js (relays.json under shell is app data and writable), natterIntrinsic.js.\n\nSHAPE (proposed)\n1. THE FILE MOVES to node state: relay-state/relays.json, the same rows {label, url}, written by the node only; ensureRelays seeds it with FIRST_RELAY there. relay-state is neither served nor writable through fs (the gate), so no app or page can redirect the node by writing a file.\n2. TWO NODE VERBS, the list as a search (rule: every list is a search): relay.search {q} answering rows as {key: url, label} bounded as every search is, and relay.remove {url}; owner-only like the other relay verbs. NO ADD VERB: a relay enters the list when its claim succeeds (relay.claim {url, name, invite, inviteLabel}, unchanged), the way Natter's two steps (add the url, then claim) collapse into one. Owner or member is the relay's distinction, made at the claim (relay.js claimAttempt: a relay with no owner yet takes the first claim, with the owner invite its install printed, as its owner; a relay with an owner takes a claim with a member invite as a member); the list never records it, the badge asks the relay (/api/relay/who). His question of 2026-10-10 (\"adding a relay happens one of two ways: via invite/claim OR via ownership? where does that distinction happen?\") is answered by that line. Verb files for agents come when a goal opens them, as with fs.\n3. NATTER READS AND WRITES THROUGH THE VERBS, nothing else changes in its face; its own relays.json is deleted from the tree and from the gate's special knowledge, with a test that nothing under shell/natter is read by the node any more (the grep of js/ for 'natter' is empty but the app's name in the intrinsic manifest).\n4. THE TWO ERROR TEXTS lose the path: 'no relay url' and 'url not in the relay list'; the register is loaded by node and relay alike, so both sides change together.\n5. NOT IN THIS ITEM: the old prefs file hub reads from Contacts (expires at alpha), the peer stats under shell/contacts (A4, its own item), the operator docs naming app/natter (one line each, folded if small).\n\nTESTS, red first: spirit/test/relayListIsNodeState.js: a node booted from the fakes with no relay-state/relays.json seeds it with FIRST_RELAY and never creates shell/natter/relays.json; relay.search lists the seeded row, relay.add adds one and relay.search shows it, relay.remove takes it away, and the file under relay-state holds exactly those rows; relay.claim of a url not in the list is refused with the new text; hub's claim and presence read the node's list (a row added through relay.add is used, a row written under shell/natter is not); fs.save cannot write relay-state/relays.json. The suites above follow: serverSurface plants its nowhere row under relay-state; pathCanonicalization and servableAssets drop the relays.json-is-app-data assertions.\n\nFILES: ownerBadge.js, hub.js, server.js, presenceNode.js, spiritErrors.js (core, grant); shell/natter/natter.js; spirit/test/relayListIsNodeState.js (new) and the suites named.\n\nFOLDED IN (Andy, 2026-10-10: \"place all you can into existing items, then we deal with the rest.\"):\n- A4: per-peer counters are node bookkeeping written into the Contacts app's folder (peerStats, shell/contacts/peerfile-<key>.json); they move to node state beside the relay list, read through the node, with Contacts as their face.\n- The operator pages (bash http-to-https, RELAY-HOST) that name app/natter/relays.json say the node-state file instead.",
-   "version": 8,
+   "half": false,
+   "full": false,
+   "box": "WHAT: the list of relays a node uses (where it claims, acquires, shows presence and searches peers) becomes the node's own state, relay-state/relays.json, read and written through node verbs, and leaves the Natter app's folder. Natter becomes a face over those verbs (A1 of the review, rule 3: no app logic in node or relay).\n\nDECIDED (Andy, 2026-10-10 and 2026-10-11):\n- This item at his word.\n- Two node verbs, approved by name: relay.search (it exists; it now reads the node's list) and relay.remove (new). No relay.add: a successful claim adds its relay.\n- Ownership is written at install and never travels (goal/G16.8); a claim only ever adds a member's relay to the list.\n- THE SEED IS TWO RELAYS (2026-10-11): \"i say two.\" A fresh node is seeded with spirit.andyflinn.com and noderoutes.net: \"i own the domain name. and i'll use spirit for development and noderoutes.net for the actual site.\" and \"noderoutes.net will not update as often as spirit\". noderoutes.net answers nothing yet; \"it will exist before end of next week\".\n- SPIRIT STAYS IN THE SEED UNTIL ALPHA (2026-10-11), asked whether a seed naming his relay points strangers at it: \"we'll be the only ones using spirit.\" and \"before alpha we'll remove the hard-coded spirit.andyflinn.com\".\n- noderoutes.net cannot be removed: \"we'll remove the option to delete noderoutes.net\".\n- No migration in code: Andy moves his own list by hand, after this build is in his tree (shell/natter/relays.json becomes relay-state/relays.json).\n\nSHAPE:\n- The node seeds relay-state/relays.json with the first relay on a fresh root and reads only that file; shell/natter/relays.json leaves the tree.\n- relay-state is neither served nor writable through fs, so no app or page can redirect the node.\n- Natter reads and removes through the two verbs; adding is a claim.\n- The two error texts lose the path, in the register both sides load.\n\nFOLDED IN: the per-peer counters leave the Contacts folder for node state (A4); the operator pages name the node-state file.\n\nTESTS: spirit/test/relayListIsNodeState.js, written first by wsl-claude (3cacb3d3), 8 of 18 at the start.\n\nBUILD: claude-windows, in progress.\n\nFILES: ownerBadge.js, hub.js, server.js, presenceNode.js, spiritErrors.js, peerStats.js (core, grant); shell/natter, shell/contacts; the suites that planted the old file.",
+   "version": 11,
    "checks": [
     {
      "number": "Q1",
@@ -5179,6 +5420,42 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-10T20:38:24.887Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Shall the node move an existing Natter list into its own state once at first boot, instead of starting over?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-11T04:41:15.602Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/hub.js, spirit/run/js/kernel.js, spirit/run/js/ownerBadge.js, spirit/run/js/peerStats.js, spirit/run/js/server.js, spirit/run/js/spiritErrors.js, spirit/run/shell/natter/natter.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T04:45:38.249Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Two relays are seeded now. Shall the delete protection count only a relay that has answered at least once, so nobody is left with a name that does not resolve?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:43:38.104Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "If spirit is only ours, should a shipped node be seeded with noderoutes.net alone, and we add spirit by hand on our own machines?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:47:03.683Z"
     }
    ],
    "chat": [
@@ -5291,6 +5568,236 @@
      "by": "desk",
      "at": "2026-10-11T04:10:23.225Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:10:35.655Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:11:25.920Z",
+     "text": "wsl: taking this one and writing the test first. Two things in the box are out of date, and I am going by your own words rather than asking again.\nIt still describes a relay taking its owner from a first claim with the token its install printed. That path went tonight, so the answer to your question about the two ways in is simpler now: ownership comes from the install, never over the wire, and a claim only ever adds a member relay to the list.\nIt also asks for a third command, add a relay, in the test list. You approved two, list and remove, and said add is not built: a successful claim puts its relay in the list. My test will demand exactly the two you approved and no more."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:15:54.358Z",
+     "text": "commit 3cacb3d366ca200c43c28b2e8a567606cdb7ffa5: goal/G16.3 red: the relay list is the node's own state\n- spirit/test/relayListIsNodeState.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:16:03.377Z",
+     "text": "wsl: the test is in, 3cacb3d3. Ten things it wants, eight it already guards.\nThe hole in plain words: where this node talks is decided by a file inside the Natter app, and any app can write it. Rename that folder and the node quietly points at your relay again. The test proves it: a row planted in the app folder wins over the node own list today.\nOne correction to the box. It calls both commands new. The listing one already exists and works; what it reads is wrong, not that it is missing. Remove is the only new command, which is also the only one that needs your yes, and you gave it.\nThe building is the next pair of hands."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:16:20.494Z",
+     "text": "claude-windows: taking the build against 3cacb3d3. wsl-claude, G16.11 shows me only because I wrote its red; its build is yours to take."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:16:45.365Z",
+     "text": "claude-windows: one thing for you before this lands on your nodes. Your nodes keep their relay list in the Natter folder today. The red forbids the node from reading that folder at all, so on update each node starts from the default list again.\nWhat they joined is not lost: the seats they hold are kept in node state and still drive the connections. Only the list Natter shows and claims from goes back to the default.\nShall the node move an existing Natter list into its own state once at first boot, instead of starting over?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:17:42.916Z",
+     "text": "wsl: one thing you should know before you answer him. My test forbids the node from naming that app folder anywhere, so a one-time move would make it red. If you want the move, say so and I widen the test to allow that one read and nothing else. Either answer is buildable; it is your call, not a test problem."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:32:16.727Z",
+     "text": "i just offered to move it myself to simplify the process, i'll move it, then commit?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:32:39.496Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:33:53.328Z",
+     "text": "claude-windows: yes, that is simpler, and no migration gets built. One thing on the order: move it after this build is in your tree, not before. Until then your node still reads the Natter folder.\nThe move is one file: shell/natter/relays.json becomes relay-state/relays.json. I will say here when the build is pushed. Taking the cap now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:34:18.883Z",
+     "text": "claude-windows: capped. The box keeps the decisions, including your hand move of the list, and drops the old checks and the dead first-claim shape."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:34:39.657Z",
+     "text": "wsl: if you move the file yourself then there is nothing to build for it, and my test stands as it is: the node never reads that app folder, not even once. That is the cleaner end state.\nI did not understand your last word, so I am not guessing at it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:34:52.806Z",
+     "text": "claude-windows: wsl-claude, cap means condense the item text. I took it and it is done: the box now holds the decisions and his hand move of the list."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:36:09.998Z",
+     "text": "but relay-state/relays.json will be .gitignored"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:36:33.858Z",
+     "text": "claude-windows: it already is: the whole relay-state folder is ignored by git, and so was the old Natter file. So your move stays on your machine and there is nothing to commit for the file itself.\nThe build removes the two ignore lines that name the old Natter file, and the lab tool that still copies that file."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:38:25.064Z",
+     "text": "why don't we just hard-code initialize it with two relays spirit.andyflinn.com and noderoutes.net, one of them will always work, so the node on first start will write that file, then it is initialized with at least one valid relay ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:39:03.839Z",
+     "text": "wsl: two things before you decide, then it is yours.\nnoderoutes.net does not exist yet. I just looked it up and it has no address at all, so seeding it today puts a dead row in every new node. Once it is up, your reason is good: two names, one of them answers.\nAnd you chose one row on purpose once, for a reason worth re-reading: a second relay is a second thing to explain to somebody seeing the screen for the first time. That is a judgement about the first five minutes, not about plumbing, so it is yours to overturn.\nMy test demands exactly one row today. Say two and I change it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:39:33.642Z",
+     "text": "it will exist before end of next week"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:40:21.408Z",
+     "text": "i own the domain name. and i'll use spirit for development and noderoutes.net for the actual site."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:40:21.936Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:41:12.942Z",
+     "text": "noderoutes.net will not update as often as spirit"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:41:13.414Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:41:17.926Z",
+     "text": "claude-windows: built in my clone, not committed: the red is 18 of 18, and the Natter, Contacts, error and lab suites are green, merged with G16.11. It still seeds one relay; if you say two, the red changes first.\nThe grant above covers the node files and the two Natter screens.\nTwo things you should know. A claim may now aim at a relay the node does not list yet, since a claim is the only way onto the list; only your own machine can ask for one. And Natter keeps the private names you type for relays in a small file of its own, because a claim has no place to carry them.\nNo screen offers remove yet: Natter has had no remove button since September, so the verb is there for whoever builds one."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:41:48.512Z",
+     "text": "wsl: understood, and that reason is good: a steadier box is the better fallback. One real cost of seeding it before it exists, and then it is your call.\nThe rule that stops somebody deleting their last relay counts a second one as safe on the look of the address alone. It never checks that anything answers. So the moment a second row is seeded, that protection ends, and a new user can remove the working relay and be left pointing only at a name that does not resolve. One click, no way back through the screen that did it.\nSo: seed both the day noderoutes.net answers, not before. Until then one row, and the second is a line of code waiting. If you want both now anyway, I will make the protection count only relays that have answered at least once."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:41:49.394Z",
+     "text": "i say two."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:42:32.530Z",
+     "text": "we'll remove the option to delete noderoutes.net"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:42:52.843Z",
+     "text": "commit 1af22cf8b5136bf875e9d3e501920affb942ac6f: goal/G16.3: the red seeds his two relays, not one\n- spirit/test/relayListIsNodeState.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:43:02.286Z",
+     "text": "wsl: two it is. The test now demands both names, pushed as 1af22cf8, so the build can go green against it.\nOne thing is still open and it is under the item as a question, because it is the only sharp edge of seeding the second one early: the rule that stops somebody deleting their last relay will now count noderoutes.net as a safe second path even though it does not exist. My advice is to make that rule count only a relay that has answered at least once. Yes or no and I am done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:43:39.496Z",
+     "text": "wsl: that is cleaner than my suggestion and it closes the question. One relay that cannot be deleted is a floor, so the delete rule needs no notion of what has answered. Question cleared, and the test will demand that noderoutes.net cannot be removed.\nOne window left, and it is yours to time, not a code problem: until that box answers, a node seeded today holds an undeletable name that does not resolve, and the user can still delete the one that works. It closes itself the day the box is up."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:44:27.397Z",
+     "text": "commit aec66923f31655f8b49be1b68b92fa841d7d682a: goal/G16.3: the red demands the undeletable floor\n- spirit/test/relayListIsNodeState.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:44:34.440Z",
+     "text": "wsl: the floor is in the test now, aec66923. claude-windows, that is one more thing owed on your build: noderoutes.net cannot be removed.\nI put it on the rule the screens ask, not on a button, because no screen offers remove today and a check on a button would prove nothing. Two of its three checks already pass on purpose: the floor has to be one row, not the list, so the other public relay must still go, and a node holding only the floor must not be able to empty itself."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:44:53.790Z",
+     "text": "we'll be the only ones using spirit."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:44:54.308Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:45:27.106Z",
+     "text": "claude-windows: built to your two rulings, still in my clone. A fresh node gets both spirit and noderoutes.net, and the node refuses to remove noderoutes.net, with its own refusal saying it is kept on every node. The red is 19 of 19 on wsl-claude update, and every suite I reran is green.\nI commit as soon as you grant the core files above."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:45:40.709Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:46:01.132Z",
+     "text": "wsl: then the seed points strangers at your box. Every node anybody downloads would carry spirit in its list and start asking it who it is, and offering a seat screen for a relay that is yours.\nMy advice: ship with noderoutes.net alone, which is also the floor, and the two of us add spirit by hand on our own machines. That is one name to explain on a first screen, which was your own reason for one row, and it keeps your relay off every stranger list.\nIt is under the item as a question. If you still want both seeded, the test changes back in a minute and nothing is lost."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:46:24.670Z",
+     "text": "commit d35aa3e6631a8a9d8aab2ebbc3537f51467a8aa9: goal/G16.3: the relay list is the node's own state\n- .gitignore\n- design/protocol/THE-DOOR.md\n- spirit/run/js/hub.js\n- spirit/run/js/kernel.js\n- spirit/run/js/ownerBadge.js\n- spirit/run/js/peerStats.js\n- spirit/run/js/server.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/shell/natter/natter.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/agentOnboard.js\n- spirit/test/authTables.js\n- spirit/test/cycleA.js\n- spirit/test/debugSwitch.js\n- spirit/test/deskLoop.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/deskUnslothFs.js\n- spirit/test/everyVerb.js\n- spirit/test/htmlEscaping.js\n- spirit/test/jobsAuth.js\n- spirit/test/labLifecycle.js\n- spirit/test/labMaster/BONES.md\n- spirit/test/labMaster/labMaster.js\n- spirit/test/labPopulate.js\n- spirit/test/labWorld.js\n- spirit/test/natterBind.js\n- spirit/test/natterDetails.js\n- spirit/test/natterIntrinsic.js\n- spirit/test/nodeInfo.js\n- spirit/test/pathCanonicalization.js\n- spirit/test/peerStats.js\n- spirit/test/presenceFeeding.js\n- spirit/test/presenceNode.js\n- spirit/test/presenceProof.js\n- spirit/test/presenceReconcile.js\n- spirit/test/presenceWire.js\n- spirit/test/publishData.js\n- spirit/test/relaySearch.js\n- spirit/test/searchMemory.js\n- spirit/test/servableAssets.js\n- spirit/test/serverSurface.js\n- spirit/test/sharedLimit.js\n- spirit/test/shellRename.js\n- spirit/test/world.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:46:29.010Z",
+     "text": "before alpha we'll remove the hard-coded spirit.andyflinn.com"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:46:29.514Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:46:32.294Z",
+     "text": "claude-windows: pushed as d35aa3e6, with the floor wsl-claude added: the red is 22 of 22, and the Natter, Contacts, error and lab suites are green. Claiming it.\nYour hand move, once this is in your tree and before you restart your node: copy shell/natter/relays.json to relay-state/relays.json. If you skip it, the node seeds spirit and noderoutes.net on its first start.\nFiles: hub.js, ownerBadge.js, server.js, spiritErrors.js, peerStats.js, kernel.js, onboard.js, publishData.js, the Natter and Natter details screens, the ignore rules, the protocol page, the lab notes, and 33 suites and lab scripts."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:47:20.212Z",
+     "text": "wsl: your question is cleared, and I have put the before-alpha promise in the rollout goal so it is not lost: remove the hard-coded spirit.andyflinn.com, and the one line that seeds it is named there.\nI am verifying his build now. I wrote the test, he built it, so the check is mine to run."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:47:22.048Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:47:32.265Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:47:42.058Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-11T04:51:44.980Z",
+     "text": "deskVerify: passed, at d35aa3e6 (pulled). 34 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:52:00.408Z",
+     "text": "claude-windows: it is in your tree now. Before your node next restarts, copy shell/natter/relays.json to relay-state/relays.json, or it starts with the two seeded relays."
     }
    ]
   },
@@ -6611,7 +7118,7 @@
    "title": "App error codes leave the shared register (A3)",
    "goal": "goal/G16",
    "status": "running",
-   "with": "",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G16.9"
@@ -6622,9 +7129,75 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/appServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/appServer.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "wsl-claude",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/chatClerver/chatClerver.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/chatClerver/chatClerver.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskClient/deskClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskClient/deskClient.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/fileServer/fileServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/fileServer/fileServer.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appErrorCodes.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -6680,6 +7253,24 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-10T22:14:56.545Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appServer.js, spirit/run/js/spiritErrors.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T04:13:03.678Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appServer.js, spirit/run/js/appServer.js, spirit/run/js/spiritErrors.js, spirit/run/js/spiritErrors.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-11T04:47:52.818Z"
     }
    ],
    "chat": [
@@ -6717,6 +7308,121 @@
      "by": "desk",
      "at": "2026-10-11T04:10:23.696Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:10:36.045Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:12:38.973Z",
+     "text": "commit 8d6d82b29322cea225d1053c8753a8c2ed7ea771: goal/G16.11 red: app error codes leave the shared register\n- spirit/test/appErrorCodes.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:12:44.844Z",
+     "text": "claude-windows: the red is pushed, 8d6d82b2, and its build belongs to wsl-claude.\nIt asks for an app to declare its own codes to the app server, as serve(verbs, {codes}). A refused code comes back with its status, and its text reads the app name, a colon, then the text, with the name put there by the app server. The four apps carry their own declarations, and the register holds none of the nine app codes.\nIt reads 2 of 9. The two that pass guard what must not change: an undeclared code stays handler-failed, and a register code passes through as before."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:13:04.099Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:13:15.052Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:13:24.995Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:13:41.746Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:13:51.705Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:14:08.501Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:14:18.234Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:14:35.416Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:14:45.054Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:15:02.560Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:15:12.250Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:15:29.426Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:15:39.227Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-11T04:15:56.944Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:17:06.345Z",
+     "text": "wsl: taking the build here, against his test. It wants seven things and already guards two.\nI need your grant on the two core files, the shared error list and the app server, plus the four app servers that will declare their own codes. Nothing on the wire changes: the same codes travel, each now wearing the name of the server that raised it, put there by the app server and never typed by the app."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:17:27.967Z",
+     "text": "claude-windows: for the grant: you already granted the two core files here (G1). The new G2 only repeats them; the four app servers are not core files, so they need no grant."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:18:23.095Z",
+     "text": "wsl: the second grant on this item is mine to apologise for, not yours to press. You already granted the same two files, and I then filed my file list, which made the desk ask again for the same thing twice over. Ignore it. I am building on the grant you gave.\nI cannot clear a grant myself: only you can."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:34:29.280Z",
+     "text": "commit afb7fbc25a7299ac48efc7f86f80ad74f912ae1f: goal/G16.11 built: app error codes leave the shared register\n- spirit/run/js/appServer.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/process/js/fileServer/fileServer.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-11T04:34:38.227Z",
+     "text": "wsl: built and pushed, afb7fbc2. His test is nine of nine and the twenty-seven other tests that name any of those codes are all green.\nWhat changed: each app server now declares its own error names, and the app server stamps the servers name in front of the text, so a refusal says which server raised it. An app cannot write another server name there, and it cannot take over a name the core already uses.\nNothing travels differently. The same names cross the wire as before."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-11T04:49:16.694Z",
+     "text": "claude-windows: verified wsl-claude build against my red: 9 of 9, and the app server, chat, desk loop and error suites are green.\nI broke it twice on purpose and put it back. Without the app name in front, the two name checks went red and nothing else did. With one app code put back into the shared register, the register check went red and nothing else did. So the red watches the build.\nNothing is owed from my side; it waits on wsl-claude claim and your verifier."
     }
    ]
   },
@@ -6733,7 +7439,6 @@
     "goal/G16"
    ],
    "blocked": [
-    "goal/G16.3",
     "goal/G16.11"
    ],
    "go": false,
