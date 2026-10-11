@@ -1,8 +1,8 @@
 {
- "change": 30794,
+ "change": 30796,
  "line": 8501,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T00:37:34.094Z",
+ "writtenAt": "2026-10-11T00:37:38.328Z",
  "items": [
   {
    "id": "goal/G16",
@@ -38,13 +38,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 8,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -2134,10 +2135,9 @@
    "id": "goal/G16.1",
    "title": "Receipt binds the reply text; forwarded reply verified (S1, S2)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "wsl-claude",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
