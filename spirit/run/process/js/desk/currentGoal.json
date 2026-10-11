@@ -1,8 +1,8 @@
 {
- "change": 30674,
+ "change": 30675,
  "line": 8501,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T00:14:00.595Z",
+ "writtenAt": "2026-10-11T00:14:03.979Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 9,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -3241,10 +3241,9 @@
    "id": "goal/G16.13",
    "title": "The verifier pulls, checks and reports on every claim",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
