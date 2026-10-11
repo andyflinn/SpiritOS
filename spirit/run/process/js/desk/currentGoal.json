@@ -1,8 +1,8 @@
 {
- "change": 32268,
+ "change": 32271,
  "line": 8507,
  "goal": "goal/G16",
- "writtenAt": "2026-10-11T03:08:33.371Z",
+ "writtenAt": "2026-10-11T03:08:43.239Z",
  "items": [
   {
    "id": "goal/G16",
@@ -38,12 +38,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2523,10 +2526,9 @@
    "id": "goal/G16.2",
    "title": "Self-addressed verbs get their own capacity (S3)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
