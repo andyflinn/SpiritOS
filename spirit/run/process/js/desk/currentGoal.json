@@ -1,8 +1,8 @@
 {
- "change": 33560,
+ "change": 33856,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T03:19:33.897Z",
+ "writtenAt": "2026-10-12T04:03:33.082Z",
  "items": [
   {
    "id": "goal/G10",
@@ -11,11 +11,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G10.8"
+    "goal/G10.9"
    ],
    "go": false,
    "alone": false,
@@ -37,12 +38,14 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3841,9 +3844,12 @@
    "id": "goal/G10.8",
    "title": "Enable Levant to act as a normal agent on desk, like claude",
    "goal": "goal/G10",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G10"
    ],
@@ -3851,18 +3857,154 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/box.write.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/check.set.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/commitCheck.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.files.add.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/press.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/removeAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/verify.again.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskClient/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/AGENTS.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/commit.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/file.load.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/file.save.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/push.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/coreFilesMove.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskCoreGrants.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskKnownAgents.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskProfiles.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedWriterBuild.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRules.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothContext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothDesk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3893,11 +4035,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 4,
    "half": false,
    "full": false,
-   "box": "Andy, 2026-10-12: \"new item. Enable Levant, to act as a normal agent on desk. like claude.\"\n\nDECIDED (Andy, 2026-10-12)\n- Levant reads every desk change and acts on it as claude does, and is just as constrained by the desk.\n- Its desk tools grow by box.write, press (claim-done, design-complete), check.set, item.files.add and verify.again.\n- It works in its own clone, D:/SpiritOS-agent-local, and writes code there.\n- Code goes through deskUnsloth own file tools, rooted at that clone: deskUnsloth verbs, one description file each, so introspection lists them and tools.js makes them tools generically; they write only files on the item Levant has taken, for every caller.\n- It commits and pushes, so its work is verified like everyone else (his earlier \"no\" reversed: unverified is worse). Two deskUnsloth verbs, commit and push, through the same commitCheck hook as claude, installed in agent-local: no Go, no commit; scope and core grants enforced.\n- Remedy: a tag on origin before the trial goal; a bad commit is undone by git revert, never a force push.\n- All of it in this item.\n\nFOUND IN THE CODE\n- 11111 (Levant) runs its node and deskUnsloth from D:/SpiritOS-agent-local; that clone has no commitCheck hook installed today.\n- Today Levant answers only lines addressed to it and JOB lines; ten desk tools (chat.add, check.add, item.box, item.chat, item.checks, item.get, item.status, item.take, items.search, work.open); fs on its own app folder.\n- The node fs writes only shell, media, published and preferences.json under spirit/run (kernel.js fileWritable), so spirit/test and process are out of its reach.",
-   "version": 7,
+   "box": "Andy, 2026-10-12: \"new item. Enable Levant, to act as a normal agent on desk. like claude.\"\n\nDECIDED (Andy, 2026-10-12)\n- Levant reads every desk change and acts on it as claude does, and is just as constrained by the desk.\n- Its desk tools grow by box.write, press (claim-done, design-complete), check.set, item.files.add and verify.again.\n- It works in its own clone, D:/SpiritOS-agent-local, and writes code there.\n- Code goes through deskUnsloth own file tools, rooted at that clone: deskUnsloth verbs, one description file each, so introspection lists them and tools.js makes them tools generically; they write only files on the item Levant has taken, for every caller.\n- It commits and pushes, so its work is verified like everyone else (his earlier \"no\" reversed: unverified is worse). Two deskUnsloth verbs, commit and push, through the same commitCheck hook as claude, installed in agent-local: no Go, no commit; scope and core grants enforced.\n- Remedy: a tag on origin before the trial goal; a bad commit is undone by git revert, never a force push.\n- All of it in this item.\n- file.save refuses outside the agent scope too, so it never writes what it cannot commit (Q14). Andy, 2026-10-12: \"correct. and all agents in desk have \"/\" file scope, to that configuration item goes.\"\n- The per-agent scope setting is removed from desk and commitCheck, every agent being / (Q15). Andy, 2026-10-12: \"b\". With it gone, file.save has no scope to check: the item file list stays its one fence.\n- The scope removal is in this item (Q16 to Q19). Andy, 2026-10-12: \"all in this item\".\n\nFOUND IN THE CODE\n- 11111 (Levant) runs its node and deskUnsloth from D:/SpiritOS-agent-local; that clone has no commitCheck hook installed today.\n- Today Levant answers only lines addressed to it and JOB lines; ten desk tools (chat.add, check.add, item.box, item.chat, item.checks, item.get, item.status, item.take, items.search, work.open); fs on its own app folder.\n- The node fs writes only shell, media, published and preferences.json under spirit/run (kernel.js fileWritable), so spirit/test and process are out of its reach.\n- Desk scopes are per agent key (scope.set is his alone; commitCheck reads scope.get): claude-windows has /, the ollama agent node (Levant) spirit/run/shell/textEditor/.",
+   "version": 10,
    "checks": [
     {
      "number": "Q1",
@@ -4015,6 +4157,87 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T03:18:49.540Z"
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "save also refuse outside its scope, so it never writes what it cannot commit?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:32:30.661Z"
+    },
+    {
+     "number": "Q15",
+     "kind": "Q",
+     "words": "\"all agents in desk have / file scope, to that configuration item goes\": do you mean (a) you set / for every agent now and the scope setting stays, or (b) the per-agent scope setting is removed from desk and commitCheck, every agent being / ; and in (b), in this item or its own?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:34:01.561Z"
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "The scope removal (scope.set, scope.get, the Desk scope pane, commitCheck scope check, their suites): in this item, or an item of its own, \"Desk: remove agent scopes\"?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:34:03.786Z"
+    },
+    {
+     "number": "Q17",
+     "kind": "Q",
+     "words": "Q16: in this item, or its own item \"Desk: remove agent scopes\"?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:34:05.840Z"
+    },
+    {
+     "number": "Q18",
+     "kind": "Q",
+     "words": "Either the loaded model template does not parse its own tool-call format, or deskUnsloth must read that text form; worth its own item once Q16 is settled?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:32:55.153Z"
+    },
+    {
+     "number": "Q19",
+     "kind": "Q",
+     "words": "8), or its own item \"Desk: remove agent scopes\"?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:34:07.731Z"
+    },
+    {
+     "number": "Q20",
+     "kind": "Q",
+     "words": "Waive, so I build the scope removal?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:35:28.491Z"
+    },
+    {
+     "number": "Q21",
+     "kind": "Q",
+     "words": "I lean to the fallback only if the model you want to keep is this one; title: \"deskUnsloth: tool calls the studio hands back as text\"?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:35:52.283Z"
+    },
+    {
+     "number": "Q22",
+     "kind": "Q",
+     "words": "Item \"deskUnsloth: test tool calling of the allowed models\", measuring each model with today tool list: add it?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:45:36.967Z"
     }
    ],
    "chat": [
@@ -4127,6 +4350,290 @@
      "by": "desk",
      "at": "2026-10-12T03:19:33.418Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:26:35.215Z",
+     "text": "this is all assuming that all agents have \"/\" file scope in desk?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T03:26:35.690Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T03:29:00.056Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:29:05.510Z",
+     "text": "commit 5a3b983690032bd5a1b9b1fc1b956312744f7afb: goal/G10.8: Levant acts as a normal agent on the desk\n- spirit/run/process/js/desk/box.write.json\n- spirit/run/process/js/desk/check.set.json\n- spirit/run/process/js/desk/item.files.add.json\n- spirit/run/process/js/desk/press.json\n- spirit/run/process/js/desk/verify.again.json\n- spirit/run/process/js/deskUnsloth/AGENTS.md\n- spirit/run/process/js/deskUnsloth/commit.json\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/process/js/deskUnsloth/file.load.json\n- spirit/run/process/js/deskUnsloth/file.save.json\n- spirit/run/process/js/deskUnsloth/push.json\n- spirit/test/deskUnslothAgent.js\n- spirit/test/deskUnslothContext.js\n- spirit/test/deskUnslothDesk.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:29:25.149Z",
+     "text": "Built at 5a3b9836: Levant reads every change but its own (it used to answer its own lines); five desk verb files; deskUnsloth file.load, file.save, commit, push, fenced to items its node has taken; commit hooks installed in agent-local.\nFiles: deskUnsloth.js, AGENTS.md and four verb files beside it, five desk verb files, test deskUnslothAgent.js (new, 17 green), deskUnslothContext.js, deskUnslothDesk.js; all eight deskUnsloth suites green; deskServer.js has 2 reds that are already red at HEAD.\nLive needs a restart of deskUnsloth on 11111; cost stated: one model call per desk change; the origin tag before the trial goal waits for your word."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:29:40.653Z",
+     "text": "deskVerify: passed, at 5a3b9836 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T03:29:41.097Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:30:26.625Z",
+     "text": "No: the file tools fence only by the item file list; commits are also bounded by the scope you set per agent, and Levant (ollama agent node) has spirit/run/shell/textEditor/, I have /.\nSo today Levant could write a red in spirit/test but its commit would be refused (scope); to work like claude it needs / from you (scope.set).\nShould file.save also refuse outside its scope, so it never writes what it cannot commit?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:30:50.502Z",
+     "text": "The verifier ran one suite because I listed only the new one; deskUnslothContext.js and deskUnslothDesk.js, which this item changed, are on the list now.\nI send verify.again after your answer on file.save and the scope, since that may change the code."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:31:18.999Z",
+     "text": "Q14: save also refuse outside its scope, so it never writes what it cannot commit?\n\ncorrect. and all agents in desk have \"/\" file scope, to that configuration item goes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:31:46.350Z",
+     "text": "Recorded: file.save will refuse outside the agent scope.\nThe second half reads two ways: you set / for all agents and the scope setting stays, or the scope setting is removed and everyone is /.\nQ15 asks which, and if removal, in this item or its own."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:32:06.583Z",
+     "text": "Q15: \"all agents in desk have / file scope, to that configuration item goes\": do you mean (a) you set / for every agent now and the scope setting stays, or (b) the per-agent scope setting is removed from desk and commitCheck, every agent being / ; and in (b), in this item or its own?\n\nb"
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T03:32:21.514Z",
+     "text": "Levant: <tool_call>\n<function=fs_load>\n<parameter=path>\nprocess/js/fs.load.json\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=fs_load>\n<parameter=path>\nprocess/js/fs.save.json\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=fs_load>\n<parameter=path>\nprocess/js/fs.search.json\n</parameter>\n</function>\n</tool_call>"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:32:35.086Z",
+     "text": "Recorded (b): the scope setting goes, everyone is /; file.save then keeps the item list as its one fence.\nThe removal touches scope.set, scope.get, the Desk scope pane, the commitCheck scope check and their suites.\nQ16: in this item, or its own item \"Desk: remove agent scopes\"?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:32:54.788Z",
+     "text": "Finding, not acted on: Levant line above is three tool calls written as text (<tool_call><function=fs_load>...), so the studio handed them back as content, not as tool_calls; deskUnsloth posted them as the answer and ran none.\nEither the loaded model template does not parse its own tool-call format, or deskUnsloth must read that text form; worth its own item once Q16 is settled?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:33:01.183Z",
+     "text": "Q17: Q16: in this item, or its own item \"Desk: remove agent scopes\"?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:33:13.921Z",
+     "text": "\"yes\" fits both halves: is the scope removal in this item (G10.8), or its own item \"Desk: remove agent scopes\"?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:33:30.357Z",
+     "text": "Q19: 8), or its own item \"Desk: remove agent scopes\"?\n\nall in this item"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:35:22.134Z",
+     "text": "Q18: Either the loaded model template does not parse its own tool-call format, or deskUnsloth must read that text form; worth its own item once Q16 is settled?\n\nrecommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:35:28.052Z",
+     "text": "Red done: the scope section of deskUnslothAgent.js is red on 5a3b9836 (scopes in five files, two scope suites in the tree).\nThe desk will not let me build it, since I wrote the red; your waive button on G10.8 lifts that.\nWaive, so I build the scope removal?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:35:51.803Z",
+     "text": "Recommendation: its own item, after this one. Tool calls came back structured with the model Levant used on 2026-10-10 (net_fetch ran three rounds), so it is this model template, not deskUnsloth.\nFirst one measured call to the studio with tools on the loaded model, to confirm it answers text; then either load a model whose calls the studio parses, or a small fallback in deskUnsloth reading the <tool_call><function=..><parameter=..> form.\nI lean to the fallback only if the model you want to keep is this one; title: \"deskUnsloth: tool calls the studio hands back as text\"?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:37:29.673Z",
+     "text": "Q18: Either the loaded model template does not parse its own tool-call format, or deskUnsloth must read that text form; worth its own item once Q16 is settled?\n\nenglish?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T03:37:30.073Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:42:21.916Z",
+     "text": "Plainly: Levant tried to use three tools, but the model wrote the requests as plain text instead of real tool requests, so nothing ran and the text was posted as his answer.\nWith the model he used on 2026-10-10 this worked, so the model loaded now is the likely cause.\nMy suggestion: a separate item later, to test this model once and then either switch model or teach deskUnsloth to read that text."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:44:00.167Z",
+     "text": "which model did he use on 2026-10-10? We'll use that for now, and we'll test that capability for the models he's allowed to use?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:45:36.491Z",
+     "text": "Correction: on 2026-10-10 Levant ran Ornith-1.5-9B (my line in goal/G14.6 that day), and that is the model loaded now, so I was wrong to blame the model.\nWhat changed since is the tool list (desk and fs grew, about 25 tools now) and the prompt; a 9B model may fall back to writing calls as text under that load, but that is a guess until measured.\nItem \"deskUnsloth: test tool calling of the allowed models\", measuring each model with today tool list: add it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:46:40.056Z",
+     "text": "Item \"deskUnsloth: test tool calling of the allowed models\", measuring each model with today tool list: add it?\n\nadd it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:47:47.275Z",
+     "text": "commit d0c3a4b79f3b4e3b155e3edd0d6be0945cc82a08: goal/G10.8: agent scopes removed; every agent is /\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/removeAgent.js\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/shell/desk/desk.js\n- spirit/test/agentOnboard.js\n- spirit/test/coreFilesMove.js\n- spirit/test/deskCoreGrants.js\n- spirit/test/deskKnownAgents.js\n- spirit/test/deskProfiles.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/deskRules.js\n- spirit/test/deskScopePane.js\n- spirit/test/deskServer.js\n- spirit/test/deskUnslothAgent.js\n- spirit/test/publishData.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:51:02.746Z",
+     "text": "Scope removal at d0c3a4b7: no scope.set or scope.get left; the commit check keeps the core grants; the agent pane is the profile; deskScopes.js became deskCoreGrants.js, deskScopePane.js retired.\nFiles: desk.js, commitCheck.js, removeAgent.js, publishData.js, shell desk.js and eleven suites, all green; deskServer.js keeps its 2 old reds (red at HEAD before this), so it is not on the list.\nLive: restart desk on 65432 and deskUnsloth on 11111; Levant scope no longer matters."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:54:03.190Z",
+     "text": "deskVerify: passed, at d0c3a4b7 (pulled). 11 suites ran green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:03:17.034Z",
+     "text": "cool, i reconnected to unsloth with a new token!"
+    }
+   ]
+  },
+  {
+   "id": "goal/G10.9",
+   "title": "deskUnsloth: test tool calling of the allowed models",
+   "goal": "goal/G10",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G10"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": false,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 3,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12: \"which model did he use on 2026-10-10? We'll use that for now, and we'll test that capability for the models he's allowed to use?\" and \"add it.\"\n\nDECIDED (Andy, 2026-10-12)\n- The selection is precise: a model and its quantization (flavor). His words: \"thing is: i tested, quantized versions of models in unsloth, so i could experiment with configurations where certain models we're reduced by quantization. so we need to offer a precise selection of models, that includes the quantization/flavor as well?\"\n- Only the quantizations already downloaded are listed: \"yes. i'll download extra flavors manually, if needed.\"\n- Allowed models: \"a list deskUnsloth keeps, (the cached list) where we mark models as desk-recommended, with the desk-icon \n(ICON.THREAD:🧵)\"\n\nFOUND IN THE STUDIO (127.0.0.1:8888, openapi.json)\n- api/inference/load takes gguf_variant (e.g. Q4_K_M) beside model_path; deskUnsloth sends model_path alone today.\n- api/models/gguf-variants lists every quantization of a model with whether it is downloaded.\n- the load also takes chat_template_override.\n\nFOUND ON THE DESK\n- 2026-10-12 Levant (Ornith-1.5-9B, the model it ran on 2026-10-10 too) posted three tool calls as plain text (<tool_call><function=fs_load>...) under goal/G10.8: none ran.\n- Since 2026-10-10 its tool list grew to about 25 tools (desk, fs, deskUnsloth); the cause is not measured yet.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should the selector list only the quantizations already downloaded, or every one the hub offers, loading one that is not downloaded fetching it first?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:52:51.470Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1 (red check): list only the downloaded quantizations, or every one the hub offers?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:52:53.662Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Which models is Levant allowed to use: every downloaded model and quantization, or a list you keep (where)?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:57:23.415Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Where should the tool-calling result show: a mark beside each model in the configure selector, a table in the test tab, or a line in Desk?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Who marks a model and quantization desk-recommended: you, with a toggle beside it in the configure selector, or the test, when its tool calls come back as real calls?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Q5: you, by a toggle in configure, or the test when tool calls come back real?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:57:28.130Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:47:13.907Z",
+     "text": "Added as goal/G10.9, your words in the box; nothing built until your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:49:45.328Z",
+     "text": "thing is: i tested, quantized versions of models in unsloth, so i could experiment with configurations where certain models we're reduced by quantization. so we need to offer a precise selection of models, that includes the quantization/flavor as well?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:51:31.093Z",
+     "text": "Yes, it can be precise: the studio load takes gguf_variant (for example Q4_K_M) beside the model, and api/models/gguf-variants lists every quantization of a model with whether it is downloaded; today deskUnsloth sends the model alone, so the studio picks the variant.\nSo the test would run per model and quantization pair, and the load also takes chat_template_override, a possible remedy if one pair writes its tool calls as text.\nQ1 (red check): list only the downloaded quantizations, or every one the hub offers?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:52:29.296Z",
+     "text": "Q2: Q1 (red check): list only the downloaded quantizations, or every one the hub offers?\n\nyes. i'll download extra flavors manually, if needed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:53:10.706Z",
+     "text": "Recorded: a model and its quantization, downloaded ones only.\nTwo gaps before this is buildable: Q3 which models count as allowed, and Q4 where the tool-calling result shows.\nQ3 and Q4 are on the item as red checks."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:56:58.547Z",
+     "text": "Q3: Which models is Levant allowed to use: every downloaded model and quantization, or a list you keep (where)?\n\na list deskUnsloth keeps, (the cached list) where we mark models as desk-recommended, with the desk-icon \n(ICON.THREAD:🧵)\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:57:27.752Z",
+     "text": "Workable: models.json, the cached list deskUnsloth keeps, gets a recommended mark per model and quantization, and the selector shows 🧵 (ICON.THREAD is in the kernel table) beside those.\nIt answers Q3; the open part is who sets the mark.\nQ5: you, by a toggle in configure, or the test when tool calls come back real?"
     }
    ]
   }
