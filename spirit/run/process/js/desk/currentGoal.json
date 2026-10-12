@@ -1,15 +1,15 @@
 {
- "change": 36147,
+ "change": 36240,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T13:04:00.842Z",
+ "writtenAt": "2026-10-12T13:23:53.813Z",
  "items": [
   {
    "id": "goal/G19",
    "title": "October 10 review items",
    "goal": "",
    "status": "",
-   "with": "",
+   "with": "claude-windows",
    "buttons": [
     "close"
    ],
@@ -46,23 +46,40 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 12,
+   "design": false,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "October 10 review items.\n\nWHAT: act on the master review of 2026-10-10 (design/reviews/claude-clowd/2026-10-10-master-review.md, read-only review of master at e8f8ffd7, Sep 18 to Oct 10). Andy, 2026-10-12: \"yes open that goal as \"October 10 review items\"\".\nOf about forty findings, 2 are fixed (net.fetch buffering, the Stop flag) and 4 partly; the rest stand. Each item holds its findings and today's evidence.\n\nTOPICS: seats; the goal Done gates; deskVerify (its tab, its suites); desk checks; git helpers; deskUnsloth robustness; shell trust in streamed objects; the net.fetch gate; the face; hygiene.\n\nOUTSIDE THE REPO, his: rotate the sk-unsloth key committed in a2786053 (the file is untracked since 30218a86, the key is still in history).\n",
-   "version": 1,
-   "checks": [],
+   "box": "October 10 review items.\n\nWHAT: act on the master review of 2026-10-10 (design/reviews/claude-clowd/2026-10-10-master-review.md, read-only review of master at e8f8ffd7, Sep 18 to Oct 10). Andy, 2026-10-12: \"yes open that goal as \"October 10 review items\"\".\nOf about forty findings, 2 are fixed (net.fetch buffering, the Stop flag) and 4 partly; the rest stand. Each item holds its findings and today's evidence.\n\nTOPICS: seats; the goal Done gates; deskVerify (its tab, its suites); desk checks; git helpers; deskUnsloth robustness; shell trust in streamed objects; the net.fetch gate; the face; hygiene.\n\nOUTSIDE THE REPO, his: rotate the sk-unsloth key committed in a2786053 (the file is untracked since 30218a86, the key is still in history).\n\nSEQUENCE (set 2026-10-12 at his ask): G19.4 then G19.3 then G19.2 (all deskVerify, each on the one before); G19.11 last, after G19.1 and G19.2; G19.5 to G19.10 free.\nLATER, oos now (Andy, 2026-10-12): \"and we'll look into forcing this kind of sequencing through the desk itself, oos for now.\"\n",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should those get an item of their own in this goal?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T13:18:09.571Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "2?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T13:18:11.721Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -78,6 +95,66 @@
      "by": "andy",
      "at": "2026-10-12T13:03:01.388Z",
      "text": "if necessary please optimize the item list with appropriate blockers, so the items are processed in a sensible sequence. Then i will exit design mode."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:04:30.946Z",
+     "text": "and we'll look into forcing this kind of sequencing through the desk itself, oos for now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:04:54.515Z",
+     "text": "Blockers set, boxes untouched:\n- G19.4 then G19.3 then G19.2: all three change deskVerify, and each builds on the one before (suites cleaned up, then runs kept in its db, then the Done gates read those runs).\n- G19.11 last, after G19.1 and G19.2: hygiene deletes dead code the others may still touch (relayKeys.unseat for G19.1, the old deskVerify verbs).\n- G19.5 to G19.10 wait on nothing and can go in any order.\nReady for you to leave design mode."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:05:38.271Z",
+     "text": "one last, careful, diligent review pass, please."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:06:01.729Z",
+     "text": "taking: the review pass over the goal and its eleven boxes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:07:51.879Z",
+     "text": "Review pass done. Fixed by me, no decision changed:\n- three lines that had run together (G19.3, G19.4, G19.9);\n- G19.3: deskVerify's database is verify.db; your \"verifier.db\" is that file, so the box names it;\n- G19.1: your Remove of a relay gives up its seat with it, so relayKeys.unseat gets its caller and is not hygiene's dead code;\n- G19.7: the Remote's three faults (stuck hourglass, target switch, double connect) are fixed there too, and its LOW findings ride along by your cleanup rule.\nFor you to rename (renames are yours), as two titles now say the opposite of what was decided:\n- G19.1 \"...given up when evicted\": you ruled the seat is kept and the rejection shown, so perhaps \"Seats: kept on connect, a rejection shown in Natter\".\n- G19.9 \"net.fetch gate: refuse loopback...\": you ruled the gate stays, so perhaps \"net.fetch: no tool for agents\".\nGood to know before Go: G19.1, G19.8, G19.9 and G19.10 change core files (relayKeys, hub, relay, natter, shell.js, server.js, jobs.js, appServer, fetch.json), so they will raise grant checks; the desk and deskVerify items do not.\nTwo points a decision is still owed on:\n- Your undo rule unsettles every done item that lists a suite gone red. deskServer.js has had two reds for weeks, so the first full run would reopen every old item that ever listed it. Reading \"regression\" as green when the item passed, red now (deskVerify keeps that history) avoids it.\nShould regression mean green at the item's pass and red now, so long-standing reds reopen nothing?\n- The review also named red suites no item covers: runStandsAlone (deskVerify hard-codes spirit/test), appClientName, appDependencies, harnessAppSuites, jobsRemoveWhenDone, backupServer, trafficLog.\nShould those get an item of their own in this goal?\n"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:15:33.029Z",
+     "text": "G19.1 \"...given up when evicted\": you ruled the seat is kept and the rejection shown, so perhaps \"Seats: kept on connect, a rejection shown in Natter\".\n\nnot quite: the eviction is effective, and frees a slot, but the (ex-)members node informs it's user in natter about the situation.\n\nG19.9 \"net.fetch gate: refuse loopback...\": you ruled the gate stays, so perhaps \"net.fetch: no tool for agents\".\n\ncorrect, except that is asserted by a test/suite ensuring a js/net/fetch.json is not allowed to exists. we won't need production code for that, if an end user hacks inside of run/js/* that's not our problem.\n\na regression must come back as a red. If we find it is due to an eliminated product feature (device), we rectify the test, if its in production code, we fix the code.\n\n(deskVerify hard-codes spirit/test),??? the core hard-codes MANY folders for many reasons. irrelevant."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:16:33.035Z",
+     "text": "Recorded in G19.1, G19.9 and G19.2. Your regression rule answers my first point, and sharpens the second: no red is exempt, so every red standing today must be rectified (the test, where a feature like device went) or fixed (the code), and before G19.2's undo goes live, else its first full run reopens old work.\nSo I propose one item, \"Harness reds: rectify the test or fix the code\", taking deskServer.js's two reds and the review's list (runStandsAlone, appClientName, appDependencies, harnessAppSuites, jobsRemoveWhenDone, backupServer, trafficLog), each judged by your rule, and blocking G19.2.\nAdd it, blocking G19.2?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:17:39.437Z",
+     "text": "Add it, blocking G19.2?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:18:26.439Z",
+     "text": "Added as goal/G19.12, blocking G19.2, box written: every red listed with what it says, each to be run here first (the review ran on Linux) and judged by your rule. Review pass done; the two renames are yours."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:19:13.627Z",
+     "text": "all green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:20:26.945Z",
+     "text": "Green: all twelve settled, no open questions, every box current. Only the two titles still say the opposite of what you ruled: G19.1 (\"given up when evicted\") and G19.9 (\"refuse loopback\"); renaming them is yours."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:21:16.962Z",
+     "text": "the titles don't define the issues, i don't care about them. (kind of like comments)\n\ni'll exit design mode."
     }
    ]
   },
@@ -85,38 +162,64 @@
    "id": "goal/G19.1",
    "title": "Seats kept on first connect, given up when evicted",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "claude-windows",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19",
     "goal/G19.11"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "Seats kept on first connect, given up when evicted.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote. js/hub.js:1160 seats; js/answerRelay.js:201 calls relayKeys.accept on a \"new\" verdict; js/relayKeys.js:196-202 rewrites the whole row. Every new node reads \"You (unknown)\". test/presenceProof.js:70 never checks the label.\n- HIGH: a seat is never given up. relayKeys.unseat (js/relayKeys.js:159) has no caller; any pin counts as a seat (:138-146); ownerBadge.js:408 claimed = owned || hasSeat; natterDetails.js:580 hides the claim form.\n- An owner CAN evict: Contacts details > Forget twice (shell/contactsDetails/contactsDetails.js:363-388) sends removePeer to each relay (relay.js:3403-3406 then forgetPeer :2258). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js:1135-1143); \"a boot can still backfill\" (:1161) is false.\n- MEDIUM: the seat label is frozen at claim time (ownerBadge.js:426,431); a rename from Info (info.js:285) never re-seats; natter.js:811-815 says otherwise.\n- LOW: natterDetails.js:433 reads c.peers, :1048 reads roll.roster; the probe sets neither. Andy's reading: rules for seats, but no code for the owner to evict members.\n\nDECIDED (Andy, 2026-10-12)\n- \"the relay, by definition, has no power over a member-node's data, so the only thing that could be done: help a node realize it is outcast, and remove that relay from it's list.\"\n- \"a relay row may need a field, that persists the rejection, until the user sees that in natter, and removes the relay himself, the automation of a removal may exceed our (coders) authority. Nobody other than the node user has a right to remove data:\"\n- \"furthermore, the user may call the relay-owner by phone and clear up misunderstandings that lead to the eviction in the first place....\"\n- So: on a stream refused \"no such identity\" the node writes the rejection (and when) on that relay's row and keeps its seat; Natter shows it; only the user removes the relay. An accepted stream later clears the field.\n- \".... and it might contradict our own rule, never remove the last relay from the relay-roll.\" So no automatic removal, and the user's Remove in Natter keeps that rule too.\n- \"also: a relay MUST be robust to malicious attacks, and repeating denied request might only be ignorance, not maliciousness.\" Withstanding repeated denied requests is the relay's job.\n\n- And to close it: \"with all that said: \"let's provide the user with the neccessary knowledge in natter.\" So Natter says, on that relay's row, that the relay refused this node and since when, and offers the user's own Remove (never on the last relay).\n\n- Then, on dialing: \"the dialing may as well cease, since it's useless, and doesn't hurt the users data.\" So a rejected relay is not dialed; Natter offers a try-again beside the Remove, which dials once and clears the rejection if the stream is accepted.\n\n- Asked whether the try-again in Natter brings a rejected relay back: \"that's what that new field in a natter row is for.\" The rejection field on the row drives both what Natter says and its try-again.\n\n- \"yes. there has to be a way for re-admission, outside of our wire.\" The owner re-admits off the wire (a phone call); the user's try-again is how the node finds out.\n\nSHAPE, the plain parts: relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx; a rename re-seats.\n",
-   "version": 7,
+   "box": "Seats kept on first connect, given up when evicted.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote. js/hub.js:1160 seats; js/answerRelay.js:201 calls relayKeys.accept on a \"new\" verdict; js/relayKeys.js:196-202 rewrites the whole row. Every new node reads \"You (unknown)\". test/presenceProof.js:70 never checks the label.\n- HIGH: a seat is never given up. relayKeys.unseat (js/relayKeys.js:159) has no caller; any pin counts as a seat (:138-146); ownerBadge.js:408 claimed = owned || hasSeat; natterDetails.js:580 hides the claim form.\n- An owner CAN evict: Contacts details > Forget twice (shell/contactsDetails/contactsDetails.js:363-388) sends removePeer to each relay (relay.js:3403-3406 then forgetPeer :2258). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js:1135-1143); \"a boot can still backfill\" (:1161) is false.\n- MEDIUM: the seat label is frozen at claim time (ownerBadge.js:426,431); a rename from Info (info.js:285) never re-seats; natter.js:811-815 says otherwise.\n- LOW: natterDetails.js:433 reads c.peers, :1048 reads roll.roster; the probe sets neither. Andy's reading: rules for seats, but no code for the owner to evict members.\n\nDECIDED (Andy, 2026-10-12)\n- \"the relay, by definition, has no power over a member-node's data, so the only thing that could be done: help a node realize it is outcast, and remove that relay from it's list.\"\n- \"a relay row may need a field, that persists the rejection, until the user sees that in natter, and removes the relay himself, the automation of a removal may exceed our (coders) authority. Nobody other than the node user has a right to remove data:\"\n- \"furthermore, the user may call the relay-owner by phone and clear up misunderstandings that lead to the eviction in the first place....\"\n- So: on a stream refused \"no such identity\" the node writes the rejection (and when) on that relay's row and keeps its seat; Natter shows it; only the user removes the relay. An accepted stream later clears the field.\n- \".... and it might contradict our own rule, never remove the last relay from the relay-roll.\" So no automatic removal, and the user's Remove in Natter keeps that rule too.\n- \"also: a relay MUST be robust to malicious attacks, and repeating denied request might only be ignorance, not maliciousness.\" Withstanding repeated denied requests is the relay's job.\n\n- And to close it: \"with all that said: \"let's provide the user with the neccessary knowledge in natter.\" So Natter says, on that relay's row, that the relay refused this node and since when, and offers the user's own Remove (never on the last relay).\n\n- Then, on dialing: \"the dialing may as well cease, since it's useless, and doesn't hurt the users data.\" So a rejected relay is not dialed; Natter offers a try-again beside the Remove, which dials once and clears the rejection if the stream is accepted.\n\n- Asked whether the try-again in Natter brings a rejected relay back: \"that's what that new field in a natter row is for.\" The rejection field on the row drives both what Natter says and its try-again.\n\n- \"yes. there has to be a way for re-admission, outside of our wire.\" The owner re-admits off the wire (a phone call); the user's try-again is how the node finds out.\n\nFROM THE REVIEW PASS: the user's Remove of a relay gives up its seat with it (relayKeys.unseat, which so gets its first caller and stays out of G19.11's dead code); Remove still refuses the last relay.\nSHAPE, the plain parts: relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx; a rename re-seats.\n- At the review pass, on the title \"...given up when evicted\": \"not quite: the eviction is effective, and frees a slot, but the (ex-)members node informs it's user in natter about the situation.\" The relay's eviction stands and frees its slot; the ex-member's node keeps its own record until its user removes it, and tells him in Natter.\n",
+   "version": 9,
    "checks": [
     {
      "number": "Q1",
@@ -259,6 +362,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:07:56.392Z",
      "text": "Recorded (box v7); still green."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:49.286Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -269,15 +377,15 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G19",
     "goal/G19.11"
    ],
    "blocked": [
-    "goal/G19.3"
+    "goal/G19.3",
+    "goal/G19.12"
    ],
    "go": false,
    "alone": false,
@@ -288,7 +396,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -298,8 +406,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Goal Done gates: reds, stop, reopen, restart.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- goalRun (process/js/deskVerify/deskVerify.js:612-614) calls verify.pass on the goal whatever runList returns: reds, a Stop by hand or a missing file all still bring Done. fullRun no longer passes (4be68252).\n- A reopened goal keeps checked and emptied (process/js/desk/desk.js:785 clears done, closed, alone and claims only; :594, :625, :815), so Done returns without a new run.\n- A deskVerify restart during a goal run blocks the goal's Done for good: the first walk is history (deskVerify.js:502), goalsRun is in memory (:454, :515), goal.emptied is written once, and verify.again refuses a goal.\n- Missed by the review: full.run sends id '' when no goal row is current (shell/desk/desk.js:1342), and its report line then fails in silence.\n\nDECIDED (Andy, 2026-10-12)\n- \"i said the verifier can not press done, i never said that the verifier cannot undo a done/close...\" (the guard that a settled item is never re-opened from the verifier's side was claude-windows's, goal/G8.10, not his).\n- \"a done becomes unsettles when an associated suite shows regression.\"\n- Asked whether that reading is his rule (any run showing a suite red unsettles every done or closed item listing it, and its goal; counted only from a clean, pulled tree holding the item's commit): \"yes.\"\n- The four fixes that hold back an unearned Done (a goal run passes only all green, a missing file or a Stop giving no pass; a reopen clears emptied and checked; re-verify on a goal re-runs its goal run; the full-run button uses the current goal): \"yes. with my addendum.\" and \"the four go in, where they don't contradict the idea that verifier must reverse done/closed when the item/goal regresses.\"\n",
-   "version": 4,
+   "box": "Goal Done gates: reds, stop, reopen, restart.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- goalRun (process/js/deskVerify/deskVerify.js:612-614) calls verify.pass on the goal whatever runList returns: reds, a Stop by hand or a missing file all still bring Done. fullRun no longer passes (4be68252).\n- A reopened goal keeps checked and emptied (process/js/desk/desk.js:785 clears done, closed, alone and claims only; :594, :625, :815), so Done returns without a new run.\n- A deskVerify restart during a goal run blocks the goal's Done for good: the first walk is history (deskVerify.js:502), goalsRun is in memory (:454, :515), goal.emptied is written once, and verify.again refuses a goal.\n- Missed by the review: full.run sends id '' when no goal row is current (shell/desk/desk.js:1342), and its report line then fails in silence.\n\nDECIDED (Andy, 2026-10-12)\n- \"i said the verifier can not press done, i never said that the verifier cannot undo a done/close...\" (the guard that a settled item is never re-opened from the verifier's side was claude-windows's, goal/G8.10, not his).\n- \"a done becomes unsettles when an associated suite shows regression.\"\n- Asked whether that reading is his rule (any run showing a suite red unsettles every done or closed item listing it, and its goal; counted only from a clean, pulled tree holding the item's commit): \"yes.\"\n- The four fixes that hold back an unearned Done (a goal run passes only all green, a missing file or a Stop giving no pass; a reopen clears emptied and checked; re-verify on a goal re-runs its goal run; the full-run button uses the current goal): \"yes. with my addendum.\" and \"the four go in, where they don't contradict the idea that verifier must reverse done/closed when the item/goal regresses.\"\n- At the review pass, asked whether \"regression\" should mean green at the item's pass and red now, so long-standing reds reopen nothing: \"a regression must come back as a red. If we find it is due to an eliminated product feature (device), we rectify the test, if its in production code, we fix the code.\" So no red is exempt: a red unsettles what lists it, and is then fixed, the test where a feature was removed, the code where production broke. The reds standing today (deskServer.js's two among them) are fixed before this item's undo goes live, or its first full run reopens old work.\n",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -427,8 +535,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G19",
@@ -446,7 +553,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -456,8 +563,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: the Verifier tab vanishes when work is queued.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- The now verb declares queued: [''] but returns objects (process/js/deskVerify/deskVerify.js:754-756); appServer refuses the reply as handler-failed (js/appServer.js:196); the page then sets deskVerifier = null (shell/desk/desk.js:1014), and queued.map(deskEsc) (:1091) would draw [object Object].\n\nDECIDED (Andy, 2026-10-12): \"is there queued work in verifier? if so, then yes, the verifier tab may keep an updated queue list below it's current ui elements.\" There is: watchQueue holds the checks that wait while one runs (a claim, a verify pass, a goal run, a full run).\nSHAPE: now declares queued as [{kind, id}], so its reply passes and the tab no longer vanishes; the tab lists them below its current elements, kind and id each, updated with every now.- \"and we make sure it doesn't stop working until the queue is worked off.\" Today the drain works the whole queue and one failed job does not stop it (deskVerify.js drainQueue); but the queue is held in memory, so a deskVerify restart loses what waited.\n- Asked whether the queue should survive a restart: \"so the runs must be stored verifier history, in verifier.db\". So every run is a row in deskVerify's own database beside its results (queued, running, ended, with its kind, id and outcome); a restart takes up the rows not ended, in their order.\n",
-   "version": 4,
+   "box": "deskVerify: the Verifier tab vanishes when work is queued.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- The now verb declares queued: [''] but returns objects (process/js/deskVerify/deskVerify.js:754-756); appServer refuses the reply as handler-failed (js/appServer.js:196); the page then sets deskVerifier = null (shell/desk/desk.js:1014), and queued.map(deskEsc) (:1091) would draw [object Object].\n\nDECIDED (Andy, 2026-10-12): \"is there queued work in verifier? if so, then yes, the verifier tab may keep an updated queue list below it's current ui elements.\" There is: watchQueue holds the checks that wait while one runs (a claim, a verify pass, a goal run, a full run).\nSHAPE: now declares queued as [{kind, id}], so its reply passes and the tab no longer vanishes; the tab lists them below its current elements, kind and id each, updated with every now.\n- \"and we make sure it doesn't stop working until the queue is worked off.\" Today the drain works the whole queue and one failed job does not stop it (deskVerify.js drainQueue); but the queue is held in memory, so a deskVerify restart loses what waited.\n- Asked whether the queue should survive a restart: \"so the runs must be stored verifier history, in verifier.db\". So every run is a row in deskVerify's own database, verify.db (the file his \"verifier.db\" names, beside the results it already keeps) (queued, running, ended, with its kind, id and outcome); a restart takes up the rows not ended, in their order.\n",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -515,38 +622,68 @@
    "id": "goal/G19.4",
    "title": "deskVerify: kill a suite's servers; normalise listed paths",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19",
     "goal/G19.3"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: kill a suite's servers; normalise listed paths.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- Stop and the time limit kill the suite process only (process/js/deskVerify/deskVerify.js:177 spawns without detached; :187, :231 kid.kill()), so its servers live on and the next suite collides on lab ports. runAll spawns detached and kills the group.\n- Listed file paths are not normalised: spirit/test/../../x.js passes the regex (deskVerify.js:306, :602; process/js/desk/desk.js:2169 accepts any non-empty string).\n- A plain item's verify.reject is always refused by the desk (desk.js:2087 needs code), so only the chat line records a red.\n\nDECIDED (Andy, 2026-10-12): \"yes, a stopped suite must clean up after itself like any cleanly ended suite. we will not support resume.\"\nSHAPE: deskVerify spawns each suite detached and, on Stop or the time limit, ends the whole process group, as runAll does; a stopped suite is never resumed, it runs again from the start. A listed path is normalised and refused when it leaves spirit/test (the yes taken for both halves of the question).\nThe plain item's refused verify.reject falls under goal/G19.2's rule: a red unsettles the item, code or plain.- Andy, on the box as outlined: \"yes to the box as outlined.\"\n",
-   "version": 3,
+   "box": "deskVerify: kill a suite's servers; normalise listed paths.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- Stop and the time limit kill the suite process only (process/js/deskVerify/deskVerify.js:177 spawns without detached; :187, :231 kid.kill()), so its servers live on and the next suite collides on lab ports. runAll spawns detached and kills the group.\n- Listed file paths are not normalised: spirit/test/../../x.js passes the regex (deskVerify.js:306, :602; process/js/desk/desk.js:2169 accepts any non-empty string).\n- A plain item's verify.reject is always refused by the desk (desk.js:2087 needs code), so only the chat line records a red.\n\nDECIDED (Andy, 2026-10-12): \"yes, a stopped suite must clean up after itself like any cleanly ended suite. we will not support resume.\"\nSHAPE: deskVerify spawns each suite detached and, on Stop or the time limit, ends the whole process group, as runAll does; a stopped suite is never resumed, it runs again from the start. A listed path is normalised and refused when it leaves spirit/test (the yes taken for both halves of the question).\nThe plain item's refused verify.reject falls under goal/G19.2's rule: a red unsettles the item, code or plain.\n- Andy, on the box as outlined: \"yes to the box as outlined.\"\n",
+   "version": 4,
    "checks": [
     {
      "number": "Q1",
@@ -578,6 +715,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:29:44.314Z",
      "text": "Green: settled, no open questions, box current (v3)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:49.736Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -585,32 +727,62 @@
    "id": "goal/G19.5",
    "title": "Desk checks: numbers never repeat; box blur on its own item",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -637,6 +809,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:31:27.354Z",
      "text": "Recorded (box v2): numbers from the highest the item ever had, never a count; the box blur written to the item it was focused on. Green: settled, no open questions, box current (v2)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:50.258Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -644,32 +821,62 @@
    "id": "goal/G19.6",
    "title": "Git helpers: deskClient pull, publishData, pushOrigin",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -706,6 +913,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:35:36.339Z",
      "text": "Recorded (box v2), with the two lows of this item carried along (goalShare's needless commits, commitCheck matching by subject). Green: settled, no open questions, box current (v2)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:50.812Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -713,37 +925,67 @@
    "id": "goal/G19.7",
    "title": "deskUnsloth: timeouts, tool results in the room, working reset",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskUnsloth: timeouts, tool results in the room, working reset.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- The chat-completion call has no timeout (process/js/deskUnsloth/deskUnsloth.js:399), and working is reset only on success (:1048): a hung or failed answer leaves Levant silent until restart.\n- Two of three model-refresh calls have no timeout (deskUnsloth.js:525: cached-gguf and inference/status).\n- Tool results are cut each to a quarter of the room but never counted against the prompt room over up to three rounds (deskUnsloth.js:418, :295; tools.js:153).\n- The Remote: a load refusal published before the answer leaves the hourglass stuck (shell/deskUnslothRemote/deskUnslothRemote.js:499, :460); a target switch keeps the old transcript and busy flags (:715-726); a published state re-enables the switch mid-flip (:458).\n- LOW: lastChat is one global (deskUnsloth.js:617, :958); model.load with no id writes \"undefined\" (:1175); ANSWER_TOKENS falls to 0 (:112); tools declare required: [] (tools.js:116); describeAll reruns every ask (:360); an error field in a fetched JSON reads \"the node refused\" (tools.js:146-147).\n\nDECIDED (Andy, 2026-10-12)\n- \"and the timeout, if Levant is in a huge cleanup-batch of something? ... i think the Remote should have an abort button, that is armed and comes alive whenever the model is working. i much would prefer manual intervention to automated aborting.....\"\n- \"this situation has occurred multiple times with claude... The abort button sit's with the chat in the test tab, where all requests, replies, and tool calls should be logged.\"\nSHAPE: no automatic timeout on the model's answer; an armed Abort beside the test tab's chat, alive only while the model works, cancels the call in flight and frees Levant; a failed or aborted answer frees Levant at once; timeouts only on the model-list reads; the test tab's chat logs every request, reply and tool call Levant makes, his desk work included, a tool result in short; tool results counted against the prompt room.\n",
-   "version": 2,
+   "box": "deskUnsloth: timeouts, tool results in the room, working reset.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- The chat-completion call has no timeout (process/js/deskUnsloth/deskUnsloth.js:399), and working is reset only on success (:1048): a hung or failed answer leaves Levant silent until restart.\n- Two of three model-refresh calls have no timeout (deskUnsloth.js:525: cached-gguf and inference/status).\n- Tool results are cut each to a quarter of the room but never counted against the prompt room over up to three rounds (deskUnsloth.js:418, :295; tools.js:153).\n- The Remote: a load refusal published before the answer leaves the hourglass stuck (shell/deskUnslothRemote/deskUnslothRemote.js:499, :460); a target switch keeps the old transcript and busy flags (:715-726); a published state re-enables the switch mid-flip (:458).\n- LOW: lastChat is one global (deskUnsloth.js:617, :958); model.load with no id writes \"undefined\" (:1175); ANSWER_TOKENS falls to 0 (:112); tools declare required: [] (tools.js:116); describeAll reruns every ask (:360); an error field in a fetched JSON reads \"the node refused\" (tools.js:146-147).\n\nDECIDED (Andy, 2026-10-12)\n- \"and the timeout, if Levant is in a huge cleanup-batch of something? ... i think the Remote should have an abort button, that is armed and comes alive whenever the model is working. i much would prefer manual intervention to automated aborting.....\"\n- \"this situation has occurred multiple times with claude... The abort button sit's with the chat in the test tab, where all requests, replies, and tool calls should be logged.\"\nSHAPE: no automatic timeout on the model's answer; an armed Abort beside the test tab's chat, alive only while the model works, cancels the call in flight and frees Levant; a failed or aborted answer frees Levant at once; timeouts only on the model-list reads; the test tab's chat logs every request, reply and tool call Levant makes, his desk work included, a tool result in short; tool results counted against the prompt room.\nFROM THE REVIEW PASS: the Remote's three faults in FOUND are fixed here too (a load refusal published before the answer no longer leaves the hourglass stuck; a target switch clears the transcript and busy flags; a published state no longer re-enables the switch mid-flip), and the LOW findings go with the code this item changes, by his G19.10 rule.\n",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
@@ -784,6 +1026,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:42:56.172Z",
      "text": "Recorded (box v2): the armed Abort beside the test tab's chat, and that chat logging every request, reply and tool call, his desk work included; the rest as proposed, as you did not object to it. Green: settled, no open questions, box current (v2)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:51.352Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -791,32 +1038,58 @@
    "id": "goal/G19.8",
    "title": "Shell: published objects only from the node's own puppets",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -843,6 +1116,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:45:20.043Z",
      "text": "Recorded (box v2): the check sits once in the shell's delivery, before any app sees the object, so no app has to do it. Green: settled, no open questions, box current (v2)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:51.874Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -850,37 +1128,67 @@
    "id": "goal/G19.9",
    "title": "net.fetch gate: refuse loopback, private, link-local",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "net.fetch gate: refuse loopback, private, link-local.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- Levant no longer has net.fetch (process/js/deskUnsloth/deskUnsloth.js:307, removed in b355e36d). But the gate is unchanged: js/proxyList.js:227-244 refuses only closed entries, so 127.0.0.1, private ranges and 169.254.169.254 pass for any caller of the node's door (js/server.js:1774, gate at :668-669). A request the node makes to itself passes the door checks.\n- Buffering is fixed: js/server.js:690-698 pipes the reply (bb8aeb85).\n\nDECIDED (Andy, 2026-10-12): \"node fetch should NOT be allowed to agents. i saw that one coming when we used it for testing the hello-world for tool-calls. a test should assedt that that verb never has a fetch.json in its folder.\"\nSHAPE: spirit/run/js/net/fetch.json, the description that makes net.fetch a tool an agent can be given, is deleted; a test asserts no fetch.json ever comes back in that folder, and that no agent's tool namespaces list net. The verb itself stays the node's (js/server.js:1772).- Asked whether the gate stays as it is for the node's own callers: \"We can put as much security as we want into code, when a protagonist uses that \"secure\" code on his computer, his (spy) lover can look over his shoulders and steal secrets anyway. this applies to pirated software we we \"love\" to run on our machines. our software can't stop the crooks the user lets in\". So the gate stays as it is for them: what the user runs on his own node is his to trust. Agents are kept out by having no tool, not by the gate.\n",
-   "version": 3,
+   "box": "net.fetch gate: refuse loopback, private, link-local.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- Levant no longer has net.fetch (process/js/deskUnsloth/deskUnsloth.js:307, removed in b355e36d). But the gate is unchanged: js/proxyList.js:227-244 refuses only closed entries, so 127.0.0.1, private ranges and 169.254.169.254 pass for any caller of the node's door (js/server.js:1774, gate at :668-669). A request the node makes to itself passes the door checks.\n- Buffering is fixed: js/server.js:690-698 pipes the reply (bb8aeb85).\n\nDECIDED (Andy, 2026-10-12): \"node fetch should NOT be allowed to agents. i saw that one coming when we used it for testing the hello-world for tool-calls. a test should assedt that that verb never has a fetch.json in its folder.\"\nSHAPE: spirit/run/js/net/fetch.json, the description that makes net.fetch a tool an agent can be given, is deleted; a test asserts no fetch.json ever comes back in that folder, and that no agent's tool namespaces list net. The verb itself stays the node's (js/server.js:1772).\n- Asked whether the gate stays as it is for the node's own callers: \"We can put as much security as we want into code, when a protagonist uses that \"secure\" code on his computer, his (spy) lover can look over his shoulders and steal secrets anyway. this applies to pirated software we we \"love\" to run on our machines. our software can't stop the crooks the user lets in\". So the gate stays as it is for them: what the user runs on his own node is his to trust. Agents are kept out by having no tool, not by the gate.\n- At the review pass: \"correct, except that is asserted by a test/suite ensuring a js/net/fetch.json is not allowed to exists. we won't need production code for that, if an end user hacks inside of run/js/* that's not our problem.\" So: delete the file, and a suite asserts it does not exist; no production code guards it.\n",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -940,6 +1248,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:52:12.254Z",
      "text": "Understood, and recorded (box v3): the gate stays as it is for the node's own callers; agents are kept out by having no fetch tool. Green: settled, no open questions, box current (v3)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:52.444Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -947,32 +1260,62 @@
    "id": "goal/G19.10",
    "title": "Face: no identity.json in appFaceApp; FACE.md; appApi.js",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -1018,6 +1361,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T13:00:24.595Z",
      "text": "Precisely: appFaceApp, a process server built on appServer. Today the job runner already hands every server the node's name and public key (--node) and the port; the owner's public key is the one thing missing. So: the runner hands that too, appServer puts all three on the spirit object, and no server opens identity.json. Recorded (box v2), with the docs, appApi.js, no test helpers in node code, and the message cleanup riding with every change rather than as an item. Green: settled, no open questions, box current (v2)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:52.988Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1028,8 +1376,7 @@
    "status": "",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "close"
    ],
    "blocking": [
     "goal/G19"
@@ -1047,7 +1394,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -1080,6 +1427,76 @@
      "by": "claude-windows",
      "at": "2026-10-12T13:01:46.985Z",
      "text": "Recorded (box v2). Green: settled, no open questions, box current (v2). That makes all eleven items of goal/G19 argued and green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G19.12",
+   "title": "Harness reds: rectify the test or fix the code",
+   "goal": "goal/G19",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G19.2"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Harness reds: rectify the test or fix the code.\n\nDECIDED (Andy, 2026-10-12): \"a regression must come back as a red. If we find it is due to an eliminated product feature (device), we rectify the test, if its in production code, we fix the code.\" Asked to add this item, blocking goal/G19.2: \"yes.\"\nWHY FIRST: G19.2 makes a red unsettle every done item that lists its suite; every red standing today would then reopen old work on the first full run. So they are cleared before it.\n\nTHE REDS (the review at e8f8ffd7, and deskServer.js today; each judged by his rule, the test rectified where a removed feature is the cause, the code fixed where production broke)\n- deskServer.js: two reds for weeks, its api listing no longer what it expects (desk/G1.3).\n- runStandsAlone.js: flags deskVerify.js and deskVerify.json for naming spirit/test; Andy: \"the core hard-codes MANY folders for many reasons. irrelevant.\" So the test is rectified.\n- appClientName.js: appServers still named in server.js, appFaceApp.js, appFaceProcess.js, contactLabel.js.\n- appDependencies.js: deskUnsloth will not start without a hand-written configuration.json in its state folder.\n- harnessAppSuites.js: runAll --list finds no app or process suites (owed by goal/G4.23).\n- jobsRemoveWhenDone.js: jobs.create answered 0 (owed by goal/G4.34).\n- backupServer.js: its own folder started a run (desk/G1.7).\n- trafficLog.js: an unparseable payload is mangled.\n- Already covered elsewhere: appApi.js (goal/G19.10); notASuite.js (goal/G19.11). nodeKnowsNoApps.js is deleted; keyTail.js is fixed.\nEach is run first: the review's harness ran on Linux, so a red may be gone or different here.\n",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:23:53.423Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
