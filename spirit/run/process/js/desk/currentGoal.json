@@ -1,8 +1,8 @@
 {
- "change": 33858,
+ "change": 33905,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T04:03:35.403Z",
+ "writtenAt": "2026-10-12T04:11:39.170Z",
  "items": [
   {
    "id": "goal/G10",
@@ -11,7 +11,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -38,7 +37,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -4509,37 +4508,63 @@
    "id": "goal/G10.9",
    "title": "deskUnsloth: test tool calling of the allowed models",
    "goal": "goal/G10",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G10"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
-   "asks": 3,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "Andy, 2026-10-12: \"which model did he use on 2026-10-10? We'll use that for now, and we'll test that capability for the models he's allowed to use?\" and \"add it.\"\n\nDECIDED (Andy, 2026-10-12)\n- The selection is precise: a model and its quantization (flavor). His words: \"thing is: i tested, quantized versions of models in unsloth, so i could experiment with configurations where certain models we're reduced by quantization. so we need to offer a precise selection of models, that includes the quantization/flavor as well?\"\n- Only the quantizations already downloaded are listed: \"yes. i'll download extra flavors manually, if needed.\"\n- Allowed models: \"a list deskUnsloth keeps, (the cached list) where we mark models as desk-recommended, with the desk-icon \n(ICON.THREAD:🧵)\"\n\nFOUND IN THE STUDIO (127.0.0.1:8888, openapi.json)\n- api/inference/load takes gguf_variant (e.g. Q4_K_M) beside model_path; deskUnsloth sends model_path alone today.\n- api/models/gguf-variants lists every quantization of a model with whether it is downloaded.\n- the load also takes chat_template_override.\n\nFOUND ON THE DESK\n- 2026-10-12 Levant (Ornith-1.5-9B, the model it ran on 2026-10-10 too) posted three tool calls as plain text (<tool_call><function=fs_load>...) under goal/G10.8: none ran.\n- Since 2026-10-10 its tool list grew to about 25 tools (desk, fs, deskUnsloth); the cause is not measured yet.",
-   "version": 4,
+   "box": "Andy, 2026-10-12: \"which model did he use on 2026-10-10? We'll use that for now, and we'll test that capability for the models he's allowed to use?\" and \"add it.\"\n\nDECIDED (Andy, 2026-10-12)\n- The selection is precise: a model and its quantization (flavor). His words: \"thing is: i tested, quantized versions of models in unsloth, so i could experiment with configurations where certain models we're reduced by quantization. so we need to offer a precise selection of models, that includes the quantization/flavor as well?\"\n- Only the quantizations already downloaded are listed: \"yes. i'll download extra flavors manually, if needed.\"\n- Allowed models: \"a list deskUnsloth keeps, (the cached list) where we mark models as desk-recommended, with the desk-icon \n(ICON.THREAD:🧵)\"\n- The result: \"a mark beside each model in the configure selector, stored in the selectors cache file.\" (Q4)\n- The test sets the desk-recommended mark: \"a test, there is no use of it all if a model is not capable of using desk properly.\" (Q5)\n- The test runs from a [test] button: \"run it from a [test] button, and utomatically connect/disconnect Levant from the desk, depending on the outcome.\" (Q6)\n- The manual switch: \"Connect should be refused while the loaded model has no 🧵.\"\n\nFOUND IN THE STUDIO (127.0.0.1:8888, openapi.json)\n- api/inference/load takes gguf_variant (e.g. Q4_K_M) beside model_path; deskUnsloth sends model_path alone today.\n- api/models/gguf-variants lists every quantization of a model with whether it is downloaded.\n- the load also takes chat_template_override.\n\nFOUND ON THE DESK\n- 2026-10-12 Levant (Ornith-1.5-9B, the model it ran on 2026-10-10 too) posted three tool calls as plain text (<tool_call><function=fs_load>...) under goal/G10.8: none ran.\n- Since 2026-10-10 its tool list grew to about 25 tools (desk, fs, deskUnsloth); the cause is not measured yet.",
+   "version": 7,
    "checks": [
     {
      "number": "Q1",
@@ -4573,27 +4598,54 @@
      "kind": "Q",
      "words": "Where should the tool-calling result show: a mark beside each model in the configure selector, a table in the test tab, or a line in Desk?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T04:06:17.234Z"
     },
     {
      "number": "Q5",
      "kind": "Q",
      "words": "Who marks a model and quantization desk-recommended: you, with a toggle beside it in the configure selector, or the test, when its tool calls come back as real calls?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T04:06:19.401Z"
     },
     {
      "number": "Q6",
      "kind": "Q",
      "words": "Q5: you, by a toggle in configure, or the test when tool calls come back real?",
      "test": "",
-     "state": "open",
+     "state": "passed",
      "by": "claude-windows",
-     "at": "2026-10-12T03:57:28.130Z"
+     "at": "2026-10-12T04:09:14.897Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "When does the test run: a [test] button beside a model in the configure selector (it loads that model and quantization, minutes each), or one run over every downloaded pair?",
+     "test": "",
+     "state": "passed",
+     "by": "ollama agent node",
+     "at": "2026-10-12T04:11:18.198Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Q6: run it from a [test] button per model, or one run over every downloaded pair?",
+     "test": "",
+     "state": "passed",
+     "by": "ollama agent node",
+     "at": "2026-10-12T04:11:18.971Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Should Connect be refused while the loaded model has no 🧵?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T04:10:28.527Z"
     }
    ],
    "chat": [
@@ -4631,6 +4683,41 @@
      "by": "claude-windows",
      "at": "2026-10-12T03:57:27.752Z",
      "text": "Workable: models.json, the cached list deskUnsloth keeps, gets a recommended mark per model and quantization, and the selector shows 🧵 (ICON.THREAD is in the kernel table) beside those.\nIt answers Q3; the open part is who sets the mark.\nQ5: you, by a toggle in configure, or the test when tool calls come back real?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:05:54.918Z",
+     "text": "Q4: Where should the tool-calling result show: a mark beside each model in the configure selector, a table in the test tab, or a line in Desk?\n\na mark beside each model in the configure selector, stored in the selectors cache file.\n\nQ5: Who marks a model and quantization desk-recommended: you, with a toggle beside it in the configure selector, or the test, when its tool calls come back as real calls?\n\na test, there is no use of it all if a model is not capable of using desk properly."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:06:23.644Z",
+     "text": "Recorded: the mark beside each model in configure, kept in models.json; the test, not you, sets 🧵.\nThe test I propose: load the pair, send one request with today tool list that needs a tool, pass when a real tool call comes back.\nQ6: run it from a [test] button per model, or one run over every downloaded pair?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:08:45.937Z",
+     "text": "Q8: Q6: run it from a [test] button per model, or one run over every downloaded pair?\n\nrun it from a [test] button, and utomatically connect/disconnect Levant from the desk, depending on the outcome."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:09:22.586Z",
+     "text": "Recorded: a [test] button per model; a pass connects Levant to the desk on that model, a fail disconnects him.\nOne gap left: the manual Connect switch in the connect tab.\nShould Connect be refused while the loaded model has no 🧵?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:10:04.547Z",
+     "text": "Connect should be refused while the loaded model has no 🧵."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:10:30.723Z",
+     "text": "Recorded (v7); every Q check on this item is passed.\nThe design: model and quantization from the downloaded ones, a [test] button per model setting 🧵 in models.json, a pass connecting Levant and a fail disconnecting him, Connect refused without 🧵.\nReady for your Go."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T04:11:38.741Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
