@@ -1,8 +1,8 @@
 {
- "change": 37451,
+ "change": 37734,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T14:52:25.936Z",
+ "writtenAt": "2026-10-12T15:13:35.626Z",
  "items": [
   {
    "id": "goal/G19",
@@ -18,7 +18,6 @@
     "goal/G19.1",
     "goal/G19.7",
     "goal/G19.8",
-    "goal/G19.10",
     "goal/G19.11",
     "goal/G19.13"
    ],
@@ -46,7 +45,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1748,9 +1749,12 @@
    "id": "goal/G19.10",
    "title": "Face: no identity.json in appFaceApp; FACE.md; appApi.js",
    "goal": "goal/G19",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19"
    ],
@@ -1758,18 +1762,89 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "bash/FACE.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/face-install",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/face-tls",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "bash/systemd/spirit-face.service",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/appServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/jobs.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/appFaceApp.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceApp/faceRoute.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/appFaceAppServer/appFaceAppServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appApi.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appFaceProcess.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceNoIdentity.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceRouteSuite.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetsPending.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -1827,6 +1902,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-12T13:00:17.925Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appServer.js, spirit/run/js/jobs.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T15:10:59.821Z"
     }
    ],
    "chat": [
@@ -1854,6 +1938,51 @@
      "by": "desk",
      "at": "2026-10-12T13:23:52.988Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:53:01.311Z",
+     "text": "taking, while G19.13 waits on your verb answer: red first, in my clone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:09:39.999Z",
+     "text": "Built and green in my clone; two of its files are core (jobs.js, appServer.js), so G1 waits for your grant before the commit.\n- The job runner hands every server --node {name, publicKey, ownerKey}; appServer puts all three on the spirit object (NODE_NAME, NODE_KEY, OWNER_KEY) beside SPIRIT_PORT; appFaceApp reads them there and opens neither identity.json nor owner.json.\n- FACE.md and the bash face files rewritten where they no longer matched the code; appApi.js green; faceRoute's test-only helpers moved into its test.\nOne consequence to know: the face used to re-read the owner on every call; now the owner arrives once with --node, so a changed owner reaches the face when the node next starts it.\nSuites: faceNoIdentity 9 (new), appFaceProcess 24, faceRouteSuite 6, appApi 8, and about fifty more touching the face, --node or jobs.js, all green.\n"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:11:52.907Z",
+     "text": "commit 54561a5071993150656fb3835d085346fe6627ee: goal/G19.10: servers get the node's facts on the spirit object; face docs true\n- bash/FACE.md\n- bash/face-install\n- bash/face-tls\n- bash/systemd/spirit-face.service\n- spirit/run/js/appServer.js\n- spirit/run/js/jobs.js\n- spirit/run/process/js/appFaceApp/appFaceApp.js\n- spirit/run/process/js/appFaceApp/faceRoute.js\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.js\n- spirit/test/appApi.js\n- spirit/test/appFaceProcess.js\n- spirit/test/faceNoIdentity.js\n- spirit/test/faceRouteSuite.js\n- spirit/test/puppetsPending.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:11:54.006Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:11:55.453Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:12:01.378Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:12:09.635Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:12:17.554Z",
+     "text": "Claimed, in 54561a50 (on the remote before the claim), with your grant G1."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T15:13:24.298Z",
+     "text": "deskVerify: passed, at 54561a50 (pulled). 5 suites ran green."
     }
    ]
   },
@@ -2129,7 +2258,7 @@
    "id": "goal/G19.13",
    "title": "Desk: a claim carries its commit; deskVerify waits for it",
    "goal": "goal/G19",
-   "status": "running",
+   "status": "red",
    "with": "claude-windows",
    "buttons": [],
    "blocking": [
@@ -2144,10 +2273,10 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -2181,20 +2310,47 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "Desk: a claim carries its commit; deskVerify waits for it.\n\nDECIDED (Andy, 2026-10-12): \"these push things, when you report a claim on code, it should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet... ?\"; asked whether to add it as an item: \"yes.\"\nFOUND: on goal/G19.12 a claim ran ahead of its push (the push was refused, the claim was not), and deskVerify checked and rejected the old tree. Since goal/G18.10 a pass is bound to the commits commitCheck writes under the item, but those lines appear only once the remote holds the commit, so a claim that runs ahead of its push is still checked on old code.\nPROPOSED SHAPE\n- The claim-done press of a code item names its commit (the hash at the agent's HEAD).\n- deskVerify pulls; if its tree then lacks that commit it says \"not checked, waiting for <commit>\", neither passes nor rejects, and checks again on its next pull, until the commit is there.\n",
-   "version": 1,
+   "box": "Desk: a claim carries its commit; deskVerify waits for it.\n\nDECIDED (Andy, 2026-10-12): \"these push things, when you report a claim on code, it should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet... ?\"; asked whether to add it as an item: \"yes.\"\nFOUND: on goal/G19.12 a claim ran ahead of its push (the push was refused, the claim was not), and deskVerify checked and rejected the old tree. Since goal/G18.10 a pass is bound to the commits commitCheck writes under the item, but those lines appear only once the remote holds the commit, so a claim that runs ahead of its push is still checked on old code.\nPROPOSED SHAPE\n- The claim-done press of a code item names its commit (the hash at the agent's HEAD).\n- deskVerify pulls; if its tree then lacks that commit it says \"not checked, waiting for <commit>\", neither passes nor rejects, and checks again on its next pull, until the commit is there.\n\nDECIDED (Andy, 2026-10-12), asked for recommendations, then whether it shall be claim {id, commit}, as one verb: \"better. that closes the door on half-ass claims.\"\nSHAPE: one new desk verb, claim {id, commit}: the claim-done press carrying the commit it claims, one write (commit may be empty for a plain item with no code), with its verb file for agents. press claim-done stays for his pages and older callers. deskVerify reads the commit from the record, pulls, and while its tree lacks it says \"not checked, waiting for <commit>\" and checks again on its next pulls, never passing or rejecting the old code.\n- \"and why are the reds not claimed as complete that way, so the verifier can check them, they should be red. at the time\"; asked whether the red phase ends with its own commit, checked red by deskVerify, in this item: \"yes\".\nSHAPE, WHOLE: claim {id, phase, commit}, one desk verb with its verb file. phase red: the red is committed on its own (the new suites, no build yet) and claimed with that commit; deskVerify, once its pulled tree holds the commit, runs the item's listed suites and confirms each comes back red, saying which; a listed suite already green is named as no red. phase build: the claim-done press carrying its commit; deskVerify checks it green as today, once its tree holds the commit. While the tree lacks a claimed commit: \"not checked, waiting for <commit>\", checked again on its next pulls. The verify-phase pass no longer starts a check (it came without a commit, a moment before the claim); verify.again stays. press claim-done stays for his pages and older callers.\n",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "at {id, commit} the verb you want for this?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-12T14:52:19.765Z"
+     "at": "2026-10-12T14:55:19.026Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Shall it be claim {id, commit}, as one verb?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T14:55:21.263Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Shall the verify-phase pass stop starting a check, leaving it to the claim?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T14:57:23.527Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Shall the red phase end with its own commit, checked red by deskVerify, in this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T14:57:25.727Z"
     }
    ],
    "chat": [
@@ -2207,6 +2363,76 @@
      "by": "claude-windows",
      "at": "2026-10-12T14:52:19.332Z",
      "text": "Before the red, one shape point that is yours: the desk takes exactly a verb's declared keys, so adding a commit to press would break every press that does not send one (pages, agents, tests).\nMy proposal: one new desk verb, claim.at {id, commit}, sent by the agent just before its claim-done press; the desk keeps the commit on the item, and deskVerify reads it from item.get: if its pulled tree lacks that commit it says \"not checked, waiting for <commit>\" and checks again on its next pull. A plain item without code sends none, as today.\nIs claim.at {id, commit} the verb you want for this?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T14:53:03.818Z",
+     "text": "Q1: at {id, commit} the verb you want for this?\n\nrecommendations?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:53:04.320Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:54:05.768Z",
+     "text": "Weighed:\n- A commit field on press: every press would have to send one (the desk takes exactly a verb's keys), so every page, agent and test changes. No.\n- No new verb, deskVerify waiting for commitCheck's commit line under the item: fails in exactly the G19.12 case, where an older commit line already stood, so it would check the old code.\n- Reading my \"Claimed, in <hash>\" chat text: free text, fragile. No.\nSo the claim must name its commit itself. Better than my first proposal, one verb instead of two, so nothing can come in the wrong order: claim {id, commit}, which is the claim-done press carrying the commit it claims (commit may be empty for a plain item with no code). The desk records both as one write; deskVerify reads the commit from that record, pulls, and if its tree lacks it says \"not checked, waiting for <commit>\" and checks again on its next pull. press claim-done stays for Andy's pages and older callers.\nShall it be claim {id, commit}, as one verb?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T14:54:43.773Z",
+     "text": "Q2: Shall it be claim {id, commit}, as one verb?\n\nbetter. that closes the door on half-ass claims."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:54:44.280Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:55:21.822Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:55:31.725Z",
+     "text": "Recorded (box v2). Taking it: red first, in my clone."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T14:55:40.691Z",
+     "text": "and why are the reds not claimed as complete that way, so the verifier can check them, they should be red. at the time"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:55:41.114Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:56:05.707Z",
+     "text": "One snag found before the red: deskVerify starts a check on two words (your goal/G8.10: \"a verifier's pass\" and the claim). On a code item the verify-phase pass comes a moment before the claim and carries no commit, so that first check would still run on the old tree, and a reject from it would send the item back to build before the claim with its commit is even read.\nSo the claim should be the one word that starts an item's check; verify.again stays as it is.\nShall the verify-phase pass stop starting a check, leaving it to the claim?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:56:25.867Z",
+     "text": "Because today the red is never committed on its own: I write the red, build, and commit both together, so at the red phase there is no commit to check, and the claim that red was red is my word alone.\nYour way closes that too: the red phase ends with its own commit (the new suites, no build yet), handed over the same way, and deskVerify checks that the listed suites come back RED at that commit; a red that is already green proves nothing and is refused. Then the build's claim carries its own commit, checked green.\nThat also answers my snag: the verify-phase pass then starts nothing; the two commits, red and build, are what deskVerify checks.\nShall the red phase end with its own commit, checked red by deskVerify, in this item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T14:56:39.567Z",
+     "text": "Q4: Shall the red phase end with its own commit, checked red by deskVerify, in this item?\n\nyes"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:56:40.073Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:57:32.732Z",
+     "text": "Recorded (box v3), the whole shape in one place: claim {id, phase, commit}, red checked red, build checked green, both only once the tree holds the commit; the verify-phase pass no longer starts a check. Building it once the face item (G19.10) is in."
     }
    ]
   }
