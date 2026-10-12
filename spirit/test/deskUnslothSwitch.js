@@ -43,7 +43,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const RUN = path.join(ROOT, 'spirit', 'run');
 const AGENT = path.join(RUN, 'process', 'js', 'deskUnsloth', 'deskUnsloth.js');
 const APP_DIR = path.join(RUN, 'shell', 'deskUnslothRemote');
-const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-Test-GGUF', contextLimit: 375, answerTokens: 25, bytesPerToken: 4 };
+const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-Test-GGUF', answerTokens: 25, bytesPerToken: 4 };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }

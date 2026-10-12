@@ -43,10 +43,10 @@ const AGENT = path.join(RUN, 'process', 'js', 'deskUnsloth', 'deskUnsloth.js');
 const TOOLS = path.join(RUN, 'process', 'js', 'deskUnsloth', 'tools.js');
 const FETCH_DESCRIPTION = 'Fetch a page from the internet by url: GET unless method says otherwise; the owner proxy list decides which sites and which keys';
 const LOAD_DESCRIPTION = 'The text of one file the node will serve, by its path';
-// contextLimit "auto" (Andy, 2026-10-10: "lets assume "auto" is most appropriate for now"): the limit is the
+// The context is the studio's (goal/G14.6 "auto", always since goal/G10.7, no contextLimit): the limit is the
 // studio's context_length of the loaded model, STUDIO_CONTEXT below, read with the known list; the rooms follow it.
 const STUDIO_CONTEXT = 2000;
-const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', contextLimit: 'auto', answerTokens: 100, bytesPerToken: 4 };
+const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', answerTokens: 100, bytesPerToken: 4 };
 const PROMPT_ROOM = (STUDIO_CONTEXT - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken;
 const TOOL_ROOM = Math.floor(PROMPT_ROOM / 4);
 
@@ -254,7 +254,7 @@ async function suite() {
   const tree = await doorUp(client, 10000);
   if (!tree) { test.fail(OWED + 'deskUnsloth never answered api on its pipe (' + short((out.stderr + out.stdout).slice(0, 200)) + ')'); return; }
   function ask(verb, args) { const a = {}; a[verb] = args || {}; return client.ask({ deskUnsloth: a }).then(function (r) { return r.body || {}; }); }
-  // THE ROOM FOLLOWS THE STUDIO with contextLimit "auto": the known list is read once (models), which carries the
+  // THE ROOM FOLLOWS THE STUDIO (since goal/G10.7 always): the known list is read once (models), which carries the
   // studio's context_length; then a page over a quarter of (2000 - 100) * 4 bytes comes back cut to that room.
   await ask('models', {});
   await sleep(300);
@@ -266,8 +266,8 @@ async function suite() {
   const roomCall = studio.chats[1];
   const roomTool = roomCall && Array.isArray(roomCall.messages) ? roomCall.messages.filter(function (m) { return m.role === 'tool'; })[0] : null;
   const roomBytes = roomTool ? Buffer.byteLength(String(roomTool.content), 'utf8') : -1;
-  if (roomTool && roomBytes <= TOOL_ROOM + 200 && roomBytes > TOOL_ROOM / 2 && /cut/.test(String(roomTool.content))) test.check('with contextLimit auto the tool room follows the studio\'s context_length: the big page came back cut to ' + roomBytes + ' bytes of room ' + TOOL_ROOM);
-  else test.fail(OWED + 'with contextLimit auto the tool result was ' + roomBytes + ' bytes against a room of ' + TOOL_ROOM + ' (' + short(roomTool && roomTool.content) + ')');
+  if (roomTool && roomBytes <= TOOL_ROOM + 200 && roomBytes > TOOL_ROOM / 2 && /cut/.test(String(roomTool.content))) test.check('the tool room follows the studio\'s context_length: the big page came back cut to ' + roomBytes + ' bytes of room ' + TOOL_ROOM);
+  else test.fail(OWED + 'the tool result was ' + roomBytes + ' bytes against a room of ' + TOOL_ROOM + ' (' + short(roomTool && roomTool.content) + ')');
   script = [
     { toolCalls: [toolCall('call-1', 'fs_load', { path: 'shell/example.test' })] },
     { text: 'The page says: Example Domain, for use in illustrative examples.' },

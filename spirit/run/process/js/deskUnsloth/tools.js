@@ -79,7 +79,7 @@ function createTools(opts) {
   const o = opts || {};
   const routes = isPlain(o.routes) ? o.routes : {};
   const ask = typeof o.ask === 'function' ? o.ask : null;
-  // The room may follow the studio (contextLimit "auto", goal/G14.6), so a function is taken as well as a number.
+  // The room follows the studio's context (goal/G14.6, goal/G10.7), so a function is taken as well as a number.
   const room = function () {
     const r = typeof o.room === 'function' ? o.room() : o.room;
     return Number(r) > 0 ? Number(r) : 4096;

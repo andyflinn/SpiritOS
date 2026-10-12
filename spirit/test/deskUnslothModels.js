@@ -52,7 +52,7 @@ const AGENT = path.join(RUN, 'process', 'js', 'deskUnsloth', 'deskUnsloth.js');
 const APP = path.join(RUN, 'shell', 'deskUnslothRemote', 'deskUnslothRemote.js');
 const LOADED = 'unsloth/Qwen-AgentWorld-35B-A3B-GGUF';
 const OTHER = 'unsloth/Ornith-1.0-9B-GGUF';
-const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: LOADED, contextLimit: 2000, answerTokens: 100, bytesPerToken: 4 };
+const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: LOADED, answerTokens: 100, bytesPerToken: 4 };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
@@ -297,7 +297,7 @@ async function suite() {
   if (l1.model === OTHER && l1.loaded === false && loadMs < LOAD_MS && loadCall && loadCall.method === 'POST' && loadCall.body && loadCall.body.model_path === OTHER) test.check('model.load posts the studio\'s load with model_path and answers {model, loaded: false} at once (' + loadMs + ' ms), not waiting for the studio\'s blocking load');
   else test.fail(OWED + 'model.load answered ' + short(l1) + ' in ' + loadMs + ' ms (the studio holds its load ' + LOAD_MS + '), studio load call ' + short(loadCall));
   let conf = null; try { conf = JSON.parse(fs.readFileSync(path.join(state, 'configuration.json'), 'utf8')); } catch (e) { conf = null; }
-  if (conf && conf.model === OTHER && conf.persona === CONFIGURATION.persona && conf.preamble === CONFIGURATION.preamble && conf.contextLimit === CONFIGURATION.contextLimit) test.check('configuration.json now names the new model and keeps everything else');
+  if (conf && conf.model === OTHER && conf.persona === CONFIGURATION.persona && conf.preamble === CONFIGURATION.preamble && conf.answerTokens === CONFIGURATION.answerTokens) test.check('configuration.json now names the new model and keeps everything else');
   else test.fail(OWED + 'configuration.json reads ' + short(conf));
   await until(function () { return loaded === OTHER; }, LOAD_MS + 2000);
   const m2 = await modelsWhen(function (g) { return g.active === OTHER; }, 6000);

@@ -12,6 +12,7 @@
 // "[loop.js] "; nothing of the desk's goal is in the call.
 //
 // THE SHAPE ASSERTED (G10.3's box, decided 1 to 8):
+//   (Since goal/G10.7: connection.json may be absent and contextLimit is gone; the window is the studio's context.)
 //   1. TWO FILES IN ITS STATE FOLDER (--state, the node's to name), read at start; without either it ends with a code
 //      that is not 0 and the missing file's name on stderr, asking nobody: configuration.json {persona, preamble, model,
 //      contextLimit, answerTokens, bytesPerToken} and connection.json {key, url} (loop.json's two values, flat). The
@@ -59,8 +60,12 @@ const AGENTS_TEXT = 'Rules for agents at this desk. 1. A post is 3 lines at most
 const PREAMBLE = 'you are \'Levant\' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)';
 const GOAL_BOX = 'GOAL BOX: upgrade the local agent so it works from the desk goal. Vision: a coder agent following the current goal as the claudes do. The retrofit first, then the context. Nothing kept between calls.';
 const ITEM_BOX = 'ITEM BOX: the context auto-built from the desk goal. The call carries the rules, the persona, both boxes and the newest chat lines that fit; a long answer goes back in several lines.';
-const CONFIGURATION = { persona: 'Levant', preamble: PREAMBLE, model: 'fake/Levant-Test-GGUF', contextLimit: 375, answerTokens: 25, bytesPerToken: 4 };
-const PROMPT_ROOM = (CONFIGURATION.contextLimit - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken;
+// SINCE goal/G10.7 THE CONTEXT IS THE STUDIO'S: no contextLimit in the configuration (Andy, 2026-10-12: "remove
+// contextLimit from the configuration file. ... that's a decision."); the window is sized to the context_length the
+// studio reports for the loaded model, which the fake studio below answers.
+const CONFIGURATION = { persona: 'Levant', preamble: PREAMBLE, model: 'fake/Levant-Test-GGUF', answerTokens: 25, bytesPerToken: 4 };
+const STUDIO_CONTEXT = 375;
+const PROMPT_ROOM = (STUDIO_CONTEXT - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken;
 function filler(n) { let s = 'chat line ' + n + ' of the item, kept long enough that a few of them fill the window: '; while (s.length < 100) s += 'word '; return s.trim(); }
 
 const desk = { items: {} };
@@ -117,12 +122,22 @@ const node = http.createServer(function (req, res) {
 
 // THE FAKE MODEL: an OpenAI chat completion, scripted; it keeps every request body.
 const calls = [];
+const studioReads = [];
 let modelScript = ['The item is the context, built from the desk.'];
 const model = http.createServer(function (req, res) {
   let raw = '';
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
+    // THE STUDIO'S OWN ROUTES (goal/G10.7): the loaded model's context_length, which sizes the window.
+    const p = req.url.split('?')[0];
+    if (req.method === 'GET') {
+      studioReads.push(p);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (p === '/api/inference/status') return res.end(JSON.stringify({ active_model: CONFIGURATION.model, loaded: [CONFIGURATION.model], context_length: STUDIO_CONTEXT }));
+      if (p === '/api/models/cached-gguf') return res.end(JSON.stringify({ cached: [] }));
+      return res.end(JSON.stringify({ object: 'list', data: [] }));
+    }
     calls.push({ url: req.url, auth: String(req.headers.authorization || ''), body: b });
     const content = modelScript.length > 1 ? modelScript.shift() : modelScript[0];
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -174,8 +189,8 @@ async function suite() {
   fs.writeFileSync(path.join(scratch, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.address().port }));
   setUp();
 
-  test.subHeading('1. two files in its state folder, or it does not start');
-  for (const only of [['connection'], ['configuration']]) {
+  test.subHeading('1. the configuration in its state folder, or it does not start; the connection may come later');
+  for (const only of [['connection']]) {
     const missing = only[0] === 'connection' ? 'configuration' : 'connection';
     writeFiles(only);
     nodeAsks.length = 0; calls.length = 0;
@@ -185,12 +200,27 @@ async function suite() {
     else test.fail(OWED + 'without ' + missing + '.json it ' + (out.code === null ? 'is still running' : 'exited ' + out.code) + ', stderr ' + JSON.stringify(out.stderr.slice(0, 160)) + ', ' + nodeAsks.length + ' node ask(s), ' + calls.length + ' model call(s)');
     await stop();
   }
+  // WITHOUT connection.json IT STARTS (goal/G10.7): the connect tab sets it through connection.set; until then it asks
+  // no model.
+  writeFiles(['configuration']);
+  nodeAsks.length = 0; calls.length = 0;
+  start();
+  await until(function () { return nextCount >= 1 || out.code !== null; }, 6000);
+  if (out.code === null && !calls.length) test.check('without connection.json it starts and asks no model');
+  else test.fail(OWED + 'without connection.json it ' + (out.code === null ? 'called the model ' + calls.length + ' time(s)' : 'exited ' + out.code));
+  await stop();
   writeFiles(['configuration', 'connection']);
   nodeAsks.length = 0; calls.length = 0; posted.length = 0; nextQueue = []; nextCount = 0;
   start();
   const up = await until(function () { return nextCount >= 2 || out.code !== null; }, 8000);
   if (up && out.code === null && nextCount >= 2) test.check('with both files it runs and waits on its node\'s deskClient.next, again after an empty answer');
   else { test.fail(OWED + 'with both files it ' + (out.code === null ? 'asked next ' + nextCount + ' time(s)' : 'exited ' + out.code + ' saying ' + JSON.stringify((out.stderr + out.stdout).slice(0, 200)))); return; }
+
+  // The studio's context is read with the known list, which a models ask refreshes (goal/G14.6, goal/G10.7).
+  const client = appClient.createAppClient({ rootDir: scratch, log: function () {} });
+  client.register('deskUnsloth', pipe);
+  await client.ask({ deskUnsloth: { models: {} } }).catch(function () { return null; });
+  await until(function () { return studioReads.indexOf('/api/inference/status') !== -1; }, 5000);
 
   test.subHeading('2. the call: rules, persona, both boxes, the newest lines that fit');
   const ask1 = 'levant: what is this item about?';
@@ -208,7 +238,7 @@ async function suite() {
   const first = present.indexOf(true);
   const suffix = first !== -1 && present.slice(first).every(Boolean);
   const total = textOf(c1).reduce(function (s, t) { return s + bytes(t); }, 0);
-  if (holds(c1, ask1) && !present[0] && suffix && total <= PROMPT_ROOM) test.check('the chat is a window of the newest lines: the asking line is in, line 1 is out, and the messages fit (contextLimit - answerTokens) * bytesPerToken', total + ' of ' + PROMPT_ROOM + ' bytes, lines ' + present.map(function (p) { return p ? 1 : 0; }).join(''));
+  if (holds(c1, ask1) && !present[0] && suffix && total <= PROMPT_ROOM) test.check('the chat is a window of the newest lines: the asking line is in, line 1 is out, and the messages fit (the studio context_length - answerTokens) * bytesPerToken', total + ' of ' + PROMPT_ROOM + ' bytes, lines ' + present.map(function (p) { return p ? 1 : 0; }).join(''));
   else test.fail(OWED + 'asking line ' + holds(c1, ask1) + ', lines present ' + present.map(function (p) { return p ? 1 : 0; }).join('') + ', ' + total + ' bytes of ' + PROMPT_ROOM);
   if (await until(function () { return posted.length >= 1; }, 5000) && posted[0].id === 'ctx/G1.2' && posted[0].text.indexOf(modelScript[0]) !== -1 && /^levant[:,]/i.test(posted[0].text) && posted[0].text.indexOf('[loop.js]') === -1) test.check('the answer is posted under the item, in its own name, without [loop.js]');
   else test.fail(OWED + 'posted ' + short(posted[0] || null));

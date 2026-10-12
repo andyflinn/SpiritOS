@@ -37,7 +37,7 @@ const AGENT = path.join(RUN, 'process', 'js', 'deskUnsloth', 'deskUnsloth.js');
 const TOOLS = path.join(RUN, 'process', 'js', 'deskUnsloth', 'tools.js');
 const DESK_DIR = path.join(RUN, 'process', 'js', 'desk');
 const TEN = ['items.search', 'item.get', 'item.box', 'item.checks', 'item.chat', 'chat.add', 'item.take', 'item.status', 'check.add', 'work.open'];
-const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', contextLimit: 4000, answerTokens: 100, bytesPerToken: 4 };
+const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', answerTokens: 100, bytesPerToken: 4 };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

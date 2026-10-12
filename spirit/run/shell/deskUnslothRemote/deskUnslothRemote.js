@@ -22,10 +22,12 @@
 // THE PUPPETS come from puppets.json in this app's own folder, for now: {"puppets": [{name, key}]}. A node with no
 // such file offers this node alone — which is what the same app shows when it opens on the puppet itself.
 //
-// THE CHAT BOX IS DRAWN FOR ANY TARGET WHOSE STATE ANSWERED, the hosting node and the puppet alike (Andy,
-// 2026-10-10, "go." on running the chat on 65432; until then it was the hosting node's alone). The send is one
-// ask through the chosen target, chat.send answering an id at once; the answer arrives as the published object's
-// chat {id, done, text} down the stream (goal/G14.5), on either node.
+// THREE TABS SINCE goal/G10.7 (Andy, 2026-10-12: "actually, make that 3 tabs [test] [configure][connect]"): the
+// warnings above all three, the chat in [test] once a model is ready, the model selector in [configure], and in
+// [connect] the where, the OpenAI compatible server (connection.set) and the switch. The chat works for any target,
+// the hosting node and the puppet alike (Andy, 2026-10-10, "go." on running it on 65432): one ask through the chosen
+// target, chat.send answering an id at once, the answer arriving as the published object's chat {id, done, text}
+// down the stream (goal/G14.5).
 //
 // NO TICK: `render` is left undefined. The state and the models are read when the app opens, when the target
 // changes and after a press; a load in progress is re-asked every two seconds until the studio is done, and a chat
@@ -39,7 +41,7 @@ var deskUnslothRemoteBusy = false;
 var deskUnslothRemoteModels = null;     // the last models answer for the target, or null
 var deskUnslothRemoteChosen = '';       // the id in the dropdown
 var deskUnslothRemoteLoadTimer = null;  // the re-ask while a load runs
-var deskUnslothRemoteLocal = false;     // this node hosts deskUnsloth: the chat box is drawn
+var deskUnslothRemoteTab = 'test';      // the tab shown: test, configure or connect (goal/G10.7)
 var deskUnslothRemoteTranscript = [];   // the chat box's lines, the page's own: [{role, text}]
 var deskUnslothRemoteChatBusy = false;
 
@@ -122,6 +124,41 @@ function deskUnslothRemoteOptionFor(model) {
   return [String(m.id || ''), line.icons.join(''), m.loaded ? line.mark : ''].filter(Boolean).join(' ');
 }
 
+// ── THE WARNINGS, IN EVERY TAB (goal/G10.7) ──────────────────────────
+//
+//   Andy, 2026-10-12: "the following warning bubbles appear in all 3 tabs": no node with deskUnsloth, no OpenAI
+//   compatible server, no model loaded and selected, and "while a model is loading, an ICON.WARNING bubble is
+//   displayed, "be patient, a model (name of model) is currently loading."
+//
+// From the state and the models answer alone, a pure function. Each one hides the ones after it: with no node there
+// is no server to speak of, and with no server no model. None means a model is ready, and the test tab shows the chat.
+function deskUnslothRemoteWarnings(state, models) {
+  var w = deskUnslothRemoteIcon('WARNING');
+  if (!state || state.ok === false) {
+    return [w + ' No node with deskUnsloth is connected: use the [connect] tab to connect to a node that has deskUnsloth installed.'];
+  }
+  if (!state.server || state.server.answers !== true) {
+    return [w + ' deskUnsloth is not connected to an OpenAI compatible server: use the [connect] tab to connect to an OpenAI compatible server.'];
+  }
+  var load = (models && models.load) || {};
+  if (load.state === 'loading') return [w + ' Be patient, a model (' + String(load.model || '') + ') is currently loading.'];
+  var loaded = models && Array.isArray(models.models) && models.models.some(function (m) { return m && m.loaded; });
+  if (!loaded) return [w + ' No model is loaded: use the model selector in the [configure] tab to select and load a model.'];
+  return [];
+}
+
+// THE WHERE DEFAULT (goal/G10.7). Andy, 2026-10-12: "when deskUnsloth does not find desk installed on it's own node,
+// it will default to "this" node. if it does find desk is installed on its own node it, will default to the first
+// puppet it finds that has deskUnsloth installed." `answered[i]` says whether target i's deskUnsloth answered; with
+// none answering, this node.
+function deskUnslothRemoteDefaultTarget(targets, hasDesk, answered) {
+  if (!hasDesk) return 0;
+  for (var i = 0; i < targets.length; i++) {
+    if (targets[i] && targets[i].kind === 'puppet' && answered && answered[i]) return i;
+  }
+  return 0;
+}
+
 // ── THE TARGETS ──────────────────────────────────────────────────────
 function deskUnslothRemoteReadTargets() {
   var targets = [{ kind: 'node', name: 'this node' }];
@@ -162,6 +199,69 @@ function deskUnslothRemoteDraw() {
     (s.model ? ' (' + s.model + ')' : '');
   button.textContent = s.connected ? 'Disconnect ' + who : 'Connect ' + who;
   button.disabled = deskUnslothRemoteBusy;
+}
+
+// THE WARNINGS ABOVE EVERY TAB (goal/G10.7): one box, drawn from the state and the models, hidden when empty.
+function deskUnslothRemoteDrawWarnings() {
+  var box = document.getElementById('dur-warnings');
+  if (!box) return;
+  var escape = deskUnslothRemoteApi && deskUnslothRemoteApi.escapeHtml ? deskUnslothRemoteApi.escapeHtml : function (s) { return String(s); };
+  var list = deskUnslothRemoteWarnings(deskUnslothRemoteState, deskUnslothRemoteModels);
+  box.innerHTML = list.map(function (t) { return '<div class="job-start-error">' + escape(t) + '</div>'; }).join('');
+  box.style.display = list.length ? '' : 'none';
+}
+
+// THE SERVER BUBBLE'S URL, from what deskUnsloth says it is connected to; the key is never shown, it is not sent.
+function deskUnslothRemoteDrawServer() {
+  var url = document.getElementById('dur-server-url');
+  var s = deskUnslothRemoteState;
+  if (url && !url.value && s && s.server && s.server.url) url.value = s.server.url;
+}
+
+// EVERYTHING THE STATE DRAWS, in one call: the switch, the warnings, the server bubble and the chat.
+function deskUnslothRemoteDrawAll() {
+  deskUnslothRemoteDraw();
+  deskUnslothRemoteDrawWarnings();
+  deskUnslothRemoteDrawServer();
+  deskUnslothRemoteDrawChat();
+}
+
+// ── THE THREE TABS (goal/G10.7) ──────────────────────────────────────
+//
+//   Andy, 2026-10-12: "actually, make that 3 tabs [test] [configure][connect]". The test tab: "if an model is ready
+//   in the OpenAI compatible server, the test tab will show the chat interface." The configure tab: "the model
+//   selector bubble." The connect tab: the where bubble, the OpenAI compatible server bubble, and "the
+//   connect/disconnect "Levant" to the desk bubble."
+var DESK_UNSLOTH_REMOTE_TABS = ['test', 'configure', 'connect'];
+function deskUnslothRemoteDrawTabs() {
+  var strip = document.getElementById('dur-tabs');
+  if (strip) {
+    strip.innerHTML = DESK_UNSLOTH_REMOTE_TABS.map(function (t) {
+      return '<button type="button" data-tab="' + t + '"' + (t === deskUnslothRemoteTab ? ' class="active" aria-pressed="true"' : '') + '>' + t + '</button>';
+    }).join('');
+  }
+  DESK_UNSLOTH_REMOTE_TABS.forEach(function (t) {
+    var panel = document.getElementById('dur-tab-' + t);
+    if (panel) panel.style.display = t === deskUnslothRemoteTab ? '' : 'none';
+  });
+}
+
+// THE SERVER BUBBLE'S PRESS (goal/G10.7): the url and the key to deskUnsloth on the chosen node, connection.set; its
+// answer says whether a server answers there, and the state is asked again so the warnings follow.
+function deskUnslothRemoteSaveServer() {
+  var url = document.getElementById('dur-server-url');
+  var key = document.getElementById('dur-server-key');
+  var u = String((url && url.value) || '').trim();
+  if (!u) { deskUnslothRemoteSay('a url is needed, the OpenAI root, for example http://127.0.0.1:8888/v1', true); return; }
+  var target = deskUnslothRemoteTarget;
+  deskUnslothRemoteAsk(target, 'connection.set', { url: u, key: String((key && key.value) || '') }).then(function (said) {
+    if (target !== deskUnslothRemoteTarget) return;
+    if (!said || said.ok === false) { deskUnslothRemoteSay((said && (said.error || said.code)) || 'the connection was not set', true); return; }
+    deskUnslothRemoteSay(said.answers ? 'connected: a server answers at ' + said.url : 'saved, but nothing answers at ' + said.url + ': ' + said.error, !said.answers);
+    if (key) key.value = '';
+    deskUnslothRemoteLoadState();
+    deskUnslothRemoteLoadModels();
+  });
 }
 
 // THE MODEL LINE: the dropdown of cached models, the loaded one selected unless the person chose another, then the
@@ -230,6 +330,7 @@ function deskUnslothRemoteLoadModels() {
     if (target !== deskUnslothRemoteTarget) return said;
     deskUnslothRemoteModels = said;
     deskUnslothRemoteDrawModels();
+    deskUnslothRemoteDrawAll();
     return said;
   }, function (e) {
     deskUnslothRemoteModelsInFlight = false;
@@ -259,15 +360,15 @@ function deskUnslothRemoteTakesPublished(target, meta) {
 var deskUnslothRemoteChatPending = '';   // the chat.send id awaiting its published answer
 function deskUnslothRemoteApplyPublished(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.connected !== 'boolean') return;
-  deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '' };
+  deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' } };
   deskUnslothRemoteBusy = false;
   deskUnslothRemoteModels = { active: obj.active || '', cached: !!obj.cached, load: obj.load || {}, models: Array.isArray(obj.models) ? obj.models : [] };
   if (deskUnslothRemoteLoadTimer) {
     var over = deskUnslothRemoteLoadOver(deskUnslothRemoteModels, deskUnslothRemoteChosen);
     if (over.over) { deskUnslothRemoteLoadTimer = null; deskUnslothRemoteSay(over.error, !!over.error); }
   }
-  deskUnslothRemoteDraw();
   deskUnslothRemoteDrawModels();
+  deskUnslothRemoteDrawAll();
   if (deskUnslothRemoteChatPending && obj.chat && obj.chat.id === deskUnslothRemoteChatPending && obj.chat.done) {
     deskUnslothRemoteChatPending = '';
     deskUnslothRemoteTranscript.push({ role: 'assistant', text: String(obj.chat.text || '') });
@@ -312,11 +413,7 @@ function deskUnslothRemoteLoadState() {
     deskUnslothRemoteState = said;
     deskUnslothRemoteBusy = false;
     deskUnslothRemoteSay(said && said.ok === false ? (said.error || said.code || 'no answer') : '', true);
-    deskUnslothRemoteDraw();
-    // THE CHAT BOX IS DRAWN FOR ANY TARGET WHOSE STATE ANSWERED (his "go." of 2026-10-10 on running the chat on
-    // 65432): the hosting node and the puppet alike.
-    deskUnslothRemoteLocal = !!(said && said.ok !== false);
-    deskUnslothRemoteDrawChat();
+    deskUnslothRemoteDrawAll();
     return said;
   });
 }
@@ -338,7 +435,7 @@ function deskUnslothRemoteFlip() {
   });
 }
 
-// ── THE CHAT BOX, ON THE HOSTING NODE ONLY ───────────────────────────
+// ── THE CHAT BOX, IN THE TEST TAB, WHEN A MODEL IS READY (goal/G10.7) ─
 function deskUnslothRemoteDrawChatTitle() {
   var title = document.getElementById('dur-chat-title');
   if (!title) return;
@@ -363,8 +460,11 @@ function deskUnslothRemoteDrawChatLines() {
 function deskUnslothRemoteDrawChat() {
   var box = document.getElementById('dur-chat');
   if (!box) return;
-  if (!deskUnslothRemoteLocal) { box.innerHTML = ''; box.style.display = 'none'; return; }
-  if (document.getElementById('dur-chat-input')) { deskUnslothRemoteDrawChatTitle(); deskUnslothRemoteDrawChatLines(); return; }
+  // A MODEL READY is no warning left (goal/G10.7): "if an model is ready in the OpenAI compatible server, the test
+  // tab will show the chat interface."
+  if (deskUnslothRemoteWarnings(deskUnslothRemoteState, deskUnslothRemoteModels).length) { box.innerHTML = ''; box.style.display = 'none'; return; }
+  // Drawn once, then only its title and lines: the box holding the input is the sign it is there.
+  if (String(box.innerHTML).indexOf('id="dur-chat-input"') !== -1) { box.style.display = ''; deskUnslothRemoteDrawChatTitle(); deskUnslothRemoteDrawChatLines(); return; }
   box.style.display = '';
   box.innerHTML =
     '<div class="label" id="dur-chat-title"></div>' +
@@ -413,6 +513,30 @@ function deskUnslothRemoteChatSend() {
   });
 }
 
+// THE WHERE DEFAULT, CHOSEN AT OPEN (goal/G10.7): whether desk runs on this node (its api), then each puppet in
+// order asked for deskUnsloth's state; the first that answers is the target. One ask at a time, as the models ask.
+function deskUnslothRemoteChooseTarget() {
+  var targets = deskUnslothRemoteTargets;
+  return Promise.resolve(deskUnslothRemoteApi.verb('jobs.api', { ask: 'api' })).then(function (r) {
+    var apps = r && r.status === 200 && r.body && typeof r.body === 'object' ? r.body : {};
+    return !!apps.desk;
+  }, function () { return false; }).then(function (hasDesk) {
+    var answered = [];
+    if (!hasDesk) return deskUnslothRemoteDefaultTarget(targets, false, answered);
+    var i = 0;
+    var next = function () {
+      while (i < targets.length && targets[i].kind !== 'puppet') i++;
+      if (i >= targets.length) return Promise.resolve(deskUnslothRemoteDefaultTarget(targets, true, answered));
+      var at = i++;
+      return deskUnslothRemoteAsk(targets[at], 'state', {}).then(function (said) {
+        answered[at] = !!(said && said.ok !== false);
+        return answered[at] ? deskUnslothRemoteDefaultTarget(targets, true, answered) : next();
+      });
+    };
+    return next();
+  });
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskUnslothRemoteApi = api;
@@ -421,45 +545,73 @@ spirit.shell.activateApp({
     deskUnslothRemoteTarget = deskUnslothRemoteTargets[0];
 
     var escape = api.escapeHtml || function (s) { return String(s); };
-    // The panel is a column: the controls above, the chat box stuck to the bottom edge (his "sticky").
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     container.style.minHeight = '100%';
+    // THE FRAME (goal/G10.7): the tab strip, the warnings above every tab, then one panel per tab, each filled below.
     container.innerHTML =
       '<div class="stat-tile wide" style="flex:1 1 auto">' +
         '<div class="label">The local agent at the desk</div>' +
-        '<div class="job-manifest-note">Connected, the agent reads the desk and answers what is addressed to it, ' +
-          'and the desk counts it live. Disconnected, it stops reading and signs off at once, so a phase that ' +
-          'waits for a second agent does not wait for it.</div>' +
-        '<div class="start-job-form card">' +
-          '<label class="field-label grow">Where' +
-            '<select id="dur-target">' +
-              deskUnslothRemoteTargets.map(function (t, i) {
-                return '<option value="' + i + '">' + escape(t.name) + '</option>';
-              }).join('') +
-            '</select>' +
-          '</label>' +
-        '</div>' +
-        '<div class="start-job-form card">' +
-          '<div class="grow" id="dur-state">asking…</div>' +
-          '<button type="button" id="dur-switch" disabled>Connect</button>' +
-        '</div>' +
+        '<div id="dur-tabs" class="start-job-form"></div>' +
+        '<div id="dur-warnings" style="display:none"></div>' +
         '<div id="dur-note" class="job-manifest-note"></div>' +
-        '<div id="dur-models"></div>' +
-      '</div>' +
+        '<div id="dur-tab-test"></div>' +
+        '<div id="dur-tab-configure"></div>' +
+        '<div id="dur-tab-connect"></div>' +
+      '</div>';
+    // [test]: the chat, sticky at the bottom (his "sticky"), drawn only when a model is ready.
+    document.getElementById('dur-tab-test').innerHTML =
       '<div class="stat-tile wide" id="dur-chat" style="position:sticky;bottom:0;display:none"></div>';
+    // [configure]: the model selector bubble.
+    document.getElementById('dur-tab-configure').innerHTML = '<div id="dur-models"></div>';
+    // [connect]: where, the OpenAI compatible server, and the switch, in his order; where is "the first one that
+    // needs setting properly".
+    document.getElementById('dur-tab-connect').innerHTML =
+      '<div class="start-job-form card">' +
+        '<label class="field-label grow">select the node where your local agent lives' +
+          '<select id="dur-target">' +
+            deskUnslothRemoteTargets.map(function (t, i) {
+              return '<option value="' + i + '">' + escape(t.name) + '</option>';
+            }).join('') +
+          '</select>' +
+        '</label>' +
+      '</div>' +
+      '<div class="start-job-form card">' +
+        '<label class="field-label grow">connect to an OpenAI compatible server' +
+          '<input type="text" id="dur-server-url" placeholder="http://127.0.0.1:8888/v1">' +
+        '</label>' +
+        '<label class="field-label">key<input type="password" id="dur-server-key" placeholder="the server key"></label>' +
+        '<button type="button" id="dur-server-save">Connect</button>' +
+      '</div>' +
+      '<div class="job-manifest-note">Connected, the agent reads the desk and answers what is addressed to it, ' +
+        'and the desk counts it live. Disconnected, it stops reading and signs off at once, so a phase that ' +
+        'waits for a second agent does not wait for it.</div>' +
+      '<div class="start-job-form card">' +
+        '<div class="grow" id="dur-state">asking…</div>' +
+        '<button type="button" id="dur-switch" disabled>Connect</button>' +
+      '</div>';
+    deskUnslothRemoteDrawTabs();
 
+    document.getElementById('dur-tabs').addEventListener('click', function (e) {
+      var t = e && e.target && e.target.getAttribute ? e.target.getAttribute('data-tab') : null;
+      if (!t || DESK_UNSLOTH_REMOTE_TABS.indexOf(t) === -1) return;
+      deskUnslothRemoteTab = t;
+      deskUnslothRemoteDrawTabs();
+    });
     document.getElementById('dur-target').addEventListener('change', function (e) {
       deskUnslothRemoteTarget = deskUnslothRemoteTargets[Number(e.target.value)] || deskUnslothRemoteTargets[0];
       deskUnslothRemoteState = null;
       deskUnslothRemoteModels = null;
       deskUnslothRemoteChosen = '';
       deskUnslothRemoteLoadTimer = null;
+      var url = document.getElementById('dur-server-url');
+      if (url) url.value = '';
       deskUnslothRemoteDrawModels();
       deskUnslothRemoteLoadState();
       deskUnslothRemoteLoadModels();
     });
     document.getElementById('dur-switch').addEventListener('click', deskUnslothRemoteFlip);
+    document.getElementById('dur-server-save').addEventListener('click', deskUnslothRemoteSaveServer);
     // THE STREAM (goal/G14.5): every change of deskUnsloth's state, local or from the chosen puppet, through one
     // handler; the asks below paint the first time and are not repeated.
     if (typeof api.onPublished === 'function') {
@@ -468,7 +620,12 @@ spirit.shell.activateApp({
         deskUnslothRemoteApplyPublished(obj);
       }, 'deskUnsloth');
     }
-    deskUnslothRemoteLoadState();
-    deskUnslothRemoteLoadModels();
+    deskUnslothRemoteDrawAll();
+    deskUnslothRemoteChooseTarget().then(function (i) {
+      deskUnslothRemoteTarget = deskUnslothRemoteTargets[i] || deskUnslothRemoteTargets[0];
+      document.getElementById('dur-target').value = String(i);
+      deskUnslothRemoteLoadState();
+      deskUnslothRemoteLoadModels();
+    });
   },
 });

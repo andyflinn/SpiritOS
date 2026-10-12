@@ -2,7 +2,6 @@
   "persona": "Levant",
   "preamble": "you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)",
   "model": "",
-  "contextLimit": 8192,
   "answerTokens": 4096,
   "bytesPerToken": 4
 }

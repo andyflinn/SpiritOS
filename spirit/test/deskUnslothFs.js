@@ -41,7 +41,7 @@ const AGENT = path.join(RUN, 'process', 'js', 'deskUnsloth', 'deskUnsloth.js');
 const TOOLS = path.join(RUN, 'process', 'js', 'deskUnsloth', 'tools.js');
 const FS_STEMS = ['load', 'save', 'search', 'stat', 'annotations'];
 const STUDIO_CONTEXT = 4000;
-const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', contextLimit: 'auto', answerTokens: 100, bytesPerToken: 4 };
+const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', answerTokens: 100, bytesPerToken: 4 };
 const TOOL_ROOM = Math.floor(((STUDIO_CONTEXT - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken) / 4);
 const BOOT_TIMEOUT_MS = 10000;
 

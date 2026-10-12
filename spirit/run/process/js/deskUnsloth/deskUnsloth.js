@@ -32,8 +32,10 @@ const spirit = appServer.spirit;
 
 // ── THE TWO FILES, ITS OWN STATE FOLDER'S (goal/G10.3 point 4) ────────
 //
-// The node names the folder with --state; the files are read once at start and the process ends without either, by
-// name, asking nobody. They are hand-edited for now: the configuration manager is a later goal's screen.
+// The node names the folder with --state; the configuration is read once at start and the process ends without it, by
+// name, asking nobody. THE CONNECTION MAY BE ABSENT (goal/G10.7): it is set from deskUnslothRemote's connect tab
+// through connection.set, so a node without one starts, says it has no server, and waits for it. Andy, 2026-10-12, on
+// the server bubble writing a url and a key into connection.json through a verb of deskUnsloth's own: "yes."
 const STATE = (function () {
   const argv = process.argv;
   const at = argv.indexOf('--state');
@@ -57,22 +59,24 @@ function readOrDie(name) {
 }
 // Read before anything is asked of the node: a missing file is this process's own business and no desk's.
 const CONFIGURATION = readOrDie(CONFIGURATION_FILE);
-const CONNECTION = readOrDie(CONNECTION_FILE);
+function readConnection() {
+  try { const c = JSON.parse(fs.readFileSync(path.join(STATE, CONNECTION_FILE), 'utf8')); return c && typeof c === 'object' ? c : {}; } catch (e) { return {}; }
+}
+let CONNECTION = readConnection();
 
 const PERSONA = String(CONFIGURATION.persona || 'agent');
 const PREAMBLE = String(CONFIGURATION.preamble || '');
 // THE MODEL FOLLOWS A LOAD (goal/G14.4): model.load rewrites configuration.json and this with it, so the next call
 // names what the studio now serves. Everything else in the configuration is still read once.
 let MODEL = String(CONFIGURATION.model || '');
-// THE CONTEXT LIMIT: a number, or "auto" (goal/G14.6; Andy, 2026-10-10, seeing 1 % context use in the studio:
-// "lets assume "auto" is most appropriate for now, and we'll get more nit-picky as we learn more"): auto is the
-// studio's context_length of the loaded model, read with every refresh of the known list (inference/status), and
-// the configured fallback until it has been read once.
-const CONTEXT_AUTO = String(CONFIGURATION.contextLimit).toLowerCase() === 'auto' || !Number(CONFIGURATION.contextLimit);
+// THE CONTEXT IS THE STUDIO'S, NEVER CONFIGURED (goal/G10.7). Andy, 2026-10-12: "remove  contextLimit from the
+// configuration file. we will not work on stuff that unsloth does already well. we will never pass context limits to
+// unslot. that's a decision." The room below is the loaded model's context_length as the studio reports it
+// (inference/status, read with every refresh of the known list), CONTEXT_FALLBACK until it has been read once; it
+// only sizes what this process sends, and no context length is ever sent to the studio.
 const CONTEXT_FALLBACK = 8192;
-let CONTEXT_LIMIT = CONTEXT_AUTO ? CONTEXT_FALLBACK : Number(CONFIGURATION.contextLimit);
 let studioContext = 0;
-function contextLimit() { return CONTEXT_AUTO && studioContext > 0 ? studioContext : CONTEXT_LIMIT; }
+function contextLimit() { return studioContext > 0 ? studioContext : CONTEXT_FALLBACK; }
 const ANSWER_TOKENS = Number(CONFIGURATION.answerTokens) || 0;
 const BYTES_PER_TOKEN = Number(CONFIGURATION.bytesPerToken) || 4;
 // HIS FORMULA (goal/G10.3): the room for the whole prompt is what is left of the context once the answer has its
@@ -192,11 +196,22 @@ function callFor(id) {
 //
 // The connection's url is the OpenAI root (…/v1); the studio's own api sits beside it at the host root (…/api/…),
 // read live 2026-10-10 (Unsloth Studio 2026.10.3, openapi.json). One function for both: a path from the host root.
-const STUDIO_URL = String(CONNECTION.url || '').replace(/\/+$/, '').replace(/\/v1$/, '');
+function studioUrlOf(conn) { return String((conn && conn.url) || '').replace(/\/+$/, '').replace(/\/v1$/, ''); }
+let STUDIO_URL = studioUrlOf(CONNECTION);
+// WHETHER THE SERVER ANSWERS (goal/G10.7), for the Remote's warning (`answers`, since `ok` is appServer's reserved
+// reply key): true once a call got any answer back, false when
+// one could not reach it, and false with no url. Never the key: the state goes to every page that listens.
+let server = { url: String(CONNECTION.url || ''), answers: false, error: STUDIO_URL ? '' : 'no OpenAI compatible server is set' };
+function serverSeen(ok, error) {
+  if (server.answers === ok && server.error === error && server.url === String(CONNECTION.url || '')) return;
+  server = { url: String(CONNECTION.url || ''), answers: ok, error: error };
+  publishState();
+}
 
 // `timeoutMs` caps one call: a studio route that dawdles (v1/models took 14.9 s live on 2026-10-10, probing its
 // ollama entries) must not take the whole ask past the 12 s a process has to answer.
 function studio(method, pathname, body, timeoutMs) {
+  if (!STUDIO_URL) return Promise.reject(new Error('no OpenAI compatible server is set: connect one in deskUnslothRemote'));
   const url = new URL(STUDIO_URL + pathname);
   const text = body === undefined ? '' : JSON.stringify(body);
   const lib = url.protocol === 'https:' ? https : http;
@@ -210,6 +225,7 @@ function studio(method, pathname, body, timeoutMs) {
       method: method,
       headers: headers,
     }, function (res) {
+      serverSeen(true, '');
       let raw = '';
       res.on('data', function (c) { raw += c; });
       res.on('end', function () {
@@ -219,7 +235,7 @@ function studio(method, pathname, body, timeoutMs) {
         resolve(got);
       });
     });
-    req.on('error', reject);
+    req.on('error', function (e) { if (e && e.code) serverSeen(false, String(e.message || e)); reject(e); });
     if (Number(timeoutMs) > 0) req.setTimeout(Number(timeoutMs), function () { req.destroy(new Error('the studio took longer than ' + timeoutMs + ' ms at ' + pathname)); });
     if (text) req.write(text);
     req.end();
@@ -382,7 +398,7 @@ function fetchModels() {
       const st = got[2] || {};
       const active = String(st.active_model || '');
       const loadedList = Array.isArray(st.loaded) ? st.loaded.map(String) : [];
-      // The loaded model's context, for contextLimit "auto".
+      // The loaded model's context: the room every call is sized to (goal/G10.7).
       if (Number(st.context_length) > 0) studioContext = Number(st.context_length);
       const was = {};
       ((readKnown() || {}).models || []).forEach(function (m) { if (m && m.id) was[m.id] = m; });
@@ -451,6 +467,7 @@ function stateObject() {
     connected: connected,
     persona: PERSONA,
     model: MODEL,
+    server: { url: server.url, answers: server.answers, error: server.error },
     active: String(have.active || ''),
     cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS),
     load: { model: load.model, state: load.state, error: load.error },
@@ -498,6 +515,38 @@ function loadModel(id) {
     publishState();
   });
   return { model: id, loaded: false };
+}
+
+// ── THE CONNECTION, FROM THE CONNECT TAB (goal/G10.7) ───────────────────
+//
+// connection.set {url, key}: connection.json is written by this process, the one that owns it, and the next call
+// uses it. The answer says whether a server answers at that url: one GET of the url itself, any HTTP answer counting,
+// capped at PROBE_MS. Not v1/models: the studio's took 14.9 s live (goal/G14.4) and a process answers within 12 s.
+const PROBE_MS = 5000;
+function probe() {
+  return new Promise(function (resolve) {
+    let url = null;
+    try { url = new URL(String(CONNECTION.url || '')); } catch (e) { return resolve({ ok: false, error: 'not a url: ' + String(CONNECTION.url || '') }); }
+    const lib = url.protocol === 'https:' ? https : http;
+    const req = lib.request({
+      hostname: url.hostname, port: url.port || (url.protocol === 'https:' ? 443 : 80), path: url.pathname + url.search,
+      method: 'GET', headers: { Authorization: 'Bearer ' + String(CONNECTION.key || '') },
+    }, function (res) { res.resume(); resolve({ ok: true, error: '' }); });
+    req.on('error', function (e) { resolve({ ok: false, error: String((e && e.message) || e) }); });
+    req.setTimeout(PROBE_MS, function () { req.destroy(new Error('no answer within ' + PROBE_MS + ' ms')); });
+    req.end();
+  });
+}
+function setConnection(url, key) {
+  const next = { url: String(url || ''), key: String(key || '') };
+  fs.writeFileSync(path.join(STATE, CONNECTION_FILE), JSON.stringify(next, null, 2) + '\n');
+  CONNECTION = next;
+  STUDIO_URL = studioUrlOf(next);
+  say('connection.json now names ' + next.url);
+  return probe().then(function (r) {
+    serverSeen(r.ok, r.error);
+    return { url: next.url, answers: r.ok, error: r.error };
+  });
 }
 
 // ── THE CHAT BOX'S CALLS (goal/G14.4) ──────────────────────────────────
@@ -688,8 +737,16 @@ appServer.serve({
     handler: function (a) { return setConnected(a.on === true); },
   },
   state: {
-    request: {}, reply: { connected: true, persona: '', model: '' },
-    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL }; },
+    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' } },
+    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error } }; },
+  },
+  // THE SERVER BUBBLE'S VERB (goal/G10.7): the url and the key into connection.json, and whether a server answers.
+  'connection.set': {
+    request: { url: '', key: '' }, reply: { url: '', answers: true, error: '' },
+    handler: function (a) {
+      if (!String(a.url || '')) throw { refusal: 'bad-request', extra: { why: 'a url is needed' } };
+      return setConnection(a.url, a.key);
+    },
   },
   // THE MODEL LINE AND THE CHAT BOX (goal/G14.4): what deskUnslothRemote reads and presses.
   models: {
@@ -710,7 +767,7 @@ appServer.serve({
   },
 }, { dependencies: [] });
 
-say(PERSONA + ' is at the desk, model ' + MODEL + ', context ' + (CONTEXT_AUTO ? 'auto (the studio\'s, ' + CONTEXT_FALLBACK + ' until read)' : CONTEXT_LIMIT + ' tokens'));
+say(PERSONA + ' is at the desk, model ' + MODEL + ', context the studio\'s (' + CONTEXT_FALLBACK + ' until read), server ' + (server.url || 'not set'));
 // The first state goes out at once, from what is known. The studio is not read until somebody asks models (the
 // Remote does when it opens): at the desk alone, deskUnsloth speaks to the studio for chat and nothing else
 // (goal/G10.3, deskUnslothContext.js).
