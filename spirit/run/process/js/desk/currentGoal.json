@@ -1,8 +1,8 @@
 {
- "change": 35833,
+ "change": 35836,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T11:33:42.513Z",
+ "writtenAt": "2026-10-12T11:33:52.677Z",
  "items": [
   {
    "id": "goal/G18",
@@ -36,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -3041,10 +3041,9 @@
    "id": "goal/G18.9",
    "title": "deskUnsloth: a provider switch leaves Levant live on the desk",
    "goal": "goal/G18",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
