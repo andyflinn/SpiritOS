@@ -2101,7 +2101,12 @@ appServer.serve({
       return { change: write('verify.again', { id: a.id, by: w.by, key: w.key }, function (st, it) {
         // Nor on a done or closed item (goal/G8.10): a re-verify of a settled item would only feed the watcher a word
         // the desk would then refuse.
-        if (!it || !it.code || it.verified !== true || it.done || it.closed) throw refused('not-offered');
+        // EACH REFUSAL SAYS WHY (goal/G18.10): the Verifier tab's button was refused in silence, and Andy read it as
+        // "verify, when idling, does not react to my attempts of pushing it's re-verify button."
+        if (!it) throw refused('not-offered');
+        if (it.done || it.closed) throw refusedWhy('not-offered', a.id + ' is ' + (it.closed ? 'closed' : 'done') + ': a settled item is not verified again');
+        if (!it.code) throw refusedWhy('not-offered', a.id + ' is not a code item: its check comes from its claim, not from a re-verify');
+        if (it.verified !== true) throw refusedWhy('not-offered', a.id + ' has no verify pass on record yet: its verifier passes it first, then it can be verified again');
       }).change };
     },
   },

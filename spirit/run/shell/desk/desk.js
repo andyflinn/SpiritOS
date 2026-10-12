@@ -141,7 +141,8 @@ function deskAsk(verb, args) {
 function deskRefusalText(body) {
   if (!body || !body.code) return body && body.error ? String(body.error) : '';
   var x = body.extra || {};
-  return body.code + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (body.error ? ' (' + body.error + ')' : '');
+  // THE WHY TOO (goal/G18.10): every refusal carries its reason since goal/G10.10, and the page showed the code alone.
+  return body.code + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (x.why ? ': ' + x.why : '') + (body.error ? ' (' + body.error + ')' : '');
 }
 // One bounded search; the server answers newest first in searchBucket's
 // shape, {items: [{key, label}], more}, a line being its label (slim/G1.2).
@@ -992,6 +993,9 @@ function deskBackupHtml() {
 // his behalf and brings no Done.
 var deskVerifier = null;
 var deskVerifyLast = '';
+// THE RE-VERIFY'S ANSWER (goal/G18.10). Andy: "verify, when idling, does not react to my attempts of pushing it's
+// re-verify button." The desk refused it and the page swallowed the refusal; now its outcome is said in the tab.
+var deskVerifyNote = '';
 function deskVerifyAsk(verb, args) {
   var ask = { deskVerify: {} };
   ask.deskVerify[verb] = args || {};
@@ -1085,6 +1089,7 @@ function deskVerifyHtml() {
         (run.since ? ' · since ' + deskTime(run.since) : '')
       : (live && live.doing !== 'idle' ? '' : 'Idle' + (deskVerifyLast ? '; last checked ' + deskEsc(deskVerifyLast) : ''))) +
     '</div><div>' + (queued.length ? 'Waiting: ' + queued.map(deskEsc).join(', ') : 'Nothing waiting') + '</div>' +
+    (deskVerifyNote ? '<div class="job-manifest-note">' + deskEsc(deskVerifyNote) + '</div>' : '') +
     // HIS BUTTONS (goal/G14.3). Andy, 2026-10-12: "the Buttons in the verifier then read: [run the full harness button]
     // [stop the run][re- run:.....]", the full harness "(armable)" and his alone; "re-run:" names the item, and
     // "[Verify <item> again] can be left alone." Stop is pressable whenever anything runs: it was tied to an item id,
@@ -1346,7 +1351,10 @@ spirit.shell.activateApp({
       var again = t.getAttribute && t.getAttribute('data-reverify');
       // THE RE-VERIFY GOES TO THE DESK, not to deskVerify (goal/G8.10): the record is the word its watcher reads, so
       // his node's verifier picks it up wherever it runs.
-      if (again) deskAsk('verify.again', { id: again }).then(function () { return deskVerifyRefresh(); }, function () {});
+      if (again) deskAsk('verify.again', { id: again }).then(function () {
+        deskVerifyNote = 'Asked to verify ' + again + ' again.';
+        return deskVerifyRefresh();
+      }, function (e) { deskVerifyNote = 'Not verified again: ' + ((e && e.message) || e); deskDrawVerifier(); });
     });
     document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
     document.getElementById('desk-muse-send').addEventListener('click', deskMuse);

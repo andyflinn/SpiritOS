@@ -334,7 +334,23 @@ function claimCheck(id) {
       .then(function () { throw e; });
   });
 }
-function claimCheckRun(id) {
+// The commits written under the item that this tree does not hold (goal/G18.10). A hash git cannot name is lacking;
+// so is one it names that is not an ancestor of HEAD. An item with no commit line lacks nothing.
+function commitsLacking(id, port) {
+  return spirit.core.ask('jobs.api', { ask: { desk: { 'item.chat': { id: String(id) } } } }, 'http://127.0.0.1:' + port).then(function (r) {
+    const body = r && r.body && r.body.body ? r.body.body : (r && r.body) || {};
+    const chat = Array.isArray(body.chat) ? body.chat : [];
+    const hashes = [];
+    chat.forEach(function (l) {
+      const m = /^commit ([0-9a-f]{7,40})\b/.exec(String(l && l.text || ''));
+      if (m && hashes.indexOf(m[1]) === -1) hashes.push(m[1]);
+    });
+    return hashes.filter(function (h) {
+      return spawnSync('git', ['merge-base', '--is-ancestor', h, 'HEAD'], { cwd: REPO, encoding: 'utf8' }).status !== 0;
+    });
+  }, function () { return []; });
+}
+async function claimCheckRun(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   stopped = false;
   running = { id: String(id), suite: '', since: new Date().toISOString() };
@@ -350,6 +366,18 @@ function claimCheckRun(id) {
     return spirit.core.ask('jobs.api', { ask: { desk: { 'chat.add': { id: String(id), text: text } } } },
       'http://127.0.0.1:' + port).catch(function () { /* the verdict below still stands */ });
   };
+  // THE PASS IS BOUND TO THE ITEM'S COMMIT (goal/G18.10). Found live on 2026-10-12: it passed goal/G18.7 "at 24533a26
+  // (dirty, not pulled)" while the item's commit was 227b0ad4, so the suites it ran were older than the item's and the
+  // pass named code that was not the item's. Andy: "yes." to "no pass without the item's commit". The item's commits
+  // are the lines commitCheck writes under it ("commit <hash>: ..."); with one missing from this tree nothing is
+  // measured, so it is neither a pass nor a reject, and the line says which commit it waits for.
+  const lacking = await commitsLacking(id, port);
+  if (lacking.length) {
+    const at0 = tree();
+    await report('deskVerify: not checked, at ' + (at0.short || at0.commit || 'an unknown commit') + ' (' + pulled + '): the tree lacks the item\'s commit '
+      + lacking.map(function (h) { return h.slice(0, 8); }).join(', ') + '. Nothing was measured, so this is not a pass.');
+    return { rejected: false, unchecked: true, lacking: lacking };
+  }
   return suitesOf(id).then(async function (list) {
     const reds = [];
     // NOTHING TO RUN IS NOT A PASS (goal/G8.10, grown from rule/11 point 2): an item with no test file on its list had
