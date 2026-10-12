@@ -1837,14 +1837,18 @@ contactBook.syncMarks(ROOT_DIR);
         rs.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify(body));
       };
-      const refusal = function (code) {
+      // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why."): the reason in
+      // extra.why beside the code's own words.
+      const refusal = function (code, why) {
         const e = require('./spiritErrors').byCode(code);
-        send((e && e.status) || 400, { ok: false, code: code, error: e ? e.text : code });
+        const body = { ok: false, code: code, error: e ? e.text : code };
+        if (why) body.extra = { why: String(why) };
+        send((e && e.status) || 400, body);
       };
       readJsonBody(rq).then(function (body) {
         return Promise.resolve().then(function () { return work(body && typeof body === 'object' ? body : {}); });
-      }, function () { return { refusal: 'bad-request' }; }).then(function (out) {
-        if (out && out.refusal) refusal(out.refusal);
+      }, function () { return { refusal: 'bad-request', why: 'the body is not JSON' }; }).then(function (out) {
+        if (out && out.refusal) refusal(out.refusal, out.why);
         else send(200, out);
       }, function () { refusal('store-unavailable'); });
     };

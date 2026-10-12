@@ -295,6 +295,9 @@ function deskUnslothRemoteDrawModels() {
   var loading = deskUnslothRemoteLoadTimer && !model.loaded;
   box.innerHTML =
     '<div class="start-job-form card">' +
+      // THE REFRESH (goal/G10.10). Andy, 2026-10-12: "we need a button to the left of the model-picker that allows me
+      // to refresh the model list, so i don't have to re-start the Remote or 11111".
+      '<button type="button" id="dur-refresh" title="ask the model list again">' + deskUnslothRemoteIcon('REFRESH') + '</button>' +
       '<label class="field-label grow">Model' +
         '<select id="dur-model">' +
           models.map(function (m) {
@@ -326,6 +329,8 @@ function deskUnslothRemoteDrawModels() {
   if (load) load.addEventListener('click', deskUnslothRemoteLoad);
   var testButton = document.getElementById('dur-test');
   if (testButton) testButton.addEventListener('click', deskUnslothRemoteTest);
+  var refresh = document.getElementById('dur-refresh');
+  if (refresh) refresh.addEventListener('click', function () { deskUnslothRemoteLoadModels(); });
   deskUnslothRemoteDrawChatTitle();
 }
 
@@ -566,7 +571,19 @@ function deskUnslothRemoteChatSend() {
 
 // THE WHERE DEFAULT, CHOSEN AT OPEN (goal/G10.7): whether desk runs on this node (its api), then each puppet in
 // order asked for deskUnsloth's state; the first that answers is the target. One ask at a time, as the models ask.
+// ITS OWN NODE FIRST (goal/G10.10). Andy, 2026-10-12: "if deskUnsloth lives on the same node as the Remote, we'll just
+// automatically configure it to the same node, and never show this bubble." So deskUnsloth answering on this node is
+// the target, and the where bubble is hidden; otherwise the choice of goal/G10.7 stands and the bubble shows.
+var deskUnslothRemoteOwnNode = false;
 function deskUnslothRemoteChooseTarget() {
+  return deskUnslothRemoteAsk({ kind: 'node' }, 'state', {}).then(function (said) {
+    deskUnslothRemoteOwnNode = !!(said && said.ok !== false && typeof said.connected === 'boolean');
+    var where = document.getElementById('dur-where');
+    if (where) where.style.display = deskUnslothRemoteOwnNode ? 'none' : '';
+    return deskUnslothRemoteOwnNode ? 0 : deskUnslothRemoteChooseAmongPuppets();
+  });
+}
+function deskUnslothRemoteChooseAmongPuppets() {
   var targets = deskUnslothRemoteTargets;
   return Promise.resolve(deskUnslothRemoteApi.verb('jobs.api', { ask: 'api' })).then(function (r) {
     var apps = r && r.status === 200 && r.body && typeof r.body === 'object' ? r.body : {};
@@ -618,7 +635,7 @@ spirit.shell.activateApp({
     // [connect]: where, the OpenAI compatible server, and the switch, in his order; where is "the first one that
     // needs setting properly".
     document.getElementById('dur-tab-connect').innerHTML =
-      '<div class="start-job-form card">' +
+      '<div class="start-job-form card" id="dur-where">' +
         '<label class="field-label grow">select the node where your local agent lives' +
           '<select id="dur-target">' +
             deskUnslothRemoteTargets.map(function (t, i) {

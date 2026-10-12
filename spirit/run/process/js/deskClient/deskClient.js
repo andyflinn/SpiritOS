@@ -434,7 +434,9 @@ appServer.serve({
       const to = deskKey();
       let args = null;
       try { args = JSON.parse(a.json || '{}'); } catch (e) { args = null; }
-      if (!a.verb || !args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request');
+      // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
+      if (!a.verb) throw refused('bad-request', { why: 'desk needs the verb to ask' });
+      if (!args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request', { why: 'desk needs json: the arguments as a JSON object' });
       const one = countedAsk(to, a.verb, args);
       // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
       const answer = one.answer.then(function (got) {
@@ -453,7 +455,7 @@ appServer.serve({
     request: { key: '' }, reply: { set: true },
     handler: function (a, caller) {
       ownerOnly(caller);
-      if (!a.key) throw refused('bad-request');
+      if (!a.key) throw refused('bad-request', { why: 'setDesk needs the key of the node that runs the desk' });
       putSetting.run('desk', a.key);
       return { set: true };
     },

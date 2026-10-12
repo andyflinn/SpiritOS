@@ -41,6 +41,9 @@ function ddAsk(verb, args) {
 // A REFUSAL BY ITS NAME, SIZE AND LIMIT (Andy: "would have been diagnosed in an instant").
 function ddRefusalText(body) {
   var x = body.extra || {};
+  // A REFUSAL SAYS WHY (goal/G10.10): the server's reason, when it gives one, is what he reads, not the code's
+  // default wording ("text required" for any bad-request).
+  if (x.why) return String(x.why);
   return String(body.code || 'refused') + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (body.error ? ' (' + body.error + ')' : '');
 }
 
@@ -87,7 +90,8 @@ function ddFrame() {
     // entered title and a blank text box. The blocked-by section will be updated immediately." It lives in the frame,
     // so what he has typed survives every repaint, as the chat input does.
     '<div class="start-job-form card" id="dd-add-row"><label class="field-label grow">Title' +
-      '<input type="text" id="dd-add-title" placeholder="an item this one waits on"></label>' +
+      '<input type="text" id="dd-add-title" data-field="label" placeholder="an item this one waits on"></label>' +
+      '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
       // Return is a new line; only Send sends (desk/G1.12).
@@ -125,7 +129,8 @@ function ddButtonsHtml() {
     return '<button type="button" id="dd-' + b + '">' + label + '</button>';
   }).join('');
   html += ddRenaming
-    ? '<label class="field-label grow">Your name for it<input type="text" id="dd-name" placeholder="in your own words"></label>' +
+    ? '<label class="field-label grow">Your name for it<input type="text" id="dd-name" data-field="label" placeholder="in your own words"></label>' +
+      '<span class="job-manifest-note" id="dd-name-left"></span>' +
       '<button type="button" id="dd-name-save">Save</button>'
     : '<button type="button" id="dd-rename">Rename</button>';
   // THE GOAL'S ABANDON: "a red, arming-button ... with are-you-sure", "at the
@@ -392,10 +397,43 @@ function ddSay() {
 // ADD BLOCKING ITEM (goal/G9.10): the desk names the id (goal/G9.9), the new item blocks the one on screen, and the
 // dialog reads itself again so Blocked by shows it at once. The title stays in the box if the desk refused it, so a
 // title the label rules turn down is not lost.
+// ── INPUTS FOLLOW THE FIELD RULES (rule/12, goal/G10.10) ─────────────
+//
+//   rule/12: "every input in the shell, system or app level, whose value a field rule governs is marked with that rule
+//   (data-field="label", ...) and validated as typed with the same rule the node uses (fieldRules.js,
+//   window.spiritFieldRules in the browser): bytes left shown beside it, its action refused while the rule says no."
+// The title and the rename are labels. What is left, or over, shows beside each as it is typed; a value the rule
+// refuses is not sent, and the reason is said. The node checks again: this spares the wire, it never replaces that.
+var DD_FIELD_ACTION = { 'dd-add-title': 'dd-add', 'dd-name': 'dd-name-save' };
+function ddFieldRule() { return (typeof window !== 'undefined' && window && window.spiritFieldRules) || null; }
+function ddFieldWhy(id) {
+  var rule = ddFieldRule();
+  var el = document.getElementById(id);
+  var value = el ? String(el.value || '') : '';
+  if (!rule || !value.trim()) return '';
+  var problem = rule.problem(value);
+  if (!problem) return '';
+  var bytes = rule.byteLength(rule.normalize(value));
+  return problem + (bytes > rule.MAX_BYTES ? ': ' + (bytes - rule.MAX_BYTES) + ' bytes over, the limit is ' + rule.MAX_BYTES : '');
+}
+function ddFieldCheck(id) {
+  var rule = ddFieldRule();
+  var el = document.getElementById(id);
+  var left = document.getElementById(id + '-left');
+  if (!rule || !el || !left) return;
+  var bytes = rule.byteLength(rule.normalize(String(el.value || '')));
+  var why = ddFieldWhy(id);
+  left.textContent = why || (rule.MAX_BYTES - bytes) + ' bytes left';
+  left.className = why ? 'job-start-error' : 'job-manifest-note';
+  var action = document.getElementById(DD_FIELD_ACTION[id]);
+  if (action) action.disabled = !!why;
+}
 function ddAdd() {
   var title = ddValue('dd-add-title');
   var f = ddFacts || {};
   if (!title || ddSending) return;
+  var why = ddFieldWhy('dd-add-title');
+  if (why) { ddNote = 'Not sent: the title: ' + why; ddPaint(); return; }
   ddSending = true;
   ddWrite('item.add', { goal: f.goal === '' ? ddId : String(f.goal), title: title, blocks: ddId }).then(function (taken) {
     ddSending = false;
@@ -425,6 +463,8 @@ function ddBoxBlur() {
 function ddRename() {
   var title = ddValue('dd-name');
   if (!title) return;
+  var why = ddFieldWhy('dd-name');
+  if (why) { ddNote = 'Not sent: the name: ' + why; ddPaint(); return; }
   ddWrite('item.rename', { id: ddId, title: title }).then(function () { ddRenaming = false; ddPaint(); });
 }
 
@@ -514,6 +554,12 @@ spirit.shell.activateApp({
       if (id === 'dd-name-save') { ddRename(); return; }
       if (id === 'dd-add') { ddAdd(); return; }
       if (id === 'dd-say-send') ddSay();
+    });
+    // EVERY MARKED INPUT, CHECKED AS TYPED (rule/12): one listener on the body, which is repainted.
+    document.getElementById('dd-body').addEventListener('input', function (event) {
+      var t = event && event.target;
+      if (!t || !t.getAttribute || t.getAttribute('data-field') !== 'label') return;
+      if (DD_FIELD_ACTION[t.id]) ddFieldCheck(t.id);
     });
     document.getElementById('dd-body').addEventListener('keydown', function (event) {
       if (event.key === 'Enter' && !event.repeat && event.target && event.target.id === 'dd-name') {

@@ -1142,6 +1142,19 @@ function findItems(a) {
 }
 
 function refused(code) { const e = new Error(code); e.refusal = code; return e; }
+// A REFUSAL SAYS WHY (goal/G10.10). Andy, 2026-10-12: "all refusals everywhere should say why." A bare bad-request
+// reached his dialog as "text required", the code's first wording, for an 81-byte title. The reason rides in
+// extra.why, as a refused press's does (notOffered below), in words a person can act on.
+function refusedWhy(code, why) { const e = refused(code); e.extra = { why: String(why) }; return e; }
+// A FIELD RULE'S ANSWER IN WORDS: what was wrong with which field, and its bytes against the limit when it is the size.
+function fieldWhy(what, value, paragraph) {
+  const fr = require('../../../js/fieldRules.js');
+  const p = paragraph ? fr.paragraphProblem(value) : fr.problem(value);
+  if (!p) return '';
+  const max = paragraph ? fr.PARAGRAPH_MAX_BYTES : fr.MAX_BYTES;
+  const bytes = fr.byteLength(paragraph ? fr.normalizeParagraph(value) : fr.normalize(value));
+  return what + ': ' + p + (bytes > max ? ' (' + bytes + ' bytes, the limit is ' + max + ')' : '');
+}
 // A REFUSED PRESS NAMES WHAT BLOCKS IT (goal/G9.17, change 3). Andy, 2026-10-09, on "Not pressed: not-offered (that
 // press is not offered for this item now)": "and it doesn't tell me why either." The code stays not-offered; the
 // reason rides in extra.why, as line-too-large carries its bytes and its room.
@@ -1341,7 +1354,7 @@ function changedRows(before, after, goalId) {
 function newGoal(w) {
   const st = walkState();
   const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && listed(st, g) && !g.closed; });
-  if (open) throw refused('bad-request');
+  if (open) throw refusedWhy('bad-request', 'a goal is open already; close it before a new one starts');
   const used = Object.keys(st.goals).map(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); return m ? Number(m[1]) : 0; });
   const id = 'goal/G' + (Math.max.apply(null, [0].concat(used)) + 1);
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
@@ -1417,9 +1430,9 @@ function nextItemId(s, gid) {
 // its label, the key's tail when the door knew no name; a write with no
 // caller has no writer and is refused.
 function writerOf(caller) {
-  if (!caller || typeof caller !== 'object') throw refused('bad-request');
+  if (!caller || typeof caller !== 'object') throw refusedWhy('bad-request', 'the write came with no caller, so it has no writer');
   if (caller.owner === true) return { by: 'andy', key: String(caller.key || '') };
-  if (typeof caller.key !== 'string' || !caller.key) throw refused('bad-request');
+  if (typeof caller.key !== 'string' || !caller.key) throw refusedWhy('bad-request', 'the caller carries no key, so it has no writer');
   const label = String(caller.label || '').trim();
   // The one cut of a key, everywhere (G1.11): kernel.keyTail.
   return { by: label || require('../../../js/kernel.js').keyTail(caller.key), key: caller.key };
@@ -1655,7 +1668,7 @@ appServer.serve({
     handler: function (a, caller) {
       const w = writerOf(caller);
       const title = String(a.title || '').trim();
-      if (!title) throw refused('bad-request');
+      if (!title) throw refusedWhy('bad-request', 'a goal needs a title');
       const args = { title: title, by: w.by, key: w.key };
       const r = write('goal.add', args, function (st) { args.minted = nextGoalId(st); });
       return { id: args.minted, change: r.change };
@@ -1677,7 +1690,8 @@ appServer.serve({
       const w = writerOf(caller);
       const gid = String(a.goal || '');
       const title = String(a.title || '').trim();
-      if (!title || require('../../../js/fieldRules.js').problem(title)) throw refused('bad-request');
+      if (!title) throw refusedWhy('bad-request', 'an item needs a title');
+      if (fieldWhy('title', title)) throw refusedWhy('bad-request', fieldWhy('title', title));
       const args = { goal: gid, title: title, by: w.by, key: w.key };
       if (a.blocks !== undefined && String(a.blocks)) args.blocks = String(a.blocks);
       const r = write('item.add', args, function (st) {
@@ -1704,7 +1718,7 @@ appServer.serve({
       if (boxBytes > ANSWER_ROOM) throw tooLarge(boxBytes, ANSWER_ROOM);
       // AN OPEN POINT IS A RED QUESTION, NEVER BOX TEXT (goal/G6.8). Andy: "in design mode as well, OPEN is help in
       // red-questions". A line starting with OPEN in capitals is refused, his own too.
-      if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refused('bad-request');
+      if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refusedWhy('bad-request', 'a line starting OPEN is not box text: an open point is a Q check');
       const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
         // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9). ONE RULE FOR EVERYBODY SINCE goal/G9.3:
         // Andy, 2026-10-07, asked whether his own take refuses an agent until he leaves the box: "yes. so it shoule be
@@ -1737,7 +1751,7 @@ appServer.serve({
       return { change: write('check.set', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
         const c = it.checks.filter(function (x) { return x.number === a.check; })[0];
         if (!c) throw refused('no-row');
-        if ((a.state === 'granted' && c.kind !== 'G') || (a.state === 'answered' && c.kind !== 'Q')) throw refused('bad-request');
+        if ((a.state === 'granted' && c.kind !== 'G') || (a.state === 'answered' && c.kind !== 'Q')) throw refusedWhy('bad-request', a.check + ' is a ' + c.kind + ' check: ' + a.state + ' is for ' + (a.state === 'granted' ? 'a G' : 'a Q') + ' check');
       }).change };
     },
   },
@@ -1900,7 +1914,9 @@ appServer.serve({
     handler: function (a, caller) {
       const w = writerOf(caller);
       const fr = require('../../../js/fieldRules.js');
-      if (RULE_TYPES.indexOf(a.type) === -1 || fr.problem(a.label) || fr.paragraphProblem(a.text)) throw refused('bad-request');
+      if (RULE_TYPES.indexOf(a.type) === -1) throw refusedWhy('bad-request', 'a rule type is one of ' + RULE_TYPES.join(', '));
+      if (fieldWhy('label', a.label)) throw refusedWhy('bad-request', fieldWhy('label', a.label));
+      if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
       addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text));
       appServer.publish({ rule: key });
@@ -1923,7 +1939,7 @@ appServer.serve({
       ownerOnly(caller);
       const fr = require('../../../js/fieldRules.js');
       if (!newestRule.get(String(a.key))) throw refused('no-such-item');
-      if (fr.paragraphProblem(a.text)) throw refused('bad-request');
+      if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       putDraft.run(String(a.key), new Date().toISOString(), fr.normalizeParagraph(a.text));
       appServer.publish({ rule: String(a.key) });
       return { key: String(a.key) };
@@ -1936,7 +1952,8 @@ appServer.serve({
       const fr = require('../../../js/fieldRules.js');
       const r = newestRule.get(String(a.key));
       if (!r) throw refused('no-such-item');
-      if (RULE_STATUSES.indexOf(a.status) === -1 || fr.paragraphProblem(a.text)) throw refused('bad-request');
+      if (RULE_STATUSES.indexOf(a.status) === -1) throw refusedWhy('bad-request', 'a rule status is one of ' + RULE_STATUSES.join(', '));
+      if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text));
       appServer.publish({ rule: r.key });
       rulesChanged(r.key, 'versioned, ' + a.status);
@@ -1975,7 +1992,7 @@ appServer.serve({
     request: { word: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      if (a.word !== 'listening' && a.word !== 'working') throw refused('bad-request');
+      if (a.word !== 'listening' && a.word !== 'working') throw refusedWhy('bad-request', 'an agent word is listening or working');
       return { change: write('agent.state', { word: a.word, by: w.by, key: w.key }).change };
     },
   },
@@ -2056,7 +2073,9 @@ appServer.serve({
     handler: function (a, caller) {
       ownerOnly(caller);
       const w = writerOf(caller);
-      if (!a.agent || require('../../../js/fieldRules.js').problem(a.name) || !/^[a-z0-9]{1,8}$/.test(a.nick)) throw refused('bad-request');
+      if (!a.agent) throw refusedWhy('bad-request', 'a profile names its agent by key');
+      if (fieldWhy('name', a.name)) throw refusedWhy('bad-request', fieldWhy('name', a.name));
+      if (!/^[a-z0-9]{1,8}$/.test(a.nick)) throw refusedWhy('bad-request', 'a nick is 1 to 8 of a-z and 0-9');
       const held = walkState().profiles;
       if (Object.keys(held).some(function (k) { return k !== a.agent && held[k].nick === a.nick; })) throw refused('taken');
       return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, by: w.by, key: w.key }).change };
@@ -2125,7 +2144,7 @@ appServer.serve({
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      if (w.by === 'andy') throw refused('bad-request');
+      if (w.by === 'andy') throw refusedWhy('bad-request', 'a line is taken by an agent, not by Andy');
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
       // ONE TAKER UNTIL IT ANSWERS (claude-windows's review): a take on a newer line of his while the first stands
@@ -2145,7 +2164,7 @@ appServer.serve({
   'press': {
     request: { id: '', what: '' }, reply: { change: 0 },
     handler: function (a, caller) {
-      if (PRESSES.indexOf(a.what) === -1) throw refused('bad-request');
+      if (PRESSES.indexOf(a.what) === -1) throw refusedWhy('bad-request', 'no press is called ' + JSON.stringify(String(a.what)));
       if (OWNER_PRESSES.indexOf(a.what) !== -1) ownerOnly(caller);
       const w = writerOf(caller);
       // START DESIGN WITH NOTHING OPEN STARTS A NEW GOAL (desk/G3.1). Andy: "start design mode should start a new

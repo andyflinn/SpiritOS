@@ -78,7 +78,8 @@ const ANSWER_BY_MS = 10000;
 // A chat read fills half an answer, as chat.search does: an agent's deskClient-like wrapper may pack it once more.
 const READ_ROOM = Math.floor((appClient.ANSWER_MAX - 512) / 2);
 
-function refused(code) { const e = new Error(code); e.refusal = code; return e; }
+function refused(code, why) { const e = new Error(code); e.refusal = code; if (why) e.extra = { why: String(why) }; return e; }
+// A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 // One ask of this node: {status, body}, or {status: 0} when the node did not answer at all.
 function askNode(verb, args) {
@@ -205,7 +206,7 @@ appServer.serve({
     handler: function (a, caller) {
       ownerOnly(caller);
       const to = String(a.to);
-      if (!to) throw refused('bad-request');
+      if (!to) throw refused('bad-request', 'a line needs to: the key of the chat it is written to');
       const re = { writer: String((a.re && a.re.writer) || ''), seq: Number((a.re && a.re.seq) || 0) };
       const text = String(a.text);
       // Measured before anything is asked, with the largest number this line could carry.
@@ -278,7 +279,7 @@ appServer.serve({
       const peer = caller && caller.key ? String(caller.key) : '';
       if (!peer) throw refused('not-granted');
       const seq = Number(a.seq);
-      if (!(seq > 0)) throw refused('bad-request');
+      if (!(seq > 0)) throw refused('bad-request', 'a line needs its seq, a number above 0');
       const re = { writer: String((a.re && a.re.writer) || ''), seq: Number((a.re && a.re.seq) || 0) };
       const receivedAt = new Date().toISOString();
       if (!getPeer.get(peer)) addPeer.run(peer, receivedAt);
