@@ -1,8 +1,8 @@
 {
- "change": 33856,
+ "change": 33858,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T04:03:33.082Z",
+ "writtenAt": "2026-10-12T04:03:35.403Z",
  "items": [
   {
    "id": "goal/G10",
@@ -38,14 +38,12 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3844,10 +3842,9 @@
    "id": "goal/G10.8",
    "title": "Enable Levant to act as a normal agent on desk, like claude",
    "goal": "goal/G10",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
