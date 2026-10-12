@@ -1,5 +1,5 @@
 {
- "change": 40095,
+ "change": 40606,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -40,7 +40,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -164,9 +164,7 @@
     "goal/G19",
     "goal/G19.11"
    ],
-   "blocked": [
-    "goal/G19.15"
-   ],
+   "blocked": [],
    "go": true,
    "alone": false,
    "alert": false,
@@ -3624,9 +3622,12 @@
    "id": "goal/G19.15",
    "title": "Relay records on the node keyed by the relay key",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19.1"
    ],
@@ -3634,18 +3635,104 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cycleA.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLoop.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedWriterBuild.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/nodeInfo.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceFeeding.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceNode.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceProof.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceReconcile.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayKeys.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayListIsNodeState.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relaySearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayTableByKey.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/searchMemory.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/storeOwnership.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3676,11 +3763,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
-   "half": false,
+   "asks": 2,
+   "half": true,
    "full": false,
-   "box": "Relay records on the node keyed by the relay key.\n\nFOUND (D:/SpiritOS at 9e8c3887, 2026-10-12; paths under spirit/run/)\n- relay-state/relays.json is a list of {label, url}, read and written by js/ownerBadge.js (loadRelays, addRelay, removeRelay, configuredUrls, ensureRelays, writeRelays), called from js/hub.js, js/relayAuth.js and js/server.js.\n- relay-state/relayKeys.json maps each URL to {publicKey, firstSeen, acceptedAt, seat}, written only by js/relayKeys.js, which says \"A URL is the identity of a relay as far as this node is concerned\"; required by js/answerRelay.js, hub.js, ownerBadge.js, presenceNode.js and server.js.\n- So the node's relay records are keyed by URL today, in both files.\n\nDECIDED (Andy, 2026-10-12, on goal/G19.1)\n- \"the authoritative info about relays on the node MUST be by ID (key)\"\n- Asked whether re-keying is its own item first, blocking G19.1: \"yes.\"\n\nSHAPE: the node's authoritative record of each relay is keyed by the relay's public key; a URL is an address held on that record, not its identity. Stored rows on every node move over safely on first start (no backward compatibility on the wire before alpha, but stored data stays safe). goal/G19.1 then keeps the rejection and the seat's label on that keyed record.\n- \"while we're at this, let's move the relays into node.db. this change won't even affect the relay code, so updating nodes is simple, on boot, the node asserts the contents of  \\\"noderoutes.net\\\" and spirit.andyflinn.com in the database, by creating those rows, if they don't exist.\"\nSo: one relays table in node.db (nodeStore owns where it lives, as for every node.db table), keyed by the relay key, replacing relays.json and relayKeys.json; on boot the node creates the rows for noderoutes.net and spirit.andyflinn.com when they are missing. The relay code is untouched.\n- On a relay with no known key: \"false: the key will now be generated at first boot, if it doesn't exists.\" then \"no. the node knows at install time the ID's of relays we guarantee as existent.\" So the keys of the guaranteed relays (noderoutes.net, spirit.andyflinn.com) ship with the install, and boot writes their rows under those keys.\n- \"for now, that's only spirit.andyflinn.com\" So for now the install ships one guaranteed relay key, spirit.andyflinn.com, and boot asserts only that row.\n- \"actually i HAVE a VPS on a domain, with node installed.\" \"waiting for a relay.\" Then: \"i don't really have an option noderoutes.net has to go up and stay up. now. it's part of the alpha strategy, where spirit is my development releay (for us) and noderoutes.et will be the alpha public relay.\" So both keys ship: spirit.andyflinn.com (development, for us) and noderoutes.net (the alpha public relay, on that VPS); the never-removed floor stays noderoutes.net (G16.3). noderoutes.net's key exists only once its relay runs, so its row ships when it does.\n- \"there will be only ONE relay table in node.db. why the HELL would we need two?\" Then, on the answer \"One table, agreed: the two files are only what exists today. Both are emptied into that one relays table, keyed by the relay key, and then deleted.\": \"yes\". So the first boot copies every row of relays.json and relayKeys.json into the one relays table and deletes both files.\n- The guaranteed relays' keys (G19.16 done): noderoutes.net MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls= ; spirit.andyflinn.com is read from its key door when the item is built.\n- On rows with no known key: \"we will pre-seed WITH keys, we know those key, after all.\" So the seeded relays arrive with their keys; any other row in the old files with no pinned key (a relay this node never reached) is not copied, since nothing can key it (my reading of the above; on Andy's node every listed relay has a key or is a seed).\n",
-   "version": 7,
+   "box": "Relay records on the node keyed by the relay key.\n\nFOUND (D:/SpiritOS at 9e8c3887, 2026-10-12; paths under spirit/run/)\n- relay-state/relays.json is a list of {label, url}, read and written by js/ownerBadge.js (loadRelays, addRelay, removeRelay, configuredUrls, ensureRelays, writeRelays), called from js/hub.js, js/relayAuth.js and js/server.js.\n- relay-state/relayKeys.json maps each URL to {publicKey, firstSeen, acceptedAt, seat}, written only by js/relayKeys.js, which says \"A URL is the identity of a relay as far as this node is concerned\"; required by js/answerRelay.js, hub.js, ownerBadge.js, presenceNode.js and server.js.\n- So the node's relay records are keyed by URL today, in both files.\n\nDECIDED (Andy, 2026-10-12, on goal/G19.1)\n- \"the authoritative info about relays on the node MUST be by ID (key)\"\n- Asked whether re-keying is its own item first, blocking G19.1: \"yes.\"\n\nSHAPE: the node's authoritative record of each relay is keyed by the relay's public key; a URL is an address held on that record, not its identity. Stored rows on every node move over safely on first start (no backward compatibility on the wire before alpha, but stored data stays safe). goal/G19.1 then keeps the rejection and the seat's label on that keyed record.\n- \"while we're at this, let's move the relays into node.db. this change won't even affect the relay code, so updating nodes is simple, on boot, the node asserts the contents of  \\\"noderoutes.net\\\" and spirit.andyflinn.com in the database, by creating those rows, if they don't exist.\"\nSo: one relays table in node.db (nodeStore owns where it lives, as for every node.db table), keyed by the relay key, replacing relays.json and relayKeys.json; on boot the node creates the rows for noderoutes.net and spirit.andyflinn.com when they are missing. The relay code is untouched.\n- On a relay with no known key: \"false: the key will now be generated at first boot, if it doesn't exists.\" then \"no. the node knows at install time the ID's of relays we guarantee as existent.\" So the keys of the guaranteed relays (noderoutes.net, spirit.andyflinn.com) ship with the install, and boot writes their rows under those keys.\n- \"for now, that's only spirit.andyflinn.com\" So for now the install ships one guaranteed relay key, spirit.andyflinn.com, and boot asserts only that row.\n- \"actually i HAVE a VPS on a domain, with node installed.\" \"waiting for a relay.\" Then: \"i don't really have an option noderoutes.net has to go up and stay up. now. it's part of the alpha strategy, where spirit is my development releay (for us) and noderoutes.et will be the alpha public relay.\" So both keys ship: spirit.andyflinn.com (development, for us) and noderoutes.net (the alpha public relay, on that VPS); the never-removed floor stays noderoutes.net (G16.3). noderoutes.net's key exists only once its relay runs, so its row ships when it does.\n- \"there will be only ONE relay table in node.db. why the HELL would we need two?\" Then, on the answer \"One table, agreed: the two files are only what exists today. Both are emptied into that one relays table, keyed by the relay key, and then deleted.\": \"yes\". So the first boot copies every row of relays.json and relayKeys.json into the one relays table and deletes both files.\n- The guaranteed relays' keys (G19.16 done): noderoutes.net MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls= ; spirit.andyflinn.com is read from its key door when the item is built.\n- On rows with no known key: \"we will pre-seed WITH keys, we know those key, after all.\" So the seeded relays arrive with their keys; any other row in the old files with no pinned key (a relay this node never reached) is not copied, since nothing can key it (my reading of the above; on Andy's node every listed relay has a key or is a seed).\n- On which relay onboarding claims when a node lists two: \"No, now that we have it, we only list noderoutes.net, spirit.andyflinn.com is OURS.\" So, superseding \"both keys ship\": the install seeds only noderoutes.net, with its key; spirit.andyflinn.com is our development relay and is not seeded on every node; a node that uses it adds it by claiming there.\n- \"what does it matter which relay an agent is a member of to participate in my team?\" and \"even if i don't own the relay my agents use, still no difference.\" So onboarding claims on whatever relay it is given (an optional relay argument, default the one listed relay), and which relay an agent joins does not decide its desk.\n- How an agent finds its desk when the relay owner is not it: \"we'll just have to tell the agent what label to look for, when searching the desk.\" So onboarding is given the desk's label and finds the desk node by searching for that label, instead of reading the relay owner.\n",
+   "version": 10,
    "checks": [
     {
      "number": "Q1",
@@ -3771,6 +3858,33 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-12T18:04:35.493Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "com, the development relay, when a node lists more than one?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T18:46:41.181Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "com?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T18:51:32.091Z"
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Shall onboarding take your node key as the desk, as an argument, instead of reading the relay owner?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T18:55:36.831Z"
     }
    ],
    "chat": [
@@ -4038,6 +4152,136 @@
      "by": "desk",
      "at": "2026-10-12T18:19:51.473Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:20:14.322Z",
+     "text": "Taking G19.15, red phase first: one relays table in node.db keyed by the relay key, both files copied in and deleted, the two seeds asserted at boot."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:43:18.605Z",
+     "text": "Built in my clone, not committed yet: the new suite went from 20 red to 25 green; the suites around it are green.\n- One rule breaks: the agent onboarding tool refuses a node that lists more than one relay, and every node now lists both seeds, so four onboarding suites go red.\n- One effect to know: both seed relays are trusted from install, so the node accepts a packet from either before it has ever connected to it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:43:21.455Z",
+     "text": "Shall onboarding claim on spirit.andyflinn.com, the development relay, when a node lists more than one?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:46:05.572Z",
+     "text": "Q10: com, the development relay, when a node lists more than one?\n\nNo, now that we have it, we only list noderoutes.net, spirit.andyflinn.com is OURS."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:46:06.147Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:46:44.770Z",
+     "text": "Recorded (box v8): only noderoutes.net is seeded; spirit is ours, added by claim. That also leaves onboarding with one listed relay, and only noderoutes.net trusted from install. Reworking the build now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:46:56.088Z",
+     "text": "we only seed with noderoutes.net\n\nspirit.andyflinn.com is now the development relay."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:47:18.591Z",
+     "text": "Yes, that is what box v8 says and what is being built: only noderoutes.net is seeded; spirit.andyflinn.com is the development relay."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:51:26.940Z",
+     "text": "Rework built: a fresh node seeds only noderoutes.net, spirit is neither seeded nor trusted; the new suite 28 green, the rest green.\n- One thing left: the agent onboarding tool claims on the one relay a node lists, and a fresh agent node now lists only noderoutes.net, the public relay.\n- So agents would join the alpha public relay instead of our development relay."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:51:31.565Z",
+     "text": "Shall onboarding take the relay to claim on as an argument, so agents join spirit.andyflinn.com?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:53:02.261Z",
+     "text": "what does it matter which relay an agent is a member of to participate in my team?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:53:46.893Z",
+     "text": "- It does not matter: onboarding makes the relay owner the agent desk, and noderoutes.net is owned by your node, so an agent there reaches your desk the same.\n- So on a real node nothing changes: it lists only noderoutes.net, and onboarding claims there.\n- Only the four onboarding tests break: their scratch relay plus the seed make two, so I give onboarding an optional third argument, the relay to claim on, defaulting to the one listed relay."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:54:44.584Z",
+     "text": "even if i don't own the relay my agents use, still no difference."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:55:31.233Z",
+     "text": "Recorded (box v9).\n- One clash with the tree: onboarding today makes the relay owner the agent desk, so on a relay you do not own the agent would get the wrong desk.\n- To match your line the desk has to be named some other way than the relay owner."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:55:36.203Z",
+     "text": "Shall onboarding take your node key as the desk, as an argument, instead of reading the relay owner?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:56:16.462Z",
+     "text": "we'll just have to tell the agent what label to look for, when searching the desk."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:56:58.657Z",
+     "text": "Recorded (box v10): onboarding is given the desk label and finds the desk by searching for it; the relay owner no longer decides it. Building that into onboarding now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:57:06.609Z",
+     "text": "who knows, i might send Levant to help jazz?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:57:33.126Z",
+     "text": "The label shape covers that: Levant onboarded with jazz desk label finds jazz desk, on whatever relay he joins."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:58:16.511Z",
+     "text": "and jazz get's to use my Levant for her project."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:58:17.025Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:00:14.960Z",
+     "text": "i'll run Levant in customer-support mode :)\n\nShe'll be called Heidi"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:01:54.278Z",
+     "text": "commit 8e9d781109c4ace39bcab5310c67a1df53729066: goal/G19.15: one relays table in node.db keyed by the relay key; only noderoutes.net seeded; onboarding finds the desk by label\n- spirit/run/js/hub.js\n- spirit/run/js/nodeStore.js\n- spirit/run/js/ownerBadge.js\n- spirit/run/js/relayAuth.js\n- spirit/run/js/relayKeys.js\n- spirit/run/js/server.js\n- spirit/run/process/js/desk/offboard.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/test/agentOnboard.js\n- spirit/test/cycleA.js\n- spirit/test/deskLoop.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/labWorld.js\n- spirit/test/nodeInfo.js\n- spirit/test/presenceFeeding.js\n- spirit/test/presenceNode.js\n- spirit/test/presenceProof.js\n- spirit/test/presenceReconcile.js\n- spirit/test/presenceWire.js\n- spirit/test/publishData.js\n- spirit/test/relayKeys.js\n- spirit/test/relayListIsNodeState.js\n- spirit/test/relaySearch.js\n- spirit/test/relayTableByKey.js\n- spirit/test/searchMemory.js\n- spirit/test/storeOwnership.js\n- spirit/test/world.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:02:02.732Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:02:22.019Z",
+     "text": "Built at 8e9d7811. Core: nodeStore, relayKeys, ownerBadge, relayAuth, server, hub (G1). Also onboard and offboard, the new relayTableByKey, and the fixtures that wrote the old files.\n- One relays table keyed by relay key; first boot copies both files in and deletes them; only noderoutes.net is seeded.\n- Onboarding: name:token, the desk label, an optional relay url; the desk is found by searching its label.\n- Noticed, left alone: a claimed relay labelled by its url is missing from the relay list search; worth its own item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:05:55.459Z",
+     "text": "deskVerify: passed, at 8e9d7811 (pulled). 17 suites ran green."
     }
    ]
   },
