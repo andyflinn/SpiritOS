@@ -1,8 +1,8 @@
 {
- "change": 36848,
+ "change": 36855,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T14:08:26.085Z",
+ "writtenAt": "2026-10-12T14:08:50.741Z",
  "items": [
   {
    "id": "goal/G19",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "claude-windows",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -44,7 +43,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -373,33 +372,63 @@
    "id": "goal/G19.2",
    "title": "Goal Done gates: reds, stop, reopen, restart",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19",
     "goal/G19.11"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -522,6 +551,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T12:20:31.642Z",
      "text": "Done: G19.3 to G19.11 each carry one red question now, the point to argue; G19.1 and G19.2 have none left."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:08:50.316Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1036,8 +1070,8 @@
    "id": "goal/G19.6",
    "title": "Git helpers: deskClient pull, publishData, pushOrigin",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G19"
@@ -1048,13 +1082,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -1133,6 +1167,11 @@
      "by": "desk",
      "at": "2026-10-12T13:23:50.812Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:08:46.080Z",
+     "text": "taking: red first, in my clone."
     }
    ]
   },
