@@ -360,10 +360,33 @@ function askModel(messages, onTool) {
 // spent, so it answers with what it has read; only if that too says nothing does the placeholder stand.
 const BUDGET_SPENT = '(the tool budget of this answer is spent: answer now with what you have read)';
 
+// THE ANSWER'S LENGTH, AS THE SERVER NAMES IT (goal/G18.7). OpenAI refuses max_tokens (found live, 2026-10-12:
+// "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens'"); the studio
+// reads max_tokens. So a plain OpenAI pair is sent max_completion_tokens, and every other one max_tokens.
+function withAnswerTokens(body) {
+  const have = readKnown();
+  if (have && have.studio === false) body.max_completion_tokens = ANSWER_TOKENS;
+  else body.max_tokens = ANSWER_TOKENS;
+  return body;
+}
+// THE REASONING MARK, LEARNED (goal/G18.7). Andy: "yes add reasoning."; OpenAI reports no capabilities, so a model is
+// marked reasoning once an answer of it counts reasoning tokens. Only on a plain pair: the studio says it itself.
+function learnReasoning(model, got) {
+  const used = Number(got && got.usage && got.usage.completion_tokens_details && got.usage.completion_tokens_details.reasoning_tokens) || 0;
+  const have = readKnown();
+  if (!used || !have || have.studio !== false) return;
+  const entry = have.models.filter(function (m) { return m && m.id === model; })[0];
+  if (!entry || entry.reasoning === true) return;
+  writeKnown(Object.assign({}, have, { models: have.models.map(function (m) { return m.id === model ? Object.assign({}, m, { reasoning: true }) : m; }) }));
+  say(model + ' counted ' + used + ' reasoning tokens: marked reasoning');
+  publishState();
+}
+
 function askModelRound(messages, list, round, onTool) {
-  const body = { model: MODEL, messages: messages, max_tokens: ANSWER_TOKENS };
+  const body = withAnswerTokens({ model: MODEL, messages: messages });
   if (list.length) body.tools = list;
   return studio('POST', '/v1/chat/completions', body).then(function (got) {
+    learnReasoning(body.model, got);
     const choice = got && Array.isArray(got.choices) ? got.choices[0] : null;
     const message = choice && choice.message ? choice.message : null;
     const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
@@ -699,9 +722,10 @@ function testModel(id, quant) {
   ready.then(function () { return refreshModels(); }).then(function () {
     return describeAll().then(function (list) {
       if (!list.length) throw new Error('no tools described to test with');
-      return studio('POST', '/v1/chat/completions', { model: id, messages: [{ role: 'system', content: PREAMBLE }, { role: 'user', content: TEST_PROMPT }], tools: list, max_tokens: ANSWER_TOKENS });
+      return studio('POST', '/v1/chat/completions', withAnswerTokens({ model: id, messages: [{ role: 'system', content: PREAMBLE }, { role: 'user', content: TEST_PROMPT }], tools: list }));
     });
   }).then(function (got) {
+    learnReasoning(id, got);
     const message = got && Array.isArray(got.choices) && got.choices[0] ? got.choices[0].message : null;
     const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls.filter(function (c) { return c && c.function && c.function.name; }) : [];
     const pass = calls.length > 0;

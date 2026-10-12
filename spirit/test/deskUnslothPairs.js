@@ -18,6 +18,9 @@
 //   4. per pair: connection.use {name} brings back that pair's list, its chosen model and its marks; a switch
 //      disconnects Levant.
 //   5. connection.remove {name} takes a pair out; removing the pair in use is refused.
+//   7. goal/G18.7: a plain OpenAI server is sent max_completion_tokens, never max_tokens (OpenAI refuses it, found live
+//      2026-10-12), in the test and in the chat; the studio keeps max_tokens; a model whose answer counts reasoning
+//      tokens is marked reasoning in its pair's list (Andy: "yes add reasoning.").
 //   6. the connect tab: the pairs listed by name with use and remove, the one in use marked, the key never drawn; the
 //      add form (name marked data-field="label", url, key) sends connection.set {name, url, key}; use and remove send
 //      their verbs.
@@ -67,6 +70,7 @@ function bodyOf(req, fn) { let raw = ''; req.on('data', function (c) { raw += c;
 
 // ── THE FAKE STUDIO (the routes as read live 2026-10-12) ──────────────
 const studioCalls = [];
+const studioChats = [];
 const studioServer = http.createServer(function (req, res) {
   bodyOf(req, function (body) {
     const answer = answerer(res);
@@ -77,12 +81,13 @@ const studioServer = http.createServer(function (req, res) {
     if (p === '/v1/models') return answer(200, { object: 'list', data: [{ id: REPO, loaded: true, quant: QUANT }] });
     if (p === '/api/inference/status') return answer(200, { active_model: REPO, loaded: [REPO], gguf_variant: QUANT, context_length: 8192 });
     if (p === '/api/inference/load') return answer(200, { status: 'loaded' });
+    if (p === '/v1/chat/completions' && req.method === 'POST') { studioChats.push(body); return answer(200, { choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: 'studio hello' } }] }); }
     answer(404, { detail: 'not found' });
   });
 });
 
 // ── THE FAKE OPENAI: /v1/models and /v1/chat/completions, nothing of the studio's ──
-const openai = { calls: [], loads: 0, auth: [] };
+const openai = { calls: [], loads: 0, auth: [], chats: [] };
 const openaiServer = http.createServer(function (req, res) {
   bodyOf(req, function (body) {
     const answer = answerer(res);
@@ -92,9 +97,13 @@ const openaiServer = http.createServer(function (req, res) {
     if (p.indexOf('/api/') === 0) { if (p === '/api/inference/load') openai.loads++; return answer(404, { error: { message: 'Invalid URL (GET ' + p + ')' } }); }
     if (p === '/v1/models') return answer(200, { object: 'list', data: [{ id: 'gpt-x', object: 'model' }, { id: 'gpt-y', object: 'model' }] });
     if (p === '/v1/chat/completions' && req.method === 'POST') {
+      openai.chats.push(body);
+      // As OpenAI answered live on 2026-10-12 (goal/G18.7).
+      if (body && body.max_tokens !== undefined) return answer(400, { error: { message: "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.", type: 'invalid_request_error', param: 'max_tokens', code: 'unsupported_parameter' } });
+      const usage = { prompt_tokens: 10, completion_tokens: 40, total_tokens: 50, completion_tokens_details: { reasoning_tokens: body && body.model === 'gpt-x' ? 32 : 0 } };
       const tools = body && Array.isArray(body.tools) && body.tools.length;
-      if (tools) return answer(200, { choices: [{ index: 0, finish_reason: 'tool_calls', message: { role: 'assistant', content: null, tool_calls: [{ id: 'c1', type: 'function', function: { name: body.tools[0].function.name, arguments: '{}' } }] } }] });
-      return answer(200, { choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: 'hello' } }] });
+      if (tools) return answer(200, { usage: usage, choices: [{ index: 0, finish_reason: 'tool_calls', message: { role: 'assistant', content: null, tool_calls: [{ id: 'c1', type: 'function', function: { name: body.tools[0].function.name, arguments: '{}' } }] } }] });
+      return answer(200, { usage: usage, choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: 'hello' } }] });
     }
     answer(404, { error: { message: 'not found' } });
   });
@@ -210,6 +219,22 @@ async function serverHalf() {
   if (gt && gt.recommended === true) test.check('model.test against it: a real tool call marks gpt-x 🧵');
   else test.fail(OWED + 'after model.test gpt-x: ' + short(gt));
 
+  test.subHeading('7. goal/G18.7: max_completion_tokens for OpenAI, the reasoning mark');
+  const sentToOpenai = openai.chats.filter(function (b) { return b && Array.isArray(b.tools) && b.tools.length; });
+  if (sentToOpenai.length && sentToOpenai.every(function (b) { return b.max_tokens === undefined && Number(b.max_completion_tokens) > 0; })) test.check('the test asked OpenAI with max_completion_tokens and no max_tokens');
+  else test.fail('OWED by goal/G18.7: the test sent OpenAI ' + short(sentToOpenai.map(function (b) { return { max_tokens: b.max_tokens, max_completion_tokens: b.max_completion_tokens }; })));
+  if (gt && gt.reasoning === true) test.check('gpt-x counted reasoning tokens in its answer: marked reasoning in the openai pair\'s list');
+  else test.fail('OWED by goal/G18.7: gpt-x after its test: ' + short(gt));
+  const gy = (m3.models || []).filter(function (x) { return x.id === 'gpt-y'; })[0];
+  if (gy && gy.reasoning === false) test.check('gpt-y, never asked, is not marked reasoning');
+  else test.fail('OWED by goal/G18.7: gpt-y reads ' + short(gy));
+  const chatsBefore = openai.chats.length;
+  const sent = await ask('chat.send', { lines: [{ role: 'user', text: 'hello there' }] });
+  await until(async function () { const a = sent.id ? await ask('chat.answer', { id: sent.id }) : {}; return a.done === true; }, 8000);
+  const chatBody = openai.chats.slice(chatsBefore).filter(function (b) { return b && !(Array.isArray(b.tools) && b.tools.length); })[0] || openai.chats.slice(chatsBefore)[0];
+  if (chatBody && chatBody.max_tokens === undefined && Number(chatBody.max_completion_tokens) > 0) test.check('the chat asks OpenAI with max_completion_tokens too');
+  else test.fail('OWED by goal/G18.7: the chat sent OpenAI ' + short(chatBody));
+
   test.subHeading('4. per pair: the list, the chosen model and the marks');
   const connectedBefore = (await ask('state', {})).connected;
   const signoffsBefore = deskWords.filter(function (w) { return w === 'signoff'; }).length;
@@ -220,6 +245,12 @@ async function serverHalf() {
   const back = (m4.models || []).filter(function (x) { return x.id === REPO; })[0];
   if (names(s3).split(',').sort().join() === 'openai,studio*' && s3.model === REPO && back && back.recommended === true) test.check('connection.use studio: its list, its model ' + REPO + ', its 🧵');
   else test.fail(OWED + 'after use studio: ' + short(names(s3)) + ', model ' + short(s3.model) + ', list ' + short(m4.models));
+  const studioBefore = studioChats.length;
+  const sentStudio = await ask('chat.send', { lines: [{ role: 'user', text: 'hello studio' }] });
+  await until(async function () { const a = sentStudio.id ? await ask('chat.answer', { id: sentStudio.id }) : {}; return a.done === true; }, 8000);
+  const studioBody = studioChats.slice(studioBefore)[0];
+  if (studioBody && Number(studioBody.max_tokens) > 0 && studioBody.max_completion_tokens === undefined) test.check('goal/G18.7: the studio is still asked with max_tokens');
+  else test.fail('OWED by goal/G18.7: the studio was sent ' + short(studioBody));
   if (connectedBefore === true && s3.connected === false && deskWords.filter(function (w) { return w === 'signoff'; }).length > signoffsBefore) test.check('the switch disconnected Levant, with a signoff');
   else test.fail(OWED + 'connected before ' + connectedBefore + ', after ' + s3.connected + '; signoffs ' + signoffsBefore + ' -> ' + deskWords.filter(function (w) { return w === 'signoff'; }).length);
   await ask('connection.use', { name: 'openai' });
