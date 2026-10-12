@@ -1,5 +1,5 @@
 {
- "change": 40954,
+ "change": 42592,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -15,7 +15,6 @@
    "blocking": [],
    "blocked": [
     "goal/G19.7",
-    "goal/G19.8",
     "goal/G19.11",
     "goal/G19.13"
    ],
@@ -43,7 +42,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2366,9 +2367,12 @@
    "id": "goal/G19.8",
    "title": "Shell: published objects only from the node's own puppets",
    "goal": "goal/G19",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19"
    ],
@@ -2376,18 +2380,59 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/test/cardFetch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/chatter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactCard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contacts.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRemoteTabs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/nodeCardSigned.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/oneDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellStreamSenders.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -2421,8 +2466,8 @@
    "asks": 1,
    "half": false,
    "full": false,
-   "box": "Shell: published objects only from the node's own puppets.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- js/client/shell.js:1983-1994 and :2208 deliver a streamed object from any fromKey. These ignore the sender: shell/chatter/chatter.js:347, shell/desk/desk.js:441 and :1131, shell/deskDetails/deskDetails.js:374, shell/ruleDetails/ruleDetails.js:213. Any contact can push objects into the master's apps (a change:1e12 freezes the desk view; a fake chat line can name another peer). Only deskUnslothRemote checks the sender (:448).\n\nDECIDED (Andy, 2026-10-12): \"The shell takes only streams from ID's that it explicitly or implicitly asks for. Implicit is: the own local node, and any puppet owned, including owned relays.\"\nSHAPE: the shell's delivery of a streamed object (js/client/shell.js) checks the sender before any app sees it: the own node, an owned puppet or an owned relay, or a key an app asked to hear from by name; anything else is dropped there, once, for every app, so no app has to check.\n",
-   "version": 2,
+   "box": "Shell: published objects only from the node's own puppets.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- js/client/shell.js:1983-1994 and :2208 deliver a streamed object from any fromKey. These ignore the sender: shell/chatter/chatter.js:347, shell/desk/desk.js:441 and :1131, shell/deskDetails/deskDetails.js:374, shell/ruleDetails/ruleDetails.js:213. Any contact can push objects into the master's apps (a change:1e12 freezes the desk view; a fake chat line can name another peer). Only deskUnslothRemote checks the sender (:448).\n\nDECIDED (Andy, 2026-10-12): \"The shell takes only streams from ID's that it explicitly or implicitly asks for. Implicit is: the own local node, and any puppet owned, including owned relays.\"\nSHAPE: the shell's delivery of a streamed object (js/client/shell.js) checks the sender before any app sees it: the own node, an owned puppet or an owned relay, or a key an app asked to hear from by name; anything else is dropped there, once, for every app, so no app has to check.\n\n- Asked where this node's owned puppets are kept: \"puppet is just a flag in the contact list, more likely even the node.db table of peers that can't get flushed.\" then \"puppeteering is a node feature, it does belong in the shadow roll's  contact list with a flab that says puppet, or even better, with your damned ownerBadge.\" So an owned puppet is marked on its contact row in the node's contact list, the way ownerBadge marks what this node owns, and the shell reads that mark.\n- \"so the relays owner code and the puppets owner code should be the same.\" So one ownership mechanism, ownerBadge's, decides both an owned relay and an owned puppet, and marks the row the same way; no second puppet-only path.\n- On the card owner field and its flag day: \"we have no vital puppets deployed right now. ... why worry to much?\" then \"so we make that the final step of this item, flag day. where i log into both my VPS servers and make sure an update occurs.\" So inside G19.8: the signed card gains the node's owner; ownerBadge marks a contact whose card names this node as owned, by the same rule as a relay; the shell hears every owned contact. Last step: a tag, then Andy updates spirit.andyflinn.com and noderoutes.net (they follow tags) the same day.\n- \"or we just TAg\" So the flag day is a tag: both relays follow tags (their update cron, every 10 minutes), so tagging after the commit updates them without a login.\n",
+   "version": 6,
    "checks": [
     {
      "number": "Q1",
@@ -2438,9 +2483,72 @@
      "kind": "G",
      "words": "core grant: spirit/run/js/client/shell.js",
      "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T19:33:33.487Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Ship it so, with owned puppets heard where an app names them, and a list of this node own puppets as its own item later?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T20:00:42.966Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "8 now and give the flag its own item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T20:00:45.362Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/contacts.js, spirit/run/js/ownerBadge.js, spirit/run/js/puppetMode.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T19:52:11.193Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "8 as built now, and make the card owner field (flag day) its own item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T20:00:47.829Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/nodeCard.js, spirit/run/js/hub.js, spirit/run/js/server.js (the card owner field, flag day)",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T19:58:37.459Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "8, flag day included (G3 asks the three files)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T20:00:50.177Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Rehearse on a lab relay first, or tag now?",
+     "test": "",
      "state": "open",
-     "by": "",
-     "at": ""
+     "by": "claude-windows",
+     "at": "2026-10-12T20:27:57.073Z"
     }
    ],
    "chat": [
@@ -2463,6 +2571,171 @@
      "by": "claude-windows",
      "at": "2026-10-12T19:33:19.841Z",
      "text": "Taking G19.8, red phase first: the shell drops a streamed object unless it comes from this node, a puppet or relay it owns, or a key an app asked to hear.\nG1 asks the grant for shell.js."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:43:50.710Z",
+     "text": "Built in my clone, not committed: the new suite went from 7 red to 9 green; 90 other suites green. Only shell.js changed in core.\n- Heard by every app: this node and every relay it owns. Anything else is dropped in the shell, with one console line per sender, before any app sees it.\n- One part of your line could not be built: \"any puppet owned\". This node keeps no list of its own puppets; ownership is written only on the puppet itself.\n- So for now a puppet is heard by an app that names it; the Unsloth Remote names the puppets it already keeps."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:43:55.123Z",
+     "text": "Ship it so, with owned puppets heard where an app names them, and a list of this node own puppets as its own item later?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:47:19.438Z",
+     "text": "Q2: Ship it so, with owned puppets heard where an app names them, and a list of this node own puppets as its own item later?\n\npuppet is just a flag in the contact list, more likely even the node.db table of peers that can't get flushed."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:47:19.988Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:47:52.945Z",
+     "text": "- Checked live: neither exists yet. Contacts carry no puppet flag, and the node.db peers table holds only a key and a label.\n- So the flag has to be added: on the peers table, set when this node becomes a puppet owner, never flushed, and read by the shell.\n- That touches nodeStore and the place where ownership of a puppet is handed over."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:47:56.594Z",
+     "text": "Add that puppet flag inside G19.8, or ship G19.8 now and give the flag its own item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:49:41.014Z",
+     "text": "puppeteering is a node feature, it does belong in the shadow roll's  contact list with a flab that says puppet, or even better, with your damned ownerBadge."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:50:23.385Z",
+     "text": "Recorded: an owned puppet is marked on its contact row, the ownerBadge way, and the shell reads that mark.\nI will build that inside G19.8 so the item lands whole, unless you say split; it needs the grant for contacts and ownerBadge, asked as G2."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:51:06.690Z",
+     "text": "so the relays owner code and the puppets owner code should be the same."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:51:44.257Z",
+     "text": "Recorded (box v4): one ownership code, ownerBadge, for relays and puppets alike. Building it into G19.8 now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:52:55.390Z",
+     "text": "- ownerBadge knows a relay is yours because the relay says who owns it when asked. A puppet says that to nobody: its owner is written only in its own folder.\n- For ownerBadge to mark a puppet yours the same way, the puppet has to say its owner too. The place a node says who it is, is its signed card, and the card has no owner field.\n- Adding one changes the signed card of every node: a flag day, all nodes at once. It also needs three more core files: the card, hub (so the mark reaches the shell) and the node server (where a card is stored).\n- No new verb is needed for it.\n- The rest of G19.8 is built and green: the shell drops anything not from this node, an owned relay, or a key an app names; the Unsloth Remote names its puppets."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:53:00.099Z",
+     "text": "Ship G19.8 as built now, and make the card owner field (flag day) its own item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:55:39.680Z",
+     "text": "we have no vital puppets deployed right now. I don't even know if Levant's clone is my puppet. why worry to much? what really changes on fag day. appFaceApp might break. Isn't it broken already? (besides the new faceProof-replacement)"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:56:21.023Z",
+     "text": "- What changes on flag day: every node and both relays (the relay checks cards too) run the new code the same day; until each one updates, cards between old and new fail their check. Nothing stored is lost.\n- appFaceApp reads no cards, so this change does not touch it. Whether it is broken today I have not checked.\n- So the cost is one coordinated update, which with no vital puppets is small."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:56:33.671Z",
+     "text": "Then build the card owner field inside G19.8, flag day included (G3 asks the three files)?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:57:57.557Z",
+     "text": "so we make that the final step of this item, flag day. where i log into both my VPS servers and make sure an update occurs."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:58:21.066Z",
+     "text": "or we just TAg"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:58:38.205Z",
+     "text": "Recorded (box v5). Building the card owner field now; the relays follow tags, so the flag day is: I tag, you update both boxes. G3 still needs your grant press."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:59:03.456Z",
+     "text": "Right, both relays update themselves within ten minutes of a tag. Recorded (box v6): the last step is the tag."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T20:00:18.368Z",
+     "text": "clear resolved red Q's"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T20:00:55.240Z",
+     "text": "Resolved Q checks cleared; only the grants remain, all granted."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T20:01:15.394Z",
+     "text": "no grants left either"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T20:01:35.248Z",
+     "text": "Right, nothing open for you here. The card owner field is being built; the claim follows when it is green, then the tag."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T20:26:06.076Z",
+     "text": "- G19.8 with the card owner field is built and green: the new suite 20 green, 175 suites run, none red.\n- A pause on my side: my node lost its relays mid-build (the build touched my own node folder) and I restarted it; it is back.\n- Committing next, then the claim; the tag after it passes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T20:26:40.003Z",
+     "text": "commit 4bc0d428a02c2a56aad8c9ac7dc763316e44f83e: goal/G19.8: the shell hears only this node, owned relays, owned contacts and keys an app names; the card names its owner (flag day)\n- spirit/run/js/client/shell.js\n- spirit/run/js/contacts.js\n- spirit/run/js/hub.js\n- spirit/run/js/nodeCard.js\n- spirit/run/js/ownerBadge.js\n- spirit/test/nodeCardSigned.js\n- spirit/test/shellStreamSenders.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T20:26:51.956Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T20:26:53.595Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T20:26:58.107Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T20:27:03.032Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T20:27:06.206Z",
+     "text": "Built at 4bc0d428. Core: shell, contacts, ownerBadge (G1, G2), nodeCard, hub (G3). Tests: shellStreamSenders (new, 20), nodeCardSigned (17).\n- The shell hears this node, the relays it owns, the contacts it owns, and keys an app names; anything else is dropped before any app, one console line per sender.\n- The signed card names its owner; one rule (ownerBadge) marks an owned relay and an owned contact alike.\n- Owned contacts read \"name — owned\" in Contacts; that word is how the shell finds them by search, as blocked and waiting already are.\n- Flag day, by tag after deskVerify passes: both relays update themselves within ten minutes; your node, mine and the ollama node take it on their next restart. Until both ends run it, cards between old and new fail their check."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T20:27:27.526Z",
+     "text": "deskVerify: passed, at 4bc0d428 (pulled). 8 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T20:27:54.896Z",
+     "text": "G19.8 passed; the last step is the tag. Before you say yes:\n- Both relays still run v-2026-10-11-07-26. A tag moves them over everything since: the card owner field (G19.8), the not-a-sender refusals and stream text (G19.1), and the rest of G18 and G19. That is a bigger jump than this one item.\n- AGENT.md asks that a release be rehearsed on a lab relay at the previous tag before it is tagged, since spirit-3 is production. That rehearsal has not been done.\n- After the tag, the relays switch within ten minutes. Your node, mine and the ollama node fail their card checks with them until each is restarted on the new code. Nothing stored is lost.\n- The tag is pushed and public.\n- My recommendation: not yet. First a short lab-relay rehearsal at v-2026-10-11-07-26 moving to master, then the tag, then restart the three nodes in the same ten minutes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T20:27:56.543Z",
+     "text": "Rehearse on a lab relay first, or tag now?"
     }
    ]
   },
@@ -2978,8 +3251,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Hygiene: temp_loop, localEar leftovers, dead code, stale notes.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- At the repo root, tracked: temp_loop.js, temp_loop2.js to temp_loop6.js, temp_loop_clean.js, temp-desk-reply.js (UTF-16). Andy: \"The temp_loop/.js scratch file gotta go.\"\n- localEar leftovers: process/js/desk/reply.js (UTF-16, throws on load), localEar.json pointing at a deleted localEar.js, create-localEar.js.\n- process/js/deskUnsloth/configuration.json is still tracked although .gitignore:92 lists it; it holds no secret.\n- process/js/fileServer/fileServer.js:107-110: Buffer.alloc(length) with no cap (CHUNK = 6000 at :138).\n- Dead code: relay.who (relay.js:896), hub.handleMatches (:573), hub.handleWho and withRelay (:1560, :1009), relayKeys.unseat (if 19.1 does not give it a caller); the deskVerify verbs only tests call (loop.once, suites, goal.check, claim.check, chore.once, idle, mode, records.search).\n- Stale words: whoBook / who.json in DICTIONARY.md, AGENT.md, CLAUDE.md, CLINE.md, relay.js:1765, .gitignore:128, UI_DESIGN_STYLE.md, labMaster/BONES.md, test/peerPostWiring.js; comments leaning on the deleted /api/relay/who route (natterDetails.js:460, hub.js:2077, relay.js:2365, 3097, 3492, 4254, 1062, js/relayStatus.js:15, server.js:2063); others describing removed behaviour.\n- Repo notes: .gitignore:218-220 pasted console.log lines; .claude/settings.json:4 a one-machine path; CLINE.md a byte copy of CLAUDE.md; notASuite.js lists the deleted appServerWorlds.js and labMaster.js in a subfolder, and its own header makes runAll take it for a suite; rollNarrow.js guards only partly (:64, :77, :144, :152).\n\nDECIDED (Andy, 2026-10-12), asked whether the hygiene list goes in as one item as its box lists it: \"yes.\" (The stale-word and comment cleanup also follows his G19.10 rule: \"error messages and rule related cleanup belong to every update/new-code.\")\n",
-   "version": 2,
+   "box": "Hygiene: temp_loop, localEar leftovers, dead code, stale notes.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- At the repo root, tracked: temp_loop.js, temp_loop2.js to temp_loop6.js, temp_loop_clean.js, temp-desk-reply.js (UTF-16). Andy: \"The temp_loop/.js scratch file gotta go.\"\n- localEar leftovers: process/js/desk/reply.js (UTF-16, throws on load), localEar.json pointing at a deleted localEar.js, create-localEar.js.\n- process/js/deskUnsloth/configuration.json is still tracked although .gitignore:92 lists it; it holds no secret.\n- process/js/fileServer/fileServer.js:107-110: Buffer.alloc(length) with no cap (CHUNK = 6000 at :138).\n- Dead code: relay.who (relay.js:896), hub.handleMatches (:573), hub.handleWho and withRelay (:1560, :1009), relayKeys.unseat (if 19.1 does not give it a caller); the deskVerify verbs only tests call (loop.once, suites, goal.check, claim.check, chore.once, idle, mode, records.search).\n- Stale words: whoBook / who.json in DICTIONARY.md, AGENT.md, CLAUDE.md, CLINE.md, relay.js:1765, .gitignore:128, UI_DESIGN_STYLE.md, labMaster/BONES.md, test/peerPostWiring.js; comments leaning on the deleted /api/relay/who route (natterDetails.js:460, hub.js:2077, relay.js:2365, 3097, 3492, 4254, 1062, js/relayStatus.js:15, server.js:2063); others describing removed behaviour.\n- Repo notes: .gitignore:218-220 pasted console.log lines; .claude/settings.json:4 a one-machine path; CLINE.md a byte copy of CLAUDE.md; notASuite.js lists the deleted appServerWorlds.js and labMaster.js in a subfolder, and its own header makes runAll take it for a suite; rollNarrow.js guards only partly (:64, :77, :144, :152).\n\nDECIDED (Andy, 2026-10-12), asked whether the hygiene list goes in as one item as its box lists it: \"yes.\" (The stale-word and comment cleanup also follows his G19.10 rule: \"error messages and rule related cleanup belong to every update/new-code.\")\n\nADDED (claude-windows, 2026-10-12, found bringing up noderoutes.net under goal/G19.16):\n- bash/README.md (from 2026-09-06) still says clone to /opt/spirit-os and run as an unprivileged spirit account; that contradicts bash/ONE-OPERATOR.md, AGENT.md and the scripts themselves (lib.sh: CLONE_DIR /root/SpiritOS, the unit runs as root).\n- bash/status probes GET /api/relay/who, which the relay no longer serves, so a healthy relay reads \"https who failed ... local node not answering\"; it should ask /api/relay/key.\n",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
