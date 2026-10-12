@@ -2,6 +2,11 @@
 
 ## ui
 
+### rule/12 (version 29): Inputs validate with the field rules
+
+every input in the shell, system or app level, whose value a field rule governs is marked with that rule (data-field="label", "paragraph", ...) and validated as typed with the same rule the node uses (fieldRules.js, window.spiritFieldRules in the browser): bytes left shown beside it, its action refused while the rule says no.
+The node still checks every value; the input check spares the wire and says why at once, it never replaces the node check.
+
 ### rule/8 (version 18): Shell and Application Elements
 
 Shell and application elements, should bring their subscriptions with them, so that they're automatically subscribed to the events that update them
