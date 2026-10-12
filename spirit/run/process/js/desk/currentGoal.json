@@ -1,8 +1,8 @@
 {
- "change": 35797,
+ "change": 35833,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T11:24:08.910Z",
+ "writtenAt": "2026-10-12T11:33:42.513Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,12 +11,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G18.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,11 +36,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3040,9 +3041,12 @@
    "id": "goal/G18.9",
    "title": "deskUnsloth: a provider switch leaves Levant live on the desk",
    "goal": "goal/G18",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -3050,18 +3054,29 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothSwitchKept.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3463,6 +3478,61 @@
      "by": "desk",
      "at": "2026-10-12T11:24:07.901Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:24:21.527Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:24:31.050Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:24:48.195Z",
+     "text": "taking: red first, in my clone. First the finding: does the switch's signoff reach the desk, and what makes the desk count an agent live."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:27:02.306Z",
+     "text": "Found: the signoff did reach the desk (change 35021, 10:24:51). But Levant went on writing after it: two check.set within 2 seconds, a chat.add at 10:26, item.status and item.files.add at 10:29. Each write makes an agent live again for ten minutes.\nSo a disconnect stops his listening, but an answer already in flight keeps running its desk tools. The red asserts: after a disconnect no desk tool runs and no answer is posted; and the switch is kept across a restart."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:29:16.696Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:29:18.077Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:33:10.222Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:33:11.399Z",
+     "text": "commit 62ee63b965a4d1147f7f67d81bb1891fc6677993: goal/G18.9: a disconnect stops Levant at once; the switch is kept\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/test/deskUnslothSwitchKept.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:33:16.164Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:33:25.924Z",
+     "text": "Claimed, in 62ee63b9. Files: deskUnsloth.js, the new deskUnslothSwitchKept.js.\nOn your node it takes effect once deskUnsloth restarts on it; until switch.json exists, a start behaves as before (connected on 🧵), so set the switch once after the restart."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T11:33:35.068Z",
+     "text": "deskVerify: passed, at 62ee63b9 (pulled). 1 suite ran green."
     }
    ]
   },
