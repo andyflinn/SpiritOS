@@ -1,8 +1,8 @@
 {
- "change": 35572,
+ "change": 35597,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T11:09:17.083Z",
+ "writtenAt": "2026-10-12T11:13:04.167Z",
  "items": [
   {
    "id": "goal/G18",
@@ -16,7 +16,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G18.9"
+    "goal/G18.9",
+    "goal/G18.10"
    ],
    "go": false,
    "alone": false,
@@ -3041,46 +3042,72 @@
    "id": "goal/G18.9",
    "title": "deskUnsloth: a provider switch leaves Levant live on the desk",
    "goal": "goal/G18",
-   "status": "",
-   "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [],
    "blocking": [
     "goal/G18"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
-   "boxTaken": "andy",
-   "limbo": false,
+   "boxTaken": "",
+   "limbo": true,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
-   "asks": 1,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskUnsloth: a provider switch leaves Levant live on the desk.\n\nFOUND (Andy, 2026-10-12): \"i know why Levant still looks \"present\", i first switched to unsloth, instead of first disconnecting Levant. so a switch between Levant-providers should sign him off first.\"; asked whether to look into it as an item of its own: \"yes\".\n\nWHAT IS THERE (deskUnsloth.js @ 3e1fc72a)\n- connection.use already disconnects Levant with one signoff when he is connected (usePair, goal/G18.6, box v4: \"A switch disconnects Levant\").\n- Yet after his switch the desk still lists ollama agent node as live (item.get goal/G18 live, read 2026-10-12).\n\nTO FIND before any fix: whether the signoff left deskUnsloth and reached the desk, and what the desk counts as live.\n\nALSO (Andy, 2026-10-12): \"We'll need to add this: The connected/disconnected status of levant needs to be persisted, otherwise he will be re-connected every time i update his node/deskUnsloth... and restart.\"\n- Today deskUnsloth starts connected whenever the loaded model has 🧵 (deskUnsloth.js, let connected = loadedRecommended()), whatever his last switch said.\n- So the switch is kept in deskUnsloth's state folder, and a start is connected only when his last switch said connected and the model still has 🧵.\n",
-   "version": 2,
+   "box": "deskUnsloth: a provider switch leaves Levant live on the desk.\n\nFOUND\n- After a provider switch the desk still lists ollama agent node as live.\n- connection.use already disconnects Levant with a signoff when he is connected (goal/G18.6), so either the signoff did not reach the desk, or the desk counts him live by something else.\n- A restart reconnects him whenever the loaded model has 🧵, whatever his last switch said.\n\nSHAPE\n- Find first: does the switch's signoff reach the desk, and what makes the desk count an agent live.\n- A provider switch signs Levant off first, and leaves him visibly gone from the desk.\n- The connect switch is kept in deskUnsloth's state folder; a start is connected only when the last switch said connected and the model still has 🧵.\n",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "Shall I add one deskVerify item with both: \"deskVerify: no pass without the item's commit, and re-verify answers while idle\"?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-12T11:07:48.505Z"
+     "at": "2026-10-12T11:10:04.660Z"
     }
    ],
    "chat": [
@@ -3103,8 +3130,81 @@
      "by": "claude-windows",
      "at": "2026-10-12T11:07:48.078Z",
      "text": "That is deskVerify's, not Levant's, so it fits the item I proposed on G18.7 better than this one.\nShall I add one deskVerify item with both: \"deskVerify: no pass without the item's commit, and re-verify answers while idle\"?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T11:09:50.565Z",
+     "text": "Q1: Shall I add one deskVerify item with both: \"deskVerify: no pass without the item's commit, and re-verify answers while idle\"?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:10:24.245Z",
+     "text": "Added as goal/G18.10, box written (the title shortened to fit 64 bytes, the full one in the box)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T11:11:14.607Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:11:34.276Z",
+     "text": "taking: cap."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:11:57.763Z",
+     "text": "The cap is ready, but you still hold this box (box.take, no release), so the write was refused taken. Release it and I write it as v3.\nThe take rule is live on your desk now: my second line here was refused until I took the item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:12:51.898Z",
+     "text": "Capped: box v3, found then shape, your quotes dropped."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:13:03.717Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
+  },
+  {
+   "id": "goal/G18.10",
+   "title": "deskVerify: commit-bound pass, re-verify while idle",
+   "goal": "goal/G18",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: commit-bound pass, re-verify while idle.\n\nThe title in full, as proposed and agreed: \"deskVerify: no pass without the item's commit, and re-verify answers while idle\". Andy: \"yes.\"\n\nFOUND (2026-10-12)\n- deskVerify passed goal/G18.7 \"at 24533a26 (dirty, not pulled)\": the tree lacked G18.7's commit 227b0ad4, so the suite it ran was the older one, without G18.7's checks. A pass that checked other code than the item's.\n- A tree dirty with his own documents keeps deskVerify from pulling. Andy: \"besides my document-writing blocking verifies pulls, verify, when idling, does not react to my attempts of pushing it's re-verify button.\"\n\nPROPOSED SHAPE\n- A pass needs the item's commit in the tree it ran on (the commits written under the item); without it deskVerify says so and does not pass. It does not reject either: nothing was checked.\n- The re-verify button is answered while deskVerify idles: it starts a run, or says why it cannot.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
   }
  ]
 }
