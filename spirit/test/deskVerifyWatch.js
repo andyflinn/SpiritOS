@@ -16,6 +16,8 @@
 //   short). What is already on the record when it starts triggers nothing; after that, an agent's verify pass
 //   (phase.done, phase verify, pass true) and an agent's re-verify (verify.again) each run claim.check on that item,
 //   once. A failed verify triggers nothing: it is already back in build.
+//   (Since goal/G19.13 a verify pass triggers nothing either: the claim that follows it, carrying its commit, does, and
+//   the press claim-done for a caller with no commit. Section 2 below writes the press.)
 //   THE TIME LIMIT: a suite still running after `suiteMs` (a manifest value) is stopped and counts as red, its why naming
 //   the time limit - never as green.
 //   THE RE-VERIFY: the desk gains verify.again {id}, any agent, only on a verified code item; it changes nothing but the
@@ -147,7 +149,8 @@ async function verifyHalf() {
   });
   // Already on the record when deskVerify starts, over several pages: it must not re-check any of that history.
   const HISTORY = ['wt/G1.0', 'wt/G0.1', 'wt/G0.2', 'wt/G0.3', 'wt/G0.4', 'wt/G0.5'];
-  HISTORY.forEach(function (id) { ITEMS[id] = files(GREEN); rec('phase.done', { id: id, phase: 'verify', pass: true }); });
+  // Claims since goal/G19.13, as a verify pass would trigger nothing whether history or not.
+  HISTORY.forEach(function (id) { ITEMS[id] = files(GREEN); rec('press', { id: id, what: 'claim-done' }); });
   const run = path.join(scratch, 'verify');
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
@@ -161,10 +164,13 @@ async function verifyHalf() {
     if (!old.length) test.check('verify passes already on the record when it starts, three pages of them, trigger nothing');
     else test.fail(OWED + 'it re-checked history: ' + short(old));
 
-    rec('phase.done', { id: 'wt/G1.1', phase: 'verify', pass: true });
+    // SINCE goal/G19.13 THE VERIFY PASS STARTS NOTHING: it came without a commit, a moment before the claim, so it was
+    // checked on the old tree. The claim is the trigger now, so this suite writes the press claim-done (the claim of a
+    // caller with no commit, checked at once); the claim with its commit is deskClaimCommit.js's.
+    rec('press', { id: 'wt/G1.1', what: 'claim-done' });
     rec('phase.done', { id: 'wt/G1.2', phase: 'verify', pass: false });
     const passed = await waitFor(function () { return said('verify.pass', 'wt/G1.1').length > 0; }, 8000);
-    if (passed) test.check('a new verify pass: within seconds, unasked, it ran the item\'s suites and asked verify.pass');
+    if (passed) test.check('a new claim: within seconds, unasked, it ran the item\'s suites and asked verify.pass');
     else test.fail(OWED + 'no verify.pass for wt/G1.1; the desk was asked ' + short(asks));
     if (!said('item.get', 'wt/G1.2').length && !said('verify.pass', 'wt/G1.2').length && !said('verify.reject', 'wt/G1.2').length) test.check('a failed verify triggers nothing');
     else test.fail(OWED + 'a failed verify was checked: ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.2'; })));
@@ -177,7 +183,7 @@ async function verifyHalf() {
     else test.fail(OWED + 'no check after verify.again; asked ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.4'; })));
 
     test.subHeading('3. the time limit: a suite that hangs is stopped and counts as red');
-    rec('phase.done', { id: 'wt/G1.3', phase: 'verify', pass: true });
+    rec('press', { id: 'wt/G1.3', what: 'claim-done' });
     const rejected = await waitFor(function () { return said('verify.reject', 'wt/G1.3').length > 0 || said('verify.pass', 'wt/G1.3').length > 0; }, 10000);
     const rj = said('verify.reject', 'wt/G1.3');
     if (rejected && rj.length === 1 && !said('verify.pass', 'wt/G1.3').length) test.check('the hung suite is stopped after its limit and the claim is rejected, never passed');
@@ -187,8 +193,8 @@ async function verifyHalf() {
     // GROWN BEFORE HANDOVER (claude-windows): claim.check with nothing to run asked verify.pass - an item with no test
     // file on its list, or a listed file that is gone, passed the machine without a single assertion.
     test.subHeading('4. nothing to run is not a pass');
-    rec('phase.done', { id: 'wt/G1.5', phase: 'verify', pass: true });
-    rec('phase.done', { id: 'wt/G1.6', phase: 'verify', pass: true });
+    rec('press', { id: 'wt/G1.5', what: 'claim-done' });
+    rec('press', { id: 'wt/G1.6', what: 'claim-done' });
     await waitFor(function () { return ['wt/G1.5', 'wt/G1.6'].every(function (id) { return said('verify.reject', id).length || said('verify.pass', id).length; }); }, 8000);
     if (!said('verify.pass', 'wt/G1.5').length && said('verify.reject', 'wt/G1.5').length === 1) test.check('an item with no test file on its list is rejected, not passed');
     else test.fail(OWED + 'no test file: ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.5'; })));

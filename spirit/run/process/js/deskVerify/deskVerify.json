@@ -12,7 +12,17 @@
     {
       "name": "watchMs",
       "default": "5000",
-      "description": "How often the watcher reads the desk's changes (goal/G8.10). A verifier's pass or an agent's verify.again starts that item's claim check; what was on the record before it started triggers nothing."
+      "description": "How often the watcher reads the desk's changes (goal/G8.10). A claim (since goal/G19.13 it carries its commit; the verifier's pass no longer starts anything), a press claim-done or an agent's verify.again starts that item's check; what was on the record before it started triggers nothing."
+    },
+    {
+      "name": "waitMs",
+      "default": "60000",
+      "description": "How often a claim waiting for its commit is tried again, pulling first (goal/G19.13). A claim whose commit the tree does not hold yet is neither passed nor rejected: one line on the item says what it waits for."
+    },
+    {
+      "name": "waitGiveUpMs",
+      "default": "3600000",
+      "description": "How long a claim waits for its commit before it is dropped, with one line on the item saying so (goal/G19.13)."
     },
     {
       "name": "suiteMs",

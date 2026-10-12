@@ -90,10 +90,21 @@ const addRow = db.prepare('INSERT INTO results (suite, title, outcome, "commit",
 db.exec('CREATE TABLE IF NOT EXISTS runs (rowid INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, id TEXT NOT NULL,' +
   ' state TEXT NOT NULL, outcome TEXT NOT NULL, queuedAt TEXT NOT NULL, startedAt TEXT NOT NULL, endedAt TEXT NOT NULL);' +
   'CREATE INDEX IF NOT EXISTS runs_state ON runs (state);');
-const runQueued = db.prepare('INSERT INTO runs (kind, id, state, outcome, queuedAt, startedAt, endedAt) VALUES (?, ?, \'queued\', \'\', ?, \'\', \'\')');
+// THE COMMIT A RUN WAITS FOR (goal/G19.13). A claim carries the commit it was made at, and a run whose commit the tree
+// does not hold yet is kept as 'waiting' with it, so a restart takes up the wait and not only the queue. Added to a
+// verify.db that predates it, guarded, so an existing db keeps its rows; '' for a run that names no commit.
+if (!db.prepare('PRAGMA table_info(runs)').all().some(function (c) { return c.name === 'commit'; })) {
+  db.exec('ALTER TABLE runs ADD COLUMN "commit" TEXT NOT NULL DEFAULT \'\'');
+}
+const runQueued = db.prepare('INSERT INTO runs (kind, id, state, outcome, queuedAt, startedAt, endedAt, "commit") VALUES (?, ?, \'queued\', \'\', ?, \'\', \'\', ?)');
 const runStarted = db.prepare('UPDATE runs SET state = \'running\', startedAt = ? WHERE rowid = ?');
 const runEnded = db.prepare('UPDATE runs SET state = \'ended\', outcome = ?, endedAt = ? WHERE rowid = ?');
-const runsOpen = db.prepare('SELECT rowid, kind, id FROM runs WHERE state != \'ended\' ORDER BY rowid');
+// A waiting run's startedAt is when its wait began, which is what the give-up hour counts from; a run taken up again is
+// started afresh, and its startedAt then says when it ran.
+const runWaiting = db.prepare('UPDATE runs SET state = \'waiting\', startedAt = ? WHERE rowid = ?');
+const runRequeued = db.prepare('UPDATE runs SET state = \'queued\' WHERE rowid = ?');
+const runCommit = db.prepare('UPDATE runs SET "commit" = ? WHERE rowid = ?');
+const runsOpen = db.prepare('SELECT rowid, kind, id, state, "commit" AS commitAt, startedAt FROM runs WHERE state != \'ended\' ORDER BY rowid');
 
 // THE TREE IT MEASURED. Read once per call and cached for a moment: a run posts thousands of records and the commit
 // does not move inside one. The repo is the checkout holding this file, which is the clone deskVerify runs in.
@@ -474,7 +485,8 @@ async function claimCheckRun(id) {
 // should be able to trigger a re-verify". Until now claim.check was a verb nobody called, so no code item on his node
 // ever got its Done button. This reads the desk's own `changes` from a cursor of its own - the idle cursor is another
 // reader and the two must not eat each other's pages - and runs the check on two words and no others:
-//   a verifier's pass   phase.done, phase verify, pass true
+//   a verifier's pass   phase.done, phase verify, pass true (NO LONGER since goal/G19.13: the claim that follows it,
+//                       carrying its commit, is the trigger; see watched())
 //   an agent's re-verify  verify.again
 // What is already on the record when it starts triggers nothing (a restart would re-run the whole history), each record
 // triggers once, and one check runs at a time: two suite runs on one host fight over the lab ports (goal/G8.9).
@@ -490,17 +502,37 @@ let checking = false;
 // and an id already waiting or already being checked is not queued again: the repeat cost whole suite runs.
 let reading = false;
 const watchQueue = [];
+// THE CLAIMS WAITING FOR THEIR COMMIT (goal/G19.13), apart from the queue: a job here is not run until the tree holds
+// its commit, and the queue behind it is not held up by it.
+const waitingFor = [];
+// The job drainQueue is running now, so a word about it is told apart by its kind and its commit (goal/G19.13).
+let runningJob = null;
 // A job joins the queue as a row, and the row is the record (goal/G19.3).
 function enqueue(job) {
-  const row = runQueued.run(String(job.kind), String(job.id), new Date().toISOString());
-  watchQueue.push({ kind: String(job.kind), id: String(job.id), row: Number(row.lastInsertRowid) });
+  const row = runQueued.run(String(job.kind), String(job.id), new Date().toISOString(), String(job.commit || ''));
+  watchQueue.push({ kind: String(job.kind), id: String(job.id), commit: String(job.commit || ''), row: Number(row.lastInsertRowid) });
 }
-// What the last restart left unended, taken up in order before anything new.
-runsOpen.all().forEach(function (r) { watchQueue.push({ kind: String(r.kind), id: String(r.id), row: Number(r.rowid) }); });
+// What the last restart left unended, taken up in order before anything new. A run that was waiting for its commit
+// waits on, its line already said and its hour counted from when the wait began (goal/G19.13), so the restart posts
+// nothing new for it.
+runsOpen.all().forEach(function (r) {
+  const job = { kind: String(r.kind), id: String(r.id), commit: String(r.commitAt || ''), row: Number(r.rowid) };
+  if (r.state === 'waiting') { job.said = true; job.since = Date.parse(String(r.startedAt || '')) || Date.now(); waitingFor.push(job); } else watchQueue.push(job);
+});
 const goalsRun = Object.create(null);
+// A NEWER CLAIM OF THE SAME KIND ON THE SAME ITEM (goal/G19.13) is not a second run: the one already queued or waiting
+// takes the newer commit, which is the one the claim now stands at.
 function queuedAlready(job) {
-  return watchQueue.some(function (q) { return q.kind === job.kind && q.id === job.id; }) ||
-    (job.kind === 'item' && running.id === job.id);
+  const same = watchQueue.concat(waitingFor).filter(function (q) { return q.kind === job.kind && q.id === job.id; })[0];
+  if (same) {
+    if (job.commit && same.commit !== job.commit) { same.commit = String(job.commit); same.said = false; same.since = Date.now(); if (same.row) runCommit.run(same.commit, same.row); }
+    return true;
+  }
+  // The check running now is the same word only when it is the same kind (a red check is not the item's check) and,
+  // for a claim with a commit, at the same commit: a newer claim waits behind it rather than being swallowed.
+  if (job.kind !== 'item' && job.kind !== 'red') return false;
+  const busy = runningJob || (running.id ? { kind: 'item', id: running.id, commit: '' } : null);
+  return !!busy && busy.kind === job.kind && busy.id === job.id && (!job.commit || busy.commit === job.commit);
 }
 function watched(r) {
   let b = null;
@@ -510,39 +542,163 @@ function watched(r) {
   // goal whose goal.emptied this server never saw (written while it was down, and read as history on its first walk).
   if (r.verb === 'verify.again' && b.goal === true) return { kind: 'goal', id: String(b.id), again: true };
   if (r.verb === 'verify.again') return { kind: 'item', id: String(b.id) };
-  if (r.verb === 'phase.done' && String(b.phase) === 'verify' && b.pass === true) return { kind: 'item', id: String(b.id) };
+  // A CLAIM CARRIES ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code, it
+  // should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet... ?",
+  // and of the red: "they should be red. at the time". A build claim is the item's check, run once the tree holds its
+  // commit; a red claim is a RED check at its commit. Found before it: a claim that ran ahead of its push was checked on
+  // the old tree (goal/G19.12).
+  if (r.verb === 'claim' && String(b.phase) === 'build') return { kind: 'item', id: String(b.id), commit: String(b.commit || '') };
+  if (r.verb === 'claim' && String(b.phase) === 'red') return { kind: 'red', id: String(b.id), commit: String(b.commit || '') };
+  // THE VERIFY-PHASE PASS STARTS NOTHING ANY MORE (goal/G19.13, decided in the item). It came without a commit, a moment
+  // before the claim, so it checked the old tree; the claim that follows it is the trigger now. Do not put it back.
   // A CLAIM IS A TRIGGER (goal/G16.13). It was not, so a plain item — which has no
   // verify phase to pass — was never checked at all, and the Done it offered had been
   // through nothing. Andy, 2026-10-11: "only the verifier should give me a done button,
   // that's one way of knowing that the 'Done' offered went through the verifier."
+  // (Since goal/G19.13 the press is the claim of a caller with no commit: it is checked at once, on what the tree holds.)
   if (r.verb === 'press' && String(b.what) === 'claim-done') return { kind: 'item', id: String(b.id) };
   // THE GOAL HAS EMPTIED (goal/G8.12): the desk writes this when its last item goes, and it starts the goal run
   // (goal/G14.3: the goal's own suites; the full harness is his button's alone).
   if (r.verb === 'goal.emptied') return { kind: 'goal', id: String(b.id) };
   return null;
 }
+// ── A CLAIM WAITS FOR ITS COMMIT (goal/G19.13) ───────────────────────────
+//
+//   Andy, 2026-10-12: "these push things, when you report a claim on code, it should be accompanied by the commit id,
+//   that way desk verify won't check something that hasn't arrived yet... ?"
+//
+// A job that names a commit is checked only once this tree holds it: pulled first, then git asked whether the commit
+// is an ancestor of HEAD (a commit git cannot name is not held either). Until then it is neither passed nor rejected:
+// one line on the item says what it waits for, and it waits apart from the queue, quietly, each later attempt pulling
+// first (every WAIT_MS, never while a run is measuring, which a pull would move under it). Past GIVE_UP_MS of waiting
+// it is dropped with one line saying so. The wait is a row in verify.db ('waiting', with the commit), so a restart takes
+// it up and posts nothing new. A newer claim of the same kind on the same item moves the wait to its commit.
+const WAIT_MS = Number(values.waitMs) > 0 ? Number(values.waitMs) : 60000;
+const GIVE_UP_MS = Number(values.waitGiveUpMs) > 0 ? Number(values.waitGiveUpMs) : 60 * 60 * 1000;
+function holds(commit) {
+  // Only a hash is handed to git: the desk refuses anything else at the claim, and this never trusts that alone.
+  if (!/^[0-9a-f]{7,40}$/.test(String(commit))) return false;
+  return spawnSync('git', ['merge-base', '--is-ancestor', String(commit), 'HEAD'], { cwd: REPO, encoding: 'utf8' }).status === 0;
+}
+function shortOf(commit) { return String(commit || '').slice(0, 8); }
+async function startWaiting(job, pulled) {
+  job.since = job.since || Date.now();
+  if (job.row) runWaiting.run(new Date(job.since).toISOString(), job.row);
+  waitingFor.push(job);
+  if (job.said) return;
+  job.said = true;
+  const t = tree();
+  await desk('chat.add', { id: job.id, text: 'deskVerify: not checked, waiting for ' + shortOf(job.commit) + ': the tree, at ' +
+    (t.short || t.commit || 'an unknown commit') + ' (' + pulled + '), does not hold the commit the ' + (job.kind === 'red' ? 'red ' : '') + 'claim was made at. Nothing was measured, so this is neither a pass nor a reject; it is checked once the commit arrives.' });
+}
+let waitTicking = false;
+async function waitOnce() {
+  if (!waitingFor.length || checking || waitTicking) return;
+  waitTicking = true;
+  try {
+    const m = await mode();
+    if (m.mode !== 'desk' || checking) return;
+    pullFirst();
+    for (const job of waitingFor.slice()) {
+      if (holds(job.commit)) {
+        waitingFor.splice(waitingFor.indexOf(job), 1);
+        if (job.row) runRequeued.run(job.row);
+        watchQueue.push(job);
+      } else if (Date.now() - job.since >= GIVE_UP_MS) {
+        waitingFor.splice(waitingFor.indexOf(job), 1);
+        if (job.row) runEnded.run('gave up waiting', new Date().toISOString(), job.row);
+        await desk('chat.add', { id: job.id, text: 'deskVerify: gave up waiting for ' + shortOf(job.commit) + ': the tree still lacks it after ' +
+          Math.round((Date.now() - job.since) / 60000) + ' minutes, so nothing was checked. Push it and claim again.' });
+      }
+    }
+  } finally { waitTicking = false; }
+  if (watchQueue.length) drainQueue();
+}
+
+// ── THE RED CHECK (goal/G19.13) ──────────────────────────────────────────
+//
+//   Andy, 2026-10-12: "and why are the reds not claimed as complete that way, so the verifier can check them, they
+//   should be red. at the time", and "yes" to the red phase ending with its own commit, checked red by deskVerify.
+//
+// At the claimed commit, every test file the item lists is run (the same list and the same leavesTests guard as an
+// item's check) and each must come back red: at least one FAILURE line. One line on the item says which: confirmed,
+// naming the suites, or not confirmed, naming every one already green and any that could not be run. A red is what is
+// expected here, so it presses neither verify.pass nor verify.reject, and it never runs the undo (verify.regress).
+async function redCheck(id, commit) {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  stopped = false;
+  running = { id: String(id), suite: '', since: new Date().toISOString() };
+  try {
+    const list = await suitesOf(id);
+    const reds = [];
+    const greens = [];
+    const unrun = [];
+    if (!list.length) unrun.push('the item lists no test file');
+    for (const rel of list) {
+      const file = path.join(REPO, rel);
+      if (leavesTests(rel)) { unrun.push(rel + ' leaves spirit/test, so it was not run'); continue; }
+      if (!fs.existsSync(file)) { unrun.push(rel + ' is missing from this checkout'); continue; }
+      running = { id: String(id), suite: rel, since: new Date().toISOString() };
+      const index = list.indexOf(rel) + 1;
+      const expected = expectedOf(rel);
+      const told = function (tests) {
+        say({ doing: 'item', id: id, suite: rel, index: index, of: list.length, tests: tests, expected: expected,
+          line: 'red check: ' + path.basename(rel) + ', suite ' + index + ' of ' + list.length + ', ' + tests + ' tests',
+          since: running.since });
+      };
+      told(0);
+      const run = await runSuite(file, port, told);
+      if (run.stopped) { unrun.push(rel + ' was stopped by hand'); break; }
+      if (/FAILURE #/.test(run.said)) reds.push(rel);
+      else if (run.timedOut) unrun.push(rel + ' was stopped at the time limit of ' + SUITE_MS + 'ms, printing no red');
+      else greens.push(rel);
+    }
+    const t = tree();
+    const at = shortOf(commit) || t.short || t.commit || 'an unknown commit';
+    const confirmed = reds.length > 0 && !greens.length && !unrun.length;
+    const text = confirmed
+      ? 'deskVerify: red confirmed at ' + at + ': ' + reds.join(', ')
+      : 'deskVerify: red not confirmed at ' + at + ': ' + greens.map(function (g) { return g + ' is already green'; }).concat(unrun).join('; ');
+    await desk('chat.add', { id: String(id), text: text });
+    return { red: true, confirmed: confirmed };
+  } finally {
+    running = { id: '', suite: '', since: '' };
+    stopped = false;
+    sayIdle();
+  }
+}
+
 async function drainQueue() {
   if (checking) return;
   checking = true;
   try {
     while (watchQueue.length) {
       const job = watchQueue.shift();
+      // A JOB THAT NAMES A COMMIT WAITS FOR IT (goal/G19.13): pulled first, and not run until the tree holds it.
+      if (job.commit) {
+        const pulled = pullFirst();
+        if (!holds(job.commit)) { await startWaiting(job, pulled); continue; }
+      }
       if (job.row) runStarted.run(new Date().toISOString(), job.row);
+      runningJob = job;
       let outcome = 'ended';
       try {
         let r = null;
         if (job.kind === 'goal') r = await goalRun(job.id);
         else if (job.kind === 'full') r = await fullRun(job.id);
+        else if (job.kind === 'red') r = await redCheck(job.id, job.commit);
         else r = await claimCheck(job.id);
-        if (r && r.unchecked) outcome = 'not checked';
+        if (r && r.red) outcome = r.confirmed ? 'red confirmed' : 'red not confirmed';
+        else if (r && r.unchecked) outcome = 'not checked';
         else if (r && typeof r.rejected === 'boolean') outcome = r.rejected ? 'rejected' : 'passed';
       } catch (e) {
         /* the desk is the record; a failed check is asked again by its next word */
         outcome = 'broke: ' + String((e && e.message) || e).slice(0, 200);
       }
+      runningJob = null;
       if (job.row) runEnded.run(outcome, new Date().toISOString(), job.row);
     }
-  } finally { checking = false; }
+  } finally { checking = false; runningJob = null; }
 }
 async function watchOnce() {
   // One read at a time: a tick that arrives while the last is still reading does nothing.
@@ -595,6 +751,9 @@ const watcher = setInterval(function () { watchOnce().catch(function () { /* nex
 // The runs a restart found unended are worked off at once (goal/G19.3), on this node only, as the watcher's are.
 if (watchQueue.length) setTimeout(function () { mode().then(function (m) { if (m.mode === 'desk') drainQueue(); }, function () {}); }, 500);
 if (watcher.unref) watcher.unref();
+// The claims waiting for their commit are tried again on a clock of their own (goal/G19.13), on this node only.
+const waiter = setInterval(function () { waitOnce().catch(function () { /* next tick */ }); }, WAIT_MS);
+if (waiter.unref) waiter.unref();
 
 // THE SUITES FOLDER, which only his full run walks (goal/G14.3); the goal run takes its suites from the items.
 const SUITES_DIR = path.resolve(REPO, String(values.suites || 'spirit/test'));

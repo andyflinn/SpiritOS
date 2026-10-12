@@ -176,9 +176,12 @@ async function verifyHalf() {
     const redLine = lineOn('oc/G1.2')[0] || '';
     if (/rejected/i.test(redLine) && redLine.indexOf(RED) !== -1 && !said('verify.pass', 'oc/G1.2').length) test.check('a red item gets one line: rejected, naming the red suite, and no pass');
     else test.fail(OWED + 'the line on a red item reads ' + short(redLine) + '; passes ' + said('verify.pass', 'oc/G1.2').length);
-    rec('phase.done', { id: 'oc/G1.3', phase: 'verify', pass: true });
+    // SINCE goal/G19.13 A CODE ITEM IS CHECKED ON ITS CLAIM, not on its verify pass: the pass came without a commit, a
+    // moment before the claim, and was checked on the old tree. The claim here names no commit (as the press does), so
+    // it is checked at once; a claim with its commit is deskClaimCommit.js's.
+    rec('claim', { id: 'oc/G1.3', phase: 'build', commit: '' });
     await waitFor(function () { return said('verify.pass', 'oc/G1.3').length > 0 && lineOn('oc/G1.3').length > 0; }, 15000);
-    if (said('verify.pass', 'oc/G1.3').length === 1 && lineOn('oc/G1.3').length === 1) test.check('a code item\'s verify pass still asks verify.pass, and now gets its line too');
+    if (said('verify.pass', 'oc/G1.3').length === 1 && lineOn('oc/G1.3').length === 1) test.check('a code item\'s claim still asks verify.pass, and gets its line too');
     else test.fail(OWED + 'code item: passes ' + said('verify.pass', 'oc/G1.3').length + ', lines ' + lineOn('oc/G1.3').length);
   } finally {
     await v.stop();

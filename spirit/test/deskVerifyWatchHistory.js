@@ -37,7 +37,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-watchhistory-'));
   const rec = function (verb, body) { records.push({ n: records.length + 1, at: new Date().toISOString(), verb: verb, by: 'claude-windows', key: '', body: JSON.stringify(body) }); };
   const asks = [];
   // THE WORLD: six verify passes already on the record, so the first walk takes three pages.
-  ['wh/G1.1', 'wh/G1.2', 'wh/G1.3', 'wh/G1.4', 'wh/G1.5', 'wh/G1.6'].forEach(function (id) { rec('phase.done', { id: id, phase: 'verify', pass: true }); });
+  // Since goal/G19.13 a verify pass triggers nothing at all, so the history is claims, which would trigger a check.
+  ['wh/G1.1', 'wh/G1.2', 'wh/G1.3', 'wh/G1.4', 'wh/G1.5', 'wh/G1.6'].forEach(function (id) { rec('press', { id: id, what: 'claim-done' }); });
 
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
@@ -90,7 +91,9 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-watchhistory-'));
     else test.fail(OWED + 'it spoke about ' + short(spoke().map(function (x) { return x.args.id; })));
 
     // AND IT IS WATCHING: the next pass, after the walk, is checked - so the silence above is history alone.
-    rec('phase.done', { id: 'wh/G1.7', phase: 'verify', pass: true });
+    // SINCE goal/G19.13 a verify pass starts nothing, so the live word after the walk is a claim too (the press, which
+    // names no commit and is checked at once).
+    rec('press', { id: 'wh/G1.7', what: 'claim-done' });
     const t = Date.now() + 8000;
     while (Date.now() < t && !asks.some(function (x) { return x.verb === 'verify.pass' && x.args.id === 'wh/G1.7'; })) await sleep(200);
     if (asks.some(function (x) { return x.verb === 'verify.pass' && x.args.id === 'wh/G1.7'; })) test.check('and a pass written after the walk is checked, so the watcher is alive');

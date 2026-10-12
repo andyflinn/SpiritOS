@@ -732,6 +732,17 @@ function apply(s, r, b, item, goalOf) {
       return;
     }
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
+    // A CLAIM CARRIES ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code,
+    // it should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet...
+    // ?", and to one verb carrying both: "better. that closes the door on half-ass claims." A build claim IS the
+    // claim-done, applied by the same press() so the two can never drift, and the item keeps the commit it was claimed
+    // at; a red claim changes nothing but the commit kept ("they should be red. at the time"). The refusals are at the
+    // verb, so a replay only records.
+    case 'claim':
+      if (!it) return;
+      if (String(b.phase) === 'build') { press(s, it, 'claim-done', r, goalOf, b); it.claimCommit = String(b.commit || ''); }
+      else if (String(b.phase) === 'red') it.redCommit = String(b.commit || '');
+      return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
     case 'agent.state': s.agentWord[r.by] = String(b.word); return;
@@ -1126,6 +1137,8 @@ function facts(s, it) {
     green: !openQ(it),
     // goal/G5.7: the phase it is in, and who did each.
     code: it.code === true, phase: it.phase || '', red: it.red || '', builder: it.builder || '', verifier: it.verifier || '',
+    // goal/G19.13: the commits it was claimed at, the build's and the red's, '' while none was claimed with one.
+    claimCommit: it.claimCommit || '', redCommit: it.redCommit || '',
     // goal/G2.22: whether the phase rules are lifted on it, so the dialog knows to stop offering Waive.
     waived: it.waived === true,
     // goal/G5.8: the rules in force at his Go, each { key, version }.
@@ -2308,29 +2321,45 @@ appServer.serve({
       if (a.what === 'start-design' && a.id === '') return { change: newGoal(w).change };
       const body = Object.assign({}, a, { by: w.by, key: w.key });
       if (a.what === 'go' || a.what === 'go-all') body.rules = rulesForGo(walkState(), a.id, a.what);
-      const landed = write('press', body, function (st, it) {
-        const offered = buttons(st, it);
-        // goal/G2.19 puts make-current on the same leash: offered or refused, so a closed goal takes Reopen first.
-        // Every refusal below names what blocked it (goal/G9.17, change 3), the code staying not-offered.
-        if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw notOffered(whyNotOffered(st, it, a.what, offered));
-        if (a.what === 'bring-back' && !it.closed) throw notOffered(it.id + ' is not closed, so there is nothing to bring back');
-        if (a.what === 'code' && (it.goal || it.subGoal)) throw notOffered(it.id + ' is a goal, and a goal is never a code item');
-        // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
-        // on an item with one, a go-all while any item of the goal has one: refused.
-        const gOf = st.goals[it.goal ? it.id : it.goalId];
-        const members = gOf ? gOf.members : [];
-        const red = (a.what === 'end-design' || a.what === 'go-all') ? notGreen(st, members.concat(it.goal ? [it.id] : [])) : [];
-        if (red.length) throw notOffered(red.join(', ') + (red.length === 1 ? ' carries' : ' carry') + ' an open red question; answer or close it first');
-        if (a.what === 'go' && openQ(it)) throw notOffered(it.id + ' carries an open red question; answer or close it first');
-        // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
-        // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
-        // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).
-        if (a.what === 'claim-done' && !it.goal && !it.go) throw notOffered('no Go is on record for ' + it.id + ', so nothing is claimable');
-        // The group chat's anchor stays closed (goal/G3.10): nobody brings it back onto the List.
-        if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw notOffered('the group chat never comes back onto the List');
-      });
+      const landed = write('press', body, pressCheck(a));
       // THE PRESS THAT EMPTIES THE GOAL WRITES IT (goal/G8.12), once, right after it has landed.
       emptiedByPress(a);
+      return { change: landed.change };
+    },
+  },
+  // A CLAIM WITH ITS COMMIT (goal/G19.13). Andy, 2026-10-12: "these push things, when you report a claim on code, it
+  // should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet... ?";
+  // to claim {id, commit} as one verb: "better. that closes the door on half-ass claims."; and "and why are the reds not
+  // claimed as complete that way, so the verifier can check them, they should be red. at the time", "yes" to the red
+  // phase ending with its own commit, checked red by deskVerify.
+  //   phase build  the press claim-done, through the same checks (pressCheck), and the record carries the commit;
+  //                deskVerify waits until its tree holds that commit before it checks the item.
+  //   phase red    the red is claimed at that commit; deskVerify runs the item's suites and each must be red. No Done
+  //                follows from it. Only on a code item with his Go.
+  //   commit       7 to 40 hex characters; '' only for a plain item's build claim, which has no code to carry.
+  // An agent verb, told to the agents by claim.json beside this file. press claim-done stays for his pages and the
+  // callers that have no commit. Every refusal says why.
+  'claim': {
+    request: { id: '', phase: '', commit: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const id = String(a.id);
+      const phase = String(a.phase);
+      const commit = String(a.commit);
+      if (phase !== 'build' && phase !== 'red') throw refusedWhy('bad-request', 'a claim\'s phase is build or red, not ' + JSON.stringify(phase));
+      if (commit !== '' && !/^[0-9a-f]{7,40}$/.test(commit)) throw refusedWhy('bad-request', 'a commit is 7 to 40 hex characters (lower case), not ' + JSON.stringify(commit));
+      const st0 = walkState();
+      const it0 = st0.items[id];
+      if (!it0) throw refusedWhy('no-such-item', 'there is no item ' + id + ' on the desk');
+      if (commit === '' && (phase === 'red' || it0.code)) throw refusedWhy('bad-request', 'a ' + (phase === 'red' ? 'red' : 'code item\'s') + ' claim carries the commit it was made at; only a plain item\'s build claim may leave it empty');
+      if (phase === 'red') {
+        if (!it0.code) throw refusedWhy('not-offered', id + ' is not a code item: it has no red phase to claim');
+        if (!it0.go) throw refusedWhy('not-offered', 'no Go is on record for ' + id + ', so its red is not claimable yet');
+      }
+      const body = { id: id, phase: phase, commit: commit, by: w.by, key: w.key };
+      // THE SAME CHECKS AS THE PRESS (goal/G19.13): a build claim is refused exactly where press claim-done is.
+      const landed = write('claim', body, phase === 'build' ? pressCheck({ id: id, what: 'claim-done' }) : null);
+      if (phase === 'build') emptiedByPress({ id: id });
       return { change: landed.change };
     },
   },
@@ -2359,3 +2388,29 @@ appServer.serve({
   'not-offered': { status: 409, text: 'that press is not offered for this item now' },
   'no-such-item': { status: 404, text: 'no such item' },
 } });
+
+// THE PRESS'S CHECKS, ONE COPY (goal/G19.13): what the press handler refuses, as a write() check, so the claim verb's
+// build phase refuses exactly what press claim-done refuses and the two cannot drift apart.
+function pressCheck(a) {
+  return function (st, it) {
+    const offered = buttons(st, it);
+    // goal/G2.19 puts make-current on the same leash: offered or refused, so a closed goal takes Reopen first.
+    // Every refusal below names what blocked it (goal/G9.17, change 3), the code staying not-offered.
+    if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw notOffered(whyNotOffered(st, it, a.what, offered));
+    if (a.what === 'bring-back' && !it.closed) throw notOffered(it.id + ' is not closed, so there is nothing to bring back');
+    if (a.what === 'code' && (it.goal || it.subGoal)) throw notOffered(it.id + ' is a goal, and a goal is never a code item');
+    // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
+    // on an item with one, a go-all while any item of the goal has one: refused.
+    const gOf = st.goals[it.goal ? it.id : it.goalId];
+    const members = gOf ? gOf.members : [];
+    const red = (a.what === 'end-design' || a.what === 'go-all') ? notGreen(st, members.concat(it.goal ? [it.id] : [])) : [];
+    if (red.length) throw notOffered(red.join(', ') + (red.length === 1 ? ' carries' : ' carry') + ' an open red question; answer or close it first');
+    if (a.what === 'go' && openQ(it)) throw notOffered(it.id + ' carries an open red question; answer or close it first');
+    // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
+    // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
+    // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).
+    if (a.what === 'claim-done' && !it.goal && !it.go) throw notOffered('no Go is on record for ' + it.id + ', so nothing is claimable');
+    // The group chat's anchor stays closed (goal/G3.10): nobody brings it back onto the List.
+    if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw notOffered('the group chat never comes back onto the List');
+  };
+}
