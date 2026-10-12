@@ -1,8 +1,7 @@
 {
- "change": 37735,
+ "change": 38954,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T15:13:42.015Z",
  "items": [
   {
    "id": "goal/G19",
@@ -41,13 +40,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -158,26 +155,28 @@
    "id": "goal/G19.1",
    "title": "Seats kept on first connect, given up when evicted",
    "goal": "goal/G19",
-   "status": "running",
+   "status": "red",
    "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G19",
     "goal/G19.11"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G19.14"
+   ],
    "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -211,11 +210,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 6,
    "half": true,
    "full": false,
-   "box": "Seats kept on first connect, given up when evicted.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote. js/hub.js:1160 seats; js/answerRelay.js:201 calls relayKeys.accept on a \"new\" verdict; js/relayKeys.js:196-202 rewrites the whole row. Every new node reads \"You (unknown)\". test/presenceProof.js:70 never checks the label.\n- HIGH: a seat is never given up. relayKeys.unseat (js/relayKeys.js:159) has no caller; any pin counts as a seat (:138-146); ownerBadge.js:408 claimed = owned || hasSeat; natterDetails.js:580 hides the claim form.\n- An owner CAN evict: Contacts details > Forget twice (shell/contactsDetails/contactsDetails.js:363-388) sends removePeer to each relay (relay.js:3403-3406 then forgetPeer :2258). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js:1135-1143); \"a boot can still backfill\" (:1161) is false.\n- MEDIUM: the seat label is frozen at claim time (ownerBadge.js:426,431); a rename from Info (info.js:285) never re-seats; natter.js:811-815 says otherwise.\n- LOW: natterDetails.js:433 reads c.peers, :1048 reads roll.roster; the probe sets neither. Andy's reading: rules for seats, but no code for the owner to evict members.\n\nDECIDED (Andy, 2026-10-12)\n- \"the relay, by definition, has no power over a member-node's data, so the only thing that could be done: help a node realize it is outcast, and remove that relay from it's list.\"\n- \"a relay row may need a field, that persists the rejection, until the user sees that in natter, and removes the relay himself, the automation of a removal may exceed our (coders) authority. Nobody other than the node user has a right to remove data:\"\n- \"furthermore, the user may call the relay-owner by phone and clear up misunderstandings that lead to the eviction in the first place....\"\n- So: on a stream refused \"no such identity\" the node writes the rejection (and when) on that relay's row and keeps its seat; Natter shows it; only the user removes the relay. An accepted stream later clears the field.\n- \".... and it might contradict our own rule, never remove the last relay from the relay-roll.\" So no automatic removal, and the user's Remove in Natter keeps that rule too.\n- \"also: a relay MUST be robust to malicious attacks, and repeating denied request might only be ignorance, not maliciousness.\" Withstanding repeated denied requests is the relay's job.\n\n- And to close it: \"with all that said: \"let's provide the user with the neccessary knowledge in natter.\" So Natter says, on that relay's row, that the relay refused this node and since when, and offers the user's own Remove (never on the last relay).\n\n- Then, on dialing: \"the dialing may as well cease, since it's useless, and doesn't hurt the users data.\" So a rejected relay is not dialed; Natter offers a try-again beside the Remove, which dials once and clears the rejection if the stream is accepted.\n\n- Asked whether the try-again in Natter brings a rejected relay back: \"that's what that new field in a natter row is for.\" The rejection field on the row drives both what Natter says and its try-again.\n\n- \"yes. there has to be a way for re-admission, outside of our wire.\" The owner re-admits off the wire (a phone call); the user's try-again is how the node finds out.\n\nFROM THE REVIEW PASS: the user's Remove of a relay gives up its seat with it (relayKeys.unseat, which so gets its first caller and stays out of G19.11's dead code); Remove still refuses the last relay.\nSHAPE, the plain parts: relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx; a rename re-seats.\n- At the review pass, on the title \"...given up when evicted\": \"not quite: the eviction is effective, and frees a slot, but the (ex-)members node informs it's user in natter about the situation.\" The relay's eviction stands and frees its slot; the ex-member's node keeps its own record until its user removes it, and tells him in Natter.\n",
-   "version": 9,
+   "box": "Seats kept on first connect, given up when evicted.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote. js/hub.js:1160 seats; js/answerRelay.js:201 calls relayKeys.accept on a \"new\" verdict; js/relayKeys.js:196-202 rewrites the whole row. Every new node reads \"You (unknown)\". test/presenceProof.js:70 never checks the label.\n- HIGH: a seat is never given up. relayKeys.unseat (js/relayKeys.js:159) has no caller; any pin counts as a seat (:138-146); ownerBadge.js:408 claimed = owned || hasSeat; natterDetails.js:580 hides the claim form.\n- An owner CAN evict: Contacts details > Forget twice (shell/contactsDetails/contactsDetails.js:363-388) sends removePeer to each relay (relay.js:3403-3406 then forgetPeer :2258). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js:1135-1143); \"a boot can still backfill\" (:1161) is false.\n- MEDIUM: the seat label is frozen at claim time (ownerBadge.js:426,431); a rename from Info (info.js:285) never re-seats; natter.js:811-815 says otherwise.\n- LOW: natterDetails.js:433 reads c.peers, :1048 reads roll.roster; the probe sets neither. Andy's reading: rules for seats, but no code for the owner to evict members.\n\nDECIDED (Andy, 2026-10-12)\n- \"the relay, by definition, has no power over a member-node's data, so the only thing that could be done: help a node realize it is outcast, and remove that relay from it's list.\"\n- \"a relay row may need a field, that persists the rejection, until the user sees that in natter, and removes the relay himself, the automation of a removal may exceed our (coders) authority. Nobody other than the node user has a right to remove data:\"\n- \"furthermore, the user may call the relay-owner by phone and clear up misunderstandings that lead to the eviction in the first place....\"\n- So: on a stream refused \"no such identity\" the node writes the rejection (and when) on that relay's row and keeps its seat; Natter shows it; only the user removes the relay. An accepted stream later clears the field.\n- \".... and it might contradict our own rule, never remove the last relay from the relay-roll.\" So no automatic removal, and the user's Remove in Natter keeps that rule too.\n- \"also: a relay MUST be robust to malicious attacks, and repeating denied request might only be ignorance, not maliciousness.\" Withstanding repeated denied requests is the relay's job.\n\n- And to close it: \"with all that said: \"let's provide the user with the neccessary knowledge in natter.\" So Natter says, on that relay's row, that the relay refused this node and since when, and offers the user's own Remove (never on the last relay).\n\n- Then, on dialing: \"the dialing may as well cease, since it's useless, and doesn't hurt the users data.\" So a rejected relay is not dialed; Natter offers a try-again beside the Remove, which dials once and clears the rejection if the stream is accepted. (The try-again is superseded below.)\n\n- Asked whether the try-again in Natter brings a rejected relay back: \"that's what that new field in a natter row is for.\" The rejection field on the row drives both what Natter says and its try-again. (Superseded below: no try-again.)\n\n- \"yes. there has to be a way for re-admission, outside of our wire.\" The owner re-admits off the wire (a phone call); the user's try-again is how the node finds out.\n\nFROM THE REVIEW PASS: the user's Remove of a relay gives up its seat with it (relayKeys.unseat, which so gets its first caller and stays out of G19.11's dead code); Remove still refuses the last relay.\nSHAPE, the plain parts: relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx; a rename re-seats.\n- At the review pass, on the title \"...given up when evicted\": \"not quite: the eviction is effective, and frees a slot, but the (ex-)members node informs it's user in natter about the situation.\" The relay's eviction stands and frees its slot; the ex-member's node keeps its own record until its user removes it, and tells him in Natter.\n\n- Asked about the try-again: \"why would natter try again after a rejection? the rejection is noted by the node, stashed in the correct relay-row, and the information can then be displayed by natter?\"\n- \"and the seat is already vacated, so the nodes ID has to get a new invite, that what the info in natter is supposed to convey.\"\nSo, superseding the try-again: there is no try-again and no command that calls one relay. Natter says on that relay's row that the relay refused this node, since when, that the seat is gone, and that only a new invite brings it back; Remove stays (never on the last relay). Re-admission is a new invite.\n\n- Asked where the rejection is noted: \"and why would that logging not go behind peerRequest? it is known behind peerRequest, and the information goes into relay-state dataset?\" So peerPost, which already keeps the relay's refusal text, writes the rejection into that relay's row in relay-state; presenceNode closes the held stream to it and stops redialing.\n- \"and the message is supposed to say: no such Sender is known, otherwise it could be assumed that the Recipient is not known.\" So the relay's refusal reads \"no such sender\" (code no-such-sender) wherever it names the asking node: the post, the reply and the stream.\n- On the wording: \"or your ID is not a valid Sending ID.... something....\" The text is still open.\n- Asked why the stream is not held behind peerPost (it came first, for presence; the router put requests and replies on it later): \"size is not a more important argument that one door only\" So the node's stream to each relay moves under peerPost: one door.\n- Blocked by goal/G19.14 (Andy: \"so it belongs behind peerPost. decided. add a blocking item to that effect.\"): the stream moves behind peerPost first, and the refusal is noted and the redial stopped there.\n",
+   "version": 14,
    "checks": [
     {
      "number": "Q1",
@@ -261,6 +260,114 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-12T12:06:59.052Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/hub.js, spirit/run/js/answerRelay.js, spirit/run/js/relayKeys.js, spirit/run/js/ownerBadge.js, spirit/run/shell/natter/natter.js, spirit/run/shell/natterDetails/natterDetails.js, spirit/run/shell/info/info.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T16:05:04.270Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "1?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:07:05.330Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "May I also change the two files that open the node streams, so a not-a-member refusal is noted and that relay is no longer called?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:19:12.430Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "May the node get one new command that calls a single relay once, for the try-again in Natter?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:12:22.340Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Shall a rename update the name each relay shows through another new command, or stay out of this item?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:07:20.078Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Drop the try-again, so a re-admission is found only when the node restarts?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:19:14.682Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "So the extra grant is peerPost and presenceNode, not sseClient?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:19:17.143Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/spiritErrors.js",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Shall the relay say: your id is not a valid sender here (code not-a-sender)?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:19:44.069Z"
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "1, and propose moving it under peerPost as its own item?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:22:56.529Z"
+    },
+    {
+     "number": "Q14",
+     "kind": "Q",
+     "words": "1, or as its own item first?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:23:23.956Z"
+    },
+    {
+     "number": "Q15",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:24:39.848Z"
     }
    ],
    "chat": [
@@ -363,6 +470,256 @@
      "by": "desk",
      "at": "2026-10-12T13:23:49.286Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:59:34.691Z",
+     "text": "Taking G19.1, red phase first.\nThe seat fixes and the rejection field all sit in core: hub, answerRelay, relayKeys, ownerBadge, natter, natterDetails, info.\nThe G check asks your grant for those seven; the relay itself is not touched."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:02:51.621Z",
+     "text": "G19.1 stops at the grant: the node cannot tell why a relay refused its stream, and no verb dials one relay once. Nothing is written yet.\nMay the grant add sseClient and presenceNode, so a no-such-identity refusal is recorded and that relay is no longer dialed?\nShall the try-again be a new node verb relay.retry {key} that dials that relay once?\nShall a rename re-seat through a new verb seat.label, or leave rename out of G19.1?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:06:30.866Z",
+     "text": "english. bullets."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:07:08.075Z",
+     "text": "- The granted files fix the seat and show a refusal in Natter.\n- Two gaps stop the rest: the node never learns why a relay turned it away, and nothing can call one relay on demand.\n- Nothing is written yet; three questions follow."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:07:13.027Z",
+     "text": "May I also change the two files that open the node streams, so a not-a-member refusal is noted and that relay is no longer called?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:07:16.337Z",
+     "text": "May the node get one new command that calls a single relay once, for the try-again in Natter?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:07:19.593Z",
+     "text": "Shall a rename update the name each relay shows through another new command, or stay out of this item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:10:23.227Z",
+     "text": "why would natter try again after a rejection? the rejection is noted by the node, stashed in the correct relay-row, and the information can then be displayed by natter?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:10:23.793Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:10:43.398Z",
+     "text": "- Yes: the node notes it on the relay row and Natter only shows it.\n- The try-again is for after the owner re-admits you by phone: the node has stopped calling that relay, so nothing else finds out.\n- The box (v9) has it from your answer: that is what that new field in a natter row is for.\nDrop the try-again, so a re-admission is found only when the node restarts?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:11:37.992Z",
+     "text": "and the seat is already vacated, so the nodes ID has to get a new invite, that what the info in natter is supposed to convey."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:11:38.415Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:12:25.053Z",
+     "text": "Recorded (box v10): no try-again and no new command; Natter says the seat is gone and only a new invite brings the node back.\nQ8 is answered by that. Q7 and Q9 stay open."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:13:33.929Z",
+     "text": "Q7: May I also change the two files that open the node streams, so a not-a-member refusal is noted and that relay is no longer called?\n\nwhich files sseClient and ?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:13:56.007Z",
+     "text": "- sseClient: it reads the relay refusal, today it keeps only the status number and drops the reason.\n- presenceNode: it holds the stream to each relay and redials it; it would note the refusal on the row and stop redialing."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:14:39.220Z",
+     "text": "are those behind peerRequest?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:14:39.722Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:15:08.930Z",
+     "text": "- No. peerPost carries requests; these two hold the listening stream to each relay, beside it.\n- The node server starts presenceNode, and presenceNode alone uses sseClient."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:16:19.421Z",
+     "text": "and why would that logging not go behind peerRequest? it is known behind peerRequest, and the information goes into relay-state dataset?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:16:19.889Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:17:00.265Z",
+     "text": "- It can: the relay answers a post with the same not-a-member refusal, and peerPost keeps its text, so peerPost writes it into that relay row in relay-state.\n- That replaces sseClient; the stream needs no change to learn it.\n- presenceNode still has to close the held stream on that row, or it keeps redialing until the node restarts."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:17:02.887Z",
+     "text": "So the extra grant is peerPost and presenceNode, not sseClient?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:17:58.127Z",
+     "text": "and the message is supposed to say: no such Sender is known, otherwise it could be assumed that the Recipient is not known."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:18:28.994Z",
+     "text": "or your ID is not a valid Sending ID.... something...."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:18:29.480Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:19:03.796Z",
+     "text": "Recorded (box v11): the relay says no such sender on the post, the reply and the stream; peerPost notes it in the row, presenceNode stops the redial.\nThat takes four more core files, asked as G2: peerPost, presenceNode, relay, spiritErrors. sseClient stays out."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:19:43.371Z",
+     "text": "Shall the relay say: your id is not a valid sender here (code not-a-sender)?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:20:09.704Z",
+     "text": "why presenceNode? isn't that calling peerRequest as well?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:20:44.969Z",
+     "text": "- presenceNode is the listening half of the same interface: requests and replies arriving on the stream go to peerPost.\n- But the dialing is not a post: presenceNode holds each stream open and its loop redials a refused relay every few seconds, without peerPost.\n- So peerPost notes the refusal in the row, and presenceNode, seeing the row, closes that stream; nothing else stops the redial."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:22:07.694Z",
+     "text": "why would the stream be held open behind peerPost?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:22:22.658Z",
+     "text": "why souldn't, i mean"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:22:23.227Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:22:30.469Z",
+     "text": "- It is not behind peerPost; presenceNode holds it beside peerPost.\n- It is held open because a relay cannot call a node: everything addressed to this node, and every reply to its posts, comes down that stream."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:22:35.547Z",
+     "text": "why wouldn't?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:22:53.491Z",
+     "text": "- No reason in principle: post and stream are one interface, your words in presenceNode, the post mechanism has to be tied to a reply-by-stream.\n- Today the stream also carries presence, routes, partners and the owned relay status, so moving it under peerPost moves all of that: a bigger change than this item.\n- For G19.1 the redial stop lives wherever the stream lives."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:22:55.960Z",
+     "text": "Keep the stream in presenceNode for G19.1, and propose moving it under peerPost as its own item?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:23:20.726Z",
+     "text": "- Nothing forbids it; it all is peer traffic, so it could all sit under peerPost.\n- The cost is size and risk: peerPost is 1764 lines, presenceNode 681, and every reply in the node passes through the move.\n- Bundled into G19.1 a fault in the move and a fault in the seats show as one red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:23:23.397Z",
+     "text": "Move the stream under peerPost inside G19.1, or as its own item first?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:23:26.594Z",
+     "text": "why is the stream NOT held open behind peerPost?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:23:27.096Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:23:51.638Z",
+     "text": "- History, not a choice: the stream came first, for presence only, with a fence saying no messages on it.\n- On 2026-09-11 the router design opened that fence, and requests and replies were put on the stream that already existed; peerPost was attached to it rather than given it.\n- Nobody has decided they must stay apart."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:24:13.212Z",
+     "text": "size is not a more important argument that one door only"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:24:13.762Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:24:39.408Z",
+     "text": "Recorded (box v13): one door, the stream moves under peerPost.\nProposed item, blocking G19.1: One door: peerPost holds the node stream to each relay.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:27:01.606Z",
+     "text": "how many clients does presenceNode have?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:27:29.125Z",
+     "text": "- One: the node server creates it, once.\n- The server hands it on to hub, which reads it to pick a route, to show relay status and to restart after a claim; the server also feeds it what a relay says arrived and asks it to hand over the card.\n- No app and no other module requires it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:28:25.081Z",
+     "text": "so it belongs behind peerPost. decided. add a blocking item to that effect."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:29:18.716Z",
+     "text": "we can break down the large chunk behind peerPost later."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:29:19.211Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:29:19.994Z",
+     "text": "Added G19.14, blocking this item; box v14 says so."
     }
    ]
   },
@@ -1337,7 +1694,7 @@
    "id": "goal/G19.7",
    "title": "deskUnsloth: timeouts, tool results in the room, working reset",
    "goal": "goal/G19",
-   "status": "running",
+   "status": "deskVerify rejected it",
    "with": "",
    "buttons": [],
    "blocking": [
@@ -1347,18 +1704,44 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskUnslothAbort.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothDesk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRemoteTabs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothTools.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -1443,6 +1826,56 @@
      "by": "desk",
      "at": "2026-10-12T13:23:51.352Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:36:32.551Z",
+     "text": "Taking G19.7, red phase first: Abort beside the test tab chat, every call logged, tool results counted, the Remote fixes and the LOW findings."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:57:04.821Z",
+     "text": "commit 67b2e2a681bb19a36c6cb02c9b75bff88390885a: goal/G19.7: deskUnsloth Abort, every call logged in the test tab, tool results in the room\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/process/js/deskUnsloth/deskUnsloth.json\n- spirit/run/process/js/deskUnsloth/tools.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothAbort.js\n- spirit/test/deskUnslothDesk.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:57:12.929Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:57:14.398Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:57:20.802Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:57:29.021Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T15:57:34.586Z",
+     "text": "deskVerify: rejected, at 67b2e2a6 (pulled). Red: (no test file on the item's list): nothing to run, so nothing passed"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:57:35.608Z",
+     "text": "verify rejected: (no test file on the item's list): nothing to run, so nothing passed"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:57:37.081Z",
+     "text": "Built at 67b2e2a6. Files: deskUnsloth.js (abort, working, the log, room count, LOW fixes), tools.js, deskUnsloth.json, the Remote (Abort beside Send, log drawn, three fixes), deskUnslothAbort (new), deskUnslothDesk (claim folded in from G19.13).\nAbort has no verb file, so Levant gets no tool to abort himself.\nThe Remote 120 s give-up is gone, it was an automatic timeout.\nUnruled values: tool list kept 60 s, answer tokens default 1024."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T15:58:33.154Z",
+     "text": "deskVerify: passed, at 67b2e2a6 (pulled). 5 suites ran green."
     }
    ]
   },
@@ -2257,8 +2690,8 @@
    "id": "goal/G19.13",
    "title": "Desk: a claim carries its commit; deskVerify waits for it",
    "goal": "goal/G19",
-   "status": "red",
-   "with": "claude-windows",
+   "status": "running",
+   "with": "",
    "buttons": [],
    "blocking": [
     "goal/G19"
@@ -2267,18 +2700,44 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskClaimCommit.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyOnClaim.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyWatch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyWatchHistory.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "build",
    "red": "claude-windows",
    "builder": "",
    "verifier": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -2432,6 +2891,325 @@
      "by": "claude-windows",
      "at": "2026-10-12T14:57:32.732Z",
      "text": "Recorded (box v3), the whole shape in one place: claim {id, phase, commit}, red checked red, build checked green, both only once the tree holds the commit; the verify-phase pass no longer starts a check. Building it once the face item (G19.10) is in."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:33:45.828Z",
+     "text": "commit e32295a6dc5d41117312185388c015894cefd2cc: goal/G19.13: a claim carries its commit; deskVerify waits for it, checks reds red\n- spirit/run/process/js/desk/claim.json\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/deskVerify.json\n- spirit/test/deskClaimCommit.js\n- spirit/test/deskServer.js\n- spirit/test/deskVerifyOnClaim.js\n- spirit/test/deskVerifyWatch.js\n- spirit/test/deskVerifyWatchHistory.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:33:58.438Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T15:33:59.823Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T15:34:10.236Z",
+     "text": "Built at e32295a6. Files: desk.js (claim verb), claim.json, deskVerify.js (waits for the commit, red check), deskVerify.json, deskClaimCommit (new), deskServer, deskVerifyWatch, deskVerifyOnClaim, deskVerifyWatchHistory. The claim verb is live once your desk restarts."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T15:35:25.564Z",
+     "text": "deskVerify: passed, at e32295a6 (pulled). 5 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G19.14",
+   "title": "One door: peerPost holds the node stream to each relay",
+   "goal": "goal/G19",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [],
+   "blocking": [
+    "goal/G19.1"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "\nOne door: peerPost holds the node's stream to each relay.\n\nFOUND (D:/SpiritOS at 54561a50, 2026-10-12; paths under spirit/run/)\n- js/presenceNode.js holds one stream to every relay the node has a row on, through js/sseClient.js, and hands the requests and replies on it to peerPost (the router it is given at construction).\n- History, not a decision: the stream was built for presence only, with a fence against messages (design/relay/PRESENCE.md §6); ROUTER.md opened that fence on 2026-09-11 and put requests and replies on the stream that already existed, so peerPost was attached to it rather than given it.\n- One client: js/server.js creates it once, feeds it what a relay says arrived and asks it to hand over the card, and lends it to js/hub.js (route choice, relay status, restart after a claim). No app and no other module requires it.\n- Besides requests and replies the stream carries presence, routes, partners and the owned relays' status.\n\nDECIDED (Andy, 2026-10-12, on goal/G19.1)\n- \"why is the stream NOT held open behind peerPost?\"\n- \"size is not a more important argument that one door only\"\n- Asked how many clients presenceNode has (one): \"so it belongs behind peerPost. decided. add a blocking item to that effect.\"\n\nSHAPE: the node's held stream to each relay is opened, kept and closed behind peerPost, the one door for everything the node exchanges with a relay; presenceNode stops being a separate module the server builds beside peerPost. Everything the stream carries today keeps working. goal/G19.1 then notes a not-a-sender refusal and stops the redial at that one door.\n- Asked whether presenceNode folds into peerPost or stays a file only peerPost builds: \"we can break down the large chunk behind peerPost later.\" So it folds into peerPost now; splitting the large chunk behind peerPost is later work.\n- \"why do you have to delete presence node to put it behind peerPost, can peerPost require('presenceNode') as one of its components (and then you have the first breakdown already?)\" So presenceNode stays a file: peerPost requires it and builds it as its own part, the server no longer builds it, and nothing outside peerPost reaches it. This supersedes \"it folds into peerPost now\" above.\n- \"whe just want that a stack-frame test asserst nobody but peerPost has a path to it.\" So the red is a stack-frame test: every call stack that reaches presenceNode passes through peerPost, and none from anywhere else; it builds on the stack probe the tree already has (spirit/test/tools/wirePaths.js), with presenceNode added as a watched bottom.\n- \"the permitted door is peerPost (bottom frame) and the endpoints are the components of peerPost. are you afraid this will uncover more cans of worms?\"\n- \"and wy is this test not part of a suite? It's simply generate a set of test id's by matching allowed door (peerPost) to endpoint (http, presenceNode etc)\"\nSo the test is a suite in the harness: one test id per pair of allowed door (peerPost) and endpoint (each component of peerPost: presenceNode, postQueue, arrivals, seal, contacts, nodeCard, and http), failing on any stack that reaches the endpoint without the door; it uses the stack probe the tree has.\n- On the suite being slow: \"the full harness now runs only by me. overnight, or during an hour or more of rest.\" So slowness is no reason to keep it out of the harness.\n- \"make a goal that is only: fill that test with endpoints past peerPost that could be called illegally.\" So G19.14 builds the suite with presenceNode (and postQueue, reached by nobody else) as its rows; every other endpoint past peerPost is goal/G20.\n",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Shall presenceNode code fold into peerPost itself, or stay a file that only peerPost builds and nobody else sees?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:29:55.378Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js (folded in, then deleted), spirit/run/js/server.js, spirit/run/js/hub.js",
+     "test": "",
+     "state": "failed",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:34:12.393Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/server.js, spirit/run/js/hub.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T16:50:10.590Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "14, and keep arrivals, seal, contacts and nodeCard as findings for a later item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:46:33.134Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Rows that name their door, plus one suite that fails on a stack missing it: is that the test?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:46:35.479Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Build it that way: table rows with their door, the tool failing on a missed door, run by the harness?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:46:37.825Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "14 move those callers behind peerPost too, or mark those ids as owed by a later item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T16:46:40.151Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:29:16.201Z",
+     "text": "Added, blocking G19.1; your three lines are in the box.\nShall presenceNode code fold into peerPost itself, or stay a file that only peerPost builds and nobody else sees?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:30:00.436Z",
+     "text": "Recorded (box v2): presenceNode folds into peerPost now, the split comes later.\nG1 asks the grant for peerPost, presenceNode (deleted after the fold), server and hub.\nIt waits for your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:33:38.707Z",
+     "text": "why do you have to delete presence node to put it behind peerPost, can peerPost require('presenceNode') as one of its components (and then you have the first breakdown already?)\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:34:17.413Z",
+     "text": "- Yes, nothing has to be deleted: peerPost requires presenceNode as its part, the server stops building it, and hub reaches it only through peerPost.\n- Recorded (box v3), superseding the fold.\n- G1 said deleted, so it is withdrawn; G2 asks the same four files without it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:35:19.806Z",
+     "text": "whe just want that a stack-frame test asserst nobody but peerPost has a path to it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:36:03.079Z",
+     "text": "Recorded (box v4): the red is that stack-frame test.\nIt reuses the stack probe the tree already has for wire paths, with presenceNode added as one more watched bottom, so no second tool."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:36:13.522Z",
+     "text": "and while yoou're at it, that maybe true for other parts of peerPost."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:36:14.114Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:36:43.917Z",
+     "text": "- Of the seven parts peerPost requires, only postQueue is reached by nobody else; it takes the same test at no cost.\n- arrivals (hub, nodeCard, server), seal (hub and the relay side), contacts and nodeCard are reached from elsewhere too; asserting them would mean moving those callers behind peerPost first.\n- relayAuth and spiritErrors are shared by design: identity and error texts for everyone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:36:46.792Z",
+     "text": "Add postQueue to the test in G19.14, and keep arrivals, seal, contacts and nodeCard as findings for a later item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:37:05.999Z",
+     "text": "is this not just one table-entry in the existing stack-frame test ?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:37:36.952Z",
+     "text": "- Almost: the stack probe takes one table row per watched function, so presenceNode and postQueue are two rows.\n- But that probe is a meter: it ranks the stacks it saw and fails nothing, so a row alone asserts nothing.\n- The plain fix: a row may name its door (via peerPost), and one suite runs those rows and fails on any stack that misses the door."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:37:39.469Z",
+     "text": "Rows that name their door, plus one suite that fails on a stack missing it: is that the test?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:37:57.932Z",
+     "text": "it is my understanding that the stack-frame test has a table for endpoints?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:38:23.398Z",
+     "text": "- It records endpoints, not a table of them: for each wire call it notes the method and path with the stack that made it, and prints a ranked report.\n- Nothing in it says which endpoint or which function may be reached from where, and it fails nothing; the gate beside it, oneDoor, counts which files touch the wire.\n- So the door rule is still one small addition, whichever table it lives in."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:38:32.177Z",
+     "text": "the test is already written, it's just a few table entries in that test."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:39:01.641Z",
+     "text": "so presence node is equivalent to 'http' in that test"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:39:02.169Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:39:08.339Z",
+     "text": "- Checked live: the stack test is a tool beside the harness, never run by it, and it exits red only on a bad argument or when the suites it drives fail; nothing in it fails on a path.\n- So yes, a few table entries, but each entry also needs the door it must pass and the tool must fail when a stack misses it, and the harness must run it.\n- That stays in the one file; no second tool."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:39:10.911Z",
+     "text": "Build it that way: table rows with their door, the tool failing on a missed door, run by the harness?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:39:30.474Z",
+     "text": "- Yes: presenceNode is a bottom in that table, as http is.\n- peerPost is its door, as relayRequest is the one place the node opens a socket to http.\n- For http that door holds by construction; for presenceNode the new row asserts it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:42:08.151Z",
+     "text": "the permitted door is peerPost (bottom frame) and the endpoints are the components of peerPost. are you afraid this will uncover more cans of worms?\n\nand wy is this test not part of a suite? It's simply generate a set of test id's by matching allowed door (peerPost) to endpoint (http, presenceNode etc)\n\n?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:42:08.677Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:42:39.120Z",
+     "text": "- Not afraid; finding them is the point. Recorded (box v5).\n- Why not a suite: it was built as a meter on purpose, next to the oneDoor gate, and kept out of the harness because watching every call is slow; nobody ruled it must stay so.\n- What it will uncover today: hub, server and the relay side reach arrivals, seal, contacts and nodeCard without peerPost, so those test ids go red at once."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:42:41.958Z",
+     "text": "Shall G19.14 move those callers behind peerPost too, or mark those ids as owed by a later item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:43:46.614Z",
+     "text": "the full harness now runs only by me. overnight, or during an hour or more of rest."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:44:17.265Z",
+     "text": "Recorded (box v6): slow is no argument, it goes in the harness.\nThe question on the reds it uncovers stays open."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:45:47.106Z",
+     "text": "make a goal that is only: fill that test with endpoints past peerPost that could be called illegally."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:45:47.585Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:46:42.660Z",
+     "text": "Added goal G20 with your line as its box; this item keeps presenceNode and postQueue as the first rows (box v7).\nQ2 to Q5 are answered by that and closed.\nThe desk cut Q2 and Q5 at the dot inside an item id; that is a desk fault for the desk-issues list.\nG19.14 still waits for your Go and the G2 grant."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T16:49:36.248Z",
+     "text": "thanks, \nthis green now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:50:02.994Z",
+     "text": "Green: settled, no open questions, box current (v7). Only the G2 grant waits for you."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:50:13.572Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
