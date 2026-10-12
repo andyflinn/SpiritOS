@@ -1,5 +1,5 @@
 {
- "change": 40950,
+ "change": 40954,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "claude-windows",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -40,13 +39,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2461,6 +2458,11 @@
      "by": "desk",
      "at": "2026-10-12T13:23:51.874Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:33:19.841Z",
+     "text": "Taking G19.8, red phase first: the shell drops a streamed object unless it comes from this node, a puppet or relay it owns, or a key an app asked to hear.\nG1 asks the grant for shell.js."
     }
    ]
   },
@@ -2917,32 +2919,62 @@
    "id": "goal/G19.11",
    "title": "Hygiene: temp_loop, localEar leftovers, dead code, stale notes",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -2969,6 +3001,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T13:01:46.985Z",
      "text": "Recorded (box v2). Green: settled, no open questions, box current (v2). That makes all eleven items of goal/G19 argued and green."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:33:22.244Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
