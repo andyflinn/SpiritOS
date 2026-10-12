@@ -1,8 +1,8 @@
 {
- "change": 34138,
+ "change": 34170,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T06:53:04.062Z",
+ "writtenAt": "2026-10-12T07:08:22.844Z",
  "items": [
   {
    "id": "goal/G10",
@@ -14,9 +14,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G10.10"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,7 +35,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -5001,28 +4999,67 @@
    "id": "goal/G10.10",
    "title": "deskUnsloth and its Remote: smaller fixes",
    "goal": "goal/G10",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G10"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/chatClerver/chatClerver.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskClient/deskClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskSmallFixes.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -5053,7 +5090,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-12: \"i was gonna add\n\n\"deskUnslothRemote: Smaller Fixes to the UI and to both deskUnsloth and its Remote\"\n\ncan you do it and include the fix to desk\"\n\nDECIDED (Andy, 2026-10-12)\n- Added under this shorter title, his full one above: \"yes.\"\n- The 64-byte limit on a label stays: \"no limit-raising\".\n- The desk fix in this item: a title over 64 bytes is refused saying so, not \"text is missing\" as the Add blocking item form says today.\n- The fixes, Andy, 2026-10-12: \"BTW: i found a model that passed the test on the first try.\n\non the Remote: we need a button to the left of the model-picker that allows me to refresh the model list, so i don't have to re-start the Remote or 11111\n\nin the connect tab:\n\nwe don't need this: \"select the node where your local agent lives\", if deskUnsloth lives on the same node as the Remote, we'll just automatically configure it to the same node, and never show this bubble.\"\n- Refusals say why: \"all refusals everywhere should say why.\" (Q3). Bare bad-request refusals found: 19, in desk.js, deskClient.js, chatClerver.js and server.js (core).\n- The input field: \"Do the input field properly, as described in the new rule.\" (rule/12): the Add-blocking-item title and Rename in the item dialog marked data-field=\"label\", checked as typed with window.spiritFieldRules, bytes left beside them, Add and Save refused while the rule says no.\n\nFOUND\n- fieldRules.problem(title) answers \"name too long\" for his 81-byte title; desk.js item.add refuses it as bad-request, and the form shows \"text is missing\".",
@@ -5121,6 +5158,24 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T06:52:31.374Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T07:04:54.986Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Waive?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T06:55:27.447Z"
     }
    ],
    "chat": [
@@ -5228,6 +5283,31 @@
      "by": "desk",
      "at": "2026-10-12T06:53:03.563Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T06:55:24.613Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T06:55:26.993Z",
+     "text": "Red written and red: deskSmallFixes.js, 12 checks owed (the refusals, the dialog inputs under rule/12, the Remote refresh and its own node); files on the list, server.js among them, which will ask your core grant at the commit.\nThe desk lets me build it only after your waive, since I wrote the red.\nWaive?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:07:39.955Z",
+     "text": "commit af47872a0338b269b219726659bb5c0b793ff147: goal/G10.10: refusals say why; inputs follow rule/12; the Remote refreshes\n- spirit/run/js/server.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskSmallFixes.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:07:54.215Z",
+     "text": "Built at af47872a: every bad-request refusal says why (your title: name too long, 81 bytes, the limit is 64); the title and Rename inputs count bytes as typed and send nothing past the rule; the Remote has a refresh left of the picker and on its own node hides the where bubble.\nFiles: desk.js, deskClient.js, chatClerver.js, server.js (your G1), deskDetails.js, deskUnslothRemote.js, test deskSmallFixes.js (14 green); neighbouring suites green but deskServer.js 2 old reds.\nRestart 65432 and 11111 for desk, deskClient and the node to carry it; reload the Desk and the Remote."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:07:59.885Z",
+     "text": "deskVerify: passed, at af47872a (pulled). 1 suite ran green."
     }
    ]
   }
