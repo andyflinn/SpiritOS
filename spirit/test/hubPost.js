@@ -52,8 +52,13 @@ function bodyOf(obj) {
   };
 }
 
+// Since goal/G19.14 the router answers what presence knows (peerPost holds
+// the streams), so a stand-in router carries these beside its `post`.
 function presenceNaming(map) {
-  return { relaysNaming: function (key) { return map[key] || []; } };
+  return {
+    relaysNaming: function (key) { return map[key] || []; },
+    relaysHeld: function () { return []; },
+  };
 }
 
 const PEER = 'PEERKEYAAA';
@@ -88,8 +93,7 @@ function run() {
         },
       };
       const deps = {
-        router: router,
-        presence: presenceNaming({ [PEER]: [RELAY_A, RELAY_B] }),
+        router: Object.assign(router, presenceNaming({ [PEER]: [RELAY_A, RELAY_B] })),
       };
 
       const plain = fakeRes();
@@ -161,12 +165,11 @@ function run() {
                       // ---------------------------------------------------
 
                       const refusing = {
-                        router: {
+                        router: Object.assign({
                           post: function () {
                             return Promise.resolve({ ok: false, status: 403, error: 'no' });
                           },
-                        },
-                        presence: presenceNaming({ [PEER]: [RELAY_A] }),
+                        }, presenceNaming({ [PEER]: [RELAY_A] })),
                       };
                       const refused = fakeRes();
                       return hub.handlePost({}, refused, bodyOf({ to: PEER, text: 'hi' }), refusing)
@@ -264,10 +267,8 @@ function theChooserAttachesHints() {
           sent.push({ url: url, to: to, hints: hints });
           return Promise.resolve({ ok: true, status: 200, hash: 'h9', text: 'ack' });
         },
-      },
-      presence: {
         relaysNaming: function () { return []; },
-        detail: function () { return connected; },
+        relaysHeld: function () { return Object.keys(connected); },
       },
     };
   }
@@ -312,10 +313,8 @@ function theChooserAttachesHints() {
             seen.push({ had: arguments.length, hints: hints });
             return Promise.resolve({ ok: true, status: 200, hash: 'h', text: '' });
           },
-        },
-        presence: {
           relaysNaming: function () { return []; },
-          detail: function () { return { [RELAY_A]: {} }; },
+          relaysHeld: function () { return [RELAY_A]; },
         },
       }).then(function () {
         if (seen.length === 1 && seen[0].hints === undefined) {
@@ -382,8 +381,8 @@ function patienceReachesTheScheduler() {
   test.subHeading('peer.post hands an asked-for patience to the scheduler, capped');
   const seen = [];
   const deps = {
-    router: { post: function (url, to, text, hints, how) { seen.push(how); return Promise.resolve({ ok: true, status: 200, hash: 'h', text: 'ack' }); } },
-    presence: presenceNaming({ [PEER]: [RELAY_A] }),
+    router: Object.assign({ post: function (url, to, text, hints, how) { seen.push(how); return Promise.resolve({ ok: true, status: 200, hash: 'h', text: 'ack' }); } },
+      presenceNaming({ [PEER]: [RELAY_A] })),
   };
   return hub.handlePost({}, fakeRes(), bodyOf({ to: PEER, text: 'plain' }), deps)
     .then(function () { return hub.handlePost({}, fakeRes(), bodyOf({ to: PEER, text: 'wait', patienceMs: 60000 }), deps); })

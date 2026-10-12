@@ -178,6 +178,31 @@ const BOTTOMS = {
     ],
     suites: [],
   },
+  // ── A COMPONENT OF OURS, AND THE ONE DOOR IT SITS BEHIND (goal/G19.14) ──
+  //
+  //   Andy: "the permitted door is peerPost (bottom frame) and the endpoints
+  //   are the components of peerPost."
+  //
+  // `file` names a module of ours instead of `mod`, patched as it loads.
+  // `instance: true` watches what the factory returns as well, so a path
+  // to the instance counts like a path to the factory. `door` is the file
+  // every production stack reaching it must pass through; the probe only
+  // records, and oneDoorStacks.js holds the verdict.
+  //
+  // `suites` drive the endpoint THROUGH A REAL NODE: each spawns
+  // js/server.js, whose process inherits the probe.
+  presenceNode: {
+    file: 'spirit/run/js/presenceNode.js',
+    watch: [{ fn: 'createPresence', instance: true }],
+    door: 'spirit/run/js/peerPost.js',
+    suites: ['serverSurface.js', 'everyVerb.js'],
+  },
+  postQueue: {
+    file: 'spirit/run/js/postQueue.js',
+    watch: [{ fn: 'createQueue', instance: true }],
+    door: 'spirit/run/js/peerPost.js',
+    suites: ['serverSurface.js', 'everyVerb.js'],
+  },
 };
 
 // ── OUR OWN CODE, AND NOTHING ELSE ──────────────────────────────────
@@ -186,15 +211,29 @@ const BOTTOMS = {
 // Node's internals are not call points anybody can fix, and a stack made
 // mostly of them buries the frames that matter. Dropped: anything outside
 // the repo, node's own modules, dependencies, and this probe.
+//
+// A PLANTED COPY OF spirit/run IS OURS TOO (goal/G19.14). A suite that
+// boots a real node copies the run tree into a temp home (plantRun.js)
+// and starts js/server.js there, so every frame of that node sat outside
+// the repo and was dropped — and a node is exactly where a component is
+// reached in production. Named by its path from `spirit/run/` on, as if
+// it were the repo's.
+//
+// Returns the repo-relative name, or '' for a frame that is not ours.
 function ours(file) {
-  if (!file) return false;
+  if (!file) return '';
   const f = String(file).replace(/\\/g, '/');
-  if (f.indexOf('node:') === 0) return false;
-  if (f.indexOf('internal/') === 0) return false;
-  if (f.indexOf('node_modules') !== -1) return false;
+  if (f.indexOf('node:') === 0) return '';
+  if (f.indexOf('internal/') === 0) return '';
+  if (f.indexOf('node_modules') !== -1) return '';
   const abs = path.resolve(f);
-  if (abs === SELF) return false;
-  return abs.toLowerCase().indexOf(REPO.toLowerCase()) === 0;
+  if (abs === SELF) return '';
+  if (abs.toLowerCase().indexOf(REPO.toLowerCase()) === 0) {
+    return path.relative(REPO, abs).replace(/\\/g, '/');
+  }
+  const slashed = abs.replace(/\\/g, '/');
+  const at = slashed.lastIndexOf('/spirit/run/');
+  return at === -1 ? '' : slashed.slice(at + 1);
 }
 
 // THE WHOLE CHAIN, not the nearest frame. Andy: "the call stack inside
@@ -224,8 +263,9 @@ function callStack() {
   lines.forEach(function (line) {
     const m = /\(([^()]+):(\d+):\d+\)\s*$/.exec(line) ||
       /\bat\s+([^()\s]+):(\d+):\d+\s*$/.exec(line);
-    if (!m || !ours(m[1])) return;
-    out.push(path.relative(REPO, path.resolve(m[1])).replace(/\\/g, '/') + ':' + m[2]);
+    const name = m && ours(m[1]);
+    if (!name) return;
+    out.push(name + ':' + m[2]);
   });
   return out;
 }
@@ -271,7 +311,25 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
     return String(method).toUpperCase() + ' ' + String(target).split('?')[0];
   };
 
-  const patch = function (mod, method) {
+  // ── THE FIRST SIGHTING OF A STACK IS WRITTEN AT ONCE ────────────────
+  //
+  // A node a suite spawns is killed, not asked to exit, and a killed
+  // process runs no `exit` handler: everything it saw was lost. So a stack
+  // seen for the first time goes to the log as it is seen — once per
+  // distinct stack, never per call — and the exit handler below writes
+  // only the calls counted after that.
+  const written = new Map();
+  const count = function (key) {
+    const n = (counts.get(key) || 0) + 1;
+    counts.set(key, n);
+    if (n !== 1) return;
+    written.set(key, 1);
+    try { fs.appendFileSync(process.env.SPIRIT_WIRE_LOG, '1\t' + key + '\n'); } catch (e) { written.delete(key); }
+  };
+
+  // `label` says which endpoint a call is: the request line for the wire,
+  // the function's own name for a module of ours.
+  const patch = function (mod, method, label) {
     const original = mod[method];
     if (typeof original !== 'function') return;
     mod[method] = function () {
@@ -280,11 +338,63 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
       // is no call point in our code to show.
       if (stack.length) {
         let where = '';
-        try { where = endpointOf(arguments); } catch (e) { where = '(unreadable)'; }
-        const key = where + '\t' + stack.join(' < ');
-        counts.set(key, (counts.get(key) || 0) + 1);
+        try { where = label ? label(arguments) : endpointOf(arguments); } catch (e) { where = '(unreadable)'; }
+        count(where + '\t' + stack.join(' < '));
       }
       return original.apply(this, arguments);
+    };
+  };
+
+  // A FACTORY'S INSTANCE IS PART OF THE COMPONENT. Every function on what
+  // it returns is patched the same way, named `factory().method`, so a
+  // caller holding the instance is seen as clearly as one calling the
+  // factory.
+  const patchFactory = function (mod, fn) {
+    const original = mod[fn];
+    if (typeof original !== 'function') return;
+    patch(mod, fn, function () { return fn; });
+    const counted = mod[fn];
+    mod[fn] = function () {
+      const made = counted.apply(this, arguments);
+      if (made && typeof made === 'object') {
+        Object.keys(made).forEach(function (k) {
+          if (typeof made[k] !== 'function') return;
+          patch(made, k, function () { return fn + '().' + k; });
+        });
+      }
+      return made;
+    };
+  };
+
+  // A MODULE OF OURS IS PATCHED AS IT LOADS, not loaded by the probe: a
+  // probe that required presenceNode into every relay it rides would be
+  // changing what each process carries. After Module._load returns the
+  // exports and before the caller reads a property off them.
+  //
+  // Matched by name from `spirit/run/` on (see ours()), so the copy a
+  // planted node runs is watched as the repo's own file would be.
+  const watchFile = function (row) {
+    const Module = require('module');
+    const load = Module._load;
+    const base = path.basename(row.file, '.js');
+    const done = new Set();
+    Module._load = function (request, parent) {
+      const exported = load.apply(this, arguments);
+      if (typeof request === 'string' && path.basename(request, '.js') === base) {
+        let file = '';
+        try { file = Module._resolveFilename(request, parent); } catch (e) { file = ''; }
+        const m = file && !done.has(file) && ours(file) === row.file ? require.cache[file] : null;
+        // `loaded`, because the module sits in the cache while it is still
+        // requiring its own dependencies, before it has exported anything.
+        if (m && m.loaded === true && m.exports) {
+          done.add(file);
+          row.watch.forEach(function (w) {
+            if (w.instance) patchFactory(m.exports, w.fn);
+            else patch(m.exports, w.fn, function () { return w.fn; });
+          });
+        }
+      }
+      return exported;
     };
   };
 
@@ -306,18 +416,23 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   // replaces a PROPERTY on a required module (`mod[method] = ...`), so
   // `probe(require('fs'), 'writeFileSync')` works identically and
   // `probe(seal.seal)` does not exist as a shape at all.
-  ((BOTTOMS[process.env.SPIRIT_WIRE_BOTTOM] || BOTTOMS.wire).watch || [])
-    .forEach(function (b) { patch(require(b.mod), b.fn); });
+  const row = BOTTOMS[process.env.SPIRIT_WIRE_BOTTOM] || BOTTOMS.wire;
+  if (row.file) watchFile(row);
+  else (row.watch || []).forEach(function (b) { patch(require(b.mod), b.fn); });
 
   // WRITTEN AT EXIT, NOT PER CALL. Appending on every request would make
   // the instrument a participant in what it measures, and this harness
   // has timing-sensitive worlds: a diminishing timeout, a claim limiter
   // at ten a minute, windows a suite waits on. An instrument that changes
-  // the thing it observes is worse than no instrument.
+  // the thing it observes is worse than no instrument. (Only a stack's
+  // first sighting is written as it happens — see `count` above.)
   process.on('exit', function () {
-    if (!counts.size) return;
     const lines = [];
-    counts.forEach(function (n, key) { lines.push(n + '\t' + key); });
+    counts.forEach(function (n, key) {
+      const left = n - (written.get(key) || 0);
+      if (left > 0) lines.push(left + '\t' + key);
+    });
+    if (!lines.length) return;
     try {
       fs.appendFileSync(process.env.SPIRIT_WIRE_LOG, lines.join('\n') + '\n');
     } catch (e) {
@@ -327,13 +442,69 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
 }
 
 // ── RUNNER MODE ─────────────────────────────────────────────────────
-if (require.main === module) {
+// ── ONE MEASUREMENT, FOR THE RUNNER BELOW AND FOR A SUITE ────────────
+//
+// Runs the named suites (or, with `all`, the harness) under the probe for
+// one bottom and hands back what arrived: `counts` keyed
+// `endpoint \t stack`, the runs' own output, and their status. The
+// runner prints it; oneDoorStacks.js (goal/G19.14) judges it. One home
+// for the spawning and the log format, so the two cannot disagree.
+function measure(bottom, targets, all) {
   const { spawnSync } = require('child_process');
   const os = require('os');
 
-  const log = path.join(os.tmpdir(), 'spirit-wire-' + process.pid + '.tsv');
+  const log = path.join(os.tmpdir(), 'spirit-wire-' + process.pid + '-' + bottom + '.tsv');
   try { fs.unlinkSync(log); } catch (e) { /* not there yet */ }
 
+  const runner = path.join(REPO, 'spirit', 'test', 'runAll.js');
+  const env = Object.assign({}, process.env, {
+    SPIRIT_WIRE_LOG: log,
+    // WHICH BOTTOM, PASSED DOWN. `--bottom fs-write` and the probe in
+    // every child instruments the filesystem instead of the wire. An
+    // unknown name is refused above rather than silently falling back to
+    // the wire, because a probe that watched something other than what
+    // was asked for is worse than one that refused.
+    SPIRIT_WIRE_BOTTOM: bottom,
+    // EVERY SUITE PROCESS IS INSTRUMENTED AND NO SUITE KNOWS. runAll is
+    // not touched, and a suite that had to opt in is a suite that can
+    // forget to — which would make the quiet paths the unwatched ones.
+    NODE_OPTIONS: ((process.env.NODE_OPTIONS || '') + ' --require ' +
+      SELF.replace(/\\/g, '/')).trim(),
+  });
+
+  let r;
+  if (all) {
+    r = spawnSync(process.execPath, [runner], { env: env, encoding: 'utf8', maxBuffer: 1 << 28 });
+  } else {
+    r = { status: 0, stdout: '' };
+    targets.forEach(function (t) {
+      const one = spawnSync(process.execPath, [path.join(REPO, 'spirit', 'test', t)], {
+        env: env, encoding: 'utf8', maxBuffer: 1 << 26,
+      });
+      r.stdout += String(one.stdout || '');
+      if (one.status) r.status = one.status;
+    });
+  }
+
+  const counts = new Map();
+  let raw = '';
+  try { raw = fs.readFileSync(log, 'utf8'); } catch (e) { raw = ''; }
+  // count \t endpoint \t stack — split on the FIRST tab only, because the
+  // key carries one of its own.
+  raw.split('\n').filter(Boolean).forEach(function (line) {
+    const at = line.indexOf('\t');
+    if (at === -1) return;
+    const n = Number(line.slice(0, at)) || 0;
+    const key = line.slice(at + 1);
+    counts.set(key, (counts.get(key) || 0) + n);
+  });
+  try { fs.unlinkSync(log); } catch (e) { /* leave it behind */ }
+  return { out: String(r.stdout || ''), status: r.status, counts: counts };
+}
+
+module.exports = { BOTTOMS: BOTTOMS, measure: measure };
+
+if (require.main === module) {
   // ── ONE SUITE, NOT THE HARNESS — AND THAT IS ANDY'S SIMPLIFICATION ──
   //
   //   Andy, 2026-09-24, to wsl-claude while this agent was building:
@@ -377,22 +548,6 @@ if (require.main === module) {
   const named = argv.filter(function (a, i) {
     return a.indexOf('--') !== 0 && argv[i - 1] !== '--bottom';
   });
-  const runner = path.join(REPO, 'spirit', 'test', 'runAll.js');
-  const env = Object.assign({}, process.env, {
-    SPIRIT_WIRE_LOG: log,
-    // WHICH BOTTOM, PASSED DOWN. `--bottom fs-write` and the probe in
-    // every child instruments the filesystem instead of the wire. An
-    // unknown name is refused above rather than silently falling back to
-    // the wire, because a probe that watched something other than what
-    // was asked for is worse than one that refused.
-    SPIRIT_WIRE_BOTTOM: bottom,
-    // EVERY SUITE PROCESS IS INSTRUMENTED AND NO SUITE KNOWS. runAll is
-    // not touched, and a suite that had to opt in is a suite that can
-    // forget to — which would make the quiet paths the unwatched ones.
-    NODE_OPTIONS: ((process.env.NODE_OPTIONS || '') + ' --require ' +
-      SELF.replace(/\\/g, '/')).trim(),
-  });
-
   // A suite is run directly rather than through runAll, so nothing but
   // the named files is instrumented. `--all` is the opt-in that pays for
   // coverage with the perturbation risk, and says so out loud.
@@ -402,37 +557,16 @@ if (require.main === module) {
     console.error('Name them, or pass --all. An empty default refuses; a wrong default reassures.');
     process.exit(1);
   }
-  let r;
   if (all) {
     process.stdout.write('Instrumenting the WHOLE HARNESS. This inherits into every\n' +
       'spawned relay and node, including the timing-sensitive worlds.\n\n');
-    r = spawnSync(process.execPath, [runner], { env: env, encoding: 'utf8', maxBuffer: 1 << 28 });
   } else {
     process.stdout.write('Instrumenting ' + targets.join(', ') + '.\n\n');
-    r = { status: 0, stdout: '' };
-    targets.forEach(function (t) {
-      const one = spawnSync(process.execPath, [path.join(REPO, 'spirit', 'test', t)], {
-        env: env, encoding: 'utf8', maxBuffer: 1 << 26,
-      });
-      r.stdout += String(one.stdout || '');
-      if (one.status) r.status = one.status;
-    });
   }
-  const out = String(r.stdout || '');
+  const r = measure(bottom, targets, all);
+  const out = r.out;
   const verdict = out.trim().split('\n').filter(Boolean).slice(-1)[0] || '(no verdict)';
-
-  const counts = new Map();
-  let raw = '';
-  try { raw = fs.readFileSync(log, 'utf8'); } catch (e) { raw = ''; }
-  // count \t endpoint \t stack — split on the FIRST tab only, because the
-  // key carries one of its own.
-  raw.split('\n').filter(Boolean).forEach(function (line) {
-    const at = line.indexOf('\t');
-    if (at === -1) return;
-    const n = Number(line.slice(0, at)) || 0;
-    const key = line.slice(at + 1);
-    counts.set(key, (counts.get(key) || 0) + n);
-  });
+  const counts = r.counts;
 
   const ranked = Array.from(counts.entries()).sort(function (a, b) { return b[1] - a[1]; });
   const calls = ranked.reduce(function (n, e) { return n + e[1]; }, 0);
@@ -575,6 +709,5 @@ if (require.main === module) {
     console.log('');
   });
 
-  try { fs.unlinkSync(log); } catch (e) { /* leave it behind */ }
   process.exit(r.status === null ? 1 : r.status);
 }

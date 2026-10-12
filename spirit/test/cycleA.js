@@ -465,6 +465,8 @@ function presenceFor(boxes) {
         return boxes[url].relayPublicKey() === key;
       });
     },
+    // No stream held: a key nobody names is unreachable (goal/G19.14 asks the router this).
+    relaysHeld: function () { return []; },
   };
 }
 
@@ -534,7 +536,8 @@ function runHubOnLoopback() {
     const boxes = {};
     boxes[servers[0].url] = first.box;
     boxes[servers[1].url] = second.box;
-    deps = { router: routerTo(boxes, owner), presence: presenceFor(boxes) };
+    // Since goal/G19.14 the router answers what presence knows: peerPost holds the streams.
+    deps = { router: Object.assign(routerTo(boxes, owner), presenceFor(boxes)) };
 
     return hubPost(hub, second.box.relayPublicKey(),
       { invite: { label: 'saint', days: 7, token: '' } }, deps);

@@ -166,9 +166,8 @@ const BOOT_ASSETS = ['index.html', 'relay.html', 'js/kernel.js', 'js/client/shel
 const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
 
-// Held here rather than inside the boot block so a later shutdown path
-// has something to close.
-let presence = null;
+// `let presence` STOOD HERE. The node's held streams live inside peerRouter
+// since goal/G19.14 (peerPost.holdStreams): one door, and this file asks it.
 // Set once the router exists (see ownerPost.js); owner.command calls it.
 let peerOwnerPost = null;
 // The owner's view of his boxes (boxes.js, public-app-server/G10), in memory.
@@ -1420,8 +1419,8 @@ contactBook.syncMarks(ROOT_DIR);
       // carried in is that relay saying its sender is there now, the strongest evidence there is; the live table
       // marks the sender at that relay as a broadcast would, and the Contacts dot paints. No unit mounts this
       // closure; it is verified live, a line between the agents' nodes.
-      if (presence && relayUrl && typeof presence.heard === 'function') {
-        try { presence.heard(relayUrl, from); } catch (e) { /* a witness, never a reason to refuse the packet */ }
+      if (peerRouter && relayUrl) {
+        try { peerRouter.heard(relayUrl, from); } catch (e) { /* a witness, never a reason to refuse the packet */ }
       }
     },
     remember: function (from, verdict, relayUrl) {
@@ -1491,7 +1490,7 @@ contactBook.syncMarks(ROOT_DIR);
     // the rest; the master's shell routes the packet to onPublished (shell.js).
     const puppetStream = require('./puppetStream').createPuppetStream({
       puppet: require('./puppetMode').puppetIn(ROOT_DIR, function () {}),
-      route: function (to) { return presence ? hub.chooseRoute(presence, to) : { unreachable: true }; },
+      route: function (to) { return hub.chooseRoute(peerRouter, to); },
       post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
       encode: wire.encode,
       log: function (line) { console.log(line); },
@@ -1527,7 +1526,7 @@ contactBook.syncMarks(ROOT_DIR);
       auth: require('./relayAuth'),
       encode: wire.encode,
       randomId: wire.randomId,
-      route: function (to) { return presence ? hub.chooseRoute(presence, to) : { unreachable: true }; },
+      route: function (to) { return hub.chooseRoute(peerRouter, to); },
       post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
     });
     arrivals.witness(ownerPost.onArrival);
@@ -1538,7 +1537,9 @@ contactBook.syncMarks(ROOT_DIR);
     peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }
 
-  presence = require('./presenceNode').createPresence({
+  // THE STREAMS ARE THE DOOR'S (goal/G19.14): peerRouter builds and holds
+  // them; this file hands over what only the node knows and asks the door.
+  peerRouter.holdStreams({
     // The node filters what the relay broadcasts (cycle 3): only its own
     // contacts are kept on its presence picture.
     knows: function (key) { return !!contactBook.byPublicKey(ROOT_DIR, key); },
@@ -1584,7 +1585,6 @@ contactBook.syncMarks(ROOT_DIR);
     },
     rootDir: ROOT_DIR,
     jobs: jobs,
-    router: peerRouter,
     // Straight onto the page's stream. presenceNode receives it, this
     // hands it to whoever has a panel open.
     //
@@ -1749,7 +1749,7 @@ contactBook.syncMarks(ROOT_DIR);
     // nothing was pinned, so the pinner never ran.
     pinRelay: answerer.relayKey,
   });
-  presence.start(require('./hub').relayRequest).catch(() => {});
+  peerRouter.startStreams(require('./hub').relayRequest).catch(() => {});
 
   // ── THE CLAIMS, WHERE THE DEPENDENCIES ARE ─────────────────────────
   //
@@ -1992,7 +1992,7 @@ contactBook.syncMarks(ROOT_DIR);
         const said = require('./nodeCard').rotate(ROOT_DIR);
         let relays = 0;
         if (said.ok) {
-          try { relays = presence ? presence.handOverCardEverywhere() : 0; } catch (e) { relays = 0; }
+          try { relays = peerRouter ? peerRouter.handOverCardEverywhere() : 0; } catch (e) { relays = 0; }
           try {
             trafficLog.note({ dir: 'out', kind: 'owner', event: 'cipher-rotated', outcome: 'card ' + said.at });
           } catch (e) { /* the rotation stands; the record is best effort */ }
@@ -2069,13 +2069,13 @@ contactBook.syncMarks(ROOT_DIR);
   // goes through peer.post like anybody else's — the relay names itself
   // on its own roster precisely so it has an ordinary address.
   introSpector.claim(loopbackVerbs, 'relay', 'hub.js', {
-    // PRESENCE IS HANDED IN so a claim can connect the node it just
+    // THE ROUTER IS HANDED IN so a claim can connect the node it just
     // enrolled. A brand-new node has no key at boot, so presence bailed
     // and never tried again — see handleClaim.
     // The relay's own claim answer comes back, `mine` beside it.
     'relay.claim': { request: { url: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
       hub.handleClaim(rq, rs, readJsonBody, {
-        presence: presence,
+        router: peerRouter,
         probe: require('./hub').relayRequest,
       });
     } },
@@ -2089,7 +2089,7 @@ contactBook.syncMarks(ROOT_DIR);
     // relay.status is gone: a list is a search (puppets/G2). One probe
     // serves a search and the gets that follow it (hub.js, PROBE_FRESH_MS).
     'relay.search': { request: { q: '', name: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, mustPick: false, name: '' }, handler: proxyVerb(function (b) { return hub.relaySearch(b); }) },
-    'relay.get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { presence: presence }); }) },
+    'relay.get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { router: peerRouter }); }) },
     // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by the url
     // relay.search hands out. The list is node state and the node its only
     // writer; there is no relay.add, because a successful relay.claim is
@@ -2165,14 +2165,14 @@ contactBook.syncMarks(ROOT_DIR);
   // because the asking can fail, and the write never happens when it
   // does.
   //
-  // peerRouter and presence are handed in rather than reached for: they
-  // are built at the foot of this file and hub.js must not hold state it
+  // peerRouter is handed in rather than reached for (and presence with it,
+  // since goal/G19.14 inside it): it is built at the foot of this file and hub.js must not hold state it
   // cannot see created. That is not pedantry — /api/hub/invite was given
   // a name out of scope on 2026-09-13 and the first real mint killed the
   // node with every suite green.
   introSpector.claim(loopbackVerbs, 'peer', 'hub.js', {
     'peer.post': { request: { to: '', text: '', via: '', patienceMs: 0, kind: '' }, reply: { ok: true, status: 0, hash: '', from: '', text: '', sig: '', receipt: false }, handler: function (rq, rs) {
-      hub.handlePost(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
+      hub.handlePost(rq, rs, readJsonBody, { router: peerRouter });
     } },
     'peer.acquire': { request: { publicKey: '', publicLabel: '', url: '', via: '' }, reply: { publicKey: '', publicLabel: '', acquiredVia: '' }, handler: function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); } },
     // Ask every relay who matches, rather than downloading every
@@ -2182,7 +2182,7 @@ contactBook.syncMarks(ROOT_DIR);
     // by downloading every roll on every relay and partner. Deleted
     // 2026-09-17 with no caller — see the tombstone in hub.js.
     'peer.search': { request: { q: '' }, reply: { q: '', matches: [{}], more: false, asked: 0, remembered: 0, silent: [''] }, handler: function (rq, rs) {
-      hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
+      hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter });
     } },
   }, { wire: true });
 }

@@ -121,8 +121,9 @@ function nodeFor(id) {
   // THE REAL POST HALF, not a stub. This suite already probes with
   // hub.relayRequest rather than a stand-in, and the pairing is the same
   // kind of claim: a reply arriving on the stream has to settle in the
-  // table the post opened, so the two halves are wired here exactly as
-  // server.js wires them.
+  // table the post opened, so the two halves are paired here as peerPost
+  // pairs them. Since goal/G19.14 the node builds this inside its peerPost
+  // (holdStreams); the suite builds the component itself, which a test may.
   // AND THE PIN, as server.js wires it: the stream header names the relay
   // it is for (goal/G16.12), so the node must know that relay's key before
   // the relay will open its stream.

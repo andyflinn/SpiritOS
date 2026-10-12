@@ -43,6 +43,11 @@ const seal = require('./seal');
 // because they are decidable without a socket and therefore testable
 // without one — see postQueue.js and spirit/test/postQueue.js.
 const postQueue = require('./postQueue');
+// THE HELD STREAM TO EACH RELAY, a part of this door (goal/G19.14). Andy:
+// "can peerPost require('presenceNode') as one of its components". Built
+// by holdStreams below and reached by nobody else; oneDoorStacks.js holds
+// the line.
+const presenceNode = require('./presenceNode');
 const spiritErrors = require('./spiritErrors');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
 const arrivals = require('./arrivals');
@@ -1747,14 +1752,43 @@ function createPeerPost(opts) {
     setT(function () { pump(); }, 0);
   }
 
-  return {
+  // ── THE STREAMS, HELD BEHIND THIS DOOR (goal/G19.14) ─────────────────
+  //
+  // One door for everything the node exchanges with a relay: the stream
+  // each relay pushes down is opened, kept and closed here, and what it
+  // knows is asked of this object. The instance never leaves this file.
+  // A relay's own peerPost never calls holdStreams and holds none.
+  var presence = null;
+  var self = {
     post: post,
     onRequest: onRequest,
     onReply: onReply,
     // What arrived while nobody was home, and what is still outstanding.
     arrived: function () { return arrived.slice(); },
     outstanding: function () { return Object.keys(waiting); },
+    // Builds the streams' holder once, with what the node hands it
+    // (presenceNode.createPresence's options); the router is this door.
+    holdStreams: function (presenceOpts) {
+      if (presence) throw new Error('holdStreams: this door already holds its streams');
+      presence = presenceNode.createPresence(Object.assign({ rootDir: rootDir }, presenceOpts, { router: self }));
+    },
+    // Opens a stream to every relay this node holds a row on. Safe to call
+    // again (after a claim): a relay already held is left as it is.
+    startStreams: function (probe) {
+      return presence ? presence.start(probe) : Promise.resolve([]);
+    },
+    // A relay just carried this key: the live picture hears it there.
+    heard: function (url, key) { return presence ? presence.heard(url, key) : false; },
+    // The relays whose stream names this key as present.
+    relaysNaming: function (key) { return presence ? presence.relaysNaming(key) : []; },
+    // The relays this node holds a stream to.
+    relaysHeld: function () { return presence ? Object.keys(presence.detail()) : []; },
+    // What each owned relay last said about itself, by url.
+    relayStatus: function () { return presence ? presence.relayStatus() : {}; },
+    // This node's card, to every relay it holds a stream to. How many.
+    handOverCardEverywhere: function () { return presence ? presence.handOverCardEverywhere() : 0; },
   };
+  return self;
 }
 
 module.exports = {

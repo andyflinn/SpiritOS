@@ -54,8 +54,11 @@ async function partA() {
   test.subHeading('A. peer.post takes the no-rush word');
   const seen = [];
   const deps = {
-    router: { post: function (url, to, text, hints, how) { seen.push(how); return Promise.resolve({ ok: true, status: 200, hash: 'h', text: '' }); } },
-    presence: { relaysNaming: function () { return ['https://a.example']; } },
+    // Since goal/G19.14 the router answers which relays name a key (peerPost holds the streams).
+    router: {
+      post: function (url, to, text, hints, how) { seen.push(how); return Promise.resolve({ ok: true, status: 200, hash: 'h', text: '' }); },
+      relaysNaming: function () { return ['https://a.example']; },
+    },
   };
   await hub.handlePost({}, fakeRes(), bodyOf({ to: 'PEERKEYAAA', text: 'plain' }), deps);
   await hub.handlePost({}, fakeRes(), bodyOf({ to: 'PEERKEYAAA', text: 'slow', kind: 'background' }), deps);

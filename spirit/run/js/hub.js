@@ -1101,11 +1101,12 @@ function createHub(rootDir) {
   // public roll and `claimed` means "you have a row here", not "you are
   // connected". Green was telling the truth about a different question.
   //
-  // `presence.start` is safe to call again: it creates its job only if it
-  // has none and openTo returns early for a url it already holds. So this
-  // is "make sure", not "restart".
+  // `router.startStreams` is safe to call again: presence creates its job
+  // only if it has none and openTo returns early for a url it already
+  // holds. So this is "make sure", not "restart". The streams are the
+  // router's since goal/G19.14; this file never holds them.
   function handleClaim(req, res, readJsonBody, deps) {
-    var presence = deps && deps.presence;
+    var router = deps && deps.router;
     var probe = deps && deps.probe;
     readJsonBody(req).then(function (body) {
       withClaimRelay(res, body && body.url, function (url) {
@@ -1160,8 +1161,8 @@ function createHub(rootDir) {
               try { relayKeys.seat(rootDir, url, (body && body.name) || ''); }
               catch (e) { /* the claim stands; a boot can still backfill */ }
 
-              if (presence && probe) {
-                try { presence.start(probe); }
+              if (router && probe) {
+                try { router.startStreams(probe); }
                 catch (e) { /* the claim stands; the next boot connects */ }
               }
             }
@@ -1262,9 +1263,12 @@ function createHub(rootDir) {
   //      does not name the peer is a refusal rather than a fallback, because
   //      the caller asked to measure one path.
   //   3. otherwise unreachable, which the caller reports.
-  function chooseRoute(presence, to, via) {
+  //
+  // ASKED OF THE ROUTER, which holds the streams (goal/G19.14): nobody but
+  // peerPost has a path to presenceNode.
+  function chooseRoute(router, to, via) {
     var wanted = String(via || '').trim();
-    var where = presence.relaysNaming(to).filter(function (url) {
+    var where = router.relaysNaming(to).filter(function (url) {
       return !wanted || url === wanted;
     });
     // Posting to a relay itself needs nothing special here. Its own key is in
@@ -1283,7 +1287,7 @@ function createHub(rootDir) {
     var hints = shadow(rootDir).routes(to)
       .map(function (r) { return r.at; })
       .filter(function (at, i, all) { return at && all.indexOf(at) === i; });
-    var connected = Object.keys((presence.detail && presence.detail()) || {});
+    var connected = router.relaysHeld();
     if (!connected.length) return { unreachable: true };
     // A PARTNER THIS RELAY RECENTLY CALLED UNAVAILABLE GOES LAST (R42).
     // Reordered, never dropped: the word is "as of", and a send after it goes
@@ -1294,7 +1298,6 @@ function createHub(rootDir) {
 
   function handlePost(req, res, readJsonBody, deps) {
     var router = deps && deps.router;
-    var presence = deps && deps.presence;
 
     // RETURNED, unlike the older handlers beside it, which fire and
     // forget. server.js ignores it; a suite awaits it. A handler whose
@@ -1302,7 +1305,7 @@ function createHub(rootDir) {
     // a test that sleeps is a test that will one day be flaky on a
     // slower machine.
     return readJsonBody(req).then(function (body) {
-      if (!router || !presence) {
+      if (!router) {
         fail(res, 503, 'this node is not connected to a relay');
         return;
       }
@@ -1340,7 +1343,7 @@ function createHub(rootDir) {
       // could not reach it without re-deciding — and a second opinion about
       // reachability is what serverSurface.js:848 refuses. Same presence, same
       // `via` rule, same hints, decided in one place.
-      var route = chooseRoute(presence, to, (body && body.via));
+      var route = chooseRoute(router, to, (body && body.via));
       if (route.unreachable) {
         // Truthfully, and at once. Presence is what makes this answerable
         // rather than a guess — and it is why that arc had to come first.
@@ -1382,8 +1385,8 @@ function createHub(rootDir) {
         // DELIVERED MEANS THERE (goal/G2.9): an answer that crossed the wire is the relay carrying that peer now,
         // so the live table hears it at the relay the post went through. A refusal teaches the shadow (above) and
         // the live table nothing here: its red comes from the relay's own broadcast.
-        if (answer && answer.ok && typeof presence.heard === 'function') {
-          try { presence.heard(route.relayUrl, to); } catch (e) { /* a witness, never a reason to fail the post */ }
+        if (answer && answer.ok && typeof router.heard === 'function') {
+          try { router.heard(route.relayUrl, to); } catch (e) { /* a witness, never a reason to fail the post */ }
         }
         res.writeHead(answer.ok ? 200 : (answer.status || 502),
           { 'Content-Type': 'application/json; charset=utf-8' });
@@ -2395,9 +2398,8 @@ function createHub(rootDir) {
   // partners' members (tier two) the same request covers partner space and
   // nothing here changes.
   function handleSearch(req, res, readJsonBody, deps) {
+    // The router, and through it the live picture, told what the relay answered (goal/G2.9, goal/G19.14).
     var router = deps && deps.router;
-    // The live picture, told what the relay answered (goal/G2.9). Absent in the lab and the older suites, and then nobody is told.
-    var presence = deps && deps.presence;
     readJsonBody(req).then(function (body) {
       var q = String((body && body.q) || '').trim();
       // No floor: see relay.js. A short query is a real question with a
@@ -2468,8 +2470,8 @@ function createHub(rootDir) {
             // of its own or of a partner it reached — so the live table hears it at that relay, as a broadcast
             // would be heard, and the Contacts dot paints without a restart. A row memory supplies below is not
             // heard: it is what this node already had, not evidence.
-            if (presence && typeof presence.heard === 'function') {
-              try { presence.heard(url, p.publicKey); } catch (e) { /* the picture is a witness to the search, never a reason to fail it */ }
+            if (router && typeof router.heard === 'function') {
+              try { router.heard(url, p.publicKey); } catch (e) { /* the picture is a witness to the search, never a reason to fail it */ }
             }
             var row = contactBook.byPublicKey(rootDir, p.publicKey);
             found[p.publicKey] = {
@@ -2903,7 +2905,7 @@ function createHub(rootDir) {
     return relaySummary().then(function (summary) {
       var row = summary.rows.filter(function (r) { return r.url === key; })[0];
       if (!row) return { ok: false, status: 404, error: 'no such relay' };
-      var reports = (deps && deps.presence && deps.presence.relayStatus) ? deps.presence.relayStatus() : {};
+      var reports = (deps && deps.router && deps.router.relayStatus) ? deps.router.relayStatus() : {};
       return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, relay: row,
         report: reports[key] || null });
     });
@@ -2957,8 +2959,8 @@ function createHub(rootDir) {
           // reader and mean very different things — "not told yet"
           // versus "told me nothing" — so a monitor must not draw zeros
           // for a relay that has simply not spoken.
-          relayStatus: (deps && deps.presence && deps.presence.relayStatus)
-            ? deps.presence.relayStatus()
+          relayStatus: (deps && deps.router && deps.router.relayStatus)
+            ? deps.router.relayStatus()
             : {},
         }));
       })

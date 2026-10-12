@@ -108,7 +108,7 @@ function recorder(naming) {
     heard: heard,
     presence: {
       relaysNaming: function (key) { return (naming && naming[key]) || []; },
-      detail: function () { return {}; },
+      relaysHeld: function () { return []; },
       heard: function (url, key) { heard.push({ url: url, key: key }); return true; },
     },
   };
@@ -122,16 +122,18 @@ function fakeRes(resolve) {
   };
   return res;
 }
+// Since goal/G19.14 hub asks the router what presence knows (peerPost holds the streams), so the picture's
+// stand-in rides on the router handed in.
 function search(H, q, router, presence) {
   return new Promise(function (resolve) {
     hubModule.createHub(H).handleSearch({}, fakeRes(resolve), function () { return Promise.resolve({ q: q }); },
-      { router: router, presence: presence });
+      { router: Object.assign({}, router, presence) });
   });
 }
 function post(H, to, router, presence) {
   return new Promise(function (resolve) {
     hubModule.createHub(H).handlePost({}, fakeRes(resolve), function () { return Promise.resolve({ to: to, text: 'hi' }); },
-      { router: router, presence: presence });
+      { router: Object.assign({}, router, presence) });
   });
 }
 function relayAnswering(byUrl) {
@@ -237,7 +239,7 @@ test.startTest('goal/G2.9: the live presence table learns from every moment a re
   await post(H, JOHN, refusing, noRec.presence);
   if (heardOf(noRec, JOHN).length === 0) test.check('refused: nobody heard — present comes only from an answer that crossed the wire');
   else test.fail(OWED + 'heard after a refused post: ' + JSON.stringify(noRec.heard));
-  const plain = await post(H, JOHN, okRouter, { relaysNaming: function () { return [RELAY]; }, detail: function () { return {}; } });
+  const plain = await post(H, JOHN, okRouter, { relaysNaming: function () { return [RELAY]; }, relaysHeld: function () { return []; } });
   if (plain.status === 200) test.check('and a presence picture without heard (the older fakes) still posts');
   else test.fail(OWED + 'a post without heard failed: ' + JSON.stringify(plain.body));
 
