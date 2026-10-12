@@ -1,5 +1,5 @@
 {
- "change": 40608,
+ "change": 40948,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -10,11 +10,11 @@
    "status": "",
    "with": "claude-windows",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G19.1",
     "goal/G19.7",
     "goal/G19.8",
     "goal/G19.11",
@@ -28,7 +28,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -36,7 +36,7 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "design": false,
@@ -44,7 +44,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -71,6 +73,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-12T13:18:11.721Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T19:07:18.350Z"
     }
    ],
    "chat": [
@@ -148,6 +159,21 @@
      "by": "andy",
      "at": "2026-10-12T13:21:16.962Z",
      "text": "the titles don't define the issues, i don't care about them. (kind of like comments)\n\ni'll exit design mode."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:06:49.205Z",
+     "text": "we should have put in the new search thinggie for relay's"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:06:49.752Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:07:17.835Z",
+     "text": "- The new search is probabilityStringObjectMatch (G18.3); today only the desk uses it.\n- The relay list search (relay.search) still matches its own way, and it drops a claimed relay whose name is its address, found while building G19.15.\nProposed item: Relay search ranks with probabilityStringObjectMatch and finds every listed relay. Add it?"
     }
    ]
   },
@@ -155,9 +181,12 @@
    "id": "goal/G19.1",
    "title": "Seats kept on first connect, given up when evicted",
    "goal": "goal/G19",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19",
     "goal/G19.11"
@@ -166,18 +195,69 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": false,
+   "files": [
+    {
+     "path": "spirit/test/inviteMint.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceProof.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/refusalCodes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayTableByKey.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/reviewCleanup.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/seatsKept.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/streamReconnect.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/streamSig.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -208,11 +288,11 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "Seats kept on first connect; an evicted node told so in Natter.\n\nFOUND (tree at f0d03916, 2026-10-12; paths under spirit/run/)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote (js/hub.js seats, js/answerRelay.js calls relayKeys.accept on a \"new\" verdict, js/relayKeys.js rewrites the whole row). Every new node reads \"You (unknown)\"; test/presenceProof.js never checks the label.\n- HIGH: a seat is never given up: relayKeys.unseat has no caller; any pin counts as a seat; ownerBadge claimed = owned || hasSeat; natterDetails hides the claim form.\n- An owner can evict (Contacts details > Forget twice sends removePeer to each relay). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js).\n- MEDIUM: the seat label is frozen at claim time (ownerBadge); a rename from Info never re-seats.\n- LOW: natterDetails reads c.peers and roll.roster; the probe sets neither.\n\nDECIDED (Andy, 2026-10-12; the chat holds every line)\n- The relay has no power over a member node's data; only the node's user removes a relay, never the last one. \"Nobody other than the node user has a right to remove data\". A relay must withstand repeated denied requests.\n- The eviction stands and frees the slot; \"the seat is already vacated, so the nodes ID has to get a new invite, that what the info in natter is supposed to convey.\" No try-again; re-admission is a new invite, arranged off the wire.\n- \"it happens all behind peerPost, when a rejection-reply arrives and peerPost stashes the info into the relay table, from then on peerPost will reject posts to that relay. simple, no interventions needed, natter will know from being allows access to the relay table. and peerPost streams the rejection for realtime update to shell.\"\n- \"we don't cheat at the first opportunity\" / \"peerPost, on receiving and recognizing the FUCKING rejection, terminate the correct ONE relayStream that belongs to the rejecting relay.\" / \"at the same point it writes to the relay-row\"\n- The refusal names the sender, not the recipient: \"your id is not a valid sender here\" (code not-a-sender), on the post, the reply and the stream.\n- One door first: goal/G19.14 (closed) put the node's relay streams behind peerPost.\n\nSHAPE\n- relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx.\n- peerPost, at the one place it recognises a not-a-sender reply: writes the rejection and its time into that relay's row in the relay table, closes exactly that relay's stream (it keeps each stream's handle, handing presenceNode the opener; presenceNode unchanged), refuses every later post to that relay, and streams the rejection to the shell.\n- A start or restart does not open a stream to a relay whose row holds a rejection (the list comes from ownerBadge).\n- Natter reads the relay table: on that relay's row it says the relay refused this node, since when, that the seat is gone and only a new invite brings it back, and offers the user's Remove (never on the last relay). Remove gives up the seat (relayKeys.unseat, its first caller).\n- The LOW reads in natterDetails are fixed with the code this item changes.\n- Rename: no new verb. Info already tells every relay the new name through peerPost (\"you node will notify the relays, through peerPost\"); peerPost, when a relay accepts the rename, writes the new label into that relay's row (relay-state/relayKeys.json, through relayKeys), at the same door as the rejection (\"yes.\", Q19).\n\nGRANTS: G1 (hub, answerRelay, relayKeys, ownerBadge, natter, natterDetails, info) and G3 (peerPost, relay, spiritErrors).\n\nAsked where the rejection is kept: \"the authoritative info about relays on the node MUST be by ID (key)\"\n",
-   "version": 22,
+   "box": "Seats kept on first connect; an evicted node told so in Natter.\n\nFOUND (tree at f0d03916, 2026-10-12; paths under spirit/run/)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote (js/hub.js seats, js/answerRelay.js calls relayKeys.accept on a \"new\" verdict, js/relayKeys.js rewrites the whole row). Every new node reads \"You (unknown)\"; test/presenceProof.js never checks the label.\n- HIGH: a seat is never given up: relayKeys.unseat has no caller; any pin counts as a seat; ownerBadge claimed = owned || hasSeat; natterDetails hides the claim form.\n- An owner can evict (Contacts details > Forget twice sends removePeer to each relay). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js).\n- MEDIUM: the seat label is frozen at claim time (ownerBadge); a rename from Info never re-seats.\n- LOW: natterDetails reads c.peers and roll.roster; the probe sets neither.\n\nDECIDED (Andy, 2026-10-12; the chat holds every line)\n- The relay has no power over a member node's data; only the node's user removes a relay, never the last one. \"Nobody other than the node user has a right to remove data\". A relay must withstand repeated denied requests.\n- The eviction stands and frees the slot; \"the seat is already vacated, so the nodes ID has to get a new invite, that what the info in natter is supposed to convey.\" No try-again; re-admission is a new invite, arranged off the wire.\n- \"it happens all behind peerPost, when a rejection-reply arrives and peerPost stashes the info into the relay table, from then on peerPost will reject posts to that relay. simple, no interventions needed, natter will know from being allows access to the relay table. and peerPost streams the rejection for realtime update to shell.\"\n- \"we don't cheat at the first opportunity\" / \"peerPost, on receiving and recognizing the FUCKING rejection, terminate the correct ONE relayStream that belongs to the rejecting relay.\" / \"at the same point it writes to the relay-row\"\n- The refusal names the sender, not the recipient: \"your id is not a valid sender here\" (code not-a-sender), on the post, the reply and the stream.\n- One door first: goal/G19.14 (closed) put the node's relay streams behind peerPost.\n\nSHAPE\n- relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx.\n- peerPost, at the one place it recognises a not-a-sender reply: writes the rejection and its time into that relay's row in the relay table, closes exactly that relay's stream (it keeps each stream's handle, handing presenceNode the opener; presenceNode unchanged), refuses every later post to that relay, and streams the rejection to the shell.\n- A start or restart does not open a stream to a relay whose row holds a rejection (the list comes from ownerBadge).\n- Natter reads the relay table: on that relay's row it says the relay refused this node, since when, that the seat is gone and only a new invite brings it back, and offers the user's Remove (never on the last relay). Remove gives up the seat (relayKeys.unseat, its first caller).\n- The LOW reads in natterDetails are fixed with the code this item changes.\n- Rename: no new verb. Info already tells every relay the new name through peerPost (\"you node will notify the relays, through peerPost\"); peerPost, when a relay accepts the rename, writes the new label into that relay's row (relay-state/relayKeys.json, through relayKeys), at the same door as the rejection (\"yes.\", Q19).\n\nGRANTS: G1 (hub, answerRelay, relayKeys, ownerBadge, natter, natterDetails, info) and G3 (peerPost, relay, spiritErrors).\n\nAsked where the rejection is kept: \"the authoritative info about relays on the node MUST be by ID (key)\"\n\nOn the listening line: \"understood. granted. for now.\" So relayServer says the real reason when it refuses a stream, sseClient passes it on, and peerPost recognises the not-a-sender refusal on the stream too and stops that redial.\n",
+   "version": 23,
    "checks": [
     {
      "number": "Q1",
@@ -435,9 +515,36 @@
      "kind": "Q",
      "words": "May the grant add relayServer and sseClient, so a stream refusal is recognised too and its redial stops?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-12T17:48:30.157Z"
+     "at": "2026-10-12T19:12:53.909Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/nodeStore.js (the rejection and its time as columns on the relays table from G19.15)",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T19:11:51.252Z"
+    },
+    {
+     "number": "Q23",
+     "kind": "Q",
+     "words": "May I change those two files, so the node also learns it was thrown out from the listening line, and stops redialing?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T19:14:53.610Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/relayServer.js, spirit/run/js/sseClient.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T19:15:17.879Z"
     }
    ],
    "chat": [
@@ -1020,6 +1127,86 @@
      "by": "claude-windows",
      "at": "2026-10-12T17:48:29.668Z",
      "text": "May the grant add relayServer and sseClient, so a stream refusal is recognised too and its redial stops?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:06:29.165Z",
+     "text": "G19.15 is closed, so G19.1 goes on: its build is put back onto the new relays table, the rejection stored on the relay row keyed by relay key.\nThat adds two columns in node.db, so G4 asks nodeStore.\nThe question on relayServer and sseClient (a refused stream recognised too) is still yours."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:12:33.656Z",
+     "text": "Q22: May the grant add relayServer and sseClient, so a stream refusal is recognised too and its redial stops?\n\nenglish. bullets."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:12:34.155Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:12:56.963Z",
+     "text": "- Each node keeps a listening line open to every relay it uses.\n- When a relay has thrown the node out, it refuses that line, but today it only says \"not now\", without the reason.\n- So the node finds out it was thrown out only the next time it sends something there; until then the line keeps redialing every few seconds.\n- Two files would fix that: the relay's front door (relayServer), to say the real reason, and the node's line reader (sseClient), to pass the reason on."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:12:59.983Z",
+     "text": "May I change those two files, so the node also learns it was thrown out from the listening line, and stops redialing?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:14:19.575Z",
+     "text": "understood. granted. for now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:15:03.635Z",
+     "text": "Recorded (box v23). G5 holds the two files for your grant press."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:25:10.984Z",
+     "text": "?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:25:36.131Z",
+     "text": "Being built now in my clone: the earlier build moved onto the new relay table, plus the listening-line half. Claim follows when it is green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:31:19.966Z",
+     "text": "commit e350902ee3bcdde4dfe63bfd4106531843e1005b: goal/G19.1: seats kept on first connect; a relay that refuses this node is noted on its keyed row, its stream closed, Natter tells the user\n- spirit/run/js/hub.js\n- spirit/run/js/nodeStore.js\n- spirit/run/js/ownerBadge.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayKeys.js\n- spirit/run/js/relayServer.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/js/sseClient.js\n- spirit/run/shell/natter/natter.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/inviteMint.js\n- spirit/test/refusalCodes.js\n- spirit/test/seatsKept.js\n- spirit/test/streamSig.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:31:36.952Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:31:38.674Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:31:47.268Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T19:31:56.035Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T19:32:01.059Z",
+     "text": "Built at e350902e. Core (G1, G3, G4, G5): hub, nodeStore, ownerBadge, peerPost, relay, relayKeys, relayServer, spiritErrors, sseClient, natter, natterDetails. Tests: seatsKept (new), refusalCodes, inviteMint, streamSig.\n- Seat kept from the first connect; a 409 re-claim seats; Remove gives the seat up.\n- A relay saying \"your id is not a valid sender here\" on a post, a reply or the listening line: the refusal and its time go on that relay's row, that one line is closed, later posts there are refused, the shell hears it at once, Natter says the seat is gone and only a new invite brings it back.\n- Folded in: my G19.15 left relayKeys loading the node store on a relay; it now loads it on first use (reviewCleanup green again).\n- For you to judge: the relay now tells any caller, before checking its signature, whether that key is a member, on the listening line too; it used to say only \"not now\" there."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T19:32:32.354Z",
+     "text": "deskVerify: passed, at e350902e (pulled). 10 suites ran green."
     }
    ]
   },
@@ -2183,8 +2370,8 @@
    "id": "goal/G19.8",
    "title": "Shell: published objects only from the node's own puppets",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G19"
@@ -2195,13 +2382,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -2725,14 +2912,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G19"
    ],
-   "blocked": [
-    "goal/G19.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
