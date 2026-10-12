@@ -31,20 +31,26 @@ test.subHeading('T2: no ' + OLD + ' identifier is left in spirit/run or spirit/t
 // currentGoal.json skip that file").
 const SKIP = /[\\/](node_modules|relay-state|app-state)[\\/]|[\\/]app[\\/]desk[\\/](log|voice)[\\/]|[\\/]process[\\/]js[\\/]desk[\\/]currentGoal\.json[\\/]$/;
 const hits = [];
+// THE CODE, NOT THE QUOTES (goal/G19.12): his own words quoted in a comment keep the name he used ("give appServers
+// their namespace"), and a quote stays as he said it. So in a .js file only the lines that are not comments are read.
+function codeOf(file, text) {
+  if (!/\.js$/.test(file)) return text;
+  return text.split('\n').filter(function (l) { return !/^\s*(\/\/|\*|\/\*)/.test(l); }).join('\n');
+}
 (function walk(dir) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     const p = path.join(dir, e.name);
     if (SKIP.test(p + path.sep)) return;
     if (e.isDirectory()) return walk(p);
     if (!/\.(js|json|html|md)$/.test(e.name)) return;
-    if (new RegExp('\\b' + OLD + '\\b').test(fs.readFileSync(p, 'utf8'))) hits.push(path.relative(SPIRIT, p));
+    if (new RegExp('\\b' + OLD + '\\b').test(codeOf(p, fs.readFileSync(p, 'utf8')))) hits.push(path.relative(SPIRIT, p));
   });
 }(path.join(SPIRIT, 'run')));
 (function walk(dir) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     const p = path.join(dir, e.name);
     if (e.isDirectory()) return;
-    if (/\.js$/.test(e.name) && new RegExp('\\b' + OLD + '\\b').test(fs.readFileSync(p, 'utf8'))) hits.push(path.relative(SPIRIT, p));
+    if (/\.js$/.test(e.name) && new RegExp('\\b' + OLD + '\\b').test(codeOf(p, fs.readFileSync(p, 'utf8')))) hits.push(path.relative(SPIRIT, p));
   });
 }(path.join(SPIRIT, 'test')));
 if (!hits.length) test.check('no file under spirit/run or spirit/test names ' + OLD);

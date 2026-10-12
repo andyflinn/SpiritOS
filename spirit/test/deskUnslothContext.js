@@ -191,17 +191,17 @@ async function suite() {
   fs.writeFileSync(path.join(scratch, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.address().port }));
   setUp();
 
-  test.subHeading('1. the configuration in its state folder, or it does not start; the connection may come later');
-  for (const only of [['connection']]) {
-    const missing = only[0] === 'connection' ? 'configuration' : 'connection';
-    writeFiles(only);
-    nodeAsks.length = 0; calls.length = 0;
-    start();
-    await until(function () { return out.code !== null; }, 6000);
-    if (out.code !== null && out.code !== 0 && new RegExp(missing + '\\.json').test(out.stderr) && !nodeAsks.length && !calls.length) test.check('without ' + missing + '.json it ends with a code that is not 0, names the file on stderr and asks nobody');
-    else test.fail(OWED + 'without ' + missing + '.json it ' + (out.code === null ? 'is still running' : 'exited ' + out.code) + ', stderr ' + JSON.stringify(out.stderr.slice(0, 160)) + ', ' + nodeAsks.length + ' node ask(s), ' + calls.length + ' model call(s)');
-    await stop();
-  }
+  // SINCE goal/G19.12 A MISSING CONFIGURATION STARTS ON DEFAULTS. Andy, 2026-10-12, asked whether deskUnsloth should
+  // start without configuration.json, on defaults: "yes." This section asserted that it ended; it now asserts that it
+  // runs, so a session that brings the refusal back goes red.
+  test.subHeading('1. without its configuration it starts on defaults; the connection may come later');
+  writeFiles([]);
+  nodeAsks.length = 0; calls.length = 0;
+  start();
+  await until(function () { return out.code !== null; }, 3000);
+  if (out.code === null && !calls.length) test.check('without configuration.json it starts on defaults and asks no model');
+  else test.fail('goal/G19.12: without configuration.json it ' + (out.code === null ? 'called the model ' + calls.length + ' time(s)' : 'exited ' + out.code) + ', stderr ' + JSON.stringify(out.stderr.slice(0, 160)));
+  await stop();
   // WITHOUT connection.json IT STARTS (goal/G10.7): the connect tab sets it through connection.set; until then it asks
   // no model.
   writeFiles(['configuration']);

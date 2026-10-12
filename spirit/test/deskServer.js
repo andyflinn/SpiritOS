@@ -60,6 +60,11 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // goal/G8.5 added signoff: a leaving agent is gone at once and its phases are freed.
 // goal/G10.5 added AGENTS.introspect beside AGENTS: the family every server with an AGENTS.md carries (introSpector.js);
 // the desk has no verb files yet, so no AGENTS.<verb> is listed.
+// THE VERBS, WITHOUT THEIR DESCRIPTIONS (goal/G19.12). Since goal/G10.8 the api also lists AGENTS.<verb> for every verb
+// an agent may use, each the description its verb file gives; frozen into this list they made it red with every verb
+// file added. So the verbs are compared exactly, and each AGENTS.<verb> is checked to name one of them.
+function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('AGENTS.') !== 0 || k === 'AGENTS.introspect'; }).sort(); }
+function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('AGENTS.') === 0 && k !== 'AGENTS.introspect'; }).every(function (k) { return VERBS.indexOf(k.slice(7)) !== -1; }); }
 const VERBS = ['AGENTS', 'AGENTS.introspect', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'state.get', 'state.set', 'verify.again', 'verify.pass', 'verify.reject', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
@@ -117,7 +122,7 @@ function line(key, todo, text, extra) {
   let kid = start();
   const up = kid ? await waitFor(function () { return ask('api').then(function (r) { return r.body && r.body.desk && r.body.desk.ok !== false; }); }) : false;
   const tree = up ? (await ask('api')).body.desk : null;
-  if (tree && Object.keys(tree).sort().join(',') === VERBS.join(',')) test.check('api lists exactly ' + VERBS.join(', '));
+  if (tree && verbsOf(tree).join(',') === VERBS.join(',') && familyNamesVerbs(tree)) test.check('api lists exactly ' + VERBS.join(', ') + ', and each AGENTS.<verb> names one of them');
   else test.fail(OWED + 'api answered ' + JSON.stringify(tree));
 
   // ── T2 ──────────────────────────────────────────────────────────────
@@ -262,7 +267,7 @@ function line(key, todo, text, extra) {
   }, 15000);
   const listed = await jobsApi('api').catch(function () { return null; });
   if (whole && whole.status === 200 && whole.body && typeof whole.body.json === 'string' &&
-      listed && listed.body && listed.body.desk && Object.keys(listed.body.desk).sort().join(',') === VERBS.join(',')) {
+      listed && listed.body && listed.body.desk && verbsOf(listed.body.desk).join(',') === VERBS.join(',') && familyNamesVerbs(listed.body.desk)) {
     test.check('a planted node started its desk server; jobs.api answered api with its verbs and a state.get');
   } else {
     test.fail(OWED + 'jobs.api answered ' + JSON.stringify(whole) + ' / api ' + JSON.stringify(listed && listed.body) + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : ''));

@@ -69,7 +69,14 @@ function readOrDie(name) {
   return null;
 }
 // Read before anything is asked of the node: a missing file is this process's own business and no desk's.
-const CONFIGURATION = readOrDie(CONFIGURATION_FILE);
+// A MISSING CONFIGURATION STARTS ON DEFAULTS (goal/G19.12). Andy, 2026-10-12, asked whether deskUnsloth should start
+// without configuration.json, on defaults: "yes." So it starts as persona agent with no model, as it already starts with
+// no connection (goal/G10.7), and the Remote sets the rest; model.load writes the file. A file that is there but not
+// readable JSON still ends it: that is broken data, not absent data.
+const CONFIGURATION = fs.existsSync(path.join(STATE, CONFIGURATION_FILE)) ? readOrDie(CONFIGURATION_FILE) : (function () {
+  console.log('deskUnsloth: no ' + CONFIGURATION_FILE + ' in its state folder; starting on defaults (persona agent, no model)');
+  return {};
+}());
 // THE PAIRS (goal/G18.6). Andy, 2026-10-12: "I want my Account URL/token pairs saved in connection.json, now an array.
 // i want to maintain that array in the connect tab."; each pair named by him, "good Idea, yes." So connection.json is
 // [{name, url, key, use, model}]: one pair in use, and the model chosen on each pair kept with it. AN OLD FILE, one

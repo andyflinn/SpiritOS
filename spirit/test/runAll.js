@@ -90,6 +90,8 @@ const LAST = 'visualScenarios.js';
 const args = process.argv.slice(2);
 const serial = args.indexOf('--serial') !== -1;
 const filter = args.filter(function (a) { return a.charAt(0) !== '-'; })[0] || '';
+// --list [filter]: the suites it would run, one path per line relative to spirit/test, and nothing run (goal/G4.23).
+const listOnly = args.indexOf('--list') !== -1;
 const LANES = serial ? 1 : 6;
 
 // ── WHAT THE DISCOVERY RULE SKIPPED, SAID OUT LOUD ───────────────────
@@ -124,6 +126,28 @@ function discover() {
     return false;
   }).sort();
 
+  // THE SUITES AN APP OR A PROCESS KEEPS BESIDE ITSELF (goal/G4.23, built under goal/G19.12). Andy, 2026-10-04: "the
+  // harness should check in / process/js/<process-name>/test/ / shell/<appname>/test/ / for valid suites and run them
+  // if they exist." By the same rule as here: a file that reports. Kept as paths relative to this folder, so they run
+  // exactly as the others do.
+  const RUN = path.join(DIR, '..', 'run');
+  [path.join(RUN, 'shell'), path.join(RUN, 'process', 'js')].forEach(function (base) {
+    let owners = [];
+    try { owners = fs.readdirSync(base, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); } catch (e) { owners = []; }
+    owners.forEach(function (owner) {
+      const testDir = path.join(base, owner, 'test');
+      let names = [];
+      try { names = fs.readdirSync(testDir); } catch (e) { return; }
+      names.filter(function (f) { return /\.js$/.test(f); }).forEach(function (f) {
+        if (filter && f.toLowerCase().indexOf(filter.toLowerCase()) === -1) return;
+        const full = path.join(testDir, f);
+        const rel = path.relative(DIR, full).split(path.sep).join('/');
+        if (/startTest\s*\(/.test(fs.readFileSync(full, 'utf8'))) found.push(rel);
+        else skipped.push(rel);
+      });
+    });
+  });
+  found.sort();
   if (!filter || LAST.toLowerCase().indexOf(filter.toLowerCase()) !== -1) found.push(LAST);
   return found;
 }
@@ -487,6 +511,10 @@ function recordRun(byReq, titles, tally) {
 
 async function main() {
   const files = discover();
+  if (listOnly) {
+    files.forEach(function (f) { console.log(f); });
+    process.exit(files.length ? 0 : 1);
+  }
   if (!files.length) {
     console.log('no suites match ' + JSON.stringify(filter));
     process.exit(1);

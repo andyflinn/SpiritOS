@@ -107,6 +107,11 @@ const FORBIDDEN = [
 // Listed as an exact file so that a second file cannot quietly inherit
 // the exemption by adopting the same string.
 const EXEMPT = { 'js/buildStamp.js': ':!spirit/test' };
+// AND THE VERIFIER, WHOLE (goal/G19.12). deskVerify is the product's test runner: its job is to find and run the suites,
+// so it names their folder, and with the folder deleted it runs nothing and says so, which is no dependency of the
+// product on the harness. Andy, 2026-10-12, on this very flag: "the core hard-codes MANY folders for many reasons.
+// irrelevant." Named file by file, as the one above is.
+const EXEMPT_WHOLE = { 'process/js/deskVerify/deskVerify.js': true, 'process/js/deskVerify/deskVerify.json': true };
 
 const files = walk(RUN_DIR, []);
 
@@ -125,6 +130,7 @@ files.forEach(function (full) {
 
   FORBIDDEN.forEach(function (rule) {
     if (!rule.re.test(body)) return;
+    if (EXEMPT_WHOLE[rel] && rule.what === 'the path spirit/test') return;
     if (EXEMPT[rel] && body.indexOf(EXEMPT[rel]) !== -1) {
       // The exempt string is present; make sure it is the ONLY match, so
       // the exemption cannot cover a second, real reference in the same
