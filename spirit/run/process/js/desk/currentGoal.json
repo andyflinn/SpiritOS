@@ -1,8 +1,8 @@
 {
- "change": 36815,
+ "change": 36847,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T14:06:12.177Z",
+ "writtenAt": "2026-10-12T14:08:24.158Z",
  "items": [
   {
    "id": "goal/G19",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "claude-windows",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -43,11 +44,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -373,15 +376,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G19",
     "goal/G19.11"
    ],
-   "blocked": [
-    "goal/G19.12"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1724,9 +1726,12 @@
    "id": "goal/G19.12",
    "title": "Harness reds: rectify the test or fix the code",
    "goal": "goal/G19",
-   "status": "build",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19.2"
    ],
@@ -1777,7 +1782,7 @@
    ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
@@ -1888,6 +1893,41 @@
      "by": "desk",
      "at": "2026-10-12T14:02:48.030Z",
      "text": "verify rejected: spirit/test/appClientName.js: FAILURE #1.1: OWED by appPair/G1.1: appServers still named in run\\brains\\input\\andy\\2026-09-29-20-31-lowest-shell-layer.md | spirit/test/runStandsAlone.js: FAILURE #1.1: relay-state/process/desk/currentGoal.json — the path spirit/test: \"text\": \"Review pass done. Fixed by me, no decision changed:\\n- three lines that had run together (G19.3, G19.4, G19.9);; FAILURE #1.2: relay-state/process/desk/currentGoal.json — the labMaster control plane: \"box\": \"Hygiene: temp_loop, localEar leftovers, dead code, stale notes.\\n\\nFOUND (Checked against the tree at f0d03916 ("
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:06:36.118Z",
+     "text": "Re-claimed, in 9f367bfe. deskVerify's two reds came from your vault (run/brains) and the desk's runtime file in relay-state, which exist only on your node; both suites now skip those folders, as they already skipped the desk's logs."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:06:53.232Z",
+     "text": "commit ff5d9fb528bde38b232682c775a8602dd28ce9c2: goal/G19.12: the two scans skip his vault and the node's runtime state\n- spirit/test/appClientName.js\n- spirit/test/runStandsAlone.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:06:59.553Z",
+     "text": "Correction: the push first met newer desk commits; rebased and pushed, the commit is ff5d9fb5 (not 9f367bfe)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T14:07:09.273Z",
+     "text": "deskVerify: rejected, at 1b56b555 (pulled). Red: spirit/test/appClientName.js: FAILURE #1.1: OWED by appPair/G1.1: appServers still named in run\\brains\\input\\andy\\2026-09-29-20-31-lowest-shell-layer.md | spirit/test/runStandsAlone.js: FAILURE #1.1: relay-state/process/desk/currentGoal.json — the path spirit/test: \"text\": \"Review pass done. Fixed by me, no decision changed:\\n- three lines that had run together (G19.3, G19.4, G19.9);; FAILURE #1.2: relay-state/process/desk/currentGoal.json — the labMaster control plane: \"box\": \"Hygiene: temp_loop, localEar leftovers, dead code, stale notes.\\n\\nFOUND (Checked against the tree at f0d03916 ("
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:07:10.305Z",
+     "text": "verify rejected: spirit/test/appClientName.js: FAILURE #1.1: OWED by appPair/G1.1: appServers still named in run\\brains\\input\\andy\\2026-09-29-20-31-lowest-shell-layer.md | spirit/test/runStandsAlone.js: FAILURE #1.1: relay-state/process/desk/currentGoal.json — the path spirit/test: \"text\": \"Review pass done. Fixed by me, no decision changed:\\n- three lines that had run together (G19.3, G19.4, G19.9);; FAILURE #1.2: relay-state/process/desk/currentGoal.json — the labMaster control plane: \"box\": \"Hygiene: temp_loop, localEar leftovers, dead code, stale notes.\\n\\nFOUND (Checked against the tree at f0d03916 ("
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:07:45.079Z",
+     "text": "That reject ran at 1b56b555, before my fix ff5d9fb5 reached the remote: my claim went out while the push was still failing, my mistake. Re-claimed now that ff5d9fb5 is on the remote."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T14:08:19.471Z",
+     "text": "deskVerify: passed, at ff5d9fb5 (pulled). 6 suites ran green."
     }
    ]
   }
