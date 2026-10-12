@@ -178,14 +178,20 @@ async function main() {
   // what happened."). The figures say what the run met; it only says so aloud.
   if (!packets.posts) say('the desk asks counted 0 posts; published as measured (is the node\'s deskClient answering?)');
   const rel = path.relative(clone, out).split(path.sep).join('/');
+  // ITS ONE FOLDER AND NOTHING ELSE STAGED (goal/G19.6; Andy, 2026-10-12: "agreed to the whole thing as stated", the
+  // box: "publishData commits its one file and nothing else staged."). A plain commit took whatever the agent had
+  // staged in its clone and pushed it as "publish:". `--only -- <rel>` commits <rel> alone, from a temporary index, so
+  // other staged work stays staged and uncommitted; the commit check's hook sees only <rel> staged, so the standing
+  // grant applies to exactly what is published. The add comes first so a file new to git is known to --only.
   git(['add', '--', rel], clone);
-  const c = git(['commit', '-q', '-m', 'publish: ' + agent + ' at ' + commit + ' (agents/' + agent + '/, the standing grant of goal/G4.33)'], clone);
+  const c = git(['commit', '-q', '--only', '-m', 'publish: ' + agent + ' at ' + commit + ' (agents/' + agent + '/, the standing grant of goal/G4.33)', '--', rel], clone);
   if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
   // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, retries on a
   // race (Andy: "tries again if someone pushed meanwhile"), stops on a clash.
   const { pushOrigin } = require('../pushOrigin/pushOrigin.js');
   const pushed = await pushOrigin({ repo: clone });
-  if (!pushed || !pushed.ok) end(1, 'publishData: the push failed: ' + ((pushed && pushed.reason) || 'unknown'));
+  // pushOrigin's reason says what went wrong, the push itself or putting the clone's unsaved edits back (goal/G19.6).
+  if (!pushed || !pushed.ok) end(1, 'publishData: pushOrigin did not finish: ' + ((pushed && pushed.reason) || 'unknown'));
   await desk('chat.add', { id: 'desk/G0.0', text: 'published ' + agent + ' at ' + commit + ': wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms over ' + packets.posts + ' posts; agents/' + agent + '/' });
   end(0, 'publishData: published agents/' + agent + '/');
 }

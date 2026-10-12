@@ -1372,7 +1372,10 @@ function writeGoalFile(s, verb, a, change) {
     return Object.assign(facts(s, it), { box: it.box, version: it.version, checks: it.checks,
       chat: it.chat.map(function (l) { return { by: l.by, at: l.at, text: l.text }; }) });
   });
-  const doc = { change: change, line: Number(newestLine.get().rid) || 0, goal: s.current, writtenAt: new Date().toISOString(), items: items };
+  // NO writtenAt (goal/G19.6; the box: "goalShare's shared file without writtenAt, so an unchanged goal is not
+  // committed again"): a clock in the file made every share new bytes, so goalShare's "same" never held. Nothing read
+  // it; the commit carries its own time, and change and line still name the desk's moment.
+  const doc = { change: change, line: Number(newestLine.get().rid) || 0, goal: s.current, items: items };
   try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
   shareFile(GOAL_PATH, GOAL_STATE_FILE, 'currentGoal.json, shared by the desk (goal/G4.21)');
 }

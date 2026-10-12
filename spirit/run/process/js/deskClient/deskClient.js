@@ -227,23 +227,66 @@ function publishOn(body) {
   }, function (e) { console.error('deskClient: the publish job was not asked: ' + ((e && e.message) || e)); });
 }
 
-// What one answer of changes holds for this agent, in the order the desk gave it, each with the place after it.
 // THE PULL (goal/G5.8): the clone this deskClient runs from, fast-forwarded onto its origin only when it holds no
 // unsaved edit; with one, nothing is touched and the agent is told. A rebase that clashes is undone. '' when pulled
 // or already there.
-function pullClone(hash) {
-  const cp = require('child_process');
-  const run = function (args, cwd) { const r = cp.spawnSync('git', args, { cwd: cwd, encoding: 'utf8', timeout: 60000, windowsHide: true }); return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim() }; };
-  const top = run(['rev-parse', '--show-toplevel'], __dirname);
+// BESIDE next, NEVER INSIDE IT (goal/G19.6; Andy, 2026-10-12: "agreed to the whole thing as stated", the box:
+// "deskClient pulls beside the call that hands an agent its lines, never inside it, and never aborts a rebase it did
+// not start."). The pull was a synchronous git pull with a 60 s timeout run while next read the desk, so a slow pull
+// held next past the node's 12 s door and the agent's listener timed out. Now a commit line only queues its hash; the
+// pulls run one at a time, as child processes, after the line is handed over, and what a pull has to tell joins the
+// lines waiting for the agent, handed over by the next wait (or the one under way). Its place is the desk's as read
+// so far, so handing it over moves the cursor no further back than it stood; a restart before it is handed over
+// loses that one note, never a desk line.
+// NOT INTO THE AGENT'S OWN REBASE: with a rebase already in progress in the clone it neither pulls nor aborts, and
+// says so; it aborts only a rebase its own pull left behind.
+function gitIn(args, cwd) {
+  return new Promise(function (resolve) {
+    require('child_process').execFile('git', args, { cwd: cwd, encoding: 'utf8', timeout: 60000, windowsHide: true, maxBuffer: 4 * 1024 * 1024 }, function (e, stdout, stderr) {
+      resolve({ status: e ? (typeof e.code === 'number' ? e.code : 1) : 0, out: String(stdout || '').trim(), err: String(stderr || '').trim() });
+    });
+  });
+}
+function rebaseInProgress(root) {
+  return Promise.all(['rebase-merge', 'rebase-apply'].map(function (d) {
+    return gitIn(['rev-parse', '--git-path', d], root).then(function (r) { return !!r.out && fs.existsSync(path.resolve(root, r.out)); });
+  })).then(function (found) { return found.indexOf(true) !== -1; });
+}
+async function pullClone(hash) {
+  const top = await gitIn(['rev-parse', '--show-toplevel'], __dirname);
   if (top.status !== 0 || !top.out) return '';
   const root = top.out;
-  if (run(['cat-file', '-e', hash + '^{commit}'], root).status === 0 && run(['merge-base', '--is-ancestor', hash, 'HEAD'], root).status === 0) return '';
-  if (run(['status', '--porcelain', '--untracked-files=no'], root).out) return 'commit ' + hash + ' landed; your clone has unsaved edits, so it was not pulled.';
-  const pulled = run(['pull', '-q', '--rebase'], root);
+  if ((await gitIn(['cat-file', '-e', hash + '^{commit}'], root)).status === 0 && (await gitIn(['merge-base', '--is-ancestor', hash, 'HEAD'], root)).status === 0) return '';
+  if (await rebaseInProgress(root)) return 'commit ' + hash + ' landed; a rebase is in progress in your clone, so it was not pulled.';
+  if ((await gitIn(['status', '--porcelain', '--untracked-files=no'], root)).out) return 'commit ' + hash + ' landed; your clone has unsaved edits, so it was not pulled.';
+  const pulled = await gitIn(['pull', '-q', '--rebase'], root);
   if (pulled.status === 0) return '';
-  run(['rebase', '--abort'], root);
-  return 'commit ' + hash + ' landed; the pull clashed and was undone, so your clone was not pulled: ' + (pulled.err || pulled.out).slice(0, 300);
+  const why = (pulled.err || pulled.out).slice(0, 300);
+  // No rebase was in progress before the pull, so one standing now is the pull's own.
+  if (!await rebaseInProgress(root)) return 'commit ' + hash + ' landed; the pull failed, so your clone was not pulled: ' + why;
+  await gitIn(['rebase', '--abort'], root);
+  return 'commit ' + hash + ' landed; the pull clashed and was undone, so your clone was not pulled: ' + why;
 }
+const pulls = [];
+let pulling = false;
+function queuePull(hash) {
+  if (pulls.indexOf(hash) === -1) pulls.push(hash);
+  // After the answer under way has gone: the queue is worked from the next turn of the event loop.
+  setImmediate(pumpPulls);
+}
+function pumpPulls() {
+  if (pulling || !pulls.length) return;
+  pulling = true;
+  pullClone(pulls.shift()).then(function (told) {
+    if (!told) return;
+    const at = fetched || place || { n: 0, line: 0 };
+    waiting.push({ text: told, n: at.n, line: at.line });
+    wakers.splice(0).forEach(function (wake) { wake(); });
+  }).catch(function (e) { console.error('deskClient: the pull failed: ' + ((e && e.message) || e)); })
+    .then(function () { pulling = false; pumpPulls(); });
+}
+
+// What one answer of changes holds for this agent, in the order the desk gave it, each with the place after it.
 
 function meantForAgent(got, from) {
   const out = [];
@@ -266,11 +309,11 @@ function meantForAgent(got, from) {
       out.push({ text: 'DESK ' + r.by + ' chat.add ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
       // A COMMIT LANDING PULLS THIS AGENT'S CLONE (goal/G5.8). Andy: "when the reds  landed, why doesn't deskClient
       // pull the changes automatically?", "or when the code lands?". Read here, inside next, so only while the agent
-      // listens.
+      // listens; since goal/G19.6 only queued here, and pulled beside next (queuePull, above).
       let said = '';
       try { said = String(JSON.parse(r.body).text || ''); } catch (e) { said = ''; }
       const m = /^commit ([0-9a-f]{7,40})\b/.exec(said);
-      if (m) { const told = pullClone(m[1]); if (told) out.push({ text: told, n: cur.n, line: cur.line }); }
+      if (m) queuePull(m[1]);
     }
   });
   got.lines.forEach(function (l) {

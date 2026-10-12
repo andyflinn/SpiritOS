@@ -17,7 +17,7 @@
 // goal/G4.27: a detached helper waits for the remote, since the pre-push hook runs before the server answers): its
 // hash as the remote holds it and each file it changed, one `- path` per line. A pull --rebase gives a commit a new
 // hash, so the hash it was made with would name nothing on the remote; the commit is found again at the push by
-// its subject, which a rebase keeps. Every ask
+// its subject and its patch (git patch-id, goal/G19.6), which a rebase keeps. Every ask
 // goes through the agent's own deskClient (its node's jobs.api), so it is counted with the rest; with the node not
 // answering, the commit is refused, not waved through.
 //
@@ -28,7 +28,7 @@
 //   node commitCheck.js confirm <port> <job file>                  the detached helper push starts (goal/G4.27)
 //
 // The port lives in the hook text install writes; the item a check accepted waits in .git/commitCheck.item for the
-// record that follows the commit, which moves it, with the commit's subject, to .git/commitCheck.pending; the push
+// record that follows the commit, which moves it, with the commit's subject and patch-id, to .git/commitCheck.pending; the push
 // writes each pending commit it carries and takes it off. A rebase replays commits through neither hook, so a
 // pull --rebase passes. With the node not answering at the push, the push is refused and nothing is taken off.
 // Exits: 0 taken; 1 refused or no node (the reason printed); 2 usage.
@@ -193,7 +193,7 @@ function redWriterBuilds(id) {
 }
 
 // ── record ───────────────────────────────────────────────────────────
-// The commit just made waits for its push, under the item the check accepted, known by its subject.
+// The commit just made waits for its push, under the item the check accepted, known by its subject and its patch.
 function pendingFile() { return path.join(gitDir(), 'commitCheck.pending'); }
 function readPending() {
   let raw = '';
@@ -201,13 +201,34 @@ function readPending() {
   return raw.split('\n').filter(Boolean).map(function (l) { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean);
 }
 function writePending(list) { fs.writeFileSync(pendingFile(), list.map(function (p) { return JSON.stringify(p) + '\n'; }).join('')); }
+// A PENDING COMMIT IS KNOWN BY ITS SUBJECT AND ITS PATCH (goal/G19.6; the box: "commitCheck keys a pending commit by
+// more than its subject"). By the subject alone a second commit saying the same words, one that passed no check, was
+// written under the first one's item and took its place. The patch is git patch-id --stable of the commit's diff: a
+// pull --rebase gives the commit a new hash but keeps its patch, so it is still found at the push; a rebase that had to
+// resolve a clash in it changes the patch, and that commit is then passed over as one with nothing pending. An entry
+// written before goal/G19.6 has no patch and is matched by its subject, as then.
+function patchOf(hash) {
+  const diff = spawnSync('git', ['show', '--format=', '-p', hash], { encoding: 'utf8', timeout: 30000, windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+  const id = spawnSync('git', ['patch-id', '--stable'], { input: String(diff.stdout || ''), encoding: 'utf8', timeout: 30000, windowsHide: true });
+  return (String(id.stdout || '').trim().split(/\s+/)[0]) || '';
+}
+function pendingAt(pending, hash) {
+  const subject = git(['log', '-1', '--format=%s', hash]).stdout.trim();
+  let patch = null;
+  return pending.findIndex(function (p) {
+    if (p.subject !== subject) return false;
+    if (typeof p.patch !== 'string') return true;
+    if (patch === null) patch = patchOf(hash);
+    return p.patch === patch;
+  });
+}
 function record() {
   const marker = path.join(gitDir(), 'commitCheck.item');
   let id = '';
   try { id = fs.readFileSync(marker, 'utf8').trim(); fs.unlinkSync(marker); } catch (e) { id = ''; }
   if (!id) end(0, 'commitCheck: no item to record under (the commit passed no check)');
   const subject = git(['log', '-1', '--format=%s']).stdout.trim();
-  writePending(readPending().concat([{ id: id, subject: subject }]));
+  writePending(readPending().concat([{ id: id, subject: subject, patch: patchOf('HEAD') }]));
   end(0, 'commitCheck: ' + git(['rev-parse', '--short', 'HEAD']).stdout.trim() + ' is written under ' + id + ' when it is pushed');
 }
 
@@ -236,8 +257,7 @@ function push() {
     const commits = git(['rev-list', '--reverse'].concat(range)).stdout.split('\n').map(function (h) { return h.trim(); }).filter(function (h) {
       if (!h || seen.indexOf(h) !== -1) return false;
       seen.push(h);
-      const subject = git(['log', '-1', '--format=%s', h]).stdout.trim();
-      return pending.some(function (p) { return p.subject === subject; });
+      return pendingAt(pending, h) !== -1;
     });
     if (commits.length) refs.push({ ref: ref, sha: local, commits: commits });
   });
@@ -288,7 +308,7 @@ function confirm() {
     return withLock(function () {
       const pending = readPending();
       const subject = git(['log', '-1', '--format=%s', hash]).stdout.trim();
-      const at = pending.findIndex(function (p) { return p.subject === subject; });
+      const at = pendingAt(pending, hash);
       if (at === -1) return null;
       const id = pending[at].id;
       const files = git(['show', '--name-only', '--format=', hash]).stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
