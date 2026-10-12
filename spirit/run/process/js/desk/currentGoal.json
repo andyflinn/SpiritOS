@@ -1,5 +1,5 @@
 {
- "change": 40093,
+ "change": 40095,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "claude-windows",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -41,7 +40,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "live": [
     "claude-windows"
    ],
@@ -3625,32 +3624,58 @@
    "id": "goal/G19.15",
    "title": "Relay records on the node keyed by the relay key",
    "goal": "goal/G19",
-   "status": "",
+   "status": "running",
    "with": "claude-windows",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G19.1"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -4008,6 +4033,11 @@
      "by": "claude-windows",
      "at": "2026-10-12T18:05:11.878Z",
      "text": "Green: settled, no open questions, box current (v7)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:19:51.473Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
