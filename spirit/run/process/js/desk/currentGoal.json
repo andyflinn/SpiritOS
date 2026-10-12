@@ -1,8 +1,8 @@
 {
- "change": 34201,
+ "change": 34220,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T07:18:20.062Z",
+ "writtenAt": "2026-10-12T07:20:31.675Z",
  "items": [
   {
    "id": "goal/G18",
@@ -14,9 +14,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G18.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,13 +35,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -80,9 +76,12 @@
    "id": "goal/G18.1",
    "title": "deskUnslothRemote stays visible over every app",
    "goal": "goal/G18",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -90,11 +89,22 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRemoteHidden.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -148,6 +158,26 @@
      "by": "desk",
      "at": "2026-10-12T07:18:19.643Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:19:40.174Z",
+     "text": "commit 5ac318bce91549d88e25f26ce3f84715d5c1a0df: goal/G18.1: the Remote no longer stays visible over every app\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothRemoteHidden.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:19:45.397Z",
+     "text": "Fixed at 5ac318bc: the Remote no longer sets a display on the container the shell hides, its column is on an inner wrapper, so leaving it hides it.\nFiles: deskUnslothRemote.js, test deskUnslothRemoteHidden.js (new, 3 green); the Remote other suites green.\nReload the shell (or the page) once the verifier has pulled; the Remote then shows only in its own panel."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T07:19:53.555Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:19:55.981Z",
+     "text": "deskVerify: passed, at 5ac318bc (pulled). 1 suite ran green."
     }
    ]
   }
