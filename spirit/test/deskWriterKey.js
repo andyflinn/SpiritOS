@@ -93,10 +93,18 @@ function call(verb, args, headers) {
   // Any spelling of setting a by: as a property (by: ...) or by assignment (x.by = ...). The first check looked
   // for by: 'andy' alone and missed deskDetails' args.by = 'andy', which reached Andy's live Desk.
   const sets = /(\.by\s*=(?!=)|[{,]\s*by\s*:)/;
-  const pageSends = sets.test(page.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'));
+  // A READ'S EMPTY FILTER IS NOT A WRITER (goal/G18.5). appServer takes exactly a verb's declared keys, so the
+  // dialog's chat search sends chat.search's by, its "only lines by" filter, always empty. A line calling a read verb
+  // with by: '' is let through; any other by, on a read or a write, still fails. Andy, 2026-10-12: "yes. fix that
+  // test to be in line with the revised design."
+  const readFilter = /'(chat\.search|items\.find)'.*[{,]\s*by\s*:\s*''/;
+  const lines = page.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); });
+  const pageSends = sets.test(lines.filter(function (l) { return !readFilter.test(l); }).join('\n'));
   // agents.js was read here too; the agents app is gone (goal/G3.2).
-  if (!pageSends) test.check('the Desk page and dialog send no by');
+  if (!pageSends) test.check('the Desk page and dialog send no by, but a read\'s empty filter');
   else test.fail(OWED + 'still sending by: Desk page or dialog ' + pageSends);
+  if (readFilter.test("ddAsk('chat.search', { id: id, by: '' })") && !readFilter.test("ddAsk('chat.search', { id: id, by: 'andy' })") && !readFilter.test("ddWrite('chat.add', { id: id, by: '' })")) test.check('the exception is narrow: a read with by \'andy\', or a write with any by, is not excused');
+  else test.fail('the read exception is too wide');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   if (kid) kid.kill();
   setTimeout(function () {

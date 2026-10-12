@@ -172,7 +172,8 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (goals['t/G1'] && !goals['t/G1.2']) test.check('goalsOnly answers the goal and no items');
   else test.fail(OWED + 'goalsOnly answered ' + JSON.stringify(Object.keys(goals)));
   const found = await items({ text: 'renamed' });
-  if (found['t/G1.2'] && !found['t/G1']) test.check('text search answers what matches');
+  // goal/G18.5: the text ranks, it no longer filters; what matches comes first.
+  if (Object.keys(found)[0] === 't/G1.2') test.check('text search ranks what matches first');
   else test.fail(OWED + 'search "renamed" answered ' + JSON.stringify(Object.keys(found)));
 
   // Owner presses are Andy's (G2.1 review): go, done, reopen, close, abandon, start-design, end-design, and the

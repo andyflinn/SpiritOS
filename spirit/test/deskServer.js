@@ -151,10 +151,12 @@ function line(key, todo, text, extra) {
   const byText = up ? await call('log.search', { text: 'second', todo: '', since: '', kind: '', before: '' }) : {};
   const since = up ? await call('log.search', { text: '', todo: '', since: new Date(Date.UTC(2026, 8, 29, 5, 0, 2)).toISOString(), kind: '', before: '' }) : {};
   const keys = function (r) { return (r.items || []).map(function (i) { try { return JSON.parse(i.label).key; } catch (e) { return '?'; } }).sort().join(','); };
-  if (keys(byTodo) === 'k1,k3' && keys(byText) === 'k2' && keys(since) === 'k2,k3' && byTodo.more === false) {
-    test.check('search by todo, by text, and since: each finds its lines, whole, as JSON text');
+  // goal/G18.5: the text ranks the lines (probabilityStringMatch), todo, since, kind and before still filter.
+  const first = function (r) { try { return JSON.parse(((r.items || [])[0] || {}).label).key; } catch (e) { return '?'; } };
+  if (keys(byTodo) === 'k1,k3' && first(byText) === 'k2' && keys(since) === 'k2,k3' && byTodo.more === false) {
+    test.check('search by todo and since finds its lines, the text ranks its line first, whole, as JSON text');
   } else {
-    test.fail(OWED + 'search found todo ' + keys(byTodo) + ', text ' + keys(byText) + ', since ' + keys(since));
+    test.fail(OWED + 'search found todo ' + keys(byTodo) + ', text first ' + first(byText) + ', since ' + keys(since));
   }
   const report = (byTodo.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } }).filter(function (l) { return l.key === 'k1'; })[0];
   if (report && report.reported === true && report.to === 'andy') test.check('a report line comes back with its to and reported');
@@ -198,7 +200,7 @@ function line(key, todo, text, extra) {
   await stop(kid);
   kid = start();
   const again = kid ? await waitFor(function () {
-    return call('log.search', { text: 'third', todo: '', since: '', kind: '', before: '' }).then(function (r) { return keys(r) === 'k3'; });
+    return call('log.search', { text: 'third', todo: '', since: '', kind: '', before: '' }).then(function (r) { return first(r) === 'k3'; });
   }) : false;
   const sAgain = again ? await call('state.get', {}) : {};
   if (again && sAgain.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } })) test.check('after a restart its lines and state are still there');

@@ -22,6 +22,7 @@ var ddVersion = 0;
 var ddChecks = [];
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
+var ddFound = null;           // the chat search's ranked lines; null while the search is empty (goal/G18.5)
 var ddArmed = '';            // the id of the armed button (abandon, go all), pressed once
 var ddRenaming = false;
 var ddNote = '';
@@ -93,6 +94,10 @@ function ddFrame() {
       '<input type="text" id="dd-add-title" data-field="label" placeholder="an item this one waits on"></label>' +
       '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
+    // THE CHAT SEARCH (goal/G18.5). Andy: "chats for items/goals are searchable in the UI, right above the chat input
+    // box.", then "yes, add it here." The desk ranks the lines (chat.search); while it holds text they replace the chat.
+    '<div class="start-job-form card"><label class="field-label grow">Search the chat' +
+      '<input type="search" id="dd-chat-search" placeholder="ranks the lines below"></label></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
       // Return is a new line; only Send sends (desk/G1.12).
       '<textarea id="dd-say" rows="3" placeholder="under this item"></textarea></label>' +
@@ -318,20 +323,23 @@ function ddLineHtml(text) {
   flush();
   return out.join('<br>').replace(/<br>(<ul)/g, '$1').replace(/(<\/ul>)<br>/g, '$1');
 }
+// EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
+// left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
+// vertically be 1em space." Same shape as desk.js' deskGroupChat (goal/G6.2): change both or neither.
+function ddBubble(l) {
+  var his = l.by === 'andy';
+  var look = his
+    ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
+    : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
+  return '<div' + look + '><b>' + ddEsc(his ? 'you' : l.by) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
+    ddLineHtml(l.text) + '</div>';
+}
 function ddChatHtml() {
+  // While the search holds text, the lines in the order the desk ranked them.
+  if (ddFound) return ddFound.length ? ddFound.map(ddBubble).join('') : '<div class="job-manifest-note">No lines found.</div>';
   if (!ddChat.length) return '<div class="job-manifest-note">Nothing said here yet.</div>';
   var older = ddChatMore ? '<div class="job-manifest-note">Older lines are not shown.</div>' : '';
-  // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
-  // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
-  // vertically be 1em space." Same shape as desk.js' deskGroupChat (goal/G6.2): change both or neither.
-  return ddChat.slice().reverse().map(function (l) {
-    var his = l.by === 'andy';
-    var look = his
-      ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
-      : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
-    return '<div' + look + '><b>' + ddEsc(his ? 'you' : l.by) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
-      ddLineHtml(l.text) + '</div>';
-  }).join('') + older;
+  return ddChat.slice().reverse().map(ddBubble).join('') + older;
 }
 
 function ddSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
@@ -382,6 +390,18 @@ function ddTake(obj) {
   if (obj.chat) ddChat.push(obj.chat);
   if (Array.isArray(obj.checks)) ddChecks = obj.checks;
   ddPaint();
+}
+
+// Asks the desk to rank this item's lines by the text; an answer that comes after the text changed is dropped.
+function ddChatSearch() {
+  var text = ddValue('dd-chat-search');
+  var id = ddId;
+  if (!text) { ddFound = null; ddPaint(); return; }
+  ddAsk('chat.search', { id: id, text: text, by: '', since: '', before: '' }).then(function (r) {
+    if (ddId !== id || ddValue('dd-chat-search') !== text) return;
+    ddFound = (r.items || []).map(function (p) { try { return JSON.parse(p.label); } catch (e) { return null; } }).filter(Boolean);
+    ddPaint();
+  }, function (e) { ddNote = e.message; ddPaint(); });
 }
 
 var ddSending = false;
@@ -558,6 +578,7 @@ spirit.shell.activateApp({
     // EVERY MARKED INPUT, CHECKED AS TYPED (rule/12): one listener on the body, which is repainted.
     document.getElementById('dd-body').addEventListener('input', function (event) {
       var t = event && event.target;
+      if (t && t.id === 'dd-chat-search') { ddChatSearch(); return; }
       if (!t || !t.getAttribute || t.getAttribute('data-field') !== 'label') return;
       if (DD_FIELD_ACTION[t.id]) ddFieldCheck(t.id);
     });
@@ -594,6 +615,8 @@ spirit.shell.activateApp({
     ddChecks = [];
     ddChat = [];
     ddChatMore = false;
+    ddFound = null;
+    ddClear('dd-chat-search');
     ddArmed = '';
     ddRenaming = false;
     ddNote = '';

@@ -535,8 +535,27 @@ function deskRowHtml(row) {
     '<td>' + presses + '</td>' +
     '<td>' + deskLinks(row.blocking) + '</td>' +
     '<td>' + deskLinks(row.blocked) + '</td>' +
-    '<td>' + deskEsc(row.status || '') + '</td>' +
+    '<td style="width:16em">' + deskStatusCell(row) + '</td>' +
   '</tr>';
+}
+// THE STATUS BOX SHOWS THE VERIFIER'S RUN (goal/G18.5). Andy, 2026-10-12: "when a search is run agains the goal or an
+// item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result
+// string shown will be green or red, depending on the outcome." ("search" there: "i DEFINITELY meant verify-run".)
+// While deskVerify runs for this row (its published object names the row's id), its bar and suite i of n stand in the
+// box; otherwise the server's status word, green when it says passed, red when rejected or red.
+function deskStatusCell(row) {
+  var r = deskVerifyRun;
+  if (r && r.doing && r.doing !== 'idle' && String(r.id) === String(row.id)) {
+    var of = Number(r.of) || 0;
+    var index = Number(r.index) || 0;
+    var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) : 0;
+    var pct = of ? Math.max(0, Math.min(100, Math.round(((index - 1) + inOne) / of * 100))) : 0;
+    return '<progress max="100" value="' + pct + '" style="width:6em"></progress> ' +
+      '<span class="job-manifest-note">' + (of ? 'suite ' + index + ' of ' + of : 'verifying') + '</span>';
+  }
+  var word = String(row.status || '');
+  var colour = /passed/i.test(word) ? '#1a7f37' : /rejected|\bred\b/i.test(word) ? '#c00' : '';
+  return colour ? '<span style="color:' + colour + '">' + deskEsc(word) + '</span>' : deskEsc(word);
 }
 // The toggles say how they stand; the server does the filtering.
 function deskDrawToggles() {
@@ -564,7 +583,7 @@ function deskAddGoal() {
 }
 function deskTable() {
   if (!deskItems.length) return '<div class="job-manifest-note">Nothing to show.</div>';
-  var head = '<tr><th></th><th></th><th>to-do</th><th>with</th><th>yours</th><th>blocks</th><th>waits on</th><th>status</th></tr>';
+  var head = '<tr><th></th><th></th><th>to-do</th><th>with</th><th>yours</th><th>blocks</th><th>waits on</th><th style="width:16em">status</th></tr>';
   return '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + deskItems.map(deskRowHtml).join('') + '</tbody></table>';
 }
 
@@ -1110,6 +1129,9 @@ function deskVerifyEvent(obj) {
   if (obj.id) deskVerifyLast = String(obj.id);
   if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' }, queued: [] }; deskDrawTabs(); }
   deskDrawVerifier();
+  // AND THE LIST'S STATUS BOX FOLLOWS IT (goal/G18.5): the row it runs for shows the progress, and is itself again
+  // once the run is idle.
+  if (deskTab === 'list') deskDraw();
 }
 
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #desk-bars moves into the app header, which sticks it

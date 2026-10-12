@@ -125,7 +125,9 @@ async function main() {
 
   test.subHeading('2. text in a title or a line');
   const rails = await find({ text: 'rails' });
-  if (rails.status === 200 && rails.ids.indexOf('f/G1.2') !== -1 && rails.ids.indexOf('f/G1.3') !== -1 && rails.ids.indexOf('f/G1.1') === -1 && rails.ids.indexOf('f/G1') === -1) test.check('text: the item titled Rails and the item with a RAILS line, whatever the case; not the item with neither');
+  // goal/G18.5: the text ranks, it no longer filters. Every item is answered; the ones that match come first.
+  const at = function (id) { const i = rails.ids.indexOf(id); return i === -1 ? Infinity : i; };
+  if (rails.status === 200 && Math.max(at('f/G1.2'), at('f/G1.3')) < Math.min(at('f/G1.1'), at('f/G1'))) test.check('text ranks: the item titled Rails and the item with a RAILS line, whatever the case, ahead of the items with neither');
   else test.fail(OWED + 'text rails answered ' + rails.status + ' ' + JSON.stringify(rails.ids) + ' ' + JSON.stringify(rails.body).slice(0, 160));
   const all = await find({});
   if (all.status === 200 && ['f/G1', 'f/G1.1', 'f/G1.2', 'f/G1.3', 'f/G1.4'].every(function (id) { return all.ids.indexOf(id) !== -1; }) && all.facts.every(function (f) { return f && f.id && typeof f.status === 'string' && Array.isArray(f.buttons); })) test.check('nothing set: every item, goal too, each label its facts');
@@ -146,10 +148,11 @@ async function main() {
   const andyRails = await find({ text: 'rails', by: 'andy' });
   const wslRails = await find({ text: 'rails', by: 'wsl-claude' });
   const window = await find({ by: 'wsl-claude', since: t1, before: t3, text: 'rails' });
-  if (andyRails.ids.join() === 'f/G1.3' && wslRails.ids.join() === 'f/G1.4' && window.ids.join() === 'f/G1.4') test.check('text and by on the same line: rails by andy is f/G1.3 alone, rails by wsl-claude f/G1.4 alone; all four together f/G1.4');
+  // goal/G18.5: by, since and before still filter; the text only orders what they keep.
+  if (andyRails.ids.join() === 'f/G1.3,f/G1.1' && wslRails.ids.join() === 'f/G1.4,f/G1.3' && window.ids.join() === 'f/G1.4,f/G1.3') test.check('filters filter, text ranks: rails by andy is f/G1.3 then f/G1.1, rails by wsl-claude f/G1.4 then f/G1.3; all four together f/G1.4 then f/G1.3');
   else test.fail(OWED + 'together: rails+andy ' + JSON.stringify(andyRails.ids) + ', rails+wsl ' + JSON.stringify(wslRails.ids) + ', all four ' + JSON.stringify(window.ids));
   const titleOnly = await find({ text: 'rails', by: 'claude-windows' });
-  if (titleOnly.status === 200 && titleOnly.ids.length === 0) test.check('with a line filter set, a title alone matches nothing: rails by claude-windows is no item');
+  if (titleOnly.status === 200 && titleOnly.ids.join() === 'f/G1.1') test.check('a line filter keeps only items with such a line: rails by claude-windows is f/G1.1 alone, not f/G1.2 titled Rails');
   else test.fail(OWED + 'rails by claude-windows answered ' + JSON.stringify(titleOnly.ids));
 
   test.subHeading('5. closed items answered, abandoned never');
@@ -179,14 +182,15 @@ async function main() {
   const order = await find({ text: 'rails' });
   if (order.ids.slice(0, 3).join() === ['f/G1.4', 'f/G1.3', 'f/G1.2'].join()) test.check('newest matching line first: f/G1.4, f/G1.3, then f/G1.2 matched by its title alone');
   else test.fail(OWED + 'text rails came in the order ' + JSON.stringify(order.ids));
-  // Many items with a matching line: the answer fits half a room and more says the rest were left out.
+  // Many items with a matching line: the answer fits half a room and more says the rest were left out. The fillers
+  // differ only in their number, so they rank by probability, not by age (goal/G18.5).
   const many = [];
   for (let i = 0; i < 90; i++) many.push({ id: 'f/G1.' + (10 + i), title: 'Filler ' + i + ' with a long enough title to take room in the answer', blocks: ['f/G1'] });
   const base = [{ id: 'f/G1.1', title: 'Plain' }, { id: 'f/G1.2', title: 'Rails for the List' }, { id: 'f/G1.3', title: 'Third' }, { id: 'f/G1.4', title: 'Closed early' }].map(function (x) { x.blocks = ['f/G1']; return x; });
   await call('session.set', { json: JSON.stringify({ goal: { id: 'f/G1', title: 'Finding' }, items: base.concat(many) }) }, CW);
   for (let i = 0; i < 90; i++) await say('f/G1.' + (10 + i), 'filler line ' + i + ' says sideways', ANDY);
   const cut = await find({ text: 'sideways' });
-  if (cut.status === 200 && cut.more === true && cut.ids.length > 0 && cut.ids.length < 90 && cut.bytes <= ROOM && cut.ids[0] === 'f/G1.99') test.check('90 matching items: ' + cut.ids.length + ' came back in ' + cut.bytes + ' bytes (half a room is ' + ROOM + '), the newest first, more true');
+  if (cut.status === 200 && cut.more === true && cut.ids.length > 0 && cut.ids.length < 90 && cut.bytes <= ROOM && /^f\/G1\.\d\d$/.test(cut.ids[0])) test.check('90 matching items: ' + cut.ids.length + ' came back in ' + cut.bytes + ' bytes (half a room is ' + ROOM + '), a filler first, more true');
   else test.fail(OWED + '90 matching items answered ' + cut.status + ', ' + cut.ids.length + ' item(s), ' + cut.bytes + ' bytes, more ' + cut.more + ', first ' + cut.ids[0]);
 }
 

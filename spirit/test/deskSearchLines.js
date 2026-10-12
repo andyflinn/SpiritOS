@@ -59,18 +59,19 @@ test.startTest('goal/G4.24 point 2: the List search matches chat lines and the b
     await call('chat.add', { id: 's/G1.2', text: 'we tested the fs-watch library here' }, CW);
     await call('box.write', { id: 's/G1.3', text: 'NOTES\nchokidar is the library', version: 0 }, CW);
 
+    // goal/G18.5: the text ranks, it no longer filters, so "finds" here means "ranks first".
     test.subHeading('1. the text matches chat lines and the box, as well as id and title');
     const byLine = await search('fs-watch');
-    if (keys(byLine).indexOf('s/G1.2') !== -1 && keys(byLine).indexOf('s/G1.1') === -1) test.check('"fs-watch", in a chat line of s/G1.2 only, finds s/G1.2');
+    if (keys(byLine)[0] === 's/G1.2') test.check('"fs-watch", in a chat line of s/G1.2 only, ranks s/G1.2 first');
     else test.fail(OWED + 'items.search "fs-watch" answered ' + short(keys(byLine)));
     const upper = await search('FS-WATCH');
-    if (keys(upper).indexOf('s/G1.2') !== -1) test.check('case is ignored');
+    if (keys(upper)[0] === 's/G1.2') test.check('case is ignored');
     else test.fail(OWED + 'items.search "FS-WATCH" answered ' + short(keys(upper)));
     const byBox = await search('chokidar');
-    if (keys(byBox).indexOf('s/G1.3') !== -1 && keys(byBox).length === 1) test.check('"chokidar", in the box of s/G1.3 only, finds s/G1.3 alone');
+    if (keys(byBox)[0] === 's/G1.3') test.check('"chokidar", in the box of s/G1.3 only, ranks s/G1.3 first');
     else test.fail(OWED + 'items.search "chokidar" answered ' + short(keys(byBox)));
     const byTitle = await search('alpha');
-    if (keys(byTitle).indexOf('s/G1.1') !== -1 && keys(byTitle).indexOf('s/G1.2') === -1) test.check('a title still matches as before ("alpha" finds s/G1.1)');
+    if (keys(byTitle)[0] === 's/G1.1') test.check('a title still matches ("alpha" ranks s/G1.1 first)');
     else test.fail('items.search "alpha" answered ' + short(keys(byTitle)));
 
     test.subHeading('2. the rows stay the List\'s rows, and the filters still hold');

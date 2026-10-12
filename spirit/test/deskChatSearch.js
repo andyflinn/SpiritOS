@@ -160,7 +160,10 @@ async function main() {
   const byText = await search({ text: 'alpha' });
   const byWho = await search({ by: 'wsl-claude' });
   const byAndy = await search({ by: 'andy' });
-  if (texts(byText) === 'alpha two | alpha one' && texts(byWho) === 'beta three' && texts(byAndy) === 'beta four | alpha one') test.check('text finds the lines holding the words; by finds an agent\'s lines, and Andy\'s');
+  // SINCE goal/G18.5 THE TEXT RANKS, IT DOES NOT FILTER. Andy, 2026-10-12: "The bucket solves this. if all items are
+  // probability 0, that is equal to the old searches "*"". So the lines holding the words come first, the others after
+  // them; by, since and before still filter.
+  if (texts(byText) === 'alpha two | alpha one | beta four | beta three' && texts(byWho) === 'beta three' && texts(byAndy) === 'beta four | alpha one') test.check('text ranks the lines holding the words first, the rest after; by finds an agent\'s lines, and Andy\'s');
   else test.fail(OWED + 'text alpha gave [' + texts(byText) + '], by wsl-claude [' + texts(byWho) + '], by andy [' + texts(byAndy) + ']');
   const since = await search({ since: at[2] });
   const before = await search({ before: at[2] });
@@ -169,7 +172,7 @@ async function main() {
   else test.fail(OWED + 'since the third line gave [' + texts(since) + '], before it [' + texts(before) + '], between the second and the fourth [' + texts(between) + ']');
   const together = await search({ text: 'beta', by: 'andy', since: at[0], before: '9999-01-01T00:00:00.000Z' });
   const nobody = await search({ text: 'alpha', by: 'wsl-claude' });
-  if (texts(together) === 'beta four' && nobody.status === 200 && nobody.lines.length === 0 && nobody.more === false) test.check('all four together answer the one line every filter lets through; filters that agree on no line answer none');
+  if (texts(together) === 'beta four | alpha one' && nobody.status === 200 && texts(nobody) === 'beta three' && nobody.more === false) test.check('by, since and before filter, the text ranks what they let through: beta four before alpha one; text alpha by wsl-claude answers its one line');
   else test.fail(OWED + 'all four together gave [' + texts(together) + ']; text alpha by wsl-claude gave ' + nobody.status + ' [' + texts(nobody) + ']');
 
   test.subHeading('5. a read: no record written, no by taken');

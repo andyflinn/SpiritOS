@@ -294,6 +294,48 @@ function walked(walk, pairOf) {
   return { items: r.items, more: r.more || skipped };
 }
 
+// ── THE DESK'S SEARCHES RANK BY PROBABILITY (goal/G18.5) ──────────────
+//
+//   Andy, 2026-10-12 (goal/G18): "i have a strong dislike for the search system right now", and the three probabilit
+//   modules built for it (G18.2 to G18.4). In G18.5: the desk searches move onto them ("your points accepted.");
+//   nothing is dropped: "The bucket solves this. if all items are probability 0, that is equal to the old searches
+//   "*""; "the item search must probability search the chat-lines, and weigh the chat lines in the item result as 50%
+//   overall."; "the chat lines have all equal weight within their 50%"; and "chat lines are 50% of the weight, if there
+//   is no chat lines the rule still applies, meaning that half is going to default to a probability of 0."
+// How it is used, his words for the bucket: "the desk reads items, newest to oldest, up to MAX_SCANNED_ITEMS, compares
+// every item against the search string, gets a probability as result, then drops the (probability,item) combination
+// into the bucket. at the end calls serialize, done."
+//
+// Until this the desk's searches graded nothing: a substring filter, then searchBucket in the walk's order. With no
+// text every probability is 0 and the bucket keeps the walk's order, so the List reads as it did.
+const probabilityStringMatch = require('../../../js/probabilityStringMatch.js').probabilityStringMatch;
+const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
+const MAX_SCANNED_ITEMS = 1000;
+function lineProbability(text, line) { return text ? probabilityStringMatch(text, String(line.text)) : 0; }
+function itemProbability(text, it, lines) {
+  if (!text) return 0;
+  const fields = probabilityStringObjectMatch(text, { id: String(it.id), title: String(it.title || ''), box: String(it.box || '') });
+  const chat = lines.length ? lines.reduce(function (n, l) { return n + lineProbability(text, l); }, 0) / lines.length : 0;
+  return 0.5 * fields + 0.5 * chat;
+}
+// The walk offers {probability, pair} in its own order, newest or session first; the bucket seats them, an equal
+// probability behind those already in, so that order stands among equals. One pair too big for the room alone is
+// skipped and said by more, as walked() does; past MAX_SCANNED_ITEMS the walk stops, and that is said by more too.
+function ranked(walk, room) {
+  const bucket = createProbabilityBucket(MAX_SCANNED_ITEMS);
+  let scanned = 0;
+  let more = false;
+  for (const one of walk) {
+    if (scanned >= MAX_SCANNED_ITEMS) { more = true; break; }
+    scanned += 1;
+    if (oneAnswerBytes(one.pair.key, one.pair.label) > room) { more = true; continue; }
+    bucket.seatFor(one.probability, one.pair);
+  }
+  const r = bucket.serialize(null, room);
+  return { items: r.items, more: r.more || more };
+}
+
 // ── THE STATE: RECORDS IN TIME ORDER (desk/G2.1) ─────────────────────
 //
 //   Andy: "The server determines all the content to be drawn. buttons, the
@@ -983,6 +1025,10 @@ function limboOf(s, it) {
   // every item it held fell back into limbo and the desk posted the line again on the next write. So the phase holder
   // decides; a holder gone silent is the desk's stale question (10 minutes), not this.
   if (it.phaseWith) return false;
+  // A CLAIM WAITING ON THE VERIFIER IS NOT LIMBO (goal/G18.5). Somebody finished it and deskVerify is checking it; the
+  // taker's word flipping between working and listening while it waits brought the limbo line again on every flip.
+  // Andy, 2026-10-12, accepting "no limbo line while a claim waits on deskVerify": "your points accepted."
+  if (Object.keys(it.claims).length && !it.checked) return false;
   // On a code item the phase holder is the whole answer: a phase nobody holds is limbo however its earlier takers are
   // marked, which is what makes a finished red visible to the agent that must build it.
   if (it.code) return true;
@@ -1068,16 +1114,13 @@ function facts(s, it) {
   return f;
 }
 
-function matchesText(it, text) {
-  if ((it.id + ' ' + it.title).toLowerCase().indexOf(text) !== -1) return true;
-  if (String(it.box || '').toLowerCase().indexOf(text) !== -1) return true;
-  return it.chat.some(function (l) { return String(l.text).toLowerCase().indexOf(text) !== -1; });
-}
+// (matchesText, the substring filter of items.search, went with goal/G18.5: items are ranked, not filtered.)
 
 // The goal first, then its items in session order; the newest goal first.
 function searchItems(a) {
   const s = walkState();
-  const text = String(a.text || '').toLowerCase();
+  const rawText = String(a.text || '').trim();
+  const text = rawText.toLowerCase();
   const out = [];
   // THE LATEST STATE AT STARTUP (desk/G3.2, Andy: "and at startup, it should show the
   // latest state"): with the current goal closed, the empty current-goal search shows
@@ -1098,8 +1141,8 @@ function searchItems(a) {
       // THE SEARCH READS THE LINES TOO (goal/G4.24 point 2). Andy: "same principle as the agent search, it searches the
       // lines server-side, but only brings back handle/key and title, i'll have to go to details to fetch the rest."
       // id, title, box and every chat line, case ignored; the answer is the row as before, never the box or the chat.
-      if (text && !matchesText(it, text)) return;
-      out.push(JSON.stringify(facts(s, it)));
+      // RANKED, NOT FILTERED (goal/G18.5): every listed item goes in with its probability; the bucket orders them.
+      out.push({ probability: itemProbability(rawText, it, it.chat), json: JSON.stringify(facts(s, it)) });
     });
   });
   return out;
@@ -1113,32 +1156,33 @@ function searchItems(a) {
 // in the item's id or title. Every goal's items and the goals, closed ones too (a search is not the List; Andy:
 // "close is more of an 'visibility' issue than a process issue"), an abandoned goal's never. Ordered by the newest
 // line that matched, newest first; an item matched by id or title alone comes after those, newest written first.
+// SINCE goal/G18.5 THE TEXT RANKS, THE FILTERS STAY FILTERS: by, since and before still choose which lines count, and an
+// item with none of them left is not offered while a line filter is set; the text gives each item its probability, the
+// chat half over the lines the filters let through. Offered newest first, so among equal probabilities the newest leads.
 function findItems(a) {
   const s = walkState();
-  const text = String(a.text || '').toLowerCase();
+  const text = String(a.text || '').trim();
   const lineFilter = !!(a.by || a.since || a.before);
   const lineMatches = function (l) {
     if (a.by && l.by !== a.by) return false;
     if (a.since && !(String(l.at) >= a.since)) return false;
     if (a.before && !(String(l.at) < a.before)) return false;
-    if (text && String(l.text).toLowerCase().indexOf(text) === -1) return false;
     return true;
   };
-  const byLine = [];
-  const byTitle = [];
+  const found = [];
   Object.keys(s.goals).forEach(function (gid) {
     if (s.goals[gid].abandoned) return;
     [gid].concat(s.goals[gid].members).forEach(function (id) {
       const it = s.items[id];
       if (!it) return;
-      let newest = '';
-      for (let i = it.chat.length - 1; i >= 0; i--) { if (lineMatches(it.chat[i])) { newest = String(it.chat[i].at); break; } }
-      if (newest) byLine.push({ at: newest, it: it });
-      else if (!lineFilter && (!text || (it.id + ' ' + it.title).toLowerCase().indexOf(text) !== -1)) byTitle.push({ at: String(it.at || ''), it: it });
+      const lines = it.chat.filter(lineMatches);
+      if (lineFilter && !lines.length) return;
+      const newest = lines.length ? String(lines[lines.length - 1].at) : String(it.at || '');
+      found.push({ at: newest, it: it, probability: itemProbability(text, it, lines) });
     });
   });
   const newestFirst = function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : 0; };
-  return byLine.sort(newestFirst).concat(byTitle.sort(newestFirst)).map(function (w) { return JSON.stringify(facts(s, w.it)); });
+  return found.sort(newestFirst).map(function (w) { return { probability: w.probability, json: JSON.stringify(facts(s, w.it)) }; });
 }
 
 function refused(code) { const e = new Error(code); e.refusal = code; return e; }
@@ -1276,7 +1320,11 @@ function write(verb, a, check) {
   if (verb === 'rule.chat') out.rule = String(a.rule);
   if (now && verb === 'box.write') { out.box = now.box; out.version = now.version; }
   if (now && verb === 'chat.add') out.chat = now.chat[now.chat.length - 1];
-  if (now && (verb === 'check.add' || verb === 'check.set')) out.checks = now.checks;
+  // THE CHECKS TRAVEL WHENEVER THEY CHANGED (goal/G18.5), not only on check.add and check.set: item.files.add raises
+  // the core grant itself, and an open dialog that never heard of it showed no red button until it was reopened. Andy,
+  // 2026-10-12: "the red grant Buttons don't show up automatically in deskDetail, i'd like that as well".
+  const was = it ? s.items[it.id] : null;
+  if (now && (verb === 'check.add' || verb === 'check.set' || !was || JSON.stringify(was.checks) !== JSON.stringify(now.checks))) out.checks = now.checks;
   // EVERY ROW IT CHANGED (desk/G3.10). Andy: "i just pressed the Go-All button in the list. and the G3.9 go button
   // didn't disarm." A press changes more than its own row (go-all, a done that unblocks, the goal's waiting), so the
   // facts of every row of the goal that differ now ride along, in this one object: one press, one object, never a
@@ -1504,8 +1552,17 @@ appServer.serve({
     request: { text: '', todo: '', since: '', kind: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
       const todo = a.todo === '-' ? '' : a.todo;
-      const rows = findLines.iterate(a.todo, todo, a.kind, a.kind, a.since, a.since, a.before, a.before, a.text, a.text);
-      return walked(rows, function (row) { return { key: row.key, label: row.line }; });
+      // SINCE goal/G18.5 THE TEXT RANKS THE LINES; the SQL keeps the other filters and gives newest first.
+      const text = String(a.text || '').trim();
+      const rows = findLines.iterate(a.todo, todo, a.kind, a.kind, a.since, a.since, a.before, a.before, '', '');
+      const walk = (function* () {
+        for (const row of rows) {
+          let line = null;
+          try { line = JSON.parse(row.line); } catch (e) { line = null; }
+          yield { probability: text ? probabilityStringMatch(text, String((line && line.text) || row.line)) : 0, pair: { key: row.key, label: row.line } };
+        }
+      })();
+      return ranked(walk, ANSWER_ROOM);
     },
   },
   // WHAT CHANGED SINCE (apiAuth/G1.12). Andy: "dsek needs an interface for that. desk can't serve agents at
@@ -1531,7 +1588,7 @@ appServer.serve({
   'items.search': {
     request: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
-      return walked(searchItems(a), function (item) { return { key: JSON.parse(item).id, label: item }; });
+      return ranked(searchItems(a).map(function (x) { return { probability: x.probability, pair: { key: JSON.parse(x.json).id, label: x.json } }; }), ANSWER_ROOM);
     },
   },
   // EACH PANEL ITS OWN ANSWER. Andy: "what kind of app doesn't measure the sum of its packets?" and "lazy load the
@@ -1541,19 +1598,7 @@ appServer.serve({
   'items.find': {
     request: { text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
-      const bucket = searchBucket.createSearch({
-        query: '**', maxBytes: SEARCH_ROOM,
-        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-        extractKeyAndLabelFromRow: function (pair) { return pair; },
-      });
-      let skipped = false;
-      for (const item of findItems(a)) {
-        const pair = { key: JSON.parse(item).id, label: item };
-        if (oneAnswerBytes(pair.key, pair.label) > SEARCH_ROOM) { skipped = true; continue; }
-        if (!bucket.offer(pair)) break;
-      }
-      const r = bucket.getResult();
-      return { items: r.items, more: r.more || skipped };
+      return ranked(findItems(a).map(function (x) { return { probability: x.probability, pair: { key: JSON.parse(x.json).id, label: x.json } }; }), SEARCH_ROOM);
     },
   },
   'item.get': {
@@ -1623,26 +1668,18 @@ appServer.serve({
     handler: function (a) {
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      const text = String(a.text).toLowerCase();
-      const bucket = searchBucket.createSearch({
-        query: '**', maxBytes: SEARCH_ROOM,
-        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-        extractKeyAndLabelFromRow: function (pair) { return pair; },
-      });
-      // A line too big for the room on its own is never offered (as item.chat does): it is skipped, and said by more.
-      let skipped = false;
+      // SINCE goal/G18.5 THE TEXT RANKS THE LINES (probabilityStringMatch), the filters still filter; newest first
+      // among equals.
+      const text = String(a.text || '').trim();
+      const walk = [];
       for (let i = it.chat.length - 1; i >= 0; i--) {
         const l = it.chat[i];
         if (a.by && l.by !== a.by) continue;
         if (a.since && !(String(l.at) >= a.since)) continue;
         if (a.before && !(String(l.at) < a.before)) continue;
-        if (text && String(l.text).toLowerCase().indexOf(text) === -1) continue;
-        const pair = { key: String(i), label: JSON.stringify({ by: l.by, at: l.at, text: l.text }) };
-        if (oneAnswerBytes(pair.key, pair.label) > SEARCH_ROOM) { skipped = true; continue; }
-        if (!bucket.offer(pair)) break;
+        walk.push({ probability: lineProbability(text, l), pair: { key: String(i), label: JSON.stringify({ by: l.by, at: l.at, text: l.text }) } });
       }
-      const r = bucket.getResult();
-      return { items: r.items, more: r.more || skipped };
+      return ranked(walk, SEARCH_ROOM);
     },
   },
   // ── THE WRITES: no verb takes `by` any more (apiAuth/G1.13) — the
