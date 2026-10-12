@@ -135,6 +135,9 @@ function tree() {
 // recorded in this item's box).
 const PULL = String(values.pull === undefined ? 'git pull --ff-only' : values.pull).trim();
 function pullFirst() {
+  // READ NOW, NOT FROM THE CACHE (goal/G19.2): a run that starts within two seconds of the last one was judged on that
+  // run's tree, so a file left uncommitted in between read as clean and was pulled over - and the undo trusts this word.
+  seen = { at: 0, commit: '', short: '', dirty: '' };
   const before = tree();
   if (before.dirty) return 'dirty, not pulled';
   if (!PULL) return 'no pull command set';
@@ -411,6 +414,7 @@ async function claimCheckRun(id) {
   }
   return suitesOf(id).then(async function (list) {
     const reds = [];
+    const failed = [];
     // NOTHING TO RUN IS NOT A PASS (goal/G8.10, grown from rule/11 point 2): an item with no test file on its list had
     // no reds, and no reds asked verify.pass - so it took the Done button without one assertion having run. A list with
     // nothing on it, and a listed file that is gone, are both rejections now, and the missing file is named.
@@ -442,10 +446,13 @@ async function claimCheckRun(id) {
       // same reason. Found while building this: a red probe exited 0 and would have passed as green.
       const lines = said.split('\n').filter(function (l) { return /FAILURE #/.test(l); })
         .map(function (l) { return l.replace(/^\**\s*/, '').replace(/\s*[❌✅]\s*$/, '').trim(); });
-      if (lines.length) reds.push({ suite: rel, failures: lines });
+      if (lines.length) { reds.push({ suite: rel, failures: lines }); failed.push(rel); }
     }
+    // A RED HERE TAKES BACK THE DONE OF EVERY SETTLED ITEM LISTING THE SUITE (goal/G19.2), as a goal run's does; the
+    // item checked now is open, so it is never among them.
+    const undo = await regress(failed, pulled, 'item check');
     const at = tree();
-    const where = 'at ' + (at.short || at.commit || 'an unknown commit') + ' (' + pulled + ')';
+    const where = 'at ' + (at.short || at.commit || 'an unknown commit') + ' (' + pulled + ')' + regressSaid(undo);
     if (!reds.length) {
       // ALL GREEN IS ITS WORD TOO (goal/G8.3, found by claude-windows verifying b93a54d1): Andy, "only deskVerify brings
       // the button", so saying nothing would leave Done forever absent on his node. verify.pass is that word.
@@ -499,6 +506,9 @@ function watched(r) {
   let b = null;
   try { b = JSON.parse(r && r.body || 'null'); } catch (e) { b = null; }
   if (!b || !b.id) return null;
+  // A RE-VERIFY OF A GOAL IS ITS GOAL RUN (goal/G19.2): the desk marks the record goal: true. It is the way back for a
+  // goal whose goal.emptied this server never saw (written while it was down, and read as history on its first walk).
+  if (r.verb === 'verify.again' && b.goal === true) return { kind: 'goal', id: String(b.id), again: true };
   if (r.verb === 'verify.again') return { kind: 'item', id: String(b.id) };
   if (r.verb === 'phase.done' && String(b.phase) === 'verify' && b.pass === true) return { kind: 'item', id: String(b.id) };
   // A CLAIM IS A TRIGGER (goal/G16.13). It was not, so a plain item — which has no
@@ -557,13 +567,19 @@ async function watchOnce() {
       if (recs.length && recs[recs.length - 1].at) lastWriteAt = String(recs[recs.length - 1].at);
       if (!history) {
         recs.forEach(function (r) {
+          // A GOAL REOPENED OR REGRESSED EMPTIES AGAIN (goal/G19.2): the desk clears its emptied mark on either, and its
+          // next goal.emptied is a fresh run that the once-per-goal rule below must not swallow.
+          let rb = null;
+          try { rb = JSON.parse(r && r.body || 'null'); } catch (e) { rb = null; }
+          if (rb && rb.id && (r.verb === 'verify.regress' || (r.verb === 'press' && rb.what === 'reopen'))) delete goalsRun[String(rb.id)];
           const job = watched(r);
           if (!job) return;
-          // ONE PASS PER GOAL (goal/G8.12): a second goal.emptied for a goal already run does nothing.
-          if (job.kind === 'goal' && goalsRun[job.id]) return;
+          // ONE PASS PER GOAL (goal/G8.12): a second goal.emptied for a goal already run does nothing. A re-verify
+          // asked of a goal (goal/G19.2) is a word of its own and is always run.
+          if (job.kind === 'goal' && !job.again && goalsRun[job.id]) return;
           if (queued.some(function (q) { return q.kind === job.kind && q.id === job.id; })) return;
           if (queuedAlready(job)) return;
-          if (job.kind === 'goal') goalsRun[job.id] = true;
+          if (job.kind === 'goal' && !job.again) goalsRun[job.id] = true;
           queued.push(job);
         });
       }
@@ -607,6 +623,8 @@ function suiteFiles() {
 async function runList(doing, goalId, list) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   const reds = [];
+  // The suites that printed a red, apart from the missing and the stopped ones: what the undo reads (goal/G19.2).
+  const failed = [];
   stopped = false;
   for (const where of list) {
     const index = list.indexOf(where) + 1;
@@ -626,16 +644,86 @@ async function runList(doing, goalId, list) {
     const run = await runSuite(file, port, told);
     if (run.stopped) { reds.push(where + ': stopped by hand'); break; }
     if (run.timedOut) reds.push(where + ': stopped at the time limit of ' + SUITE_MS + 'ms');
-    else if (/FAILURE #/.test(run.said)) reds.push(where);
+    else if (/FAILURE #/.test(run.said)) { reds.push(where); failed.push(where); }
   }
   running = { id: '', suite: '', since: '' };
   stopped = false;
-  // THE REPORT IS ONE LINE (goal/G8.7, Andy: "both"): what went red, in the goal's own chat, where he reads it.
+  // THE REPORT IS ONE LINE (goal/G8.7, Andy: "both"): what went red, in the goal's own chat, where he reads it. Since
+  // goal/G19.2 the caller writes it, after the undo below, so the one line also says what the red took back.
   const text = reds.length
     ? doing + ' run on ' + list.length + ' suites: red in ' + reds.join(', ')
     : doing + ' run on ' + list.length + ' suites: all green';
-  await desk('chat.add', { id: String(goalId), text: text });
-  return { ran: list, reds: reds };
+  return { ran: list, reds: reds, failed: failed, text: text };
+}
+
+// ── A RED TAKES A DONE BACK (goal/G19.2) ─────────────────────────────────
+//
+//   Andy, 2026-10-12: "i said the verifier can not press done, i never said that the verifier cannot undo a
+//   done/close...", "a done becomes unsettles when an associated suite shows regression.", and "yes." to the reading:
+//   any run showing a suite red unsettles every done or closed item listing it, and its goal, counted only from a
+//   clean, pulled tree holding the item's commit. "a regression must come back as a red. If we find it is due to an
+//   eliminated product feature (device), we rectify the test, if its in production code, we fix the code."
+//
+// So after any run of this server (an item's check, a goal run, his full run): each suite that PRINTED a red - not one
+// missing, stopped by hand or stopped at the time limit, which measured nothing about the code - is looked up, and every
+// done or closed item listing it is unsettled with verify.regress, then its goal. Never when the tree was not pulled
+// clean (pullFirst said anything but 'pulled'): a red on his uncommitted work, or on code behind the remote, is not the
+// items' regression. Never an item whose commits the tree lacks (commitsLacking, goal/G18.10): the red was measured on
+// code that is not yet the item's. Done is still never pressed here; this only takes one back.
+//
+// WHERE THE ITEMS COME FROM: the desk's own items.search with includeClosed, the suite's path as the text. The desk
+// ranks items by their lines, and commitCheck's line under an item lists the files of its commit, so the items listing
+// the suite come first; the file list in each label is what decides. One answer per suite, so on a desk past one answer
+// room an item ranked below the bucket can be missed: the line then says the search was partial, rather than nothing.
+async function regress(failed, pulled, doing) {
+  const out = { items: [], goals: [], partial: false, skipped: '' };
+  if (!failed.length) return out;
+  if (pulled !== 'pulled') { out.skipped = 'nothing taken back: the tree was ' + pulled; return out; }
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  const byId = Object.create(null);
+  for (const suite of failed) {
+    const found = await desk('items.search', { text: suite, currentGoalOnly: false, goalsOnly: false, includeClosed: true });
+    if (found && found.more) out.partial = true;
+    ((found && found.items) || []).forEach(function (i) {
+      let one = null;
+      try { one = JSON.parse(i.label); } catch (e) { one = null; }
+      if (!one || !one.id || one.goal === '' || (one.status !== 'done' && one.status !== 'closed')) return;
+      const lists = (Array.isArray(one.files) ? one.files : []).some(function (f) { return String((f && f.path) || '') === suite; });
+      if (!lists) return;
+      const at = byId[one.id] || (byId[one.id] = { id: String(one.id), goal: String(one.goal), suites: [] });
+      if (at.suites.indexOf(suite) === -1) at.suites.push(suite);
+    });
+  }
+  const t = tree();
+  const where = 'at ' + (t.short || t.commit || 'an unknown commit') + ' (' + pulled + ')';
+  const goals = Object.create(null);
+  for (const id of Object.keys(byId).sort()) {
+    const one = byId[id];
+    if ((await commitsLacking(id, port)).length) continue;
+    const why = one.suites.join(', ');
+    const r = await desk('verify.regress', { id: id, why: why });
+    if (typeof r.change !== 'number') continue;
+    out.items.push(id);
+    await desk('chat.add', { id: id, text: 'deskVerify: regressed, ' + where + ': ' + why + ' went red in a ' + doing + ' run, so ' + id + ' is unsettled and waits for its work again.' });
+    const g = goals[one.goal] || (goals[one.goal] = []);
+    one.suites.forEach(function (s) { if (g.indexOf(s) === -1) g.push(s); });
+  }
+  for (const gid of Object.keys(goals).sort()) {
+    const why = goals[gid].join(', ');
+    const r = await desk('verify.regress', { id: gid, why: why });
+    if (typeof r.change !== 'number') continue;
+    out.goals.push(gid);
+    await desk('chat.add', { id: gid, text: 'deskVerify: regressed, ' + where + ': ' + why + ' went red in a ' + doing + ' run, so the goal waits for its items again.' });
+  }
+  return out;
+}
+// What the undo did, as the tail of a run's one line.
+function regressSaid(u) {
+  const parts = [];
+  if (u.items.length) parts.push('taken back: ' + u.items.concat(u.goals).join(', '));
+  if (u.skipped) parts.push(u.skipped);
+  if (u.partial) parts.push('the search for items listing the red was partial, so an item may have been missed');
+  return parts.length ? '; ' + parts.join('; ') : '';
 }
 
 // THE GOAL'S OWN SUITES (goal/G14.3): the test files on the lists of the goal's items, done and closed ones too -
@@ -660,11 +748,21 @@ async function goalSuites(goalId) {
 // - until Andy, 2026-10-12, in G14.3's box: "the verifier must run only automatically for items and for a goal." So:
 // the goal's own suites, the report line, and verify.pass on the goal, which is what brings the goal its Done. No
 // tolerated-reds grant (goal/G8.7) here any more: every suite this runs is the goal's own, so none is outside it.
+// ONLY A CLEAN RUN PASSES THE GOAL (goal/G19.2). It asked verify.pass whatever the run came to, so a red, a Stop by hand
+// or a listed file gone still brought the goal its Done. Andy, 2026-10-12, to the four fixes that hold back an unearned
+// Done: "yes. with my addendum." Now the pass is asked only when nothing was red, nothing missing and nothing stopped;
+// otherwise the line on the goal names what was, and says the goal is not passed. The tree is pulled first, as an
+// item's check pulls it (goal/G16.13), so the undo below knows whether the red was measured on a clean, pulled tree.
 async function goalRun(goalId) {
+  const pulled = pullFirst();
   const r = await runList('goal', goalId, await goalSuites(goalId));
-  await desk('verify.pass', { id: String(goalId) });
+  const undo = await regress(r.failed, pulled, 'goal');
+  const t = tree();
+  const where = ' (at ' + (t.short || t.commit || 'an unknown commit') + ', ' + pulled + ')';
+  await desk('chat.add', { id: String(goalId), text: r.text + where + (r.reds.length ? ', so the goal is not passed' : '') + regressSaid(undo) });
+  if (!r.reds.length) await desk('verify.pass', { id: String(goalId) });
   sayIdle();
-  return r;
+  return Object.assign(r, { rejected: r.reds.length > 0 });
 }
 
 // THE FULL HARNESS, BY HIS BUTTON ALONE (goal/G14.3). Andy, 2026-10-12: "only the desk user can run the full harness
@@ -672,7 +770,12 @@ async function goalRun(goalId) {
 // the goal chat the button named, and nothing else: it brings no Done and asks no grant.
 async function fullRun(goalId) {
   const rel = function (f) { return path.relative(REPO, path.join(SUITES_DIR, f)).split(path.sep).join('/'); };
+  // Pulled first, and a red here takes a Done back like any run's (goal/G19.2); it still passes nothing.
+  const pulled = pullFirst();
   const r = await runList('full', goalId, suiteFiles().map(rel));
+  const undo = await regress(r.failed, pulled, 'full');
+  const t = tree();
+  await desk('chat.add', { id: String(goalId), text: r.text + ' (at ' + (t.short || t.commit || 'an unknown commit') + ', ' + pulled + ')' + regressSaid(undo) });
   sayIdle();
   return r;
 }

@@ -1343,8 +1343,19 @@ spirit.shell.activateApp({
       // THE FULL HARNESS, ARMED THEN SENT (goal/G14.3), on the current goal, whose chat takes the report line.
       if (t.id === 'desk-verify-full') {
         deskArmOrFire('desk-verify-full', function () {
-          var g = deskGoalRow();
-          deskVerifyAsk('full.run', { id: g ? g.id : '' }).then(function () { return deskVerifyRefresh(); }, function () { return deskVerifyRefresh(); });
+          var sent = function (id) {
+            return deskVerifyAsk('full.run', { id: id }).then(function () { return deskVerifyRefresh(); }, function () { return deskVerifyRefresh(); });
+          };
+          // THE DESK'S CURRENT GOAL WHEN THE LIST SHOWS NONE (goal/G19.2). With no goal row on screen (a search, Goals
+          // Only off the current goal) it sent id '', and the report line had no goal to land on and failed in silence.
+          // The goal row is taken only while the List is the current goal's; otherwise the desk is asked for its
+          // current goal alone, with the same read the List uses.
+          var g = deskFilter.currentGoalOnly ? deskGoalRow() : null;
+          if (g) { sent(g.id); return; }
+          deskAsk('items.search', { text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: true }).then(function (r) {
+            var cur = deskLabels(r).filter(function (x) { return x && x.goal === ''; })[0];
+            return sent(cur ? cur.id : '');
+          }, function () { return sent(''); });
         });
         deskDrawVerifier();
         return;

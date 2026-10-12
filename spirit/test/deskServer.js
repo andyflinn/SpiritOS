@@ -54,6 +54,8 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // goal/G8.8 added item.files.add: the files an agent touched, kept by the item.
 // goal/G8.3 added verify.reject and verify.pass: deskVerify takes a verify back, his alone.
 // goal/G8.10 added verify.again: any agent asks for a re-verify, and deskVerify's watcher reads that record.
+// goal/G19.2 added verify.regress: deskVerify takes back the Done of a settled item, and its goal, when a suite it lists
+// goes red; his alone, as verify.reject is.
 // goal/G9.3 added box.release: the holder lets a box go without writing it.
 // goal/G9.9 added goal.add and item.add: the desk names every goal and item id, and the same two verbs serve him and
 // the agents (Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.").
@@ -65,7 +67,7 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // file added. So the verbs are compared exactly, and each AGENTS.<verb> is checked to name one of them.
 function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('AGENTS.') !== 0 || k === 'AGENTS.introspect'; }).sort(); }
 function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('AGENTS.') === 0 && k !== 'AGENTS.introspect'; }).every(function (k) { return VERBS.indexOf(k.slice(7)) !== -1; }); }
-const VERBS = ['AGENTS', 'AGENTS.introspect', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'state.get', 'state.set', 'verify.again', 'verify.pass', 'verify.reject', 'work.open'];
+const VERBS = ['AGENTS', 'AGENTS.introspect', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'state.get', 'state.set', 'verify.again', 'verify.pass', 'verify.regress', 'verify.reject', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');

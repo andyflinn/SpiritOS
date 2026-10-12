@@ -631,7 +631,35 @@ function apply(s, r, b, item, goalOf) {
     // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." It changes
     // nothing of the item - not its phase, not its verified mark, not its buttons: the record itself is the word, and
     // deskVerify's watcher reads it and runs the item's suites again.
+    // (Since goal/G19.2 the record on a goal carries goal: true, which is how the watcher knows to run the goal run;
+    // it still changes nothing here.)
     case 'verify.again': return;
+    // A DONE TAKEN BACK BY A REGRESSION (goal/G19.2). Andy, 2026-10-12: "i said the verifier can not press done, i
+    // never said that the verifier cannot undo a done/close...", "a done becomes unsettles when an associated suite
+    // shows regression.", and "a regression must come back as a red." The verifier still presses nothing: this is its
+    // own word, as verify.reject is, written as him. When it is written (a red on a clean, pulled tree holding the
+    // item's commit) is deskVerify's to judge; what it does is here, so a replay agrees. On an item: done and closed
+    // go, with its pass, its verify and its claims, so Done waits for the work again and an agent's new claim starts
+    // the check; a code item goes back to build as a rejected one does. On a goal: done and closed go, with its pass
+    // and its emptied mark, so the item's next Done asks a new goal run. Nothing that was not settled is touched.
+    case 'verify.regress': {
+      if (!it) return;
+      const word = 'regressed: ' + String(b.why || 'a suite it lists went red').slice(0, 200);
+      if (it.goal) {
+        const rg = s.goals[it.id];
+        if (!it.done && !it.closed && !it.checked && !(rg && rg.emptied)) return;
+        it.done = false; it.closed = false; it.alone = false; it.checked = false;
+        if (rg) rg.emptied = false;
+        it.status = word;
+        return;
+      }
+      if ((!it.done && !it.closed) || it.leftOut) return;
+      it.done = false; it.closed = false; it.alone = false;
+      it.verified = false; it.checked = false; it.claims = Object.create(null);
+      if (it.code) { it.phase = 'build'; it.phaseWith = ''; it.with = ''; }
+      it.status = word;
+      return;
+    }
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
     case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
@@ -793,7 +821,14 @@ function press(s, it, what, r, goalOf, b) {
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
   // REOPEN TAKES BACK DONE AS WELL AS CLOSE (goal/G4.20 point 2). Andy: "agreed: \"Reopen takes back Done as well
   // as Close\"". His Go stays on record; the claims go, so Done is not offered again until an agent claims anew.
-  else if (what === 'reopen') { it.done = false; it.closed = false; it.alone = false; it.claims = Object.create(null); }
+  else if (what === 'reopen') {
+    it.done = false; it.closed = false; it.alone = false; it.claims = Object.create(null);
+    // A REOPENED GOAL WAITS FOR A FRESH RUN (goal/G19.2). Its deskVerify pass and its emptied mark survived the reopen,
+    // so Done came straight back on the old run's word. Andy, 2026-10-12, to the four fixes that hold back an unearned
+    // Done: "yes. with my addendum." Both go here, in the walk, so a replay agrees; with the mark gone the press below
+    // writes a new goal.emptied when every item is still done or closed, and that is the fresh run.
+    if (it.goal) { it.checked = false; if (g) g.emptied = false; }
+  }
   else if (what === 'close') it.closed = true;
   // A BROUGHT-BACK ITEM DRAWS HIS EYE (goal/G2.1 note 6). Andy: "the row should immediately pop back into
   // visibility, with the attention-grabbing error icon, to draw my attention." The alert stands until his seen.
@@ -2112,7 +2147,15 @@ appServer.serve({
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      return { change: write('verify.again', { id: a.id, by: w.by, key: w.key }, function (st, it) {
+      // A GOAL IS RUN AGAIN TOO (goal/G19.2). A deskVerify restarted while a goal emptied read that goal.emptied as
+      // history, and verify.again refused a goal as "not a code item", so the goal's Done was out of reach for good.
+      // On a goal it is taken, from him or an agent, and the record says goal: true: deskVerify's watcher reads that as
+      // the goal run. The refusals below are an item's, unchanged.
+      const st0 = walkState();
+      const isGoal = !!(st0.items[String(a.id)] && st0.items[String(a.id)].goal);
+      const rec = isGoal ? { id: a.id, goal: true, by: w.by, key: w.key } : { id: a.id, by: w.by, key: w.key };
+      return { change: write('verify.again', rec, function (st, it) {
+        if (it && it.goal) { if (it.id === GROUP_CHAT) throw refusedWhy('not-offered', 'the group chat has no suites: it is not a goal to verify'); return; }
         // Nor on a done or closed item (goal/G8.10): a re-verify of a settled item would only feed the watcher a word
         // the desk would then refuse.
         // EACH REFUSAL SAYS WHY (goal/G18.10): the Verifier tab's button was refused in silence, and Andy read it as
@@ -2121,6 +2164,30 @@ appServer.serve({
         if (it.done || it.closed) throw refusedWhy('not-offered', a.id + ' is ' + (it.closed ? 'closed' : 'done') + ': a settled item is not verified again');
         if (!it.code) throw refusedWhy('not-offered', a.id + ' is not a code item: its check comes from its claim, not from a re-verify');
         if (it.verified !== true) throw refusedWhy('not-offered', a.id + ' has no verify pass on record yet: its verifier passes it first, then it can be verified again');
+      }).change };
+    },
+  },
+  // THE UNDO OF A DONE (goal/G19.2). Andy, 2026-10-12: "i said the verifier can not press done, i never said that the
+  // verifier cannot undo a done/close...", and "yes." to: any run showing a suite red unsettles every done or closed
+  // item listing it, and its goal, counted only from a clean, pulled tree holding the item's commit. deskVerify judges
+  // that and writes this as him, so it is his alone; what it does to the item is in the walk. Only a settled item takes
+  // it (a goal also while its pass or its emptied mark stands, which is what would bring its Done back unearned), and
+  // every refusal says why. verify.reject keeps refusing a settled item: the undo is this verb's, not that one's.
+  'verify.regress': {
+    request: { id: '', why: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      if (!caller || caller.owner !== true) throw refusedWhy('not-owner', 'verify.regress is the owner\'s: deskVerify writes it as Andy, and no agent takes back a Done');
+      const w = writerOf(caller);
+      const why = String(a.why || '').trim();
+      return { change: write('verify.regress', { id: a.id, why: why, by: w.by, key: w.key }, function (st, it) {
+        if (!it) throw refused('not-offered');
+        if (it.goal) {
+          if (it.id === GROUP_CHAT) throw refusedWhy('not-offered', 'the group chat is never settled, so nothing regresses there');
+          if (!it.done && !it.closed && !it.checked && !(st.goals[it.id] || {}).emptied) throw refusedWhy('not-offered', a.id + ' is neither done, closed nor passed: a goal with nothing settled has nothing to take back');
+          return;
+        }
+        if (it.leftOut) throw refusedWhy('not-offered', a.id + ' was deleted: a left-out item is not brought back by a regression');
+        if (!it.done && !it.closed) throw refusedWhy('not-offered', a.id + ' is neither done nor closed: only a settled item is unsettled by a regression');
       }).change };
     },
   },
