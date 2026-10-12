@@ -29,7 +29,9 @@ test.subHeading('T2: no ' + OLD + ' identifier is left in spirit/run or spirit/t
 // Desk's log records conversation, not code, and may name anything. So does process/js/desk/currentGoal.json, the
 // desk's record of the goal in his and the agents' words (goal/G4.19, issue 7: "the two guards that trip on
 // currentGoal.json skip that file").
-const SKIP = /[\\/](node_modules|relay-state|app-state)[\\/]|[\\/]app[\\/]desk[\\/](log|voice)[\\/]|[\\/]process[\\/]js[\\/]desk[\\/]currentGoal\.json[\\/]$/;
+// AND HIS VAULT (goal/G19.12, found by deskVerify on his node): run/brains/ is his own notes, in his own words, and
+// exists only on his node; like the desk's log it may name anything.
+const SKIP = /[\\/](node_modules|relay-state|app-state|brains)[\\/]|[\\/]app[\\/]desk[\\/](log|voice)[\\/]|[\\/]process[\\/]js[\\/]desk[\\/]currentGoal\.json[\\/]$/;
 const hits = [];
 // THE CODE, NOT THE QUOTES (goal/G19.12): his own words quoted in a comment keep the name he used ("give appServers
 // their namespace"), and a quote stays as he said it. So in a .js file only the lines that are not comments are read.

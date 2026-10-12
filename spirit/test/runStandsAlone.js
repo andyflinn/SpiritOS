@@ -46,7 +46,10 @@ test.startTest('run/ stands alone — the product does not need the harness');
 // node_modules is somebody else's code, vendored under a process script.
 // It is not ours to hold to this rule and scanning it would only find
 // other people's test fixtures.
-const SKIP_DIRS = ['node_modules'];
+// AND WHAT A RUNNING NODE KEEPS (goal/G19.12, found by deskVerify on his node): relay-state/ is the node's runtime
+// state, ignored by git and never shipped (the desk's currentGoal.json there quotes people's words), and brains/ is
+// his own vault. Neither is the product reaching for the harness.
+const SKIP_DIRS = ['node_modules', 'relay-state', 'brains'];
 // A RECORD OF CONVERSATION IS NOT CODE. Desk's own log (gitignored, never
 // shipped) holds what Andy and the agents said, and they talk about
 // spirit/test. What they said is not the product reaching for the harness.
