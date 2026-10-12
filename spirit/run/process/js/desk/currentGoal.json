@@ -1,8 +1,8 @@
 {
- "change": 33396,
+ "change": 33429,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T02:36:44.661Z",
+ "writtenAt": "2026-10-12T02:54:24.373Z",
  "items": [
   {
    "id": "goal/G10",
@@ -14,9 +14,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G10.7"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,9 +35,10 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
    "working": [],
    "agents": {
@@ -3530,9 +3529,12 @@
    "id": "goal/G10.7",
    "title": "Omit content length selection when loading a model in unsloth",
    "goal": "goal/G10",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G10"
    ],
@@ -3540,12 +3542,73 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/configuration.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/tools.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothContext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothDesk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothFs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothModels.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRemoteTabs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothSwitch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothTools.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -3582,7 +3645,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-12: \"add one item: Omit content length selection when loading a model in unsloth:\n\nNote:\nAutomatic Selection: If you omit context length settings or flags during an API/CLI startup (unsloth run), Unsloth automatically applies the best recommended parameters for that specific model, including its default context length.\"\n\nDECIDED\n- Q1, answered: Andy, 2026-10-12: \"- Remove the contextLimit from the deskUnsloth configuration the desckUnsloth configuration.\n- make sure that the connection.json file is .gitignored.\"\n- Q2, answered: Andy, 2026-10-12: \"remove  contextLimit from the configuration file. we will not work on stuff that unsloth does already well. we will never pass context limits to unslot. that's a decision.\n\nthe connection.json file must be gitignored.\n\nthe current comfiguration will be a \"configure\" tab in the UI.\n\nand a new tab is added: connect.\n\nthe \"where\" item in the \"configure\" tab will default as follows: 1 when deskUnsloth does not find desk installed on it's own node, it will default to \"this\" node. if it does find desk is installed on its own node it, will default to the first puppet it finds that has deskUnsloth installed.\"\n- Under Q3, the tabs: Andy, 2026-10-12:\n\"# the tabs\n\nactually, make that 3 tabs [test] [configure][connect]\nthe following warning bubbles appear in all 3 tabs:\n\n- if the \"remote\" app is not connected to a node containing the deskUnsloth app, an ICON.WARNING bubble is displayed, telling the user to use the \"connect\" tab to connect to a node that has deskUnsloth installed.\n- if the \"deskUnsloth\" on the chosen node is not connected to an OpenAI compatible server, the tab shows an ICON.WARNING bubble, telling the user to use the [connect] tab to connect to an OpenAI compatible server.\n- if the \"deskUnsloth\" has no model loaded and selected in the configure tab, an ICON.WARNING bubble appears, telling the user to use the model selector to select/load a model in the \"configure\" tab \n- while a model is loading, an ICON.WARNING bubble is displayed, \"be patient, a model (name of model) is currently loading.\n\n#the test tab\n\n- shows the appropriate warning bubbles above, when appropriate.\n- if an model is ready in the OpenAI compatible server, the test tab will show the chat interface.\n\nin the future the test tab will facilitate the testing of other model features, like vision, audio etc. oos for now.\n\n# the configure tab will show\n\n- the model selector bubble.\n\nin the future this tab will contain the persona configuration details. oos for this item.\n\n# the connect tab.\n\n- shows the appropriate warning bubbles above, when appropriate.\n\n- the \"where\" bubble: \"select the node where your local agent lives\"\n- the new \"connect to and OpenAI compatible server bubble\n- the connect/disconnect \"Levant\" to the desk bubble.\"\n- Q7, the server bubble writes url and key into connection.json through a new verb of deskUnsloth: \"yes.\"\n- Q3 and Q8, one item: \"All in this item.\", \"All of it in one item.\"\n- Q6, where: \"The where bubble is really a \"connect\" issue, and the first one that needs setting properly\"\n\nFOUND IN THE CODE\n- the studio load sends the model path alone (deskUnsloth.js loadModel); contextLimit only sizes the prompt, already auto when absent: the studio context_length, 8192 until first read.\n- connection.json is already gitignored (.gitignore line 240) and no longer tracked.\n- the \"where\" today is the target picker of deskUnslothRemote: this node, or a puppet from puppets.json in the app folder.",
@@ -3659,6 +3722,15 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T02:35:44.404Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Add an item for that, \"Desk: no limbo line while deskVerify checks a claim\"?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T02:49:44.391Z"
     }
    ],
    "chat": [
@@ -3721,6 +3793,41 @@
      "by": "desk",
      "at": "2026-10-12T02:36:44.254Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T02:48:45.160Z",
+     "text": "commit 2becb03730be55e6dd9ad80390060132929742dd: goal/G10.7: no context limit of ours; the connection from the app; three tabs\n- spirit/run/process/js/deskUnsloth/configuration.json\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/process/js/deskUnsloth/deskUnsloth.json\n- spirit/run/process/js/deskUnsloth/tools.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothContext.js\n- spirit/test/deskUnslothDesk.js\n- spirit/test/deskUnslothFs.js\n- spirit/test/deskUnslothModels.js\n- spirit/test/deskUnslothRemoteTabs.js\n- spirit/test/deskUnslothSwitch.js\n- spirit/test/deskUnslothTools.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T02:48:50.203Z",
+     "text": "Built at 2becb037: contextLimit gone (the room is the studio context, never sent); deskUnsloth starts without connection.json and the new connection.set writes it; Remote in [test] [configure] [connect] with the four warnings, where defaulting to the first puppet with deskUnsloth.\nFiles: deskUnsloth.js, configuration.json, deskUnsloth.json, tools.js, deskUnslothRemote.js, test deskUnslothRemoteTabs.js (new, 25 green) and the six deskUnsloth suites, all green.\nTo see it live, deskUnsloth needs a restart on 11111 and the Remote a reload; your state copy of configuration.json may keep contextLimit, now ignored."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T02:48:58.191Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T02:49:11.619Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T02:49:24.146Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T02:49:44.037Z",
+     "text": "deskVerify is running this item suites (on deskUnslothModels.js now).\nThe desk repeats its limbo line about every 13 s meanwhile, because a claim waiting on deskVerify does not count as worked on.\nAdd an item for that, \"Desk: no limbo line while deskVerify checks a claim\"?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T02:50:13.848Z",
+     "text": "deskVerify: passed, at 2becb037 (pulled). 7 suites ran green."
     }
    ]
   }
