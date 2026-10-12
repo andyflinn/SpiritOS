@@ -1,8 +1,8 @@
 {
- "change": 33429,
+ "change": 33433,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T02:54:24.373Z",
+ "writtenAt": "2026-10-12T02:54:30.988Z",
  "items": [
   {
    "id": "goal/G10",
@@ -35,12 +35,14 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3529,10 +3531,9 @@
    "id": "goal/G10.7",
    "title": "Omit content length selection when loading a model in unsloth",
    "goal": "goal/G10",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
