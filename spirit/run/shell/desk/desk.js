@@ -1113,7 +1113,7 @@ function deskVerifyBar() {
   var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
   var runPct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
   return deskVerifyBarHtml(runPct, 'run') +
-    '<div>' + (r.doing === 'full' ? 'Full run' : 'Item ' + deskEsc(r.id)) +
+    '<div>' + (r.doing === 'full' ? 'Full run' : r.doing === 'goal' ? 'Goal ' + deskEsc(r.id) : 'Item ' + deskEsc(r.id)) +
     (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
 }
 // IDLE, IT COUNTS DOWN (goal/G8.12). Andy: "after all is done, it should count down idle time, before it starts
@@ -1142,7 +1142,13 @@ function deskVerifyHtml() {
         (run.since ? ' · since ' + deskTime(run.since) : '')
       : (live && live.doing !== 'idle' ? '' : 'Idle' + (deskVerifyLast ? '; last checked ' + deskEsc(deskVerifyLast) : ''))) +
     '</div><div>' + (queued.length ? 'Waiting: ' + queued.map(deskEsc).join(', ') : 'Nothing waiting') + '</div>' +
-    '<div><button type="button" id="desk-verify-stop"' + (run.id ? '' : ' disabled') + '>Stop the run</button>' +
+    // HIS BUTTONS (goal/G14.3). Andy, 2026-10-12: "the Buttons in the verifier then read: [run the full harness button]
+    // [stop the run][re- run:.....]", the full harness "(armable)" and his alone; "re-run:" names the item, and
+    // "[Verify <item> again] can be left alone." Stop is pressable whenever anything runs: it was tied to an item id,
+    // and a full run carries none, so the longest run there is could never be stopped.
+    '<div><button type="button" id="desk-verify-full" data-armed="' + (deskArmed === 'desk-verify-full' ? '1' : '') + '">' +
+      (deskArmed === 'desk-verify-full' ? 'Run the full harness: sure?' : 'Run the full harness') + '</button>' +
+    ' <button type="button" id="desk-verify-stop"' + (run.id || run.suite ? '' : ' disabled') + '>Stop the run</button>' +
     (item ? ' <button type="button" data-reverify="' + deskEsc(item) + '">Verify ' + deskEsc(item) + ' again</button>' : '') +
     '</div></div>';
   // THE RECORDS LIST IS GONE (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
@@ -1378,6 +1384,15 @@ spirit.shell.activateApp({
     document.getElementById('desk-verifier').addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
+      // THE FULL HARNESS, ARMED THEN SENT (goal/G14.3), on the current goal, whose chat takes the report line.
+      if (t.id === 'desk-verify-full') {
+        deskArmOrFire('desk-verify-full', function () {
+          var g = deskGoalRow();
+          deskVerifyAsk('full.run', { id: g ? g.id : '' }).then(function () { return deskVerifyRefresh(); }, function () { return deskVerifyRefresh(); });
+        });
+        deskDrawVerifier();
+        return;
+      }
       if (t.id === 'desk-verify-stop') {
         deskVerifyAsk('stop', {}).then(function () { return deskVerifyRefresh(); }, function () { return deskVerifyRefresh(); });
         return;

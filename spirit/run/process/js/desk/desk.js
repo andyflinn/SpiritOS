@@ -552,7 +552,8 @@ function apply(s, r, b, item, goalOf) {
       it.checked = true;
       // goal/G8.12: the word on the row, written by the desk - on an item deskVerify has passed it, on a goal the full
       // run has.
-      it.status = it.goal ? 'full run passed' : 'deskVerify passed';
+      // goal/G14.3: an emptied goal's run is its own items' suites, no longer the full harness, and the word says so.
+      it.status = it.goal ? 'goal run passed' : 'deskVerify passed';
       return;
     // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
     // agent to pick the item up, raise red-questions if neccessary." It is the one thing deskVerify may do on his
@@ -582,7 +583,7 @@ function apply(s, r, b, item, goalOf) {
       if (g) g.emptied = true;
       // goal/G8.12: and the goal's own row says what it is waiting for, written here and by nobody by hand.
       const row = s.items[String(b.id)];
-      if (row && !row.done && !row.closed) row.status = 'full run started';
+      if (row && !row.done && !row.closed) row.status = 'goal run started';
       return;
     }
     // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." It changes

@@ -201,7 +201,8 @@ function runSuite(file, port, onTests) {
 // bar", and "it should refresh by itself". So every change of the run is one object down the stream
 // (appServer.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the newest
 // and replaces it. The page asks nothing, as his no-pulling rule requires.
-//   doing     'item' one item's suites, 'full' the short loop, 'idle' nothing running
+//   doing     'item' one item's suites, 'goal' an emptied goal's suites, 'full' the whole folder (his button) or the
+//             short loop, 'idle' nothing running
 //   index/of  which suite of how many; tests/expected: assertions printed so far, and how many that suite reported
 //             the last time it was measured (0 when it was never seen)
 //   since     idle: the newest desk write this server knows, which is what the tab counts the idle hour from
@@ -438,7 +439,8 @@ function watched(r) {
   // through nothing. Andy, 2026-10-11: "only the verifier should give me a done button,
   // that's one way of knowing that the 'Done' offered went through the verifier."
   if (r.verb === 'press' && String(b.what) === 'claim-done') return { kind: 'item', id: String(b.id) };
-  // THE GOAL HAS EMPTIED (goal/G8.12): the desk writes this when its last item goes, and it starts the full run.
+  // THE GOAL HAS EMPTIED (goal/G8.12): the desk writes this when its last item goes, and it starts the goal run
+  // (goal/G14.3: the goal's own suites; the full harness is his button's alone).
   if (r.verb === 'goal.emptied') return { kind: 'goal', id: String(b.id) };
   return null;
 }
@@ -449,7 +451,8 @@ async function drainQueue() {
     while (watchQueue.length) {
       const job = watchQueue.shift();
       try {
-        if (job.kind === 'goal') await fullRun(job.id);
+        if (job.kind === 'goal') await goalRun(job.id);
+        else if (job.kind === 'full') await fullRun(job.id);
         else await claimCheck(job.id);
       } catch (e) { /* the desk is the record; a failed check is asked again by its next word */ }
     }
@@ -499,12 +502,7 @@ async function watchOnce() {
 const watcher = setInterval(function () { watchOnce().catch(function () { /* next tick */ }); }, WATCH_MS);
 if (watcher.unref) watcher.unref();
 
-// THE FULL RUN WHEN THE GOAL EMPTIES (goal/G8.12). Andy, 2026-10-09: "why, the run-all should be triggered by: \"no
-// items left in the goal\", by the desk itself", and it was already his ruling in goal/G8.3's box ("When the last item
-// of the goal closes, every copy starts its full run"). The desk writes goal.emptied; this runs every suite in its
-// suites folder, one at a time, publishing doing 'full' so the tab's bar moves through it, then says what it found:
-// ONE line in the goal's chat naming the reds, the tolerated-reds grant through goal.check (goal/G8.7), and
-// verify.pass on the goal, which is what brings the goal its Done. One pass per goal; the watcher holds that.
+// THE SUITES FOLDER, which only his full run walks (goal/G14.3); the goal run takes its suites from the items.
 const SUITES_DIR = path.resolve(REPO, String(values.suites || 'spirit/test'));
 // A SUITE IS WHAT THE HARNESS CALLS ONE (goal/G8.12, found by claude-windows verifying 4c7fcb76): a file that calls
 // startTest( and is not on the harness's own list of helpers. Taking every .js ran testSupport.js, deskFake.js and
@@ -524,64 +522,80 @@ function suiteFiles() {
     try { return /startTest\s*\(/.test(fs.readFileSync(path.join(SUITES_DIR, f), 'utf8')); } catch (e) { return false; }
   }).sort();
 }
-async function fullRun(goalId) {
+// A LIST OF SUITES, ONE AT A TIME (goal/G14.3): what the goal run and his full run share. `doing` is what the tab
+// shows, 'goal' or 'full'. The stop flag is cleared before the first suite and after the last, so a Stop ends this
+// run and never the next one - it was cleared only by an item check, and a full run stopped by hand left the next
+// full run stopped at its first suite.
+async function runList(doing, goalId, list) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  const files = suiteFiles();
   const reds = [];
-  const rel = function (f) { return path.relative(REPO, path.join(SUITES_DIR, f)).split(path.sep).join('/'); };
-  for (const f of files) {
-    const index = files.indexOf(f) + 1;
-    const where = rel(f);
-    const expected = expectedOf(f);
+  stopped = false;
+  for (const where of list) {
+    const index = list.indexOf(where) + 1;
+    const expected = expectedOf(where);
+    const file = path.join(REPO, where);
+    if (!fs.existsSync(file)) { reds.push(where + ': missing from this checkout'); continue; }
     running = { id: '', suite: where, since: new Date().toISOString() };
     const told = function (tests) {
-      say({ doing: 'full', id: String(goalId), suite: where, index: index, of: files.length, tests: tests,
+      say({ doing: doing, id: String(goalId), suite: where, index: index, of: list.length, tests: tests,
         expected: expected,
-        line: 'full run: ' + f + ', suite ' + index + ' of ' + files.length +
+        line: doing + ' run: ' + path.basename(where) + ', suite ' + index + ' of ' + list.length +
           (expected ? ', ' + tests + ' of about ' + expected + ' tests' : ', ' + tests + ' tests'),
         since: running.since });
     };
     told(0);
-    const run = await runSuite(path.join(SUITES_DIR, f), port, told);
+    const run = await runSuite(file, port, told);
     if (run.stopped) { reds.push(where + ': stopped by hand'); break; }
     if (run.timedOut) reds.push(where + ': stopped at the time limit of ' + SUITE_MS + 'ms');
     else if (/FAILURE #/.test(run.said)) reds.push(where);
   }
   running = { id: '', suite: '', since: '' };
+  stopped = false;
   // THE REPORT IS ONE LINE (goal/G8.7, Andy: "both"): what went red, in the goal's own chat, where he reads it.
   const text = reds.length
-    ? 'full run on ' + files.length + ' suites: red in ' + reds.join(', ')
-    : 'full run on ' + files.length + ' suites: all green';
+    ? doing + ' run on ' + list.length + ' suites: red in ' + reds.join(', ')
+    : doing + ' run on ' + list.length + ' suites: all green';
   await desk('chat.add', { id: String(goalId), text: text });
-  // THE REDS OUTSIDE THE GOAL BECOME ONE GRANT ON IT (goal/G8.7). Andy, 2026-10-06: "tolerated reds have to be granted
-  // as a whole, in order to pop the Done button for the goal". These are the reds this pass MEASURED, not the
-  // dataset's - the pass is the newer truth, and it is the run he is waiting on. A red whose suite is on an item's own
-  // file list is the goal's own work and is never tolerated; and while such a grant already stands open, none is asked,
-  // because one decision is one button.
-  if (reds.length) {
-    const inside = Object.create(null);
-    const found = await desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: true });
-    ((found && found.items) || []).forEach(function (i) {
-      let one = null;
-      try { one = JSON.parse(i.label); } catch (e) { one = null; }
-      ((one && one.files) || []).forEach(function (f) {
-        const q = String((f && f.path) || '');
-        if (/^spirit\/test\/.+\.js$/.test(q)) inside[path.basename(q)] = true;
-      });
+  return { ran: list, reds: reds };
+}
+
+// THE GOAL'S OWN SUITES (goal/G14.3): the test files on the lists of the goal's items, done and closed ones too -
+// they are the goal's work. Andy, 2026-10-12, asked "When a goal empties, does the verifier run only the suites of its
+// items, the full harness being your button alone?": "yes."
+async function goalSuites(goalId) {
+  const found = await desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: true });
+  const out = Object.create(null);
+  ((found && found.items) || []).forEach(function (i) {
+    let one = null;
+    try { one = JSON.parse(i.label); } catch (e) { one = null; }
+    if (!one || one.goal !== String(goalId)) return;
+    (Array.isArray(one.files) ? one.files : []).forEach(function (f) {
+      const p = String((f && f.path) || '');
+      if (/^spirit\/test\/.+\.js$/.test(p)) out[p] = true;
     });
-    const outside = reds.filter(function (r) { return !inside[path.basename(String(r).split(':')[0])]; });
-    const open = await desk('item.checks', { id: String(goalId) }).then(function (c) {
-      return ((c && c.checks) || []).some(function (x) {
-        return x.kind === 'G' && x.state === 'open' && String(x.words).indexOf('tolerated reds:') === 0;
-      });
-    }, function () { return false; });
-    if (outside.length && !open) {
-      await desk('check.add', { id: String(goalId), kind: 'G', words: 'tolerated reds: ' + outside.join(', '), test: '' });
-    }
-  }
+  });
+  return Object.keys(out).sort();
+}
+
+// THE GOAL RUN, WHEN THE GOAL EMPTIES (goal/G8.12, narrowed by goal/G14.3). It ran every suite in the folder - the hour
+// - until Andy, 2026-10-12, in G14.3's box: "the verifier must run only automatically for items and for a goal." So:
+// the goal's own suites, the report line, and verify.pass on the goal, which is what brings the goal its Done. No
+// tolerated-reds grant (goal/G8.7) here any more: every suite this runs is the goal's own, so none is outside it.
+async function goalRun(goalId) {
+  const r = await runList('goal', goalId, await goalSuites(goalId));
   await desk('verify.pass', { id: String(goalId) });
   sayIdle();
-  return { ran: files.map(rel), reds: reds };
+  return r;
+}
+
+// THE FULL HARNESS, BY HIS BUTTON ALONE (goal/G14.3). Andy, 2026-10-12: "only the desk user can run the full harness
+// using a [run the full harness button] (armable) in the verifier tab." Every suite in the folder, the report line in
+// the goal chat the button named, and nothing else: it brings no Done and asks no grant.
+async function fullRun(goalId) {
+  const rel = function (f) { return path.relative(REPO, path.join(SUITES_DIR, f)).split(path.sep).join('/'); };
+  const r = await runList('full', goalId, suiteFiles().map(rel));
+  sayIdle();
+  return r;
 }
 
 // IDLE TIME (goal/G8.4). Andy, 2026-10-06: "when it's agent or it's desk have been idle for more than an hour". The box
@@ -729,6 +743,17 @@ appServer.serve({
   stop: {
     request: {}, reply: { stopped: false },
     handler: function () { return stopRun(); },
+  },
+  // HIS BUTTON (goal/G14.3): the full harness, queued behind whatever runs now, one at a time as every run is. `id` is
+  // the goal whose chat takes the report line. deskVerify's own verb, as the tab's three are (goal/G8.11).
+  'full.run': {
+    request: { id: '' }, reply: { queued: true },
+    handler: function (a) {
+      const job = { kind: 'full', id: String(a.id || '') };
+      if (!queuedAlready(job)) watchQueue.push(job);
+      drainQueue();
+      return { queued: true };
+    },
   },
   'claim.check': {
     request: { id: '' }, reply: { rejected: false, reds: [''] },

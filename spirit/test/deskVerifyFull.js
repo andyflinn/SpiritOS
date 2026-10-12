@@ -19,6 +19,8 @@
 //   index/of as it goes; then it posts ONE report line in the goal's chat naming the reds, asks goal.check (so the reds
 //   outside the goal become the G8.7 grant), and asks verify.pass on the goal. One pass per goal: a second goal.emptied
 //   for the same goal runs nothing.
+// SINCE goal/G14.3 the deskVerify half lives in deskVerifyGoalRun.js: an emptied goal runs its own items' suites, and
+// the whole folder runs only by his button. Andy, 2026-10-12: "yes." to both. This file keeps the desk's half.
 // NOT ASSERTED: the report line's exact words, and what a full run does when a suite hangs (the time limit already
 // covers it).
 
@@ -33,7 +35,6 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by goal/G8.12 (full run): ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const VERIFY = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 'deskVerify.js');
-const PROBES = path.join(__dirname, 'zzFullProbes');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskVerifyFullTestCWAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyFullTestOwnerAAAAAAAAAAAAAA=', label: 'andy' };
 
@@ -105,13 +106,14 @@ async function deskHalf() {
     else test.fail(OWED + 'the goal offers Done before deskVerify has spoken: ' + short(g.buttons));
     // GROWN AFTER HIS WORD (claude-windows). Andy: "the desk should update status in every change it manages....", and
     // "yes" to its being the status word on the List rows.
-    if (/full run/i.test(String(g.status))) test.check('the desk writes the goal\'s status itself: the full run is running');
+    // goal/G14.3: an emptied goal runs its own items' suites, not the full harness, and its word says so.
+    if (/goal run/i.test(String(g.status))) test.check('the desk writes the goal\'s status itself: the goal run is running');
     else test.fail(OWED + 'the emptied goal\'s status reads ' + short(g.status));
     const pass = await d.call('verify.pass', { id: 'fe/G1' }, ANDY);
     const g2 = parse((await d.call('item.get', { id: 'fe/G1' }, ANDY)).body.item) || {};
     if (took(pass) && (g2.buttons || []).indexOf('done') !== -1) test.check('deskVerify\'s verify.pass on the goal brings its Done');
     else test.fail(OWED + 'verify.pass on the goal answered ' + pass.status + ' ' + short(pass.body) + '; buttons ' + short(g2.buttons));
-    if (g2.status && g2.status !== g.status && /pass/i.test(String(g2.status))) test.check('and its status moves on by itself: passed');
+    if (/goal run passed/i.test(String(g2.status)) && g2.status !== g.status) test.check('and its status moves on by itself: passed');
     else test.fail(OWED + 'after the goal\'s pass its status reads ' + short(g2.status));
 
     // The same for an item: an agent's verify pass, deskVerify's rejection and its pass each set the status word.
@@ -141,89 +143,9 @@ async function deskHalf() {
   } finally { await d.stop(); node.close(); }
 }
 
-async function verifyHalf() {
-  test.subHeading('2. deskVerify: goal.emptied starts one full run, published, reported, granted, passed');
-  fs.mkdirSync(PROBES, { recursive: true });
-  fs.writeFileSync(path.join(PROBES, 'zzFullGreen.js'), "'use strict';\nconst test = require('../testSupport.js');\ntest.startTest('full probe green');\ntest.check('green one');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
-  fs.writeFileSync(path.join(PROBES, 'zzFullRed.js'), "'use strict';\nconst test = require('../testSupport.js');\ntest.startTest('full probe red');\ntest.fail('red one');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
-  // GROWN IN THE VERIFY (claude-windows, at 4c7fcb76): a suite is what runAll calls one - a file that calls startTest(
-  // and is not on runAll's NOT_A_SUITE list. Taking every .js would run testSupport.js, deskFake.js and runAll.js
-  // itself, a whole nested harness inside the full run. Each of these leaves a mark if it is ever run.
-  const MARK = path.join(scratch, 'ran-');
-  fs.writeFileSync(path.join(PROBES, 'zzFullHelper.js'), "'use strict';\nrequire('fs').writeFileSync(" + JSON.stringify(MARK + 'helper') + ", 'x');\nmodule.exports = {};\n");
-  fs.writeFileSync(path.join(PROBES, 'runAll.js'), "'use strict';\n// test.startTest( appears here as runAll's own does\nrequire('fs').writeFileSync(" + JSON.stringify(MARK + 'runAll') + ", 'x');\n");
-  const asks = []; const published = []; const records = [];
-  const node = await new Promise(function (resolve) {
-    const s = http.createServer(function (req, res) {
-      let b = ''; req.on('data', function (c) { b += c; });
-      req.on('end', function () {
-        let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        let out = {};
-        if (j && j.verb === 'jobs.update') { if (j.app) published.push(j.app); out = { ok: true }; }
-        else if (j && j.ask === 'api') out = { desk: {}, deskVerify: {} };
-        else if (j && j.ask && j.ask.desk) {
-          const verb = Object.keys(j.ask.desk)[0];
-          const a = j.ask.desk[verb] || {};
-          if (verb === 'changes') {
-            const from = Number(a.n) || 0;
-            const rest = records.filter(function (r) { return r.n > from; });
-            out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
-          } else {
-            asks.push({ verb: verb, args: a });
-            if (verb === 'items.search') out = { items: [{ key: 'fe/G1', label: JSON.stringify({ id: 'fe/G1', goal: '', files: [] }) }], more: false };
-            else if (verb === 'item.checks') out = { checks: [] };
-            else out = { change: 1 };
-          }
-        } else if (j && j.ask && j.ask.deskVerify && j.ask.deskVerify.record) out = { written: true };
-        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
-      });
-    }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
-  });
-  const rec = function (verb, body) { records.push({ n: records.length + 1, at: new Date().toISOString(), verb: verb, by: 'desk', key: '', body: JSON.stringify(body) }); };
-  const root = path.join(scratch, 'verify');
-  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
-  const v = server(VERIFY, 'verify', {
-    values: { db: path.join(root, 'verify.db'), watchMs: 300, suiteMs: 60000, suites: 'spirit/test/zzFullProbes' },
-    env: { SPIRIT_JOB_ID: 'verify-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' },
-  }, root);
-  const waitFor = async function (fn, ms) { const t = Date.now() + ms; while (Date.now() < t) { if (fn()) return true; await sleep(200); } return fn(); };
-  const said = function (verb) { return asks.filter(function (x) { return x.verb === verb; }); };
-  try {
-    if (!await v.up()) { test.fail('the world: deskVerify did not start'); return; }
-    await sleep(800);
-    rec('goal.emptied', { id: 'fe/G1' });
-    await waitFor(function () { return said('verify.pass').some(function (x) { return x.args.id === 'fe/G1'; }); }, 15000);
-    const full = published.filter(function (o) { return o && o.doing === 'full'; });
-    if (full.length && full.every(function (o) { return o.of === 2; }) && full.some(function (o) { return o.index === 2; })) test.check('it ran every suite of its folder, publishing doing full, suite i of 2');
-    else test.fail(OWED + 'published: ' + short(published.slice(0, 4)));
-    if (!fs.existsSync(MARK + 'helper') && !fs.existsSync(MARK + 'runAll')) test.check('it ran suites only: no helper, and never runAll.js itself');
-    else test.fail(OWED + 'the full run ran ' + [fs.existsSync(MARK + 'helper') ? 'a helper (no startTest)' : '', fs.existsSync(MARK + 'runAll') ? 'runAll.js' : ''].filter(Boolean).join(' and '));
-    const report = said('chat.add').filter(function (x) { return x.args.id === 'fe/G1'; });
-    if (report.length === 1 && /zzFullRed\.js/.test(String(report[0].args.text))) test.check('one report line in the goal chat, naming the red suite');
-    else test.fail(OWED + 'the goal chat was asked ' + short(report));
-    const grant = said('check.add').filter(function (x) { return x.args.id === 'fe/G1' && x.args.kind === 'G'; });
-    if (grant.length === 1 && /zzFullRed\.js/.test(String(grant[0].args.words))) test.check('and the red outside the goal became the G8.7 grant');
-    else test.fail(OWED + 'check.add asked ' + short(said('check.add')));
-    if (said('verify.pass').some(function (x) { return x.args.id === 'fe/G1'; })) test.check('then it gave the goal its verify.pass');
-    else test.fail(OWED + 'no verify.pass on the goal: ' + short(said('verify.pass')));
-    const runs = full.filter(function (o) { return o.index === 1; }).length;
-    rec('goal.emptied', { id: 'fe/G1' });
-    await sleep(3000);
-    const runs2 = published.filter(function (o) { return o && o.doing === 'full' && o.index === 1; }).length;
-    if (runs > 0 && runs2 === runs) test.check('a second goal.emptied for the same goal runs nothing: one pass per goal');
-    else test.fail(OWED + 'the full run started again: suite 1 published ' + runs + ' then ' + runs2 + ' times');
-  } finally {
-    await v.stop(); node.close();
-    try { fs.rmSync(PROBES, { recursive: true, force: true }); } catch (e) { /* gone */ }
-  }
-}
-
 (async function () {
   await deskHalf();
-  await verifyHalf();
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
-  try { fs.rmSync(PROBES, { recursive: true, force: true }); } catch (e) { /* gone */ }
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   test.reportSuccessFailureCount();
   process.exit(0);
