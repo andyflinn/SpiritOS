@@ -1,5 +1,5 @@
 {
- "change": 38954,
+ "change": 39205,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -40,7 +40,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -162,9 +162,7 @@
     "goal/G19",
     "goal/G19.11"
    ],
-   "blocked": [
-    "goal/G19.14"
-   ],
+   "blocked": [],
    "go": true,
    "alone": false,
    "alert": false,
@@ -2923,9 +2921,12 @@
    "id": "goal/G19.14",
    "title": "One door: peerPost holds the node stream to each relay",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19.1"
    ],
@@ -2933,18 +2934,64 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/cycleA.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/fileCore.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/hubPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/oneDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/oneDoorStacks.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceFeeding.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3210,6 +3257,61 @@
      "by": "desk",
      "at": "2026-10-12T16:50:13.572Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:50:16.498Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:50:20.350Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T16:50:23.770Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T16:50:37.175Z",
+     "text": "Taking G19.14, red phase first: the stack suite with presenceNode and postQueue behind peerPost, then the move."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:07:25.792Z",
+     "text": "commit 9e8c3887efed6bd2b388740d257bfe50ade66d87: goal/G19.14: one door, peerPost holds the node's stream to each relay; stack suite asserts it\n- spirit/run/js/hub.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/server.js\n- spirit/test/cycleA.js\n- spirit/test/fileCore.js\n- spirit/test/hubPost.js\n- spirit/test/oneDoorStacks.js\n- spirit/test/presenceFeeding.js\n- spirit/test/presenceWire.js\n- spirit/test/tools/wirePaths.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:07:35.931Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:07:37.398Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:07:44.665Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:07:53.284Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:07:56.977Z",
+     "text": "Built at 9e8c3887. Files: peerPost, server, hub (core, G2), the stack probe, oneDoorStacks (new), hubPost, fileCore, cycleA, presenceFeeding, presenceWire.\n- peerPost builds presenceNode and answers for it; server no longer requires it, hub reaches it only through peerPost.\n- One text changed: a post while no relay stream is held now says that peer is not reachable right now, not this node is not connected to a relay.\n- The suites that test presenceNode itself still build it directly, as tests may."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:09:45.206Z",
+     "text": "deskVerify: passed, at 9e8c3887 (pulled). 9 suites ran green."
     }
    ]
   }
