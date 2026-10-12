@@ -1,8 +1,8 @@
 {
- "change": 34027,
+ "change": 34028,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T04:49:35.058Z",
+ "writtenAt": "2026-10-12T04:49:40.714Z",
  "items": [
   {
    "id": "goal/G10",
@@ -35,7 +35,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -4505,10 +4505,9 @@
    "id": "goal/G10.9",
    "title": "deskUnsloth: test tool calling of the allowed models",
    "goal": "goal/G10",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
