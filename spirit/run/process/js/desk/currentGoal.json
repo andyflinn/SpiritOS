@@ -1,8 +1,8 @@
 {
- "change": 34178,
+ "change": 34201,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T07:12:48.245Z",
+ "writtenAt": "2026-10-12T07:18:20.062Z",
  "items": [
   {
    "id": "goal/G18",
@@ -14,7 +14,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G18.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -34,22 +36,120 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
+   "design": false,
    "waiting": 1,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "This is NOT good, every panel in desk and desk details now shows the deskUnslothRemote. Needs fixing ASAP",
+   "version": 1,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Item \"deskUnslothRemote stays visible over every app\" under goal/G18 with your Go now, or where do you want it?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T07:17:14.617Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:16:17.289Z",
+     "text": "Found: the shell hides an app it leaves with hidden = true (shell.js switchTo), and the Remote mount sets display flex on its own container (deskUnslothRemote.js mount, since goal/G14.4); an inline display beats hidden, so once the Remote has been opened it stays visible under every app.\nThe fix is three lines, all in the Remote: the flex column moves onto an inner wrapper, the container keeps no display of its own.\nItem \"deskUnslothRemote stays visible over every app\" under goal/G18 with your Go now, or where do you want it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:16:52.045Z",
+     "text": "Q1: Item \"deskUnslothRemote stays visible over every app\" under goal/G18 with your Go now, or where do you want it?\n\ninder G18 is good. let's do that before anything else."
+    }
+   ]
+  },
+  {
+   "id": "goal/G18.1",
+   "title": "deskUnslothRemote stays visible over every app",
+   "goal": "goal/G18",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12, in the goal box: \"This is NOT good, every panel in desk and desk details now shows the deskUnslothRemote. Needs fixing ASAP\"; and \"inder G18 is good. let's do that before anything else.\"\n\nFOUND\n- shell.js switchTo hides the app it leaves with _el.hidden = true; deskUnslothRemote.js mount sets container.style.display = flex (since goal/G14.4), and an inline display beats hidden, so the Remote stays visible under every app once opened.\n\nTHE FIX\n- the flex column moves onto an inner wrapper; the container keeps no display of its own, so hidden hides it again.",
+   "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:17:24.525Z",
+     "text": "Added as goal/G18.1, your words and the cause in the box.\nGo is not offered while goal/G18 is in design mode: End design mode, then Go on G18.1, and I commit at once; red and fix are ready in my clone meanwhile."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T07:18:19.643Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
