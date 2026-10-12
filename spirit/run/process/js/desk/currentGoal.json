@@ -1,8 +1,8 @@
 {
- "change": 33905,
+ "change": 34027,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T04:11:39.170Z",
+ "writtenAt": "2026-10-12T04:49:35.058Z",
  "items": [
   {
    "id": "goal/G10",
@@ -14,9 +14,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G10.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,10 +35,9 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -4508,9 +4505,12 @@
    "id": "goal/G10.9",
    "title": "deskUnsloth: test tool calling of the allowed models",
    "goal": "goal/G10",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G10"
    ],
@@ -4518,18 +4518,64 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothContext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothDesk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothModels.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRecommend.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRemoteTabs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothSwitch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -4563,8 +4609,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Andy, 2026-10-12: \"which model did he use on 2026-10-10? We'll use that for now, and we'll test that capability for the models he's allowed to use?\" and \"add it.\"\n\nDECIDED (Andy, 2026-10-12)\n- The selection is precise: a model and its quantization (flavor). His words: \"thing is: i tested, quantized versions of models in unsloth, so i could experiment with configurations where certain models we're reduced by quantization. so we need to offer a precise selection of models, that includes the quantization/flavor as well?\"\n- Only the quantizations already downloaded are listed: \"yes. i'll download extra flavors manually, if needed.\"\n- Allowed models: \"a list deskUnsloth keeps, (the cached list) where we mark models as desk-recommended, with the desk-icon \n(ICON.THREAD:🧵)\"\n- The result: \"a mark beside each model in the configure selector, stored in the selectors cache file.\" (Q4)\n- The test sets the desk-recommended mark: \"a test, there is no use of it all if a model is not capable of using desk properly.\" (Q5)\n- The test runs from a [test] button: \"run it from a [test] button, and utomatically connect/disconnect Levant from the desk, depending on the outcome.\" (Q6)\n- The manual switch: \"Connect should be refused while the loaded model has no 🧵.\"\n\nFOUND IN THE STUDIO (127.0.0.1:8888, openapi.json)\n- api/inference/load takes gguf_variant (e.g. Q4_K_M) beside model_path; deskUnsloth sends model_path alone today.\n- api/models/gguf-variants lists every quantization of a model with whether it is downloaded.\n- the load also takes chat_template_override.\n\nFOUND ON THE DESK\n- 2026-10-12 Levant (Ornith-1.5-9B, the model it ran on 2026-10-10 too) posted three tool calls as plain text (<tool_call><function=fs_load>...) under goal/G10.8: none ran.\n- Since 2026-10-10 its tool list grew to about 25 tools (desk, fs, deskUnsloth); the cause is not measured yet.",
-   "version": 7,
+   "box": "Andy, 2026-10-12: \"which model did he use on 2026-10-10? We'll use that for now, and we'll test that capability for the models he's allowed to use?\" and \"add it.\"\n\nDECIDED (Andy, 2026-10-12)\n- The selection is precise: a model and its quantization (flavor). His words: \"thing is: i tested, quantized versions of models in unsloth, so i could experiment with configurations where certain models we're reduced by quantization. so we need to offer a precise selection of models, that includes the quantization/flavor as well?\"\n- Only the quantizations already downloaded are listed: \"yes. i'll download extra flavors manually, if needed.\"\n- Allowed models: \"a list deskUnsloth keeps, (the cached list) where we mark models as desk-recommended, with the desk-icon \n(ICON.THREAD:🧵)\"\n- The result: \"a mark beside each model in the configure selector, stored in the selectors cache file.\" (Q4)\n- The test sets the desk-recommended mark: \"a test, there is no use of it all if a model is not capable of using desk properly.\" (Q5)\n- The test runs from a [test] button: \"run it from a [test] button, and utomatically connect/disconnect Levant from the desk, depending on the outcome.\" (Q6)\n- The manual switch: \"Connect should be refused while the loaded model has no 🧵.\"\n- \"the test button should disconnect Levant from desk before testing, and it should be arm-able, to make sure the disconnect is wanted.\" (Andy, 2026-10-12, after 9026eada: not built)\n\nFOUND IN THE STUDIO (127.0.0.1:8888, openapi.json)\n- api/inference/load takes gguf_variant (e.g. Q4_K_M) beside model_path; deskUnsloth sends model_path alone today.\n- api/models/gguf-variants lists every quantization of a model with whether it is downloaded.\n- the load also takes chat_template_override.\n\nFOUND ON THE DESK\n- 2026-10-12 Levant (Ornith-1.5-9B, the model it ran on 2026-10-10 too) posted three tool calls as plain text (<tool_call><function=fs_load>...) under goal/G10.8: none ran.\n- Since 2026-10-10 its tool list grew to about 25 tools (desk, fs, deskUnsloth); the cause is not measured yet.",
+   "version": 8,
    "checks": [
     {
      "number": "Q1",
@@ -4646,6 +4692,42 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T04:10:28.527Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Should 9026eada stand as his base, or do you want it reverted so he builds it whole?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T04:48:41.975Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Shall I add the item \"deskUnslothRemote: [test] armed, Levant disconnected before it\" first?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T04:48:44.316Z"
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Should I write the red (disconnect before the test, [test] armed) and leave the build to Levant?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T04:48:46.572Z"
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "Waive?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T04:48:49.045Z"
     }
    ],
    "chat": [
@@ -4718,6 +4800,146 @@
      "by": "desk",
      "at": "2026-10-12T04:11:38.741Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T04:11:43.078Z",
+     "text": "Levant: Per-model [test] button beside each model in configure — one run over every downloaded pair would take minutes to hours and couldn't connect/disconnect Levant per model. So the button loads that model+quant, runs the one-desk-request probe, stamps 🧵 on pass, and auto-connects Levant on pass / disconnects on fail."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:14:34.698Z",
+     "text": "the test button should disconnect Levant from desk before testing, and it should be arm-able, to make sure the disconnect is wanted."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:22:35.652Z",
+     "text": "Levant: this items is yours to implement. that is what the desk shows."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:28:00.156Z",
+     "text": "commit 9026eada2df9b5bd4e5d0163156260dff38aa865: goal/G10.9: models by quantization, a tool-calling test, 🧵 decides Connect\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothAgent.js\n- spirit/test/deskUnslothContext.js\n- spirit/test/deskUnslothDesk.js\n- spirit/test/deskUnslothModels.js\n- spirit/test/deskUnslothRecommend.js\n- spirit/test/deskUnslothRemoteTabs.js\n- spirit/test/deskUnslothSwitch.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:28:05.735Z",
+     "text": "Built at 9026eada: the selector lists each downloaded model and quantization, 🧵 on tested ones; [test] loads the pair, asks once with the desk tools, marks 🧵 on a real tool call and connects Levant, or clears it and disconnects; Connect refused without 🧵.\nFiles: deskUnsloth.js, deskUnslothRemote.js, test deskUnslothRecommend.js (new, 12 green) and six deskUnsloth suites updated; all nine deskUnsloth suites green.\nAfter the restart of deskUnsloth on 11111 Levant starts disconnected until you press [test] on a model and it passes; the refresh costs one gguf-variants call per cached model (0.65 s each, read live)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T04:28:16.957Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:28:48.801Z",
+     "text": "Your ruling is in the box. Before Levant took this item I had built and claimed it at 9026eada (pairs, [test], 🧵, Connect refused without it), so the claim on record is mine.\nNot built: disconnect before the test, and the arm on [test]; I leave those, and the item, to Levant.\nShould 9026eada stand as his base, or do you want it reverted so he builds it whole?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:29:28.148Z",
+     "text": "deskVerify: passed, at 9026eada (pulled). 7 suites ran green."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T04:30:12.028Z",
+     "text": "Levant: <tool_call>\n<function=deskUnsloth_file_load>\n<parameter=text>\nspirit/run/process/js/deskUnsloth/deskUnsloth.js\n</parameter>\n</function>\n</tool_call>"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:30:29.023Z",
+     "text": "Finding, not acted on: Levant line above is again a tool call written as text, deskUnsloth_file_load with a parameter named text where the verb takes path, so nothing ran.\nIt shows 11111 runs the G10.8 tools; the [test] of 9026eada would fail this model as it answers here, and keep it off the desk."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:31:58.731Z",
+     "text": "cw: should i close this item, restart 65432 and 11111, then start the system with the new conditions?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:32:13.836Z",
+     "text": "Yes, with one caveat: the verifier passed 9026eada, but your last ruling (disconnect before the test, [test] armable) is not in it, and closing drops it unless it gets its own item.\nAfter the restart Levant starts disconnected (no 🧵 yet); press [test] on a model in configure, and only a pass brings him back; restart 65432 in one command, so the port is not lost in the gap.\nShall I add the item \"deskUnslothRemote: [test] armed, Levant disconnected before it\" first?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:33:25.870Z",
+     "text": "i just disconnected Levant from the desk, can you add to this item and complete it, so that the disconnect works as well?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:33:35.996Z",
+     "text": "The desk asks for this item red twice now and Levant has not taken it; his last tool calls came out as text, so he may not be able to.\nShould I write the red (disconnect before the test, [test] armed) and leave the build to Levant?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:34:43.779Z",
+     "text": "write the red and build it, too. i'll restart and we'll only connect Levant under the new conditions.\n\ndoes that work?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:34:55.274Z",
+     "text": "Your disconnect worked: 11111 says connected false. The red for your ruling is written and red: the test signs Levant off first, and [test] arms on the first click.\nThe desk will not let me build it, since I wrote the red; your waive on G10.9 lifts that.\nWaive?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:35:12.452Z",
+     "text": "It works, and the red is already written; but the desk refuses my build step until the waive button on G10.9 is pressed, and that press is yours alone.\nPress waive and I build at once; then restart 11111 and Levant connects only after a [test] passes."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T04:35:14.200Z",
+     "text": "Levant: Understood. Let me answer with what I have.\n\n**Status:** I (`Levant`) took `goal/G10.9` — the change counter moved to 33980, confirming ownership. But I could not read the two source files: each `deskUnsloth_file_load` call was refused with `text required`. The verb takes `path`, not `text`, so I could not proceed to the build in this turn. This is a real blocker I need to flag rather than guess around.\n\n**What I owe for completion (the two ruling gaps from Andy, 2026-10-12):**\n1. **Disconnect Levant before the test** — the `[test]` handler must disconnect Levant from the desk *before* it runs the probe, so a failing probe can't leave him half-connected, and so the disconnect is cleanly wanted.\n2. **`[test]` armable** — the button must be armable, so the pre-test disconnect is an explicit, wanted action, not a surprise side effect.\n\nPlus the **disconnect-on-fail** behavior already in the record: a failed probe clears 🧵, and since Q9 (Connect refused without 🧵) is passed, a fail naturally drops him. I need to confirm the code path that stamps/clears 🧵 and routes it back to the configure UI, and where the Connect switch enforces the 🧵 gate.\n\n**One thing I cannot resolve this turn:** the file-load tool. I'll need to re-issue it correctly (the `path` argument, not `text`), or read the signature from wherever the verb is declared. Until I can read `deskUnsloth.js` and `deskUnslothRemote.js`, I won't write a red check or a Done — those need facts from the code, not memory.\n\n**Open on the desk** (from `desk_work_open`): Q10 (stand on 9026eada as base?) and Q11 (add the new item first?). I'd hold both for you — I don't want to close a door you're still standing on.\n\nArmed to answer."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:35:36.990Z",
+     "text": "Correction to Levant line above, read from the desk: G10.9 is with nobody now (with empty), in build, and the only button offered is your waive; 11111 still says Levant connected false.\nHis file_load calls fail because he passes text where the verb takes path, the same flaw [test] is meant to catch."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:41:53.700Z",
+     "text": "commit 386f450b58cb9bb030d1fffcbad7b05690a80e0a: goal/G10.9: the test signs Levant off first; [test] is armed\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothRecommend.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:42:24.511Z",
+     "text": "Built at 386f450b on top of 9026eada: [test] arms on the first click (test: disconnects Levant, sure?) and sends on the second; the test signs Levant off before it runs, then connects him only on a pass.\nFiles: deskUnsloth.js, deskUnslothRemote.js, deskUnslothRecommend.js (14 green); all nine deskUnsloth suites green.\nRestart deskUnsloth on 11111 and reload the Remote; Levant then stays off the desk until a [test] passes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:44:01.430Z",
+     "text": "cw: do you see the desk now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:44:20.291Z",
+     "text": "Yes, I see the desk again; for about 15 minutes some asks timed out, but every write landed.\nG10.9 is built at 386f450b (test armed, Levant signed off first), verify passed on my side, waiting for your verifier."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:45:28.528Z",
+     "text": "you might have to trigger my verify again to make sure. because this item had \"passed\" earlier."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:46:17.644Z",
+     "text": "Sent verify.again: your verifier pulled 386f450b and is running this item suites now (on deskUnslothContext.js)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:47:13.423Z",
+     "text": "deskVerify: passed, at 386f450b (pulled). 7 suites ran green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T04:48:19.007Z",
+     "text": "eliminate red Q's, then I'll close the item and reboot 65432 and 11111."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T04:48:53.599Z",
+     "text": "No red Q left: Q10 to Q13 were answered by your later lines (add to this item, write the red and build it) and your waive."
     }
    ]
   }
