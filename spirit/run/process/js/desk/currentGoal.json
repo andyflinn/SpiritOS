@@ -1,8 +1,8 @@
 {
- "change": 37183,
+ "change": 37449,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T14:32:39.731Z",
+ "writtenAt": "2026-10-12T14:52:23.381Z",
  "items": [
   {
    "id": "goal/G19",
@@ -16,7 +16,6 @@
    "blocking": [],
    "blocked": [
     "goal/G19.1",
-    "goal/G19.2",
     "goal/G19.7",
     "goal/G19.8",
     "goal/G19.10",
@@ -43,7 +42,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -372,9 +371,12 @@
    "id": "goal/G19.2",
    "title": "Goal Done gates: reds, stop, reopen, restart",
    "goal": "goal/G19",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19",
     "goal/G19.11"
@@ -383,18 +385,44 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyDoneGates.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -561,6 +589,41 @@
      "by": "claude-windows",
      "at": "2026-10-12T14:32:31.256Z",
      "text": "taking: red first, in my clone."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:51:15.959Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:51:17.632Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:51:18.491Z",
+     "text": "commit e5c83fbbacfa9dd725c4a678bf4cbcba8644423d: goal/G19.2: goal Done gates; a regression unsettles what it reaches\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/shell/desk/desk.js\n- spirit/test/deskServer.js\n- spirit/test/deskVerifyDoneGates.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:51:25.663Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T14:51:33.855Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:51:50.716Z",
+     "text": "Claimed, in e5c83fbb (on the remote before the claim). Files: desk.js, deskVerify.js, the desk page desk.js, deskServer.js (verify.regress added to its verb list), and the new deskVerifyDoneGates.js.\nHow the undo finds what to unsettle: one items.search per red suite with closed items included; commitCheck's commit lines list the files, so items that listed the suite rank first; each is then checked for its commit in the tree. On a big desk one answer may not reach every item; the run's line then says the search was partial.\nOnly a suite that printed a red counts as a regression; a missing file, a Stop or the time limit still holds back the goal's pass but unsettles nothing, since nothing was measured.\nYour rule taken as worded, so you know its reach: a red in an item's own claim check (its new code breaking an old suite) unsettles the older done items that list that suite.\nNot in this item: reopening a single item leaves its goal's pass standing; a goal whose items list no test file still passes on an empty run, as before.\nGoal and full runs now pull first, as item checks already did. All of it takes effect when deskVerify and the desk server restart on it.\n"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T14:52:14.012Z",
+     "text": "deskVerify: passed, at e5c83fbb (pulled). 2 suites ran green."
     }
    ]
   },
@@ -1810,8 +1873,7 @@
     "goal/G19"
    ],
    "blocked": [
-    "goal/G19.1",
-    "goal/G19.2"
+    "goal/G19.1"
    ],
    "go": false,
    "alone": false,
@@ -2071,7 +2133,7 @@
    "title": "Desk: a claim carries its commit; deskVerify waits for it",
    "goal": "goal/G19",
    "status": "running",
-   "with": "",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G19"
@@ -2082,10 +2144,10 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "red",
    "red": "",
@@ -2122,17 +2184,32 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Desk: a claim carries its commit; deskVerify waits for it.\n\nDECIDED (Andy, 2026-10-12): \"these push things, when you report a claim on code, it should be accompanied by the commit id, that way desk verify won't check something that hasn't arrived yet... ?\"; asked whether to add it as an item: \"yes.\"\nFOUND: on goal/G19.12 a claim ran ahead of its push (the push was refused, the claim was not), and deskVerify checked and rejected the old tree. Since goal/G18.10 a pass is bound to the commits commitCheck writes under the item, but those lines appear only once the remote holds the commit, so a claim that runs ahead of its push is still checked on old code.\nPROPOSED SHAPE\n- The claim-done press of a code item names its commit (the hash at the agent's HEAD).\n- deskVerify pulls; if its tree then lacks that commit it says \"not checked, waiting for <commit>\", neither passes nor rejects, and checks again on its next pull, until the commit is there.\n",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "at {id, commit} the verb you want for this?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T14:52:19.765Z"
+    }
+   ],
    "chat": [
     {
      "by": "desk",
      "at": "2026-10-12T14:32:22.551Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T14:52:19.332Z",
+     "text": "Before the red, one shape point that is yours: the desk takes exactly a verb's declared keys, so adding a commit to press would break every press that does not send one (pages, agents, tests).\nMy proposal: one new desk verb, claim.at {id, commit}, sent by the agent just before its claim-done press; the desk keeps the commit on the item, and deskVerify reads it from item.get: if its pulled tree lacks that commit it says \"not checked, waiting for <commit>\" and checks again on its next pull. A plain item without code sends none, as today.\nIs claim.at {id, commit} the verb you want for this?"
     }
    ]
   }
