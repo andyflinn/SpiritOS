@@ -613,11 +613,13 @@ spirit.shell.activateApp({
     deskUnslothRemoteTarget = deskUnslothRemoteTargets[0];
 
     var escape = api.escapeHtml || function (s) { return String(s); };
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.minHeight = '100%';
+    // THE COLUMN IS AN INNER WRAPPER'S, NEVER THE CONTAINER'S (goal/G18.1). The shell hides an app it leaves with
+    // hidden = true on this container (shell.js switchTo), and an inline display beats hidden: set here, it kept the
+    // Remote on screen under every app. Andy, 2026-10-12: "every panel in desk and desk details now shows the
+    // deskUnslothRemote. Needs fixing ASAP".
     // THE FRAME (goal/G10.7): the tab strip, the warnings above every tab, then one panel per tab, each filled below.
     container.innerHTML =
+      '<div style="display:flex;flex-direction:column;min-height:100%">' +
       '<div class="stat-tile wide" style="flex:1 1 auto">' +
         '<div class="label">The local agent at the desk</div>' +
         '<div id="dur-tabs" class="start-job-form"></div>' +
@@ -626,6 +628,7 @@ spirit.shell.activateApp({
         '<div id="dur-tab-test"></div>' +
         '<div id="dur-tab-configure"></div>' +
         '<div id="dur-tab-connect"></div>' +
+      '</div>' +
       '</div>';
     // [test]: the chat, sticky at the bottom (his "sticky"), drawn only when a model is ready.
     document.getElementById('dur-tab-test').innerHTML =
