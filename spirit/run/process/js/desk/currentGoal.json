@@ -1,8 +1,8 @@
 {
- "change": 34299,
+ "change": 34355,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T07:40:35.892Z",
+ "writtenAt": "2026-10-12T08:08:10.460Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,11 +11,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G18.3"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -94,6 +95,11 @@
      "by": "andy",
      "at": "2026-10-12T07:24:40.156Z",
      "text": "Add one item: probabilityStringMatch.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:41:12.097Z",
+     "text": "new Item probabilityStringObjectMatch"
     }
    ]
   },
@@ -397,6 +403,187 @@
      "by": "andy",
      "at": "2026-10-12T07:40:01.868Z",
      "text": "deskVerify: passed, at a9a0c252 (pulled). 1 suite ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G18.3",
+   "title": "probabilityStringObjectMatch",
+   "goal": "goal/G18",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12: \"new Item probabilityStringObjectMatch\"\n\nThe goal: three core modules in run/js, probabilit<Name>.js, built one by one; their integration argued after. The first, probabilityStringMatch(A, B), is built (goal/G18.2, a9a0c252).\n\nTHE SPEC, proposed, Andy, 2026-10-12:\n\"this one we'll discuss a little bit\n\nfunction probabilityStringObjectMatch(string,object){\n\n1. the input must be valid string and object, empty string will return 0,\n\n2. We \"measure\" the object\nlet table = [{objectString, weight]\nfunction measureObject(){\n// this internal function extracts every valid string from the object and places it in a table of objects, which contain the string and an empty weight (0.0) for staters\n}\n\n3. we assign weight to each string as follows: this is proposed and will be discussed.\nthe shortest string in the object gets the highest weight, the longest string in the object gets the smallest weight, and all the weights of the string in the table must add up to 1.0,\n\n4. the overall input string is then matched agains all strings in the object, using pobabilityStringMatch(). each of those results is then multiplied by the weight of the corresponding object-string, and added to the overall result.\n\n5. the overall result is returned.\n}\n\nthoughts?\"\n\nDECIDED, Andy, 2026-10-12:\n\"1. agreed. empty string stay out of the table.\n\n2. no arrays are searched in this version.\n\n3. dilution concern. when searching a table of objects, dilution doesn't matter because we look for the best matching contact not for the perfect one (this will become obvious in our 3rd item: probabilityBucket)\"\n- \"nested objects will be searched for strings to put into the table.\"\n- The weights: \"you formula-correction is accepted.\" Each string weighs (S - L) / S / (n - 1), S the added length of all its strings, n how many; one string alone weighs 1.0; they add up to 1, the shortest heaviest.\n- \"if keys are string, they are included, this is supposed to be \"dumb\"\": every key of the object and its nested objects goes into the table with the values (keys are always strings), empty ones out.",
+   "version": 5,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "How should probabilityStringObjectMatch work: a string against an object, for example the best probabilityStringMatch over the object values?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:07:24.144Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Weighted sum as proposed, or the best match?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:07:26.213Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "And the weights: proportional to 1/length, scaled to add up to 1, is that your shortest-heaviest?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:07:28.282Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Values only, and 1/length, yes?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:07:30.246Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "That, and still open: values only, or the keys too?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:07:32.347Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:41:31.736Z",
+     "text": "Added as goal/G18.3, your words in the box.\nHow should probabilityStringObjectMatch work: a string against an object, for example the best probabilityStringMatch over the object values?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:54:08.017Z",
+     "text": "this one we'll discuss a little bit\n\nfunction probabilityStringObjectMatch(string,object){\n\n1. the input must be valid string and object, empty string will return 0,\n\n2. We \"measure\" the object\nlet table = [{objectString, weight]\nfunction measureObject(){\n// this internal function extracts every valid string from the object and places it in a table of objects, which contain the string and an empty weight (0.0) for staters\n}\n\n3. we assign weight to each string as follows: this is proposed and will be discussed.\nthe shortest string in the object gets the highest weight, the longest string in the object gets the smallest weight, and all the weights of the string in the table must add up to 1.0,\n\n4. the overall input string is then matched agains all strings in the object, using pobabilityStringMatch(). each of those results is then multiplied by the weight of the corresponding object-string, and added to the overall result.\n\n5. the overall result is returned.\n}\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:54:39.266Z",
+     "text": "Workable, with three gaps: empty strings must stay out of the table (shortest means heaviest, and they always match 0); does every valid string mean nested objects and arrays too, and the keys or only the values; and weight proportional to 1/length, scaled to add up to 1, is the plainest shortest-heaviest.\nOne concern: a weighted sum dilutes a perfect hit, so a name matched exactly among nine other fields scores about 0.2 and can lose to an object that matches everything weakly; the best weighted match would not.\nWeighted sum as proposed, or the best match?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:57:55.923Z",
+     "text": "1. agreed. empty string stay out of the table.\n\n2. no arrays are searched in this version.\n\n3. dilution concern. when searching a table of objects, dilution doesn't matter because we look for the best matching contact not for the perfect one (this will become obvious in our 3rd item: probabilityBucket)"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:58:19.096Z",
+     "text": "Recorded (v3): empty strings out, no arrays, the weighted sum stands since the bucket picks the best of many.\nOpen: does it go into nested plain objects, and are keys strings of the object or only values?\nAnd the weights: proportional to 1/length, scaled to add up to 1, is that your shortest-heaviest?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:58:51.328Z",
+     "text": "nested objects will be searched for strings to put into the table."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:59:10.936Z",
+     "text": "Recorded: nested objects are searched, arrays not.\nTwo left: only the values, or the keys too (a contact {name: \"ann\"} would then also match \"name\"); and the weights proportional to 1/length, scaled to add up to 1.\nValues only, and 1/length, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:05:06.464Z",
+     "text": "for the weights of the strings:\n\n1. the added length of all strings in the object represents 1.0\nthe weight of a single string is\n\n (sumOfAllSringLengthsAdded - stringLength) / sumOfAllSringLengthsAdded \n\nis this a viable formula?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:05:27.864Z",
+     "text": "Viable with one change: (S - L)/S over n strings adds up to n - 1, not 1 (lengths 3, 7, 10 give 0.85, 0.65, 0.5, sum 2), so each is divided by n - 1: 0.425, 0.325, 0.25, sum 1, shortest heaviest; with two strings it is already right.\nOne string alone gives (S - L)/S = 0, so a single string takes the whole weight, 1.0.\nThat, and still open: values only, or the keys too?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:06:59.359Z",
+     "text": "you formula-correction is accepted.\n\nif keys are string, they are included, this is supposed to be \"dumb\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:07:34.672Z",
+     "text": "Recorded (v5): keys and values both, nested objects in, arrays and empty strings out, the corrected weights, the weighted sum of probabilityStringMatch; every red Q here is passed.\nReady for your Go; the commit of run/js/probabilityStringObjectMatch.js will ask your core grant."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:07:42.020Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:07:54.781Z",
+     "text": "Green: settled, no open questions, box current (v5)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T08:08:10.048Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
