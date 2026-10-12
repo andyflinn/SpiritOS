@@ -1,8 +1,8 @@
 {
- "change": 37734,
+ "change": 37735,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T15:13:35.626Z",
+ "writtenAt": "2026-10-12T15:13:42.015Z",
  "items": [
   {
    "id": "goal/G19",
@@ -41,7 +41,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -1749,10 +1749,9 @@
    "id": "goal/G19.10",
    "title": "Face: no identity.json in appFaceApp; FACE.md; appApi.js",
    "goal": "goal/G19",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
