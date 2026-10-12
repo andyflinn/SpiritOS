@@ -1,8 +1,8 @@
 {
- "change": 34225,
+ "change": 34272,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T07:20:41.857Z",
+ "writtenAt": "2026-10-12T07:35:51.669Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,11 +11,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G18.2"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -24,7 +25,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -32,7 +33,7 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "design": false,
@@ -40,17 +41,15 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "This is NOT good, every panel in desk and desk details now shows the deskUnslothRemote. Needs fixing ASAP",
-   "version": 1,
+   "box": "i have a strong dislike for the search system right now. what i want to do:\n\nadd a set of core modules in run/js that start with probabilit(ModuleName).js and build them one by one. 3 of them. After that we discuss how to integrated them.\n\n",
+   "version": 2,
    "checks": [
     {
      "number": "Q1",
@@ -60,6 +59,15 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T07:17:14.617Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "What is the first module: its name and the one job it does?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T07:23:43.997Z"
     }
    ],
    "chat": [
@@ -77,6 +85,16 @@
      "by": "andy",
      "at": "2026-10-12T07:20:37.525Z",
      "text": "goal run on 1 suites: all green"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:23:43.544Z",
+     "text": "Read: three core modules in run/js, probabilit<Name>.js, built one by one, the integration argued after; today search is searchBucket.js, gradedSearch.js and bucket.js.\nCore files, so each will need your grant at its commit.\nWhat is the first module: its name and the one job it does?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:24:40.156Z",
+     "text": "Add one item: probabilityStringMatch.js"
     }
    ]
   },
@@ -185,6 +203,140 @@
      "by": "andy",
      "at": "2026-10-12T07:19:55.981Z",
      "text": "deskVerify: passed, at 5ac318bc (pulled). 1 suite ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G18.2",
+   "title": "probabilityStringMatch.js",
+   "goal": "goal/G18",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12: \"Add one item: probabilityStringMatch.js\"\n\nThe goal: three core modules in run/js, probabilit<Name>.js, built one by one; their integration argued after.\n\nTHE SPEC, Andy, 2026-10-12:\n\"probabilityStringMatch is to work like this\n\nresult probability = probabilityStringMatch(A,B) where A and B must be strings.\n\n{\n\n function helperFoo1() // from old gradedSearch-logic\n function helperFoo2() // form old logic\n ... etc.\n\nif A or B are not of type string return 0.0;\nif A is EXACTLY equal to B return 1.0\n\nshorterString = the shorter String of A and B\nlongerString = longer String of A and B\n\nif they are of equal length, shorterString = A, longerString = B,\n\nthen use the logic from gradedSearch to return a result between 0 and 1\n\n}\"\n\nDECIDED (Andy, 2026-10-12)\n- \"in this version, we just compute the matching of two string, no matter which one is the search string.\" So no wildcards: * and ? are characters like any other.\n- The reading confirmed by it: both folded (case, accents); shorter and longer as the spec says; no match 0.0; else the weighted mean of gradedSearch's four signals (match 1.0, coverage 0.2, tokens 0.3, sequence 0.25), the helpers copied in, gradedSearch.js untouched until the integration.\n\nFOUND\n- search today: bucket.js, searchBucket.js, gradedSearch.js, nodeSearches.js, peerSearch.js in run/js; a new file there is core, so its commit needs his grant.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "What should probabilityStringMatch do: given a query and a string, answer how likely the string is what the query meant, as a number from 0 to 1?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T07:33:51.260Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "in the shorter string still act as wildcards, as they do in search today, or is every character literal here?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T07:33:53.322Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:25:01.735Z",
+     "text": "Added as goal/G18.2, your words in the box.\nWhat should probabilityStringMatch do: given a query and a string, answer how likely the string is what the query meant, as a number from 0 to 1?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:32:11.710Z",
+     "text": "probabilityStringMatch is to work like this\n\nresult probability = probabilityStringMatch(A,B) where A and B must be strings.\n\n{\n\n function helperFoo1() // from old gradedSearch-logic\n function helperFoo2() // form old logic\n ... etc.\n\nif A or B are not of type string return 0.0;\nif A is EXACTLY equal to B return 1.0\n\nshorterString = the shorter String of A and B\nlongerString = longer String of A and B\n\nif they are of equal length, shorterString = A, longerString = B,\n\nthen use the logic from gradedSearch to return a result between 0 and 1\n\n}"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:32:47.797Z",
+     "text": "Recorded (v2). My reading against gradedSearch.js: both strings folded (case, accents) as it does; the shorter is the query, the longer the label; no match at all (its rank -1) answers 0.0; else the weighted mean of its four signals, match 1.0, coverage 0.2, tokens 0.3, sequence 0.25, with the helpers copied in and gradedSearch.js untouched until the integration.\nShould * and ? in the shorter string still act as wildcards, as they do in search today, or is every character literal here?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:33:24.185Z",
+     "text": "in this version, we just compute the matching of two string, no matter which one is the search string."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:33:55.609Z",
+     "text": "Recorded (v3): two strings, no search string, so * and ? are plain characters; Q1 and Q2 passed by your spec and this line.\nNo red Q left: ready for your Go, and the commit of run/js/probabilityStringMatch.js will ask your core grant."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:34:49.013Z",
+     "text": "why use wildcards when your graded search already does that kind of thing implicitly?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:35:01.197Z",
+     "text": "Agreed, and that is how it stands now: no wildcards; the graded logic already scores a string found inside, at the start, or by some of its words, which is what a * was for."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:35:17.581Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:35:29.958Z",
+     "text": "Green: settled, no open questions, box current (v3)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T07:35:51.184Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
