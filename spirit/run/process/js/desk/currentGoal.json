@@ -1,8 +1,8 @@
 {
- "change": 34820,
+ "change": 34821,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T09:57:42.202Z",
+ "writtenAt": "2026-10-12T09:57:44.889Z",
  "items": [
   {
    "id": "goal/G18",
@@ -36,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -1314,10 +1314,9 @@
    "id": "goal/G18.6",
    "title": "deskUnslothRemote refinements",
    "goal": "goal/G18",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
