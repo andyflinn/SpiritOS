@@ -27,6 +27,8 @@ const nodeCard = require('../run/js/nodeCard');
 const { openBody, sealFor } = require('./openReply');
 const scenario = require('./scenario');
 const { createRelay } = require('../run/js/relay');
+const relayKeys = require('../run/js/relayKeys');
+const nodeStore = require('../run/js/nodeStore');
 
 function tmpHome(tag) {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-world-' + (tag || '') + '-'));
@@ -79,6 +81,16 @@ function assemble(s) {
     boxes[name] = createRelay(home);
   });
   const first = s.relays[0];
+
+  // A node's relay list. Since goal/G19.15 it is node.db's relays table, keyed by relay key: the i-th url is filed
+  // under the i-th relay's key, and a url with no relay of the world behind it under a fake key of its own.
+  function listRelays(home, urls) {
+    (urls || ['http://relay']).forEach(function (u, i) {
+      const k = keys[s.relays[i]];
+      relayKeys.list(home, u, 'lab', (k && k.publicKey) || ('RELAYKEY-' + u));
+    });
+    nodeStore.open(home).close();
+  }
 
   if (owner) {
     s.relays.forEach(function (name) {
@@ -225,14 +237,7 @@ function assemble(s) {
       const home = tmpHome(name);
       auth.saveIdentity(home, who.id);
       fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
-      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-      fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-      fs.writeFileSync(
-        path.join(home, 'relay-state', 'relays.json'),
-        JSON.stringify((urls || ['http://relay']).map(function (u) {
-          return { label: 'lab', url: u };
-        }), null, 2)
-      );
+      listRelays(home, urls);
       // The file that decides firstRun(). Without it a node with a key,
       // a claim and a relay still believes it has no name.
       fs.writeFileSync(
@@ -249,14 +254,7 @@ function assemble(s) {
       const home = tmpHome('owner');
       auth.saveIdentity(home, owner);
       fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
-      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-      fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-      fs.writeFileSync(
-        path.join(home, 'relay-state', 'relays.json'),
-        JSON.stringify((urls || ['http://relay']).map(function (u) {
-          return { label: 'lab', url: u };
-        }), null, 2)
-      );
+      listRelays(home, urls);
       return home;
     },
 

@@ -8,14 +8,20 @@
 //
 // Run in the agent's own clone, with its own node up:
 //
-//   node spirit/run/process/js/desk/onboard.js <port of the agent's own node> <name:token>
+//   node spirit/run/process/js/desk/onboard.js <port of the agent's own node> <name:token> <desk label> [relay url]
 //
-// name:token is the relay invite Andy gave; name is the seat's name and the invite's label. In order:
-//   1  the relay is the one row of the node's relay list; the seat is claimed with the invite, unless this node
-//      already holds it (a second run is not refused for its own seat). Andy's node, owning the relay, adopts the
-//      agent as a contact by itself (hub.js adoptClaim).
-//   2  the relay's owner (GET /api/relay/key, ownerKey) is the desk node: acquired as a contact, and set as deskClient's
-//      desk once deskClient is switched on.
+// name:token is the relay invite Andy gave; name is the seat's name and the invite's label. The desk label is the
+// label the desk node is known by. In order (goal/G19.15 for the relay and the desk; Andy, 2026-10-12: "what does it
+// matter which relay an agent is a member of to participate in my team?", "even if i don't own the relay my agents
+// use, still no difference." and "we'll just have to tell the agent what label to look for, when searching the
+// desk."):
+//   1  the relay is the url given as the last argument, or, without one, the one row of the node's relay list (on a
+//      fresh node that is noderoutes.net, the only seed since goal/G19.15). A url not yet listed is claimed all the
+//      same: relay.claim meets it first and lists it. The seat is claimed with the invite, unless this node already
+//      holds it (a second run is not refused for its own seat).
+//   2  the desk node is the one node a search for the desk label finds (peer.search, as Contacts' Find asks it, with
+//      the label matched exactly), whoever owns the relay. None found, or more than one, ends the run and says so.
+//      It is acquired as a contact, and set as deskClient's desk once deskClient is switched on.
 //   3  the commit hooks are installed in this clone (commitCheck.js install <port>).
 //   4  one desk read. Refused, it says in plain words that Andy's desk grant is missing, and exits 1: the grant is his
 //      to give, and the run is made again after it. Answered, every other agent that wrote at the desk is blocked on
@@ -27,7 +33,8 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const kernel = require('../../../js/kernel.js');
 
-const USAGE = 'usage: node onboard.js <port of the agent\'s own node> <name:token>';
+const USAGE = 'usage: node onboard.js <port of the agent\'s own node> <name:token> <desk label> [relay url]';
+const SEARCH_TRIES = 10;
 const NODE_WAIT_MS = 20000;
 const DESK_CLIENT = 'process/js/deskClient';
 
@@ -37,6 +44,9 @@ const colon = invite.indexOf(':');
 if (!Number.isInteger(port) || port <= 0 || colon <= 0 || colon === invite.length - 1) { console.error(USAGE); process.exit(2); }
 const name = invite.slice(0, colon);
 const token = invite.slice(colon + 1);
+const deskLabel = String(process.argv[4] || '').trim();
+const given = String(process.argv[5] || '').trim().replace(/\/+$/, '');
+if (!deskLabel || (given && !/^https?:\/\/[^\s/]+/.test(given))) { console.error(USAGE); process.exit(2); }
 const node = 'http://127.0.0.1:' + port;
 
 function end(code, text) { (code ? console.error : console.log)(text); process.exit(code); }
@@ -55,10 +65,13 @@ function deskClient(what, args) { const one = {}; one[what] = args; return ask('
 
 async function main() {
   // 1. THE SEAT. A fresh node has no key until its first claim makes one, so the key is read after it.
-  const relays = await ask('relay.search', { q: '' });
-  const rows = ok(relays) && Array.isArray(relays.body.items) ? relays.body.items : [];
-  if (rows.length !== 1) end(1, 'onboard: the node must list exactly one relay (relay-state/relays.json, goal/G16.3); it lists ' + rows.length);
-  const url = String(rows[0].key);
+  let url = given;
+  if (!url) {
+    const relays = await ask('relay.search', { q: '' });
+    const rows = ok(relays) && Array.isArray(relays.body.items) ? relays.body.items : [];
+    if (rows.length !== 1) end(1, 'onboard: with no relay url given, the node must list exactly one relay; it lists ' + rows.length + ' — name one: ' + USAGE);
+    url = String(rows[0].key);
+  }
   const got = await ask('relay.get', { key: url });
   const row = (ok(got) && got.body.relay) || {};
   if (row.claimed || row.owned) say('this node already holds its seat on ' + url);
@@ -80,17 +93,28 @@ async function main() {
   const me = ok(card) ? String(card.body.publicKey || '') : '';
   if (!me) end(1, 'onboard: the node has no key even after its claim: ' + card.text);
 
-  // 2. THE DESK NODE: the relay's owner.
-  let relayKey = null;
-  try { relayKey = await (await fetch(url.replace(/\/+$/, '') + '/api/relay/key')).json(); } catch (e) { relayKey = null; }
-  const desk = relayKey && String(relayKey.ownerKey || '');
-  if (!desk) end(1, 'onboard: the relay at ' + url + ' names no owner, so there is no desk node to join');
+  // 2. THE DESK NODE: the one node found under the desk label. Asked a few times while nobody answers, because the
+  // stream to a relay just claimed on may still be opening; the search answers who is online.
+  let found = [];
+  for (let i = 0; i < SEARCH_TRIES; i++) {
+    const s = await ask('peer.search', { q: deskLabel });
+    const matches = (s && s.body && Array.isArray(s.body.matches)) ? s.body.matches : [];
+    found = matches.filter(function (m) { return m && m.publicKey && String(m.publicLabel || '') === deskLabel; });
+    if (found.length) break;
+    await sleep(1000);
+  }
+  if (!found.length) end(1, 'onboard: no node is found under the desk label "' + deskLabel + '", so there is no desk node to join');
+  if (found.length > 1) {
+    end(1, 'onboard: ' + found.length + ' nodes are found under the desk label "' + deskLabel + '", so which is the desk is not known: ' +
+      found.map(function (m) { return m.publicKey.slice(0, 24) + '...'; }).join(', '));
+  }
+  const desk = String(found[0].publicKey);
   const known = await ask('contact.get', { key: desk });
   if (!(ok(known) && known.body.person)) {
-    const acq = await ask('peer.acquire', { publicKey: desk, publicLabel: String(relayKey.ownerLabel || 'desk'), url: url });
+    const acq = await ask('peer.acquire', { publicKey: desk, publicLabel: deskLabel, url: String(found[0].relay || url) });
     if (!ok(acq)) end(1, 'onboard: the desk node (' + desk.slice(0, 24) + '...) was not acquired: ' + acq.text);
   }
-  say('the desk node is a contact: ' + (relayKey.ownerLabel || desk.slice(0, 24)));
+  say('the desk node is a contact: ' + deskLabel);
   const on = await ask('config.setModules', { path: DESK_CLIENT, on: true });
   if (!ok(on)) end(1, 'onboard: deskClient was not switched on: ' + on.text);
   let set = null;

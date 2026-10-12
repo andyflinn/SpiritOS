@@ -37,11 +37,13 @@ function tmpHome(tag) {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cycleA-' + tag + '-'));
 }
 
+// Since goal/G19.15 the node's relay list is node.db's relays table, keyed by
+// relay key: each url is listed under a fake key of its own, with no seat.
 function writeRelays(home, rows) {
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  var dir = path.join(home, 'relay-state');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'relays.json'), JSON.stringify(rows, null, 2));
+  rows.forEach(function (r) {
+    var u = relayKeys.normalizeUrl(r && r.url);
+    if (u) relayKeys.list(home, u, r.label, 'RELAYKEY-' + u);
+  });
 }
 
 // A mailbox owned by `id`: owner.json names it before the box is built, as

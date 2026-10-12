@@ -34,7 +34,9 @@
 //
 // WHAT IS ASSERTED
 //   1. THE LIST IS NODE STATE: the node reads and seeds relay-state/relays.json with the TWO relays he named,
-//      and a list planted in the app's folder is not read. The app's file is gone from the tree.
+//      and a list planted in the app's folder is not read. The app's file is gone from the tree. Since
+//      goal/G19.15 the node's state is node.db's relays table, keyed by relay key, not relays.json, and the seed
+//      is noderoutes.net alone.
 //   2. THE TWO APPROVED VERBS EXIST AND NO THIRD ONE DOES: server.js claims relay.search and relay.remove, and
 //      claims no relay.add.
 //   3. NO NODE FILE REACHES INTO THE APP'S FOLDER for this any more.
@@ -62,11 +64,12 @@ const RUN = path.join(__dirname, '..', 'run');
 const JS = path.join(RUN, 'js');
 const APP_FILE = path.join('shell', 'natter', 'relays.json');
 const STATE_FILE = path.join('relay-state', 'relays.json');
+const DB_FILE = path.join('relay-state', 'node.db');
+const relayKeys = require('../run/js/relayKeys.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 function read(p) { try { return fs.readFileSync(p, 'utf8'); } catch (e) { return ''; } }
 function there(p) { try { fs.statSync(p); return true; } catch (e) { return false; } }
-function rows(p) { try { return JSON.parse(read(p)); } catch (e) { return null; } }
 
 // A node root with nothing in it: the fresh-clone case ensureRelays exists for.
 function freshRoot() {
@@ -93,8 +96,10 @@ test.subHeading('1. the node seeds and reads relay-state/relays.json, not the ap
   const root = freshRoot();
   const seeded = ownerBadge.ensureRelays(root);
 
-  if (there(path.join(root, STATE_FILE))) test.check('a fresh node seeds relay-state/relays.json');
-  else test.fail(OWED + 'a fresh node wrote no relay-state/relays.json');
+  // Since goal/G19.15 the node's own state is node.db's relays table, keyed by relay key, and relays.json is
+  // never written: it is read once, moved in and deleted.
+  if (there(path.join(root, DB_FILE)) && !there(path.join(root, STATE_FILE))) test.check('a fresh node seeds its relays table in relay-state/node.db');
+  else test.fail(OWED + 'a fresh node has no relay-state/node.db, or wrote relay-state/relays.json');
 
   if (!there(path.join(root, APP_FILE))) test.check('and writes nothing into the Natter app\'s folder');
   else test.fail(OWED + 'a fresh node still wrote ' + APP_FILE + ': the app\'s folder decides where this node talks');
@@ -105,28 +110,32 @@ test.subHeading('1. the node seeds and reads relay-state/relays.json, not the ap
   // will write that file, then it is initialized with at least one valid relay ?", with the reason
   // "noderoutes.net will not update as often as spirit" — a steadier box is the better fallback. Asked whether
   // one or two, he answered: "i say two."
-  const got = rows(path.join(root, STATE_FILE));
+  //
+  // Since goal/G19.15 ONE ROW, superseding the two: "No, now that we have it, we only list noderoutes.net,
+  // spirit.andyflinn.com is OURS." (Andy, 2026-10-12).
+  const got = ownerBadge.loadRelays(root);
   const urls = Array.isArray(got) ? got.map(function (r) { return String((r && r.url) || ''); }) : [];
-  if (urls.length === 2 && urls.every(function (u) { return /^https:\/\//.test(u); })) {
-    test.check('seeded with the two relays he named: ' + short(urls.join(', ')));
+  if (urls.length === 1 && /^https:\/\/noderoutes\.net$/.test(urls[0])) {
+    test.check('seeded with the one relay he named: ' + short(urls.join(', ')));
   } else {
-    test.fail(OWED + 'the seeded list is not his two rows: ' + short(got));
+    test.fail(OWED + 'the seeded list is not noderoutes.net alone: ' + short(got));
   }
-  if (urls.some(function (u) { return /noderoutes\.net/.test(u); }) && urls.some(function (u) { return /spirit\.andyflinn\.com/.test(u); })) {
-    test.check('and both names are the ones he gave, so neither box is the only way in');
+  if (!urls.some(function (u) { return /spirit\.andyflinn\.com/.test(u); })) {
+    test.check('and spirit.andyflinn.com is not seeded: it is ours, and a node gets it by claiming there');
   } else {
-    test.fail(OWED + 'the seed does not name both spirit.andyflinn.com and noderoutes.net: ' + short(urls.join(', ')));
+    test.fail(OWED + 'the seed still names spirit.andyflinn.com: ' + short(urls.join(', ')));
   }
 
-  if (Array.isArray(seeded) && seeded.length === 2) test.check('and ensureRelays hands both rows back to its caller');
-  else test.fail(OWED + 'ensureRelays did not return the seeded rows: ' + short(seeded));
+  if (Array.isArray(seeded) && seeded.length === 1) test.check('and ensureRelays hands that row back to its caller');
+  else test.fail(OWED + 'ensureRelays did not return the seeded row: ' + short(seeded));
 }
 
 // A list planted in the app's folder must not steer the node. This is the hole in its own words: an app writes
 // that file today, so an app chooses the node's relays.
 {
   const root = freshRoot();
-  fs.writeFileSync(path.join(root, STATE_FILE), JSON.stringify([{ label: 'mine', url: 'https://127.0.0.1:1' }]));
+  // Since goal/G19.15: the node's own list is a keyed row in node.db.
+  relayKeys.list(root, 'https://127.0.0.1:1', 'mine', 'RELAYKEY-mine');
   fs.writeFileSync(path.join(root, APP_FILE), JSON.stringify([{ label: 'theirs', url: 'https://127.0.0.2:2' }]));
   const used = ownerBadge.loadRelays(root);
   const urls = (used || []).map(function (r) { return r.url; }).join(',');
@@ -227,10 +236,13 @@ test.subHeading('6. the claim path writes the list, and no owner');
 
   // The node's own list writer is what a successful claim calls. Named here so a build that leaves Natter
   // writing the file through fs cannot pass section 1 by seeding alone.
-  if (/relay-state['"\s,\/)\]]*.{0,12}relays\.json|'relay-state', 'relays\.json'/.test(hub + read(path.join(JS, 'ownerBadge.js')))) {
-    test.check('the node names its own relays.json where the claim and the badge read it');
+  // Since goal/G19.15 the node's own list is node.db's relays table: the claim lists through ownerBadge.addRelay,
+  // and ownerBadge writes through relayKeys, the table's only writer.
+  if (/ownerBadge\.addRelay\(/.test(hub) && /relayKeys\.list\(/.test(read(path.join(JS, 'ownerBadge.js'))) &&
+      /CREATE TABLE IF NOT EXISTS relays \(/.test(read(path.join(JS, 'nodeStore.js')))) {
+    test.check('the claim lists its relay through ownerBadge.addRelay, into node.db\'s relays table');
   } else {
-    test.fail(OWED + 'no node file names relay-state/relays.json: nothing writes the node\'s own list');
+    test.fail(OWED + 'the claim does not reach the node\'s own relays table: nothing writes the node\'s own list');
   }
 }
 

@@ -19,6 +19,20 @@ const test = require('./testSupport.js');
 const relayKeys = require('../run/js/relayKeys');
 const world = require('./world');
 
+// The pins as they stand on disc, by url, read through a connection of
+// this suite's own (since goal/G19.15: node.db's relays table, keyed by
+// relay key).
+function disc(home) {
+  const db = new (require('node:sqlite').DatabaseSync)(path.join(home, 'relay-state', 'node.db'), { readOnly: true });
+  try {
+    const out = {};
+    db.prepare('SELECT * FROM relays').all().forEach(function (r) {
+      out[r.url] = { publicKey: r.key, firstSeen: r.firstSeen, acceptedAt: r.acceptedAt, replaced: r.replaced || undefined };
+    });
+    return out;
+  } finally { db.close(); }
+}
+
 test.startTest('Relay keys — pinned on disk, and a change is never silent');
 
 const URL_A = 'https://spirit.example';
@@ -64,16 +78,15 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
     test.fail('after accept: ' + relayKeys.check(home, URL_A, KEY_1));
   }
 
-  // The point of the whole module: this is a file, not a variable. Read
-  // from disk by a path this test builds itself, so a passing check
-  // cannot be a cache answering.
-  const onDisk = JSON.parse(fs.readFileSync(
-    path.join(home, 'relay-state', 'relayKeys.json'), 'utf8'
-  ));
+  // The point of the whole module: this is on disc, not a variable. Read
+  // through a connection of this test's own, so a passing check cannot be
+  // a cache answering. Since goal/G19.15 the disc is node.db's relays
+  // table, keyed by relay key, not relayKeys.json.
+  const onDisk = disc(home);
   if (onDisk[URL_A] && onDisk[URL_A].publicKey === KEY_1 && onDisk[URL_A].firstSeen) {
     test.check('and it is on disk, with when it was first accepted');
   } else {
-    test.fail('relayKeys.json: ' + JSON.stringify(onDisk));
+    test.fail('relays table: ' + JSON.stringify(onDisk));
   }
 
   test.subHeading('A different key at the same address is never silent');
@@ -97,14 +110,10 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
 
   test.subHeading('An explicit accept resolves it, and says what it replaced');
 
-  const before = JSON.parse(fs.readFileSync(
-    path.join(home, 'relay-state', 'relayKeys.json'), 'utf8'
-  ))[URL_A].firstSeen;
+  const before = disc(home)[URL_A].firstSeen;
 
   relayKeys.accept(home, URL_A, KEY_2);
-  const after = JSON.parse(fs.readFileSync(
-    path.join(home, 'relay-state', 'relayKeys.json'), 'utf8'
-  ))[URL_A];
+  const after = disc(home)[URL_A];
 
   if (relayKeys.check(home, URL_A, KEY_2) === 'match' && after.publicKey === KEY_2) {
     test.check('accepting the new key makes it the pin');
@@ -181,7 +190,9 @@ const KEY_2 = 'MCowBQYDK2VwAyEAtwodifferentkeytwodifferentkeytwodiffer=';
   // FAILS SAFE, and in the one direction that matters: a corrupt file
   // reads as nothing pinned, so every relay looks new and has to be
   // accepted again. The other direction — reading as a match — would
-  // trust a stranger because a file went bad.
+  // trust a stranger because a file went bad. Since goal/G19.15 the file
+  // is only ever an old one being moved into node.db, and a bad one moves
+  // nothing.
   const broken = world.tmpHome('relaykeys-broken');
   fs.mkdirSync(path.join(broken, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(broken, 'relay-state', 'relayKeys.json'), '{ not json');

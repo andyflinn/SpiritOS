@@ -70,11 +70,10 @@ function node() {
   const home = tmpHome('node');
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'a', url: RELAY }]));
+  // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key: listed with its key,
+  // then seated.
+  relayKeys.list(home, RELAY, 'a', RELAYKEY);
   relayKeys.seat(home, RELAY, 'me');
-  relayKeys.accept(home, RELAY, RELAYKEY);
   const book = {}; book[JOHN] = true; book[BERT] = true;
   const learned = [];
   const router = {
@@ -96,10 +95,8 @@ function node() {
 function hubHome(relays) {
   const H = tmpHome('hub');
   auth.saveIdentity(H, auth.generateIdentity('me'));
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(H, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(H, 'relay-state', 'relays.json'), JSON.stringify(relays));
-  relays.forEach(function (r) { relayKeys.accept(H, r.url, r.key); });
+  // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
+  relays.forEach(function (r) { relayKeys.list(H, r.url, r.label, r.key); });
   return H;
 }
 function recorder(naming) {

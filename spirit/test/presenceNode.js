@@ -29,23 +29,26 @@ const relayKeys = require('../run/js/relayKeys');
 // writing the seat, and the fake answers the key door instead — which is
 // all probe asks for: who the box is, and who runs it.
 function seatEveryRelay(home, label) {
-  let list = [];
-  try {
-    list = JSON.parse(fs.readFileSync(
-      path.join(home, 'relay-state', 'relays.json'), 'utf8'));
-  } catch (e) { list = []; }
-  list.forEach(function (row) {
+  relayKeys.listed(home).forEach(function (row) {
     if (row && row.url) relayKeys.seat(home, row.url, label || 'me');
   });
+}
+
+// Since goal/G19.15 the node's relay list is node.db's relays table, keyed by
+// relay key, so a listed relay is a relay with a key: each fake url has its
+// own, and the key door below answers the same one.
+function keyFor(url) { return 'RELAYKEY-' + String(url || ''); }
+function listRelays(home, rows) {
+  rows.forEach(function (r) { relayKeys.list(home, r.url, r.label, keyFor(r.url)); });
 }
 
 // What GET /api/relay/key answers. `ownerKey` is left out on purpose:
 // these checks are about pinning and streams, and none of them is about
 // owning the box.
-function keyDoor() {
+function keyDoor(url) {
   return Promise.resolve({
     status: 200,
-    text: JSON.stringify({ relayPublicKey: 'RELAYKEY', relayLabel: 'lab' }),
+    text: JSON.stringify({ relayPublicKey: keyFor(url), relayLabel: 'lab' }),
   });
 }
 
@@ -601,12 +604,8 @@ async function run() {
     auth.saveIdentity(pinHome, auth.generateIdentity('pinner'));
     // A relay to hold a row on, or the probe finds nothing to connect to
     // and openTo never runs.
-    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-    fs.mkdirSync(path.join(pinHome, 'relay-state'), { recursive: true });
-    fs.writeFileSync(
-      path.join(pinHome, 'relay-state', 'relays.json'),
-      JSON.stringify([{ label: 'one', url: 'http://relay-one' }, { label: 'two', url: 'http://relay-two' }])
-    );
+    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    listRelays(pinHome, [{ label: 'one', url: 'http://relay-one' }, { label: 'two', url: 'http://relay-two' }]);
     const pinned = [];
     const opened = [];
     const P = presenceNode.createPresence({
@@ -634,12 +633,8 @@ async function run() {
     // unpinned relay simply does not get party standing.
     const deafHome = tmpHome();
     auth.saveIdentity(deafHome, auth.generateIdentity('pinner2'));
-    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-    fs.mkdirSync(path.join(deafHome, 'relay-state'), { recursive: true });
-    fs.writeFileSync(
-      path.join(deafHome, 'relay-state', 'relays.json'),
-      JSON.stringify([{ label: 'deaf', url: 'http://relay-deaf' }])
-    );
+    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    listRelays(deafHome, [{ label: 'deaf', url: 'http://relay-deaf' }]);
     const deafOpened = [];
     const D = presenceNode.createPresence({
       rootDir: deafHome,
@@ -695,12 +690,8 @@ async function run() {
   auth.saveIdentity(spyHome, auth.generateIdentity('spy'));
   // A relay to hold a row on, or the probe finds nothing to connect to
   // and openTo never runs.
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(spyHome, 'relay-state'), { recursive: true });
-  fs.writeFileSync(
-    path.join(spyHome, 'relay-state', 'relays.json'),
-    JSON.stringify([{ label: 'spy-relay', url: 'http://relay' }])
-  );
+  // Since goal/G19.15: node.db's relays table, keyed by relay key.
+  listRelays(spyHome, [{ label: 'spy-relay', url: 'http://relay' }]);
   const spy = presenceNode.createPresence({
     rootDir: spyHome,
     jobs: fakeJobs(),
@@ -747,12 +738,8 @@ async function run() {
   const jobs = fakeJobs();
 
   // Two relays this node holds a row on, so start() opens a stream to each.
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(
-    path.join(home, 'relay-state', 'relays.json'),
-    JSON.stringify([{ label: 'a', url: 'http://a' }, { label: 'b', url: 'http://b' }])
-  );
+  // Since goal/G19.15: node.db's relays table, keyed by relay key.
+  listRelays(home, [{ label: 'a', url: 'http://a' }, { label: 'b', url: 'http://b' }]);
 
   const opened = {};
   const P = presenceNode.createPresence({
@@ -946,12 +933,8 @@ async function run() {
     // node may LEARN, and the two are separate now.
     const home27 = tmpHome();
     auth.saveIdentity(home27, auth.generateIdentity('learner'));
-    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-    fs.mkdirSync(path.join(home27, 'relay-state'), { recursive: true });
-    fs.writeFileSync(
-      path.join(home27, 'relay-state', 'relays.json'),
-      JSON.stringify([{ label: 'r', url: 'http://relay-r' }])
-    );
+    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    listRelays(home27, [{ label: 'r', url: 'http://relay-r' }]);
 
     const noted = [];
     const streams = {};
@@ -1019,12 +1002,8 @@ async function run() {
     const angryStreams = {};
     const angryHome = tmpHome();
     auth.saveIdentity(angryHome, auth.generateIdentity('angry'));
-    // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-    fs.mkdirSync(path.join(angryHome, 'relay-state'), { recursive: true });
-    fs.writeFileSync(
-      path.join(angryHome, 'relay-state', 'relays.json'),
-      JSON.stringify([{ label: 'r', url: 'http://relay-angry' }])
-    );
+    // Since goal/G19.15: node.db's relays table, keyed by relay key.
+    listRelays(angryHome, [{ label: 'r', url: 'http://relay-angry' }]);
     const A = presenceNode.createPresence({
       rootDir: angryHome,
       jobs: fakeJobs(),

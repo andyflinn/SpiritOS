@@ -8,7 +8,10 @@
 //
 // Run in the agent's own clone, with its own node up:
 //
-//   node spirit/run/process/js/desk/offboard.js <port of the agent's own node>
+//   node spirit/run/process/js/desk/offboard.js <port of the agent's own node> [relay url]
+//
+// The relay is the url given, as onboard.js takes it, or without one the one row of the node's relay list. Since
+// goal/G19.15 every node lists noderoutes.net, so a node onboarded on another relay names it here.
 //
 //   1  the commit hooks commitCheck wrote are removed from this clone (others are left alone)
 //   2  deskClient goes off the node's include list (it stops at the node's next start)
@@ -22,11 +25,12 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 const kernel = require('../../../js/kernel.js');
 
-const USAGE = 'usage: node offboard.js <port of the agent\'s own node>';
+const USAGE = 'usage: node offboard.js <port of the agent\'s own node> [relay url]';
 const NODE_WAIT_MS = 20000;
 
 const port = Number(process.argv[2]);
-if (!Number.isInteger(port) || port <= 0) { console.error(USAGE); process.exit(2); }
+const given = String(process.argv[3] || '').trim().replace(/\/+$/, '');
+if (!Number.isInteger(port) || port <= 0 || (given && !/^https?:\/\/[^\s/]+/.test(given))) { console.error(USAGE); process.exit(2); }
 const node = 'http://127.0.0.1:' + port;
 
 function end(code, text) { (code ? console.error : console.log)(text); process.exit(code); }
@@ -63,10 +67,13 @@ async function main() {
   const card = await ask('node.card', {});
   const me = ok(card) ? String(card.body.publicKey || '') : '';
   if (!me) end(1, 'offboard: the node has no key: ' + card.text);
-  const relays = await ask('relay.search', { q: '' });
-  const rows = ok(relays) && Array.isArray(relays.body.items) ? relays.body.items : [];
-  if (rows.length !== 1) end(1, 'offboard: the node must list exactly one relay; it lists ' + rows.length);
-  const url = String(rows[0].key);
+  let url = given;
+  if (!url) {
+    const relays = await ask('relay.search', { q: '' });
+    const rows = ok(relays) && Array.isArray(relays.body.items) ? relays.body.items : [];
+    if (rows.length !== 1) end(1, 'offboard: with no relay url given, the node must list exactly one relay; it lists ' + rows.length + ' — name one: ' + USAGE);
+    url = String(rows[0].key);
+  }
   let relayKey = null;
   try { relayKey = await (await fetch(url.replace(/\/+$/, '') + '/api/relay/key')).json(); } catch (e) { relayKey = null; }
   const relay = relayKey && String(relayKey.relayPublicKey || '');

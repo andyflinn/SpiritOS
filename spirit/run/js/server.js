@@ -1282,8 +1282,10 @@ contactBook.syncMarks(ROOT_DIR);
   // BEFORE PRESENCE, which is the reason it is here and not later: the
   // relay list is what presenceNode dials, a few lines below.
   //
-  // NODE STATE since goal/G16.3: relay-state/relays.json, not the Natter
-  // app's folder, so no app decides where this node talks.
+  // NODE STATE since goal/G16.3, so no app decides where this node talks;
+  // in node.db's relays table since goal/G19.15, where this asserts the one
+  // seed row, noderoutes.net, by key and moves any old relays.json and
+  // relayKeys.json in.
   try { ownerBadge.ensureRelays(ROOT_DIR); }
   catch (e) { /* nor a relay list */ }
 

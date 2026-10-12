@@ -771,10 +771,10 @@ function theFirstRelay() {
   }
 
   const first = ownerBadge.ensureRelays(home);
-  // TWO since goal/G16.3 (Andy, 2026-10-11: "i say two."): spirit for
-  // development and noderoutes.net for the actual site.
-  if (first.length === 2 && first[0].url === ownerBadge.FIRST_RELAY.url && first[1].url === ownerBadge.KEPT_RELAY.url) {
-    test.check('and boot gives it his two: spirit first, noderoutes.net beside it');
+  // ONE since goal/G19.15 (Andy, 2026-10-12: "we only list noderoutes.net,
+  // spirit.andyflinn.com is OURS."), superseding goal/G16.3's two.
+  if (first.length === 1 && first[0].url === ownerBadge.KEPT_RELAY.url) {
+    test.check('and boot gives it noderoutes.net, and only that');
   } else {
     test.fail('first: ' + JSON.stringify(first));
   }
@@ -792,35 +792,28 @@ function theFirstRelay() {
   // This runs on EVERY boot. A list somebody edited must survive a
   // restart, or it would be a git-carried file wearing different clothes
   // — which is the exact thing it was written to stop being.
-  const mine = [{ label: 'mine', url: 'https://elsewhere.example' }];
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(
-    path.join(home, 'relay-state', 'relays.json'),
-    JSON.stringify(mine, null, 2)
-  );
-  const again = ownerBadge.ensureRelays(home);
-  if (again.length === 1 && again[0].url === 'https://elsewhere.example') {
-    test.check('a list somebody edited survives every later boot');
+  //
+  // Since goal/G19.15 the list is node.db's relays table, keyed by relay
+  // key, and boot asserts the seed BY KEY, creating a row only when none
+  // exists (Andy, 2026-10-12). So the edit is made the way a node makes it
+  // — a relay claimed, another claimed and then removed — and a removed
+  // relay stays removed because its row, and its pin, stay.
+  ownerBadge.addRelay(home, 'https://dropped.example', 'gone', 'RELAYKEY-dropped');
+  ownerBadge.removeRelay(home, 'https://dropped.example');
+  ownerBadge.addRelay(home, 'https://elsewhere.example', 'mine', 'RELAYKEY-elsewhere');
+  const again = ownerBadge.ensureRelays(home).map(function (r) { return r.url; });
+  if (again.join(' ') === [ownerBadge.KEPT_RELAY.url, 'https://elsewhere.example'].join(' ')) {
+    test.check('a list somebody edited survives every later boot: ' + again.join(', '));
   } else {
     test.fail('overwritten: ' + JSON.stringify(again));
   }
 
-  // AN EMPTY LIST IS A STATE, NOT A GAP — and this is where it differs
-  // from the description, which IS refilled when cleared. Natter refuses
-  // to remove the last public relay (canRemoveRelay), so a node with an
-  // empty list got there some other way, and boot quietly deciding for it
-  // would be this file overruling something it cannot see the reason for.
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), '[]');
-  if (ownerBadge.ensureRelays(home).length === 0) {
-    test.check('but an emptied list is left empty, because empty is an answer and absent is not');
-  } else {
-    test.fail('refilled an emptied list: ' + JSON.stringify(ownerBadge.ensureRelays(home)));
-  }
+  // AN EMPTY LIST STOOD HERE, "a state, not a gap", left empty by boot.
+  // goal/G16.3 made noderoutes.net unremovable and goal/G19.15 asserts it
+  // by key at every boot, so a list can no longer be empty at all.
 
-  fs.rmSync(home, { recursive: true, force: true });
+  try { require('../run/js/nodeStore.js').open(home).close(); } catch (e) { /* not open */ }
+  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* busy */ }
 }
 
 // ── 8. NO TICK ───────────────────────────────────────────────────────

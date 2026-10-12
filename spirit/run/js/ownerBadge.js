@@ -20,8 +20,6 @@
 // will be changed in one of them. Nothing below this line requires
 // anything unless it is running under node.
 const isNode = typeof process !== 'undefined' && !!process.versions && !!process.versions.node;
-const fs = isNode ? require('fs') : null;
-const path = isNode ? require('path') : null;
 const auth = isNode ? require('./relayAuth') : null;
 // Where this node holds a seat, and who each relay is. Both are records
 // this node keeps about itself — see probe.
@@ -133,30 +131,17 @@ function canRemoveRelay(relays, url) {
 // NO MIGRATION from the old file, on purpose: moving a node's existing
 // list over is asked of Andy separately, and the node does not read the
 // app's folder even once.
-function relaysPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'relays.json');
-}
+//
+// IN node.db SINCE goal/G19.15: the list is the `listed` rows of the one
+// relays table, keyed by relay key, which relayKeys.js reads and writes.
+// relay-state/relays.json is read once, copied in and deleted.
 
-// Rows, in file order, deduped by URL. A row with no url is not a
-// mailbox; a malformed file is no mailboxes, never a throw, because the
-// browser asks for this on every claim.
+// Rows, in list order, one per URL. Never a throw, because the browser
+// asks for this on every claim: a store that cannot be read is no
+// mailboxes.
 function loadRelays(rootDir) {
-  var raw;
-  try { raw = fs.readFileSync(relaysPath(rootDir), 'utf8'); }
+  try { return relayKeys.listed(rootDir); }
   catch (e) { return []; }
-  var list;
-  try { list = JSON.parse(raw); }
-  catch (e) { return []; }
-  if (!Array.isArray(list)) return [];
-  var seen = Object.create(null);
-  var rows = [];
-  list.forEach(function (row) {
-    var url = normalizeUrl(row && row.url);
-    if (!url || seen[url]) return;
-    seen[url] = true;
-    rows.push({ label: (row && row.label) || url, url: url });
-  });
-  return rows;
 }
 
 function configuredUrls(rootDir) {
@@ -181,48 +166,31 @@ function configuredUrls(rootDir) {
 // is created once, into a gap, and from then on it belongs to whoever
 // runs the box. Nothing ever overwrites it again.
 //
-// TWO RELAYS (goal/G16.3, Andy, 2026-10-11): "i say two." spirit for
-// development and noderoutes.net for the actual site: "i own the domain
-// name. and i'll use spirit for development and noderoutes.net for the
-// actual site." and "noderoutes.net will not update as often as spirit".
-// One of them always works, so a first start is never left with none. It
-// replaces the earlier choice of one row, which was about a first screen
-// having less to explain.
+// noderoutes.net CANNOT BE REMOVED (goal/G16.3): "we'll remove the option
+// to delete noderoutes.net". It is the steady relay every node keeps;
+// removeRelay refuses it by name.
 //
-// AND noderoutes.net CANNOT BE REMOVED: "we'll remove the option to delete
-// noderoutes.net". It is the steady fallback every node keeps; removeRelay
-// refuses it by name.
-//
-// ABSENCE ONLY. An EMPTY list is not a gap — it is a state, and one the
-// UI already refuses to create, since Natter will not let the last
-// public relay be removed. A node whose list is empty got there some
-// other way and should not have this quietly decide for it.
+// ONE SEED, ASSERTED AT EVERY BOOT, BY KEY (goal/G19.15). Andy,
+// 2026-10-12: "on boot, the node asserts the contents of "noderoutes.net"
+// ... in the database, by creating those rows, if they don't exist", "we
+// will pre-seed WITH keys, we know those key, after all", and then "we
+// only list noderoutes.net, spirit.andyflinn.com is OURS." So spirit is
+// neither seeded nor trusted from install: a node that uses it claims
+// there, and the claim pins its key. A seed this node already has a row
+// for is left as it is.
 //
 // Said plainly because it is a real choice and not a detail: this points
-// a brand-new node at ANDY'S relay. It was already true when the file
-// was tracked, and with one row rather than two it is less true than it
-// was — but anybody forking this tree should change these lines, and
-// nothing else, to point their nodes somewhere of their own.
-var FIRST_RELAY = { label: 'spirit', url: 'https://spirit.andyflinn.com' };
-var KEPT_RELAY = { label: 'noderoutes', url: 'https://noderoutes.net' };
-var SEED_RELAYS = [FIRST_RELAY, KEPT_RELAY];
+// a brand-new node at ANDY'S relay. Anybody forking this tree should
+// change these lines, and nothing else, to point their nodes somewhere of
+// their own.
+var KEPT_RELAY = { label: 'noderoutes', url: 'https://noderoutes.net',
+  key: 'MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=' };
+var SEED_RELAYS = [KEPT_RELAY];
 
 function ensureRelays(rootDir) {
-  var file = relaysPath(rootDir);
-  if (fs.existsSync(file)) return loadRelays(rootDir);
-  try { writeRelays(rootDir, SEED_RELAYS); }
+  try { relayKeys.assertSeeds(rootDir, SEED_RELAYS); }
   catch (e) { return []; }
   return loadRelays(rootDir);
-}
-
-// Temp file and rename, so a crash leaves the old list or the new one and
-// never half of either — the discipline the other relay-state files use.
-function writeRelays(rootDir, rows) {
-  var file = relaysPath(rootDir);
-  fs.mkdirSync(path.dirname(file), { recursive: true });
-  var tmp = file + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(rows, null, 2) + '\n');
-  fs.renameSync(tmp, file);
 }
 
 // A SUCCESSFUL CLAIM IS WHAT ADDS A RELAY (goal/G16.3, Andy's Q4 above).
@@ -230,13 +198,14 @@ function writeRelays(rootDir, rows) {
 // gets onto the list by a claim on it succeeding. Appended, so the first
 // row stays first — hub.loadRelayUrl still reads order. A url already
 // listed is left where it is, label and all.
-function addRelay(rootDir, url, label) {
+//
+// `relayKey` is the key the claim learned at first contact (goal/G19.15):
+// the row is filed under it. A url this node never met, named without one,
+// cannot be keyed and is not listed.
+function addRelay(rootDir, url, label, relayKey) {
   var u = normalizeUrl(url);
   if (!u) return loadRelays(rootDir);
-  var rows = loadRelays(rootDir);
-  if (rows.some(function (r) { return r.url === u; })) return rows;
-  rows.push({ label: String(label || '') || u, url: u });
-  writeRelays(rootDir, rows);
+  relayKeys.list(rootDir, u, label, relayKey);
   return loadRelays(rootDir);
 }
 
@@ -259,7 +228,7 @@ function removeRelay(rootDir, url) {
   if (!canRemoveRelay(rows, u)) {
     return { ok: false, status: 409, error: 'this node must keep one public relay' };
   }
-  writeRelays(rootDir, rows.filter(function (r) { return r.url !== u; }));
+  relayKeys.unlist(rootDir, u);
   return { ok: true, status: 200, key: u };
 }
 
@@ -484,7 +453,6 @@ if (isNode) {
     configuredUrls: configuredUrls,
     // The one row a node writes itself, exported so a test can assert the
     // default without repeating the string it is checking for.
-    FIRST_RELAY: FIRST_RELAY,
     KEPT_RELAY: KEPT_RELAY,
     SEED_RELAYS: SEED_RELAYS,
     // `statusPath`, `readBadge`, `ownedFrom`, `claimedLabelFrom` and

@@ -468,6 +468,32 @@ function open(rootDir, opts) {
     );
   `);
 
+  // ── THE RELAYS THIS NODE KNOWS (goal/G19.15) ─────────────────────────
+  //
+  //   Andy, 2026-10-12: "the authoritative info about relays on the node MUST
+  //   be by ID (key)", and "there will be only ONE relay table in node.db."
+  //
+  // relayKeys.js owns what a row MEANS and is the only reader and writer;
+  // this file owns where it lives. Keyed by the relay's public key; the url
+  // is the address the relay answers at, one relay per address. `listed` and
+  // `pos` are the node's relay list and its order (hub.loadRelayUrl reads the
+  // first); a seat is held when `seatClaimedAt` is not empty.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS relays (
+      key           TEXT PRIMARY KEY,
+      url           TEXT    NOT NULL,
+      label         TEXT    NOT NULL DEFAULT '',
+      listed        INTEGER NOT NULL DEFAULT 0,
+      pos           INTEGER NOT NULL DEFAULT 0,
+      firstSeen     TEXT    NOT NULL DEFAULT '',
+      acceptedAt    TEXT    NOT NULL DEFAULT '',
+      replaced      TEXT    NOT NULL DEFAULT '',
+      seatLabel     TEXT    NOT NULL DEFAULT '',
+      seatClaimedAt TEXT    NOT NULL DEFAULT ''
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS relays_url ON relays (url);
+  `);
+
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
   // `node.db` shipped a few hours before this with `at` and `url` on the
@@ -600,6 +626,13 @@ function open(rootDir, opts) {
     aGrantDel: db.prepare('DELETE FROM grants WHERE peer_id = ? AND path = ?'),
     aPeerDelIfBare: db.prepare('DELETE FROM peers WHERE peer_id = ? AND NOT EXISTS (SELECT 1 FROM grants WHERE peer_id = ?)'),
     aRelabel: db.prepare('UPDATE peers SET label = ? WHERE peer_id = ?'),
+    relAll: db.prepare('SELECT * FROM relays ORDER BY listed DESC, pos, url'),
+    relByKey: db.prepare('SELECT * FROM relays WHERE key = ?'),
+    relByUrl: db.prepare('SELECT * FROM relays WHERE url = ?'),
+    relPut: db.prepare(`INSERT OR REPLACE INTO relays (key, url, label, listed, pos, firstSeen, acceptedAt, replaced,
+      seatLabel, seatClaimedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+    relDel: db.prepare('DELETE FROM relays WHERE key = ?'),
+    relMaxPos: db.prepare('SELECT COALESCE(MAX(pos), -1) AS n FROM relays WHERE listed = 1'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
     // and left alone when it does not — the callers do not all know the
     // same things, and a search that taught a label must not have it
@@ -715,6 +748,14 @@ function open(rootDir, opts) {
       seen: r.seen,
       choice: r.choice || '',
       blocked: !!r.blocked,
+    };
+  }
+  function relayRow(r) {
+    if (!r) return null;
+    return {
+      key: r.key, url: r.url, label: r.label, listed: !!r.listed, pos: r.pos,
+      firstSeen: r.firstSeen, acceptedAt: r.acceptedAt, replaced: r.replaced,
+      seatLabel: r.seatLabel, seatClaimedAt: r.seatClaimedAt,
     };
   }
   function routeRow(r) {
@@ -1247,6 +1288,20 @@ function open(rootDir, opts) {
         } catch (e) { db.exec('ROLLBACK'); throw e; }
       },
       relabel: function (key, label) { return q.aRelabel.run(String(label), String(key)).changes > 0; },
+    },
+
+    // goal/G19.15's table, for relayKeys.js alone. A row goes in and comes out as one plain object.
+    relays: {
+      all: function () { return q.relAll.all().map(relayRow); },
+      byKey: function (key) { return relayRow(q.relByKey.get(String(key || ''))); },
+      byUrl: function (url) { return relayRow(q.relByUrl.get(String(url || ''))); },
+      put: function (r) {
+        q.relPut.run(String(r.key), String(r.url), String(r.label || ''), r.listed ? 1 : 0, Number(r.pos) || 0,
+          String(r.firstSeen || ''), String(r.acceptedAt || ''), String(r.replaced || ''),
+          String(r.seatLabel || ''), String(r.seatClaimedAt || ''));
+      },
+      del: function (key) { return q.relDel.run(String(key || '')).changes > 0; },
+      nextPos: function () { return q.relMaxPos.get().n + 1; },
     },
 
     transaction: function (fn) {

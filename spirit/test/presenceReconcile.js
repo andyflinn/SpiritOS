@@ -76,11 +76,9 @@ function node(script) {
   const home = tmpHome();
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'a', url: RELAY }]));
+  // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key: listed, then seated.
+  relayKeys.list(home, RELAY, 'a', RELAYKEY);
   relayKeys.seat(home, RELAY, 'me');
-  relayKeys.accept(home, RELAY, RELAYKEY);
   const book = {}; book[JOHN] = true; book[BERT] = true;
   const learned = [];
   const router = fakeRouter(script);

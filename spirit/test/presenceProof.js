@@ -47,7 +47,9 @@ const RELAYKEY = 'MCowBQYDK2VwAyEArelayrelayrelayrelayrelayrelayrelayre=';
 const APP_SCRIPT = path.join(__dirname, '..', 'run', 'shell', 'contacts', 'contacts.js');
 
 function tmpHome() { return fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-presence-proof-')); }
-function keyDoor() { return Promise.resolve({ status: 200, text: JSON.stringify({ relayPublicKey: RELAYKEY, relayLabel: 'lab' }) }); }
+// Since goal/G19.15 a relay's record is keyed by its key, so two relays are two keys.
+const RELAYKEY_B = 'MCowBQYDK2VwAyEArelaybrelaybrelaybrelaybrelaybrelaybr=';
+function keyDoor(url) { return Promise.resolve({ status: 200, text: JSON.stringify({ relayPublicKey: url === RELAY_B ? RELAYKEY_B : RELAYKEY, relayLabel: 'lab' }) }); }
 function fakeJobs() {
   const j = { updates: [], job: null };
   j.createJob = function (kind, type, data) { j.job = { id: 'job_1', kind: kind, type: type, data: data }; return j.job; };
@@ -64,10 +66,10 @@ function node() {
   const home = tmpHome();
   const me = auth.generateIdentity('me');
   auth.saveIdentity(home, me);
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'a', url: RELAY }, { label: 'b', url: RELAY_B }]));
-  [RELAY, RELAY_B].forEach(function (u) { relayKeys.seat(home, u, 'me'); relayKeys.accept(home, u, RELAYKEY); });
+  // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key: listed, then seated.
+  relayKeys.list(home, RELAY, 'a', RELAYKEY);
+  relayKeys.list(home, RELAY_B, 'b', RELAYKEY_B);
+  [RELAY, RELAY_B].forEach(function (u) { relayKeys.seat(home, u, 'me'); });
   const book = {}; book[JOHN] = true; book[BERT] = true;
   const noted = [];
   const router = {

@@ -20,6 +20,11 @@
 //   2  Exit 0 only when the desk read answered. Without Andy's desk grant: a non-zero exit, and its words name the
 //      grant. Run again after the grant, it finishes: a second run is not refused for the seat it already holds.
 //   3  The desk node's key is the relay's owner key (GET /api/relay/key answers ownerKey).
+//   Since goal/G19.15 (Andy, 2026-10-12): onboard.js <port> <name:token> <desk label> [relay url]. The relay is the
+//   url given ("what does it matter which relay an agent is a member of to participate in my team?"), and the desk
+//   is the one node a search for the label finds, whoever owns the relay ("even if i don't own the relay my agents
+//   use, still no difference.", "we'll just have to tell the agent what label to look for, when searching the
+//   desk."). offboard.js takes the same optional relay url.
 //   4  Removal is two scripts beside it. Andy, 2026-10-04, to Q9 ("the agent's script undoes its side (hooks,
 //      deskClient, its relay seat). Your side (desk grant, contact, scope) as a second script you run on your
 //      node?"): "yes". offboard.js <agent's port>, in the clone: the commitCheck hooks gone, deskClient off the
@@ -89,6 +94,39 @@ function verb(port, body) {
   };
   return once().then(function (r) { return r.status ? r : sleep(200).then(once); });
 }
+// A stand-in node for goal/G19.15's label checks: it holds its seat, has a key, and answers peer.search with the
+// matches given. Anything else is a 500, so a run that went past the desk search would say so.
+function fakeNode(matches) {
+  const server = require('http').createServer(function (req, res) {
+    let body = '';
+    req.on('data', function (c) { body += c; });
+    req.on('end', function () {
+      let b = {};
+      try { b = JSON.parse(body); } catch (e) { b = {}; }
+      const answers = {
+        'relay.get': { ok: true, relay: { claimed: true } },
+        'node.card': { publicKey: 'MCowBQYDK2VwAyEAagentOnboardStandInAAAAAAAAAAAAAAAAAAAAA=' },
+        'peer.search': { q: b.q, matches: matches, more: false, asked: 1, remembered: 0, silent: [] },
+      };
+      const a = answers[b.verb];
+      res.writeHead(a ? 200 : 500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(a || { error: 'not in the stand-in: ' + b.verb }));
+    });
+  });
+  return server;
+}
+function runBeside(server, label) {
+  return new Promise(function (resolve) {
+    server.listen(0, '127.0.0.1', function () {
+      const kid = spawn(process.execPath, [SCRIPT, String(server.address().port), 'gemma:token', label, 'http://127.0.0.1:1'],
+        { cwd: os.tmpdir() });
+      let said = '';
+      kid.stdout.on('data', function (d) { said += d; });
+      kid.stderr.on('data', function (d) { said += d; });
+      kid.on('close', function (code) { server.close(); resolve({ code: code, said: said }); });
+    });
+  });
+}
 function run(file, args, cwd) {
   const r = spawnSync(process.execPath, [file].concat(args), { cwd: cwd, encoding: 'utf8', timeout: 180000 });
   return { code: r.status, said: String(r.stdout || '') + String(r.stderr || '') };
@@ -108,10 +146,14 @@ function plant(name) {
   plantRun.plantRunTree(home);
   return home;
 }
-function pointAt(home, relayUrl) {
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'spirit', url: relayUrl }], null, 2));
+// Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key: the scratch relay is
+// listed under the key its door answers, before the node starts (which then adds the two seeds after it).
+function pointAt(home, relayUrl, relayKey) {
+  require('../run/js/relayKeys.js').list(home, relayUrl, 'spirit', relayKey);
+  require('../run/js/nodeStore.js').open(home).close();
+}
+function relayKeyOf(relayUrl) {
+  return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.json(); }).then(function (j) { return (j && j.relayPublicKey) || ''; });
 }
 
 (async function () {
@@ -132,9 +174,10 @@ function pointAt(home, relayUrl) {
   const relayUrl = 'http://127.0.0.1:' + relayPort;
   const relayUp = await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); }, 15000);
   if (!relayUp) { test.fail('the scratch relay never answered /api/relay/key'); return; }
+  const relayKey = await relayKeyOf(relayUrl);
 
   includeList.add(andyHome, 'process/js/desk');
-  pointAt(andyHome, relayUrl);
+  pointAt(andyHome, relayUrl, relayKey);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);
   await waitFor(function () { return verb(andyPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
@@ -156,9 +199,11 @@ function pointAt(home, relayUrl) {
   if (wrote.status === 200) test.check('the world: another agent has written at the desk');
   else { test.fail('the world: the other agent\'s line answered ' + short(wrote)); return; }
 
-  // THE NEW AGENT: its own node, its relays.json, deskClient off; its clone a scratch git repository.
+  // THE NEW AGENT: its own node, deskClient off; its clone a scratch git repository.
+  // Since goal/G19.15 a fresh node lists noderoutes.net alone, and the agent is pointed at nothing: onboard.js takes
+  // the scratch relay's url as its third argument and the claim lists it (Andy, 2026-10-12: "what does it matter
+  // which relay an agent is a member of to participate in my team?").
   const agentHome = plant('gemma');
-  pointAt(agentHome, relayUrl);
   const agentPort = await freePort();
   startNode(agentHome, agentPort);
   await waitFor(function () { return verb(agentPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
@@ -169,9 +214,24 @@ function pointAt(home, relayUrl) {
   relayStore.open(relayHome).close();
 
   test.subHeading('1. the first run, before Andy grants desk');
-  const first = run(SCRIPT, [String(agentPort), 'gemma:' + memberInvite.token], clone);
+  // Since goal/G19.15: the desk's label (the desk is found by searching for it) and the relay url to claim on.
+  const first = run(SCRIPT, [String(agentPort), 'gemma:' + memberInvite.token, 'andy', relayUrl], clone);
   if (first.code !== 0 && /grant/i.test(first.said)) test.check('without his grant it exits non-zero and names the grant');
   else test.fail(OWED + 'the first run exited ' + first.code + ', saying ' + short(first.said));
+  // THE RELAY URL ARGUMENT IS HONOURED (goal/G19.15): the seat is claimed on the url given, which the fresh node did
+  // not list, and not on the one relay it did list (noderoutes.net).
+  // relay.get answers only for a relay on the node's list, so a claimed row there is the url listed and seated.
+  const onGiven = await verb(agentPort, { verb: 'relay.get', key: relayUrl });
+  const onRoutes = await verb(agentPort, { verb: 'relay.get', key: 'https://noderoutes.net' });
+  const givenRow = (onGiven.body && onGiven.body.relay) || {};
+  const routesRow = (onRoutes.body && onRoutes.body.relay) || {};
+  if (first.said.indexOf('seat claimed on ' + relayUrl) !== -1 && onGiven.status === 200 && givenRow.claimed &&
+      onRoutes.status === 200 && !routesRow.claimed && !routesRow.owned) {
+    test.check('the relay url given is the one claimed on, and the claim listed it; noderoutes.net is listed and not claimed');
+  } else {
+    test.fail(OWED + 'the relay url argument was not honoured: relay.get ' + short(onGiven.body) + ' / noderoutes ' +
+      short(onRoutes.body) + ' / said ' + short(first.said));
+  }
   const agentCard = await verb(agentPort, { verb: 'node.card' });
   const agentKey = agentCard.body.publicKey || '';
   if (agentKey) test.check('the agent\'s node has a key: its seat was claimed');
@@ -181,6 +241,10 @@ function pointAt(home, relayUrl) {
   }, 15000);
   if (adopted) test.check('Andy\'s node holds the agent as a contact (adoptClaim)');
   else test.fail(OWED + 'Andy\'s node does not hold the agent\'s key');
+  // FOUND BY LABEL (goal/G19.15): Andy, "we'll just have to tell the agent what label to look for, when searching
+  // the desk." The desk node is the one the search for 'andy' found, and it is Andy's node.
+  if (/the desk node is a contact: andy/.test(first.said)) test.check('the desk node is found by searching for its label, andy');
+  else test.fail(OWED + 'the desk was not found by its label: ' + short(first.said));
   const knowsDesk = await verb(agentPort, { verb: 'contact.get', key: andyKey });
   if (knowsDesk.body.person && !knowsDesk.body.person.blocked) test.check('the agent\'s node holds the desk node (the relay\'s owner) as a contact');
   else test.fail(OWED + 'the agent\'s contact.get of the desk node answered ' + knowsDesk.status + ' ' + short(knowsDesk.body));
@@ -189,12 +253,33 @@ function pointAt(home, relayUrl) {
   if (/commitCheck\.js/.test(hook) && hook.indexOf(String(agentPort)) !== -1) test.check('the clone\'s commit hooks are installed for the agent\'s port');
   else test.fail(OWED + 'the clone\'s commit-msg hook reads ' + short(hook || '(none)'));
 
+  // NONE, OR TWO, UNDER THE LABEL (goal/G19.15): the run ends and says so. Asked of a stand-in node that answers
+  // the verbs onboard.js asks before the desk is chosen, because a relay does not seat two members under one label,
+  // so two answers to one search cannot be made with real relays without a partner world.
+  test.subHeading('1b. the desk label finds nobody, or two nodes: the run ends and says which');
+  const nobody = await runBeside(fakeNode([]), 'andy');
+  if (nobody.code === 1 && /no node is found under the desk label "andy"/.test(nobody.said)) {
+    test.check('no node under the label: exit 1, and it says no node is found');
+  } else {
+    test.fail(OWED + 'with nobody under the label it exited ' + nobody.code + ', saying ' + short(nobody.said));
+  }
+  const twins = await runBeside(fakeNode([
+    { publicKey: 'MCowBQYDK2VwAyEAagentOnboardTwinOneAAAAAAAAAAAAAAAAAAAAA=', publicLabel: 'andy', relay: relayUrl },
+    { publicKey: 'MCowBQYDK2VwAyEAagentOnboardTwinTwoAAAAAAAAAAAAAAAAAAAAA=', publicLabel: 'andy', relay: relayUrl },
+    { publicKey: 'MCowBQYDK2VwAyEAagentOnboardNotAndyAAAAAAAAAAAAAAAAAAAAA=', publicLabel: 'andy2', relay: relayUrl },
+  ]), 'andy');
+  if (twins.code === 1 && /2 nodes are found under the desk label "andy"/.test(twins.said)) {
+    test.check('two nodes under the label (a third, andy2, not counted): exit 1, and it says two are found');
+  } else {
+    test.fail(OWED + 'with two under the label it exited ' + twins.code + ', saying ' + short(twins.said));
+  }
+
   test.subHeading('2. Andy grants desk; the second run finishes');
   if (!agentKey) { test.fail(OWED + 'no agent key, so there is nothing for Andy to grant'); return; }
   const granted = await verb(andyPort, { verb: 'jobs.authGrant', key: agentKey, path: 'desk' });
   if (granted.status === 200) test.check('the world: Andy\'s node grants the agent desk');
   else test.fail('the world: jobs.authGrant answered ' + granted.status + ' ' + short(granted.body));
-  const second = run(SCRIPT, [String(agentPort), 'gemma:' + memberInvite.token], clone);
+  const second = run(SCRIPT, [String(agentPort), 'gemma:' + memberInvite.token, 'andy', relayUrl], clone);
   if (second.code === 0) test.check('the second run exits 0');
   else test.fail(OWED + 'the second run exited ' + second.code + ', saying ' + short(second.said));
   // The other agents are known only from the desk's own records (changes carries each record's key), which the
@@ -209,7 +294,8 @@ function pointAt(home, relayUrl) {
   test.subHeading('3. the agent\'s removal script undoes its own side');
   if (!fs.existsSync(OFFBOARD)) { test.fail(OWED + 'there is no ' + path.basename(OFFBOARD) + ' beside onboard.js'); }
   else {
-    const off = run(OFFBOARD, [String(agentPort)], clone);
+    // Since goal/G19.15 the node lists noderoutes.net beside the relay it joined, so offboard is told which.
+    const off = run(OFFBOARD, [String(agentPort), relayUrl], clone);
     if (off.code === 0) test.check('offboard.js exits 0');
     else test.fail(OWED + 'offboard.js exited ' + off.code + ', saying ' + short(off.said));
     const left = ['commit-msg', 'post-commit', 'pre-push'].filter(function (h) {

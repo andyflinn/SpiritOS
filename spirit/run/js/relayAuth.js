@@ -544,7 +544,7 @@ function saveIdentity(rootDir, id) {
   // left a file ensureIdentity cannot read, so it minted a NEW key and
   // every allow entry naming this relay or node named one that no longer
   // existed. A temp file in the same folder, renamed over the old one, is
-  // atomic on one filesystem, as ownerBadge.writeRelays does. The temp is
+  // atomic on one filesystem. The temp is
   // made private before it holds the key, and protected again after.
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(id, null, 2), { mode: 0o600 });

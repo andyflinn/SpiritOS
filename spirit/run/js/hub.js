@@ -305,7 +305,11 @@ function sealedClaim(url, rootDir, name, invite, inviteLabel, known) {
         said.relayLabel, said.keySig)) {
         throw new Error('that relay does not publish a signed cipher key — it may be running older code');
       }
-      return wrap(said.relayPublicKey, said.relaySealKey);
+      // The key learned here is what a successful claim files the relay
+      // under (goal/G19.15). Not enumerable, so it never goes on the wire.
+      var out = wrap(said.relayPublicKey, said.relaySealKey);
+      Object.defineProperty(out, 'relayPublicKey', { value: String(said.relayPublicKey) });
+      return out;
     });
 }
 
@@ -1110,6 +1114,7 @@ function createHub(rootDir) {
     var probe = deps && deps.probe;
     readJsonBody(req).then(function (body) {
       withClaimRelay(res, body && body.url, function (url) {
+        var learnedKey = '';
         // FIRST CONTACT, STATED. This is the node's own claim: it has no
         // pin for this relay — the claim is how it gets one — so the
         // fetch-and-trust path is correct here and says so rather than
@@ -1118,6 +1123,7 @@ function createHub(rootDir) {
           body && body.name, body && body.invite, body && body.inviteLabel,
           'first-contact')
           .then(function (sending) {
+            learnedKey = (sending && sending.relayPublicKey) || '';
             return relayRequest(url, 'POST', '/api/relay/claim', sending);
           })
           .then(function (r) {
@@ -1137,7 +1143,7 @@ function createHub(rootDir) {
             try { mineAlready = r.status === 409 && !!JSON.parse(marked).mine; }
             catch (e) { mineAlready = false; }
             if ((r.status >= 200 && r.status < 300) || mineAlready) {
-              try { ownerBadge.addRelay(rootDir, url, ''); probeCache = null; }
+              try { ownerBadge.addRelay(rootDir, url, '', learnedKey); probeCache = null; }
               catch (e) { /* the claim stands; the list is written on the next claim */ }
             }
 

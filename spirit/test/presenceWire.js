@@ -47,6 +47,7 @@ const rollOf = require('./rollOf');
 // truth.
 let PORT = 0;
 let BASE = '';
+let BASE_KEY = '';
 const PORT_CANDIDATES = [48731, 48732, 48733, 48734, 48735];
 
 let child = null;
@@ -100,12 +101,9 @@ function buildRelayHome() {
 function nodeFor(id) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-wire-node-'));
   auth.saveIdentity(home, id);
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(
-    path.join(home, 'relay-state', 'relays.json'),
-    JSON.stringify([{ label: 'wire', url: BASE }])
-  );
+  // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by
+  // relay key: the relay under test, under the key its door answered.
+  relayKeys.list(home, BASE, 'wire', BASE_KEY);
   // AND THE SEAT. The claims above are made straight on the relay object
   // (`box.claim(...)`), which is the RELAY's half of a bind. A node keeps
   // its own record of where it holds one and reads that at boot
@@ -201,6 +199,8 @@ async function run() {
   child = up.kid;
   PORT = up.port;
   BASE = up.base;
+  try { BASE_KEY = (await (await fetch(BASE + '/api/relay/key')).json()).relayPublicKey || ''; }
+  catch (e) { BASE_KEY = ''; }
 
   test.subHeading('The box will say what it is made of');
 

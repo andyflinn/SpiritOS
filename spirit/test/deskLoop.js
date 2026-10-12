@@ -95,10 +95,14 @@ function plant(name) {
   plantRun.plantRunTree(home);
   return home;
 }
-function pointAt(home, relayUrl) {
-  // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'spirit', url: relayUrl }], null, 2));
+// Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key: the scratch relay is
+// listed under the key its door answers, before the node starts (which then adds the two seeds after it).
+function pointAt(home, relayUrl, relayKey) {
+  require('../run/js/relayKeys.js').list(home, relayUrl, 'spirit', relayKey);
+  require('../run/js/nodeStore.js').open(home).close();
+}
+function relayKeyOf(relayUrl) {
+  return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.json(); }).then(function (j) { return (j && j.relayPublicKey) || ''; });
 }
 function handed(log) {
   try { return fs.readFileSync(log, 'utf8').split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { return []; }
@@ -123,7 +127,8 @@ function handed(log) {
   const relayUp = await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); }, 15000);
   if (!relayUp) { test.fail('the scratch relay never answered /api/relay/key'); return; }
   includeList.add(andyHome, 'process/js/desk');
-  pointAt(andyHome, relayUrl);
+  const relayKey = await relayKeyOf(relayUrl);
+  pointAt(andyHome, relayUrl, relayKey);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);
   await waitFor(function () { return verb(andyPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
@@ -136,7 +141,7 @@ function handed(log) {
   await deskAsk('session.set', { json: JSON.stringify({ goal: { id: 'l/G1', title: 'Loop' }, items: [{ id: 'l/G1.1', title: 'Talk', blocks: ['l/G1'] }] }) }, ANDY);
 
   const agentHome = plant('gemma');
-  pointAt(agentHome, relayUrl);
+  pointAt(agentHome, relayUrl, relayKey);
   const agentPort = await freePort();
   startNode(agentHome, agentPort);
   await waitFor(function () { return verb(agentPort, { verb: 'node.debug', debug: {} }).then(function (r) { return r.status === 200; }); }, 15000);
@@ -145,10 +150,12 @@ function handed(log) {
   spawnSync('git', ['init', '-q'], { cwd: clone });
   const memberInvite = invites.add(relayHome, { label: 'gemma', days: 1 });
   relayStore.open(relayHome).close();
-  spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + memberInvite.token], { cwd: clone, encoding: 'utf8', timeout: 180000 });
+  // Since goal/G19.15 onboard.js is told the desk's label (it finds the desk by searching for it) and the scratch
+  // relay's url (every node also lists noderoutes.net).
+  spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + memberInvite.token, 'andy', relayUrl], { cwd: clone, encoding: 'utf8', timeout: 180000 });
   const agentKey = (await verb(agentPort, { verb: 'node.card' })).body.publicKey || '';
   await verb(andyPort, { verb: 'jobs.authGrant', key: agentKey, path: 'desk' });
-  const joined = spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + memberInvite.token], { cwd: clone, encoding: 'utf8', timeout: 180000 });
+  const joined = spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + memberInvite.token, 'andy', relayUrl], { cwd: clone, encoding: 'utf8', timeout: 180000 });
   if (joined.status === 0) test.check('the world: the agent joined Desk through onboard.js');
   else { test.fail('the world: onboard.js exited ' + joined.status + ': ' + short(String(joined.stdout || '') + String(joined.stderr || ''))); return; }
 

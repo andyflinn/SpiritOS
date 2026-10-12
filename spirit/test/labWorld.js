@@ -294,6 +294,9 @@ function createWorld(opts) {
     if (!await answering(relay.url + '/api/relay/key')) {
       return { ok: false, error: 'lab relay did not answer on ' + relay.url };
     }
+    // Since goal/G19.15 a node files a relay under its key (node.db's relays table), so the lab learns it once.
+    try { relay.key = ((await (await fetch(relay.url + '/api/relay/key')).json()) || {}).relayPublicKey || ''; }
+    catch (e) { relay.key = ''; }
 
     // The relay's owner was written into its owner.json above, before it
     // started, as bash/install-units does (goal/G16.8); he now claims his
@@ -354,12 +357,8 @@ function createWorld(opts) {
       // relays" from outside it.
       auth.saveIdentity(node.home, id);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
-      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-      fs.mkdirSync(path.join(node.home, 'relay-state'), { recursive: true });
-      fs.writeFileSync(
-        path.join(node.home, 'relay-state', 'relays.json'),
-        JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
-      );
+      // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
+      relayKeys.list(node.home, relay.url, 'lab', relay.key);
       // AND THE SEAT (2026-09-18). This lab claims by posting STRAIGHT AT
       // the relay above, which is the relay's half of a bind and not the
       // node's: the box gets a row and the node is never told.
@@ -419,12 +418,8 @@ function createWorld(opts) {
       const contactBook = require('../run/js/contacts.js');
       auth.saveIdentity(node.home, owner);
       fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
-      // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
-      fs.mkdirSync(path.join(node.home, 'relay-state'), { recursive: true });
-      fs.writeFileSync(
-        path.join(node.home, 'relay-state', 'relays.json'),
-        JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
-      );
+      // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
+      relayKeys.list(node.home, relay.url, 'lab', relay.key);
       relayKeys.seat(node.home, relay.url, ownerName);
       fs.writeFileSync(
         path.join(node.home, 'shell', 'natter', 'session.json'),
