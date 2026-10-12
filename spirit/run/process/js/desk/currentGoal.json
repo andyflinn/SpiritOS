@@ -1,8 +1,8 @@
 {
- "change": 36347,
+ "change": 36348,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T13:31:11.201Z",
+ "writtenAt": "2026-10-12T13:31:13.221Z",
  "items": [
   {
    "id": "goal/G19",
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -621,10 +621,9 @@
    "id": "goal/G19.4",
    "title": "deskVerify: kill a suite's servers; normalise listed paths",
    "goal": "goal/G19",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
