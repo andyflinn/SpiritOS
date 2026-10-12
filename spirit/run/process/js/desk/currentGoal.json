@@ -1,8 +1,8 @@
 {
- "change": 36353,
+ "change": 36455,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T13:31:31.146Z",
+ "writtenAt": "2026-10-12T13:38:46.922Z",
  "items": [
   {
    "id": "goal/G19",
@@ -18,7 +18,6 @@
     "goal/G19.1",
     "goal/G19.2",
     "goal/G19.3",
-    "goal/G19.5",
     "goal/G19.6",
     "goal/G19.7",
     "goal/G19.8",
@@ -46,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -533,8 +532,8 @@
    "id": "goal/G19.3",
    "title": "deskVerify: the Verifier tab vanishes when work is queued",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G19",
@@ -546,13 +545,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -650,6 +649,11 @@
      "by": "desk",
      "at": "2026-10-12T13:31:30.739Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:38:40.157Z",
+     "text": "taking: red first, in my clone."
     }
    ]
   },
@@ -820,9 +824,12 @@
    "id": "goal/G19.5",
    "title": "Desk checks: numbers never repeat; box blur on its own item",
    "goal": "goal/G19",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19"
    ],
@@ -830,18 +837,39 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskCheckNumbers.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/oversize.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -912,6 +940,41 @@
      "by": "claude-windows",
      "at": "2026-10-12T13:30:27.863Z",
      "text": "taking: red first, in my clone."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:31:43.410Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:31:44.940Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:38:07.775Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:38:08.993Z",
+     "text": "commit 7b60cdb7377215c834dd7547ff568222e729733c: goal/G19.5: check numbers never repeat; the box blur writes to its own item\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskCheckNumbers.js\n- spirit/test/oversize.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:38:14.239Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:38:24.220Z",
+     "text": "deskVerify: passed, at 7b60cdb7 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:38:25.880Z",
+     "text": "Claimed, in 7b60cdb7. Files: desk.js, deskDetails.js, the new deskCheckNumbers.js, and oversize.js, whose agent now takes before it posts (a goal/G18.8 leftover the desk sweep had missed)."
     }
    ]
   },
