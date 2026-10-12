@@ -1,0 +1,9 @@
+{
+  "description": "Commit files in your clone with a message that starts with the item id it belongs to. Only files on the list of an item you have taken; the commit check refuses a commit without Andy's Go. Push after it.",
+  "request": {
+    "message": "",
+    "paths": [
+      ""
+    ]
+  }
+}

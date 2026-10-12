@@ -1,0 +1,9 @@
+{
+  "description": "Name the files you change for an item: paths are repository paths, your whole list each time (it replaces your last). A file must be on the list of an item you have taken before you may write or commit it; the red test file goes on the list too.",
+  "request": {
+    "id": "",
+    "paths": [
+      ""
+    ]
+  }
+}

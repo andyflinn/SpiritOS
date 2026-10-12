@@ -1,0 +1,4 @@
+{
+  "description": "Push your clone's commits to origin, after bringing in what others pushed (git pull --rebase). The verifier checks your item once it is pushed and claimed.",
+  "request": {}
+}

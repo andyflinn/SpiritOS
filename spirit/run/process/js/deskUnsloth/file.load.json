@@ -1,0 +1,6 @@
+{
+  "description": "The text of one file in your clone, by its repository path. Nothing under .git, nothing outside the clone.",
+  "request": {
+    "path": ""
+  }
+}

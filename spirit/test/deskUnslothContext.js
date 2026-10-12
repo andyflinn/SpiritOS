@@ -8,7 +8,7 @@
 //
 // WHAT IS TRUE TODAY (read at 74e1d37d): deskUnsloth.js reads process/js/deskUnsloth/loop.json under the cwd and
 // exits 1 without it; every call carries "You are a helpful assistant" and the one line that woke it, to a model
-// named in the code at 127.0.0.1:8888; it answers every chat.add of any party, the backlog included, prefixed
+// named in the code at 127.0.0.1:8888; it answered every chat.add of any party, the backlog included, prefixed
 // "[loop.js] "; nothing of the desk's goal is in the call.
 //
 // THE SHAPE ASSERTED (G10.3's box, decided 1 to 8):
@@ -27,7 +27,7 @@
 //   4. A LONG ANSWER goes back as several chat.add lines under the room, each at most ANSWER_ROOM - 512 bytes of text
 //      (so the desk's wrapping of it still fits one answer), split at paragraphs: every paragraph whole in one line,
 //      in order. The lines carry no "[loop.js]".
-//   5. ADDRESSED LINES ONLY: a DESK chat.add line whose text starts with the persona's name (any case, a colon or a
+//   5. (Since goal/G10.8 every change but its own reaches the model; section 5 asserts that.) ADDRESSED LINES ONLY: a DESK chat.add line whose text starts with the persona's name (any case, a colon or a
 //      comma after it) is answered under its item, so is a JOB line under its item; a line of another agent's, a line
 //      for another agent and a line with no address are not. Its answer begins with its own name.
 //   6. THE PRESENT, NEVER THE BACKLOG: what deskClient.next hands over before it first answers with no lines is the
@@ -271,17 +271,29 @@ async function suite() {
   else test.fail(OWED + posted.length + ' line(s) posted; whole paragraphs ' + whole + ', in order ' + order + ', each under the room ' + under + '; first ' + short(posted[0] ? posted[0].text.slice(0, 60) : null));
   modelScript = ['Short.'];
 
-  test.subHeading('5. addressed lines and JOBs only');
+  // SINCE goal/G10.8, EVERY CHANGE BUT ITS OWN. Andy, 2026-10-12, asked whether Levant should read every desk change
+  // and act on it as claude does: "yes. it'll make flaws visible." The desk's rules in the call say which lines are
+  // not its to answer; the model judges. Its own line never reaches the model.
+  test.subHeading('5. every change but its own, and JOBs');
   calls.length = 0; posted.length = 0;
+  const others = [
+    'cw: a line for the other agent, not the local one',
+    'a note of andy\'s with no address; levant is named but not addressed',
+  ];
   nextQueue.push([
-    said('ctx/G1.2', 'cw: a line for the other agent, not the local one'),
-    said('ctx/G1.2', 'a note of andy\'s with no address; levant is named but not addressed'),
-    said('ctx/G1.2', 'wsl: another agent\'s line', 'wsl-claude'),
+    said('ctx/G1.2', others[0]),
+    said('ctx/G1.2', others[1]),
     'DESK desk chat.add ' + JSON.stringify({ id: 'ctx/G1.2', text: 'message delivered, Levant is at the desk' }),
   ]);
+  await until(function () { return calls.length >= 1; }, 10000);
+  if (calls.length >= 1 && others.every(function (t) { return holds(calls[0], t); }) && holds(calls[0], 'message delivered, Levant is at the desk')) test.check('lines not addressed to it reach the model, every change of the item in one call');
+  else test.fail('OWED by goal/G10.8: ' + calls.length + ' call(s) for the unaddressed lines; the first holds ' + short(calls[0] && textOf(calls[0]).slice(-3)));
+  await until(function () { return posted.length >= 1; }, 5000);
+  calls.length = 0; posted.length = 0;
+  nextQueue.push([said('ctx/G1.2', 'Levant: my own line, said by me', 'levant')]);
   await sleep(2500);
-  if (!calls.length && !posted.length) test.check('a line for another agent, a line with no address, another agent\'s line and the desk\'s own line are not answered');
-  else test.fail(OWED + calls.length + ' call(s) and ' + posted.length + ' post(s) for lines not addressed to it: ' + short(posted[0] || (calls[0] && textOf(calls[0]).slice(-1)[0]) || null));
+  if (!calls.length) test.check('its own line reaches no model call');
+  else test.fail('OWED by goal/G10.8: its own line called the model');
   nextQueue.push(['JOB ctx/G1.2 build rules: rule/1@1']);
   if (await until(function () { return calls.length >= 1 && posted.length >= 1; }, 10000) && posted[0].id === 'ctx/G1.2' && holds(calls[0], ITEM_BOX.slice(0, 40))) test.check('a JOB line is answered under its item, with the item\'s box in the call');
   else test.fail(OWED + 'a JOB line brought ' + calls.length + ' call(s) and ' + posted.length + ' post(s), the first under ' + (posted[0] ? posted[0].id : 'nothing'));

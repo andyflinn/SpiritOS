@@ -1,0 +1,8 @@
+{
+  "description": "Set a check's state on an item: check is its number (Q1, C2, T3), state is passed or failed. A Q check is passed once Andy has answered it and his answer is in the box.",
+  "request": {
+    "id": "",
+    "check": "",
+    "state": ""
+  }
+}

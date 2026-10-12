@@ -1,0 +1,7 @@
+{
+  "description": "Write one file in your clone, the whole new text, by its repository path. Only a file on the list of an item you have taken (item.files.add first); anything else is refused.",
+  "request": {
+    "path": "",
+    "content": ""
+  }
+}

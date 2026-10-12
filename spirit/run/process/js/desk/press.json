@@ -1,0 +1,7 @@
+{
+  "description": "Press a button on an item as yourself: what is claim-done when the item's work is finished and its suites are green, or design-complete when its design is complete. Go, Done, Reopen, Close, Abandon and design mode are Andy's alone and are refused.",
+  "request": {
+    "id": "",
+    "what": ""
+  }
+}

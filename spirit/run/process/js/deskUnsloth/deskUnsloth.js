@@ -25,6 +25,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const http = require('http');
 const https = require('https');
 const appServer = require('../../../js/appServer');
@@ -42,6 +43,16 @@ const STATE = (function () {
   return at !== -1 ? String(argv[at + 1] || '') : '';
 })();
 const CONFIGURATION_FILE = 'configuration.json';
+// THE VALUES THE NODE HANDS IT (argv[2]) AND THE NODE'S NAME (--node), goal/G10.8. The node's name is how the desk
+// names this agent's writes (an item it takes reads with: <name>), so its own changes and its own items are told by it.
+const VALUES = (function () { try { const v = JSON.parse(process.argv[2] || '{}'); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })();
+const NODE_NAME = (function () {
+  const at = process.argv.indexOf('--node');
+  try { return at !== -1 ? String((JSON.parse(process.argv[at + 1]) || {}).name || '') : ''; } catch (e) { return ''; }
+})();
+// THE CLONE IT WORKS IN (goal/G10.8): Andy, 2026-10-12, "levant stays in his checkout/clone", its file tools "rooted
+// at the checkout". The checkout this script runs from, unless the manifest value root names another (a suite does).
+const CLONE = path.resolve(VALUES.root ? String(VALUES.root) : path.join(__dirname, '..', '..', '..', '..', '..'));
 const CONNECTION_FILE = 'connection.json';
 
 function readOrDie(name) {
@@ -104,12 +115,10 @@ function nextLines() {
   return askNode({ deskClient: { next: {} } }).then(function (b) { return Array.isArray(b.lines) ? b.lines : []; });
 }
 
-// ── WHAT IT ANSWERS: ADDRESSED LINES AND JOBs (goal/G10.3 point 7) ────
+// ── WHAT IT ANSWERS: EVERY CHANGE BUT ITS OWN, AND JOBs ────────────────
 //
-// Andy: the agent "answers lines addressed to it (its nick) and JOBs only, starts at the present, never the
-// backlog". A line is addressed when its text opens with the persona's name and a colon or a comma after it; a line
-// for another agent, a line with no address and the desk's own line are read and left alone.
-const ADDRESSED = new RegExp('^\\s*' + PERSONA.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[:,]', 'i');
+// It starts at the present, never the backlog (goal/G10.3 point 7: "starts at the present, never the backlog"). It
+// answered only lines addressed to it until goal/G10.8, which has it read every change as claude does (mine below).
 
 // `DESK <by> <verb> <json>`, as deskEar prints a change: the verb is the last word before the json, so a `by` of
 // several words (an agent named "ollama agent node") still parses. The json is parsed, never matched by regex: a
@@ -127,15 +136,19 @@ function readLine(line) {
   let body = null;
   try { body = JSON.parse(s.slice(at + 1)); } catch (e) { return null; }
   if (!body || typeof body.id !== 'string') return null;
-  return { kind: 'change', by: by, verb: verb, id: body.id, text: typeof body.text === 'string' ? body.text : '' };
+  return { kind: 'change', by: by, verb: verb, id: body.id, text: typeof body.text === 'string' ? body.text : '', line: s };
 }
+// EVERY CHANGE, AS CLAUDE READS THEM (goal/G10.8). Andy, 2026-10-12, asked whether Levant should read every desk change
+// and act on it as claude does: "yes. it'll make flaws visible. and i need him when my claude credits run out. and i
+// need him just as constrained by desk as we all are." So every change is the model's to judge under the desk's
+// rules, which say which lines are not its to answer; only its own change is left alone: answering it would be a
+// conversation with itself. Its own is the node's name, which the desk writes its changes under, or the persona's.
+// The cost, stated (rule/5): one model call per change, the desk's own lines included.
 function mine(read) {
   if (!read) return false;
   if (read.kind === 'job') return true;
-  if (read.verb !== 'chat.add') return false;
-  // Its own line comes back as a change like any other; answering it would be a conversation with itself.
-  if (String(read.by || '').toLowerCase() === PERSONA.toLowerCase()) return false;
-  return ADDRESSED.test(read.text);
+  const by = String(read.by || '').toLowerCase();
+  return by !== PERSONA.toLowerCase() && (!NODE_NAME || by !== NODE_NAME.toLowerCase());
 }
 
 // ── THE CALL, BUILT FRESH (goal/G10.3 points 2 and 3) ─────────────────
@@ -160,7 +173,8 @@ function agentsText() {
   return desk('AGENTS', {}).then(function (b) { return String(b.text || ''); }, function () { return ''; });
 }
 
-function callFor(id) {
+// THE CHANGES THAT WOKE IT are in the call, after the item's chat, so the model knows what happened (goal/G10.8).
+function callFor(id, changes) {
   return factsOf(id).then(function (facts) {
     const goalId = facts.goal ? String(facts.goal) : id;
     return Promise.all([agentsText(), boxOf(goalId), goalId === id ? Promise.resolve('') : boxOf(id), chatOf(id)])
@@ -175,7 +189,8 @@ function callFor(id) {
         if (itemBox) head.push('THE ITEM ' + id + '\n' + itemBox);
         // THE WINDOW: the newest lines that fit. Everything but the chat is owed to the call, so the chat takes
         // whatever room is left and the oldest line goes first (his "rolling window ... the oldest dropped").
-        let room = promptRoom() - bytes(system) - head.reduce(function (s, t) { return s + bytes(t); }, 0);
+        const woke = (changes || []).map(function (t) { return 'WHAT JUST HAPPENED AT THE DESK: ' + t; });
+        let room = promptRoom() - bytes(system) - head.concat(woke).reduce(function (s, t) { return s + bytes(t); }, 0);
         const window = [];
         for (let i = chat.length - 1; i >= 0; i--) {
           const line = String(chat[i].by || '') + ': ' + String(chat[i].text || '');
@@ -187,6 +202,7 @@ function callFor(id) {
         const messages = [{ role: 'system', content: system }];
         head.forEach(function (t) { messages.push({ role: 'user', content: t }); });
         window.forEach(function (t) { messages.push({ role: 'user', content: t }); });
+        woke.forEach(function (t) { messages.push({ role: 'user', content: t }); });
         return messages;
       });
   });
@@ -258,7 +274,9 @@ const TOOL_ROUNDS = 3;
 // and allow loadFile, it's much narrower." and "net_fetch will be removed for Levant." The fs tools are the verbs
 // js/fs describes (load, save, search, stat, annotations), through the node's loopback door; a tool configurator
 // in deskUnslothRemote is a later item, and this list is its seed.
-const TOOL_NAMESPACES = ['desk', 'fs'];
+// AND deskUnsloth's own (goal/G10.8): its file and git verbs, rooted at its clone, listed by its own introspection and
+// asked through its node as any caller asks them, so the fence below holds for the model as for everyone.
+const TOOL_NAMESPACES = ['desk', 'fs', 'deskUnsloth'];
 const tools = require('./tools').createTools({
   ask: function (verb, args) { return spirit.core.ask(verb, args, NODE_URL); },
   routes: {
@@ -266,6 +284,17 @@ const tools = require('./tools').createTools({
       ask: function (verb, args) {
         return askNode({ deskClient: { desk: { verb: String(verb), json: JSON.stringify(args || {}) } } })
           .then(function (body) { return { status: body && body.ok === false ? 400 : 200, body: body, text: JSON.stringify(body) }; });
+      },
+      verb: function (stem) { return stem; },
+      family: function (name) { return 'AGENTS.' + name; },
+    },
+    deskUnsloth: {
+      ask: function (verb, args) {
+        const one = {}; one[String(verb)] = args || {};
+        return spirit.core.ask('jobs.api', { ask: { deskUnsloth: one } }, NODE_URL).then(function (r) {
+          const body = (r && r.body) || {};
+          return { status: (r && r.status) || 200, body: body, text: JSON.stringify(body) };
+        });
       },
       verb: function (stem) { return stem; },
       family: function (name) { return 'AGENTS.' + name; },
@@ -549,6 +578,106 @@ function setConnection(url, key) {
   });
 }
 
+// ── THE FILE AND GIT VERBS, FENCED BY THE DESK (goal/G10.8) ────────────
+//
+//   Andy, 2026-10-12: "Give deskUnsloth its own file tools, rooted at the checkout.", the fence "only files on the
+//   item Levant has taken" holding for every caller ("ok. we'll take that route,"), and on committing: "Shouldn't
+//   Levant be able to commit and Push? otherwise his stuff goes unverified, and i think that's worse", then "All in
+//   this item." The commit goes through the clone's own hooks (commitCheck), so no Go, no commit, as for claude.
+//
+// A path is a repository path inside CLONE, never under .git. Writing and committing need it on the file list of an
+// item of the current goal that this node has taken (with: its name) and that is not done or closed.
+function refused(why) { return { refusal: 'bad-request', extra: { why: why } }; }
+function insideClone(p) {
+  const rel = String(p || '').replace(/\\/g, '/').replace(/^\.\//, '');
+  if (!rel || path.isAbsolute(rel) || /^[A-Za-z]:/.test(rel)) throw refused('a repository path, not ' + JSON.stringify(p));
+  const full = path.resolve(CLONE, rel);
+  const back = path.relative(CLONE, full).split(path.sep).join('/');
+  if (!back || back.startsWith('..')) throw refused(rel + ' is outside the clone');
+  if (back === '.git' || back.indexOf('.git/') === 0) throw refused('nothing under .git');
+  return { rel: back, full: full };
+}
+function fencedPaths() {
+  return desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }).then(function (b) {
+    const out = Object.create(null);
+    ((b && b.items) || []).forEach(function (i) {
+      let it = null;
+      try { it = JSON.parse(i.label); } catch (e) { it = null; }
+      if (!it || !it.goal || !NODE_NAME || it.with !== NODE_NAME || it.status === 'done' || it.status === 'closed') return;
+      (Array.isArray(it.files) ? it.files : []).forEach(function (f) { if (f && f.path) out[String(f.path)] = it.id; });
+    });
+    return out;
+  });
+}
+function fenced(rel) {
+  return fencedPaths().then(function (fence) {
+    if (!fence[rel]) throw refused(rel + ' is on no item ' + (NODE_NAME || 'this node') + ' has taken: item.files.add it under your item first');
+    return fence[rel];
+  });
+}
+const LOAD_MAX = require('../../../js/appClient').ANSWER_MAX - 1024;
+function fileLoad(p) {
+  const at = insideClone(p);
+  let text = null;
+  try { text = fs.readFileSync(at.full, 'utf8'); } catch (e) { throw refused('no such file: ' + at.rel); }
+  if (bytes(text) > LOAD_MAX) throw refused(at.rel + ' is ' + bytes(text) + ' bytes, more than one answer carries (' + LOAD_MAX + ')');
+  return { path: at.rel, text: text };
+}
+function fileSave(p, content) {
+  const at = insideClone(p);
+  return fenced(at.rel).then(function () {
+    fs.mkdirSync(path.dirname(at.full), { recursive: true });
+    fs.writeFileSync(at.full, String(content), 'utf8');
+    return { path: at.rel, bytes: bytes(content) };
+  });
+}
+// git in the clone, awaited, never blocking this process: its own pipe keeps answering while a hook runs.
+function gitIn(args) {
+  return new Promise(function (resolve) {
+    const kid = spawn('git', args, { cwd: CLONE, stdio: ['ignore', 'pipe', 'pipe'] });
+    let said = '';
+    kid.stdout.on('data', function (d) { said += d; });
+    kid.stderr.on('data', function (d) { said += d; });
+    kid.on('error', function (e) { resolve({ code: 1, said: String(e.message || e) }); });
+    kid.on('exit', function (code) { resolve({ code: code, said: said }); });
+  });
+}
+function commit(message, paths) {
+  const msg = String(message || '').trim();
+  if (!msg) return Promise.reject(refused('a message is needed, starting with the item id'));
+  const list = (Array.isArray(paths) ? paths : []).map(function (p) { return insideClone(p).rel; });
+  if (!list.length) return Promise.reject(refused('paths are needed: the files to commit'));
+  return fencedPaths().then(function (fence) {
+    const out = list.filter(function (p) { return !fence[p]; });
+    if (out.length) throw refused('not on an item ' + (NODE_NAME || 'this node') + ' has taken: ' + out.join(', '));
+    // By name, never everything (the house rule: stage by name).
+    return gitIn(['add', '--'].concat(list));
+  }).then(function (r) {
+    if (r.code !== 0) throw refused('git add: ' + r.said.trim());
+    return gitIn(['commit', '-m', msg]);
+  }).then(function (r) {
+    if (r.code !== 0) throw refused('git commit (its hook included): ' + r.said.trim().slice(0, 600));
+    return gitIn(['rev-parse', '--short', 'HEAD']);
+  }).then(function (r) {
+    say('committed ' + r.said.trim() + ': ' + msg.split('\n')[0]);
+    return { commit: r.said.trim() };
+  });
+}
+function push() {
+  return gitIn(['pull', '--rebase']).then(function (r) {
+    if (r.code !== 0) {
+      return gitIn(['rebase', '--abort']).then(function () { throw refused('git pull --rebase failed, nothing pushed: ' + r.said.trim().slice(0, 600)); });
+    }
+    return gitIn(['push']);
+  }).then(function (r) {
+    if (r.code !== 0) throw refused('git push: ' + r.said.trim().slice(0, 600));
+    return gitIn(['rev-parse', '--short', 'HEAD']);
+  }).then(function (r) {
+    say('pushed ' + r.said.trim());
+    return { commit: r.said.trim() };
+  });
+}
+
 // ── THE CHAT BOX'S CALLS (goal/G14.4) ──────────────────────────────────
 //
 //   Andy, 2026-10-10: a chat box "sticky, at the bottom of the window (panel)", "Enter = send, one line only",
@@ -644,8 +773,9 @@ function postAll(id, texts) {
   }, Promise.resolve());
 }
 
-function answerItem(id) {
-  return callFor(id).then(askModel).then(function (content) {
+function answerItem(job) {
+  const id = job.id;
+  return callFor(id, job.changes).then(askModel).then(function (content) {
     return postAll(id, linesOf(content));
   }).catch(function (e) {
     say('the answer for ' + id + ' failed: ' + e.message);
@@ -662,10 +792,10 @@ const waiting = [];
 
 function drain() {
   if (working) return Promise.resolve();
-  const id = waiting.shift();
-  if (!id) return Promise.resolve();
+  const job = waiting.shift();
+  if (!job) return Promise.resolve();
   working = true;
-  return answerItem(id).then(function () { working = false; return drain(); });
+  return answerItem(job).then(function () { working = false; return drain(); });
 }
 
 // ── THE SWITCH (goal/G14.2) ───────────────────────────────────────────
@@ -714,7 +844,11 @@ function loop() {
       lines.forEach(function (line) {
         const read = readLine(line);
         if (!mine(read)) return;
-        if (waiting.indexOf(read.id) === -1) waiting.push(read.id);
+        // One answer per item waiting, every change for it carried (nothing dropped): the call reads them all.
+        const at = waiting.filter(function (j) { return j.id === read.id; })[0];
+        const what = read.kind === 'job' ? 'JOB ' + read.id : String(read.line || '');
+        if (at) at.changes.push(what);
+        else waiting.push({ id: read.id, changes: [what] });
       });
       drain();
     }
@@ -760,6 +894,23 @@ appServer.serve({
   'chat.send': {
     request: { lines: [{ role: '', text: '' }] }, reply: { id: '' },
     handler: function (a) { return chatSend(Array.isArray(a.lines) ? a.lines : []); },
+  },
+  // THE FILE AND GIT VERBS (goal/G10.8), each with its file beside this script, so introspection lists them.
+  'file.load': {
+    request: { path: '' }, reply: { path: '', text: '' },
+    handler: function (a) { return fileLoad(a.path); },
+  },
+  'file.save': {
+    request: { path: '', content: '' }, reply: { path: '', bytes: 0 },
+    handler: function (a) { return fileSave(a.path, a.content); },
+  },
+  commit: {
+    request: { message: '', paths: [''] }, reply: { commit: '' },
+    handler: function (a) { return commit(a.message, a.paths); },
+  },
+  push: {
+    request: {}, reply: { commit: '' },
+    handler: function () { return push(); },
   },
   'chat.answer': {
     request: { id: '' }, reply: { done: true, text: '' },

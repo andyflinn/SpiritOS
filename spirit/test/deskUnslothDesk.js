@@ -154,10 +154,13 @@ async function suite() {
   const missing = TEN.filter(function (s) { const f = fileOf(s); return !f || typeof f.description !== 'string' || !f.description || !f.request || typeof f.request !== 'object'; });
   if (!missing.length) test.check('process/js/desk holds a verb file for each of the ten, with a description and the request');
   else test.fail(OWED + 'verb files missing or incomplete: ' + missing.join(', '));
+  // SINCE goal/G10.8 FIFTEEN: Andy, 2026-10-12, "yes." to box.write, press, check.set, item.files.add and verify.again
+  // being described for Levant too, so the family lists the ten and those five.
+  const ALL = TEN.concat(['box.write', 'press', 'check.set', 'item.files.add', 'verify.again']);
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: TEN.concat(['press', 'box.write']), manifest: 'desk.json' }); } catch (e) { family = null; }
+  try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: ALL, manifest: 'desk.json' }); } catch (e) { family = null; }
   const listed = family ? Object.keys(family.verbs).filter(function (n) { return n.indexOf('AGENTS.') === 0 && n !== 'AGENTS.introspect'; }).map(function (n) { return n.slice(7); }).sort() : [];
-  if (family && !family.stale.length && listed.join(',') === TEN.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the ten, no stale file (desk.json and currentGoal.json left alone)');
+  if (family && !family.stale.length && listed.join(',') === ALL.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the fifteen, no stale file (desk.json and currentGoal.json left alone)');
   else test.fail(OWED + 'the family lists ' + listed.join(',') + '; stale ' + short(family && family.stale));
 
   // ── 2. THE OBJECT WITH A DESK ROUTE ─────────────────────────────────────

@@ -1,0 +1,8 @@
+{
+  "description": "Write an item's box: the whole new text, naming the version you read (item.box). Refused with box-moved when another wrote first: read it again and merge yours in. His rulings go in verbatim; a line starting OPEN is refused, an open point is a Q check instead.",
+  "request": {
+    "id": "",
+    "text": "",
+    "version": 0
+  }
+}
