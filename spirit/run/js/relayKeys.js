@@ -55,7 +55,10 @@
 
 const fs = require('fs');
 const path = require('path');
-const nodeStore = require('./nodeStore.js');
+// Required on first use, not at load: a relay loads this file through
+// presenceNode and must never pull the node's store in (reviewCleanup).
+const nodeStore = { open: function (rootDir) { return require('./nodeStore.js').open(rootDir); } };
+const spiritErrors = require('./spiritErrors.js');
 
 // Where the old files were, read once by importOld and never written.
 function keysPath(rootDir) {
@@ -239,9 +242,8 @@ function seat(rootDir, url, label, atMs) {
   var rel = table(rootDir);
   var row = rel.byUrl(normalizeUrl(url));
   if (!row) return false;
-  // What this node asked to be called here. A relay may normalise it,
-  // and the node may rename later through the `rename` verb — this is
-  // the record of the claim, not a live mirror of the label.
+  // What this node asked to be called here, at claim; an accepted rename
+  // writes it again (renameSeat, goal/G19.1).
   row.seatLabel = String(label == null ? '' : label);
   // FIRST claim kept across a re-claim, like firstSeen above: the
   // useful fact is how long this seat has been held.
@@ -271,7 +273,8 @@ function seatLabel(rootDir, url) {
   return (row && row.seatClaimedAt && String(row.seatLabel || '')) || '';
 }
 
-// Evicted, or a seat given up. Leaves the PIN alone: who that relay is
+// A seat given up: the user's Remove in Natter (hub.relayRemove,
+// goal/G19.1). Leaves the PIN alone: who that relay is
 // does not change because this node is no longer on it, and forgetting
 // the key would silently re-enable trust-on-first-use next time.
 function unseat(rootDir, url) {
@@ -280,6 +283,67 @@ function unseat(rootDir, url) {
   if (!row || !row.seatClaimedAt) return false;
   row.seatLabel = '';
   row.seatClaimedAt = '';
+  rel.put(row);
+  return true;
+}
+
+// ── THE RELAY'S REFUSAL OF THIS NODE, ON ITS ROW (goal/G19.1) ────────
+//
+//   Andy, 2026-10-12: "when a rejection-reply arrives and peerPost stashes
+//   the info into the relay table, from then on peerPost will reject posts
+//   to that relay", and "the authoritative info about relays on the node
+//   MUST be by ID (key)".
+//
+// Two columns on the keyed row: the refusal's code (spiritErrors) and its
+// time. Each takes the relay's key; a url is accepted for lookup only.
+function rowFor(rel, keyOrUrl) {
+  var k = String(keyOrUrl == null ? '' : keyOrUrl).trim();
+  if (!k) return null;
+  return rel.byKey(k) || rel.byUrl(normalizeUrl(k));
+}
+
+// { code, why, at }, or null when the relay has not refused this node.
+function refusal(rootDir, keyOrUrl) {
+  return refusalOfRow(rowFor(table(rootDir), keyOrUrl));
+}
+function refusalOfRow(row) {
+  if (!row || !row.refusal) return null;
+  var known = spiritErrors.byCode(row.refusal);
+  return { code: row.refusal, why: (known && known.texts && known.texts[0]) || '', at: row.refusedAt };
+}
+
+// Keeps the FIRST time: "since when" is the useful fact. False when this
+// node has no row for that relay (nothing to write it on).
+function refuse(rootDir, keyOrUrl, code, atMs) {
+  var rel = table(rootDir);
+  var row = rowFor(rel, keyOrUrl);
+  if (!row) return false;
+  if (row.refusal) return true;
+  row.refusal = String(code || '');
+  row.refusedAt = isoAt(atMs);
+  if (!row.refusal) return false;
+  rel.put(row);
+  return true;
+}
+
+// A claim that succeeded there: the new invite brought the seat back.
+function clearRefusal(rootDir, keyOrUrl) {
+  var rel = table(rootDir);
+  var row = rowFor(rel, keyOrUrl);
+  if (!row || !row.refusal) return false;
+  row.refusal = '';
+  row.refusedAt = '';
+  rel.put(row);
+  return true;
+}
+
+// A rename the relay accepted, answered under its own key: that relay's
+// seat takes the label (goal/G19.1). Only a seat already held is renamed.
+function renameSeat(rootDir, relayKey, label) {
+  var rel = table(rootDir);
+  var row = rel.byKey(String(relayKey == null ? '' : relayKey).trim());
+  if (!row || !row.seatClaimedAt || !label) return false;
+  row.seatLabel = String(label);
   rel.put(row);
   return true;
 }
@@ -337,6 +401,10 @@ function accept(rootDir, url, publicKey, atMs) {
     replaced: here && here.key !== given ? here.key : (base.replaced || ''),
     seatLabel: base.seatClaimedAt ? base.seatLabel : ((other && other.seatLabel) || ''),
     seatClaimedAt: base.seatClaimedAt || (other && other.seatClaimedAt) || '',
+    // MERGED, NEVER REPLACED (goal/G19.1): a pin keeps what else the row
+    // says, the refusal with the seat.
+    refusal: base.refusal || (other && other.refusal) || '',
+    refusedAt: base.refusal ? base.refusedAt : ((other && other.refusedAt) || ''),
   };
   nodeStore.open(rootDir).transaction(function () {
     if (here && here.key !== given) rel.del(here.key);
@@ -369,7 +437,12 @@ function forget(rootDir, url) {
 function listed(rootDir) {
   return table(rootDir).all()
     .filter(function (r) { return r.listed; })
-    .map(function (r) { return { label: r.label || r.url, url: r.url }; });
+    .map(function (r) {
+      var out = { label: r.label || r.url, url: r.url };
+      // The relay's refusal of this node, when one is on the row (goal/G19.1).
+      if (r.refusal) out.refused = refusalOfRow(r);
+      return out;
+    });
 }
 
 // Put a relay on the list, appended. A url already on record keeps its
@@ -440,6 +513,10 @@ module.exports = {
   seatedUrls: seatedUrls,
   seatLabel: seatLabel,
   unseat: unseat,
+  refusal: refusal,
+  refuse: refuse,
+  clearRefusal: clearRefusal,
+  renameSeat: renameSeat,
   listed: listed,
   list: list,
   unlist: unlist,

@@ -1145,9 +1145,22 @@ function createHub(rootDir) {
             if ((r.status >= 200 && r.status < 300) || mineAlready) {
               try { ownerBadge.addRelay(rootDir, url, '', learnedKey); probeCache = null; }
               catch (e) { /* the claim stands; the list is written on the next claim */ }
-            }
+              // The seat is held again, so a refusal recorded on this relay's
+              // row no longer stands: the new invite brought it back (goal/G19.1).
+              try { relayKeys.clearRefusal(rootDir, learnedKey || url); }
+              catch (e) { /* the claim stands; the row is read again on the next probe */ }
 
-            if (r.status >= 200 && r.status < 300) {
+              // A 409 FOR THIS NODE'S OWN KEY IS A SEAT HELD, and is written
+              // down exactly as a 2xx is (goal/G19.1), under the label the
+              // relay says this key already wears there.
+              var seatLabel = (body && body.name) || '';
+              if (mineAlready) {
+                try {
+                  var held = JSON.parse(marked);
+                  seatLabel = String((held.peer && held.peer.publicLabel) || '') || seatLabel;
+                } catch (e) { /* the asked-for label stands */ }
+              }
+
               // ── WRITE THE SEAT DOWN, HERE, WHERE IT IS KNOWN ────────
               //
               // Everything needed is in hand at this instant: the url, the
@@ -1164,7 +1177,7 @@ function createHub(rootDir) {
               // Before the stream, not after: a claim that worked is a
               // seat held whether or not connecting succeeds, and the next
               // boot must know that without asking.
-              try { relayKeys.seat(rootDir, url, (body && body.name) || ''); }
+              try { relayKeys.seat(rootDir, url, seatLabel); }
               catch (e) { /* the claim stands; a boot can still backfill */ }
 
               if (router && probe) {
@@ -2862,7 +2875,7 @@ function createHub(rootDir) {
     return p;
   }
   function relayLabel(row) {
-    var who = row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined');
+    var who = row.refused ? 'refused this node' : (row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined'));
     var up = row.status === 200 ? 'online' : 'offline';
     // A relay with no name goes by its host, never its whole url: the
     // search below matches this label, and since Andy's '*' rule (G2,
@@ -2895,13 +2908,20 @@ function createHub(rootDir) {
   //   list relays and remove relay, with a successful claim adding its
   //   relay? yes."
   //
-  // The key is the url, the same key relay.search hands out. The seat on
-  // that relay is not touched: this is the node no longer using it, not
-  // the node leaving it. Refused when it would leave no public relay
-  // (ownerBadge.canRemoveRelay), the rule Natter's screen already obeyed.
+  // The key is the url, the same key relay.search hands out. Refused when
+  // it would leave no public relay (ownerBadge.canRemoveRelay), the rule
+  // Natter's screen already obeyed.
+  //
+  // AND IT GIVES UP THE SEAT (goal/G19.1). Andy, 2026-10-12: "only the
+  // node's user removes a relay, never the last one". The pin stays, so a
+  // later claim there still knows who that relay is.
   function relayRemove(body) {
     var out = ownerBadge.removeRelay(rootDir, String((body && body.key) || ''));
-    if (out.ok) probeCache = null;
+    if (out.ok) {
+      probeCache = null;
+      try { relayKeys.unseat(rootDir, out.key); }
+      catch (e) { /* the relay is off the list; a seat left on disk is never probed */ }
+    }
     return out;
   }
 

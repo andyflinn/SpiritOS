@@ -489,10 +489,19 @@ function open(rootDir, opts) {
       acceptedAt    TEXT    NOT NULL DEFAULT '',
       replaced      TEXT    NOT NULL DEFAULT '',
       seatLabel     TEXT    NOT NULL DEFAULT '',
-      seatClaimedAt TEXT    NOT NULL DEFAULT ''
+      seatClaimedAt TEXT    NOT NULL DEFAULT '',
+      refusal       TEXT    NOT NULL DEFAULT '',
+      refusedAt     TEXT    NOT NULL DEFAULT ''
     );
     CREATE UNIQUE INDEX IF NOT EXISTS relays_url ON relays (url);
   `);
+  // The relay's refusal of this node and its time (goal/G19.1), added to a
+  // node.db made before them. Empty `refusal` means none recorded.
+  (function relayColumns() {
+    const cols = db.prepare('PRAGMA table_info(relays)').all().map(function (c) { return c.name; });
+    if (cols.indexOf('refusal') === -1) db.exec("ALTER TABLE relays ADD COLUMN refusal TEXT NOT NULL DEFAULT ''");
+    if (cols.indexOf('refusedAt') === -1) db.exec("ALTER TABLE relays ADD COLUMN refusedAt TEXT NOT NULL DEFAULT ''");
+  }());
 
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
@@ -630,7 +639,7 @@ function open(rootDir, opts) {
     relByKey: db.prepare('SELECT * FROM relays WHERE key = ?'),
     relByUrl: db.prepare('SELECT * FROM relays WHERE url = ?'),
     relPut: db.prepare(`INSERT OR REPLACE INTO relays (key, url, label, listed, pos, firstSeen, acceptedAt, replaced,
-      seatLabel, seatClaimedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+      seatLabel, seatClaimedAt, refusal, refusedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
     relDel: db.prepare('DELETE FROM relays WHERE key = ?'),
     relMaxPos: db.prepare('SELECT COALESCE(MAX(pos), -1) AS n FROM relays WHERE listed = 1'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
@@ -756,6 +765,7 @@ function open(rootDir, opts) {
       key: r.key, url: r.url, label: r.label, listed: !!r.listed, pos: r.pos,
       firstSeen: r.firstSeen, acceptedAt: r.acceptedAt, replaced: r.replaced,
       seatLabel: r.seatLabel, seatClaimedAt: r.seatClaimedAt,
+      refusal: r.refusal, refusedAt: r.refusedAt,
     };
   }
   function routeRow(r) {
@@ -1298,7 +1308,8 @@ function open(rootDir, opts) {
       put: function (r) {
         q.relPut.run(String(r.key), String(r.url), String(r.label || ''), r.listed ? 1 : 0, Number(r.pos) || 0,
           String(r.firstSeen || ''), String(r.acceptedAt || ''), String(r.replaced || ''),
-          String(r.seatLabel || ''), String(r.seatClaimedAt || ''));
+          String(r.seatLabel || ''), String(r.seatClaimedAt || ''),
+          String(r.refusal || ''), String(r.refusedAt || ''));
       },
       del: function (key) { return q.relDel.run(String(key || '')).changes > 0; },
       nextPos: function () { return q.relMaxPos.get().n + 1; },

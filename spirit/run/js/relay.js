@@ -3789,7 +3789,9 @@ function createRelay(rootDir, deps) {
     // here widens WHO may speak and nothing about what they may say —
     // answerSelf decides that, per verb.
     var who = deviceIdentity(fromToken) || partnerIdentity(fromToken);
-    if (!who) return { ok: false, status: 403, error: 'no such identity' };
+    // The refusal names the SENDER (goal/G19.1, Andy), the same on the post,
+    // the reply and the stream: an evicted node's peerPost acts on it.
+    if (!who) return { ok: false, status: 403, error: 'your id is not a valid sender here' };
 
     // A PARTNER MAY ONLY ADDRESS THIS BOX. It is not a member, so it has
     // no business routing to this relay's members: that would be the
@@ -4077,7 +4079,7 @@ function createRelay(rootDir, deps) {
   // the hash, so the two are never the same check.
   function routeReply(fromToken, hash, text, sig) {
     var who = deviceIdentity(fromToken);
-    if (!who) return { ok: false, status: 403, error: 'no such identity' };
+    if (!who) return { ok: false, status: 403, error: 'your id is not a valid sender here' };
     if (!hash) return { ok: false, status: 400, error: 'hash required' };
     if (typeof text === 'string' && Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
       return { ok: false, status: 413, error: 'too big' };
@@ -4665,7 +4667,7 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 403, error: 'a partner holds no stream here' };
     }
     var who_ = deviceIdentity(token);
-    if (!who_) return { ok: false, status: 403, error: 'no such identity' };
+    if (!who_) return { ok: false, status: 403, error: 'your id is not a valid sender here' };
 
     // 2. The signature, against THAT identity's own row key. Never the
     //    owner's house key — owning the relay is not owning a row — and

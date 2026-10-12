@@ -89,6 +89,9 @@ var IDLE_MS = 65000;
 // racing it.
 var RATE_LIMITED_MS = 20000;
 
+// A refusal's body is one small JSON object; anything longer is not read as one.
+var MAX_REFUSAL_CHARS = 2048;
+
 function parseChunk(text) {
   // One SSE message: any number of field lines, terminated by a blank
   // line. A line starting with `:` is a comment — the heartbeat — and
@@ -185,17 +188,21 @@ function connect(opts) {
     if (idleTimer) { idleClearT(idleTimer); idleTimer = null; }
   }
 
-  function say(fn, arg) {
+  function say(fn, arg, detail) {
     if (typeof fn !== 'function') return;
     // A callback that throws must not kill the reconnect loop with it —
     // this is a long-lived client and the thing it is reporting to is
     // not answerable for its survival.
-    try { fn(arg); } catch (e) { /* the caller's problem, not ours */ }
+    try { fn(arg, detail); } catch (e) { /* the caller's problem, not ours */ }
   }
 
-  function scheduleRetry(reason) {
+  // `detail`, on a refusal only: { status, code, error } as the relay said
+  // them (goal/G19.1), so a caller can tell a refusal of THIS NODE from a
+  // busy relay. The reason string stays what it was. A caller that closes
+  // the stream from onClose stops the retry below.
+  function scheduleRetry(reason, detail) {
     untouch();
-    say(opts.onClose, reason);
+    say(opts.onClose, reason, detail);
     if (stopped) return;
     // JITTERED, and that is what makes a short cap safe rather than
     // reckless. Without it every member of a relay backs off on the same
@@ -248,7 +255,20 @@ function connect(opts) {
       if (after > 0 && after < 3600000) retryMs = after;
       else if (status === 429) retryMs = Math.max(retryMs, RATE_LIMITED_MS);
 
-      scheduleRetry('refused: ' + status);
+      // WHY, when the relay said (goal/G19.1): its refusal body, small
+      // JSON, read under the same idle watchdog as everything else.
+      var said = null;
+      if (res && typeof res.text === 'function') {
+        try {
+          var raw = String(await res.text());
+          if (raw.length <= MAX_REFUSAL_CHARS) said = JSON.parse(raw);
+        } catch (e) { said = null; }
+      }
+      scheduleRetry('refused: ' + status, {
+        status: status,
+        code: said && typeof said.code === 'string' ? said.code : '',
+        error: said && typeof said.error === 'string' ? said.error : '',
+      });
       return;
     }
 

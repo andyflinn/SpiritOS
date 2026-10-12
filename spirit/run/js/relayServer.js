@@ -639,7 +639,13 @@ const server = http.createServer((req, res) => {
       // its partners at boot was told to try again for ever. A partner's key
       // is already known to be a partner, so the sentence tells nobody
       // anything, and "retry: no" is what stops the dialling.
-      if (opened && opened.status === 403 && opened.error === 'a partner holds no stream here') {
+      //
+      // AND SO IS A NODE THAT IS NOT A MEMBER (goal/G19.1, Andy, granted
+      // 2026-10-12): the refusal names the sender, "your id is not a valid
+      // sender here", code not-a-sender, as on a post and a reply, so an
+      // evicted node's peerPost stops dialling and tells its user.
+      if (opened && opened.status === 403 && (opened.error === 'a partner holds no stream here' ||
+          spiritErrors.classify(403, opened.error).code === 'not-a-sender')) {
         res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: opened.error, code: spiritErrors.classify(403, opened.error).code }));
         return;

@@ -85,6 +85,7 @@ var ndLabel = '';       // this node's own name, needed to sign a status ask
 var ndMinted = '';      // a label minted while this screen was open
 var ndChanged = false;  // has anything happened the list must repaint for?
 var ndRelayLabel = '';  // what the LIST calls this relay, for the title
+var ndCanRemove = false; // Natter's answer: may this relay come off the list?
 
 // WHICH ONE PANEL IS OPEN. '' means none, and none is how the screen
 // arrives.
@@ -392,6 +393,39 @@ function ndLocalHtml() {
       'can reach, which is what the public one in this list is for.</div>');
 }
 
+function ndRefusedHtml(refused) {
+  var since = new Date(refused.at);
+  var when = isNaN(since.getTime()) ? String(refused.at || 'an unknown time') : since.toLocaleString();
+  var remove = ndCanRemove
+    ? '<div class="start-job-form"><button type="button" class="cancel-btn nd-remove">Remove this relay</button></div>' +
+      '<div class="job-manifest-note">Remove takes it off this node\'s list and gives up the seat record here.</div>'
+    : '<div class="job-manifest-note">It cannot be removed: this node must keep the relay it is last on, ' +
+      'and noderoutes.net is kept on every node.</div>';
+  return '<div class="stat-tile wide">' +
+    '<div class="panel-heading">' + ndIcon.WARNING + ' This relay refused this node</div>' +
+    '<div>Since ' + ndEscapeHtml(when) + ' it has answered “' +
+      ndEscapeHtml(refused.why || 'your id is not a valid sender here') + '”. ' +
+      'Your seat is gone: the relay no longer holds a row for this node, so it sends nothing through it ' +
+      'and holds no stream to it.</div>' +
+    '<div class="muted">Only a new invite from its owner brings the seat back. ' +
+      'Ask them for one, then claim with it below.</div>' +
+    remove +
+    '</div>';
+}
+
+// Two presses, then the decision goes back to Natter, which performs it
+// through relay.remove (the list is the node's, and Natter is the list).
+function ndRemove(button) {
+  if (!ndCanRemove) return;
+  if (button.getAttribute('data-armed') !== 'yes') {
+    button.setAttribute('data-armed', 'yes');
+    button.textContent = 'Press again to remove';
+    return;
+  }
+  button.removeAttribute('data-armed');
+  if (ndApi) ndApi.closeDialog({ changed: true, url: ndUrl, remove: true });
+}
+
 function ndReportHtml() {
   // Not a panel: it is a moment, not a thing to fold. Folding it away
   // would leave a screen that says nothing at all while the answer is on
@@ -421,16 +455,20 @@ function ndReportHtml() {
       '</div></div>';
   }
 
-  // A MEMBER'S VIEW, from the public roll rather than the owner-only
-  // report. Three facts, not four: Mode and Messages are things the
-  // mailbox tells its owner. What a member gets instead is the one fact
-  // an owner never needs — the name they wear HERE, which with one
-  // browser across several relays is a per-relay answer.
+  // THIS RELAY REFUSED THIS NODE (goal/G19.1). Not a fold: it is the one
+  // thing to read here. Andy, 2026-10-12: "the seat is already vacated, so
+  // the nodes ID has to get a new invite, that what the info in natter is
+  // supposed to convey." No try-again; the user's own Remove, never on the
+  // last relay.
+  if (ndBadge.refused) return ndRefusedHtml(ndBadge.refused);
+
+  // A MEMBER'S VIEW, from what the key door answers rather than the
+  // owner-only report: who owns it, and the name this node wears HERE,
+  // which with one browser across several relays is a per-relay answer.
   if (!ndBadge.owned && ndBadge.claimed) {
     var c = ndBadge.roll || {};
     return ndPanel('relay', ndIcon.INFO, 'What this relay says', spirit.shell.factRow([
       ['Owner', c.owner || '(unknown)'],
-      ['Peers', c.peers == null ? '(unknown)' : c.peers],
       ['You', c.myLabel || '(unknown)'],
     ]));
   }
@@ -1045,10 +1083,12 @@ function ndPartnerPicked(pick) {
 function ndPartnerCandidates() {
   if (!ndBadge || !ndBadge.owned) return [];
 
-  var here = ((ndBadge.roll || {}).roster) || [];
-  var hereKeys = Object.create(null);
-  here.forEach(function (p) { if (p && p.publicKey) hereKeys[p.publicKey] = p; });
-
+  // NO ROSTER (goal/G19.1): the probe never sets one, so this read the
+  // owner of each other relay off a list that was always empty. What the
+  // probe does carry is each relay's owner BY KEY (roll.ownerKey, from the
+  // key door). Whether that owner is enrolled HERE is no longer known in
+  // advance; "Check and add" asks the relay, which is the authority.
+  var mine = (ndBadge.roll || {}).ownerKey || '';
   var already = Object.create(null);
   (((ndBadge.report || {}).partners) || []).forEach(function (p) {
     if (p && p.key) already[p.key] = true;
@@ -1059,25 +1099,14 @@ function ndPartnerCandidates() {
     // Not this relay: a relay is not its own partner, and that is a
     // question about the BOX (relay.js, setPartner).
     if (!row || row.url === ndUrl) return;
-    var roster = ((row.roll || {}).roster) || [];
-    var theirOwner = roster.filter(function (p) { return p && p.owner; })[0];
-    if (!theirOwner || !theirOwner.publicKey) return;
-
-    // Enrolled HERE is the other half of reciprocity — a partner is a
-    // peer on this relay who owns one elsewhere.
-    var rowHere = hereKeys[theirOwner.publicKey];
-    if (!rowHere) return;
-    if (already[theirOwner.publicKey]) return;
-
+    var roll = row.roll || {};
+    var theirOwner = roll.ownerKey || '';
+    if (!theirOwner || theirOwner === mine || already[theirOwner]) return;
     out.push({
-      key: theirOwner.publicKey,
+      key: theirOwner,
       url: row.url,
-      // Two labels, and they are allowed to differ — R1. What they are
-      // called HERE is what the owner will recognise in their own list;
-      // what the far relay calls itself is how they will recognise the
-      // address.
-      hereLabel: rowHere.publicLabel || '(no label)',
-      relayLabel: (row.roll && row.roll.relayLabel) || row.label || row.url,
+      hereLabel: roll.owner || '(no label)',
+      relayLabel: roll.relayLabel || row.label || row.url,
     });
   });
   return out;
@@ -1822,6 +1851,9 @@ spirit.shell.activateApp({
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }
 
+      var removeBtn = target.closest('.nd-remove');
+      if (removeBtn) { ndRemove(removeBtn); return; }
+
     });
 
     // ENTER IS THE BUTTON. One text field with one button beside it is a
@@ -1883,6 +1915,9 @@ spirit.shell.activateApp({
     // The list's caption for this relay. It is the list's to know — this
     // screen is handed one subject and never searches the relay list.
     ndRelayLabel = (params && params.relayLabel) || '';
+    // The list's rule (ownerBadge.canRemoveRelay), asked by Natter, which
+    // knows the list; this screen never counts rows.
+    ndCanRemove = !!(params && params.canRemove === true);
     ndBadge = null;
     // Opening a second relay must show "asking" again, not the previous
     // relay's answer wearing this one's name.

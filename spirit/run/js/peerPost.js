@@ -406,6 +406,7 @@ function createPeerPost(opts) {
     persistOut(hash);
     noteOutcome(hash, slot, answer);
     if (slot.askedCard) keepCard(slot, answer);
+    if (slot.renameTo) keepRename(slot, answer);
     slot.resolve(answer);
     pump();
     return true;
@@ -478,6 +479,21 @@ function createPeerPost(opts) {
     };
   }
 
+  // ── A RENAME THE RELAY ACCEPTED, WRITTEN ON ITS ROW (goal/G19.1) ──────
+  //
+  // No new verb: Info tells every relay the new name through this door,
+  // and when one says yes its seat takes the label it answered with — at
+  // the same door as the rejection, so the relay table stays this door's.
+  function keepRename(slot, answer) {
+    if (!answer || !answer.ok || typeof answer.text !== 'string') return;
+    var info = arrivals.envelopeOf(answer.text) || arrivals.relayWordOf(answer.text);
+    var said = info && info.body;
+    if (!said || said.ok !== true) return;
+    try {
+      relayTable().renameSeat(rootDir, slot.toKey, String(said.label || slot.renameTo));
+    } catch (e) { /* the relay renamed; the row catches up on the next rename */ }
+  }
+
   // ── WHAT MAY BE TRIED AGAIN ──────────────────────────────────────────
   //
   // Three of these are about the world being busy and one is about this
@@ -513,6 +529,79 @@ function createPeerPost(opts) {
     return false;
   }
 
+  // ── A RELAY THAT SAYS THIS NODE IS NOT A SENDER THERE (goal/G19.1) ────
+  //
+  //   Andy, 2026-10-12: "it happens all behind peerPost, when a
+  //   rejection-reply arrives and peerPost stashes the info into the relay
+  //   table, from then on peerPost will reject posts to that relay ... and
+  //   peerPost streams the rejection for realtime update to shell." — and
+  //   "terminate the correct ONE relayStream that belongs to the rejecting
+  //   relay" / "at the same point it writes to the relay-row".
+  //
+  // The one place it is recognised, for a post's answer and a reply's alike.
+  // Node only: the table and the streams exist where holdStreams was called,
+  // and a relay's own peerPost never calls it.
+  // The relay table is relayKeys.js's, keyed by relay key; a url is handed
+  // in for lookup. Required here, node only: a relay's peerPost never asks.
+  function relayTable() { return require('./relayKeys'); }
+  function plainUrl(url) { return relayTable().normalizeUrl(url); }
+  function refusalOf(relayUrl) {
+    if (!presence) return null;
+    try { return relayTable().refusal(rootDir, plainUrl(relayUrl)); } catch (e) { return null; }
+  }
+  function refusedAnswer(refusal, hash) {
+    return {
+      ok: false, status: 403, hash: hash, code: 'not-a-sender', refusedAt: refusal.at,
+      error: 'not sent: this relay refused this node on ' + refusal.at +
+        ' ("' + (refusal.why || 'your id is not a valid sender here') + '"); ' +
+        'the seat there is gone, and only a new invite brings it back',
+    };
+  }
+  function rejectedBy(relayUrl, status, said) {
+    if (!presence) return false;
+    var meant = spiritErrors.classify(status, said && said.error, said || {});
+    if (!meant || meant.code !== 'not-a-sender') return false;
+    var u = plainUrl(relayUrl);
+    var refusal = { code: meant.code, why: String((said && said.error) || ''), at: new Date().toISOString() };
+    try { relayTable().refuse(rootDir, u, meant.code); } catch (e) { /* still closed and refused below */ }
+    var kept = refusalOf(u) || refusal;
+    var handle = streamHandles[u];
+    if (handle) {
+      delete streamHandles[u];
+      closedByRefusal[u] = true;
+      try { handle.close(); } catch (e) { /* already gone */ }
+    }
+    if (!refusedShown[u]) {
+      refusedShown[u] = kept;
+      var jobId = presence.jobId ? presence.jobId() : null;
+      if (heldJobs && jobId) {
+        try {
+          heldJobs.updateJob(jobId, {
+            data: { refused: Object.assign({}, refusedShown) },
+            logMessage: u + ' refused this node: ' + (kept.why || 'not a valid sender there'),
+          });
+        } catch (e) { /* the row is written; the screen reads it on its next look */ }
+      }
+    }
+    return true;
+  }
+  // A reply this node sent, answered by the relay: refused, or not.
+  function replyAnswered(relayUrl, res) {
+    if (!res || !(res.status >= 400)) return;
+    var said = null;
+    try { said = JSON.parse(res.text); } catch (e) { said = null; }
+    rejectedBy(relayUrl, res.status, said || {});
+  }
+
+  // A rename this node asks of a relay, read off what it sends: the label,
+  // or ''. Written to that relay's seat when the relay says yes (settle).
+  function renameAsked(text) {
+    if (!presence) return '';
+    var info = arrivals.envelopeOf(text) || arrivals.relayWordOf(text);
+    var rename = info && info.body && info.body.rename;
+    return rename && typeof rename.label === 'string' ? rename.label : '';
+  }
+
   // An attempt is over. Either the intent survives to be tried again, or
   // this is the answer and the caller gets it.
   function afterAttempt(seq, hash, answer) {
@@ -543,6 +632,9 @@ function createPeerPost(opts) {
     var hash = it.payload.hash;
     var slot = waiting[hash];
     if (!slot) { queue.done(it.seq); persistOut(hash); return; }
+    // Queued before the relay refused this node: not sent (goal/G19.1).
+    var gone = refusalOf(it.relayUrl);
+    if (gone) { afterAttempt(it.seq, hash, refusedAnswer(gone, hash)); return; }
     // THE MOMENT THIS ATTEMPT LEAVES (goal/G4.32): the "sent" row was written when the post entered the queue, so
     // without this a wait behind a busy target read as flight.
     slot.leftAt = Date.now();
@@ -613,6 +705,7 @@ function createPeerPost(opts) {
           }
           return;
         }
+        rejectedBy(it.relayUrl, res.status, body);
         afterAttempt(it.seq, hash, {
           ok: false, status: res.status, hash: hash,
           error: (body && body.error) || 'refused',
@@ -715,6 +808,9 @@ function createPeerPost(opts) {
     if (typeof text !== 'string' || !text) {
       return Promise.resolve({ ok: false, status: 400, error: 'text required' });
     }
+    // THE RELAY REFUSED THIS NODE, so nothing more is sent to it (goal/G19.1).
+    var refusedHere = refusalOf(relayUrl);
+    if (refusedHere) return Promise.resolve(refusedAnswer(refusedHere));
 
     // ── IS THERE ROOM TO PROMISE THIS? ──────────────────────────────
     //
@@ -1003,6 +1099,7 @@ function createPeerPost(opts) {
         // (cycle 10, R3). Recorded here rather than re-derived at settle,
         // where the request is gone.
         askedCard: nodeCard.asks(text),
+        renameTo: renameAsked(text),
         at: Date.now(),
         timer: null,
         seq: 0,
@@ -1088,7 +1185,8 @@ function createPeerPost(opts) {
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
     return request(relayUrl, 'POST', '/api/relay/reply', {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
-    }).then(function () {
+    }).then(function (res) {
+      replyAnswered(relayUrl, res);
       note({
         dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
         hash: hash, outcome: 'answered', payload: text,
@@ -1119,7 +1217,7 @@ function createPeerPost(opts) {
     var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
     return request(relayUrl, 'POST', '/api/relay/reply', {
       from: id.publicKey, hash: hash, text: text, sig: receipt,
-    }).then(function () { return null; }).catch(function () { return null; });
+    }).then(function (res) { replyAnswered(relayUrl, res); return null; }).catch(function () { return null; });
   }
 
   function onRequest(relayUrl, body) {
@@ -1617,7 +1715,8 @@ function createPeerPost(opts) {
         var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash, text));
         return request(relayUrl, 'POST', '/api/relay/reply', {
           from: id.publicKey, hash: hash, text: text, sig: receipt,
-        }).then(function () {
+        }).then(function (res) {
+          replyAnswered(relayUrl, res);
           if (plain) {
             note({
               dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
@@ -1759,6 +1858,22 @@ function createPeerPost(opts) {
   // knows is asked of this object. The instance never leaves this file.
   // A relay's own peerPost never calls holdStreams and holds none.
   var presence = null;
+  // Each relay's stream, as the opener handed to presenceNode returned it,
+  // by relay url: what closes exactly the one stream a refusal names.
+  var streamHandles = Object.create(null);
+  // Closed by a refusal, so a later start may have to open it again.
+  var closedByRefusal = Object.create(null);
+  // The node's jobs, for the relay-presence job the shell already hears.
+  var heldJobs = null;
+  // What the shell has been told: relay url -> { code, why, at }.
+  var refusedShown = Object.create(null);
+
+  function relayOfStream(streamUrl) {
+    var s = String(streamUrl || '');
+    var at = s.indexOf('/api/relay/stream');
+    return at === -1 ? '' : s.slice(0, at).replace(/\/+$/, '');
+  }
+
   var self = {
     post: post,
     onRequest: onRequest,
@@ -1768,14 +1883,48 @@ function createPeerPost(opts) {
     outstanding: function () { return Object.keys(waiting); },
     // Builds the streams' holder once, with what the node hands it
     // (presenceNode.createPresence's options); the router is this door.
+    // The opener presenceNode is handed is this door's (goal/G19.1): it
+    // keeps each stream's handle, so a refusal can close exactly that one.
     holdStreams: function (presenceOpts) {
       if (presence) throw new Error('holdStreams: this door already holds its streams');
-      presence = presenceNode.createPresence(Object.assign({ rootDir: rootDir }, presenceOpts, { router: self }));
+      var given = presenceOpts || {};
+      heldJobs = given.jobs || null;
+      var open = given.connectImpl || require('./sseClient').connect;
+      presence = presenceNode.createPresence(Object.assign({ rootDir: rootDir }, given, {
+        router: self,
+        connectImpl: function (o) {
+          var u = relayOfStream(o && o.url);
+          // A REFUSED STREAM IS RECOGNISED HERE TOO (goal/G19.1, the stream
+          // half Andy granted 2026-10-12): sseClient hands the relay's
+          // refusal to onClose, and a not-a-sender goes the way a post's
+          // does: the row, exactly this stream closed (no redial), the shell.
+          var given = o || {};
+          var wrapped = Object.assign({}, given, {
+            onClose: function (reason, detail) {
+              if (typeof given.onClose === 'function') given.onClose(reason, detail);
+              if (u && detail && detail.status >= 400) rejectedBy(u, detail.status, detail);
+            },
+          });
+          var handle = open(wrapped);
+          if (u) streamHandles[u] = handle;
+          return handle;
+        },
+      }));
     },
     // Opens a stream to every relay this node holds a row on. Safe to call
-    // again (after a claim): a relay already held is left as it is.
+    // again (after a claim): a relay already held is left as it is. A relay
+    // whose refusal has since been cleared (a new invite, claimed) had its
+    // stream closed under presenceNode, which still holds the closed one;
+    // so the streams are let go and opened again, that relay with them.
     startStreams: function (probe) {
-      return presence ? presence.start(probe) : Promise.resolve([]);
+      if (!presence) return Promise.resolve([]);
+      var back = Object.keys(closedByRefusal).filter(function (u) { return !refusalOf(u); });
+      if (back.length) {
+        back.forEach(function (u) { delete closedByRefusal[u]; delete refusedShown[u]; });
+        presence.stop();
+        streamHandles = Object.create(null);
+      }
+      return presence.start(probe);
     },
     // A relay just carried this key: the live picture hears it there.
     heard: function (url, key) { return presence ? presence.heard(url, key) : false; },

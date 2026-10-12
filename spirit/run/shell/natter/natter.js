@@ -7,9 +7,9 @@
 // file, relays.json, read and written through api.fs — so an app decided
 // where the node claims, connects and searches. The node keeps it in its
 // own state now and this app only asks, through relay.search (by way of
-// spirit.core.relays.status). Taking a row off is the node's relay.remove;
-// no control here offers it today (the Remove panel went on 2026-09-13,
-// see natterCanRemove). There is no verb that adds one; a claim that
+// spirit.core.relays.status). Taking a row off is the node's relay.remove,
+// offered on a relay that refused this node (goal/G19.1, see
+// natterCanRemove). There is no verb that adds one; a claim that
 // succeeds is what adds a relay, so Add opens the relay's own screen to
 // claim on.
 //
@@ -122,12 +122,10 @@ function natterSaveCaption(api, url, label) {
 // If that script did not load there is no helper and no Remove: losing
 // the button is a nuisance, losing the last relay is a node that cannot
 // claim, send or read anything.
-// KEPT DELIBERATELY WITHOUT A CALLER, and this is the one place that says
-// so. The "Take this relay off the list" panel went on 2026-09-13 because
-// one satellite makes it a way to break your own node — but the RULE it
-// enforced is worth more than the button, and spirit/test/natterLast.js
-// still proves it. When there is a second satellite the panel comes back
-// and finds its rule already standing.
+// The "Take this relay off the list" panel went on 2026-09-13; the RULE
+// it enforced stayed, and spirit/test/natterLast.js still proves it. Its
+// caller now is the Remove a relay that refused this node offers
+// (goal/G19.1), asked here and handed to the dialog as canRemove.
 function natterCanRemove(relays, url) {
   var badge = (typeof window !== 'undefined' && window.spiritOwnerBadge) || null;
   return !!(badge && badge.canRemoveRelay(relays, url));
@@ -227,6 +225,8 @@ function natterStatusMark(badge) {
 // never took your claim, and one somebody else runs.
 function natterStatusTitle(badge) {
   if (!badge) return 'not asked yet';
+  // goal/G19.1: the seat is gone, and only a new invite brings it back.
+  if (badge.refused) return 'this relay refused this node — only a new invite brings the seat back';
   if (!badge.status) return 'no answer — ' + (badge.error || 'this relay could not be reached');
   if (badge.owned) return 'you own this relay';
   if (badge.claimed) return 'this relay carries for you';
@@ -349,6 +349,9 @@ function natterOpenRelay(api, container, relays, url) {
     // handed one subject and never searches the relay list — the caption
     // is the list's to know, the same way canRemove was.
     relayLabel: natterRelayName(relays, url),
+    // The list's rule, asked here where the list is (goal/G19.1): the
+    // screen offers Remove only when this relay may come off it.
+    canRemove: natterCanRemove(relays, url),
     // `autoAdd` WAS HANDED IN HERE and is gone with the panel that read
     // it (Andy: "another panel, 'When somebody new joins' makes no sense
     // anymore either. gotta go, too").
@@ -362,9 +365,18 @@ function natterOpenRelay(api, container, relays, url) {
   }).then(function (result) {
     if (!result) return result;
     // REMOVAL IS RETURNED, NOT DONE: the screen says what it decided and
-    // this performs it. No screen returns one today; when one does, the
-    // node performs it through relay.remove (goal/G16.3), which asks the
-    // same canRemoveRelay guard that has always stood here.
+    // this performs it, through relay.remove (goal/G16.3), which asks the
+    // same canRemoveRelay guard that has always stood here. The screen
+    // returns one for a relay that refused this node (goal/G19.1); the node
+    // gives up the seat as it takes the row off.
+    if (result.remove) {
+      if (!natterCanRemove(relays, url)) return result;
+      return natterPost(api, 'relay.remove', { key: url }).then(function (r) {
+        var said = (r && r.body) || {};
+        natterStatus(said.ok ? 'removed ' + url : 'not removed: ' + (said.error || 'no answer'));
+        return natterProbe(api, container, relays);
+      }).then(function () { return result; });
+    }
     // `result.renamed` WAS HANDLED HERE and is gone with the panel that
     // produced it: renaming moved to Info, which posts one label to every
     // relay at once (Andy: "i have no idea which 'relay' contains which
@@ -897,6 +909,33 @@ function natterCheckBinding(api, relays, rows) {
   }
 }
 
+// ── A RELAY REFUSING THIS NODE, HEARD AS IT HAPPENS (goal/G19.1) ─────
+//
+// Andy: "peerPost streams the rejection for realtime update to shell."
+// It arrives on the relay-presence job the shell already hears (its
+// `refused`, by relay url), and the list asks the node again, so the row
+// reads what the relay table now says. Once per page, like Contacts'
+// presence watch: there is no unmount to close it on.
+var natterWatchingRefusals = false;
+var natterRefusalsSeen = '';
+function natterWatchRefusals(api, container, relays) {
+  if (natterWatchingRefusals) return;
+  if (!spirit.core.jobs || typeof spirit.core.jobs.subscribe !== 'function') return;
+  natterWatchingRefusals = true;
+  function take(job) {
+    if (!job || job.type !== 'relay-presence') return;
+    var refused = JSON.stringify((job.data && job.data.refused) || {});
+    if (refused === natterRefusalsSeen) return;
+    var first = natterRefusalsSeen === '';
+    natterRefusalsSeen = refused;
+    if (!first || refused !== '{}') natterProbe(api, container, relays);
+  }
+  spirit.core.jobs.subscribe({
+    onSnapshot: function (jobs) { (jobs || []).forEach(take); },
+    onUpdate: take,
+  });
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     // EMPTY UNTIL THE NODE ANSWERS (goal/G16.3): the list is asked of the
@@ -922,6 +961,7 @@ spirit.shell.activateApp({
     if (api.onRelayEvent) {
       api.onRelayEvent(function (event) { natterOnClaim(api, event); });
     }
+    natterWatchRefusals(api, container, relays);
     var statusEl;
 
     // The shared row (.start-job-form): fields with a button on the end,

@@ -227,7 +227,8 @@ test.subHeading('Who may mint');
   // key gets. The mint gate used to answer 403 `bad mint signature`,
   // which told a caller that this key mints for somebody.
   const forged = askMint(r, mallory, 'saint', 7);
-  if (!forged.ok && forged.status === 403 && forged.error === 'no such identity') {
+  // Since goal/G19.1 the refusal names the sender: "your id is not a valid sender here".
+  if (!forged.ok && forged.status === 403 && forged.error === 'your id is not a valid sender here') {
     test.check("a stranger cannot ask: they are not on this relay at all");
   } else {
     test.fail('forged: ' + JSON.stringify(forged));

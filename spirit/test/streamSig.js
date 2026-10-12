@@ -180,7 +180,8 @@ test.subHeading('The gate refuses before it allocates');
   // entry: a registry keyed by caller-chosen input grows when a stranger
   // reaches it, so a stranger must not reach it (B1).
   const stranger = m.box.streamOpen('nobody-here', 'ANYTHING', function () {});
-  if (!stranger.ok && stranger.status === 403 && stranger.error === 'no such identity') {
+  // Since goal/G19.1 the refusal names the sender: "your id is not a valid sender here".
+  if (!stranger.ok && stranger.status === 403 && stranger.error === 'your id is not a valid sender here') {
     test.check('an identity this box does not hold is refused, and says so first');
   } else {
     test.fail('stranger: ' + JSON.stringify(stranger));

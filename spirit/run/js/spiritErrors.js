@@ -349,9 +349,15 @@ define('bad-signature', {
   // reads truthfully, but its texts are about relay ownership and broadening
   // it would make one code mean two boundaries.
 });
-define('no-such-identity', {
+// THE SENDER IS NOT ON THIS RELAY (goal/G19.1): never claimed here, or
+// evicted. It was 'no such identity'; Andy: the refusal names the sender,
+// "your id is not a valid sender here". A node's peerPost records it on that
+// relay's row and stops posting there; only a new invite brings the seat
+// back. The prefix is the node's own refusal of a later post to that relay.
+define('not-a-sender', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['no such identity'],
+  texts: ['your id is not a valid sender here'],
+  prefixes: ['not sent: this relay refused this node'],
 });
 // ── THE PROXY, UNDER THE OWNER'S LIST (2026-09-22, THE-PROXY.md) ──────
 define('proxy-closed', {

@@ -375,6 +375,15 @@ function probe(rootDir, request, myKey) {
         // longer has to say `owned || claimed`. It also covers an owner
         // whose seat predates the record and was never pinned.
         badge.claimed = badge.owned || hasSeat(relay.url);
+        // A RELAY THAT REFUSED THIS NODE HOLDS NO SEAT FOR IT (goal/G19.1).
+        // Andy: "the seat is already vacated, so the nodes ID has to get a
+        // new invite". Listed with the refusal, never claimed, so no start
+        // or restart opens a stream to it.
+        if (relay.refused) {
+          badge.refused = relay.refused;
+          badge.claimed = false;
+          badge.owned = false;
+        }
 
         // Kept only for a row this node is actually on. A relay it merely
         // lists tells it nothing, and a panel is not offered for one.
@@ -387,6 +396,9 @@ function probe(rootDir, request, myKey) {
         if (badge.claimed) {
           badge.roll = {
             owner: (said && said.ownerLabel) || '',
+            // Who owns it, by key: natterDetails offers that owner as a
+            // partner where it is a member of another relay on the list.
+            ownerKey: (said && said.ownerKey) || '',
             relayKey: (said && said.relayPublicKey) || '',
             relayLabel: (said && said.relayLabel) || '',
             // What this box calls this node. natterDetails draws it as
@@ -406,13 +418,15 @@ function probe(rootDir, request, myKey) {
         // A mailbox that is down is not a mailbox we own. It says so on
         // the row rather than failing the whole probe: one unreachable
         // URL must not hide the badge on the others.
-        return {
+        var down = {
           url: relay.url,
           label: relay.label,
           owned: false,
           status: 0,
           error: String((err && err.message) || err),
         };
+        if (relay.refused) down.refused = relay.refused;
+        return down;
       });
   })).then(summarize);
 }

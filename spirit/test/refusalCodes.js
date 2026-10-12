@@ -127,6 +127,23 @@ async function run() {
     } else {
       test.fail('reply refusal: ' + reply.status + ' ' + reply.text);
     }
+
+    // Since goal/G19.1 a stream refused for a key that is not a member says so too, not "not now".
+    const stream = await new Promise(function (resolve) {
+      const req = require('http').get(base + '/api/relay/stream?key=' + encodeURIComponent(stranger.publicKey),
+        { headers: { 'X-Spirit-Sig': 'y' } }, function (res) {
+          let raw = '';
+          res.on('data', function (c) { raw += c; });
+          res.on('end', function () { resolve({ status: res.statusCode, text: raw }); });
+        });
+      req.on('error', function (e) { resolve({ status: 0, text: String(e && e.message) }); });
+    });
+    let sb = {}; try { sb = JSON.parse(stream.text); } catch (e) { /* shown below */ }
+    if (stream.status === 403 && sb.code === 'not-a-sender' && sb.error === 'your id is not a valid sender here') {
+      test.check('a refused stream names the sender: 403, "' + sb.error + '", "' + sb.code + '"');
+    } else {
+      test.fail('stream refusal: ' + stream.status + ' ' + stream.text);
+    }
   }
 }
 
