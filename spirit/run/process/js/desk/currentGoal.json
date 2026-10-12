@@ -1,8 +1,8 @@
 {
- "change": 36240,
+ "change": 36347,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T13:23:53.813Z",
+ "writtenAt": "2026-10-12T13:31:11.201Z",
  "items": [
   {
    "id": "goal/G19",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "claude-windows",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -18,7 +19,6 @@
     "goal/G19.1",
     "goal/G19.2",
     "goal/G19.3",
-    "goal/G19.4",
     "goal/G19.5",
     "goal/G19.6",
     "goal/G19.7",
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "live": [
     "claude-windows"
    ],
@@ -535,15 +535,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G19",
     "goal/G19.2"
    ],
-   "blocked": [
-    "goal/G19.4"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -622,9 +621,12 @@
    "id": "goal/G19.4",
    "title": "deskVerify: kill a suite's servers; normalise listed paths",
    "goal": "goal/G19",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19",
     "goal/G19.3"
@@ -633,18 +635,34 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyStopTree.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -720,6 +738,46 @@
      "by": "desk",
      "at": "2026-10-12T13:23:49.736Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:24:19.533Z",
+     "text": "taking: first of the nine, as it heads the deskVerify chain. Red first, in my clone."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:25:47.637Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:25:48.978Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:29:49.934Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:29:51.223Z",
+     "text": "commit db4d1a12ff15e971e986789101845ce9c69e865d: goal/G19.4: a stopped suite takes its servers; listed paths stay in spirit/test\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/test/deskVerifyStopTree.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:29:56.646Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:30:07.061Z",
+     "text": "Claimed, in db4d1a12. Files: desk.js, deskVerify.js, the new deskVerifyStopTree.js. On Windows a dead suite already took its children with it, so the tree kill guards the Linux nodes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:30:20.083Z",
+     "text": "deskVerify: passed, at db4d1a12 (pulled). 1 suite ran green."
     }
    ]
   },
@@ -727,8 +785,8 @@
    "id": "goal/G19.5",
    "title": "Desk checks: numbers never repeat; box blur on its own item",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G19"
@@ -739,13 +797,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -814,6 +872,11 @@
      "by": "desk",
      "at": "2026-10-12T13:23:50.258Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:30:27.863Z",
+     "text": "taking: red first, in my clone."
     }
    ]
   },
