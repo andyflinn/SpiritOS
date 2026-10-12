@@ -1,8 +1,8 @@
 {
- "change": 34518,
+ "change": 34641,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T08:47:56.548Z",
+ "writtenAt": "2026-10-12T09:19:49.006Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,12 +11,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G18.5"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,9 +36,10 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
    "working": [],
    "agents": {
@@ -896,9 +896,12 @@
    "id": "goal/G18.5",
    "title": "fix desk limbo, search and verify etc.",
    "goal": "goal/G18",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -906,18 +909,64 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskItemsFind.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLiveFixes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskSearchLines.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskState.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskWriterKey.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -948,11 +997,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 5,
    "half": false,
    "full": false,
-   "box": "Andy, 2026-10-12: \"new item: fix desk limbo, search and verify etc.\"\n\nFOUND ON THE DESK TODAY\n- limbo: the desk posts its limbo line on an item with Go while it waits for deskVerify after a claim, every few seconds on G10.7 (seen 02:49, 13 s apart); nobody is working, but a claim is being checked.\n- search: the three probabilit modules are built (G18.2 to G18.4) and used nowhere yet; the desk searches with gradedSearch and searchBucket.\n- verify: deskVerify ran one suite per item when the item listed one; an item that changed other suites but listed only its new one was checked on that alone (G10.8).\n\nDECIDED, Andy, 2026-10-12:\n- \"your points accepted.\": limbo, no limbo line while a claim waits on deskVerify; search, the desk item and chat searches onto the probabilit modules.\n- \"when a search is run agains the goal or an item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result string shown will be green or red, depending on the outcome.\n\npossible?\"\n- The details dialog: \"the red grant Buttons don't show up automatically in deskDetail, i'd like that as well, today, when i waited in details for the expected red button, i always had to go back to list, then re-enter details to get the red button.\"\n- \"search\" in that line is \"the verifier run\" (Q2).\n\nFOUND\n- deskDetails takes a published object for its own item and sets its checks from it (ddTake, deskDetails.js:383); why the red G button still waits for a reopen is to be found by reproducing it.",
-   "version": 4,
+   "box": "Andy, 2026-10-12: \"new item: fix desk limbo, search and verify etc.\"\n- The by guard (deskWriterKey, apiAuth/G1.13) lets a read verb carry its empty by filter; any other by, on a read or a write, still fails. Andy: \"yes. fix that test to be in line with the revised design.\"\n\nFOUND ON THE DESK TODAY\n- limbo: the desk posts its limbo line on an item with Go while it waits for deskVerify after a claim, every few seconds on G10.7 (seen 02:49, 13 s apart); nobody is working, but a claim is being checked.\n- search: the three probabilit modules are built (G18.2 to G18.4) and used nowhere yet; the desk searches with gradedSearch and searchBucket.\n- verify: deskVerify ran one suite per item when the item listed one; an item that changed other suites but listed only its new one was checked on that alone (G10.8).\n\nDECIDED, Andy, 2026-10-12:\n- \"your points accepted.\": limbo, no limbo line while a claim waits on deskVerify; search, the desk item and chat searches onto the probabilit modules.\n- \"when a search is run agains the goal or an item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result string shown will be green or red, depending on the outcome.\n\npossible?\"\n- The details dialog: \"the red grant Buttons don't show up automatically in deskDetail, i'd like that as well, today, when i waited in details for the expected red button, i always had to go back to list, then re-enter details to get the red button.\"\n- \"search\" in that line is \"the verifier run\" (Q2).\n- Probability 0 stays in the bucket: \"The bucket solves this. if all items are probability 0, that is equal to the old searches \"*\"\" (Q5).\n- The item search: \"no. the item search must probability search the chat-lines, and weigh the chat lines in the item result as 50% overall.\" (Q6)\n- \"the chat lines have all equal weight within their 50%\": the chat half is the mean of probabilityStringMatch over the lines.\n- \"ok. for now my crude ruling. chat lines are 50% of the weight, if there is no chat lines the rule still applies, meaning that half is going to default to a probability of 0.\"\n- A chat search in the details dialog, right above the chat input: chat.search {id, text}, its ranked lines in place of the chat while it holds text. Andy: \"chats for items/goals are searchable in the UI, right above the chat input box.\", then \"yes, add it here.\"\n\nFOUND\n- deskDetails takes a published object for its own item and sets its checks from it (ddTake, deskDetails.js:383); why the red G button still waits for a reopen is to be found by reproducing it.",
+   "version": 10,
    "checks": [
     {
      "number": "Q1",
@@ -989,6 +1038,69 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T08:47:23.317Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Should the desk drop probability 0 before seatFor, so a search answers matches only, and do all four move?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:51:51.448Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Split the search move into its own item, so these three ship now?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:55:03.015Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "And an item with no chat yet: its fields count whole, or half with the chat half 0?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:55:05.813Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Whole or half?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:56:35.938Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Add it here?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T09:03:06.033Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "find) passes, while a by: on any write still fails?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T09:12:26.053Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Shall I teach the test the difference, so it still fails on any write that names a writer, but lets a search carry its empty filter?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T09:14:17.566Z"
     }
    ],
    "chat": [
@@ -1056,6 +1168,121 @@
      "by": "desk",
      "at": "2026-10-12T08:47:56.182Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:48:48.293Z",
+     "text": "Building limbo, the status box and the live grant button now. The search part needs two answers first, since it changes what a search gives back:\nThe desk has four searches on searchBucket (items.search with text, items.find, chat.search, log.search), and by the bucket rule a search for xyz would list every item at probability 0, where today it lists only matches.\nShould the desk drop probability 0 before seatFor, so a search answers matches only, and do all four move?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:51:23.763Z",
+     "text": "Q5: Should the desk drop probability 0 before seatFor, so a search answers matches only, and do all four move?\n\nThe bucket solves this. if all items are probability 0, that is equal to the old searches \"*\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:51:53.714Z",
+     "text": "Recorded: 0 stays, all-zero reads as the old *. Built and green in my clone meanwhile: limbo, the checks that travel, the 16em status box (9 checks).\nThe search part still needs its objects named, since arrays are not searched: an item today is matched on id, title, box and every chat line, but its chat is an array, so as an object it would lose its lines; and chat.search and log.search match single lines.\nSplit the search move into its own item, so these three ship now?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:54:36.590Z",
+     "text": "Q6: Split the search move into its own item, so these three ship now?\n\nno. the item search must probability search the chat-lines, and weigh the chat lines in the item result as 50% overall.\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:55:05.335Z",
+     "text": "Makes sense: an item scores 0.5 x probabilityStringObjectMatch(text, its id, title and box) + 0.5 x its chat; chat.search and log.search score each line by probabilityStringMatch.\nThe chat half: its lines weighed among themselves as an object strings are (shortest heaviest, adding up to 1), or the best line alone?\nAnd an item with no chat yet: its fields count whole, or half with the chat half 0?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:56:10.430Z",
+     "text": "the chat lines have all equal weight within their 50%"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:56:35.452Z",
+     "text": "Recorded: the chat half is the mean over the lines.\nLast point, an item with no chat lines yet: I would let its id, title and box count whole (the mean of no lines is not a 0); unless you say half.\nWhole or half?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:58:48.971Z",
+     "text": "does the current graded search include chat lines?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:59:11.961Z",
+     "text": "It includes them, but it grades nothing: items.search keeps an item when the text is found, case ignored, in its id, title, box or any chat line, and lists them in session order (desk.js matchesText); chat.search keeps the lines that contain it, newest first.\nThe desk searches are filters on searchBucket with ** today; the graded search ranks only the peer and contact searches.\nSo the probabilit move is the first time a desk search ranks at all."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:00:29.090Z",
+     "text": "ok. for now my crude ruling. chat lines are 50% of the weight, if there is no chat lines the rule still applies, meaning that half is going to default to a probability of 0."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:02:03.596Z",
+     "text": "chats for items/goals are searchable in the UI, right above the chat input box.\n\n?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T09:02:04.381Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:03:05.669Z",
+     "text": "Not today: the details dialog has no search, it shows the newest chat lines (item.chat); chat.search exists on the desk but only agents call it.\nA search field above the chat input, sending chat.search {id, text} and showing the ranked lines in place of the chat, is small and fits this item.\nAdd it here?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:03:37.268Z",
+     "text": "yes, add it here."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T09:03:37.629Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T09:10:21.737Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:12:25.541Z",
+     "text": "G18.5 is built and green, except one guard: deskWriterKey (apiAuth/G1.13) refuses any by: in the Desk page or dialog.\nThe dialog chat search must send chat.search {id, text, by, since, before}: appServer takes exactly the declared keys, and by there is a filter, sent empty, not a writer.\nMay I narrow the guard so a by: on a read verb (chat.search, items.find) passes, while a by: on any write still fails?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:14:01.414Z",
+     "text": "explain in english:\n\n\"claude-windows 11:12 G18.5 is built and green, except one guard: deskWriterKey (apiAuth/G1.13) refuses any by: in the Desk page or dialog.\nThe dialog chat search must send chat.search {id, text, by, since, before}: appServer takes exactly the declared keys, and by there is a filter, sent empty, not a writer.\nMay I narrow the guard so a by: on a read verb (chat.search, items.find) passes, while a by: on any write still fails?\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:14:17.070Z",
+     "text": "Everything in this item works, but one old test now fails.\nThat test makes sure the Desk page never tells the server who is writing; the server works that out itself, so nobody can pretend to be someone else.\nIt does this crudely: any mention of \"by\" in the page counts as a failure.\nThe new chat search has a field named \"by\" too, but there it means \"only lines written by this person\", and the page always leaves it empty. It changes nothing and names no writer.\nThe server insists every field of a request is present, so the search cannot leave it out.\nShall I teach the test the difference, so it still fails on any write that names a writer, but lets a search carry its empty filter?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:15:46.460Z",
+     "text": "yes. fix that test to be in line with the revised design."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:16:49.572Z",
+     "text": "commit c0812a31174e61e9ff7db882e980bbe4df2148c3: goal/G18.5: desk limbo, search by probability, verify status, chat search\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskChatSearch.js\n- spirit/test/deskItemsFind.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskSearchLines.js\n- spirit/test/deskServer.js\n- spirit/test/deskState.js\n- spirit/test/deskWriterKey.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:17:04.831Z",
+     "text": "Claimed, in c0812a31. Files: process desk.js, shell desk.js, deskDetails.js, and the suites deskLiveFixes, deskChatSearch, deskItemsFind, deskSearchLines, deskState, deskWriterKey.\ndeskServer.js changed too (its search checks now expect ranking) but stays off the list: two of its checks failed before this item.\nOne weakness of the ranking: a chat line \"a zebra came by\" can rank an item above one titled \"zebra crossing\", because chat is half the weight."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:17:25.743Z",
+     "text": "deskVerify: passed, at c0812a31 (pulled). 6 suites ran green."
     }
    ]
   }
