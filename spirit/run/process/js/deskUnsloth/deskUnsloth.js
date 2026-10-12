@@ -116,7 +116,9 @@ let MODEL = String(CONNECTION.name ? CONNECTION.model : CONFIGURATION.model || '
 const CONTEXT_FALLBACK = 8192;
 let studioContext = 0;
 function contextLimit() { return studioContext > 0 ? studioContext : CONTEXT_FALLBACK; }
-const ANSWER_TOKENS = Number(CONFIGURATION.answerTokens) || 0;
+// NEVER 0 (goal/G19.7): started on defaults (goal/G19.12) the answer had no room and the call asked for 0 tokens.
+const ANSWER_TOKENS_DEFAULT = 1024;
+const ANSWER_TOKENS = Number(CONFIGURATION.answerTokens) > 0 ? Number(CONFIGURATION.answerTokens) : ANSWER_TOKENS_DEFAULT;
 const BYTES_PER_TOKEN = Number(CONFIGURATION.bytesPerToken) || 4;
 // HIS FORMULA (goal/G10.3): the room for the whole prompt is what is left of the context once the answer has its
 // own, in bytes, at bytesPerToken each. A function since the limit may follow the studio.
@@ -218,7 +220,7 @@ function callFor(id, changes) {
         // THE WINDOW: the newest lines that fit. Everything but the chat is owed to the call, so the chat takes
         // whatever room is left and the oldest line goes first (his "rolling window ... the oldest dropped").
         const woke = (changes || []).map(function (t) { return 'WHAT JUST HAPPENED AT THE DESK: ' + t; });
-        let room = promptRoom() - bytes(system) - head.concat(woke).reduce(function (s, t) { return s + bytes(t); }, 0);
+        let room = promptRoom() - TOOLS_NOTE_BYTES - bytes(system) - head.concat(woke).reduce(function (s, t) { return s + bytes(t); }, 0);
         const window = [];
         for (let i = chat.length - 1; i >= 0; i--) {
           const line = String(chat[i].by || '') + ': ' + String(chat[i].text || '');
@@ -256,11 +258,13 @@ function serverSeen(ok, error) {
 // ollama entries) must not take the whole ask past the 12 s a process has to answer.
 // `conn` is the pair asked (goal/G18.6), the one in use when left out: a refresh started on one pair keeps asking it
 // after a switch, and its answer lands in that pair's list.
-function studio(method, pathname, body, timeoutMs, conn) {
+// `flight` is the model's answer this call belongs to (goal/G19.7): abort destroys the request it holds.
+function studio(method, pathname, body, timeoutMs, conn, flight) {
   const pair = conn || CONNECTION;
   const base = studioUrlOf(pair);
   const current = pair === CONNECTION;
   if (!base) return Promise.reject(new Error('no OpenAI compatible server is set: connect one in deskUnslothRemote'));
+  if (flight && flight.aborted) return Promise.reject(abortedError());
   const url = new URL(base + pathname);
   const text = body === undefined ? '' : JSON.stringify(body);
   const lib = url.protocol === 'https:' ? https : http;
@@ -288,9 +292,76 @@ function studio(method, pathname, body, timeoutMs, conn) {
     });
     req.on('error', function (e) { if (e && e.code && current) serverSeen(false, String(e.message || e)); reject(e); });
     if (Number(timeoutMs) > 0) req.setTimeout(Number(timeoutMs), function () { req.destroy(new Error('the studio took longer than ' + timeoutMs + ' ms at ' + pathname)); });
+    if (flight) {
+      flight.reqs.add(req);
+      req.on('close', function () { flight.reqs.delete(req); });
+    }
     if (text) req.write(text);
     req.end();
   });
+}
+
+// ── THE MODEL AT WORK, AND THE ABORT (goal/G19.7) ─────────────────────
+//
+//   Andy, 2026-10-12: "i think the Remote should have an abort button, that is armed and comes alive whenever the
+//   model is working. i much would prefer manual intervention to automated aborting....."
+//
+// So the model's answer has NO timeout: a huge batch may take as long as it takes, and only abort ends it. A flight is
+// one answer in the making (a chat of the test tab, an answer to the desk, a model test): every studio request it
+// makes is held, abort destroys them and marks it, and a round not yet asked is never asked. `working` in the state is
+// whether any flight is up, so the Remote's Abort is alive exactly then.
+const flights = new Set();
+function abortedError() { const e = new Error('aborted from the Remote'); e.aborted = true; return e; }
+function takeOff(from) {
+  const flight = { from: from, aborted: false, reqs: new Set() };
+  flights.add(flight);
+  if (flights.size === 1) publishState();
+  return flight;
+}
+function land(flight) {
+  if (!flights.delete(flight)) return;
+  if (!flights.size) publishState();
+}
+function abortAll() {
+  if (!flights.size) throw refused('the model is not working: there is nothing to abort');
+  const all = Array.from(flights);
+  all.forEach(function (f) {
+    f.aborted = true;
+    f.reqs.forEach(function (req) { req.destroy(abortedError()); });
+    note(f.from, 'abort', 'aborted from the Remote');
+    flights.delete(f);
+  });
+  say('aborted ' + all.length + ' answer(s) in flight from the Remote');
+  publishState();
+  return { aborted: all.length };
+}
+
+// ── THE LOG OF THE TEST TAB (goal/G19.7) ───────────────────────────────
+//
+//   Andy, 2026-10-12: "The abort button sit's with the chat in the test tab, where all requests, replies, and tool
+//   calls should be logged."
+//
+// Every request to the model, every reply, every tool call and its result, his desk work included, is an entry
+// {seq, at, from, kind, text}: from is 'chat' (the test tab), 'test' (model.test) or the item answered. The newest
+// entries ride in the published state, as many as fit LOG_BYTES; the Remote keeps what it has seen by seq. A tool
+// result is logged in short (RESULT_SHORT), anything else cut at LOG_TEXT_MAX with the cut said.
+const LOG_BYTES = 8192;
+const LOG_TEXT_MAX = 2048;
+const RESULT_SHORT = 240;
+let logSeq = 0;
+let logRing = [];
+function clip(text, room) {
+  const s = String(text);
+  if (bytes(s) <= room) return s;
+  let head = s.slice(0, room);
+  while (bytes(head) > room - 40 && head.length) head = head.slice(0, -16);
+  return head + ' [cut: ' + bytes(s) + ' bytes]';
+}
+function note(from, kind, text) {
+  logRing.push({ seq: ++logSeq, at: new Date().toISOString(), from: String(from || ''), kind: kind, text: clip(text, kind === 'result' ? RESULT_SHORT : LOG_TEXT_MAX) });
+  let total = logRing.reduce(function (s, e) { return s + bytes(JSON.stringify(e)); }, 0);
+  while (logRing.length > 1 && total > LOG_BYTES) total -= bytes(JSON.stringify(logRing.shift()));
+  publishState();
 }
 
 // ── THE MODEL: one OpenAI chat completion, WITH THE NODE'S TOOLS (goal/G14.6) ──
@@ -348,12 +419,22 @@ const tools = require('./tools').createTools({
   },
   room: toolRoom,
 });
+// DESCRIBED ONCE A WHILE, NOT FOR EVERY ANSWER (goal/G19.7): every desk change was an answer, and every answer asked
+// each namespace's introspection and every verb file again. The list is kept TOOLS_KEEP_MS, so a verb file added or
+// changed is in the answers from a minute later at the latest.
+const TOOLS_KEEP_MS = 60 * 1000;
+let described = null;   // { at, list }
 function describeAll() {
+  if (described && Date.now() - described.at < TOOLS_KEEP_MS) return Promise.resolve(described.list);
   return TOOL_NAMESPACES.reduce(function (chain, ns) {
     return chain.then(function (list) {
       return tools.describe(ns).then(function (more) { return list.concat(more); }, function () { return list; });
     });
-  }, Promise.resolve([]));
+  }, Promise.resolve([])).then(function (list) {
+    // An empty list is not kept: the node may not have answered yet.
+    described = list.length ? { at: Date.now(), list: list } : null;
+    return list;
+  });
 }
 // WHAT deskUnsloth DOES FOR THE MODEL, said in every call beside the rules: its final text is posted under the item
 // it was addressed in, so a chat.add tool is for another item or an extra line, never its answer again.
@@ -363,13 +444,40 @@ function argumentsOf(call) {
   try { const a = JSON.parse(String((call && call.function && call.function.arguments) || '{}')); return a && typeof a === 'object' ? a : {}; } catch (e) { return {}; }
 }
 
-function askModel(messages, onTool) {
+// `flight` is the answer in the making (takeOff), so abort reaches every round of it and the log names whom it is for.
+function askModel(messages, flight, onTool) {
   return describeAll().then(function (list) {
     const all = messages.slice();
     // The note rides with the rules, in the system message, only when there is a tool to speak of.
     if (list.length && all.length && all[0].role === 'system') all[0] = { role: 'system', content: String(all[0].content || '') + '\n\n' + TOOLS_NOTE };
-    return askModelRound(all, list, 0, onTool);
+    return askModelRound(all, list, 0, flight, onTool);
   });
+}
+// THE NOTE'S BYTES, kept out of the window the call is built with, since it joins the system message after.
+const TOOLS_NOTE_BYTES = bytes('\n\n' + TOOLS_NOTE);
+
+// TOOL RESULTS COUNTED AGAINST THE PROMPT ROOM (goal/G19.7). Each result was cut to a quarter of the room and never
+// counted, so three rounds of two results each overflowed it. Now a result is cut to what is left of the room after
+// every message already in the call, less ROOM_RESERVE for the notes this loop may still add, and a result that finds
+// no room is replaced by a note that says so.
+const ROOM_RESERVE = 256;
+function messageBytes(m) { return bytes(m.content || '') + (m.tool_calls ? bytes(JSON.stringify(m.tool_calls)) : 0); }
+function roomLeft(messages) {
+  return promptRoom() - ROOM_RESERVE - messages.reduce(function (s, m) { return s + messageBytes(m); }, 0);
+}
+const ROOM_MIN = 96;
+function resultRoom(messages) { return Math.min(toolRoom(), roomLeft(messages)); }
+function fitResult(name, text, room, messages) {
+  if (room > ROOM_MIN && bytes(text) <= room) return text;
+  // The note that says so is counted too: what is left of the room, the budget's note kept free.
+  const free = roomLeft(messages) + ROOM_RESERVE - bytes(BUDGET_SPENT);
+  const said = '[no room left in the prompt: the result of ' + name + ' is dropped]';
+  if (bytes(said) <= free) return said;
+  return bytes('[dropped]') <= free ? '[dropped]' : '';
+}
+function lastWords(messages) {
+  const last = messages[messages.length - 1];
+  return last ? String(last.content || '') : '';
 }
 
 // THE LAST WORD IS THE MODEL'S, NOT A PLACEHOLDER (found live by Andy, 2026-10-10: Levant fetched sources three
@@ -400,33 +508,44 @@ function learnReasoning(model, got) {
   publishState();
 }
 
-function askModelRound(messages, list, round, onTool) {
+function askModelRound(messages, list, round, flight, onTool) {
+  if (flight.aborted) return Promise.reject(abortedError());
   const body = withAnswerTokens({ model: MODEL, messages: messages });
   if (list.length) body.tools = list;
-  return studio('POST', '/v1/chat/completions', body).then(function (got) {
+  note(flight.from, 'request', 'to ' + (MODEL || '(no model)') + ', round ' + (round + 1) + ': ' + messages.length + ' messages, ' +
+    messages.reduce(function (s, m) { return s + messageBytes(m); }, 0) + ' bytes, ' + list.length + ' tools; the last: ' + lastWords(messages));
+  // NO TIMEOUT HERE, BY HIS DECISION (goal/G19.7): only abort ends the model's answer.
+  return studio('POST', '/v1/chat/completions', body, undefined, undefined, flight).then(function (got) {
     learnReasoning(body.model, got);
     const choice = got && Array.isArray(got.choices) ? got.choices[0] : null;
     const message = choice && choice.message ? choice.message : null;
     const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    if (message && String(message.content || '')) note(flight.from, 'reply', String(message.content));
     if (calls.length && round >= TOOL_ROUNDS && list.length) {
+      note(flight.from, 'reply', 'asked for ' + calls.length + ' more tool call(s) with the budget spent: asked once more, without tools');
       messages.push({ role: 'user', content: BUDGET_SPENT });
-      return askModelRound(messages, [], round + 1, onTool);
+      return askModelRound(messages, [], round + 1, flight, onTool);
     }
     if (calls.length && round < TOOL_ROUNDS) {
       messages.push({ role: 'assistant', content: String(message.content || ''), tool_calls: calls });
       return calls.reduce(function (chain, call) {
         return chain.then(function () {
+          if (flight.aborted) throw abortedError();
           const name = String((call.function && call.function.name) || '');
           // What the tool works on, for the Remote's chat line: a url (net), else a path (fs, goal/G14.8).
           const given = argumentsOf(call);
           const url = String(given.url || given.path || '');
+          note(flight.from, 'tool', name + ' ' + String((call.function && call.function.arguments) || '{}'));
           if (onTool) onTool({ name: name, url: url, done: false });
-          return tools.run(call).then(function (r) {
-            messages.push({ role: 'tool', tool_call_id: r.id, content: r.text });
+          // The room is taken before the tool runs: a tool that writes runs even when its result will not fit.
+          const room = resultRoom(messages);
+          return tools.run(call, room > ROOM_MIN ? room : undefined).then(function (r) {
+            note(flight.from, 'result', name + ': ' + r.text);
+            messages.push({ role: 'tool', tool_call_id: r.id, content: fitResult(name, r.text, room, messages) });
             if (onTool) onTool({ name: name, url: url, done: true });
           });
         });
-      }, Promise.resolve()).then(function () { return askModelRound(messages, list, round + 1, onTool); });
+      }, Promise.resolve()).then(function () { return askModelRound(messages, list, round + 1, flight, onTool); });
     }
     const content = message ? String(message.content || '') : '';
     if (!content) {
@@ -455,6 +574,7 @@ function askModelRound(messages, list, round, onTool) {
 // (it took 14.9 s live, probing the studio's ollama entries, and the whole ask died at 12 s). The loaded flag
 // comes from inference/status, 0.3 s live, which names the active model and lists the loaded ones.
 const QUANT_WAIT_MS = 5000;
+const LIST_WAIT_MS = 5000;
 
 // THE KNOWN LIST IS THE CACHE, AND THE ANSWER (Andy, 2026-10-10: "deskUnsloth should cache the model list with all
 // capabilities, you'll be able to show more info earlier, and more info from cache, for not-loaded models.", then
@@ -529,7 +649,9 @@ function plainList(conn, name, got) {
 function fetchModels(conn, name) {
   const nothing = function () { return {}; };
   const notStudio = function (e) { if (e && e.status === 404) return PLAIN; throw e; };
-  return Promise.all([studio('GET', '/api/models/cached-gguf', undefined, undefined, conn).catch(notStudio), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS, conn).catch(nothing), studio('GET', '/api/inference/status', undefined, undefined, conn).catch(nothing)])
+  // TIMEOUTS ON THE MODEL-LIST READS (goal/G19.7): a cached-gguf or a status that never answered held the one refresh
+  // forever, and no list was read again until a restart. Only these reads time out, never the model's answer.
+  return Promise.all([studio('GET', '/api/models/cached-gguf', undefined, LIST_WAIT_MS, conn).catch(notStudio), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS, conn).catch(nothing), studio('GET', '/api/inference/status', undefined, LIST_WAIT_MS, conn).catch(nothing)])
     .then(function (got) {
       if (got[0] === PLAIN) return plainList(conn, name, got[1]);
       const cached = Array.isArray(got[0] && got[0].cached) ? got[0].cached : [];
@@ -609,7 +731,7 @@ function models() {
   }
   return refreshModels().then(function (next) {
     return { active: next.active, activeQuant: String(next.activeQuant || ''), cached: false, load: loadNow, test: testNow(), models: next.models };
-  });
+  }, function (e) { throw refused('the studio\'s model list could not be read: ' + String((e && e.message) || e)); });
 }
 
 // ── ONE STATE, PUBLISHED ON EVERY CHANGE (goal/G14.5) ─────────────────
@@ -621,7 +743,14 @@ function models() {
 // whenever any of it changes: the switch, a load's state, the known list after a refresh, a chat answer. The node
 // hands it to the pages on this node and, on a puppet, streams it to the owner (puppetStream.js); the Remote
 // draws from it and asks nothing. The read verbs stay for a one-shot ask.
-let lastChat = { id: '', done: false, text: '', tool: { name: '', url: '', done: true } };
+// THE CHAT SHOWN is the id of the chat that changed last; its record is its own, in answers (goal/G19.7: one global
+// lastChat had a tool of one chat published under another's id).
+let chatShown = '';
+function chatObject() {
+  const a = chatShown ? answers[chatShown] : null;
+  if (!a) return { id: '', done: false, text: '', tool: { name: '', url: '', done: true } };
+  return { id: chatShown, done: a.done, text: a.text, tool: { name: a.tool.name, url: a.tool.url, done: a.tool.done } };
+}
 function stateObject() {
   const have = readKnown() || { active: '', models: [] };
   return {
@@ -638,7 +767,11 @@ function stateObject() {
     test: testNow(),
     models: Array.isArray(have.models) ? have.models : [],
     // The tool in flight, if any (goal/G14.6), so the chat box can show the fetch.
-    chat: { id: lastChat.id, done: lastChat.done, text: lastChat.text, tool: { name: lastChat.tool.name, url: lastChat.tool.url, done: lastChat.tool.done } },
+    chat: chatObject(),
+    // Whether the model is answering anything now, so the Remote's Abort is alive (goal/G19.7).
+    working: flights.size > 0,
+    // The newest entries of the test tab's log (goal/G19.7).
+    log: logRing.slice(),
   };
 }
 function publishState() {
@@ -740,12 +873,17 @@ function testModel(id, quant) {
   ready.then(function () { return refreshModels(); }).then(function () {
     return describeAll().then(function (list) {
       if (!list.length) throw new Error('no tools described to test with');
-      return studio('POST', '/v1/chat/completions', withAnswerTokens({ model: id, messages: [{ role: 'system', content: PREAMBLE }, { role: 'user', content: TEST_PROMPT }], tools: list }));
+      // The test's call is the model at work too: abort reaches it and the test tab logs it (goal/G19.7).
+      const flight = takeOff('test');
+      note('test', 'request', 'to ' + id + (quant ? ' ' + quant : '') + ', ' + list.length + ' tools: ' + TEST_PROMPT);
+      return studio('POST', '/v1/chat/completions', withAnswerTokens({ model: id, messages: [{ role: 'system', content: PREAMBLE }, { role: 'user', content: TEST_PROMPT }], tools: list }), undefined, undefined, flight)
+        .then(function (got) { land(flight); return got; }, function (e) { land(flight); throw e; });
     });
   }).then(function (got) {
     learnReasoning(id, got);
     const message = got && Array.isArray(got.choices) && got.choices[0] ? got.choices[0].message : null;
     const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls.filter(function (c) { return c && c.function && c.function.name; }) : [];
+    note('test', 'reply', calls.length ? 'tool call ' + calls[0].function.name + ' ' + String(calls[0].function.arguments || '{}') : String((message && message.content) || '(nothing)'));
     const pass = calls.length > 0;
     return { pass: pass, why: pass ? 'a real tool call came back: ' + calls[0].function.name : 'no tool call came back; the model answered: ' + String((message && message.content) || '').slice(0, 160) };
   }, function (e) { return { pass: false, why: 'the test could not run: ' + String((e && e.message) || e) }; }).then(function (r) {
@@ -945,10 +1083,17 @@ function push() {
 const ANSWER_KEEP_MS = 10 * 60 * 1000;
 const answers = Object.create(null);
 
+const NO_TOOL = { name: '', url: '', done: true };
+// One chat's record changed: it is the one shown, and the state goes out.
+function chatChanged(id, change) {
+  answers[id] = Object.assign({}, answers[id], change);
+  chatShown = id;
+  publishState();
+}
 function chatSend(lines) {
   const id = require('crypto').randomBytes(8).toString('hex');
   const system = PREAMBLE;
-  let room = promptRoom() - bytes(system);
+  let room = promptRoom() - TOOLS_NOTE_BYTES - bytes(system);
   const window = [];
   for (let i = lines.length - 1; i >= 0; i--) {
     const role = lines[i].role === 'assistant' ? 'assistant' : 'user';
@@ -959,18 +1104,16 @@ function chatSend(lines) {
     window.unshift({ role: role, content: content });
   }
   const messages = [{ role: 'system', content: system }].concat(window);
-  answers[id] = { done: false, text: '', at: Date.now() };
-  lastChat = { id: id, done: false, text: '', tool: { name: '', url: '', done: true } };
-  publishState();
-  const onTool = function (t) { lastChat.tool = { name: t.name, url: t.url, done: t.done }; publishState(); };
-  askModel(messages, onTool).then(function (content) {
-    answers[id] = { done: true, text: content, at: Date.now() };
-    lastChat = { id: id, done: true, text: content, tool: { name: '', url: '', done: true } };
-    publishState();
+  chatChanged(id, { done: false, text: '', at: Date.now(), tool: NO_TOOL });
+  const onTool = function (t) { chatChanged(id, { tool: { name: t.name, url: t.url, done: t.done } }); };
+  const flight = takeOff('chat');
+  askModel(messages, flight, onTool).then(function (content) {
+    land(flight);
+    chatChanged(id, { done: true, text: content, at: Date.now(), tool: NO_TOOL });
   }, function (e) {
-    answers[id] = { done: true, text: '(the model did not answer: ' + e.message + ')', at: Date.now() };
-    lastChat = { id: id, done: true, text: answers[id].text, tool: { name: '', url: '', done: true } };
-    publishState();
+    land(flight);
+    if (!e.aborted) note('chat', 'error', 'the model did not answer: ' + e.message);
+    chatChanged(id, { done: true, text: '(the model did not answer: ' + e.message + ')', at: Date.now(), tool: NO_TOOL });
   });
   Object.keys(answers).forEach(function (k) { if (answers[k].done && Date.now() - answers[k].at > ANSWER_KEEP_MS) delete answers[k]; });
   return { id: id };
@@ -1030,12 +1173,19 @@ function postAll(id, texts) {
   }, Promise.resolve());
 }
 
+// AN ANSWER THAT FAILS OR IS ABORTED POSTS NOTHING, AND FREES LEVANT AT ONCE (goal/G19.7): it is said, logged,
+// and the next one waiting is answered.
 function answerItem(job) {
   const id = job.id;
-  return callFor(id, job.changes).then(askModel).then(function (content) {
+  const flight = takeOff(id);
+  return callFor(id, job.changes).then(function (messages) { return askModel(messages, flight); }).then(function (content) {
+    land(flight);
+    if (flight.aborted) return null;
     return postAll(id, linesOf(content));
   }).catch(function (e) {
+    land(flight);
     say('the answer for ' + id + ' failed: ' + e.message);
+    if (!e.aborted) note(id, 'error', 'the answer failed: ' + e.message);
   });
 }
 
@@ -1052,7 +1202,8 @@ function drain() {
   const job = waiting.shift();
   if (!job) return Promise.resolve();
   working = true;
-  return answerItem(job).then(function () { working = false; return drain(); });
+  const free = function () { working = false; return drain(); };
+  return answerItem(job).then(free, free);
 }
 
 // ── THE SWITCH (goal/G14.2) ───────────────────────────────────────────
@@ -1150,8 +1301,14 @@ appServer.serve({
     handler: function (a) { return setConnected(a.on === true); },
   },
   state: {
-    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }] },
-    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow() }; },
+    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }], working: true },
+    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow(), working: flights.size > 0 }; },
+  },
+  // THE REMOTE'S ABORT (goal/G19.7): cancels every model answer in flight and frees Levant. Andy's manual
+  // intervention, in place of any automatic timeout. No verb file: it is the Remote's, never a tool of Levant's.
+  abort: {
+    request: {}, reply: { aborted: 0 },
+    handler: function () { return abortAll(); },
   },
   // THE SERVER BUBBLE'S VERB (goal/G10.7): the url and the key into connection.json, and whether a server answers.
   // Since goal/G18.6 a named pair, one of several kept in connection.json; the key never comes back.
@@ -1179,6 +1336,8 @@ appServer.serve({
   'model.load': {
     request: { id: '', quant: '' }, reply: { model: '', loaded: true },
     handler: function (a) {
+      // An empty id wrote an empty model into configuration.json (goal/G19.7): refused, saying why.
+      if (!String(a.id || '')) throw refused('an id is needed: the model to load');
       loadModel(String(a.id), String(a.quant || '')).catch(function () { /* said and published above */ });
       return { model: String(a.id), loaded: false };
     },

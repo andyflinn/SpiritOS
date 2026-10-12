@@ -113,7 +113,9 @@ function createTools(opts) {
             Object.keys(request).forEach(function (k) { properties[k] = propertyOf(request[k]); });
             const name = toolName(ns + '.' + stem);
             listed[name] = { route: route, stem: stem, request: request };
-            tools.push({ type: 'function', function: { name: name, description: description, parameters: { type: 'object', properties: properties, required: [] } } });
+            // EVERY KEY REQUIRED (goal/G19.7): a process server's request is exact (appServer.matches), so a key the
+            // model leaves out is a refused call; the schema says what the verb takes.
+            tools.push({ type: 'function', function: { name: name, description: description, parameters: { type: 'object', properties: properties, required: Object.keys(properties) } } });
             return tools;
           }, function () { return tools; });
         });
@@ -132,7 +134,9 @@ function createTools(opts) {
     try { const parsed = JSON.parse(String(raw || '{}')); return isPlain(parsed) ? parsed : {}; } catch (e) { return {}; }
   }
 
-  function run(call) {
+  // `roomNow`, when given, is the room this result has in the call (goal/G19.7: results counted against the prompt
+  // room); the configured room otherwise.
+  function run(call, roomNow) {
     const id = String((call && call.id) || '');
     const name = String((call && call.function && call.function.name) || '');
     const k = known[name];
@@ -143,14 +147,16 @@ function createTools(opts) {
     return k.route.ask(k.route.verb(k.stem), args).then(function (r) {
       const body = r && r.body;
       let text;
-      if (!r || r.status >= 400 || (isPlain(body) && (body.ok === false || typeof body.error === 'string'))) {
-        text = 'the node refused: ' + ((isPlain(body) && (body.error || body.code)) || ('status ' + (r && r.status)));
+      // A REFUSAL IS A STATUS OR ok false (goal/G19.7): an error field in a JSON that was fetched is the data's own.
+      if (!r || r.status >= 400 || (isPlain(body) && body.ok === false)) {
+        const why = isPlain(body) && isPlain(body.extra) && body.extra.why ? ' (' + body.extra.why + ')' : '';
+        text = 'the node refused: ' + ((isPlain(body) && (body.error || body.code)) || ('status ' + (r && r.status))) + why;
       } else if (isPlain(body) || Array.isArray(body)) {
         text = JSON.stringify(body);
       } else {
         text = textOf(r && r.text || '');
       }
-      return { id: id, name: name, text: cutTo(text, room()) };
+      return { id: id, name: name, text: cutTo(text, Number(roomNow) > 0 ? Math.min(Number(roomNow), room()) : room()) };
     }, function (e) {
       return { id: id, name: name, text: 'the node could not be asked: ' + ((e && e.message) || e) };
     });

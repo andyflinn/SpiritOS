@@ -452,23 +452,40 @@ function deskUnslothRemoteTakesPublished(target, meta) {
 }
 
 var deskUnslothRemoteChatPending = '';   // the chat.send id awaiting its published answer
+var deskUnslothRemoteLogSeen = 0;        // the highest log seq drawn (goal/G19.7)
+
+// THE LOG IN THE CHAT (goal/G19.7). Andy, 2026-10-12: "The abort button sit's with the chat in the test tab, where all
+// requests, replies, and tool calls should be logged." The published state carries the newest entries; each one not
+// yet drawn joins the transcript as a log line, which chat.send never sends to the model.
+function deskUnslothRemoteTakeLog(log) {
+  if (!Array.isArray(log)) return false;
+  var added = false;
+  log.forEach(function (e) {
+    if (!e || typeof e.seq !== 'number' || e.seq <= deskUnslothRemoteLogSeen) return;
+    deskUnslothRemoteLogSeen = e.seq;
+    deskUnslothRemoteTranscript.push({ role: 'log', text: String(e.from || '') + ' ' + String(e.kind || '') + ': ' + String(e.text || '') });
+    added = true;
+  });
+  return added;
+}
+
 function deskUnslothRemoteApplyPublished(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.connected !== 'boolean') return;
-  deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' }, connections: Array.isArray(obj.connections) ? obj.connections : [] };
-  deskUnslothRemoteBusy = false;
+  deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' }, connections: Array.isArray(obj.connections) ? obj.connections : [], working: obj.working === true };
+  // The switch's busy flag is the flip's own (goal/G19.7): a state published mid-flip no longer re-enables it.
   deskUnslothRemoteModels = { active: obj.active || '', activeQuant: obj.activeQuant || '', cached: !!obj.cached, load: obj.load || {}, test: obj.test || {}, models: Array.isArray(obj.models) ? obj.models : [] };
+  deskUnslothRemoteTakeLog(obj.log);
   if (deskUnslothRemoteLoadTimer) {
     var over = deskUnslothRemoteLoadOver(deskUnslothRemoteModels, deskUnslothRemoteChosen);
     if (over.over) { deskUnslothRemoteLoadTimer = null; deskUnslothRemoteSay(over.error, !!over.error); }
   }
-  deskUnslothRemoteDrawModels();
-  deskUnslothRemoteDrawAll();
   if (deskUnslothRemoteChatPending && obj.chat && obj.chat.id === deskUnslothRemoteChatPending && obj.chat.done) {
     deskUnslothRemoteChatPending = '';
     deskUnslothRemoteTranscript.push({ role: 'assistant', text: String(obj.chat.text || '') });
     deskUnslothRemoteChatBusy = false;
-    deskUnslothRemoteDrawChatLines();
   }
+  deskUnslothRemoteDrawModels();
+  deskUnslothRemoteDrawAll();
 }
 
 // IS THE LOAD OVER, from one models answer: loaded, or failed with the studio's words, or the studio unreadable.
@@ -492,12 +509,18 @@ function deskUnslothRemoteLoad() {
   var pair = deskUnslothRemoteChosenPair();
   if (!pair.id || deskUnslothRemoteLoadTimer) return;
   var target = deskUnslothRemoteTarget;
+  // THE HOURGLASS FROM THE PRESS (goal/G19.7): set before the ask, so an outcome published before the answer arrives
+  // ends it (deskUnslothRemoteApplyPublished); set at the answer, it stuck when the refusal came first.
+  deskUnslothRemoteLoadTimer = true;
+  deskUnslothRemoteSay('', false);
+  deskUnslothRemoteDrawModels();
   deskUnslothRemoteAsk(target, 'model.load', { id: pair.id, quant: pair.quant }).then(function (said) {
-    if (said && said.ok === false) { deskUnslothRemoteSay(said.error || said.code || 'the load was refused', true); return; }
     if (target !== deskUnslothRemoteTarget) return;
-    deskUnslothRemoteSay('', false);
-    deskUnslothRemoteLoadTimer = true;
-    deskUnslothRemoteDrawModels();
+    if (said && said.ok === false) {
+      deskUnslothRemoteLoadTimer = null;
+      deskUnslothRemoteSay((said.extra && said.extra.why) || said.error || said.code || 'the load was refused', true);
+      deskUnslothRemoteDrawModels();
+    }
   });
 }
 
@@ -548,9 +571,29 @@ function deskUnslothRemoteDrawChatLines() {
   if (!display) return;
   var escape = deskUnslothRemoteApi && deskUnslothRemoteApi.escapeHtml ? deskUnslothRemoteApi.escapeHtml : function (s) { return String(s); };
   display.innerHTML = deskUnslothRemoteTranscript.map(function (l) {
+    if (l.role === 'log') return '<div class="job-manifest-note">' + escape(l.text) + '</div>';
     return '<div><b>' + (l.role === 'assistant' ? escape((deskUnslothRemoteState && deskUnslothRemoteState.persona) || 'model') : 'you') + ':</b> ' + escape(l.text) + '</div>';
   }).join('') + (deskUnslothRemoteChatBusy ? '<div class="job-manifest-note">' + deskUnslothRemoteIcon('LOADING') + '</div>' : '');
   display.scrollTop = display.scrollHeight;
+  deskUnslothRemoteDrawAbort();
+}
+
+// THE ABORT (goal/G19.7). Andy, 2026-10-12: "an abort button, that is armed and comes alive whenever the model is
+// working. i much would prefer manual intervention to automated aborting....." Beside the chat's Send, alive only
+// while deskUnsloth says the model works; one press cancels the answer in flight and frees Levant.
+function deskUnslothRemoteDrawAbort() {
+  var button = document.getElementById('dur-abort');
+  if (!button) return;
+  button.disabled = !(deskUnslothRemoteState && deskUnslothRemoteState.working === true);
+}
+function deskUnslothRemoteAbort() {
+  if (!deskUnslothRemoteState || deskUnslothRemoteState.working !== true) return;
+  var target = deskUnslothRemoteTarget;
+  deskUnslothRemoteAsk(target, 'abort', {}).then(function (said) {
+    if (target !== deskUnslothRemoteTarget) return;
+    if (said && said.ok === false) { deskUnslothRemoteSay((said.extra && said.extra.why) || said.error || said.code || 'the abort was refused', true); return; }
+    deskUnslothRemoteSay('aborted: the model is free', false);
+  });
 }
 
 function deskUnslothRemoteDrawChat() {
@@ -568,10 +611,12 @@ function deskUnslothRemoteDrawChat() {
     '<div class="start-job-form">' +
       '<input type="text" id="dur-chat-input" class="grow" placeholder="one line, Enter sends">' +
       '<button type="button" id="dur-chat-send">Send</button>' +
+      ' <button type="button" id="dur-abort" disabled title="cancel the model\'s answer in flight">Abort</button>' +
     '</div>';
   var input = document.getElementById('dur-chat-input');
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); deskUnslothRemoteChatSend(); } });
   document.getElementById('dur-chat-send').addEventListener('click', deskUnslothRemoteChatSend);
+  document.getElementById('dur-abort').addEventListener('click', deskUnslothRemoteAbort);
   deskUnslothRemoteDrawChatTitle();
   deskUnslothRemoteDrawChatLines();
 }
@@ -586,22 +631,18 @@ function deskUnslothRemoteChatSend() {
   deskUnslothRemoteChatBusy = true;
   deskUnslothRemoteDrawChatLines();
   var target = deskUnslothRemoteTarget;
-  var payload = deskUnslothRemoteChatAskFor(target, 'chat.send', { lines: deskUnslothRemoteTranscript.slice() });
+  // The conversation alone goes to the model, never the log's lines (goal/G19.7).
+  var conversation = deskUnslothRemoteTranscript.filter(function (l) { return l.role === 'user' || l.role === 'assistant'; });
+  var payload = deskUnslothRemoteChatAskFor(target, 'chat.send', { lines: conversation });
   var rest = {};
   Object.keys(payload).forEach(function (k) { if (k !== 'verb') rest[k] = payload[k]; });
   deskUnslothRemoteApi.verb(payload.verb, rest).then(function (r) {
     var said = deskUnslothRemoteAnswerOf(target, r);
     if (!said || said.ok === false || !said.id) throw new Error((said && (said.error || said.code)) || 'the chat was refused');
     // THE ANSWER ARRIVES AS A PUBLISHED OBJECT (goal/G14.5): chat {id, done, text}, taken by
-    // deskUnslothRemoteApplyPublished. Nothing is polled; a chat that never comes back is let go after a while.
+    // deskUnslothRemoteApplyPublished. Nothing is polled, and nothing gives up on it: since goal/G19.7 the model's
+    // answer has no timeout, so the chat waits for the answer or for Abort, which publishes it done.
     deskUnslothRemoteChatPending = said.id;
-    setTimeout(function () {
-      if (deskUnslothRemoteChatPending !== said.id) return;
-      deskUnslothRemoteChatPending = '';
-      deskUnslothRemoteTranscript.push({ role: 'assistant', text: '(no answer published in time)' });
-      deskUnslothRemoteChatBusy = false;
-      deskUnslothRemoteDrawChatLines();
-    }, 120000);
   }).catch(function (e) {
     deskUnslothRemoteTranscript.push({ role: 'assistant', text: '(' + String((e && e.message) || e) + ')' });
     deskUnslothRemoteChatBusy = false;
@@ -718,6 +759,15 @@ spirit.shell.activateApp({
       deskUnslothRemoteModels = null;
       deskUnslothRemoteChosen = '';
       deskUnslothRemoteLoadTimer = null;
+      // THE CHAT AND THE FLAGS WERE THE OLD TARGET'S (goal/G19.7): its transcript, its log, an answer it still owed
+      // and a flip in flight are not the new target's.
+      deskUnslothRemoteTranscript = [];
+      deskUnslothRemoteLogSeen = 0;
+      deskUnslothRemoteChatBusy = false;
+      deskUnslothRemoteChatPending = '';
+      deskUnslothRemoteBusy = false;
+      deskUnslothRemoteTestArmed = false;
+      deskUnslothRemoteDrawChatLines();
       var url = document.getElementById('dur-server-url');
       if (url) url.value = '';
       deskUnslothRemoteDrawModels();
