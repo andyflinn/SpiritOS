@@ -1,8 +1,8 @@
 {
- "change": 34643,
+ "change": 34725,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T09:19:53.551Z",
+ "writtenAt": "2026-10-12T09:43:40.031Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,11 +11,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G18.6"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -41,9 +42,7 @@
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -112,6 +111,11 @@
      "by": "andy",
      "at": "2026-10-12T08:37:55.642Z",
      "text": "new item: fix desk limbo, search and verify etc."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:21:59.724Z",
+     "text": "new Item: deskUnslothRemote refinements"
     }
    ]
   },
@@ -220,6 +224,11 @@
      "by": "andy",
      "at": "2026-10-12T07:19:55.981Z",
      "text": "deskVerify: passed, at 5ac318bc (pulled). 1 suite ran green."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T09:35:51.900Z",
+     "text": "Levant: Closed. The fix is in, verified green, Done and Closed both pressed by Andy — nothing left to add here."
     }
    ]
   },
@@ -638,6 +647,11 @@
      "by": "andy",
      "at": "2026-10-12T08:10:10.078Z",
      "text": "deskVerify: passed, at 6a4f7aa9 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T09:40:38.719Z",
+     "text": "Levant: I've read the desk state. Here's what I found:\n\n**No open item for me to take** — `desk_work_open` returns empty, so nothing has `Go` for an agent right now.\n\n**What's on record:**\n- `goal/G18.3` (probabilityStringObjectMatch) — closed/done, your `close` press landed.\n- `goal/G18.4` (probabilityBucket) — closed, green, files committed.\n- `goal/G18.6` (deskUnslothRemote refinements) — the only one still carrying open checks: **Q1** (\"which refinements?\") and **Q2** (the `/v1/models` + cost questions), both from `claude-windows`, unanswered by you.\n\nThose two questions on G18.6 are addressed to you, not me, so they aren't mine to answer. I'm listening with nothing open to take; I'll re-arm and stay in the loop until you close vscode."
     }
    ]
   },
@@ -891,6 +905,11 @@
      "by": "andy",
      "at": "2026-10-12T08:35:51.484Z",
      "text": "deskVerify: passed, at 428416fc (pulled). 1 suite ran green."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T09:41:48.000Z",
+     "text": "Levant: Done and closed: probabilityBucket is built, green (12 checks), committed under your G1, verified at 428416fc. The three probabilit* modules stand — probabilityStringMatch, probabilityStringObjectMatch, probabilityBucket — and the integration is yours to open. Nothing open for agents now."
     }
    ]
   },
@@ -1284,6 +1303,154 @@
      "by": "andy",
      "at": "2026-10-12T09:17:25.743Z",
      "text": "deskVerify: passed, at c0812a31 (pulled). 6 suites ran green."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T09:42:31.104Z",
+     "text": "Levant: The desk is empty — goal/G18.5 is closed, nothing open for agents. The three probabilit modules are built and green here; the integration is still to be discussed, which is the next step when you're ready.\n\nI'll stay armed on my node and keep listening."
+    }
+   ]
+  },
+  {
+   "id": "goal/G18.6",
+   "title": "deskUnslothRemote refinements",
+   "goal": "goal/G18",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskUnslothRemote refinements: several OpenAI compatible connections, kept in the connect tab.\n\nDESIGN (Andy, 2026-10-12): \"i have an OpenAI account with 10 bucks to spend on it. I want my Account URL/token pairs saved in connection.json, now an array. i want to maintain that array in the connect tab.\"\n\nPROPOSED SHAPE\n- connection.json becomes an array of {name, url, key}, one of them the one in use. The name is his choice (openai, studio), a label under the field rules, and is shown instead of the url. Andy, on naming the pairs: \"good Idea, yes.\" It stays in deskUnsloth's state folder under relay-state/, which git ignores, so no key reaches the remote.\n- The connect tab lists the pairs by name: the key never shown or sent back (as today). Per pair: use, remove. Below: add a name, a url and a key, probed as connection.set probes today.\n- deskUnsloth's verbs: connection.set {name, url, key} adds a pair or replaces the one of that name; connection.remove {name}; connection.use {name}. state answers the names and urls, and which is in use. These are deskUnsloth's own verbs, not the node's.\n- A switch takes effect on the next call, as a connection.set does today.\n- The available-models list, the chosen model and the 🧵 marks are kept per pair, so a switch back finds them as left. Andy asked: \"this kind of means that the \\\"available models\\\" drop-down list must be kept by account as well, correct?\"; answered yes.\n\nWHAT OPENAI DOES NOT HAVE (deskUnsloth.js @ 7edbd860)\n- The model list reads Unsloth studio routes: api/models/cached-gguf, api/models/gguf-variants, api/inference/status. OpenAI answers none of them, only /v1/models.\n- model.load is a studio load; OpenAI has nothing to load, a model is named per call.\n- Chat and the 🧵 tool-call test are /v1/chat/completions, which OpenAI answers; they work unchanged.\n- So with an OpenAI pair in use, the configure tab lists /v1/models and picking one sets the model, with no load. Andy: \"the OpenAI caveats are noted. and accepted.\"\n\nCOST\n- OpenAI bills every call by tokens; Levant reading the desk in a loop spends without anyone typing.\n- No spending guard in deskUnsloth: the account carries its own cap. Andy: \"i have a hard cap on my OpenAI account, i just did it for testing.\"\n",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Which refinements do you want in the Remote?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T09:39:36.380Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "With an OpenAI pair in use, is picking a model from its /v1/models list, with no load, what you want in the configure tab?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T09:39:38.644Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Should each pair carry a name you choose, such as openai or studio, shown instead of the url?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T09:40:46.974Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:22:33.929Z",
+     "text": "Added as goal/G18.6.\nWhich refinements do you want in the Remote?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:32:17.342Z",
+     "text": "fill in the box using the follwing idea. i have an OpenAI account with 10 bucks to spend on it. I want my Account URL/token pairs saved in connection.json, now an array. i want to maintain that array in the connect tab."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:33:07.629Z",
+     "text": "Box filled (v1): the pairs, the connect tab, and what OpenAI lacks.\nShould each pair carry a name you choose, such as \"openai\" or \"studio\", shown instead of the url?\nShould deskUnsloth stop spending at a limit you set, counting the tokens OpenAI reports, or do you rely on the budget limit in your OpenAI account?\nWith an OpenAI pair in use, is picking a model from its /v1/models list, with no load, what you want in the configure tab?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:35:40.687Z",
+     "text": "this kind of means that the \"available models\" drop-down list must be kept by account as well, correct?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:35:55.414Z",
+     "text": "Yes. The list is asked from the pair in use, so switching the pair switches the list; and the chosen model and the 🧵 marks (models.json, kept by model id today) would be kept per pair too, so a switch back finds them as you left them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:39:05.319Z",
+     "text": "i have a hard cap on my OpenAI account, i just did it for testing.\n\nthe OpenAI caveats are noted. and accepted.\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:39:50.187Z",
+     "text": "Not green yet: one question is open, Q3 on naming the pairs. Your cap and the accepted caveats are in the box (v2)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:40:28.670Z",
+     "text": "Q3: Should each pair carry a name you choose, such as openai or studio, shown instead of the url?\n\ngood Idea, yes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:40:53.506Z",
+     "text": "Green: settled, no open questions, box current (v3)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T09:43:39.551Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
