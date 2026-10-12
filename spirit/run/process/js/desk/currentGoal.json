@@ -1,8 +1,8 @@
 {
- "change": 35794,
+ "change": 35797,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T11:24:03.836Z",
+ "writtenAt": "2026-10-12T11:24:08.910Z",
  "items": [
   {
    "id": "goal/G18",
@@ -37,13 +37,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3054,7 +3052,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -3460,6 +3458,11 @@
      "by": "desk",
      "at": "2026-10-12T11:23:54.343Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:24:07.901Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -3467,10 +3470,9 @@
    "id": "goal/G18.10",
    "title": "deskVerify: commit-bound pass, re-verify while idle",
    "goal": "goal/G18",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
