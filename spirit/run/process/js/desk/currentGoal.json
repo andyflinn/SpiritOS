@@ -1,5 +1,5 @@
 {
- "change": 42592,
+ "change": 42595,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -38,7 +38,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -2367,10 +2367,9 @@
    "id": "goal/G19.8",
    "title": "Shell: published objects only from the node's own puppets",
    "goal": "goal/G19",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
