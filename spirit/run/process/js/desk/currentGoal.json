@@ -1,8 +1,8 @@
 {
- "change": 33264,
+ "change": 33315,
  "line": 8510,
  "goal": "goal/G14",
- "writtenAt": "2026-10-12T00:56:20.982Z",
+ "writtenAt": "2026-10-12T01:09:49.239Z",
  "items": [
   {
    "id": "goal/G14",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -38,9 +37,9 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
-    "ollama agent node"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -623,22 +622,19 @@
    "id": "goal/G14.3",
    "title": "Block the Goal/G14 from running the Verifier for an hour.",
    "goal": "goal/G14",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G14"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -648,14 +644,98 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "- the verifier must run only automatically for items and for a goal.\n- only the desk user can run the full harness using a [run the full harness button] (armable) in the verifier tab.\n- the Buttons in the verifier then read: [run the full harness button] [stop the run][re- run:.....]\n\nDECIDED\n- \"re-run:\" names the item, as today’s \"Verify <item> again\" (Q1). Andy, 2026-10-12: \"yes.\"\n- when a goal empties, the verifier runs only the suites of its items; the full harness is his button alone (Q2). Andy, 2026-10-12: \"yes.\"\n- the per-item re-verify button stays as it is. Andy, 2026-10-12: \"[Verify <item> again] can be left alone.\"\n\nFOUND IN THE CODE\n- an emptied goal runs every suite today (deskVerify fullRun), the hour.\n- Stop is greyed during that run: the verifier tab enables it only when the run carries an item id.",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "What goes after \"re-run:\", the item, as today’s \"Verify <item> again\"?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T01:06:46.052Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "When a goal empties, does the verifier run only the suites of its items, the full harness being your button alone?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T01:07:37.792Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-12T01:05:06.875Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T01:05:44.846Z",
+     "text": "Not green: two things open.\nToday an emptied goal runs every suite (the hour); I read \"for a goal\" as its items suites only. The Stop button is greyed during that run, because the full run carries no item id, which is why Stop never did anything for you.\nWhat goes after \"re-run:\", the item, as today’s \"Verify <item> again\"?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T01:06:23.771Z",
+     "text": "Q1: What goes after \"re-run:\", the item, as today’s \"Verify <item> again\"?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T01:07:21.445Z",
+     "text": "Q2: When a goal empties, does the verifier run only the suites of its items, the full harness being your button alone?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T01:08:45.520Z",
+     "text": "[Verify <item> again] can be left alone. green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T01:09:03.617Z",
+     "text": "Green: settled, no open questions, box current (v7)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T01:09:48.725Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G14.4",
