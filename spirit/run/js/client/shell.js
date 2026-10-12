@@ -1453,9 +1453,11 @@
       // as it was published, whenever it changes. "no pulling".
       // `server` names another app's server when this app shows its state (the
       // Desk item dialog listens to the desk server): a plain name, never a path.
-      onPublished: function (handler, server) {
+      // `opts.from` names keys this handler asks to hear streamed objects from (goal/G19.8); without it only this
+      // node and the relays it owns are heard.
+      onPublished: function (handler, server, opts) {
         var own = server && /^[\w-]+$/.test(String(server)) ? 'shell/' + String(server) : app.id;
-        return onPublishedFor(own, handler);
+        return onPublishedFor(own, handler, opts && opts.from);
       },
 
       // Everything a relay this node OWNS reports about itself, pushed.
@@ -1980,9 +1982,100 @@
   // onPublished handlers a local object goes to, with the sender's key beside it. The last streamed object per
   // sender and module is kept, so an app that subscribes later gets what is there now, as with a local one.
   var streamedLast = Object.create(null);
+
+  // ── ONLY FROM SENDERS THE SHELL ASKED FOR (goal/G19.8) ─────────────────
+  //
+  //   Andy, 2026-10-12: "The shell takes only streams from ID's that it explicitly or implicitly asks for. Implicit
+  //   is: the own local node, and any puppet owned, including owned relays."
+  //
+  // Checked here, once, before any app sees the object, so no app has to. Implicit: this node's key (node.card), the
+  // key of every relay it owns (relay rows with owned) and of every contact marked owned (a puppet: its signed card
+  // names this node, the same ownerBadge.ownedBy rule), asked the first time a stream arrives from a key no app
+  // named, and again after the page's stream comes back. Explicit: the keys a handler named
+  // (api.onPublished(fn, server, { from: [...] })), for that handler alone. Anything else is dropped, with one
+  // console line per sender.
+  var ownSenders = null;          // key -> true once asked; null until then
+  var ownSendersAsking = null;
+  var ownSendersAt = 0;
+  var OWN_SENDERS_AGAIN_MS = 60000;
+  var waitingForOwnSenders = [];  // streams that arrived while the asking was out
+  var WAITING_MAX = 50;
+  var namedSenders = typeof Map === 'function' ? new Map() : null;   // handler -> [key]
+  var droppedSenders = Object.create(null);
+
+  function askOwnSenders() {
+    if (ownSendersAsking) return ownSendersAsking;
+    var found = Object.create(null);
+    function said(r) { return (r && r.body) || null; }
+    var card = Promise.resolve().then(function () { return spirit.core.ask('node.card', {}); }).then(function (r) {
+      var b = said(r);
+      if (b && b.publicKey) found[String(b.publicKey)] = true;
+    }, function () {});
+    var relays = Promise.resolve().then(function () {
+      return spirit.core.relays && typeof spirit.core.relays.status === 'function' ? spirit.core.relays.status() : null;
+    }).then(function (r) {
+      var b = said(r);
+      ((b && b.rows) || []).forEach(function (row) {
+        if (row && row.owned && row.roll && row.roll.relayKey) found[String(row.roll.relayKey)] = true;
+      });
+    }, function () {});
+    // The owned contacts: the book searched for the word its label carries, each hit confirmed by its get. A search
+    // is bucket-bounded; past its cap the rest are not heard until the next ask, and the console says so once.
+    var owned = Promise.resolve().then(function () { return spirit.core.ask('contact.search', { q: 'owned' }); }).then(function (r) {
+      var b = said(r);
+      if (b && b.more && !askOwnSenders.partial) {
+        askOwnSenders.partial = true;
+        if (typeof console !== 'undefined' && console.warn) console.warn('shell: more owned contacts than one search answers; only the first are heard (goal/G19.8)');
+      }
+      return Promise.all(((b && b.items) || []).map(function (item) {
+        if (!item || !item.key) return null;
+        return Promise.resolve().then(function () { return spirit.core.ask('contact.get', { key: item.key }); }).then(function (g) {
+          var p = said(g);
+          if (p && p.person && p.person.owned === true && p.person.publicKey === item.key) found[String(item.key)] = true;
+        }, function () {});
+      }));
+    }, function () {});
+    ownSendersAsking = Promise.all([card, relays, owned]).then(function () {
+      ownSenders = found;
+      ownSendersAt = Date.now();
+      ownSendersAsking = null;
+      var waiting = waitingForOwnSenders;
+      waitingForOwnSenders = [];
+      waiting.forEach(function (w) { deliverStreamed(w.from, w.module, w.app); });
+    });
+    return ownSendersAsking;
+  }
+
+  function namesSender(fn, from) {
+    var keys = namedSenders && namedSenders.get(fn);
+    return !!(keys && keys.indexOf(from) !== -1);
+  }
+
+  function anyHandlerNames(from) {
+    return Object.keys(publishedHandlers).some(function (name) {
+      return publishedHandlers[name].some(function (fn) { return namesSender(fn, from); });
+    });
+  }
+
+  function dropSender(from) {
+    if (droppedSenders[from]) return;
+    droppedSenders[from] = true;
+    if (typeof console !== 'undefined' && console.warn) {
+      console.warn('shell: streamed objects from ' + from + ' are dropped: not this node, an owned relay, or a key an app asked to hear (goal/G19.8)');
+    }
+  }
+
   function deliverStreamed(from, module, app) {
     var m = /^process\/js\/([^/]+)$/.exec(String(module || ''));
     if (!m || !from || !app || typeof app !== 'object' || Array.isArray(app)) return;
+    var own = !!(ownSenders && ownSenders[from]);
+    if (!own && !anyHandlerNames(from)) {
+      // Asked again at most once a minute: a puppet whose card arrived since (or a relay claimed) is then heard.
+      if (ownSenders && Date.now() - ownSendersAt < OWN_SENDERS_AGAIN_MS) { dropSender(from); return; }
+      if (waitingForOwnSenders.length < WAITING_MAX) waitingForOwnSenders.push({ from: from, module: module, app: app });
+      askOwnSenders();
+      return;
+    }
     var seen = JSON.stringify(app);
     var lim = typeof window !== 'undefined' && window.spiritLimits && window.spiritLimits.PAYLOAD_MAX;
     if (lim && unescape(encodeURIComponent(seen)).length > lim) return;
@@ -1990,12 +2083,15 @@
     if (streamedLast[key] && streamedLast[key].seen === seen) return;
     streamedLast[key] = { seen: seen, app: app, from: from, module: String(module) };
     (publishedHandlers['shell/' + m[1]] || []).slice().forEach(function (fn) {
+      if (!own && !namesSender(fn, from)) return;
       try { fn(app, { from: from, module: String(module) }); } catch (e) { /* one app's fault stays its own */ }
     });
   }
-  function onPublishedFor(appId, handler) {
+  function onPublishedFor(appId, handler, from) {
     if (typeof handler !== 'function' || !appId) return function () {};
     var name = String(appId);
+    var named = (Array.isArray(from) ? from : []).filter(function (k) { return typeof k === 'string' && k; });
+    if (named.length && namedSenders) namedSenders.set(handler, named);
     (publishedHandlers[name] = publishedHandlers[name] || []).push(handler);
     // An app opened after its server published gets what is there now (wsl-claude, G2.3 review): the local
     // object with from empty, and every streamed one with its sender (goal/G14.5).
@@ -2008,13 +2104,14 @@
       });
       Object.keys(streamedLast).forEach(function (key) {
         var s = streamedLast[key];
-        if (s && s.module === 'process/js/' + m[1]) {
+        if (s && s.module === 'process/js/' + m[1] && ((ownSenders && ownSenders[s.from]) || namesSender(handler, s.from))) {
           try { handler(s.app, { from: s.from, module: s.module }); } catch (e) { /* the app's own fault */ }
         }
       });
     }
     return function off() {
       publishedHandlers[name] = (publishedHandlers[name] || []).filter(function (fn) { return fn !== handler; });
+      if (namedSenders) namedSenders.delete(handler);
     };
   }
   function deliverPublished(job) {
@@ -2973,6 +3070,8 @@
       if (mark) mark.hidden = !!up;
     },
     onReconnect: function () {
+      // Which relays this node owns may have changed while it was down: asked again on the next stream (goal/G19.8).
+      ownSenders = null;
       reconnectHandlers.slice().forEach(function (fn) { try { fn(); } catch (e) { /* one app's fault stays its own */ } });
     },
   });

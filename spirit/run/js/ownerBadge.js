@@ -278,6 +278,17 @@ function removeRelay(rootDir, url) {
 // identified key. The relay knows it." That key is what /api/relay/key
 // answers, and `probe` compares it with this node's own.
 
+// ── ONE OWNERSHIP RULE, FOR A RELAY AND A NODE (goal/G19.8) ──────────
+//
+//   Andy, 2026-10-12: "so the relays owner code and the puppets owner code should be the same."
+//
+// Owned means: the owner the box itself states is this node's key. A relay states it on /api/relay/key (probe,
+// below); a node states it on its signed card (nodeCard, read by contacts.setCard). Both ask this, and nothing else.
+function ownedBy(saidOwnerKey, myKey) {
+  var said = String(saidOwnerKey || '');
+  return !!(said && myKey && said === String(myKey));
+}
+
 function summarize(rows) {
   var ownedUrls = rows.filter(function (r) { return r.owned; })
     .map(function (r) { return r.url; });
@@ -367,7 +378,7 @@ function probe(rootDir, request, myKey) {
           // `status > 0` is what tells "answered" from "unreachable"
           // downstream (natter.natterCheckBinding), and it still does.
           status: Number(answer && answer.status) || 0,
-          owned: !!(said && said.ownerKey && myKey && said.ownerKey === myKey),
+          owned: ownedBy(said && said.ownerKey, myKey),
         };
 
         // OWNING IMPLIES CLAIMING — the owner holds a peer row from first
@@ -472,6 +483,7 @@ if (isNode) {
     // `statusPath`, `readBadge`, `ownedFrom`, `claimedLabelFrom` and
     // `censusFacts` STOOD HERE (R3, then 2026-09-19): see where they stood.
     summarize: summarize,
+    ownedBy: ownedBy,
     probe: probe,
     chooseUrl: chooseUrl,
   };

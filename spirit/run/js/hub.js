@@ -416,13 +416,16 @@ function bytesHeldByPeer(rootDir) {
 // table showed: the name I gave them or theirs, the key's ending where
 // two read alike or there is no name, and the state as a word (Andy's
 // go: 'Bert — blocked').
-var CONTACT_STATE = { blocked: ' — blocked', held: ' — waiting' };
+// ' — owned' (goal/G19.8): a node whose card names this one as its owner, so the shell finds them by searching the
+// word, as 'blocked' and 'waiting' are found.
+var CONTACT_STATE = { blocked: ' — blocked', held: ' — waiting', owned: ' — owned' };
 function contactLabel(p) {
   var name = String(p.myLabel || '').trim() || String(p.publicLabel || '').trim();
   var tail = p.tail ? '…' + p.tail : '';
   var label = name ? (p.ambiguous && tail ? name + ' ' + tail : name) : (tail || '(no name)');
   if (p.blocked) label += CONTACT_STATE.blocked;
   else if (p.held) label += CONTACT_STATE.held;
+  else if (p.owned) label += CONTACT_STATE.owned;
   return label;
 }
 function searchPeople(people, q) {
@@ -481,6 +484,8 @@ function buildPeople(rootDir) {
         // at the list they are the same fact.
         held: !contactBook.listens(row),
         blocked: contactBook.isBlocked(row),
+        // Their signed card names this node as owner (goal/G19.8, contacts.setCard through ownerBadge.ownedBy).
+        owned: row.owned === true,
         // Bytes this node is carrying for them, across every app that
         // keeps a file per peer. Always a number, 0 for somebody who has
         // cost nothing yet — an absent field would make the app decide

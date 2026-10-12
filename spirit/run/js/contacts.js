@@ -76,6 +76,8 @@
 const fs = require('fs');
 const path = require('path');
 const nodeCard = require('./nodeCard');
+const auth = require('./relayAuth');
+const ownerBadge = require('./ownerBadge');
 
 // ── IT WAS `census` UNTIL 2026-09-23 (cycle 10, R18) ─────────────────
 //
@@ -316,10 +318,12 @@ function upsert(rootDir, row) {
     card: prev.card === undefined ? undefined : prev.card,
     cardVia: prev.cardVia === undefined ? undefined : prev.cardVia,
     cardDisputed: prev.cardDisputed === undefined ? undefined : prev.cardDisputed,
+    // Carried like the card it was read from, never set here (goal/G19.8: setCard alone writes it).
+    owned: prev.owned === undefined ? undefined : !!prev.owned,
   };
   // Dropped rather than written as `undefined`, so the file keeps the
   // shape it had for rows that have never seen a card.
-  ['card', 'cardVia', 'cardDisputed'].forEach(function (k) {
+  ['card', 'cardVia', 'cardDisputed', 'owned'].forEach(function (k) {
     if (next[k] === undefined) delete next[k];
   });
   if (i === -1) rows.push(next);
@@ -439,6 +443,12 @@ function setCard(rootDir, publicKey, cardText, via) {
   }
 
   rows[i].card = String(cardText);
+  // OWNED, BY THE RULE A RELAY IS OWNED BY (goal/G19.8). Andy, 2026-10-12: "puppet is just a flag in the contact
+  // list", "with your damned ownerBadge", "so the relays owner code and the puppets owner code should be the same."
+  // Written only here, from the newest verified card: a refresh or a relabel never clears it (upsert carries it),
+  // and only a newer card naming another owner, or none, sets it false.
+  const me = auth.loadIdentity(rootDir);
+  rows[i].owned = ownerBadge.ownedBy(fields.owner, me && me.publicKey);
   // The first sighting is the one that is worth anything, so it is not
   // overwritten by a later, weaker source: a contact first met by invite
   // does not become roll-sighted because a roll mentioned them again.

@@ -109,6 +109,11 @@ function asks(text) {
 // the rotation. A number inside the signature is what takes that decision
 // away from it. A receiver refuses anything not strictly greater than
 // what it holds.
+//   owner        WHO OWNS THIS NODE (goal/G19.8): the key owner.json names, or '' when the node owns itself. Andy,
+//                2026-10-12: "so the relays owner code and the puppets owner code should be the same." A relay
+//                says its owner on /api/relay/key; a node says it here, signed, and a master reads it with the
+//                same comparison (ownerBadge.ownedBy). Added on a flag day: a card signed without it does not
+//                verify, and none is defaulted.
 function cardFields(id) {
   return {
     name: String(id.name || ''),
@@ -116,7 +121,15 @@ function cardFields(id) {
     publicKey: String(id.publicKey || ''),
     sealKey: String(id.sealPublicKey || ''),
     at: Number(id.cardAt || 1),
+    owner: String(id.owner || ''),
   };
+}
+
+// The owner this node's card names: owner.json's key, or '' when there is none or it names this node itself
+// (puppetMode.puppetIn's rule).
+function ownerOf(rootDir, id) {
+  const owner = auth.loadOwner(String(rootDir || ''), function () {});
+  return owner && id && owner !== String(id.publicKey || '') ? owner : '';
 }
 
 // THE BYTES THAT ARE SIGNED, in one place, so the signer and the verifier
@@ -129,7 +142,8 @@ function signable(fields) {
     fields.description + '\n' +
     fields.publicKey + '\n' +
     fields.sealKey + '\n' +
-    fields.at;
+    fields.at + '\n' +
+    fields.owner;
 }
 
 // The card as it travels: the fields, and a signature over exactly those
@@ -198,7 +212,9 @@ function cardFrom(id) {
 function describe(rootDir) {
   const id = auth.loadIdentity(rootDir);
   if (!id || !id.privateKey) return '';
-  return cardFrom(advance(rootDir, id));
+  const owner = ownerOf(rootDir, id);
+  // The owner rides on a copy: identity.json is saved by advance and never holds it.
+  return cardFrom(Object.assign({}, advance(rootDir, id, owner), { owner: owner }));
 }
 
 // The four fields a receiver acts on, WITHOUT the counter — comparing a
@@ -207,11 +223,12 @@ function describe(rootDir) {
 // is a wire format and this is a local comparison; tying them together
 // would mean a wire change silently resetting every node's counter.
 function cardContents(fields) {
-  return [fields.name, fields.description, fields.publicKey, fields.sealKey].join('\n');
+  return [fields.name, fields.description, fields.publicKey, fields.sealKey, fields.owner].join('\n');
 }
 
-function advance(rootDir, id) {
-  const said = cardContents(cardFields(id));
+// A changed owner is a change (goal/G19.8): the counter moves, so a master holding the old card takes the new one.
+function advance(rootDir, id, owner) {
+  const said = cardContents(cardFields(Object.assign({}, id, { owner: String(owner || '') })));
   if (Number(id.cardAt) > 0 && String(id.cardSaid || '') === said) return id;
 
   id.cardAt = Number(id.cardAt || 0) + 1;
@@ -250,7 +267,10 @@ function verify(text) {
     publicKey: String(body.publicKey || ''),
     sealKey: String(body.sealKey || ''),
     at: Number(body.at || 0),
+    owner: String(body.owner || ''),
   };
+  // A card from before goal/G19.8 carries no owner and is refused, not defaulted (flag day).
+  if (typeof body.owner !== 'string') return null;
   // A card with no counter is a card from before this cycle, and the flag
   // day says those do not travel. Refused rather than defaulted, because
   // a default would be a number the signer never chose.

@@ -221,6 +221,52 @@ test.subHeading('THE COUNTER MOVES — on change, and only on change');
   try { fs.rmSync(bob.dir, { recursive: true, force: true }); } catch (e) { /* leave it */ }
 }
 
+// ── THE CARD SAYS WHO OWNS THE NODE (goal/G19.8) ──────────────────────
+//
+//   Andy, 2026-10-12: "puppeteering is a node feature, it does belong in the shadow roll's contact list with a
+//   flab that says puppet, or even better, with your damned ownerBadge." "so the relays owner code and the puppets
+//   owner code should be the same." A relay says its owner on /api/relay/key; a node says it on its card, signed.
+test.subHeading('goal/G19.8: the card carries its owner, inside the signature');
+{
+  const OWED = 'OWED by goal/G19.8: ';
+  const master = home('master');
+  const puppet = home('puppet');
+  auth.writeOwner(puppet.dir, master.id.publicKey);
+  const own = home('selfowned');
+  auth.writeOwner(own.dir, own.id.publicKey);
+
+  const pc = JSON.parse(nodeCard.describe(puppet.dir)).body;
+  const pv = nodeCard.verify(nodeCard.describe(puppet.dir));
+  if (pc.owner === master.id.publicKey && pv && pv.owner === master.id.publicKey) {
+    test.check('a puppet\'s card names its owner (owner.json), and verifies with it');
+  } else {
+    test.fail(OWED + 'puppet card owner ' + JSON.stringify(pc.owner) + ', verified ' + JSON.stringify(pv && pv.owner));
+  }
+  const ac = JSON.parse(nodeCard.describe(andy.dir)).body;
+  const oc = JSON.parse(nodeCard.describe(own.dir)).body;
+  if (ac.owner === '' && oc.owner === '' && nodeCard.verify(nodeCard.describe(own.dir))) {
+    test.check('a node with no owner.json, or one naming itself, carries owner "" and still verifies');
+  } else {
+    test.fail(OWED + 'owner on a self-owned card: ' + JSON.stringify(ac.owner) + ' / ' + JSON.stringify(oc.owner));
+  }
+  const t = JSON.parse(nodeCard.describe(puppet.dir));
+  t.body.owner = mallory.id.publicKey;
+  if (nodeCard.verify(JSON.stringify(t)) === null) test.check('changing the owner breaks the signature');
+  else test.fail(OWED + 'the owner could be altered undetected');
+
+  // A card from before goal/G19.8, signed over the five fields alone and carrying no owner. No backward
+  // compatibility before alpha: refused, never defaulted (flag day).
+  const fields = { name: 'andy', description: andy.id.description, publicKey: andy.id.publicKey, sealKey: andy.id.sealPublicKey, at: 7 };
+  const oldSig = auth.sign(andy.id.privateKey, 'card\n' + fields.name + '\n' + fields.description + '\n' + fields.publicKey + '\n' + fields.sealKey + '\n' + fields.at);
+  const old = JSON.stringify({ v: 1, body: Object.assign({ ok: true }, fields, { sig: oldSig }) });
+  if (nodeCard.verify(old) === null) test.check('an old card without an owner fails verification');
+  else test.fail(OWED + 'an old card without an owner verified');
+
+  [master.dir, puppet.dir, own.dir].forEach(function (d) {
+    try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* leave it */ }
+  });
+}
+
 [andy.dir, mallory.dir].forEach(function (d) {
   try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* leave it */ }
 });
