@@ -1,8 +1,8 @@
 {
- "change": 33341,
+ "change": 33396,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T01:24:33.379Z",
+ "writtenAt": "2026-10-12T02:36:44.661Z",
  "items": [
   {
    "id": "goal/G10",
@@ -14,7 +14,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G10.7"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -834,6 +836,11 @@
      "by": "andy",
      "at": "2026-10-10T05:47:57.394Z",
      "text": "can you analyze the text in the box above"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T01:26:15.674Z",
+     "text": "add one item: Omit content length selection when loading a model in unsloth:\n\nNote:\nAutomatic Selection: If you omit context length settings or flags during an API/CLI startup (unsloth run), Unsloth automatically applies the best recommended parameters for that specific model, including its default context length."
     }
    ]
   },
@@ -3516,6 +3523,204 @@
      "by": "claude-windows",
      "at": "2026-10-09T18:57:45.799Z",
      "text": "cw: done: streamClerver: a faked stream between two nodes over peerPost is goal/G11, its box the shape as it stood here, not in design; G10 stays current and simple. Your purpose line is in G10's vision: the agent helps you sketch a design while you wait for more claude tokens, which is the context item's first slice. This item is yours to Close or Delete."
+    }
+   ]
+  },
+  {
+   "id": "goal/G10.7",
+   "title": "Omit content length selection when loading a model in unsloth",
+   "goal": "goal/G10",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G10"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12: \"add one item: Omit content length selection when loading a model in unsloth:\n\nNote:\nAutomatic Selection: If you omit context length settings or flags during an API/CLI startup (unsloth run), Unsloth automatically applies the best recommended parameters for that specific model, including its default context length.\"\n\nDECIDED\n- Q1, answered: Andy, 2026-10-12: \"- Remove the contextLimit from the deskUnsloth configuration the desckUnsloth configuration.\n- make sure that the connection.json file is .gitignored.\"\n- Q2, answered: Andy, 2026-10-12: \"remove  contextLimit from the configuration file. we will not work on stuff that unsloth does already well. we will never pass context limits to unslot. that's a decision.\n\nthe connection.json file must be gitignored.\n\nthe current comfiguration will be a \"configure\" tab in the UI.\n\nand a new tab is added: connect.\n\nthe \"where\" item in the \"configure\" tab will default as follows: 1 when deskUnsloth does not find desk installed on it's own node, it will default to \"this\" node. if it does find desk is installed on its own node it, will default to the first puppet it finds that has deskUnsloth installed.\"\n- Under Q3, the tabs: Andy, 2026-10-12:\n\"# the tabs\n\nactually, make that 3 tabs [test] [configure][connect]\nthe following warning bubbles appear in all 3 tabs:\n\n- if the \"remote\" app is not connected to a node containing the deskUnsloth app, an ICON.WARNING bubble is displayed, telling the user to use the \"connect\" tab to connect to a node that has deskUnsloth installed.\n- if the \"deskUnsloth\" on the chosen node is not connected to an OpenAI compatible server, the tab shows an ICON.WARNING bubble, telling the user to use the [connect] tab to connect to an OpenAI compatible server.\n- if the \"deskUnsloth\" has no model loaded and selected in the configure tab, an ICON.WARNING bubble appears, telling the user to use the model selector to select/load a model in the \"configure\" tab \n- while a model is loading, an ICON.WARNING bubble is displayed, \"be patient, a model (name of model) is currently loading.\n\n#the test tab\n\n- shows the appropriate warning bubbles above, when appropriate.\n- if an model is ready in the OpenAI compatible server, the test tab will show the chat interface.\n\nin the future the test tab will facilitate the testing of other model features, like vision, audio etc. oos for now.\n\n# the configure tab will show\n\n- the model selector bubble.\n\nin the future this tab will contain the persona configuration details. oos for this item.\n\n# the connect tab.\n\n- shows the appropriate warning bubbles above, when appropriate.\n\n- the \"where\" bubble: \"select the node where your local agent lives\"\n- the new \"connect to and OpenAI compatible server bubble\n- the connect/disconnect \"Levant\" to the desk bubble.\"\n- Q7, the server bubble writes url and key into connection.json through a new verb of deskUnsloth: \"yes.\"\n- Q3 and Q8, one item: \"All in this item.\", \"All of it in one item.\"\n- Q6, where: \"The where bubble is really a \"connect\" issue, and the first one that needs setting properly\"\n\nFOUND IN THE CODE\n- the studio load sends the model path alone (deskUnsloth.js loadModel); contextLimit only sizes the prompt, already auto when absent: the studio context_length, 8192 until first read.\n- connection.json is already gitignored (.gitignore line 240) and no longer tracked.\n- the \"where\" today is the target picker of deskUnslothRemote: this node, or a puppet from puppets.json in the app folder.",
+   "version": 6,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "deskUnsloth already loads with the model path alone, no context length; is the selection you mean the contextLimit 8192 in its configuration (which sizes the prompt, not the load), or one in the studio page?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T01:31:22.438Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Q1: is the selection you mean the contextLimit 8192 in deskUnsloth configuration, or one in the studio page?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T01:45:06.184Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "The configure and connect tabs are new UI in deskUnslothRemote: fold them into G10.7, or two items of their own, \"deskUnslothRemote: configure tab\" and \"deskUnslothRemote: connect tab\"?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T02:35:38.499Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "In configure, are persona, preamble, model, answerTokens, bytesPerToken and where editable and saved, or shown only?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T02:31:44.799Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "What goes in connect: the connect/disconnect switch of G14.2 and the chat box, or something else?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T02:31:46.966Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "The where bubble: your Q2 words put it in configure, your tabs put it in connect; connect, as the newer?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T02:35:40.434Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "The OpenAI server bubble: a url and a key, saved into deskUnsloth connection.json on the chosen node through a new verb of deskUnsloth own?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T02:35:42.446Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Q3: one item for all of it, or contextLimit here and the tabs as their own item?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T02:35:44.404Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T01:26:57.046Z",
+     "text": "Added as goal/G10.7, your words in the box.\nThe load call sends the studio only the model path, no context length, so the studio already picks its default (today 58880 for the Qwen).\nQ1: is the selection you mean the contextLimit 8192 in deskUnsloth configuration, or one in the studio page?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T01:30:48.912Z",
+     "text": "Q1: deskUnsloth already loads with the model path alone, no context length; is the selection you mean the contextLimit 8192 in its configuration (which sizes the prompt, not the load), or one in the studio page?\n\n- Remove the contextLimit from the deskUnsloth configuration the desckUnsloth configuration.\n- make sure that the connection.json file is .gitignored."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T01:31:24.646Z",
+     "text": "Recorded. connection.json is already gitignored (line 240) and untracked, so that half holds today.\nRemoving contextLimit: the key leaves configuration.json, and the code always follows the studio context_length (8192 only until first read); the six deskUnsloth suites that set it are updated.\nYour live copy in the state folder may still carry the key; it will simply be ignored. Go when ready."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T01:44:35.624Z",
+     "text": "Q2: Q1: is the selection you mean the contextLimit 8192 in deskUnsloth configuration, or one in the studio page?\n\nremove  contextLimit from the configuration file. we will not work on stuff that unsloth does already well. we will never pass context limits to unslot. that's a decision.\n\nthe connection.json file must be gitignored.\n\nthe current comfiguration will be a \"configure\" tab in the UI.\n\nand a new tab is added: connect.\n\nthe \"where\" item in the \"configure\" tab will default as follows: 1 when deskUnsloth does not find desk installed on it's own node, it will default to \"this\" node. if it does find desk is installed on its own node it, will default to the first puppet it finds that has deskUnsloth installed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T01:45:39.897Z",
+     "text": "Your rulings are in the box verbatim; never passing a context limit to unsloth is recorded as your decision.\nThree red Q checks are open on this item: Q3 fold the tabs in or split, Q4 configure editable or shown, Q5 what goes in connect.\nThe contextLimit removal can be built alone as soon as you press Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T02:31:17.524Z",
+     "text": "Q3: The configure and connect tabs are new UI in deskUnslothRemote: fold them into G10.7, or two items of their own, \"deskUnslothRemote: configure tab\" and \"deskUnslothRemote: connect tab\"?\n\n# the tabs\n\nactually, make that 3 tabs [test] [configure][connect]\nthe following warning bubbles appear in all 3 tabs:\n\n- if the \"remote\" app is not connected to a node containing the deskUnsloth app, an ICON.WARNING bubble is displayed, telling the user to use the \"connect\" tab to connect to a node that has deskUnsloth installed.\n- if the \"deskUnsloth\" on the chosen node is not connected to an OpenAI compatible server, the tab shows an ICON.WARNING bubble, telling the user to use the [connect] tab to connect to an OpenAI compatible server.\n- if the \"deskUnsloth\" has no model loaded and selected in the configure tab, an ICON.WARNING bubble appears, telling the user to use the model selector to select/load a model in the \"configure\" tab \n- while a model is loading, an ICON.WARNING bubble is displayed, \"be patient, a model (name of model) is currently loading.\n\n#the test tab\n\n- shows the appropriate warning bubbles above, when appropriate.\n- if an model is ready in the OpenAI compatible server, the test tab will show the chat interface.\n\nin the future the test tab will facilitate the testing of other model features, like vision, audio etc. oos for now.\n\n# the configure tab will show\n\n- the model selector bubble.\n\nin the future this tab will contain the persona configuration details. oos for this item.\n\n# the connect tab.\n\n- shows the appropriate warning bubbles above, when appropriate.\n\n- the \"where\" bubble: \"select the node where your local agent lives\"\n- the new \"connect to and OpenAI compatible server bubble\n- the connect/disconnect \"Levant\" to the desk bubble."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T02:32:00.133Z",
+     "text": "The three tabs are in the box verbatim; Q4 and Q5 are answered by them.\nOpen: Q3 still asks fold into G10.7 or split; Q6 where in connect, the newer; Q7 the server bubble writes url and key through a new deskUnsloth verb.\nQ3: one item for all of it, or contextLimit here and the tabs as their own item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T02:35:15.789Z",
+     "text": "Q7: The OpenAI server bubble: a url and a key, saved into deskUnsloth connection.json on the chosen node through a new verb of deskUnsloth own?\n\nyes.\n\nQ3: The configure and connect tabs are new UI in deskUnslothRemote: fold them into G10.7, or two items of their own, \"deskUnslothRemote: configure tab\" and \"deskUnslothRemote: connect tab\"?\n\nAll in this item.\n\nQ6: The where bubble: your Q2 words put it in configure, your tabs put it in connect; connect, as the newer?\n\nThe where bubble is really a \"connect\" issue, and the first one that needs setting properly\n\nQ8: Q3: one item for all of it, or contextLimit here and the tabs as their own item?\n\nAll of it in one item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T02:35:54.937Z",
+     "text": "Recorded verbatim; all eight Q checks are passed, the box is current (v6).\nOne item: contextLimit removed, connection.json ignored, and deskUnslothRemote in three tabs with the four warning bubbles, the where bubble first in connect.\nReady for your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T02:36:02.139Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T02:36:13.828Z",
+     "text": "Green: settled, no open questions, box current (v6)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T02:36:44.254Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
