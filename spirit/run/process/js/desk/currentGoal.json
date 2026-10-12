@@ -1,8 +1,8 @@
 {
- "change": 34272,
+ "change": 34298,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T07:35:51.669Z",
+ "writtenAt": "2026-10-12T07:40:33.485Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,12 +11,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G18.2"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -210,9 +209,12 @@
    "id": "goal/G18.2",
    "title": "probabilityStringMatch.js",
    "goal": "goal/G18",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -220,12 +222,23 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/run/js/probabilityStringMatch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/probabilityStringMatch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -262,11 +275,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "Andy, 2026-10-12: \"Add one item: probabilityStringMatch.js\"\n\nThe goal: three core modules in run/js, probabilit<Name>.js, built one by one; their integration argued after.\n\nTHE SPEC, Andy, 2026-10-12:\n\"probabilityStringMatch is to work like this\n\nresult probability = probabilityStringMatch(A,B) where A and B must be strings.\n\n{\n\n function helperFoo1() // from old gradedSearch-logic\n function helperFoo2() // form old logic\n ... etc.\n\nif A or B are not of type string return 0.0;\nif A is EXACTLY equal to B return 1.0\n\nshorterString = the shorter String of A and B\nlongerString = longer String of A and B\n\nif they are of equal length, shorterString = A, longerString = B,\n\nthen use the logic from gradedSearch to return a result between 0 and 1\n\n}\"\n\nDECIDED (Andy, 2026-10-12)\n- \"in this version, we just compute the matching of two string, no matter which one is the search string.\" So no wildcards: * and ? are characters like any other.\n- The reading confirmed by it: both folded (case, accents); shorter and longer as the spec says; no match 0.0; else the weighted mean of gradedSearch's four signals (match 1.0, coverage 0.2, tokens 0.3, sequence 0.25), the helpers copied in, gradedSearch.js untouched until the integration.\n\nFOUND\n- search today: bucket.js, searchBucket.js, gradedSearch.js, nodeSearches.js, peerSearch.js in run/js; a new file there is core, so its commit needs his grant.",
-   "version": 3,
+   "box": "Andy, 2026-10-12: \"Add one item: probabilityStringMatch.js\"\n\nThe goal: three core modules in run/js, probabilit<Name>.js, built one by one; their integration argued after.\n\nTHE SPEC, Andy, 2026-10-12:\n\"probabilityStringMatch is to work like this\n\nresult probability = probabilityStringMatch(A,B) where A and B must be strings.\n\n{\n\n function helperFoo1() // from old gradedSearch-logic\n function helperFoo2() // form old logic\n ... etc.\n\nif A or B are not of type string return 0.0;\nif A is EXACTLY equal to B return 1.0\n\nshorterString = the shorter String of A and B\nlongerString = longer String of A and B\n\nif they are of equal length, shorterString = A, longerString = B,\n\nthen use the logic from gradedSearch to return a result between 0 and 1\n\n}\"\n\nDECIDED (Andy, 2026-10-12)\n- \"in this version, we just compute the matching of two string, no matter which one is the search string.\" So no wildcards: * and ? are characters like any other.\n- The reading confirmed by it: both folded (case, accents); shorter and longer as the spec says; no match 0.0; else the weighted mean of gradedSearch's four signals (match 1.0, coverage 0.2, tokens 0.3, sequence 0.25), the helpers copied in, gradedSearch.js untouched until the integration.\n- \"and empty string against a non-empty string should return 0\"\n\nFOUND\n- search today: bucket.js, searchBucket.js, gradedSearch.js, nodeSearches.js, peerSearch.js in run/js; a new file there is core, so its commit needs his grant.",
+   "version": 4,
    "checks": [
     {
      "number": "Q1",
@@ -285,6 +298,24 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T07:33:53.322Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/probabilityStringMatch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T07:39:21.798Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "0?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-12T07:37:40.417Z"
     }
    ],
    "chat": [
@@ -337,6 +368,36 @@
      "by": "desk",
      "at": "2026-10-12T07:35:51.184Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:37:39.975Z",
+     "text": "Built and green in my clone (9 checks): not strings 0.0, equal 1.0, the same either way round, * and ? plain, and equal to gradedSearch quality for the same pair; it waits for your core grant (G1 under this item) to commit.\nOne thing the spec leaves to gradedSearch: an empty string against any other scores 0.54 (it is a prefix of everything).\nKeep that, or should an empty string against a non-empty one answer 0.0?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:38:20.226Z",
+     "text": "and empty string against a non-empty string should return 0"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:38:51.648Z",
+     "text": "Done in my clone: an empty string against a non-empty one answers 0.0 (red first, then green); 10 checks green. Committing waits only on your core grant (G1 under this item)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:39:49.653Z",
+     "text": "commit a9a0c2525981cbaca0e27eb6f420501a3b2f53fd: goal/G18.2: probabilityStringMatch.js, the first probabilit* module\n- spirit/run/js/probabilityStringMatch.js\n- spirit/test/probabilityStringMatch.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T07:39:53.405Z",
+     "text": "Built at a9a0c252: run/js/probabilityStringMatch.js, probabilityStringMatch(A, B) from 0 to 1, gradedSearch logic on the two strings, empty against non-empty 0.0.\nFiles: probabilityStringMatch.js (your G1) and its test, 10 green; nothing else touched.\nThe next probabilit module is yours to name."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T07:40:01.868Z",
+     "text": "deskVerify: passed, at a9a0c252 (pulled). 1 suite ran green."
     }
    ]
   }
