@@ -1,17 +1,16 @@
 {
- "change": 35890,
+ "change": 35891,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T11:52:06.493Z",
+ "writtenAt": "2026-10-12T11:52:10.572Z",
  "items": [
   {
    "id": "goal/G18",
    "title": "A redesign of the search methodology,",
    "goal": "",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [],
@@ -36,7 +35,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "live": [
     "claude-windows"
    ],
