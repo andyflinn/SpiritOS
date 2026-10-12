@@ -10,6 +10,8 @@
 //     file."; set by "a test, there is no use of it all if a model is not capable of using desk properly."
 //   - "run it from a [test] button, and utomatically connect/disconnect Levant from the desk, depending on the outcome."
 //   - "Connect should be refused while the loaded model has no 🧵."
+//   - "the test button should disconnect Levant from desk before testing, and it should be arm-able, to make sure the
+//     disconnect is wanted."
 //
 // WHAT IS ASSERTED (read live from the studio on 2026-10-12: api/models/gguf-variants?repo_id lists each variant with
 // quant and downloaded; api/inference/status names gguf_variant; api/inference/load takes gguf_variant)
@@ -19,8 +21,9 @@
 //      back marks the pair recommended in models.json and connects Levant; text back marks it not and disconnects.
 //   4. connect on is refused while the loaded pair has no mark; taken when it has one; at start it is connected only
 //      when models.json says the loaded pair is recommended.
-//   5. the app: each option names its quantization and carries 🧵 when recommended; a [test] button sends model.test
-//      for the chosen pair.
+//   5. the app: each option names its quantization and carries 🧵 when recommended; a [test] button, armed by the
+//      first click, sends model.test for the chosen pair on the second.
+//   6. model.test disconnects Levant before it tests: one signoff, the state published connected false while running.
 // NOT ASSERTED: the test prompt's words; layout.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
@@ -104,17 +107,20 @@ const studioServer = http.createServer(function (req, res) {
 
 // ── THE FAKE NODE ──────────────────────────────────────────────────────
 let client = null;
+const published = [];
+const deskWords = [];
 const node = http.createServer(function (req, res) {
   let raw = '';
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
-    if (b.verb === 'jobs.update') return answer(200, { ok: true });
+    if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
     const ask = b.verb === 'jobs.api' && b.ask;
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient && ask.deskClient.desk) {
       const verb = String(ask.deskClient.desk.verb);
+      deskWords.push(verb);
       const verbs = deskVerbFiles();
       if (verb === 'AGENTS') return answer(200, { text: 'Rules.' });
       if (verb === 'AGENTS.introspect') return answer(200, { items: Object.keys(verbs).map(function (v) { return { key: v, label: verbs[v].description }; }), more: false });
@@ -223,6 +229,22 @@ async function serverHalf() {
   if (s2.connected === true && s3.connected === false) test.check('at start it is connected only when models.json says the loaded pair is recommended');
   else test.fail(OWED + 'at start with the 🧵 pair ' + short(s2) + ', with the other ' + short(s3));
   await stop();
+
+  test.subHeading('6. the test disconnects Levant first');
+  loaded = { model: REPO, variant: GOOD };
+  const k6 = knownFile(); k6.active = REPO; k6.activeQuant = GOOD; fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify(k6));
+  start();
+  if (!await up()) { test.fail('the world: deskUnsloth did not restart'); return; }
+  const before6 = await ask('state', {});
+  published.length = 0;
+  const signoffsBefore = deskWords.filter(function (w) { return w === 'signoff'; }).length;
+  await ask('model.test', { id: REPO, quant: GOOD });
+  await until(function () { return published.some(function (o) { return o.test && o.test.state === 'passed'; }); }, 8000);
+  const whileRunning = published.filter(function (o) { return o.test && o.test.state === 'running'; });
+  const signoffs = deskWords.filter(function (w) { return w === 'signoff'; }).length - signoffsBefore;
+  if (before6.connected === true && whileRunning.length && whileRunning.every(function (o) { return o.connected === false; }) && signoffs === 1) test.check('a test of a connected Levant signs him off first: connected false while it runs, one signoff');
+  else test.fail(OWED + 'connected before ' + short(before6.connected) + ', while running ' + short(whileRunning.map(function (o) { return o.connected; })) + ', signoffs ' + signoffs);
+  await stop();
 }
 
 // ── THE APP ────────────────────────────────────────────────────────────
@@ -275,11 +297,17 @@ async function faceHalf() {
   if (/id="dur-test"/.test(sel)) test.check('a [test] button beside the selector');
   else test.fail(OWED + 'no [test] button in ' + short(sel));
   const before = calls.length;
+  const sentOf = function () { return calls.slice(before).map(function (c) { const a = c.body && c.body.ask && c.body.ask.deskUnsloth; return a && a['model.test']; }).filter(Boolean); };
   doc.getElementById('dur-test').fire('click', {});
   await settled();
-  const sent = calls.slice(before).map(function (c) { const a = c.body && c.body.ask && c.body.ask.deskUnsloth; return a && a['model.test']; }).filter(Boolean)[0];
-  if (sent && sent.id === REPO && (sent.quant === GOOD || sent.quant === BAD)) test.check('[test] sends model.test for the chosen model and quantization');
-  else test.fail(OWED + 'after [test]: ' + short(calls.slice(before)));
+  const armedHtml = doc.getElementById('dur-models').innerHTML;
+  if (!sentOf().length && /id="dur-test"[^>]*data-armed="1"/.test(armedHtml)) test.check('the first click on [test] arms it and sends nothing');
+  else test.fail(OWED + 'after one click: sent ' + short(sentOf()) + ', button ' + short((/<button[^>]*id="dur-test"[^>]*>[^<]*/.exec(armedHtml) || [''])[0]));
+  doc.getElementById('dur-test').fire('click', {});
+  await settled();
+  const sent = sentOf()[0];
+  if (sentOf().length === 1 && sent.id === REPO && (sent.quant === GOOD || sent.quant === BAD)) test.check('the second click sends model.test for the chosen model and quantization');
+  else test.fail(OWED + 'after two clicks: ' + short(calls.slice(before)));
 }
 
 (async function () { await serverHalf(); await faceHalf(); })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {

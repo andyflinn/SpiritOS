@@ -616,6 +616,9 @@ function loadedRecommended() {
 }
 function testModel(id, quant) {
   if (testing.state === 'running') throw refused('a test is running already: ' + testing.id + ' ' + testing.quant);
+  // LEVANT OFF THE DESK FIRST (goal/G10.9). Andy, 2026-10-12: "the test button should disconnect Levant from desk
+  // before testing". The same disconnect as the switch's: the asks stop and one signoff goes to the desk.
+  if (connected) setConnected(false).catch(function () { /* said by setConnected */ });
   testing = { id: id, quant: String(quant || ''), state: 'running', why: '' };
   publishState();
   const p = loadedPair();

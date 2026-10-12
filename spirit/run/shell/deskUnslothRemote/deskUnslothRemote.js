@@ -309,7 +309,9 @@ function deskUnslothRemoteDrawModels() {
           ? '<button type="button" id="dur-load"' + (deskUnslothRemoteCanLoad(got, model) ? '' : ' disabled title="the studio has not answered yet"') + '>Load</button>'
           : '<span id="dur-mark" title="running">' + line.mark + '</span>')) +
       // THE [test] BUTTON (goal/G10.9): "run it from a [test] button", its outcome the 🧵 and the switch.
-      ' <button type="button" id="dur-test"' + (test.state === 'running' ? ' disabled' : '') + '>' + (testingThis ? 'testing…' : 'test') + '</button>' +
+      // ARMED FIRST (goal/G10.9): "it should be arm-able, to make sure the disconnect is wanted."
+      ' <button type="button" id="dur-test"' + (test.state === 'running' ? ' disabled' : '') + (deskUnslothRemoteTestArmed ? ' data-armed="1"' : '') + '>' +
+        (testingThis ? 'testing…' : deskUnslothRemoteTestArmed ? 'test: disconnects Levant, sure?' : 'test') + '</button>' +
       '<span id="dur-icons">' + line.icons.join(' ') + (model.recommended ? ' ' + deskUnslothRemoteIcon('THREAD') : '') + '</span>' +
     '</div>' +
     (test.state && test.state !== 'running' && test.id === model.id && String(test.quant || '') === String(model.quant || '')
@@ -334,9 +336,23 @@ function deskUnslothRemoteChosenPair() {
   var at = key.lastIndexOf('|');
   return at === -1 ? { id: key, quant: '' } : { id: key.slice(0, at), quant: key.slice(at + 1) };
 }
+// THE ARM (goal/G10.9). Andy, 2026-10-12: "the test button should disconnect Levant from desk before testing, and it
+// should be arm-able, to make sure the disconnect is wanted." The first click arms it, the second sends; a click
+// elsewhere disarms it where the shell offers that.
+var deskUnslothRemoteTestArmed = false;
 function deskUnslothRemoteTest() {
   var pair = deskUnslothRemoteChosenPair();
   if (!pair.id) return;
+  if (!deskUnslothRemoteTestArmed) {
+    deskUnslothRemoteTestArmed = true;
+    deskUnslothRemoteDrawModels();
+    if (deskUnslothRemoteApi && typeof deskUnslothRemoteApi.armUntilElsewhere === 'function') {
+      deskUnslothRemoteApi.armUntilElsewhere(function () { deskUnslothRemoteTestArmed = false; deskUnslothRemoteDrawModels(); });
+    }
+    return;
+  }
+  deskUnslothRemoteTestArmed = false;
+  deskUnslothRemoteDrawModels();
   var target = deskUnslothRemoteTarget;
   deskUnslothRemoteAsk(target, 'model.test', { id: pair.id, quant: pair.quant }).then(function (said) {
     if (said && said.ok === false) { deskUnslothRemoteSay(said.error || said.code || 'the test was refused', true); return; }
