@@ -112,11 +112,16 @@ async function main() {
   await say('f/G1.3', 'the RAILS line sits here, by andy', ANDY);
   const t1 = await lastAt('f/G1.3');
   await sleep(30);
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude and
+  // claude-windows each take the line of his they answer, and wsl-claude holds f/G1.4, where he wrote nothing.
+  await call('line.take', { id: 'f/G1.3' }, WSL);
   await say('f/G1.3', 'wsl answers, nothing of the sort in it', WSL);
   await sleep(30);
+  await call('item.take', { id: 'f/G1.4' }, WSL);
   await say('f/G1.4', 'closed later, but it says rails too', WSL);
   const t2 = await lastAt('f/G1.4');
   await sleep(30);
+  await call('line.take', { id: 'f/G1.1' }, CW);
   await say('f/G1.1', 'claude-windows on the plain item', CW);
   const t3 = await lastAt('f/G1.1');
   // f/G1.4 closes before Go (goal/G3.9), and stays findable.

@@ -136,7 +136,14 @@ async function main() {
   await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, CW);
   await call('desk', 'chat.add', { id: 't/G1.1', text: 'alpha in another item' }, ANDY);
   const said = [[ANDY, 'alpha one'], [CW, 'alpha two'], [WSL, 'beta three'], [ANDY, 'beta four']];
-  for (const s of said) { await sleep(25); await call('desk', 'chat.add', { id: CHAT, text: s[1] }, s[0]); }
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line, the team chat too (Andy:
+  // "follow the take rules."): claude-windows takes his line before it answers, wsl-claude holds the team chat.
+  for (const s of said) {
+    await sleep(25);
+    if (s[0] === CW) await call('desk', 'line.take', { id: CHAT }, CW);
+    if (s[0] === WSL) await call('desk', 'item.take', { id: CHAT }, WSL);
+    await call('desk', 'chat.add', { id: CHAT, text: s[1] }, s[0]);
+  }
   const held = (((await call('desk', 'item.chat', { id: CHAT }, ANDY)).body || {}).chat || []);
   const at = held.map(function (l) { return l.at; });
   if (held.length !== 4 || new Set(at).size !== 4) { test.fail(OWED + 'the test desk holds ' + held.length + ' group chat lines at ' + new Set(at).size + ' moments; four of each are needed'); return; }
@@ -188,7 +195,11 @@ async function main() {
   // 120 lines full of quotes: every quote gains a backslash each time the answer is packed as text, which is what
   // made a full desk answer too large for deskClient to pass on.
   const QUOTED = '"q" '.repeat(45);
-  for (let i = 0; i < 120; i++) await call('desk', 'chat.add', { id: CHAT, text: 'long ' + String(i).padStart(3, '0') + ' ' + QUOTED }, i % 2 ? CW : ANDY);
+  // Since goal/G18.8 claude-windows takes each line of his before it answers it.
+  for (let i = 0; i < 120; i++) {
+    if (i % 2) await call('desk', 'line.take', { id: CHAT }, CW);
+    await call('desk', 'chat.add', { id: CHAT, text: 'long ' + String(i).padStart(3, '0') + ' ' + QUOTED }, i % 2 ? CW : ANDY);
+  }
   const full = await search({ text: 'long' });
   if (full.status === 200 && full.more === true && full.lines.length > 0 && full.lines.length < 120 && /^long 119 /.test((full.lines[0] || {}).text || '')) test.check('120 long lines: ' + full.lines.length + ' came back, the newest first, and more is true');
   else test.fail(OWED + 'the long chat answered ' + full.status + ', ' + full.lines.length + ' line(s), more ' + full.more + ', first ' + JSON.stringify((full.lines[0] || {}).text || '').slice(0, 40));

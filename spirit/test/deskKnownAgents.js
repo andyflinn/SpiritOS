@@ -69,6 +69,8 @@ async function theServer() {
   let kid = await start();
   try {
     await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Known' }, items: [{ id: 'k/G1.1', title: 'Talk', blocks: ['k/G1'] }] }) }, CW);
+    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    await call('item.take', { id: 'k/G1.1' }, GEMMA);
     await call('chat.add', { id: 'k/G1.1', text: 'gemma here, then gone' }, GEMMA);
     await stop(kid);
     // TWENTY MINUTES AGO for every record of gemma's: past LIVE_MS (desk.js, 10 minutes).
@@ -76,6 +78,7 @@ async function theServer() {
     db.prepare('UPDATE records SET at = ? WHERE by = ?').run(new Date(Date.now() - 20 * 60 * 1000).toISOString(), GEMMA.label);
     db.close();
     kid = await start();
+    await call('item.take', { id: 'k/G1.1' }, CW);
     await call('chat.add', { id: 'k/G1.1', text: 'claude-windows, live' }, CW);
     const r = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY);
     try { row = JSON.parse((((r.body || {}).items) || [])[0].label); } catch (e) { row = null; }

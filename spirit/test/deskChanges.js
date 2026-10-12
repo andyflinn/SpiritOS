@@ -49,6 +49,8 @@ let kid = null;
   // A goal, a press, a chat line: three records. And two desk lines.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'c/G1', title: 'Goal' }, items: [{ id: 'c/G1.1', title: 'A', blocks: ['c/G1'] }] }) }, CW);
   await call('press', { id: 'c/G1', what: 'end-design' }, ANDY);
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  await call('item.take', { id: 'c/G1.1' }, WSL);
   await call('chat.add', { id: 'c/G1.1', text: 'FIRST-CHAT' }, WSL);
   await call('log.add', { json: JSON.stringify({ key: 'L1', at: '2026-10-01T14:00:00.000Z', dir: 'out', from: 'andy', kind: 'note', text: 'LINE-ONE', todo: 'team/chat' }) });
   await call('log.add', { json: JSON.stringify({ key: 'L2', at: '2026-10-01T14:00:00.000Z', dir: 'out', from: 'andy', kind: 'note', text: 'LINE-TWO', todo: 'team/chat' }) });

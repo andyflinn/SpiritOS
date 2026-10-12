@@ -143,6 +143,8 @@ function clickTarget(attrs) {
   await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [{ id: 't/G1.1', title: 'Talky', blocks: ['t/G1'] }] }) }, CW);
   await call('box.write', { id: 't/G1.1', text: 'the box', version: 0 }, CW);
   const n = Math.ceil((appClient.ANSWER_MAX * 3) / 1000);
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  for (const id of ['t/G1.1', 't/G1']) await call('item.take', { id: id }, WSL);
   for (let i = 0; i < n; i++) await call('chat.add', { id: 't/G1.1', text: 'LINE-' + String(i).padStart(3, '0') + ' ' + 'x'.repeat(1000) }, i % 2 ? ANDY : WSL);
   const got = await whole('t/G1.1');
   const body = got.body || {};

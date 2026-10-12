@@ -152,10 +152,13 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
     const other = await call('chat.add', { id: 'g/G1.2', text: 'I will answer too' }, WSL);
     const himself = await call('chat.add', { id: 'g/G1.2', text: 'and more from me' }, ANDY);
     const taker = await call('chat.add', { id: 'g/G1.2', text: 'here is my answer' }, CW);
+    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: once freed, wsl-claude takes
+    // his newer line, a take the standing one would have refused taken, and answers.
+    const freeTake = await call('line.take', { id: 'g/G1.2' }, WSL);
     const freed = await call('chat.add', { id: 'g/G1.2', text: 'my opinion, since you ask' }, WSL);
-    if (other.status !== 200 && (other.body || {}).code === 'taken' && himself.status === 200 && taker.status === 200 && freed.status === 200) {
+    if (other.status !== 200 && (other.body || {}).code === 'taken' && himself.status === 200 && taker.status === 200 && freeTake.status === 200 && freed.status === 200) {
       test.check('the other agent is refused taken while the take stands; his own line is never refused; the taker\'s answer frees the item');
-    } else test.fail(OWED + 'other ' + JSON.stringify((other.body || {}).code) + ', his own ' + himself.status + ', taker ' + taker.status + ', after ' + freed.status);
+    } else test.fail(OWED + 'other ' + JSON.stringify((other.body || {}).code) + ', his own ' + himself.status + ', taker ' + taker.status + ', take after ' + freeTake.status + ', after ' + freed.status);
 
     test.subHeading('6a. the goal row names its live agents with their keys');
     const g = await factsOf('g/G1');

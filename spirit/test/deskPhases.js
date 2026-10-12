@@ -94,7 +94,10 @@ async function open(caller) {
   // item itself the moment its red is done while ONE agent alone is live (Andy, 2026-10-06: "add to 2.22 that the
   // desk can waive the rule if only one agent is present."), and claude-ubuntu's refused takes are not writes, so
   // without this line it would never count as live and every rule below would be waived away.
-  await call('chat.add', { id: 'q/G1.1', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: claude-ubuntu says it
+  // under the decision item, which it takes, so no take lands on the code item whose phases are tested below.
+  await call('item.take', { id: 'q/G1.2' }, UBI);
+  await call('chat.add', { id: 'q/G1.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
 
   test.subHeading('1. only an item marked code has phases');
   const a0 = await facts('q/G1.1');

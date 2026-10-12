@@ -203,6 +203,9 @@ async function main() {
   await next();
   // THE WORLD HANDS LINES: another agent's chat line reaches this agent today (deskClientNext section 5), so a section
   // that waits for a line fails for the build, not for the world.
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line. The item's take sets no
+  // phase holder, so its red stays open as a job.
+  await desk('item.take', { id: 'j/G1.1' }, OTHER_AT_DESK);
   await desk('chat.add', { id: 'j/G1.1', text: 'probe from the other agent' }, OTHER_AT_DESK);
   const probe = await untilLines(function (seen) { return seen.some(function (l) { return String(l).indexOf('probe from the other agent') !== -1; }); }, 8000);
   if (!probe.some(function (l) { return String(l).indexOf('probe from the other agent') !== -1; })) { test.fail('the world: deskClient handed no line at all (' + short(probe) + ')'); return; }

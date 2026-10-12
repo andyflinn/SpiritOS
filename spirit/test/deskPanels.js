@@ -43,6 +43,8 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
     await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Panels' }, items: [] }) }, CW);
     await call('box.write', { id: 'p/G1', text: 'B'.repeat(6000), version: 0 }, CW);
     await call('check.add', { id: 'p/G1', kind: 'C', words: 'look', test: '' }, CW);
+    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    await call('item.take', { id: 'p/G1' }, WSL);
     for (let i = 0; i < 30; i++) await call('chat.add', { id: 'p/G1', text: 'LINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(300) }, WSL);
 
     test.subHeading('item.get answers the facts alone');

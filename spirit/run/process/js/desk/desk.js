@@ -1809,6 +1809,15 @@ appServer.serve({
       const it0 = walkState().items[String(a.id)];
       // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
       if (it0 && it0.takenBy && w.by !== it0.takenBy && w.by !== 'andy' && w.by !== 'desk') throw refused('taken');
+      // AN AGENT ANSWERS ONLY WHAT IT HAS TAKEN (goal/G18.8). Andy, 2026-10-12: "no agent should answer without taking.
+      // too much chatter otherwise."; and, to its own work notes going under an item it holds: "yes." So an agent
+      // writes under an item while it holds the take of his latest line there, or while the item is its own: the one
+      // it is with, or the one whose red, build or verify it took (those stay after a phase is done, so a claim's
+      // file list still goes). Not a decision of this file's to loosen: a line taker that answered is no holder.
+      if (it0 && w.by !== 'andy' && w.by !== 'desk' && it0.takenBy !== w.by &&
+          [it0.with, it0.red, it0.builder, it0.verifier].indexOf(w.by) === -1) {
+        throw refusedWhy('bad-request', 'take first: ' + w.by + ' holds neither the take of Andy\'s latest line under ' + a.id + ' (line.take) nor the item (item.take)');
+      }
       // Measured as it is stored and answered: with its taken field (goal/G2.2), else the largest line that passes
       // here would not come back whole (oversize.js caught the ten bytes).
       const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '' });

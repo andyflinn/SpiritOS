@@ -64,6 +64,8 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
     await session(['a/G1.1', 'a/G1.2', 'a/G1.3']);
     await call('press', { id: 'a/G1', what: 'end-design' }, ANDY);
     await call('press', { id: 'a/G1.1', what: 'go' }, ANDY);
+    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    await call('item.take', { id: 'a/G1.2' }, CW);
     await call('chat.add', { id: 'a/G1.2', text: 'a line that must survive' }, CW);
     await call('box.write', { id: 'a/G1.2', text: 'BOX OF G1.2', version: 0 }, CW);
 

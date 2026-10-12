@@ -173,6 +173,8 @@ function answerFor(buttons) {
   else test.fail(OWED + 'alone, the verify take answered ' + short(verify1.status) + ' and the item ends offering ' + short(f1end.buttons));
 
   // FROM HERE ON BOTH AGENTS ARE LIVE, so nothing is waived but by his press.
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  await call('item.take', { id: 'w/G1.2' }, WSL);
   await call('chat.add', { id: 'w/G1.2', text: 'wsl: here.' }, WSL);
 
   test.subHeading('3. two agents live: the red done offers his waive, and nothing waives itself');

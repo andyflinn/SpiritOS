@@ -218,6 +218,10 @@ async function main() {
   else test.fail(OWED + 'the wait answered ' + JSON.stringify(woke.body).slice(0, 200) + ', ' + after + ' ms after the write');
 
   test.subHeading('2 again: who is nudged for what');
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: A takes his line first,
+  // and its nudges settle before the write below is counted.
+  await call('desk', 'line.take', { id: 'n/G1.1' }, A_AT_DESK);
+  await sleep(700);
   const others = await writes('desk', 'chat.add', { id: 'n/G1.1', text: 'chat of agent A' }, A_AT_DESK);
   if (others.status === 200 && others.b === 1 && others.a === 0) test.check('an agent\'s chat nudges the other live agent, never the one who wrote it');
   else test.fail(OWED + 'A\'s chat sent ' + others.a + ' nudge(s) to A and ' + others.b + ' to B');

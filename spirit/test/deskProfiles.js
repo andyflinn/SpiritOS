@@ -55,6 +55,10 @@ test.startTest('goal/G4.23: the agent profile — name and nick — and "<nick>:
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Profiles' }, items: [{ id: 'p/G1.1', title: 'Work', blocks: ['p/G1'] }] }) }, CW);
+    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude answers a line
+    // of his it has taken.
+    await call('chat.add', { id: 'p/G1.1', text: 'anyone here?' }, ANDY);
+    await call('line.take', { id: 'p/G1.1' }, WSL);
     await call('chat.add', { id: 'p/G1.1', text: 'wsl-claude says hello' }, WSL);
 
     test.subHeading('1. profile.set by Andy alone; profile.get for anyone');
@@ -92,9 +96,11 @@ test.startTest('goal/G4.23: the agent profile — name and nick — and "<nick>:
     if (codeOf(other) === 'taken' && answer.status === 200) test.check('meanwhile another agent is refused taken; the nick\'s agent answers');
     else test.fail(OWED + 'another agent answered ' + short(other.body) + ', the nick\'s agent ' + answer.status + ' ' + short(answer.body));
     await call('chat.add', { id: 'p/G1.1', text: 'zz: nobody holds this nick' }, ANDY);
+    // Since goal/G18.8 claude-windows takes his line before it speaks; the take landing is itself the proof nobody holds it.
+    const freeTake = await call('line.take', { id: 'p/G1.1' }, CW);
     const free = await call('chat.add', { id: 'p/G1.1', text: 'claude-windows may speak' }, CW);
-    if (free.status === 200) test.check('a nick nobody holds takes nothing');
-    else test.fail('after "zz: ..." another agent was refused: ' + short(free.body));
+    if (freeTake.status === 200 && free.status === 200) test.check('a nick nobody holds takes nothing');
+    else test.fail('after "zz: ..." another agent was refused: take ' + short(freeTake.body) + ', line ' + short(free.body));
   } catch (e) {
     test.fail('the suite threw: ' + (e && e.stack || e));
   } finally {

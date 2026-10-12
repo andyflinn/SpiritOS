@@ -97,6 +97,8 @@ async function settled(pick) { for (let i = 0; i < 40; i++) { if (published.some
   else test.fail(OWED + 'his line answered ' + his.status + '; published ' + short(published));
 
   test.subHeading('D. an item\'s chat line is published as before, with no rule key');
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  await call('item.take', { id: 'rc/G1.1' }, CW);
   published.length = 0;
   const item = await call('chat.add', { id: 'rc/G1.1', text: 'a line under an item' }, CW);
   await settled(function (o) { return o.verb === 'chat.add'; });

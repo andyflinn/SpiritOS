@@ -165,7 +165,7 @@ async function main() {
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Heard' }, items: [{ id: 'a/G1.1', title: 'A', blocks: ['a/G1'] }] }) }, SELF_AT_DESK);
+  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Heard' }, items: [{ id: 'a/G1.1', title: 'A', blocks: ['a/G1'] }, { id: 'a/G1.2', title: 'B', blocks: ['a/G1'] }] }) }, SELF_AT_DESK);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   // What the desk holds before deskClient ever asks: a first run must not hand these over.
   await andySays('old chat, before the first run');
@@ -221,8 +221,13 @@ async function main() {
   await call('desk', 'press', { id: 'a/G1.1', what: 'seen' }, ANDY);
   await call('desk', 'press', { id: 'a/G1', what: 'end-design' }, ANDY);
   await call('desk', 'press', { id: 'a/G1.1', what: 'go' }, ANDY);
-  await call('desk', 'chat.add', { id: 'a/G1.1', text: 'chat of the other agent' }, OTHER_AT_DESK);
-  await call('desk', 'chat.add', { id: 'a/G1.1', text: 'chat of my own' }, SELF_AT_DESK);
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: both agents speak under
+  // a/G1.2, which each takes in turn. It has no Go, so no taker there moves a/G1.1 in or out of limbo (a take on
+  // a/G1.1 brought its limbo line back whenever this agent's word flipped); a take is no chat.add, so none is handed over.
+  await call('desk', 'item.take', { id: 'a/G1.2' }, OTHER_AT_DESK);
+  await call('desk', 'chat.add', { id: 'a/G1.2', text: 'chat of the other agent' }, OTHER_AT_DESK);
+  await call('desk', 'item.take', { id: 'a/G1.2' }, SELF_AT_DESK);
+  await call('desk', 'chat.add', { id: 'a/G1.2', text: 'chat of my own' }, SELF_AT_DESK);
   await keeps('l-1', 'andy', SELF_KEY, 'line of andy for me');
   await keeps('l-2', 'andy', OTHER_KEY, 'line of andy for the other agent');
   await keeps('l-3', 'claude-windows', DESK_KEY, 'line of my own');

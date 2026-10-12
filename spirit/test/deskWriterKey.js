@@ -53,6 +53,8 @@ function call(verb, args, headers) {
   await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Goal' }, items: [{ id: 'k/G1.1', title: 'A', blocks: ['k/G1'] }] }) }, MEMBER);
 
   test.subHeading('a member\'s write is tracked by its key and shown by its label');
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  await call('item.take', { id: 'k/G1.1' }, MEMBER);
   const w = await call('chat.add', { id: 'k/G1.1', text: 'FROM-ALICE' }, MEMBER);
   const chat = (await call('item.chat', { id: 'k/G1.1' }, MEMBER)).body.chat || [];
   const line = chat.filter(function (l) { return l.text === 'FROM-ALICE'; })[0];

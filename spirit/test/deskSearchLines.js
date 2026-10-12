@@ -56,6 +56,8 @@ test.startTest('goal/G4.24 point 2: the List search matches chat lines and the b
       { id: 's/G1.1', title: 'Alpha', blocks: ['s/G1'] },
       { id: 's/G1.2', title: 'Beta', blocks: ['s/G1'] },
       { id: 's/G1.3', title: 'Gamma', blocks: ['s/G1'] }] }) }, CW);
+    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    await call('item.take', { id: 's/G1.2' }, CW);
     await call('chat.add', { id: 's/G1.2', text: 'we tested the fs-watch library here' }, CW);
     await call('box.write', { id: 's/G1.3', text: 'NOTES\nchokidar is the library', version: 0 }, CW);
 

@@ -109,6 +109,8 @@ async function suite() {
   test.subHeading('2. a question made from a chat line keeps one sentence');
   await call('session.set', { json: JSON.stringify({ goal: { id: 'cp/G2', title: 'Lines' }, items: [{ id: 'cp/G2.1', title: 'Two', blocks: ['cp/G2'] }] }) }, CW);
   const line = 'cw: the first sentence states a fact. The second states another, at some length, so that the whole line is long. Is this the question?';
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+  await call('item.take', { id: 'cp/G2.1' }, CW);
   const chat = await call('chat.add', { id: 'cp/G2.1', text: line }, CW);
   if (!took(chat)) { test.fail('the world: chat.add answered ' + chat.status + ' ' + short(chat.body)); return; }
   const made = (await checks('cp/G2.1')).filter(function (c) { return c.kind === 'Q'; });

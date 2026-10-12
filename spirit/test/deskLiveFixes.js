@@ -125,6 +125,8 @@ async function serverHalf() {
       { id: 'sr/G1.2', title: 'zebra crossing', blocks: ['sr/G1'] },
       { id: 'sr/G1.3', title: 'Plums', blocks: ['sr/G1'] },
     ] }) }, CW);
+    // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    await call('item.take', { id: 'sr/G1.3' }, CW);
     await call('chat.add', { id: 'sr/G1.3', text: 'a zebra came by' }, CW);
     await call('chat.add', { id: 'sr/G1.3', text: 'nothing else' }, CW);
     const found = ((await call('items.search', { text: 'zebra', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, ANDY)).body || {}).items || [];

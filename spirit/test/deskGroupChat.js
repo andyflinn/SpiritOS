@@ -93,14 +93,22 @@ async function server() {
   } else test.fail(OWED + 'the fresh record held ' + JSON.stringify(record.records).slice(0, 160) + '; the current goal lists ' + JSON.stringify(current) + ', the open goals ' + JSON.stringify(open));
 
   test.subHeading('3. its chat takes and gives back everybody\'s lines, in one order');
+  // SINCE goal/G18.8 THE TEAM CHAT FOLLOWS THE TAKE RULE like every item. Andy, 2026-10-12, asked whether desk/G0.0
+  // stays open to every agent: "follow the take rules." So each agent answers a line of his it has taken.
   const w1 = await call('chat.add', { id: CHAT, text: 'andy in the group chat' }, ANDY);
+  const untaken = await call('chat.add', { id: CHAT, text: 'wsl-claude unasked' }, WSL);
+  await call('line.take', { id: CHAT }, CW);
   const w2 = await call('chat.add', { id: CHAT, text: 'claude-windows in the group chat' }, CW);
+  await call('chat.add', { id: CHAT, text: 'andy again' }, ANDY);
+  await call('line.take', { id: CHAT }, WSL);
   const w3 = await call('chat.add', { id: CHAT, text: 'wsl-claude in the group chat' }, WSL);
   const chat = ((await call('item.chat', { id: CHAT }, WSL)).body || {}).chat || [];
   const said = chat.map(function (l) { return l.by + ': ' + l.text; });
-  if (w1.status === 200 && w2.status === 200 && w3.status === 200 && said.join(' | ') === 'andy: andy in the group chat | claude-windows: claude-windows in the group chat | wsl-claude: wsl-claude in the group chat') {
-    test.check('three lines, Andy\'s and each agent\'s, written with chat.add and read back with item.chat in the order they were said');
+  if (w1.status === 200 && w2.status === 200 && w3.status === 200 && said.join(' | ') === 'andy: andy in the group chat | claude-windows: claude-windows in the group chat | andy: andy again | wsl-claude: wsl-claude in the group chat') {
+    test.check('Andy\'s lines and each agent\'s answer to a line it took, written with chat.add and read back with item.chat in the order they were said');
   } else test.fail(OWED + 'chat.add answered ' + [w1.status, w2.status, w3.status].join(', ') + ' and item.chat gave ' + JSON.stringify(said));
+  if (untaken.status === 400 && untaken.body && untaken.body.extra && /take first/.test(String(untaken.body.extra.why))) test.check('an agent that took no line of his is refused there too (goal/G18.8)');
+  else test.fail('goal/G18.8: an untaken line in the team chat answered ' + untaken.status + ' ' + JSON.stringify(untaken.body).slice(0, 160));
 
   test.subHeading('4. its box takes the write that exists');
   const RULES = '1. "Agants will NOT speak to each other behind the users back."';
@@ -123,8 +131,8 @@ async function server() {
   const chat2 = ((await call('item.chat', { id: CHAT }, ANDY)).body || {}).chat || [];
   const box2 = (await call('item.box', { id: CHAT }, ANDY)).body || {};
   const current2 = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
-  if (after.item && after.item.status === 'closed' && chat2.length === 3 && box2.box === RULES && current2.indexOf('t/G1') !== -1 && current2.indexOf(CHAT) === -1) {
-    test.check('after a restart: still closed, its three lines and its box intact, and the ordinary goal still the current one');
+  if (after.item && after.item.status === 'closed' && chat2.length === 4 && box2.box === RULES && current2.indexOf('t/G1') !== -1 && current2.indexOf(CHAT) === -1) {
+    test.check('after a restart: still closed, its four lines and its box intact, and the ordinary goal still the current one');
   } else test.fail(OWED + 'after a restart: status ' + JSON.stringify(after.item && after.item.status) + ', ' + chat2.length + ' line(s), box ' + JSON.stringify(box2.box).slice(0, 60) + ', current goal lists ' + JSON.stringify(current2));
 }
 

@@ -393,6 +393,9 @@ async function main() {
   const his = await waiting;
   if (his.status === 200 && his.lines && his.lines.some(function (x) { return x.indexOf('before any other agent wrote') !== -1; })) test.check('D: his write is handed over; Andy is no agent to block');
   else test.fail(OWED + 'D: after his line next answered ' + his.status + ' ' + JSON.stringify(his.body).slice(0, 160));
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line. A take is no chat line, so
+  // it is never handed over.
+  await desk('item.take', { id: 'r/G1.1' }, OTHER_AT_DESK);
   await desk('chat.add', { id: 'r/G1.1', text: 'the other agent speaks' }, OTHER_AT_DESK);
   const unblocked = await next();
   const names = JSON.stringify(unblocked.body);
@@ -412,6 +415,8 @@ async function main() {
   await next();
 
   test.subHeading('E. rules 3 and 4 at the commit: refused without an item with his Go; recorded under it with its files');
+  // Since goal/G18.8 the commit lines this agent writes under r/G1.1 need the item to be its own.
+  await desk('item.take', { id: 'r/G1.1' }, SELF_AT_DESK);
   const repo = path.join(scratch, 'clone');
   fs.mkdirSync(repo);
   await git(repo, ['init', '-q']);

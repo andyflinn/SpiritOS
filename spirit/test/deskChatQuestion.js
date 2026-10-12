@@ -71,6 +71,9 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
     { id: 'cq/G1.3', title: 'Twice', blocks: ['cq/G1'] },
     { id: 'cq/G1.4', title: 'His own', blocks: ['cq/G1'] },
   ] }) }, CW);
+  // SINCE goal/G18.8 AN AGENT WRITES ONLY WHERE IT HOLDS THE ITEM OR THE TAKE OF HIS LINE: wsl-claude holds the items
+  // it asks under; on cq/G1.3 claude-windows answers a line of his it has taken.
+  for (const id of ['cq/G1.1', 'cq/G1.2', 'cq/G1.3']) await call('item.take', { id: id }, WSL);
 
   test.subHeading('1. an agent\'s line ending in a question mark raises one open Q with those words');
   const said = await call('chat.add', { id: 'cq/G1.1', text: QUESTION }, WSL);
@@ -111,6 +114,8 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
 
   test.subHeading('4. two questions raise two, each numbered, nothing merged');
   await call('chat.add', { id: 'cq/G1.3', text: 'wsl: first, does the owner row survive a restore?' }, WSL);
+  await call('chat.add', { id: 'cq/G1.3', text: 'and the whoBook?' }, ANDY);
+  await call('line.take', { id: 'cq/G1.3' }, CW);
   await call('chat.add', { id: 'cq/G1.3', text: 'cw: second, and does the whoBook travel with it?' }, CW);
   const two = await qsOf('cq/G1.3');
   const numbers = two.map(function (c) { return c.number; });
