@@ -149,7 +149,8 @@ async function up() {
   return false;
 }
 const ask = function (verb, a) { const q = {}; q[verb] = a || {}; return client.ask({ deskUnsloth: q }).then(function (r) { return r.body || {}; }, function () { return {}; }); };
-function knownFile() { try { return JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')); } catch (e) { return null; } }
+// Since goal/G18.6 one list per pair: the old single connection is the pair named studio.
+function knownFile() { try { return JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')).pairs.studio || null; } catch (e) { return null; } }
 function pairIn(list, id, quant) { return (list || []).filter(function (m) { return m.id === id && m.quant === quant; })[0]; }
 
 async function serverHalf() {
@@ -222,7 +223,7 @@ async function serverHalf() {
   const s2 = await ask('state', {});
   await stop();
   loaded = { model: REPO, variant: BAD };
-  const k = knownFile(); k.active = REPO; k.activeQuant = BAD; fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify(k));
+  const k = knownFile(); k.active = REPO; k.activeQuant = BAD; fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify({ pairs: { studio: k } }));
   start();
   if (!await up()) { test.fail('the world: deskUnsloth did not restart'); return; }
   const s3 = await ask('state', {});
@@ -232,7 +233,7 @@ async function serverHalf() {
 
   test.subHeading('6. the test disconnects Levant first');
   loaded = { model: REPO, variant: GOOD };
-  const k6 = knownFile(); k6.active = REPO; k6.activeQuant = GOOD; fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify(k6));
+  const k6 = knownFile(); k6.active = REPO; k6.activeQuant = GOOD; fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify({ pairs: { studio: k6 } }));
   start();
   if (!await up()) { test.fail('the world: deskUnsloth did not restart'); return; }
   const before6 = await ask('state', {});

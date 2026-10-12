@@ -251,7 +251,8 @@ async function suite() {
 
   test.subHeading('1a. the known list is answered at once, from the file');
   let knownFile = null;
-  try { knownFile = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')); } catch (e) { knownFile = null; }
+  // Since goal/G18.6 one list per pair: the old single connection is the pair named studio.
+  try { knownFile = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')).pairs.studio; } catch (e) { knownFile = null; }
   if (knownFile && Array.isArray(knownFile.models) && knownFile.models.length === 3 && knownFile.active === LOADED) test.check('models.json in the state folder holds the list as answered: three models, the active one');
   else test.fail(OWED + 'models.json reads ' + short(knownFile));
   studio.calls.length = 0;
@@ -325,7 +326,7 @@ async function suite() {
   // info earlier, and more info from cache, for not-loaded models." The studio's flags for the loaded one, and the
   // quant, are remembered in models.json; after a swap back the other model keeps them.
   let learnedFile = null;
-  try { learnedFile = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')); } catch (e) { learnedFile = null; }
+  try { learnedFile = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8')).pairs.studio; } catch (e) { learnedFile = null; }
   const lf = function (id) { return ((learnedFile && learnedFile.models) || []).filter(function (m) { return m.id === id; })[0]; };
   if (lf(OTHER) && lf(OTHER).audio === true && lf(LOADED) && lf(LOADED).reasoning === true) test.check('models.json holds what was learned: the first model\'s reasoning, the second\'s audio');
   else test.fail(OWED + 'models.json reads ' + short(learnedFile));
@@ -343,7 +344,7 @@ async function suite() {
   await stop();
   try {
     const marked = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8'));
-    marked.models.forEach(function (m) { if (m.id === LOADED) { m.recommended = true; m.tested = '2026-10-12T00:00:00.000Z'; } });
+    marked.pairs.studio.models.forEach(function (m) { if (m.id === LOADED) { m.recommended = true; m.tested = '2026-10-12T00:00:00.000Z'; } });
     fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify(marked));
   } catch (e) { test.fail('the world: models.json could not be marked: ' + e.message); }
   start();

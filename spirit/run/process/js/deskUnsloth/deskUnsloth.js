@@ -70,16 +70,37 @@ function readOrDie(name) {
 }
 // Read before anything is asked of the node: a missing file is this process's own business and no desk's.
 const CONFIGURATION = readOrDie(CONFIGURATION_FILE);
-function readConnection() {
-  try { const c = JSON.parse(fs.readFileSync(path.join(STATE, CONNECTION_FILE), 'utf8')); return c && typeof c === 'object' ? c : {}; } catch (e) { return {}; }
+// THE PAIRS (goal/G18.6). Andy, 2026-10-12: "I want my Account URL/token pairs saved in connection.json, now an array.
+// i want to maintain that array in the connect tab."; each pair named by him, "good Idea, yes." So connection.json is
+// [{name, url, key, use, model}]: one pair in use, and the model chosen on each pair kept with it. AN OLD FILE, one
+// {url, key}, is read as one pair named studio, in use, its model the configuration's; it is rewritten as an array at
+// the first change (stored data stays readable).
+const LEGACY_PAIR = 'studio';
+function readConnections() {
+  let c = null;
+  try { c = JSON.parse(fs.readFileSync(path.join(STATE, CONNECTION_FILE), 'utf8')); } catch (e) { return []; }
+  if (Array.isArray(c)) {
+    return c.filter(function (p) { return p && typeof p.name === 'string' && p.name; }).map(function (p) {
+      return { name: p.name, url: String(p.url || ''), key: String(p.key || ''), use: p.use === true, model: String(p.model || '') };
+    });
+  }
+  if (c && typeof c === 'object' && c.url) return [{ name: LEGACY_PAIR, url: String(c.url), key: String(c.key || ''), use: true, model: String(CONFIGURATION.model || '') }];
+  return [];
 }
-let CONNECTION = readConnection();
+function writeConnections() {
+  const rows = CONNECTIONS.map(function (p) { return { name: p.name, url: p.url, key: p.key, use: p.use, model: p.model }; });
+  fs.writeFileSync(path.join(STATE, CONNECTION_FILE), JSON.stringify(rows, null, 2) + '\n');
+}
+function pairNamed(name) { return CONNECTIONS.filter(function (p) { return p.name === name; })[0] || null; }
+let CONNECTIONS = readConnections();
+let CONNECTION = CONNECTIONS.filter(function (p) { return p.use; })[0] || {};
 
 const PERSONA = String(CONFIGURATION.persona || 'agent');
 const PREAMBLE = String(CONFIGURATION.preamble || '');
 // THE MODEL FOLLOWS A LOAD (goal/G14.4): model.load rewrites configuration.json and this with it, so the next call
 // names what the studio now serves. Everything else in the configuration is still read once.
-let MODEL = String(CONFIGURATION.model || '');
+// Since goal/G18.6 the model is the pair's: the one chosen on the pair in use.
+let MODEL = String(CONNECTION.name ? CONNECTION.model : CONFIGURATION.model || '');
 // THE CONTEXT IS THE STUDIO'S, NEVER CONFIGURED (goal/G10.7). Andy, 2026-10-12: "remove  contextLimit from the
 // configuration file. we will not work on stuff that unsloth does already well. we will never pass context limits to
 // unslot. that's a decision." The room below is the loaded model's context_length as the studio reports it
@@ -226,13 +247,18 @@ function serverSeen(ok, error) {
 
 // `timeoutMs` caps one call: a studio route that dawdles (v1/models took 14.9 s live on 2026-10-10, probing its
 // ollama entries) must not take the whole ask past the 12 s a process has to answer.
-function studio(method, pathname, body, timeoutMs) {
-  if (!STUDIO_URL) return Promise.reject(new Error('no OpenAI compatible server is set: connect one in deskUnslothRemote'));
-  const url = new URL(STUDIO_URL + pathname);
+// `conn` is the pair asked (goal/G18.6), the one in use when left out: a refresh started on one pair keeps asking it
+// after a switch, and its answer lands in that pair's list.
+function studio(method, pathname, body, timeoutMs, conn) {
+  const pair = conn || CONNECTION;
+  const base = studioUrlOf(pair);
+  const current = pair === CONNECTION;
+  if (!base) return Promise.reject(new Error('no OpenAI compatible server is set: connect one in deskUnslothRemote'));
+  const url = new URL(base + pathname);
   const text = body === undefined ? '' : JSON.stringify(body);
   const lib = url.protocol === 'https:' ? https : http;
   return new Promise(function (resolve, reject) {
-    const headers = { Authorization: 'Bearer ' + String(CONNECTION.key || '') };
+    const headers = { Authorization: 'Bearer ' + String(pair.key || '') };
     if (text) { headers['Content-Type'] = 'application/json'; headers['Content-Length'] = Buffer.byteLength(text); }
     const req = lib.request({
       hostname: url.hostname,
@@ -241,17 +267,19 @@ function studio(method, pathname, body, timeoutMs) {
       method: method,
       headers: headers,
     }, function (res) {
-      serverSeen(true, '');
+      if (current) serverSeen(true, '');
       let raw = '';
       res.on('data', function (c) { raw += c; });
       res.on('end', function () {
+        // The status rides on the error, so a 404 tells a plain OpenAI server from a studio (goal/G18.6).
+        const failed = function (text) { const e = new Error(text); e.status = res.statusCode; return e; };
         let got = null;
-        try { got = JSON.parse(raw); } catch (e) { return reject(new Error('the studio did not answer JSON at ' + pathname)); }
-        if (res.statusCode >= 400) return reject(new Error('the studio refused ' + pathname + ': ' + res.statusCode + ' ' + raw.slice(0, 120)));
+        try { got = JSON.parse(raw); } catch (e) { return reject(failed('the studio did not answer JSON at ' + pathname)); }
+        if (res.statusCode >= 400) return reject(failed('the studio refused ' + pathname + ': ' + res.statusCode + ' ' + raw.slice(0, 120)));
         resolve(got);
       });
     });
-    req.on('error', function (e) { if (e && e.code) serverSeen(false, String(e.message || e)); reject(e); });
+    req.on('error', function (e) { if (e && e.code && current) serverSeen(false, String(e.message || e)); reject(e); });
     if (Number(timeoutMs) > 0) req.setTimeout(Number(timeoutMs), function () { req.destroy(new Error('the studio took longer than ' + timeoutMs + ' ms at ' + pathname)); });
     if (text) req.write(text);
     req.end();
@@ -397,7 +425,10 @@ const QUANT_WAIT_MS = 5000;
 // loaded model and the quant only when v1/models is quick, so a refresh keeps what was known where the studio is
 // silent this time. Vision is the studio's, for every model ("then show vision always").
 const MODELS_FILE = 'models.json';
-let known = null;       // {active, models: [...]} as last answered, or null before the file is read
+// ONE KNOWN LIST PER PAIR (goal/G18.6): Andy asked whether the available-models list "must be kept by account as well",
+// answered yes. models.json is {pairs: {<name>: {active, activeQuant, studio, models}}}; an old file, one list, is read
+// as the studio pair's, so stored data stays readable.
+let knownAll = null;    // the whole file, or null before it is read
 let refreshing = null;  // the one refresh in flight
 // THE CACHED FLAG (Andy, 2026-10-10: "the list should return with a cached flag, so the remote can forbid loading
 // until.... unsloth-studio crashed again."): an answer is `cached` until a refresh from the studio has landed
@@ -406,15 +437,24 @@ let refreshing = null;  // the one refresh in flight
 const FRESH_MS = 10000;
 let refreshedAt = 0;
 
-function readKnown() {
-  if (known) return known;
-  try { known = JSON.parse(fs.readFileSync(path.join(STATE, MODELS_FILE), 'utf8')); } catch (e) { known = null; }
-  if (!known || !Array.isArray(known.models)) known = null;
-  return known;
+function readKnownAll() {
+  if (knownAll) return knownAll;
+  let raw = null;
+  try { raw = JSON.parse(fs.readFileSync(path.join(STATE, MODELS_FILE), 'utf8')); } catch (e) { raw = null; }
+  if (raw && raw.pairs && typeof raw.pairs === 'object' && !Array.isArray(raw.pairs)) knownAll = raw;
+  else if (raw && Array.isArray(raw.models)) { knownAll = { pairs: {} }; knownAll.pairs[LEGACY_PAIR] = raw; }
+  else knownAll = { pairs: {} };
+  return knownAll;
 }
-function writeKnown(next) {
-  known = next;
-  try { fs.writeFileSync(path.join(STATE, MODELS_FILE), JSON.stringify(next, null, 2) + '\n'); } catch (e) { say('models.json could not be written: ' + e.message); }
+// The list of the pair named, the pair in use when no name is given; null when it has none yet.
+function readKnown(name) {
+  const k = readKnownAll().pairs[name === undefined ? String(CONNECTION.name || '') : name];
+  return k && Array.isArray(k.models) ? k : null;
+}
+function writeKnown(next, name) {
+  const all = readKnownAll();
+  all.pairs[name === undefined ? String(CONNECTION.name || '') : name] = next;
+  try { fs.writeFileSync(path.join(STATE, MODELS_FILE), JSON.stringify(all, null, 2) + '\n'); } catch (e) { say('models.json could not be written: ' + e.message); }
 }
 
 // ONE ENTRY PER MODEL AND QUANTIZATION (goal/G10.9). Andy, 2026-10-12: "we need to offer a precise selection of
@@ -425,14 +465,32 @@ function writeKnown(next) {
 // is the status's active_model and gguf_variant. The 🧵 mark (recommended) and when it was tested are kept from the
 // known list: only model.test writes them.
 function pairKey(id, quant) { return String(id) + '\n' + String(quant || ''); }
-function variantsOf(id) {
-  return studio('GET', '/api/models/gguf-variants?repo_id=' + encodeURIComponent(id) + '&prefer_local_cache=true', undefined, QUANT_WAIT_MS)
+function variantsOf(id, conn) {
+  return studio('GET', '/api/models/gguf-variants?repo_id=' + encodeURIComponent(id) + '&prefer_local_cache=true', undefined, QUANT_WAIT_MS, conn)
     .then(function (v) { return (Array.isArray(v && v.variants) ? v.variants : []).filter(function (x) { return x && x.downloaded === true && x.quant; }); }, function () { return null; });
 }
-function fetchModels() {
+// A PLAIN OPENAI SERVER (goal/G18.6) answers api/models/cached-gguf with a 404: it has no studio routes, so its list is
+// its v1/models, one entry per id with no quantization, and the loaded one is the model chosen on the pair. Andy: "the
+// OpenAI caveats are noted. and accepted."
+const PLAIN = {};
+function plainList(conn, name, got) {
+  const was = {};
+  ((readKnown(name) || {}).models || []).forEach(function (m) { if (m && m.id) was[m.id] = m; });
+  const chosen = String(conn.model || '');
+  const list = (Array.isArray(got && got.data) ? got.data : []).filter(function (m) { return m && m.id; }).map(function (m) {
+    const id = String(m.id);
+    const w = was[id] || {};
+    return { id: id, quant: '', loaded: id === chosen, bytes: 0, task: '', vision: false, reasoning: w.reasoning === true, audio: w.audio === true, recommended: w.recommended === true, tested: String(w.tested || '') };
+  });
+  return { active: chosen, activeQuant: '', studio: false, models: list };
+}
+// The pair asked is the one in use when the refresh starts; the list is that pair's.
+function fetchModels(conn, name) {
   const nothing = function () { return {}; };
-  return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS).catch(nothing), studio('GET', '/api/inference/status').catch(nothing)])
+  const notStudio = function (e) { if (e && e.status === 404) return PLAIN; throw e; };
+  return Promise.all([studio('GET', '/api/models/cached-gguf', undefined, undefined, conn).catch(notStudio), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS, conn).catch(nothing), studio('GET', '/api/inference/status', undefined, undefined, conn).catch(nothing)])
     .then(function (got) {
+      if (got[0] === PLAIN) return plainList(conn, name, got[1]);
       const cached = Array.isArray(got[0] && got[0].cached) ? got[0].cached : [];
       const byId = {};
       (Array.isArray(got[1] && got[1].data) ? got[1].data : []).forEach(function (m) { if (m && m.id) byId[String(m.id)] = m; });
@@ -446,13 +504,13 @@ function fetchModels() {
       // A MODEL WHOSE VARIANTS COULD NOT BE READ keeps one entry, and what was learned of it (its quant, its flags, its
       // mark) is found by its id, as before goal/G10.9: a late v1/models must not cost it (goal/G14.4, 2b).
       const wasById = {};
-      ((readKnown() || {}).models || []).forEach(function (m) { if (m && m.id) { was[pairKey(m.id, m.quant)] = m; wasById[m.id] = m; } });
+      ((readKnown(name) || {}).models || []).forEach(function (m) { if (m && m.id) { was[pairKey(m.id, m.quant)] = m; wasById[m.id] = m; } });
       const list = [];
       return cached.reduce(function (chain, c) {
         return chain.then(function () {
           const id = String(c.repo_id || '');
           const k = byId[id] || {};
-          return variantsOf(id).then(function (variants) {
+          return variantsOf(id, conn).then(function (variants) {
             const listed = variants && variants.length;
             const quants = listed ? variants : [{ quant: String(k.quant || (wasById[id] || {}).quant || ''), size_bytes: c.size_bytes }];
             quants.forEach(function (v) {
@@ -478,21 +536,23 @@ function fetchModels() {
       }, Promise.resolve()).then(function () {
         // A status without gguf_variant and a late v1/models: the loaded entry's quant, as the list knows it.
         const loadedOne = list.filter(function (m) { return m.id === active && m.loaded; })[0];
-        return { active: active, activeQuant: activeQuant || (loadedOne ? loadedOne.quant : ''), models: list };
+        return { active: active, activeQuant: activeQuant || (loadedOne ? loadedOne.quant : ''), studio: true, models: list };
       });
     });
 }
 
 function refreshModels() {
   if (refreshing) return refreshing;
-  refreshing = fetchModels().then(function (next) {
-    refreshing = null;
-    refreshedAt = Date.now();
-    writeKnown(next);
-    publishState();
+  const conn = CONNECTION;
+  const name = String(conn.name || '');
+  const mine = refreshing = fetchModels(conn, name).then(function (next) {
+    if (refreshing === mine) refreshing = null;
+    writeKnown(next, name);
+    // A refresh that lands after a switch fills its own pair's list and says nothing of the pair now in use.
+    if (conn === CONNECTION) { refreshedAt = Date.now(); publishState(); }
     return next;
   }, function (e) {
-    refreshing = null;
+    if (refreshing === mine) refreshing = null;
     say('the studio\'s model list could not be read: ' + e.message);
     throw e;
   });
@@ -528,6 +588,8 @@ function stateObject() {
     persona: PERSONA,
     model: MODEL,
     server: { url: server.url, answers: server.answers, error: server.error },
+    // The pairs by name and url, the one in use marked (goal/G18.6); never a key, the state goes to every page.
+    connections: connectionsNow(),
     active: String(have.active || ''),
     activeQuant: String(have.activeQuant || ''),
     cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS),
@@ -563,6 +625,17 @@ function loadModel(id, quant) {
   conf.model = id;
   fs.writeFileSync(file, JSON.stringify(conf, null, 2) + '\n');
   MODEL = id;
+  // THE MODEL IS THE PAIR'S (goal/G18.6): kept on the pair in use, so a switch back finds it.
+  if (CONNECTION.name) { CONNECTION.model = id; writeConnections(); }
+  // A PLAIN OPENAI SERVER HAS NOTHING TO LOAD: the model is named per call, so choosing it is the whole of it.
+  const have = readKnown();
+  if (have && have.studio === false) {
+    load = { model: id, state: 'done', error: '' };
+    writeKnown(Object.assign({}, have, { active: id, activeQuant: '', models: have.models.map(function (m) { return Object.assign({}, m, { loaded: m.id === id }); }) }));
+    say(id + ' is the model from now on; a plain OpenAI server loads nothing');
+    publishState();
+    return Promise.resolve();
+  }
   say('loading ' + id + '; the configuration names it from now on');
   load = { model: id, state: 'loading', error: '' };
   publishState();
@@ -662,16 +735,60 @@ function probe() {
     req.end();
   });
 }
-function setConnection(url, key) {
-  const next = { url: String(url || ''), key: String(key || '') };
-  fs.writeFileSync(path.join(STATE, CONNECTION_FILE), JSON.stringify(next, null, 2) + '\n');
-  CONNECTION = next;
-  STUDIO_URL = studioUrlOf(next);
-  say('connection.json now names ' + next.url);
+// THE PAIRS KEPT FROM THE CONNECT TAB (goal/G18.6): connection.set {name, url, key} adds the pair, or replaces the one
+// of that name, and uses it, as a set always did; connection.use {name} switches; connection.remove {name} takes one
+// out, never the one in use. A name is a label (rule/12, js/fieldRules.js).
+function nameWhy(name) {
+  const fr = require('../../../js/fieldRules.js');
+  const p = fr.problem(name);
+  if (!p) return '';
+  const bytes = fr.byteLength(fr.normalize(name));
+  return 'the pair\'s ' + p + (bytes > fr.MAX_BYTES ? ' (' + bytes + ' bytes, the limit is ' + fr.MAX_BYTES + ')' : '');
+}
+function connectionsNow() { return CONNECTIONS.map(function (p) { return { name: p.name, url: p.url, use: p.use === true }; }); }
+function setConnection(name, url, key) {
+  const why = nameWhy(name);
+  if (why) throw refused(why);
+  const n = require('../../../js/fieldRules.js').normalize(name);
+  let p = pairNamed(n);
+  if (!p) { p = { name: n, url: '', key: '', use: false, model: '' }; CONNECTIONS.push(p); }
+  p.url = String(url || '');
+  p.key = String(key || '');
+  return usePair(n);
+}
+function usePair(name) {
+  const p = pairNamed(name);
+  if (!p) throw refused('no pair is named ' + JSON.stringify(name));
+  const switched = p !== CONNECTION;
+  CONNECTIONS.forEach(function (x) { x.use = x === p; });
+  writeConnections();
+  CONNECTION = p;
+  STUDIO_URL = studioUrlOf(p);
+  MODEL = p.model;
+  refreshing = null;
+  refreshedAt = 0;
+  server = { url: p.url, answers: false, error: '' };
+  // A SWITCH DISCONNECTS LEVANT (goal/G18.6, box v4): the model under it changed, so Connect checks the 🧵 again.
+  if (switched && connected) setConnected(false).catch(function () { /* said by setConnected */ });
+  say('connection.json now uses ' + p.name + ' at ' + p.url);
+  publishState();
+  refreshModels().catch(function () { /* said by refreshModels; the known list stands */ });
   return probe().then(function (r) {
     serverSeen(r.ok, r.error);
-    return { url: next.url, answers: r.ok, error: r.error };
+    return { url: p.url, answers: r.ok, error: r.error };
   });
+}
+function removePair(name) {
+  const p = pairNamed(name);
+  if (!p) throw refused('no pair is named ' + JSON.stringify(name));
+  if (p === CONNECTION) throw refused(name + ' is the pair in use: use another first');
+  CONNECTIONS = CONNECTIONS.filter(function (x) { return x !== p; });
+  writeConnections();
+  const all = readKnownAll();
+  if (all.pairs[name]) { delete all.pairs[name]; try { fs.writeFileSync(path.join(STATE, MODELS_FILE), JSON.stringify(all, null, 2) + '\n'); } catch (e) { say('models.json could not be written: ' + e.message); } }
+  say('the pair ' + name + ' is removed');
+  publishState();
+  return { connections: connectionsNow() };
 }
 
 // ── THE FILE AND GIT VERBS, FENCED BY THE DESK (goal/G10.8) ────────────
@@ -974,16 +1091,25 @@ appServer.serve({
     handler: function (a) { return setConnected(a.on === true); },
   },
   state: {
-    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' } },
-    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error } }; },
+    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }] },
+    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow() }; },
   },
   // THE SERVER BUBBLE'S VERB (goal/G10.7): the url and the key into connection.json, and whether a server answers.
+  // Since goal/G18.6 a named pair, one of several kept in connection.json; the key never comes back.
   'connection.set': {
-    request: { url: '', key: '' }, reply: { url: '', answers: true, error: '' },
+    request: { name: '', url: '', key: '' }, reply: { url: '', answers: true, error: '' },
     handler: function (a) {
       if (!String(a.url || '')) throw { refusal: 'bad-request', extra: { why: 'a url is needed' } };
-      return setConnection(a.url, a.key);
+      return setConnection(a.name, a.url, a.key);
     },
+  },
+  'connection.use': {
+    request: { name: '' }, reply: { url: '', answers: true, error: '' },
+    handler: function (a) { return usePair(String(a.name)); },
+  },
+  'connection.remove': {
+    request: { name: '' }, reply: { connections: [{ name: '', url: '', use: true }] },
+    handler: function (a) { return removePair(String(a.name)); },
   },
   // THE MODEL LINE AND THE CHAT BOX (goal/G14.4): what deskUnslothRemote reads and presses.
   models: {

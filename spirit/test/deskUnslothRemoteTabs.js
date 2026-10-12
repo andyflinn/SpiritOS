@@ -147,10 +147,12 @@ async function serverHalf() {
   else test.fail(OWED + 'state without a connection answered ' + short(s0));
 
   const url = 'http://127.0.0.1:' + studioServer.address().port + '/v1';
-  const set = (await client.ask({ deskUnsloth: { 'connection.set': { url: url, key: 'secret-key' } } })).body || {};
+  // Since goal/G18.6 a named pair, and connection.json an array of them.
+  const set = (await client.ask({ deskUnsloth: { 'connection.set': { name: 'studio', url: url, key: 'secret-key' } } })).body || {};
   let file = null;
   try { file = JSON.parse(fs.readFileSync(path.join(state, 'connection.json'), 'utf8')); } catch (e) { file = null; }
-  if (set.answers === true && set.url === url && file && file.url === url && file.key === 'secret-key') test.check('connection.set writes connection.json and says whether a server answers, from a probe of the server');
+  const pair = Array.isArray(file) ? file.filter(function (c) { return c && c.name === 'studio'; })[0] : null;
+  if (set.answers === true && set.url === url && pair && pair.url === url && pair.key === 'secret-key') test.check('connection.set writes connection.json and says whether a server answers, from a probe of the server');
   else test.fail(OWED + 'connection.set answered ' + short(set) + '; the file reads ' + short(file));
   if (studio.calls.some(function (c) { return c.auth === 'Bearer secret-key'; })) test.check('the probe carried the new key');
   else test.fail(OWED + 'the studio was asked ' + short(studio.calls));
@@ -168,7 +170,7 @@ async function serverHalf() {
   if (ld && ld.body && JSON.stringify(Object.keys(ld.body)) === '["model_path"]') test.check('the studio\'s load carries the model path alone, never a context limit');
   else test.fail(OWED + 'the load sent ' + short(ld && ld.body));
 
-  const dead = (await client.ask({ deskUnsloth: { 'connection.set': { url: 'http://127.0.0.1:1/v1', key: 'k' } } })).body || {};
+  const dead = (await client.ask({ deskUnsloth: { 'connection.set': { name: 'studio', url: 'http://127.0.0.1:1/v1', key: 'k' } } })).body || {};
   const s2 = (await client.ask({ deskUnsloth: { state: {} } })).body || {};
   if (dead.answers === false && dead.error && s2.server && s2.server.answers === false) test.check('a url nothing answers: answers false, with the reason, and the state says so');
   else test.fail(OWED + 'a dead url answered ' + short(dead) + '; state ' + short(s2));
@@ -289,6 +291,7 @@ async function faceHalf() {
   if (/id="dur-chat"/.test(doc.getElementById('dur-tab-test').innerHTML) && /id="dur-chat-input"/.test(doc.getElementById('dur-chat').innerHTML)) test.check('a model ready: the test tab shows the chat');
   else test.fail(OWED + 'the test tab with a model ready: ' + short(doc.getElementById('dur-tab-test').innerHTML) + ' / ' + short(doc.getElementById('dur-chat').innerHTML));
 
+  doc.getElementById('dur-pair-name').value = 'studio';
   doc.getElementById('dur-server-url').value = 'http://studio:8888/v1';
   doc.getElementById('dur-server-key').value = 'the-key';
   const before = ready.calls.length;
@@ -296,7 +299,7 @@ async function faceHalf() {
   await settled();
   const sent = ready.calls.slice(before).filter(function (c) { return c.name === 'owner.command' && c.body && c.body.body && c.body.body.ask && c.body.body.ask.deskUnsloth && c.body.body.ask.deskUnsloth['connection.set']; });
   const args = sent.length ? sent[0].body.body.ask.deskUnsloth['connection.set'] : null;
-  if (args && args.url === 'http://studio:8888/v1' && args.key === 'the-key' && sent[0].body.to === 'KEY-AGENT') test.check('the server bubble sends connection.set {url, key} to the chosen node');
+  if (args && args.name === 'studio' && args.url === 'http://studio:8888/v1' && args.key === 'the-key' && sent[0].body.to === 'KEY-AGENT') test.check('the server bubble sends connection.set {name, url, key} to the chosen node');
   else test.fail(OWED + 'after the server bubble\'s button: ' + short(ready.calls.slice(before)));
 
   const lone = await mount({ hasDesk: false, local: { state: Object.assign({}, READY, { server: { url: '', answers: false, error: '' } }), models: MODELS }, puppets: {} });

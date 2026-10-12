@@ -215,18 +215,48 @@ function deskUnslothRemoteDrawWarnings() {
   box.style.display = list.length ? '' : 'none';
 }
 
-// THE SERVER BUBBLE'S URL, from what deskUnsloth says it is connected to; the key is never shown, it is not sent.
-function deskUnslothRemoteDrawServer() {
-  var url = document.getElementById('dur-server-url');
-  var s = deskUnslothRemoteState;
-  if (url && !url.value && s && s.server && s.server.url) url.value = s.server.url;
+// THE PAIRS (goal/G18.6). Andy, 2026-10-12: "I want my Account URL/token pairs saved in connection.json, now an array.
+// i want to maintain that array in the connect tab."; each named, "good Idea, yes.", the name shown instead of the url.
+// One row per pair: the one in use marked, the others with use and remove (deskUnsloth refuses removing the one in
+// use). The key is never drawn: deskUnsloth never sends it.
+function deskUnslothRemoteDrawPairs() {
+  var box = document.getElementById('dur-pairs');
+  if (!box) return;
+  var escape = deskUnslothRemoteApi && deskUnslothRemoteApi.escapeHtml ? deskUnslothRemoteApi.escapeHtml : function (t) { return String(t); };
+  var pairs = (deskUnslothRemoteState && Array.isArray(deskUnslothRemoteState.connections)) ? deskUnslothRemoteState.connections : [];
+  box.innerHTML = pairs.length ? pairs.map(function (p) {
+    var name = escape(p.name);
+    return '<div class="start-job-form">' +
+      '<div class="grow"><b>' + name + '</b>' + (p.use ? ' <span class="job-manifest-note">in use</span>' : '') + '</div>' +
+      (p.use ? '' : '<button type="button" data-use="' + name + '">use</button> <button type="button" data-remove="' + name + '">remove</button>') +
+      '</div>';
+  }).join('') : '<div class="job-manifest-note">No server is kept yet: add one below.</div>';
+}
+
+// USE AND REMOVE, from a row of the pairs: deskUnsloth answers, and the state and the models are asked again.
+function deskUnslothRemotePairPress(event) {
+  var t = event && event.target;
+  if (!t || !t.getAttribute) return;
+  var use = t.getAttribute('data-use');
+  var remove = t.getAttribute('data-remove');
+  if (!use && !remove) return;
+  var target = deskUnslothRemoteTarget;
+  var verb = use ? 'connection.use' : 'connection.remove';
+  deskUnslothRemoteAsk(target, verb, { name: use || remove }).then(function (said) {
+    if (target !== deskUnslothRemoteTarget) return;
+    if (!said || said.ok === false) { deskUnslothRemoteSay((said && ((said.extra && said.extra.why) || said.error || said.code)) || verb + ' was refused', true); return; }
+    if (use) deskUnslothRemoteSay(said.answers ? 'using ' + use + ': a server answers there' : 'using ' + use + ', but nothing answers there: ' + said.error, !said.answers);
+    else deskUnslothRemoteSay(remove + ' is removed', false);
+    deskUnslothRemoteLoadState();
+    deskUnslothRemoteLoadModels();
+  });
 }
 
 // EVERYTHING THE STATE DRAWS, in one call: the switch, the warnings, the server bubble and the chat.
 function deskUnslothRemoteDrawAll() {
   deskUnslothRemoteDraw();
   deskUnslothRemoteDrawWarnings();
-  deskUnslothRemoteDrawServer();
+  deskUnslothRemoteDrawPairs();
   deskUnslothRemoteDrawChat();
 }
 
@@ -252,15 +282,25 @@ function deskUnslothRemoteDrawTabs() {
 
 // THE SERVER BUBBLE'S PRESS (goal/G10.7): the url and the key to deskUnsloth on the chosen node, connection.set; its
 // answer says whether a server answers there, and the state is asked again so the warnings follow.
+// Since goal/G18.6 it carries the pair's name, checked by the label rule before it is sent (rule/12).
 function deskUnslothRemoteSaveServer() {
+  var name = document.getElementById('dur-pair-name');
   var url = document.getElementById('dur-server-url');
   var key = document.getElementById('dur-server-key');
+  var n = String((name && name.value) || '').trim();
   var u = String((url && url.value) || '').trim();
+  var rules = (typeof window !== 'undefined' && window.spiritFieldRules) || null;
+  var why = rules ? rules.problem(n) : (n ? '' : 'name required');
+  if (why) {
+    var bytes = rules ? rules.byteLength(rules.normalize(n)) : 0;
+    deskUnslothRemoteSay('the name: ' + why + (rules && bytes > rules.MAX_BYTES ? ' (' + bytes + ' bytes, the limit is ' + rules.MAX_BYTES + ')' : ''), true);
+    return;
+  }
   if (!u) { deskUnslothRemoteSay('a url is needed, the OpenAI root, for example http://127.0.0.1:8888/v1', true); return; }
   var target = deskUnslothRemoteTarget;
-  deskUnslothRemoteAsk(target, 'connection.set', { url: u, key: String((key && key.value) || '') }).then(function (said) {
+  deskUnslothRemoteAsk(target, 'connection.set', { name: n, url: u, key: String((key && key.value) || '') }).then(function (said) {
     if (target !== deskUnslothRemoteTarget) return;
-    if (!said || said.ok === false) { deskUnslothRemoteSay((said && (said.error || said.code)) || 'the connection was not set', true); return; }
+    if (!said || said.ok === false) { deskUnslothRemoteSay((said && ((said.extra && said.extra.why) || said.error || said.code)) || 'the connection was not set', true); return; }
     deskUnslothRemoteSay(said.answers ? 'connected: a server answers at ' + said.url : 'saved, but nothing answers at ' + said.url + ': ' + said.error, !said.answers);
     if (key) key.value = '';
     deskUnslothRemoteLoadState();
@@ -414,7 +454,7 @@ function deskUnslothRemoteTakesPublished(target, meta) {
 var deskUnslothRemoteChatPending = '';   // the chat.send id awaiting its published answer
 function deskUnslothRemoteApplyPublished(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.connected !== 'boolean') return;
-  deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' } };
+  deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' }, connections: Array.isArray(obj.connections) ? obj.connections : [] };
   deskUnslothRemoteBusy = false;
   deskUnslothRemoteModels = { active: obj.active || '', activeQuant: obj.activeQuant || '', cached: !!obj.cached, load: obj.load || {}, test: obj.test || {}, models: Array.isArray(obj.models) ? obj.models : [] };
   if (deskUnslothRemoteLoadTimer) {
@@ -647,12 +687,15 @@ spirit.shell.activateApp({
           '</select>' +
         '</label>' +
       '</div>' +
+      // THE PAIRS AND THE ADD FORM (goal/G18.6): the servers kept, by name, and a new one or a new key for one.
+      '<div class="stat-tile wide"><div class="label">OpenAI compatible servers</div><div id="dur-pairs"></div></div>' +
       '<div class="start-job-form card">' +
-        '<label class="field-label grow">connect to an OpenAI compatible server' +
+        '<label class="field-label">name<input type="text" id="dur-pair-name" data-field="label" placeholder="openai"></label>' +
+        '<label class="field-label grow">url' +
           '<input type="text" id="dur-server-url" placeholder="http://127.0.0.1:8888/v1">' +
         '</label>' +
         '<label class="field-label">key<input type="password" id="dur-server-key" placeholder="the server key"></label>' +
-        '<button type="button" id="dur-server-save">Connect</button>' +
+        '<button type="button" id="dur-server-save">Save and use</button>' +
       '</div>' +
       '<div class="job-manifest-note">Connected, the agent reads the desk and answers what is addressed to it, ' +
         'and the desk counts it live. Disconnected, it stops reading and signs off at once, so a phase that ' +
@@ -683,6 +726,7 @@ spirit.shell.activateApp({
     });
     document.getElementById('dur-switch').addEventListener('click', deskUnslothRemoteFlip);
     document.getElementById('dur-server-save').addEventListener('click', deskUnslothRemoteSaveServer);
+    document.getElementById('dur-pairs').addEventListener('click', deskUnslothRemotePairPress);
     // THE STREAM (goal/G14.5): every change of deskUnsloth's state, local or from the chosen puppet, through one
     // handler; the asks below paint the first time and are not repeated.
     if (typeof api.onPublished === 'function') {
