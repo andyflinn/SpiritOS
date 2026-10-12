@@ -1,8 +1,8 @@
 {
- "change": 36456,
+ "change": 36557,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T13:38:49.570Z",
+ "writtenAt": "2026-10-12T13:46:49.896Z",
  "items": [
   {
    "id": "goal/G19",
@@ -17,7 +17,6 @@
    "blocked": [
     "goal/G19.1",
     "goal/G19.2",
-    "goal/G19.3",
     "goal/G19.6",
     "goal/G19.7",
     "goal/G19.8",
@@ -45,13 +44,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -384,7 +381,6 @@
     "goal/G19.11"
    ],
    "blocked": [
-    "goal/G19.3",
     "goal/G19.12"
    ],
    "go": false,
@@ -532,9 +528,12 @@
    "id": "goal/G19.3",
    "title": "deskVerify: the Verifier tab vanishes when work is queued",
    "goal": "goal/G19",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19",
     "goal/G19.2"
@@ -543,18 +542,39 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyQueueKept.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyTab.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -654,6 +674,41 @@
      "by": "claude-windows",
      "at": "2026-10-12T13:38:40.157Z",
      "text": "taking: red first, in my clone."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:40:33.733Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:40:35.007Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:44:49.852Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:44:51.434Z",
+     "text": "commit 06c378762f5f3efd37244b1fe36194496fa7c363: goal/G19.3: the Verifier queue answered, kept in verify.db, listed in the tab\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/shell/desk/desk.js\n- spirit/test/deskVerifyQueueKept.js\n- spirit/test/deskVerifyTab.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T13:44:58.894Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:45:06.813Z",
+     "text": "Claimed, in 06c37876. Files: deskVerify.js, the desk page desk.js, the new deskVerifyQueueKept.js, and deskVerifyTab.js, whose fake now answers the queue as {kind, id}. On your node it starts keeping runs once deskVerify restarts on it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T13:45:22.495Z",
+     "text": "deskVerify: passed, at 06c37876 (pulled). 2 suites ran green."
     }
    ]
   },
@@ -1594,8 +1649,8 @@
    "id": "goal/G19.12",
    "title": "Harness reds: rectify the test or fix the code",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G19.2"
@@ -1606,13 +1661,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -1657,6 +1712,11 @@
      "by": "desk",
      "at": "2026-10-12T13:23:53.423Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T13:45:25.763Z",
+     "text": "taking: first each listed suite run here, as the box says, then judged by your rule."
     }
    ]
   }
