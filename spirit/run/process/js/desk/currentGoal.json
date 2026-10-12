@@ -1,8 +1,8 @@
 {
- "change": 34435,
+ "change": 34459,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T08:33:12.182Z",
+ "writtenAt": "2026-10-12T08:36:44.008Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,12 +11,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G18.4"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -638,9 +637,12 @@
    "id": "goal/G18.4",
    "title": "probabilityBucket",
    "goal": "goal/G18",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -648,11 +650,22 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/probabilityBucket.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/probabilityBucket.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -740,6 +753,15 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T08:28:06.433Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/probabilityBucket.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T08:35:11.419Z"
     }
    ],
    "chat": [
@@ -832,6 +854,36 @@
      "by": "desk",
      "at": "2026-10-12T08:33:11.722Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:34:38.596Z",
+     "text": "Built and green in my clone (12 checks): createProbabilityBucket(capacity) with seatFor and serialize only, {probability, object} highest first, equal behind, 0 seated until pushed out, the ceiling in UTF-8 bytes over the objects alone, nothing required.\nThe commit waits only on your core grant, G1 under this item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T08:35:11.878Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:35:40.540Z",
+     "text": "Committed under your G1 and pushed; claiming now. The three probabilit modules stand: probabilityStringMatch, probabilityStringObjectMatch, probabilityBucket; the integration is yours to open."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:35:41.118Z",
+     "text": "commit 428416fcd4489fceeca6d2896474e6271a2908c2: goal/G18.4: probabilityBucket.js, the third probabilit* module\n- spirit/run/js/probabilityBucket.js\n- spirit/test/probabilityBucket.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T08:35:49.069Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:35:51.484Z",
+     "text": "deskVerify: passed, at 428416fc (pulled). 1 suite ran green."
     }
    ]
   }
