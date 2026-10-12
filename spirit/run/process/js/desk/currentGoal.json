@@ -1,5 +1,5 @@
 {
- "change": 39207,
+ "change": 39920,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -40,13 +40,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -164,7 +162,9 @@
     "goal/G19",
     "goal/G19.11"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G19.15"
+   ],
    "go": true,
    "alone": false,
    "alert": false,
@@ -210,11 +210,11 @@
      "version": 6
     }
    ],
-   "asks": 6,
-   "half": true,
+   "asks": 1,
+   "half": false,
    "full": false,
-   "box": "Seats kept on first connect, given up when evicted.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote. js/hub.js:1160 seats; js/answerRelay.js:201 calls relayKeys.accept on a \"new\" verdict; js/relayKeys.js:196-202 rewrites the whole row. Every new node reads \"You (unknown)\". test/presenceProof.js:70 never checks the label.\n- HIGH: a seat is never given up. relayKeys.unseat (js/relayKeys.js:159) has no caller; any pin counts as a seat (:138-146); ownerBadge.js:408 claimed = owned || hasSeat; natterDetails.js:580 hides the claim form.\n- An owner CAN evict: Contacts details > Forget twice (shell/contactsDetails/contactsDetails.js:363-388) sends removePeer to each relay (relay.js:3403-3406 then forgetPeer :2258). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js:1135-1143); \"a boot can still backfill\" (:1161) is false.\n- MEDIUM: the seat label is frozen at claim time (ownerBadge.js:426,431); a rename from Info (info.js:285) never re-seats; natter.js:811-815 says otherwise.\n- LOW: natterDetails.js:433 reads c.peers, :1048 reads roll.roster; the probe sets neither. Andy's reading: rules for seats, but no code for the owner to evict members.\n\nDECIDED (Andy, 2026-10-12)\n- \"the relay, by definition, has no power over a member-node's data, so the only thing that could be done: help a node realize it is outcast, and remove that relay from it's list.\"\n- \"a relay row may need a field, that persists the rejection, until the user sees that in natter, and removes the relay himself, the automation of a removal may exceed our (coders) authority. Nobody other than the node user has a right to remove data:\"\n- \"furthermore, the user may call the relay-owner by phone and clear up misunderstandings that lead to the eviction in the first place....\"\n- So: on a stream refused \"no such identity\" the node writes the rejection (and when) on that relay's row and keeps its seat; Natter shows it; only the user removes the relay. An accepted stream later clears the field.\n- \".... and it might contradict our own rule, never remove the last relay from the relay-roll.\" So no automatic removal, and the user's Remove in Natter keeps that rule too.\n- \"also: a relay MUST be robust to malicious attacks, and repeating denied request might only be ignorance, not maliciousness.\" Withstanding repeated denied requests is the relay's job.\n\n- And to close it: \"with all that said: \"let's provide the user with the neccessary knowledge in natter.\" So Natter says, on that relay's row, that the relay refused this node and since when, and offers the user's own Remove (never on the last relay).\n\n- Then, on dialing: \"the dialing may as well cease, since it's useless, and doesn't hurt the users data.\" So a rejected relay is not dialed; Natter offers a try-again beside the Remove, which dials once and clears the rejection if the stream is accepted. (The try-again is superseded below.)\n\n- Asked whether the try-again in Natter brings a rejected relay back: \"that's what that new field in a natter row is for.\" The rejection field on the row drives both what Natter says and its try-again. (Superseded below: no try-again.)\n\n- \"yes. there has to be a way for re-admission, outside of our wire.\" The owner re-admits off the wire (a phone call); the user's try-again is how the node finds out.\n\nFROM THE REVIEW PASS: the user's Remove of a relay gives up its seat with it (relayKeys.unseat, which so gets its first caller and stays out of G19.11's dead code); Remove still refuses the last relay.\nSHAPE, the plain parts: relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx; a rename re-seats.\n- At the review pass, on the title \"...given up when evicted\": \"not quite: the eviction is effective, and frees a slot, but the (ex-)members node informs it's user in natter about the situation.\" The relay's eviction stands and frees its slot; the ex-member's node keeps its own record until its user removes it, and tells him in Natter.\n\n- Asked about the try-again: \"why would natter try again after a rejection? the rejection is noted by the node, stashed in the correct relay-row, and the information can then be displayed by natter?\"\n- \"and the seat is already vacated, so the nodes ID has to get a new invite, that what the info in natter is supposed to convey.\"\nSo, superseding the try-again: there is no try-again and no command that calls one relay. Natter says on that relay's row that the relay refused this node, since when, that the seat is gone, and that only a new invite brings it back; Remove stays (never on the last relay). Re-admission is a new invite.\n\n- Asked where the rejection is noted: \"and why would that logging not go behind peerRequest? it is known behind peerRequest, and the information goes into relay-state dataset?\" So peerPost, which already keeps the relay's refusal text, writes the rejection into that relay's row in relay-state; presenceNode closes the held stream to it and stops redialing.\n- \"and the message is supposed to say: no such Sender is known, otherwise it could be assumed that the Recipient is not known.\" So the relay's refusal reads \"no such sender\" (code no-such-sender) wherever it names the asking node: the post, the reply and the stream.\n- On the wording: \"or your ID is not a valid Sending ID.... something....\" The text is still open.\n- Asked why the stream is not held behind peerPost (it came first, for presence; the router put requests and replies on it later): \"size is not a more important argument that one door only\" So the node's stream to each relay moves under peerPost: one door.\n- Blocked by goal/G19.14 (Andy: \"so it belongs behind peerPost. decided. add a blocking item to that effect.\"): the stream moves behind peerPost first, and the refusal is noted and the redial stopped there.\n",
-   "version": 14,
+   "box": "Seats kept on first connect; an evicted node told so in Natter.\n\nFOUND (tree at f0d03916, 2026-10-12; paths under spirit/run/)\n- HIGH: the first stream to a new relay erases the seat the claim just wrote (js/hub.js seats, js/answerRelay.js calls relayKeys.accept on a \"new\" verdict, js/relayKeys.js rewrites the whole row). Every new node reads \"You (unknown)\"; test/presenceProof.js never checks the label.\n- HIGH: a seat is never given up: relayKeys.unseat has no caller; any pin counts as a seat; ownerBadge claimed = owned || hasSeat; natterDetails hides the claim form.\n- An owner can evict (Contacts details > Forget twice sends removePeer to each relay). The evicted node is never told, keeps its seat, and can never re-claim.\n- MEDIUM: a re-claim answered 409 for the node's own key records no seat (hub.js).\n- MEDIUM: the seat label is frozen at claim time (ownerBadge); a rename from Info never re-seats.\n- LOW: natterDetails reads c.peers and roll.roster; the probe sets neither.\n\nDECIDED (Andy, 2026-10-12; the chat holds every line)\n- The relay has no power over a member node's data; only the node's user removes a relay, never the last one. \"Nobody other than the node user has a right to remove data\". A relay must withstand repeated denied requests.\n- The eviction stands and frees the slot; \"the seat is already vacated, so the nodes ID has to get a new invite, that what the info in natter is supposed to convey.\" No try-again; re-admission is a new invite, arranged off the wire.\n- \"it happens all behind peerPost, when a rejection-reply arrives and peerPost stashes the info into the relay table, from then on peerPost will reject posts to that relay. simple, no interventions needed, natter will know from being allows access to the relay table. and peerPost streams the rejection for realtime update to shell.\"\n- \"we don't cheat at the first opportunity\" / \"peerPost, on receiving and recognizing the FUCKING rejection, terminate the correct ONE relayStream that belongs to the rejecting relay.\" / \"at the same point it writes to the relay-row\"\n- The refusal names the sender, not the recipient: \"your id is not a valid sender here\" (code not-a-sender), on the post, the reply and the stream.\n- One door first: goal/G19.14 (closed) put the node's relay streams behind peerPost.\n\nSHAPE\n- relayKeys.accept merges instead of replacing; a 409 re-claim of its own key seats as on a 2xx.\n- peerPost, at the one place it recognises a not-a-sender reply: writes the rejection and its time into that relay's row in the relay table, closes exactly that relay's stream (it keeps each stream's handle, handing presenceNode the opener; presenceNode unchanged), refuses every later post to that relay, and streams the rejection to the shell.\n- A start or restart does not open a stream to a relay whose row holds a rejection (the list comes from ownerBadge).\n- Natter reads the relay table: on that relay's row it says the relay refused this node, since when, that the seat is gone and only a new invite brings it back, and offers the user's Remove (never on the last relay). Remove gives up the seat (relayKeys.unseat, its first caller).\n- The LOW reads in natterDetails are fixed with the code this item changes.\n- Rename: no new verb. Info already tells every relay the new name through peerPost (\"you node will notify the relays, through peerPost\"); peerPost, when a relay accepts the rename, writes the new label into that relay's row (relay-state/relayKeys.json, through relayKeys), at the same door as the rejection (\"yes.\", Q19).\n\nGRANTS: G1 (hub, answerRelay, relayKeys, ownerBadge, natter, natterDetails, info) and G3 (peerPost, relay, spiritErrors).\n\nAsked where the rejection is kept: \"the authoritative info about relays on the node MUST be by ID (key)\"\n",
+   "version": 22,
    "checks": [
     {
      "number": "Q1",
@@ -302,9 +302,9 @@
      "kind": "Q",
      "words": "Shall a rename update the name each relay shows through another new command, or stay out of this item?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-12T16:07:20.078Z"
+     "at": "2026-10-12T17:25:56.940Z"
     },
     {
      "number": "Q10",
@@ -329,45 +329,117 @@
      "kind": "G",
      "words": "core grant: spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/spiritErrors.js",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "failed",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:22:37.277Z"
     },
     {
      "number": "Q12",
      "kind": "Q",
      "words": "Shall the relay say: your id is not a valid sender here (code not-a-sender)?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-12T16:19:44.069Z"
+     "at": "2026-10-12T17:25:54.540Z"
     },
     {
      "number": "Q13",
      "kind": "Q",
      "words": "1, and propose moving it under peerPost as its own item?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-12T16:22:56.529Z"
+     "at": "2026-10-12T17:23:01.060Z"
     },
     {
      "number": "Q14",
      "kind": "Q",
      "words": "1, or as its own item first?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-12T16:23:23.956Z"
+     "at": "2026-10-12T17:23:03.633Z"
     },
     {
      "number": "Q15",
      "kind": "Q",
      "words": "Add it?",
      "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:23:06.015Z"
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "Let that stream keep redialing, the relay withstanding it, so presenceNode leaves the grant?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:16:18.292Z"
+    },
+    {
+     "number": "Q17",
+     "kind": "Q",
+     "words": "Restart all streams once per rejection, so presenceNode leaves the grant?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:22:53.624Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/spiritErrors.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T17:23:43.242Z"
+    },
+    {
+     "number": "Q18",
+     "kind": "Q",
+     "words": "Shall a rename also change the name the relays show, with that new command, or leave it out of this item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:29:11.474Z"
+    },
+    {
+     "number": "Q19",
+     "kind": "Q",
+     "words": "So peerPost writes the renamed label into the relay row when the relay accepts it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:30:47.481Z"
+    },
+    {
+     "number": "Q20",
+     "kind": "Q",
+     "words": "json row: right?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:35:10.447Z"
+    },
+    {
+     "number": "Q21",
+     "kind": "Q",
+     "words": "14?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:35:14.792Z"
+    },
+    {
+     "number": "Q22",
+     "kind": "Q",
+     "words": "May the grant add relayServer and sseClient, so a stream refusal is recognised too and its redial stops?",
+     "test": "",
      "state": "open",
      "by": "claude-windows",
-     "at": "2026-10-12T16:24:39.848Z"
+     "at": "2026-10-12T17:48:30.157Z"
     }
    ],
    "chat": [
@@ -720,6 +792,236 @@
      "by": "claude-windows",
      "at": "2026-10-12T16:29:19.994Z",
      "text": "Added G19.14, blocking this item; box v14 says so."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:11:22.116Z",
+     "text": "so you take presenceNode out of this grant?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:11:22.604Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:11:45.623Z",
+     "text": "- No, it stays, for one small thing: presenceNode can only close all its streams at once today, and stopping the redial needs it to close the one relay that refused.\n- peerPost decides when; presenceNode only does the closing.\n- Skipping a refused relay at the next start needs no presenceNode change: that list comes from ownerBadge, already granted."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:15:07.657Z",
+     "text": "wrong: it happens all behind peerPost, when a rejection-reply arrives and peerPost stashes the info into the relay table, from then on peerPost will reject posts to that relay. simple, no interventions needed, natter will know from being allows access to the relay table. and peerPost streams the rejection for realtime update to shell."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:15:37.414Z",
+     "text": "we don't cheat at the first opportunity!!!!!!!!!!"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:15:37.926Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:15:41.527Z",
+     "text": "Recorded (box v15): all behind peerPost, it refuses posts to that relay itself, Natter reads the table, the rejection is streamed to the shell.\nOne thing it leaves: the held listening stream to that relay keeps redialing every few seconds, refused each time, until the node restarts."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:15:44.056Z",
+     "text": "Let that stream keep redialing, the relay withstanding it, so presenceNode leaves the grant?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:16:20.842Z",
+     "text": "Right, no cheat. Recorded (box v16): peerPost has presenceNode close that relay stream and not reopen it.\nG2 stands as asked: peerPost, presenceNode, relay, spiritErrors."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:16:56.443Z",
+     "text": "this: \" the held listening stream to that relay keeps redialing every few seconds, refused each time, until the node restarts.\"\n\nboth are behind peerPost, so they are allowed to talk. for now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:17:26.503Z",
+     "text": "Recorded (box v17): peerPost tells its presenceNode to close that stream; allowed, for now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:19:37.245Z",
+     "text": "so presence node can be out of the above grant?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:20:03.978Z",
+     "text": "- Yes, it can: peerPost stops all streams and starts them again, and the restart skips the refused relay because its list comes from ownerBadge, already granted.\n- The cost: every other relay stream drops for a moment and reconnects, once per rejection.\n- Without that cost, presenceNode needs one small close-this-relay function, which keeps it in the grant."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:20:06.600Z",
+     "text": "Restart all streams once per rejection, so presenceNode leaves the grant?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:21:50.755Z",
+     "text": "False!\n\npeerPost, on receiving and recognizing the FUCKING rejection, terminate the correct ONE relayStream that belongs to the rejecting relay."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:22:28.600Z",
+     "text": "at the same point it writes to the relay-row"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:22:29.210Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:22:42.406Z",
+     "text": "Right. Recorded (box v18): peerPost keeps each relay stream handle and closes exactly the rejecting one; presenceNode is untouched.\nG2 is withdrawn; G3 asks peerPost, relay and spiritErrors only."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:23:11.699Z",
+     "text": "doesn't peerPost already hold all the relay streams?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:23:12.195Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:23:21.917Z",
+     "text": "Recorded (box v19): the close happens in the same place as the row write.\nOpen: the wording (Q12), rename (Q9), and the G3 grant."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:23:42.734Z",
+     "text": "- Since G19.14, yes in ownership: peerPost builds the presenceNode that holds them all.\n- But the handles sit inside presenceNode, and it lets peerPost close only all of them at once.\n- So peerPost keeps its own copy of each handle as it opens them, and closes the one; that is all G19.1 adds there."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:25:22.709Z",
+     "text": "Q12: Shall the relay say: your id is not a valid sender here (code not-a-sender)?\n\nyes: \"your id is not a valid sender here\"\n\nQ9: Shall a rename update the name each relay shows through another new command, or stay out of this item?\n\nin english."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:25:59.513Z",
+     "text": "Recorded (box v20): your id is not a valid sender here.\n- When you rename your node in Info, each relay keeps showing the old name it was given when the node joined.\n- Fixing that needs one new node command that sends the new name to every relay."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:26:02.458Z",
+     "text": "Shall a rename also change the name the relays show, with that new command, or leave it out of this item?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:26:41.188Z",
+     "text": "Correction: that box write failed, the box had outgrown the desk limit.\nCapped now (box v20): FOUND, the rulings that stand, and the SHAPE; superseded lines dropped, every line of yours stays in this chat.\nThe wording is in; the rename question above is the last open one."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:28:29.415Z",
+     "text": "Q18: Shall a rename also change the name the relays show, with that new command, or leave it out of this item?\n\nit doesn't need a new verb, when you rename your node in info, you node will notify the relays, through peerPost. where are the relay keys kept?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:29:05.848Z",
+     "text": "- The relay keys are kept in relayKeys.json under relay-state, one row per relay, written only by relayKeys.\n- You are right, and I was wrong: Info already tells every relay the new name through peerPost, and the relays show it.\n- What stays old is the node own copy of the name in that row, which Natter shows; peerPost, on the relay ok to a rename, can write the new name into that row, beside the rejection, with no new verb."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:29:08.517Z",
+     "text": "So peerPost writes the renamed label into the relay row when the relay accepts it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:30:21.434Z",
+     "text": "Q19: So peerPost writes the renamed label into the relay row when the relay accepts it?\n\nyes."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:30:21.924Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:30:52.113Z",
+     "text": "Recorded (box v21): peerPost writes the accepted label into the row. Green: settled, no open questions. Building now, red first."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:31:30.301Z",
+     "text": "and the relay stashes it where it stashes route info?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:31:30.748Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:31:58.611Z",
+     "text": "- Route info is about other nodes: it goes on their contact rows and a small cache of strangers, not on a relay row.\n- The node keeps two files per relay under relay-state: relays.json, the list Natter shows, and relayKeys.json, the pinned key and the seat.\n- The rejection belongs on the relays.json row, the one Natter already reads; the renamed label belongs on the relayKeys.json row, where the seat is."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:32:01.441Z",
+     "text": "Rejection on the relays.json row, the label on the relayKeys.json row: right?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:32:07.945Z",
+     "text": "and where it stashes the roll"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:32:37.832Z",
+     "text": "- The roll is not stashed anywhere: ownerBadge builds it fresh on every probe and keeps it in memory.\n- It is put together from three places: the relays.json row (address and name), the relay answer (owner, relay key, relay name), and relayKeys.json (the name this node holds the seat under).\n- So the rejection on the relays.json row lands in the roll the same way, and Natter reads it from there."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:32:49.653Z",
+     "text": "the authoritative info about relays on the node MUST be by ID (key)"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:32:50.201Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:33:23.981Z",
+     "text": "Recorded (box v22). Checked live: today both files are keyed by URL, and relayKeys says so in a comment, a URL is the identity of a relay as far as this node is concerned.\n- relays.json is a list of url and name; relayKeys.json maps each url to the pinned key and the seat.\n- Re-keying by the relay key touches every reader of both, and the stored rows on every node must move over safely."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:33:26.607Z",
+     "text": "Re-key the relay records by the relay key as its own item first, blocking G19.1, like G19.14?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:33:46.697Z",
+     "text": "yes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:34:48.374Z",
+     "text": "Added G19.15, blocking this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:48:26.565Z",
+     "text": "Built in my clone, held until G19.15 lands: seatsKept went from 27 red to 31 green, everything it touches green.\n- One gap left: a relay that refuses the stream answers every stream refusal with a bare not now, so a node that never posts there learns it only on its next post.\n- Telling the stream refusal apart needs the relay HTTP layer (relayServer) to pass the text, and sseClient to hand it to peerPost."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:48:29.668Z",
+     "text": "May the grant add relayServer and sseClient, so a stream refusal is recognised too and its redial stops?"
     }
    ]
   },
@@ -3313,6 +3615,497 @@
      "by": "andy",
      "at": "2026-10-12T17:09:45.206Z",
      "text": "deskVerify: passed, at 9e8c3887 (pulled). 9 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G19.15",
+   "title": "Relay records on the node keyed by the relay key",
+   "goal": "goal/G19",
+   "status": "",
+   "with": "claude-windows",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G19.1"
+   ],
+   "blocked": [
+    "goal/G19.16"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Relay records on the node keyed by the relay key.\n\nFOUND (D:/SpiritOS at 9e8c3887, 2026-10-12; paths under spirit/run/)\n- relay-state/relays.json is a list of {label, url}, read and written by js/ownerBadge.js (loadRelays, addRelay, removeRelay, configuredUrls, ensureRelays, writeRelays), called from js/hub.js, js/relayAuth.js and js/server.js.\n- relay-state/relayKeys.json maps each URL to {publicKey, firstSeen, acceptedAt, seat}, written only by js/relayKeys.js, which says \"A URL is the identity of a relay as far as this node is concerned\"; required by js/answerRelay.js, hub.js, ownerBadge.js, presenceNode.js and server.js.\n- So the node's relay records are keyed by URL today, in both files.\n\nDECIDED (Andy, 2026-10-12, on goal/G19.1)\n- \"the authoritative info about relays on the node MUST be by ID (key)\"\n- Asked whether re-keying is its own item first, blocking G19.1: \"yes.\"\n\nSHAPE: the node's authoritative record of each relay is keyed by the relay's public key; a URL is an address held on that record, not its identity. Stored rows on every node move over safely on first start (no backward compatibility on the wire before alpha, but stored data stays safe). goal/G19.1 then keeps the rejection and the seat's label on that keyed record.\n- \"while we're at this, let's move the relays into node.db. this change won't even affect the relay code, so updating nodes is simple, on boot, the node asserts the contents of  \\\"noderoutes.net\\\" and spirit.andyflinn.com in the database, by creating those rows, if they don't exist.\"\nSo: one relays table in node.db (nodeStore owns where it lives, as for every node.db table), keyed by the relay key, replacing relays.json and relayKeys.json; on boot the node creates the rows for noderoutes.net and spirit.andyflinn.com when they are missing. The relay code is untouched.\n- On a relay with no known key: \"false: the key will now be generated at first boot, if it doesn't exists.\" then \"no. the node knows at install time the ID's of relays we guarantee as existent.\" So the keys of the guaranteed relays (noderoutes.net, spirit.andyflinn.com) ship with the install, and boot writes their rows under those keys.\n- \"for now, that's only spirit.andyflinn.com\" So for now the install ships one guaranteed relay key, spirit.andyflinn.com, and boot asserts only that row.\n- \"actually i HAVE a VPS on a domain, with node installed.\" \"waiting for a relay.\" Then: \"i don't really have an option noderoutes.net has to go up and stay up. now. it's part of the alpha strategy, where spirit is my development releay (for us) and noderoutes.et will be the alpha public relay.\" So both keys ship: spirit.andyflinn.com (development, for us) and noderoutes.net (the alpha public relay, on that VPS); the never-removed floor stays noderoutes.net (G16.3). noderoutes.net's key exists only once its relay runs, so its row ships when it does.\n- \"there will be only ONE relay table in node.db. why the HELL would we need two?\" Then, on the answer \"One table, agreed: the two files are only what exists today. Both are emptied into that one relays table, keyed by the relay key, and then deleted.\": \"yes\". So the first boot copies every row of relays.json and relayKeys.json into the one relays table and deletes both files.\n- The guaranteed relays' keys (G19.16 done): noderoutes.net MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls= ; spirit.andyflinn.com is read from its key door when the item is built.\n- On rows with no known key: \"we will pre-seed WITH keys, we know those key, after all.\" So the seeded relays arrive with their keys; any other row in the old files with no pinned key (a relay this node never reached) is not copied, since nothing can key it (my reading of the above; on Andy's node every listed relay has a key or is a seed).\n",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "json become one record per relay key?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:38:50.273Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Shall a relay added by address wait as pending until its first answer gives its key?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:42:35.064Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Shall the first boot copy every row of the two files into the table and then delete the files?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T18:02:36.582Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Do you mean the node fetches each relay key at first boot, and an unreachable relay waits as pending until it answers?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:46:25.633Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "So no pending rows: a relay enters the table only with its key, shipped or learned at its claim?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T18:04:15.287Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "com, for now?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:46:30.321Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "net, so its key ships too once its relay runs, and the floor stays there?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:46:33.702Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T17:46:59.508Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Drop such a row at the copy, so the table holds only relays whose key is known?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T18:04:19.738Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/nodeStore.js, spirit/run/js/relayKeys.js, spirit/run/js/ownerBadge.js, spirit/run/js/hub.js, spirit/run/js/relayAuth.js, spirit/run/js/server.js, spirit/run/js/answerRelay.js, spirit/run/js/presenceNode.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T18:04:35.493Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:34:50.946Z",
+     "text": "Added, blocking G19.1; your two lines and what is keyed by URL today are in the box (v1).\n- A relay you add by address has no known key until it first answers, so its record cannot be keyed yet."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:34:53.619Z",
+     "text": "Shall relays.json and relayKeys.json become one record per relay key?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:34:56.939Z",
+     "text": "Shall a relay added by address wait as pending until its first answer gives its key?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:38:10.100Z",
+     "text": "while we're at this, let's move the relays into node.db. this change won't even affect the relay code, so updating nodes is simple, on boot, the node asserts the contents of  \"noderoutes.net\" and spirit.andyflinn.com in the database, by creating those rows, if they don't exist."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:38:10.654Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:38:52.971Z",
+     "text": "Recorded (box v2): one relays table in node.db, keyed by the relay key, replacing both files; boot creates the two default rows when missing.\nQ1 is answered by that. Q2 stays: the two default rows, like any relay added by address, have no key until it first answers.\n- A node today may also hold other relays and seats in the two files."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:38:55.754Z",
+     "text": "Shall the first boot copy every row of the two files into the table and then delete the files?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:40:39.078Z",
+     "text": "false: the key will now be generated at first boot, if it doesn't exists."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:40:39.659Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:40:58.084Z",
+     "text": "- A relay key is the relay own identity: only the relay holds its private half, so the node cannot make it, only learn it.\n- At first boot the node can ask each address for its key (the relay already answers that, its key door) and write the row under it.\n- If the relay cannot be reached at boot, there is still no key to write the row under."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:41:00.789Z",
+     "text": "Do you mean the node fetches each relay key at first boot, and an unreachable relay waits as pending until it answers?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:41:45.228Z",
+     "text": "no. the node knows at install time the ID's of relays we guarantee as existent."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:42:09.671Z",
+     "text": "for now, that's only spirit.andyflinn.com"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:42:10.119Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:42:29.268Z",
+     "text": "Recorded (box v3): the guaranteed relays keys ship with the install.\n- Any other relay is joined by claiming an invite, and a claim already reaches the relay and pins its key first.\n- So a row is written only once its key is known: shipped, or learned at the claim, and nothing waits as pending."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:42:31.937Z",
+     "text": "So no pending rows: a relay enters the table only with its key, shipped or learned at its claim?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:42:40.074Z",
+     "text": "actually i HAVE a VPS on a domain, with node installed."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:43:01.183Z",
+     "text": "waiting for a relay."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:43:01.664Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:43:03.301Z",
+     "text": "Recorded (box v4): only spirit.andyflinn.com ships, for now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:43:11.077Z",
+     "text": "- One conflict with G16.3: there noderoutes.net is the floor, never removed, your words we will remove the option to delete noderoutes.net.\n- With only spirit.andyflinn.com shipped, the floor would be a relay the install does not guarantee."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:43:13.600Z",
+     "text": "Shall the never-removed floor move to spirit.andyflinn.com, for now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:43:34.676Z",
+     "text": "Noted: a VPS with node installed, waiting for its relay."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:43:37.398Z",
+     "text": "Is that VPS noderoutes.net, so its key ships too once its relay runs, and the floor stays there?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:45:37.874Z",
+     "text": "i don't really have an option noderoutes.net has to go up and stay up. now. it's part of the alpha strategy, where spirit is my development releay (for us) and noderoutes.et will be the alpha public relay."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:46:11.683Z",
+     "text": "Recorded (box v5): both keys ship, spirit for us, noderoutes.net the alpha public relay and the floor.\nG19.15 needs the noderoutes.net relay key, so its relay has to run first.\nProposed item, blocking G19.15: Bring up the noderoutes.net relay on the VPS.\nAdd it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:46:35.651Z",
+     "text": "yes, whatever the hell you mean by floor"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:47:02.186Z",
+     "text": "Added G19.16, blocking this item.\nBy floor I meant: the one relay a node can never remove from its list. That stays noderoutes.net."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:48:47.110Z",
+     "text": "lets just install the latest tag there....\n\nI'm logged in. gimme the git clone command"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:48:47.531Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:49:12.964Z",
+     "text": "As root, latest tag is v-2026-10-11-07-26:\ncd /root && git clone --branch v-2026-10-11-07-26 https://github.com/andyflinn/SpiritOS && cd SpiritOS && ./bash/help\nThat leaves the clone on the tag, not on master, so a later update moves it deliberately."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:50:45.948Z",
+     "text": "Not `/root`. The relay runs as an unprivileged `spirit` account, which\ncannot traverse `/root` (mode 0700) — `install-units` refuses rather than\ninstalling a unit that dies at start with a bare `status=200/CHDIR`.\n\n## Moving an existing box off /root\n\nThe relay used to run as root out of `/root/SpiritOS`, purely because\nthat is where it was cloned. Nothing it does needs privilege: it binds a\nroot@noderoutes:~/SpiritOS#"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:51:51.322Z",
+     "text": "/root is right: that help text is a stale README from 2026-09-06. The scripts at that tag run the relay as root from /root/SpiritOS, and ONE-OPERATOR says no spirit user, no /opt.\nIn /root/SpiritOS, first tell the scripts their domain:\necho SPIRIT_RELAY_DOMAIN=noderoutes.net > .env\nThen, with noderoutes.net DNS already pointing at this box:\nOWNER_KEY=MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c= ./bash/install-units\n./bash/http-to-https && ./bash/cron-install && ./bash/status\nThat owner key is your node public key; paste the status output back here."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:53:17.297Z",
+     "text": "root@noderoutes:~/SpiritOS# echo SPIRIT_RELAY_DOMAIN=noderoutes.net > .env\nOWNER_KEY=MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c= ./bash/install-units\n./bash/http-to-https && ./bash/cron-install && ./bash/status\n    ok  owner.json names MCowBQYDK2VwAyEAgrEcBu0F...\n==> no config.json yet — capping at 256 MB, which is what the relay will use\n==> install spirit-relay.service (from spirit-relay.service)\n    ok  installed /etc/systemd/system/spirit-relay.service\n    runs as root (one-operator host — see bash/ONE-OPERATOR.md)\n    clone: /root/SpiritOS\n    state: /root/SpiritOS/spirit/run/relay-state\n    memory cap: 384M (256 MB from the relay's own default, + 128 MB headroom)\n    re-run this after changing ramLimitMB, then ./bash/restart\n    next: ./bash/start    then ./bash/boot-on\n==> 1. install systemd unit (port 65430, --relay)\nERROR: no OWNER_KEY given — a relay is owned at install, never by a claim.\n    Run: OWNER_KEY=<the owner node's public key, MCow...> /root/SpiritOS/bash/install-units\nroot@noderoutes:~/SpiritOS#"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:53:42.019Z",
+     "text": "The unit is installed. http-to-https runs install-units again as its first step, and the key set on one line did not reach it. Export it for the session and run the rest:\nexport OWNER_KEY=MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=\n./bash/http-to-https && ./bash/cron-install && ./bash/status"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:55:16.412Z",
+     "text": "==> write /etc/caddy/sites/noderoutes.net.caddy for noderoutes.net -> 127.0.0.1:65430\n    !!  /etc/caddy/Caddyfile does not import /etc/caddy/sites — noderoutes.net is written but not served\n\n    Make the main file import the per-domain ones. If it currently\n    holds a single site block, that block is already saved as\n    /etc/caddy/sites/noderoutes.net.caddy, so this is safe:\n\n      cp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.before-sites\n      printf 'import sites/*.caddy\\n' > /etc/caddy/Caddyfile\n      caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile\n      systemctl reload caddy\n\n    Then rerun ./bash/tls. Nothing was reloaded, so the site that\n    is serving now keeps serving.\nroot@noderoutes:~/SpiritOS#"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:55:52.073Z",
+     "text": "On a fresh box the main Caddyfile holds only the package welcome page, so the lines the script printed are safe. Then go on in the same session (OWNER_KEY still exported):\ncp /etc/caddy/Caddyfile /etc/caddy/Caddyfile.before-sites\nprintf 'import sites/*.caddy\\n' > /etc/caddy/Caddyfile\ncaddy validate --config /etc/caddy/Caddyfile --adapter caddyfile && systemctl reload caddy\n./bash/http-to-https && ./bash/cron-install && ./bash/status"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T17:59:42.848Z",
+     "text": "so, we got that out of the way. \n\nthere are two files? one for each relay?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T17:59:43.330Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:59:59.106Z",
+     "text": "- No: two files in all, each holding every relay.\n- relays.json: one entry per relay, its address and name, the list Natter shows.\n- relayKeys.json: one entry per relay address, with its pinned key and this node seat; both go into the one node.db table."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:01:11.050Z",
+     "text": "there will be only ONE relay table in node.db. why the HELL would we need two?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:01:11.536Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:01:28.209Z",
+     "text": "- One table, agreed: the two files are only what exists today.\n- Both are emptied into that one relays table, keyed by the relay key, and then deleted."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:02:08.151Z",
+     "text": "yes: \"One table, agreed: the two files are only what exists today.\nBoth are emptied into that one relays table, keyed by the relay key, and then deleted.\""
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:02:08.686Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:02:39.249Z",
+     "text": "Recorded (box v6). One question stays: a relay in today's list that this node never reached has no key to copy it under.\nDrop such a row at the copy, so the table holds only relays whose key is known?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:03:33.908Z",
+     "text": "we will pre-seed WITH keys, we know those key, after all."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:03:34.486Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:04:27.032Z",
+     "text": "Recorded (box v7): seeds carry their keys; an old row with no key is not copied, my reading, say if not.\nGreen: settled, no open questions.\nG1 asks the grant for the eight core files that read or write the two relay files today; it waits for your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:04:46.259Z",
+     "text": "green?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:04:46.724Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:05:11.878Z",
+     "text": "Green: settled, no open questions, box current (v7)."
+    }
+   ]
+  },
+  {
+   "id": "goal/G19.16",
+   "title": "Bring up the noderoutes.net relay on the VPS",
+   "goal": "goal/G19",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [],
+   "blocking": [
+    "goal/G19.15"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Bring up the noderoutes.net relay on the VPS.\n\nFOUND (D:/SpiritOS at 9e8c3887, 2026-10-12)\n- bash/RELAY-HOST.md is the operator manual for a public relay, written for spirit-3 (spirit.andyflinn.com): Caddy on 80/443 with TLS and HTTP-to-HTTPS, proxying to node js/server.js --relay --port 65430, systemd unit spirit-relay.service, run as root from /root/SpiritOS, state in spirit/run/relay-state/ (owner.json from install-units given OWNER_KEY, relay.db, identity.json).\n- The scripts (bash/install-units, caddy, tls, firewall, start, status, update) take the host as it is; whether they name spirit.andyflinn.com anywhere is to be checked before running them on another box.\n- Rules that hold: no User=spirit, no /opt (bash/ONE-OPERATOR.md); no labMaster and no personal node on a relay box.\n\nDECIDED (Andy, 2026-10-12, on goal/G19.15)\n- \"actually i HAVE a VPS on a domain, with node installed.\" \"waiting for a relay.\"\n- \"i don't really have an option noderoutes.net has to go up and stay up. now. it's part of the alpha strategy, where spirit is my development releay (for us) and noderoutes.et will be the alpha public relay.\"\n- Asked to add this item: \"yes\".\n\nSHAPE: noderoutes.net runs a public relay the way spirit-3 does, from the same scripts; once it answers, its relay key is what ships with the install (goal/G19.15), and it is the relay a node can never remove from its list.\n\nDONE (2026-10-12): noderoutes.net runs a public relay at tag v-2026-10-11-07-26 from /root/SpiritOS as root, Caddy TLS valid, owner = Andy's node key. Relay key: MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=\n- Asked how an agent reaches the VPS: \"You don't only i can do that.\" Only Andy logs in to noderoutes.net; agents give him the commands.\n",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "How do I reach the VPS: ssh as root to which address, and is the relay owner key yours, as on spirit-3?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T18:06:05.967Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:47:38.452Z",
+     "text": "Box written (v1): the spirit-3 manual and scripts are the template.\nHow do I reach the VPS: ssh as root to which address, and is the relay owner key yours, as on spirit-3?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T17:58:01.001Z",
+     "text": "noderoutes.net is up, checked from here: https answers with a valid certificate, the relay runs at tag v-2026-10-11-07-26, owned by your key.\n- Its relay key, the one that ships with the install for G19.15: MCowBQYDK2VwAyEA+4mt2XtbJHPmiyCri6HRaA/PyH4EPGYE/ez+YpE72Ls=\n- The two red lines in status are the status script asking a path the relay no longer serves (who); the relay itself answered the key door.\n- That stale probe and the README that said /opt and a spirit user belong to G19.11, the hygiene item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T18:05:36.606Z",
+     "text": "Q1: How do I reach the VPS: ssh as root to which address, and is the relay owner key yours, as on spirit-3?\n\nYou don't only i can do that."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T18:06:08.580Z",
+     "text": "Recorded (box v3): only you log in there; I hand you the commands. Nothing else is open here."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T18:06:37.827Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
