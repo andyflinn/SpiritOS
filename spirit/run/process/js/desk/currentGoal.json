@@ -1,8 +1,8 @@
 {
- "change": 35045,
+ "change": 35074,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T10:27:40.197Z",
+ "writtenAt": "2026-10-12T10:33:53.414Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,7 +11,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -39,7 +38,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -1618,24 +1617,27 @@
    "id": "goal/G18.7",
    "title": "deskUnsloth: max_completion_tokens for OpenAI",
    "goal": "goal/G18",
-   "status": "",
+   "status": "running",
    "with": "claude-windows",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G18"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "run/js/deskUnsloth.js",
+     "by": "ollama agent node",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -1643,7 +1645,36 @@
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -1914,6 +1945,11 @@
      "by": "ollama agent node",
      "at": "2026-10-12T10:26:44.133Z",
      "text": "Levant: <tool_call>\n<function=desk_press>\n<parameter=id>\ngoal/G18.7\n</parameter>\n<parameter=what>\ndesign-complete\n</parameter>\n</function>\n</tool_call>"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:33:53.043Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1921,7 +1957,7 @@
    "id": "goal/G18.8",
    "title": "Desk: an agent answers only a line it has taken",
    "goal": "goal/G18",
-   "status": "running",
+   "status": "build",
    "with": "claude-windows",
    "buttons": [],
    "blocking": [
@@ -1933,16 +1969,16 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
+   "code": true,
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1976,8 +2012,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Desk: an agent answers only a line it has taken.\n\nDESIGN (Andy, 2026-10-12): \"answering a chat line is a \"take\" item, i will solicit contributions after that, from specific agents.\"\n- Found live on goal/G18.7: Levant answered every line, his and the other agents', and rewrote the item's checks; a take would have stopped all but one answer.\n\n- Andy, on goal/G18.7: \"no agent should answer without taking. too much chatter otherwise.\"\n\nWHAT IS THERE (desk.js @ 3e1fc72a)\n- line.take {id} (goal/G2.2): an agent takes Andy's latest line under an item and is the only one to answer until it does; a second take is refused taken.\n- But the take is optional: an agent that never took a line may still chat.add, and once the taker has answered, anyone may post again.\n\nPROPOSED SHAPE\n- An agent's chat.add under an item is refused unless it holds the take of Andy's latest line there; its answer releases the take, as today.\n- A take is offered only on a line of Andy's not yet answered: one line of his, one answer.\n- Andy and the desk itself post as today.\n- How he solicits a contribution from a named agent is left out of this item; Andy, asked to clear the questions: \"cw. please eliminate the Q's so my go button works\".\n",
-   "version": 3,
+   "box": "Desk: an agent answers only a line it has taken.\n\nDESIGN (Andy, 2026-10-12): \"answering a chat line is a \"take\" item, i will solicit contributions after that, from specific agents.\"\n- Found live on goal/G18.7: Levant answered every line, his and the other agents', and rewrote the item's checks; a take would have stopped all but one answer.\n\n- Andy, on goal/G18.7: \"no agent should answer without taking. too much chatter otherwise.\"\n\nWHAT IS THERE (desk.js @ 3e1fc72a)\n- line.take {id} (goal/G2.2): an agent takes Andy's latest line under an item and is the only one to answer until it does; a second take is refused taken.\n- But the take is optional: an agent that never took a line may still chat.add, and once the taker has answered, anyone may post again.\n\nPROPOSED SHAPE\n- An agent posts under an item only while it holds the take of Andy's latest line there, or holds the item itself (item.take), so its own work notes (taking, the claim's file list, a red question) still go; everything else is refused. Its answer releases a line take, as today. Andy, to \"Agreed?\": \"yes.\", and \"We need to secure desk a little better again chatterboxes like Levant/OpenAI\".\n- Soliciting is there already: a line of his starting with an agent's nick (\"cw: ...\") is taken for that agent (goal/G2.2).\n- A take is offered only on a line of Andy's not yet answered: one line of his, one answer.\n- Andy and the desk itself post as today.\n- How he solicits a contribution from a named agent is left out of this item; Andy, asked to clear the questions: \"cw. please eliminate the Q's so my go button works\".\n",
+   "version": 4,
    "checks": [
     {
      "number": "Q1",
@@ -1996,6 +2032,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-12T10:27:20.639Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Agreed?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T10:30:32.082Z"
     }
    ],
    "chat": [
@@ -2027,6 +2072,36 @@
     {
      "by": "desk",
      "at": "2026-10-12T10:27:39.699Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:27:44.814Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:28:04.254Z",
+     "text": "taking: red first, in my clone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:28:18.852Z",
+     "text": "One snag before the red: as written, an agent could not post its own work notes on an item it holds (\"taking\", the claim's file list, a question of the red), since they answer no line of yours.\nI propose: an agent posts under an item only while it holds the take of your latest line there, or holds the item itself (item.take); everything else is refused.\nAgreed?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T10:30:13.487Z",
+     "text": "Q3: Agreed?\n\nyes.\n\ndamn, that was chaos there for a while. We need to secure desk a little better again chatterboxes like Levant/OpenAI"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:30:38.511Z",
+     "text": "Recorded (box v4). Writing the red now."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:31:29.629Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
