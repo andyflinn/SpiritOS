@@ -2170,6 +2170,10 @@ appServer.serve({
     },
     handler: function (a, caller) {
       const w = writerOf(caller);
+      // NO .. IN A LISTED PATH (goal/G19.4): a path is a repository path, and one that climbs out of where it names is
+      // refused here, before deskVerify could run it.
+      const climbing = a.paths.filter(function (p) { return String(p).replace(/\\/g, '/').split('/').indexOf('..') !== -1; });
+      if (climbing.length) throw refusedWhy('bad-request', 'a listed path may not contain a .. segment: ' + climbing.join(', '));
       // The grant is raised in the walk, beside the list it describes, so a replay of the records decides the same.
       return { change: write('item.files.add', { id: a.id, paths: a.paths.map(String), by: w.by, key: w.key }).change };
     },

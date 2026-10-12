@@ -169,12 +169,31 @@ const SUITE_MS = Number(values.suiteMs) > 0 ? Number(values.suiteMs) : 600000;
 let running = { id: '', suite: '', since: '' };
 let runningKid = null;
 let stopped = false;
+// A STOPPED SUITE TAKES WHAT IT STARTED WITH IT (goal/G19.4). Andy, 2026-10-12: "yes, a stopped suite must clean up after
+// itself like any cleanly ended suite. we will not support resume." Killing the suite process alone left the servers it
+// had started running on Linux, and the next suite collided with them on the lab ports. So, as runAll does: on Windows
+// taskkill /T ends the suite's own tree; elsewhere the suite runs in its own process group and the group is ended.
+// Only that suite's tree, never anything found by name.
+function killTree(kid) {
+  if (process.platform === 'win32') {
+    try { spawnSync('taskkill', ['/pid', String(kid.pid), '/T', '/F'], { stdio: 'ignore' }); } catch (e) { /* below */ }
+    try { kid.kill(); } catch (e) { /* already gone */ }
+    return;
+  }
+  try { process.kill(-kid.pid, 'SIGKILL'); } catch (e) { try { kid.kill('SIGKILL'); } catch (x) { /* already gone */ } }
+}
+// A LISTED PATH STAYS IN spirit/test (goal/G19.4): spirit/test/../../x.js matched the pattern and was run. The path is
+// normalised first; one that leaves the folder is not run, and the item's line says so.
+function leavesTests(rel) {
+  const norm = path.posix.normalize(String(rel || '').replace(/\\/g, '/'));
+  return norm.indexOf('spirit/test/') !== 0 || norm.split('/').indexOf('..') !== -1;
+}
 function runSuite(file, port, onTests) {
   return new Promise(function (resolve) {
     const out = [];
     let timedOut = false;
     let tests = 0;
-    const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'] });
+    const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
     runningKid = kid;
     // EACH ASSERTION AS IT IS PRINTED (goal/G8.12), so the tab's bar moves while a suite runs rather than once it
     // ends. The printed lines are what every reader of a suite uses (runAll, claim.check), not the exit code.
@@ -184,7 +203,7 @@ function runSuite(file, port, onTests) {
       tests += n;
       onTests(tests);
     };
-    const stop = setTimeout(function () { timedOut = true; try { kid.kill(); } catch (e) { /* gone */ } }, SUITE_MS);
+    const stop = setTimeout(function () { timedOut = true; killTree(kid); }, SUITE_MS);
     const over = function (code) {
       clearTimeout(stop);
       if (runningKid === kid) runningKid = null;
@@ -228,7 +247,7 @@ function sayIdle(line) {
 function stopRun() {
   if (!runningKid) return { stopped: false };
   stopped = true;
-  try { runningKid.kill(); } catch (e) { /* already gone */ }
+  killTree(runningKid);
   return { stopped: true };
 }
 
@@ -386,6 +405,7 @@ async function claimCheckRun(id) {
     if (!list.length) reds.push({ suite: '(no test file on the item\'s list)', failures: ['nothing to run, so nothing passed'] });
     for (const rel of list) {
       const file = path.join(REPO, rel);
+      if (leavesTests(rel)) { reds.push({ suite: rel, failures: ['the path leaves spirit/test, so it was not run'] }); continue; }
       if (!fs.existsSync(file)) { reds.push({ suite: rel, failures: ['the listed test file is missing from this checkout'] }); continue; }
       running = { id: String(id), suite: rel, since: new Date().toISOString() };
       const index = list.indexOf(rel) + 1;
@@ -562,6 +582,7 @@ async function runList(doing, goalId, list) {
     const index = list.indexOf(where) + 1;
     const expected = expectedOf(where);
     const file = path.join(REPO, where);
+    if (leavesTests(where)) { reds.push(where + ': the path leaves spirit/test, so it was not run'); continue; }
     if (!fs.existsSync(file)) { reds.push(where + ': missing from this checkout'); continue; }
     running = { id: '', suite: where, since: new Date().toISOString() };
     const told = function (tests) {
