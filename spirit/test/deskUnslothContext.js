@@ -174,6 +174,8 @@ function stop() {
 function writeFiles(which) {
   ['configuration.json', 'connection.json'].forEach(function (f) { try { fs.unlinkSync(path.join(state, f)); } catch (e) { /* none */ } });
   if (which.indexOf('configuration') !== -1) fs.writeFileSync(path.join(state, 'configuration.json'), JSON.stringify(CONFIGURATION, null, 1));
+  // SINCE goal/G10.9 it starts connected only on the desk-recommended mark: the known list names the model as passed.
+  if (which.indexOf('configuration') !== -1) fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify({ active: CONFIGURATION.model, activeQuant: '', models: [{ id: CONFIGURATION.model, quant: '', loaded: true, recommended: true, tested: '2026-10-12T00:00:00.000Z' }] }));
   if (which.indexOf('connection') !== -1) fs.writeFileSync(path.join(state, 'connection.json'), JSON.stringify({ key: 'test-key', url: 'http://127.0.0.1:' + model.address().port + '/v1' }, null, 1));
 }
 function textOf(call) { return ((call.body && call.body.messages) || []).map(function (m) { return typeof m.content === 'string' ? m.content : JSON.stringify(m.content); }); }
@@ -301,6 +303,8 @@ async function suite() {
   test.subHeading('6. the present, never the backlog');
   await stop();
   setUp();
+  // The models ask of part 2 rewrote the known list from the fake studio; the 🧵 is set again for the restart (goal/G10.9).
+  writeFiles(['configuration', 'connection']);
   calls.length = 0; posted.length = 0; nodeAsks.length = 0; nextCount = 0;
   const old1 = 'levant: a line from before it started';
   const old2 = 'levant: another one from the backlog';

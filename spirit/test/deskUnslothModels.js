@@ -289,7 +289,7 @@ async function suite() {
   test.subHeading('2. model.load: the studio loads it, the configuration follows, the next call names it');
   studio.calls.length = 0;
   const tl = Date.now();
-  const l1 = await ask('model.load', { id: OTHER });
+  const l1 = await ask('model.load', { id: OTHER, quant: '' });
   const loadMs = Date.now() - tl;
   // The studio's call lands a moment after the answer: that is the point. Waited for, then read.
   await until(function () { return studio.calls.some(function (c) { return c.url.split('?')[0] === '/api/inference/load'; }); }, 2000);
@@ -309,13 +309,13 @@ async function suite() {
   else test.fail(OWED + 'two asks disagree: ' + short(m2) + ' vs ' + short(m3));
 
   test.subHeading('2a. a load that fails is said, so the line can let go of the hourglass');
-  const lb = await ask('model.load', { id: BROKEN });
+  const lb = await ask('model.load', { id: BROKEN, quant: '' });
   let mf = {};
   let failed = false;
   for (let i = 0; i < 30 && !failed; i++) { mf = await ask('models', {}); failed = !!(mf.load && mf.load.state === 'failed'); if (!failed) await sleep(200); }
   if (lb.model === BROKEN && lb.loaded === false && failed && mf.load && mf.load.model === BROKEN && mf.load.state === 'failed' && /llama-server exited/.test(mf.load.error)) test.check('model.load of a model the studio refuses answers at once, and models then carries load {model, state: failed, error} with the studio\'s words');
   else test.fail(OWED + 'a failing load: model.load ' + short(lb) + ', models.load ' + short(mf.load));
-  const lr = await ask('model.load', { id: OTHER });
+  const lr = await ask('model.load', { id: OTHER, quant: '' });
   const mr = await modelsWhen(function (g) { return g.load && g.load.state !== 'loading' && (g.models || []).some(function (m) { return m.id === OTHER && m.loaded; }); }, LOAD_MS + 6000);
   if (lr.model === OTHER && mr.load && mr.load.model === OTHER && mr.load.state === 'done' && (mr.models || []).some(function (m) { return m.id === OTHER && m.loaded; })) test.check('another attempt is allowed after a failure: the next load runs and models says done');
   else test.fail(OWED + 'the attempt after a failure: ' + short(lr) + ', models.load ' + short(mr.load));
@@ -338,6 +338,16 @@ async function suite() {
   else test.fail(OWED + 'after the swap back: ' + short([o4, q4]));
   await sleep(v1HoldMs + 500);
   v1HoldMs = 0;
+  // SINCE goal/G10.9 LEVANT ANSWERS THE DESK ONLY ON A 🧵 MODEL ("Connect should be refused while the loaded model has
+  // no 🧵."): the known list marks the loaded one as tested and passed, read at a restart, as model.test would leave it.
+  await stop();
+  try {
+    const marked = JSON.parse(fs.readFileSync(path.join(state, 'models.json'), 'utf8'));
+    marked.models.forEach(function (m) { if (m.id === LOADED) { m.recommended = true; m.tested = '2026-10-12T00:00:00.000Z'; } });
+    fs.writeFileSync(path.join(state, 'models.json'), JSON.stringify(marked));
+  } catch (e) { test.fail('the world: models.json could not be marked: ' + e.message); }
+  start();
+  if (!await doorUp(client, 10000)) { test.fail('the world: deskUnsloth did not come back after the mark'); return; }
   studio.chats.length = 0;
   nextQueue.push([]);
   await sleep(600);
@@ -436,7 +446,9 @@ async function suite() {
   const optionFor = ctx.deskUnslothRemoteOptionFor;
   const O1 = optionFor && optionFor({ id: OTHER, loaded: false, quant: 'Q4_1', bytes: 1, task: 'text-generation', vision: true, reasoning: false, audio: true });
   const O2 = optionFor && optionFor({ id: LOADED, loaded: true, quant: '', bytes: 1, task: 'text-generation', vision: false, reasoning: true, audio: false });
-  if (O1 === OTHER + ' 👁️🎵' && O2 === LOADED + ' 🤔 🟢') test.check('each dropdown entry reads the id, its capability icons and, loaded, the running mark');
+  // SINCE goal/G10.9 the entry names its quantization ("a precise selection of models, that includes the
+  // quantization/flavor as well"), and carries 🧵 when recommended (deskUnslothRecommend.js holds that).
+  if (O1 === OTHER + ' · Q4_1 👁️🎵' && O2 === LOADED + ' 🤔 🟢') test.check('each dropdown entry reads the id and its quantization, its capability icons and, loaded, the running mark');
   else test.fail(OWED + 'the dropdown entries read ' + short([O1, O2]));
   const canLoad = ctx.deskUnslothRemoteCanLoad;
   const cl1 = canLoad && canLoad({ cached: true, models: [] }, { id: OTHER, loaded: false });

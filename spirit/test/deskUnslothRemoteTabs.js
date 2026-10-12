@@ -162,7 +162,7 @@ async function serverHalf() {
   if (!JSON.stringify(s1).includes('secret-key') && !published.some(function (o) { return JSON.stringify(o).includes('secret-key'); })) test.check('and never the key');
   else test.fail(OWED + 'the key went out in the state or a published object');
 
-  await client.ask({ deskUnsloth: { 'model.load': { id: CONFIGURATION.model } } });
+  await client.ask({ deskUnsloth: { 'model.load': { id: CONFIGURATION.model, quant: '' } } });
   await until(function () { return studio.calls.some(function (c) { return c.url === '/api/inference/load'; }); }, 3000);
   const ld = studio.calls.filter(function (c) { return c.url === '/api/inference/load'; })[0];
   if (ld && ld.body && JSON.stringify(Object.keys(ld.body)) === '["model_path"]') test.check('the studio\'s load carries the model path alone, never a context limit');

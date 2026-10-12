@@ -417,6 +417,18 @@ function writeKnown(next) {
   try { fs.writeFileSync(path.join(STATE, MODELS_FILE), JSON.stringify(next, null, 2) + '\n'); } catch (e) { say('models.json could not be written: ' + e.message); }
 }
 
+// ONE ENTRY PER MODEL AND QUANTIZATION (goal/G10.9). Andy, 2026-10-12: "we need to offer a precise selection of
+// models, that includes the quantization/flavor as well?", and of which: "yes. i'll download extra flavors manually,
+// if needed." So the downloaded variants of every cached model, read from api/models/gguf-variants (0.65 s live), one
+// ask per cached model, one after another; the cost, stated (rule/5): one more studio call per cached model on every
+// refresh. A model whose variants cannot be read keeps one entry, its quant from v1/models as before. The loaded pair
+// is the status's active_model and gguf_variant. The 🧵 mark (recommended) and when it was tested are kept from the
+// known list: only model.test writes them.
+function pairKey(id, quant) { return String(id) + '\n' + String(quant || ''); }
+function variantsOf(id) {
+  return studio('GET', '/api/models/gguf-variants?repo_id=' + encodeURIComponent(id) + '&prefer_local_cache=true', undefined, QUANT_WAIT_MS)
+    .then(function (v) { return (Array.isArray(v && v.variants) ? v.variants : []).filter(function (x) { return x && x.downloaded === true && x.quant; }); }, function () { return null; });
+}
 function fetchModels() {
   const nothing = function () { return {}; };
   return Promise.all([studio('GET', '/api/models/cached-gguf'), studio('GET', '/v1/models', undefined, QUANT_WAIT_MS).catch(nothing), studio('GET', '/api/inference/status').catch(nothing)])
@@ -429,26 +441,45 @@ function fetchModels() {
       const loadedList = Array.isArray(st.loaded) ? st.loaded.map(String) : [];
       // The loaded model's context: the room every call is sized to (goal/G10.7).
       if (Number(st.context_length) > 0) studioContext = Number(st.context_length);
+      const activeQuant = String(st.gguf_variant || (byId[active] || {}).quant || '');
       const was = {};
-      ((readKnown() || {}).models || []).forEach(function (m) { if (m && m.id) was[m.id] = m; });
-      const list = cached.map(function (c) {
-        const id = String(c.repo_id || '');
-        const k = byId[id] || {};
-        const w = was[id] || {};
-        const loaded = id === active || loadedList.indexOf(id) !== -1 || k.loaded === true;
-        return {
-          id: id,
-          loaded: loaded,
-          quant: String(k.quant || w.quant || ''),
-          bytes: Number(c.size_bytes) || 0,
-          task: String(c.task || ''),
-          vision: c.has_vision === true,
-          // The flags are the studio's while this model is loaded, and what was learned of it otherwise.
-          reasoning: loaded ? st.supports_reasoning === true : w.reasoning === true,
-          audio: loaded ? st.is_audio === true : w.audio === true,
-        };
+      // A MODEL WHOSE VARIANTS COULD NOT BE READ keeps one entry, and what was learned of it (its quant, its flags, its
+      // mark) is found by its id, as before goal/G10.9: a late v1/models must not cost it (goal/G14.4, 2b).
+      const wasById = {};
+      ((readKnown() || {}).models || []).forEach(function (m) { if (m && m.id) { was[pairKey(m.id, m.quant)] = m; wasById[m.id] = m; } });
+      const list = [];
+      return cached.reduce(function (chain, c) {
+        return chain.then(function () {
+          const id = String(c.repo_id || '');
+          const k = byId[id] || {};
+          return variantsOf(id).then(function (variants) {
+            const listed = variants && variants.length;
+            const quants = listed ? variants : [{ quant: String(k.quant || (wasById[id] || {}).quant || ''), size_bytes: c.size_bytes }];
+            quants.forEach(function (v) {
+              const quant = String(v.quant || '');
+              const w = was[pairKey(id, quant)] || (listed ? {} : wasById[id] || {});
+              const loaded = (id === active || loadedList.indexOf(id) !== -1 || k.loaded === true) && (!activeQuant || !quant || quant === activeQuant);
+              list.push({
+                id: id,
+                quant: quant,
+                loaded: loaded,
+                bytes: Number(v.size_bytes) || Number(c.size_bytes) || 0,
+                task: String(c.task || ''),
+                vision: c.has_vision === true,
+                // The flags are the studio's while this pair is loaded, and what was learned of it otherwise.
+                reasoning: loaded ? st.supports_reasoning === true : w.reasoning === true,
+                audio: loaded ? st.is_audio === true : w.audio === true,
+                recommended: w.recommended === true,
+                tested: String(w.tested || ''),
+              });
+            });
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        // A status without gguf_variant and a late v1/models: the loaded entry's quant, as the list knows it.
+        const loadedOne = list.filter(function (m) { return m.id === active && m.loaded; })[0];
+        return { active: active, activeQuant: activeQuant || (loadedOne ? loadedOne.quant : ''), models: list };
       });
-      return { active: active, models: list };
     });
 }
 
@@ -473,10 +504,10 @@ function models() {
   const have = readKnown();
   if (have) {
     refreshModels().catch(function () { /* said above; the known list stands */ });
-    return { active: String(have.active || ''), cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS), load: loadNow, models: have.models };
+    return { active: String(have.active || ''), activeQuant: String(have.activeQuant || ''), cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS), load: loadNow, test: testNow(), models: have.models };
   }
   return refreshModels().then(function (next) {
-    return { active: next.active, cached: false, load: loadNow, models: next.models };
+    return { active: next.active, activeQuant: String(next.activeQuant || ''), cached: false, load: loadNow, test: testNow(), models: next.models };
   });
 }
 
@@ -498,8 +529,10 @@ function stateObject() {
     model: MODEL,
     server: { url: server.url, answers: server.answers, error: server.error },
     active: String(have.active || ''),
+    activeQuant: String(have.activeQuant || ''),
     cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS),
     load: { model: load.model, state: load.state, error: load.error },
+    test: testNow(),
     models: Array.isArray(have.models) ? have.models : [],
     // The tool in flight, if any (goal/G14.6), so the chat box can show the fetch.
     chat: { id: lastChat.id, done: lastChat.done, text: lastChat.text, tool: { name: lastChat.tool.name, url: lastChat.tool.url, done: lastChat.tool.done } },
@@ -523,7 +556,7 @@ function publishState() {
 // failure the moment the studio refuses and offers Load again.
 let load = { model: '', state: '', error: '' };
 
-function loadModel(id) {
+function loadModel(id, quant) {
   const file = path.join(STATE, CONFIGURATION_FILE);
   let conf = {};
   try { conf = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { conf = Object.assign({}, CONFIGURATION); }
@@ -533,7 +566,10 @@ function loadModel(id) {
   say('loading ' + id + '; the configuration names it from now on');
   load = { model: id, state: 'loading', error: '' };
   publishState();
-  studio('POST', '/api/inference/load', { model_path: id }).then(function () {
+  // THE QUANTIZATION NAMED (goal/G10.9): the studio's own field, gguf_variant; without one it picks its default.
+  const body = { model_path: id };
+  if (quant) body.gguf_variant = String(quant);
+  return studio('POST', '/api/inference/load', body).then(function () {
     if (load.model === id) load = { model: id, state: 'done', error: '' };
     say('the studio has loaded ' + id);
     // The studio is done: the known list is read again, and the state goes out with it.
@@ -542,8 +578,65 @@ function loadModel(id) {
     if (load.model === id) load = { model: id, state: 'failed', error: String(e.message || e) };
     say('the studio did not load ' + id + ': ' + e.message);
     publishState();
+    throw e;
   });
-  return { model: id, loaded: false };
+}
+
+// ── THE TEST, AND THE 🧵 IT SETS (goal/G10.9) ─────────────────────────
+//
+//   Andy, 2026-10-12: the mark is set by "a test, there is no use of it all if a model is not capable of using desk
+//   properly."; "run it from a [test] button, and utomatically connect/disconnect Levant from the desk, depending on
+//   the outcome."; and "Connect should be refused while the loaded model has no 🧵."
+//
+// model.test answers at once (a load takes minutes). It loads the pair unless it is the loaded one, then asks the
+// model once with the tools it would have at the desk and a request only a tool can answer. A real tool call back
+// (the message's tool_calls) passes; text, even text that spells a call (seen live 2026-10-12, Ornith writing
+// <tool_call>... as content), fails. The pair's entry in models.json keeps recommended and tested, and Levant is
+// connected on a pass and disconnected on a fail.
+const TEST_PROMPT = 'This is a test of your tools. Call the tool desk_items_search with an empty text to list the items of the current goal. Answer only with the tool call.';
+let testing = { id: '', quant: '', state: '', why: '' };
+function testNow() { return { id: testing.id, quant: testing.quant, state: testing.state, why: testing.why }; }
+function markPair(id, quant, pass) {
+  const have = readKnown() || { active: '', models: [] };
+  const list = Array.isArray(have.models) ? have.models.slice() : [];
+  let hit = false;
+  list.forEach(function (m) { if (m && m.id === id && String(m.quant || '') === String(quant || '')) { m.recommended = pass; m.tested = new Date().toISOString(); hit = true; } });
+  if (!hit) list.push({ id: id, quant: String(quant || ''), loaded: false, bytes: 0, task: '', vision: false, reasoning: false, audio: false, recommended: pass, tested: new Date().toISOString() });
+  writeKnown(Object.assign({}, have, { models: list }));
+}
+function loadedPair() {
+  const have = readKnown() || {};
+  return { id: String(have.active || ''), quant: String(have.activeQuant || '') };
+}
+function loadedRecommended() {
+  const have = readKnown() || {};
+  const p = loadedPair();
+  if (!p.id) return false;
+  return (Array.isArray(have.models) ? have.models : []).some(function (m) { return m && m.id === p.id && String(m.quant || '') === p.quant && m.recommended === true; });
+}
+function testModel(id, quant) {
+  if (testing.state === 'running') throw refused('a test is running already: ' + testing.id + ' ' + testing.quant);
+  testing = { id: id, quant: String(quant || ''), state: 'running', why: '' };
+  publishState();
+  const p = loadedPair();
+  const ready = p.id === id && p.quant === String(quant || '') ? Promise.resolve() : loadModel(id, quant);
+  ready.then(function () { return refreshModels(); }).then(function () {
+    return describeAll().then(function (list) {
+      if (!list.length) throw new Error('no tools described to test with');
+      return studio('POST', '/v1/chat/completions', { model: id, messages: [{ role: 'system', content: PREAMBLE }, { role: 'user', content: TEST_PROMPT }], tools: list, max_tokens: ANSWER_TOKENS });
+    });
+  }).then(function (got) {
+    const message = got && Array.isArray(got.choices) && got.choices[0] ? got.choices[0].message : null;
+    const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls.filter(function (c) { return c && c.function && c.function.name; }) : [];
+    const pass = calls.length > 0;
+    return { pass: pass, why: pass ? 'a real tool call came back: ' + calls[0].function.name : 'no tool call came back; the model answered: ' + String((message && message.content) || '').slice(0, 160) };
+  }, function (e) { return { pass: false, why: 'the test could not run: ' + String((e && e.message) || e) }; }).then(function (r) {
+    markPair(id, quant, r.pass);
+    testing = { id: id, quant: String(quant || ''), state: r.pass ? 'passed' : 'failed', why: r.why };
+    say('test of ' + id + ' ' + (quant || '') + ': ' + testing.state + ', ' + r.why);
+    return setConnected(r.pass);
+  }).then(function () { publishState(); }, function () { publishState(); });
+  return { id: id, quant: String(quant || ''), testing: true };
 }
 
 // ── THE CONNECTION, FROM THE CONNECT TAB (goal/G10.7) ───────────────────
@@ -810,10 +903,17 @@ function drain() {
 // and its first ask makes it live again. The process stays up either way: stopping the job is not this switch.
 // It starts connected, as it always did. `looping` keeps a connect that lands while the last ask is still in
 // flight from starting a second loop.
-let connected = true;
+// AT START, CONNECTED ONLY ON 🧵 (goal/G10.9): Andy, 2026-10-12, "Connect should be refused while the loaded model has
+// no 🧵." The loaded pair and its mark are the known list's (models.json), read without asking the studio.
+let connected = loadedRecommended();
 let looping = false;
 
 function setConnected(on) {
+  // REFUSED WITHOUT 🧵 (goal/G10.9): "Connect should be refused while the loaded model has no 🧵."
+  if (on && !loadedRecommended()) {
+    const p = loadedPair();
+    return Promise.reject(refused('the loaded model ' + (p.id || '(none)') + (p.quant ? ' ' + p.quant : '') + ' has no desk-recommended mark: test it first'));
+  }
   if (on === connected) return Promise.resolve({ connected: connected });
   if (!on) {
     connected = false;
@@ -887,9 +987,21 @@ appServer.serve({
     request: {}, reply: { active: '', cached: true, load: { model: '', state: '', error: '' }, models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
     handler: function () { return models(); },
   },
+  // THE QUANTIZATION NAMED (goal/G10.9); answered at once, the studio not waited for (goal/G14.4).
   'model.load': {
-    request: { id: '' }, reply: { model: '', loaded: true },
-    handler: function (a) { return loadModel(String(a.id)); },
+    request: { id: '', quant: '' }, reply: { model: '', loaded: true },
+    handler: function (a) {
+      loadModel(String(a.id), String(a.quant || '')).catch(function () { /* said and published above */ });
+      return { model: String(a.id), loaded: false };
+    },
+  },
+  // THE [test] BUTTON'S VERB (goal/G10.9): answered at once; the outcome is published (test) and kept (models.json).
+  'model.test': {
+    request: { id: '', quant: '' }, reply: { id: '', quant: '', testing: true },
+    handler: function (a) {
+      if (!String(a.id || '')) throw refused('an id is needed');
+      return testModel(String(a.id), String(a.quant || ''));
+    },
   },
   'chat.send': {
     request: { lines: [{ role: '', text: '' }] }, reply: { id: '' },

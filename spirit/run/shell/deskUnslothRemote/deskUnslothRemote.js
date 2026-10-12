@@ -39,7 +39,7 @@ var deskUnslothRemoteTarget = null;
 var deskUnslothRemoteState = null;
 var deskUnslothRemoteBusy = false;
 var deskUnslothRemoteModels = null;     // the last models answer for the target, or null
-var deskUnslothRemoteChosen = '';       // the id in the dropdown
+var deskUnslothRemoteChosen = '';       // the pair in the dropdown, id|quant (goal/G10.9)
 var deskUnslothRemoteLoadTimer = null;  // the re-ask while a load runs
 var deskUnslothRemoteTab = 'test';      // the tab shown: test, configure or connect (goal/G10.7)
 var deskUnslothRemoteTranscript = [];   // the chat box's lines, the page's own: [{role, text}]
@@ -118,10 +118,14 @@ function deskUnslothRemoteLineFor(model) {
 // EACH ENTRY OF THE DROPDOWN CARRIES ITS ICONS (Andy, 2026-10-10: "it would mean you can show cached and current
 // model capabilities in the drop-down, as far as you know it. / dropdown list / model1 - capability icons / model2
 // - capability icons...."): the id, the icons the studio or the cache know of it, and the loaded mark.
+// SINCE goal/G10.9 AN ENTRY IS A MODEL AND ITS QUANTIZATION, and the desk-recommended mark rides with it. Andy,
+// 2026-10-12: "we need to offer a precise selection of models, that includes the quantization/flavor as well?", and
+// the mark "with the desk-icon (ICON.THREAD:🧵)", "a mark beside each model in the configure selector".
+function deskUnslothRemoteKey(m) { return String((m && m.id) || '') + '|' + String((m && m.quant) || ''); }
 function deskUnslothRemoteOptionFor(model) {
   var m = model || {};
   var line = deskUnslothRemoteLineFor(m);
-  return [String(m.id || ''), line.icons.join(''), m.loaded ? line.mark : ''].filter(Boolean).join(' ');
+  return [String(m.id || '') + (m.quant ? ' · ' + m.quant : ''), line.icons.join(''), m.recommended ? deskUnslothRemoteIcon('THREAD') : '', m.loaded ? line.mark : ''].filter(Boolean).join(' ');
 }
 
 // ── THE WARNINGS, IN EVERY TAB (goal/G10.7) ──────────────────────────
@@ -280,9 +284,13 @@ function deskUnslothRemoteDrawModels() {
   }
   var models = got.models;
   if (!models.length) { box.innerHTML = '<div class="job-manifest-note">the studio has no model cached</div>'; return; }
-  var chosen = models.some(function (m) { return m.id === deskUnslothRemoteChosen; }) ? deskUnslothRemoteChosen : (got.active || models[0].id);
+  var loadedOne = models.filter(function (m) { return m.loaded; })[0];
+  var chosen = models.some(function (m) { return deskUnslothRemoteKey(m) === deskUnslothRemoteChosen; }) ? deskUnslothRemoteChosen
+    : deskUnslothRemoteKey(loadedOne || models[0]);
   deskUnslothRemoteChosen = chosen;
-  var model = models.filter(function (m) { return m.id === chosen; })[0] || models[0];
+  var model = models.filter(function (m) { return deskUnslothRemoteKey(m) === chosen; })[0] || models[0];
+  var test = got.test || {};
+  var testingThis = test.state === 'running' && test.id === model.id && String(test.quant || '') === String(model.quant || '');
   var line = deskUnslothRemoteLineFor(model);
   var loading = deskUnslothRemoteLoadTimer && !model.loaded;
   box.innerHTML =
@@ -290,7 +298,8 @@ function deskUnslothRemoteDrawModels() {
       '<label class="field-label grow">Model' +
         '<select id="dur-model">' +
           models.map(function (m) {
-            return '<option value="' + escape(m.id) + '"' + (m.id === chosen ? ' selected' : '') + '>' + escape(deskUnslothRemoteOptionFor(m)) + '</option>';
+            var k = deskUnslothRemoteKey(m);
+            return '<option value="' + escape(k) + '"' + (k === chosen ? ' selected' : '') + '>' + escape(deskUnslothRemoteOptionFor(m)) + '</option>';
           }).join('') +
         '</select>' +
       '</label>' +
@@ -299,8 +308,12 @@ function deskUnslothRemoteDrawModels() {
         : (line.load
           ? '<button type="button" id="dur-load"' + (deskUnslothRemoteCanLoad(got, model) ? '' : ' disabled title="the studio has not answered yet"') + '>Load</button>'
           : '<span id="dur-mark" title="running">' + line.mark + '</span>')) +
-      '<span id="dur-icons">' + line.icons.join(' ') + '</span>' +
+      // THE [test] BUTTON (goal/G10.9): "run it from a [test] button", its outcome the 🧵 and the switch.
+      ' <button type="button" id="dur-test"' + (test.state === 'running' ? ' disabled' : '') + '>' + (testingThis ? 'testing…' : 'test') + '</button>' +
+      '<span id="dur-icons">' + line.icons.join(' ') + (model.recommended ? ' ' + deskUnslothRemoteIcon('THREAD') : '') + '</span>' +
     '</div>' +
+    (test.state && test.state !== 'running' && test.id === model.id && String(test.quant || '') === String(model.quant || '')
+      ? '<div class="' + (test.state === 'passed' ? 'job-manifest-note' : 'job-start-error') + '" id="dur-test-result">test ' + escape(test.state) + ': ' + escape(test.why || '') + '</div>' : '') +
     '<div class="job-manifest-note" id="dur-small">' + escape(line.small) + (loading ? ' · loading…' : '') + (got.cached && !loading ? ' · from what was known; asking the studio…' : '') + '</div>';
   document.getElementById('dur-model').addEventListener('change', function (e) {
     // A CHANGED SELECTION SENDS NOTHING (his ruling): it only redraws the line for that model.
@@ -309,7 +322,27 @@ function deskUnslothRemoteDrawModels() {
   });
   var load = document.getElementById('dur-load');
   if (load) load.addEventListener('click', deskUnslothRemoteLoad);
+  var testButton = document.getElementById('dur-test');
+  if (testButton) testButton.addEventListener('click', deskUnslothRemoteTest);
   deskUnslothRemoteDrawChatTitle();
+}
+
+// THE TEST'S PRESS (goal/G10.9): model.test for the chosen pair, answered at once; the outcome comes back published
+// (test, the 🧵 in models, and the switch's connected), so nothing is asked after it.
+function deskUnslothRemoteChosenPair() {
+  var key = String(deskUnslothRemoteChosen || '');
+  var at = key.lastIndexOf('|');
+  return at === -1 ? { id: key, quant: '' } : { id: key.slice(0, at), quant: key.slice(at + 1) };
+}
+function deskUnslothRemoteTest() {
+  var pair = deskUnslothRemoteChosenPair();
+  if (!pair.id) return;
+  var target = deskUnslothRemoteTarget;
+  deskUnslothRemoteAsk(target, 'model.test', { id: pair.id, quant: pair.quant }).then(function (said) {
+    if (said && said.ok === false) { deskUnslothRemoteSay(said.error || said.code || 'the test was refused', true); return; }
+    if (target !== deskUnslothRemoteTarget) return;
+    deskUnslothRemoteSay('testing ' + pair.id + (pair.quant ? ' ' + pair.quant : '') + ': it loads first, which can take minutes', false);
+  });
 }
 
 // ONE models ASK, AT OPEN AND ON A TARGET CHANGE, AND NO POLL AFTER IT. Through the owner door an ask can take
@@ -362,7 +395,7 @@ function deskUnslothRemoteApplyPublished(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.connected !== 'boolean') return;
   deskUnslothRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' } };
   deskUnslothRemoteBusy = false;
-  deskUnslothRemoteModels = { active: obj.active || '', cached: !!obj.cached, load: obj.load || {}, models: Array.isArray(obj.models) ? obj.models : [] };
+  deskUnslothRemoteModels = { active: obj.active || '', activeQuant: obj.activeQuant || '', cached: !!obj.cached, load: obj.load || {}, test: obj.test || {}, models: Array.isArray(obj.models) ? obj.models : [] };
   if (deskUnslothRemoteLoadTimer) {
     var over = deskUnslothRemoteLoadOver(deskUnslothRemoteModels, deskUnslothRemoteChosen);
     if (over.over) { deskUnslothRemoteLoadTimer = null; deskUnslothRemoteSay(over.error, !!over.error); }
@@ -382,10 +415,12 @@ function deskUnslothRemoteApplyPublished(obj) {
 // loading attempt." A pure function, so the red can hold it.
 function deskUnslothRemoteLoadOver(got, id) {
   if (!got || got.ok === false) return { over: true, error: (got && (got.error || got.code)) || 'the studio could not be read' };
-  var loaded = Array.isArray(got.models) && got.models.some(function (m) { return m.id === id && m.loaded; });
+  // id is a pair key (id|quant, goal/G10.9) or a bare id, as before it.
+  var bare = String(id || '').split('|')[0];
+  var loaded = Array.isArray(got.models) && got.models.some(function (m) { return (deskUnslothRemoteKey(m) === id || m.id === id) && m.loaded; });
   if (loaded) return { over: true, error: '' };
   var l = got.load || {};
-  if (l.model === id && l.state === 'failed') return { over: true, error: l.error || 'the studio did not load it' };
+  if (l.model === bare && l.state === 'failed') return { over: true, error: l.error || 'the studio did not load it' };
   return { over: false, error: '' };
 }
 
@@ -393,10 +428,10 @@ function deskUnslothRemoteLoadOver(got, id) {
 // when the chosen one is loaded, or that the load failed: then the hourglass goes, the words are shown, and Load
 // is offered again (deskUnslothRemoteApplyPublished). Nothing is asked meanwhile.
 function deskUnslothRemoteLoad() {
-  var id = deskUnslothRemoteChosen;
-  if (!id || deskUnslothRemoteLoadTimer) return;
+  var pair = deskUnslothRemoteChosenPair();
+  if (!pair.id || deskUnslothRemoteLoadTimer) return;
   var target = deskUnslothRemoteTarget;
-  deskUnslothRemoteAsk(target, 'model.load', { id: id }).then(function (said) {
+  deskUnslothRemoteAsk(target, 'model.load', { id: pair.id, quant: pair.quant }).then(function (said) {
     if (said && said.ok === false) { deskUnslothRemoteSay(said.error || said.code || 'the load was refused', true); return; }
     if (target !== deskUnslothRemoteTarget) return;
     deskUnslothRemoteSay('', false);
