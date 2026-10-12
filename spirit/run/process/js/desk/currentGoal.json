@@ -1,8 +1,8 @@
 {
- "change": 35597,
+ "change": 35617,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T11:13:04.167Z",
+ "writtenAt": "2026-10-12T11:14:14.112Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,7 +11,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -39,11 +38,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3054,7 +3055,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -3165,6 +3166,36 @@
      "by": "desk",
      "at": "2026-10-12T11:13:03.717Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:13:24.087Z",
+     "text": "Go is in, but the item is not marked code, so there is no red to take. Please press code, and I start."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:13:27.475Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:13:33.895Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:13:48.712Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:13:55.167Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:14:09.769Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -3172,39 +3203,71 @@
    "id": "goal/G18.10",
    "title": "deskVerify: commit-bound pass, re-verify while idle",
    "goal": "goal/G18",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G18"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
    "box": "deskVerify: commit-bound pass, re-verify while idle.\n\nThe title in full, as proposed and agreed: \"deskVerify: no pass without the item's commit, and re-verify answers while idle\". Andy: \"yes.\"\n\nFOUND (2026-10-12)\n- deskVerify passed goal/G18.7 \"at 24533a26 (dirty, not pulled)\": the tree lacked G18.7's commit 227b0ad4, so the suite it ran was the older one, without G18.7's checks. A pass that checked other code than the item's.\n- A tree dirty with his own documents keeps deskVerify from pulling. Andy: \"besides my document-writing blocking verifies pulls, verify, when idling, does not react to my attempts of pushing it's re-verify button.\"\n\nPROPOSED SHAPE\n- A pass needs the item's commit in the tree it ran on (the commits written under the item); without it deskVerify says so and does not pass. It does not reject either: nothing was checked.\n- The re-verify button is answered while deskVerify idles: it starts a run, or says why it cannot.\n",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:14:13.700Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
