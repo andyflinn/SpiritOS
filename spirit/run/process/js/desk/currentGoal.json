@@ -1,8 +1,8 @@
 {
- "change": 34460,
+ "change": 34518,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T08:36:46.453Z",
+ "writtenAt": "2026-10-12T08:47:56.548Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,11 +11,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G18.5"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -104,6 +105,11 @@
      "by": "andy",
      "at": "2026-10-12T08:13:32.109Z",
      "text": "add the third item: \"probabilityBucket\""
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:37:55.642Z",
+     "text": "new item: fix desk limbo, search and verify etc."
     }
    ]
   },
@@ -883,6 +889,173 @@
      "by": "andy",
      "at": "2026-10-12T08:35:51.484Z",
      "text": "deskVerify: passed, at 428416fc (pulled). 1 suite ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G18.5",
+   "title": "fix desk limbo, search and verify etc.",
+   "goal": "goal/G18",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12: \"new item: fix desk limbo, search and verify etc.\"\n\nFOUND ON THE DESK TODAY\n- limbo: the desk posts its limbo line on an item with Go while it waits for deskVerify after a claim, every few seconds on G10.7 (seen 02:49, 13 s apart); nobody is working, but a claim is being checked.\n- search: the three probabilit modules are built (G18.2 to G18.4) and used nowhere yet; the desk searches with gradedSearch and searchBucket.\n- verify: deskVerify ran one suite per item when the item listed one; an item that changed other suites but listed only its new one was checked on that alone (G10.8).\n\nDECIDED, Andy, 2026-10-12:\n- \"your points accepted.\": limbo, no limbo line while a claim waits on deskVerify; search, the desk item and chat searches onto the probabilit modules.\n- \"when a search is run agains the goal or an item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result string shown will be green or red, depending on the outcome.\n\npossible?\"\n- The details dialog: \"the red grant Buttons don't show up automatically in deskDetail, i'd like that as well, today, when i waited in details for the expected red button, i always had to go back to list, then re-enter details to get the red button.\"\n- \"search\" in that line is \"the verifier run\" (Q2).\n\nFOUND\n- deskDetails takes a published object for its own item and sets its checks from it (ddTake, deskDetails.js:383); why the red G button still waits for a reopen is to be found by reproducing it.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Limbo: no limbo line while a claim waits on deskVerify; search: the desk item and chat searches move onto the probabilit modules; verify: what do you want fixed there?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:45:06.491Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "I read your \"search\" as the verifier run against the goal or an item; is that right?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:45:33.062Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Still open: by \"search\" in the status-box line, you meant the verifier run?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:45:08.723Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Q2: in your status-box line, does \"search\" mean the verifier run against the goal or an item?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:47:23.317Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:38:18.407Z",
+     "text": "Added as goal/G18.5, your words and what I saw of each today in the box.\nLimbo: no limbo line while a claim waits on deskVerify; search: the desk item and chat searches move onto the probabilit modules; verify: what do you want fixed there?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:41:13.302Z",
+     "text": "your points accepted.\n\nwhen a search is run agains the goal or an item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result string shown will be green or red, depending on the outcome.\n\npossible?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:41:46.712Z",
+     "text": "Possible, and most of it is there: the Desk page already hears deskVerify publish its run (which item or goal, suite i of n, tests so far) for the Verifier tab; the List status cell, 16em wide, can draw that on the row it runs for, then the outcome in green (passed) or red (rejected, with the red suite).\nI read your \"search\" as the verifier run against the goal or an item; is that right?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:43:37.778Z",
+     "text": "the red grant Buttons don't show up automatically in deskDetail, i'd like that as well, today, when i waited in details for the expected red button, i always had to go back to list, then re-enter details to get the red button."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:44:14.403Z",
+     "text": "Recorded (v3): the red grant button in details must appear while the dialog is open, as rule/8 asks of every element.\nThe dialog does take published checks for its item, so the cause is elsewhere; I find it by reproducing it when building.\nStill open: by \"search\" in the status-box line, you meant the verifier run?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:44:45.983Z",
+     "text": "which red Q's are really left?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:45:10.926Z",
+     "text": "Only one: Q2. Q1 was answered by your points accepted, and Q3 was Q2 asked twice; both passed now.\nQ2: in your status-box line, does \"search\" mean the verifier run against the goal or an item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:45:13.935Z",
+     "text": "Q3: Still open: by \"search\" in the status-box line, you meant the verifier run?\n\nthe verifier run"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:45:35.304Z",
+     "text": "Recorded (v4): the verifier run. No red Q left; ready for your Go, with four fixes: no limbo line while a claim waits on deskVerify, desk searches onto the probabilit modules, the verifier run shown in the List status box (green or red), the red grant button live in details."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:47:09.542Z",
+     "text": "Q4: Q2: in your status-box line, does \"search\" mean the verifier run against the goal or an item?\n\ni DEFINITELY meant verify-run"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:47:37.149Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:47:50.227Z",
+     "text": "Green: settled, no open questions, box current (v4)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T08:47:56.182Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
