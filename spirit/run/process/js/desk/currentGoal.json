@@ -1,8 +1,8 @@
 {
- "change": 33433,
+ "change": 33560,
  "line": 8510,
  "goal": "goal/G10",
- "writtenAt": "2026-10-12T02:54:30.988Z",
+ "writtenAt": "2026-10-12T03:19:33.897Z",
  "items": [
   {
    "id": "goal/G10",
@@ -14,7 +14,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G10.8"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -40,9 +42,7 @@
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3829,6 +3829,304 @@
      "by": "andy",
      "at": "2026-10-12T02:50:13.848Z",
      "text": "deskVerify: passed, at 2becb037 (pulled). 7 suites ran green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T02:55:19.750Z",
+     "text": "new item. Enable Levant, to act as a normal agent on desk. like claude."
+    }
+   ]
+  },
+  {
+   "id": "goal/G10.8",
+   "title": "Enable Levant to act as a normal agent on desk, like claude",
+   "goal": "goal/G10",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G10"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12: \"new item. Enable Levant, to act as a normal agent on desk. like claude.\"\n\nDECIDED (Andy, 2026-10-12)\n- Levant reads every desk change and acts on it as claude does, and is just as constrained by the desk.\n- Its desk tools grow by box.write, press (claim-done, design-complete), check.set, item.files.add and verify.again.\n- It works in its own clone, D:/SpiritOS-agent-local, and writes code there.\n- Code goes through deskUnsloth own file tools, rooted at that clone: deskUnsloth verbs, one description file each, so introspection lists them and tools.js makes them tools generically; they write only files on the item Levant has taken, for every caller.\n- It commits and pushes, so its work is verified like everyone else (his earlier \"no\" reversed: unverified is worse). Two deskUnsloth verbs, commit and push, through the same commitCheck hook as claude, installed in agent-local: no Go, no commit; scope and core grants enforced.\n- Remedy: a tag on origin before the trial goal; a bad commit is undone by git revert, never a force push.\n- All of it in this item.\n\nFOUND IN THE CODE\n- 11111 (Levant) runs its node and deskUnsloth from D:/SpiritOS-agent-local; that clone has no commitCheck hook installed today.\n- Today Levant answers only lines addressed to it and JOB lines; ten desk tools (chat.add, check.add, item.box, item.chat, item.checks, item.get, item.status, item.take, items.search, work.open); fs on its own app folder.\n- The node fs writes only shell, media, published and preferences.json under spirit/run (kernel.js fileWritable), so spirit/test and process are out of its reach.",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Levant answers only lines that start with its name and JOB lines; should it read every desk change and act on it as claude does?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:02:51.698Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Its desk tools are chat.add, check.add, item.box, item.chat, item.checks, item.get, item.status, item.take, items.search and work.open; should box.write, press (claim-done, design-complete), check.set, item.files.add and verify.again be described for it too?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:02:53.734Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Code: its fs.save reaches its own app only, and it has no commit or push; is writing and committing code part of this item, or desk work only for now?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:02:55.751Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Three red Q checks are on the item: Q1 listen to everything, Q2 which desk verbs, Q3 code or desk work only?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:02:57.777Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Levant's node 11111 runs from D:/SpiritOS-agent-local, not your D:/SpiritOS: should Levant move to your checkout, or is agent-local the checkout you mean?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:12:28.570Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Writing code: should its fs.save reach the whole spirit tree of that checkout, as claude's editing does, or only some folders?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:12:26.507Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "So: Levant moves to your checkout D:/SpiritOS, its fs.save reaches the whole tree there, and a git tag is set on your tree each time Levant is connected, so its work can be reset to that tag. Right, and is the tag set by the connect switch itself?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:12:44.282Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Which road?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:12:40.147Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "The fence (only files on the item Levant has taken) then holds for every caller of those verbs, you included; is that right?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:12:42.298Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "Which checkout does Levant write in, your D:/SpiritOS or D:/SpiritOS-agent-local, and does the connect switch set the tag on it each time Levant is connected?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:18:42.809Z"
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Q10: which checkout does Levant write in, and does the connect switch set the tag?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:18:45.188Z"
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "With no commit from D:/SpiritOS-agent-local, how does Levant code reach your tree and the verifier: you commit it there by hand, or it stays a sandbox for now?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:18:47.499Z"
+    },
+    {
+     "number": "Q13",
+     "kind": "Q",
+     "words": "Shall I fold commit and push (two deskUnsloth verbs, the hook installed in agent-local) into this item?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T03:18:49.540Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T02:56:06.150Z",
+     "text": "Added as goal/G10.8, your words in the box.\nWhat Levant has today: it answers lines addressed to it, with ten desk tools and fs on its own app; no presses, no box writes, no commits.\nThree red Q checks are on the item: Q1 listen to everything, Q2 which desk verbs, Q3 code or desk work only?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:02:02.767Z",
+     "text": "Q1: Levant answers only lines that start with its name and JOB lines; should it read every desk change and act on it as claude does?\n\nyes. it'll make flaws visible. and i need him when my claude credits run out. and i need him just as constrained by desk as we all are.\n\nQ2: Its desk tools are chat.add, check.add, item.box, item.chat, item.checks, item.get, item.status, item.take, items.search and work.open; should box.write, press (claim-done, design-complete), check.set, item.files.add and verify.again be described for it too?\n\nyes.\n\nQ3: Code: its fs.save reaches its own app only, and it has no commit or push; is writing and committing code part of this item, or desk work only for now?\n\nwriting code yes. commiting and pushing, no.\n\nQ4: Three red Q checks are on the item: Q1 listen to everything, Q2 which desk verbs, Q3 code or desk work only?\n\nLevant can do anything except pushing and comitting, he doesn't need that, since he's on my checkout, and it's safer that way."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:03:04.418Z",
+     "text": "Recorded verbatim; Q1 to Q4 passed.\nOne premise does not hold: Levant node 11111 runs from D:/SpiritOS-agent-local, not your checkout, so code it writes there never reaches your tree or the verifier.\nQ5 which checkout, and Q6 how far fs.save reaches, are on the item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:04:47.003Z",
+     "text": "Q5: Levant's node 11111 runs from D:/SpiritOS-agent-local, not your D:/SpiritOS: should Levant move to your checkout, or is agent-local the checkout you mean?\n\ni just notices that. i think we need to give it everything, but be careful for now that we can reverse it's work by tagging before we let him loose, so we can mitigate potential damage."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:05:14.056Z",
+     "text": "Recorded verbatim under Q5.\nMy reading of \"give it everything\": Levant on your checkout, fs.save over the whole tree, and a tag set at each connect so its work can be reset.\nQ7 asks you to confirm that, and whether the connect switch sets the tag."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:05:46.177Z",
+     "text": "my question really is, how can an agent be involved in reds (tests) if there is no \"/\" scope for it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:06:22.088Z",
+     "text": "It cannot today: the node fs verbs are rooted at spirit/run and write only into shell, media, published and preferences.json (kernel.js fileWritable), so spirit/test and process are out of reach.\nTwo roads: open a \"/\" write root in kernel.js (core, your grant, and it opens it for every caller), or give deskUnsloth its own file tools rooted at the checkout, writing only files on the item Levant has taken, the desk as its fence.\nWhich road?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:10:41.380Z",
+     "text": "Give deskUnsloth its own file tools, rooted at the checkout.\n\nwould those file tools be part of the api introspection?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:11:04.253Z",
+     "text": "Recorded in the box.\nYes, if they are deskUnsloth verbs with a description file each, as the desk verbs are: introspection lists them and tools.js turns them into tools the same generic way, nothing hand-written.\nThe fence (only files on the item Levant has taken) then holds for every caller of those verbs, you included; is that right?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:11:48.765Z",
+     "text": "ok. we'll take that route,\n\ncap and red Q cleanup"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:12:11.713Z",
+     "text": "taking: cap and red Q cleanup."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:12:48.569Z",
+     "text": "Capped: the box is the decided design and the tree facts (v5).\nQ1 to Q9 passed; Q7 is replaced by Q10, the one thing still open.\nQ10: which checkout does Levant write in, and does the connect switch set the tag?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:13:08.473Z",
+     "text": "Q7: So: Levant moves to your checkout D:/SpiritOS, its fs.save reaches the whole tree there, and a git tag is set on your tree each time Levant is connected, so its work can be reset to that tag. Right, and is the tag set by the connect switch itself?\n\nlevant stays in his checkout/clone"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:13:32.704Z",
+     "text": "Recorded: Levant stays in D:/SpiritOS-agent-local, its file tools rooted there.\nThat clone never commits, so its code reaches neither your tree nor the verifier by itself; Q11 asks how it gets out.\nQ10 still asks whether the connect switch sets the tag in that clone."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:16:32.469Z",
+     "text": "Shouldn't Levant be able to commit and Push?\n\notherwise his stuff goes unverified, and i think that's worse. I have a simple project (goal) we can try this on, after we give him that authority, and we use rollback as a remedy if things go wrong.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:16:53.297Z",
+     "text": "Agreed: unverified is worse, and commit+push is how the verifier sees anyone work; Levant should commit through the same commitCheck hook as claude (no Go, no commit; scope and core grants enforced), which agent-local does not have installed today.\nRemedy: a tag on origin before the trial goal, and git revert of his commits if it goes wrong; reverts, never a force push, so nobody else loses work.\nShall I fold commit and push (two deskUnsloth verbs, the hook installed in agent-local) into this item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:18:07.693Z",
+     "text": "All in this item.\n\ncap and clean up reds again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:18:28.718Z",
+     "text": "taking: cap and red Q cleanup."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:18:51.894Z",
+     "text": "Capped (v7): commit and push are in, through commitCheck installed in agent-local, with a tag on origin before the trial goal and git revert as the remedy.\nAll thirteen Q checks are passed; Q10 to Q13 were answered by \"All in this item\" and the clone ruling.\nThe item is green for your Go; the tag I set only on your word, before the trial goal."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T03:19:03.438Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T03:19:14.922Z",
+     "text": "Green: settled, no open questions, box current (v7)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T03:19:33.418Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
