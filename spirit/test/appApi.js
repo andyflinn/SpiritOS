@@ -105,7 +105,13 @@ let beta = start('beta', BETA1);
 
 Promise.all([up(alpha.pipe), up(beta.pipe)]).then(function (ready) {
   if (!ready[0] || !ready[1]) test.fail('setup: the sample app servers did not come up on their pipes');
-  client.startAll();
+  // SINCE goal/G19.10, AS THE NODE DOES IT: a server is started one way
+  // (jobs.startNodeServers) and known by the pipe the node named for it
+  // (register). appClient.startAll left at 013dc827 and this call broke the
+  // run. gamma is registered and never started: the down app of T3.
+  ['alpha', 'beta', 'gamma'].forEach(function (name) {
+    client.register(name, appClient.pipePathFor(root, name, process.platform, 'process'));
+  });
   return ask('api');
 }).then(function (r) {
   test.subHeading('T1: api answers {app: tree}, one branch per running appServer');

@@ -34,12 +34,14 @@ function serve(a) {
     let ask = null;
     try { ask = JSON.parse(String(a.body || '')); } catch (e) { ask = null; }
     if (!ask || typeof ask.verb !== 'string' || !ask.verb) {
-      return { status: 400, type: JSON_TYPE, body: JSON.stringify({ ok: false, code: 'bad-request', error: 'a json ask names a verb' }) };
+      return { status: 400, type: JSON_TYPE, body: JSON.stringify({ ok: false, code: 'bad-request', error: 'verb required', why: 'a json ask names a verb' }) };
     }
     // THE PROOF: the ask reached the owner of the name, and this is its answer.
     return { status: 200, type: JSON_TYPE, body: JSON.stringify({ ok: true, app: 'appFaceAppServer', verb: ask.verb, host: String(a.host || '') }) };
   }
-  return { status: 404, type: JSON_TYPE, body: JSON.stringify({ ok: false, code: 'no-such-route', error: 'nothing is served here but a json ask on /api/spirit', path: pathname }) };
+  // The declared sentence, and what is served here as the why (goal/G19.10; Andy, 2026-10-12: "error
+  // messages and rule related cleanup belong to every update/new-code").
+  return { status: 404, type: JSON_TYPE, body: JSON.stringify({ ok: false, code: 'no-such-route', error: errors.byCode('no-such-route').text, why: 'nothing is served here but a json ask on /api/spirit', path: pathname }) };
 }
 
 appServer.serve({

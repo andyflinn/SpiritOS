@@ -263,7 +263,7 @@ module.exports = function installJobs(spirit, port) {
       args: args || [],
       progress: 0,
       exitCode: null,
-    }, options.module || moduleOf((args || [])[0], options.cwd));
+    }, moduleOf((args || [])[0], options.cwd));
 
     const child = launch(job, command, args, options.cwd);
 
@@ -316,16 +316,15 @@ module.exports = function installJobs(spirit, port) {
     // a restart method", so it does not come back by itself.
     const operated = options.operated === 'user' ? 'user' : 'node';
     const restart = operated === 'node';
-    // A face's script is the node's own server.js, so its module comes in
-    // options.module (appClient.startAll); every other server is read off its
-    // script's path.
+    // Its module is read off its script's path. (options.module, which only
+    // appClient.startAll ever passed, left with it: goal/G19.10.)
     const job = createJob('server', options.type || command, {
       command: command,
       args: args || [],
       operated: operated,
       restarts: 0,
       exitCode: null,
-    }, options.module || moduleOf((args || [])[0], options.cwd));
+    }, moduleOf((args || [])[0], options.cwd));
     let child = null;
     let stopped = false;
     let wait = RESTART_MIN_MS;
@@ -457,15 +456,31 @@ module.exports = function installJobs(spirit, port) {
     names = names.filter(function (name) { return includeList.includes(rootDir, 'process/js/' + name) && (!only || name === only); });
     const pipePathFor = require('./appClient').pipePathFor;
     // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
-    // to know whose node it runs on gets --node {name, publicKey}. It never
-    // opens identity.json, which holds the private keys; nothing private is
-    // ever in a server's arguments.
+    // to know whose node it runs on gets --node {name, publicKey, ownerKey}.
+    // It never opens identity.json, which holds the private keys; nothing
+    // private is ever in a server's arguments.
     // Read here, not through loadIdentity: a fresh node is made nameless
     // (ensureIdentity(root, '')), loadIdentity answers null without a name,
     // and a missing --node crash-looped the backup on every fresh lab node.
+    //
+    // THE OWNER'S PUBLIC KEY RIDES ALONG (goal/G19.10). Andy, 2026-10-12:
+    // "The appServer have a definite need/use for all 3: the node/puppets
+    // key, the owners public key, and the nodes port: if they are not
+    // allowed to read the files, they should have that stuff passted with
+    // the spirit object that comes with the appServers passed interface."
+    // ownerKey is owner.json's key as loadOwner reads it, or '' when the
+    // node owns itself or nobody owns it: no owner to ask (puppetMode's
+    // puppetIn rule, compared here against the key read above so a nameless
+    // node is judged too). appServer puts the three on spirit.core.node.const.
+    // Read once, at the start: a server learns a changed owner when the node
+    // starts it again.
     let me = null;
     try { me = JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8')); } catch (e) { me = null; }
-    const nodeArg = me && me.publicKey ? ['--node', JSON.stringify({ name: String(me.name || ''), publicKey: String(me.publicKey) })] : [];
+    const owner = require('./relayAuth').loadOwner(rootDir, function () {});
+    const nodeArg = me && me.publicKey ? ['--node', JSON.stringify({
+      name: String(me.name || ''), publicKey: String(me.publicKey),
+      ownerKey: owner && owner !== String(me.publicKey) ? owner : '',
+    })] : [];
     const started = [];
     names.forEach(function (name) {
       const script = path.join(base, name, name + '.js');

@@ -9,10 +9,11 @@ Type=simple
 #
 # A NODE, NOT A RELAY: no --relay. It is the "VPS puppet node" of
 # design/shell/PUBLIC-APP-SERVER.md, G17: its own clone, its own
-# relay-state and key, owned by Andy's node through relay-state/puppet.json,
-# and its face switched on by relay-state/face.json. Its door listens on
-# 127.0.0.1 only (server.js BIND_HOST), and so does the face (puppetPost.js
-# FACE_BIND); Caddy is the only thing that reaches the face from outside.
+# relay-state and key, owned by Andy's node through relay-state/owner.json,
+# and its face is the appFaceApp process, its port in
+# relay-state/process/appFaceApp/face.json. Its door listens on 127.0.0.1
+# only (server.js BIND_HOST), and so does the face (appFaceApp.js FACE_BIND);
+# Caddy is the only thing that reaches the face from outside.
 WorkingDirectory=__RUN_DIR__
 ExecStart=/usr/bin/node js/server.js --port __PORT__
 Restart=always

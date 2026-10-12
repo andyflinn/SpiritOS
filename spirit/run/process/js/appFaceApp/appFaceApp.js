@@ -11,8 +11,8 @@
 //   Caddy sends visitors. It serves index.html and kernel.js itself, and carries every other
 //   request over the relay to the node that owns the name, as the serve ask; first it asks that
 //   node's owner where the name lives (route), once per subdomain, and keeps the answer in RAM.
-//   The owner's key is the puppet's, relay-state/owner.json ("The owners key is already in the
-//   puppet."). Andy: "a second door has NOTHING to do with being a puppet." and "why would the
+//   The owner's key is the puppet's ("The owners key is already in the puppet."), handed to this
+//   server by its node with the spirit object (goal/G19.10, below). Andy: "a second door has NOTHING to do with being a puppet." and "why would the
 //   node need to know if an appServer opens a port listener?" — it does not; the port is this
 //   server's own ("a configuration file that identifies the port, or any other means suitable").
 //
@@ -37,7 +37,6 @@ const http = require('http');
 const spirit = require('../../../js/kernel.js');
 const appServer = require('../../../js/appServer.js');
 const limits = require('../../../js/limits.js');
-const auth = require('../../../js/relayAuth.js');
 const errors = require('../../../js/spiritErrors.js');
 const faceRoute = require('./faceRoute.js');
 
@@ -93,14 +92,16 @@ function facePort() {
   const port = doc && Number(doc.port);
   return Number.isInteger(port) && port >= 0 && port <= 65535 ? port : null;
 }
-// WHOSE PUPPET THIS NODE IS, read on every call so an owner edit is seen at once; a node owning
-// itself, or owned by nobody, has no owner to ask (as puppetMode.puppetIn reads it).
+// WHOSE PUPPET THIS NODE IS: the owner's public key on the spirit object, '' when the node owns
+// itself or nobody owns it (no owner to ask). NOT OPENED HERE (goal/G19.10). This server once read
+// owner.json and identity.json, private key included, only to compare two public keys. Andy,
+// 2026-10-12: "The appServer have a definite need/use for all 3: the node/puppets key, the owners
+// public key, and the nodes port: if they are not allowed to read the files, they should have that
+// stuff passted with the spirit object that comes with the appServers passed interface." The node
+// hands them as --node (jobs.startNodeServers) and appServer sets OWNER_KEY from it; a changed
+// owner reaches this face when the node starts it again.
 function ownerKey() {
-  const owner = auth.loadOwner(ROOT, function () {});
-  if (!owner) return '';
-  const self = auth.loadIdentity(ROOT);
-  if (self && self.publicKey === owner) return '';
-  return owner;
+  return String(spirit.core.node.const.OWNER_KEY || '');
 }
 // The node that started this process: the origin of SPIRIT_CALLBACK_URL (jobs.js launch).
 function nodeBase() {
@@ -140,7 +141,7 @@ const verbs = {
     handler: function (a) {
       return askNode('appFaceAppServer', 'serve', { host: a.host, method: a.method, path: a.path, body: a.body, type: a.type }).then(function (r) {
         if (!r || r.ok === false || typeof r.status !== 'number') {
-          return { status: 503, body: JSON.stringify({ ok: false, code: 'app-not-running', app: 'appFaceAppServer' }), type: JSON_TYPE };
+          return { status: 503, body: JSON.stringify({ ok: false, code: 'app-not-running', error: errors.byCode('app-not-running').text, app: 'appFaceAppServer' }), type: JSON_TYPE };
         }
         return { status: r.status, body: typeof r.body === 'string' ? r.body : JSON.stringify(r.body == null ? '' : r.body), type: String(r.type || '') };
       });

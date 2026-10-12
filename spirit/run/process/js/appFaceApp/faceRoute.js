@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/js/faceRoute.js
+// spirit/run/process/js/appFaceApp/faceRoute.js
 // WHERE A FACE NAME LIVES — public-app-server/G17, THE ROUTE.
 //
 //   Andy, 2026-09-27, in Desk under G17, "go.": the face domain one level
@@ -10,11 +10,18 @@
 //   reply, allowing the appFaceApp to cache that route in RAM for future
 //   use", and "at restart, the dance starts anew".
 //
-// Three pure pieces, no I/O, so each is driven by a test and not by a lab:
+// Two pure pieces, no I/O, so each is driven by a test and not by a lab:
 //
 //   nameOf(host, faceDomain)        which name a visitor asked for
-//   answerRoute(rows, name, owner)  the owner node's answer to its puppet
-//   createRouteCache(opts)          the puppet's memory of those answers
+//   createRouteCache(opts)          the puppet's memory of the owner's answers
+//
+// NO TEST HELPERS IN THE NODE (goal/G19.10). Andy, 2026-10-12: "there shall
+// be no test helpers inside node." answerRoute (the owner signing a route)
+// and routeIsSigned (the holding node's check on one) had no caller but
+// spirit/test/faceRouteSuite.js, so they live there now. Signed routes stay
+// readable by the cache, through routeMessage below, for the day a node signs
+// them; that day the signer and the holder's check come back as code with a
+// caller.
 //
 // ── WHAT A SIGNATURE HERE PROVES ──────────────────────────────────────
 //
@@ -55,49 +62,13 @@ function routeMessage(ownerKey, name, to, until, faceKey) {
     String(to || '') + NL + String(Number(until) || 0) + NL + String(faceKey || '');
 }
 
-// NOT ON THE OWNER'S OWN PATH TODAY. appFaceApp's owner answers the plain
-// "the owner of this name is <key>" (route 'owner') and the face forwards
-// there (Andy, 2026-09-27). answerRoute and routeIsSigned are kept, and
-// tested, for the day a member's own node serves a face: a packet from the
-// puppet proves only that the puppet sent it, and this signature is how
-// that node can tell the owner pointed the face at it (wsl-claude).
-// The owner node's answer. `rows` is its grant table ({ name: { to } });
-// `owner` is { publicKey, privateKey }; `sign(privateKey, message)` is
-// relayAuth's. Mine, a signed route, or no such route; never a guess.
-function answerRoute(rows, name, owner, sign, nowMs, faceKey) {
-  var n = String(name || '');
-  var row = rows && Object.prototype.hasOwnProperty.call(rows, n) ? rows[n] : null;
-  if (!row || !row.to) return { route: 'none', name: n };
-  if (owner && row.to === owner.publicKey) return { route: 'mine', name: n };
-  var until = (nowMs == null ? Date.now() : nowMs) + ROUTE_MS;
-  var face = String(faceKey || '');
-  return {
-    route: 'to', name: n, to: row.to, until: until, face: face,
-    sig: sign(owner.privateKey, routeMessage(owner.publicKey, n, row.to, until, face)),
-  };
-}
-
-// The slot owner's check on a route a puppet forwarded to it. Four things,
-// each closing a hole wsl-claude found in the signature-only first draft:
-// the owner signed it; it has not expired (an old route for a name taken
-// back must not replay); it points at THIS node (a route for joe shown to
-// bob is no route); and the one presenting it is the face it was given to.
-// `at`: { selfKey, fromKey, now }, and REQUIRED: a check called without it
-// fails closed rather than quietly falling back to the signature alone
-// (wsl-claude). The puppet, which is the face, uses routeSignatureHolds.
+// The cache's question of a signed route: did the owner sign exactly this?
+// Signature only; the face that holds the cache is the one the route was
+// given to, so it has no "is it for me" to ask (wsl-claude).
 function routeSignatureHolds(route, ownerKey, verify) {
   if (!route || route.route !== 'to' || !route.sig) return false;
   try { return !!verify(ownerKey, routeMessage(ownerKey, route.name, route.to, route.until, route.face), route.sig); }
   catch (e) { return false; }
-}
-function routeIsSigned(route, ownerKey, verify, at) {
-  if (!at || !at.selfKey || !at.fromKey) return false;
-  if (!routeSignatureHolds(route, ownerKey, verify)) return false;
-  var now = typeof at.now === 'number' ? at.now : Date.now();
-  if (!(Number(route.until) > now)) return false;
-  if (route.to !== at.selfKey) return false;
-  if (route.face !== at.fromKey) return false;
-  return true;
 }
 
 // ── THE PUPPET'S MEMORY OF ROUTES, IN RAM ────────────────────────────
@@ -157,7 +128,6 @@ function createRouteCache(opts) {
 }
 
 module.exports = {
-  nameOf: nameOf, answerRoute: answerRoute, routeIsSigned: routeIsSigned,
-  routeSignatureHolds: routeSignatureHolds,
+  nameOf: nameOf,
   createRouteCache: createRouteCache, ROUTE_MS: ROUTE_MS, NONE_MS: NONE_MS,
 };

@@ -41,7 +41,7 @@ need_root
 FACE_DIR="${SPIRIT_FACE_DIR:-/root/face/SpiritOS}"
 FACE_UNIT="${SPIRIT_FACE_UNIT:-spirit-face}"
 FACE_NODE_PORT="${SPIRIT_FACE_NODE_PORT:-65433}"   # the face node's own door, loopback only
-FACE_PORT="${SPIRIT_FACE_PORT:-65434}"             # puppetPost, where Caddy sends visitors
+FACE_PORT="${SPIRIT_FACE_PORT:-65434}"             # appFaceApp's own port (its face.json), where Caddy sends visitors
 FACE_DOMAIN="${SPIRIT_FACE_DOMAIN:-face.$DOMAIN}"
 ORIGIN="${SPIRIT_FACE_ORIGIN:-https://github.com/andyflinn/SpiritOS.git}"
 OWNER_KEY="${1:-${SPIRIT_FACE_OWNER:-}}"

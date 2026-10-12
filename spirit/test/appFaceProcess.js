@@ -24,6 +24,7 @@
 //       index.html and kernel.js itself, carries a browser's POST /api/spirit to the owner as
 //       the serve ask over peerPost, asks the route once and remembers it, answers 404
 //       no-such-route by name for a name nobody granted, and answers Caddy's loopback ask.
+//       Since goal/G19.10 its owner is the one --node names, never owner.json (a decoy here).
 //   T4  appFaceAppServer answers the serve ask itself: a json ask gets the proof, typed json,
 //       and nothing passes through a pipe to anything.
 //
@@ -215,10 +216,12 @@ function plantRoot(label, nodePort, extra) {
   return { root: root, dir: dir, state: state, pipe: pipe, nodePort: nodePort };
 }
 
-function startServer(planted) {
+// `node`: the facts the node hands every server it starts, --node {name, publicKey, ownerKey}
+// (jobs.startNodeServers). Since goal/G19.10 that is where appFaceApp learns its owner.
+function startServer(planted, node) {
   const script = path.join(planted.dir, 'appFaceApp.js');
   if (!fs.existsSync(script)) return null;
-  return spawn(process.execPath, [script, '{}', '--pipe', planted.pipe, '--state', planted.state], {
+  return spawn(process.execPath, [script, '{}', '--pipe', planted.pipe, '--state', planted.state].concat(node ? ['--node', JSON.stringify(node)] : []), {
     cwd: planted.root,
     env: Object.assign({}, process.env, { SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + planted.nodePort + '/api/spirit', SPIRIT_JOB_ID: 'test' }),
     stdio: ['ignore', 'ignore', 'pipe', 'ipc'],
@@ -305,8 +308,12 @@ async function doorUp(client, name, ms) {
     nodes.push(faceNode);
     const facePort = await freePort();
     const face = plantRoot('face', faceNode.port, { 'face.json': JSON.stringify({ port: facePort }) });
-    fs.writeFileSync(path.join(face.root, 'relay-state', 'owner.json'), JSON.stringify({ owner: OWNER }));
-    const faceKid = startServer(face);
+    // SINCE goal/G19.10 THE OWNER COMES WITH --node, NOT FROM A FILE. Andy, 2026-10-12: "if they
+    // are not allowed to read the files, they should have that stuff passted with the spirit object
+    // that comes with the appServers passed interface." The owner.json planted here names a
+    // stranger, a decoy: every route and serve ask below going to OWNER proves the face read --node.
+    fs.writeFileSync(path.join(face.root, 'relay-state', 'owner.json'), JSON.stringify({ owner: auth.generateIdentity('decoy').publicKey }));
+    const faceKid = startServer(face, { name: 'face', publicKey: auth.generateIdentity('face').publicKey, ownerKey: OWNER });
     if (!faceKid) {
       test.fail(OWED + 'no server to start on the face\'s side');
     } else {
@@ -382,7 +389,10 @@ async function doorUp(client, name, ms) {
     const other = await client.ask({ appFaceAppServer: { serve: { host: 'join.' + FACE_DOMAIN, method: 'GET', path: '/anything', body: '', type: '' } } });
     let saidOther = null;
     try { saidOther = JSON.parse(other.body && other.body.body); } catch (e) { saidOther = null; }
-    if (other.body && other.body.status === 404 && saidOther && saidOther.ok === false) test.check('any other request is 404 by name: there is no page behind it and no pipe to pass it to');
+    // Since goal/G19.10 the sentence is the declared one ("error messages and rule related cleanup
+    // belong to every update/new-code", Andy, 2026-10-12); what is served here goes in `why`.
+    if (other.body && other.body.status === 404 && saidOther && saidOther.ok === false && saidOther.code === 'no-such-route'
+        && saidOther.error === 'no such route' && typeof saidOther.why === 'string') test.check('any other request is 404 no-such-route, its declared sentence and a why: there is no page behind it and no pipe to pass it to');
     else test.fail(OWED + 'GET /anything answered ' + JSON.stringify(other.body).slice(0, 200));
   } catch (e) {
     test.fail('the suite itself failed: ' + ((e && e.stack) || e));

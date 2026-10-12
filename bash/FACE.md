@@ -6,21 +6,22 @@ route from browser to owner-of-subdomain, and back"*). The design is
 map is `design/shell/FACE-ROUND-TRIP.md`.
 
 ```
-browser ─https─ Caddy (on-demand cert) ─ face node :65434 (puppetPost → appFaceApp)
-        ─packet via the relay─ YOUR node (appFaceApp asks grantFace) ─ answer ─ back the same way
+browser ─https─ Caddy (on-demand cert) ─ face node :65434 (its appFaceApp process)
+        ─api ask via the relay─ YOUR node (appFaceApp asks grantFace; appFaceAppServer answers) ─ back the same way
 ```
 
-When it works, `https://join.face.spirit.andyflinn.com/` shows your node's
-answer. Until the last leg is built (step 2), that answer is
-`501 last-leg-not-built` with your node's key in it. That is the proof that
-the route reached your node and came back.
+When it works, a json ask to `https://join.face.spirit.andyflinn.com/api/spirit`
+is answered by your node's appFaceAppServer, naming itself and the verb. That
+is the proof that the route reached your node and came back. (`GET /` is the
+face's own page, served by the face node itself: it proves Caddy and the face,
+not the route.)
 
 ## What is on this box afterwards
 
 - **the relay:** `/root/SpiritOS`, `spirit-relay`, on 127.0.0.1:65430, unchanged;
 - **the face node:** `/root/face/SpiritOS`, `spirit-face`:
   - its door on 127.0.0.1:65433;
-  - its face (puppetPost) on 127.0.0.1:65434;
+  - its face, the appFaceApp process, on 127.0.0.1:65434 (the port in its `face.json`);
   - owned by your node through `relay-state/owner.json`;
 - **Caddy:** `/etc/caddy/sites/face.spirit.andyflinn.com.caddy`, plus one global block you add by hand.
 
@@ -76,32 +77,44 @@ step 2 printed. Each is one POST to your node's `/api/spirit` on
 
 - let the face node in: `{"verb":"peer.acquire","publicKey":"<FACE_NODE_KEY>"}`,
   then `{"verb":"contact.accept","publicKey":"<FACE_NODE_KEY>"}`;
-- write the face domain: `{"verb":"fs.save","path":"app/appFaceApp/face-domain.json","content":"{\"faceDomain\":\"face.spirit.andyflinn.com\"}
-"}`;
-- include `process/js/grantFace` in your node's list, then grant `join` to
-  your own node's key: `{"verb":"jobs.api","ask":{"grantFace":{"grant":{"name":"join","id":"<YOUR_NODE_KEY>"}}}}`.
+- list the three processes your node runs for the face, and it starts each at once:
+  `{"verb":"config.setModules","path":"process/js/grantFace","on":true}`, then the
+  same for `process/js/appFaceApp` and `process/js/appFaceAppServer`;
+- write the face domain into appFaceApp's state folder, which your node made
+  when it started it. By hand, in your clone: `fs.save` writes nothing under
+  `relay-state`.
+  `spirit/run/relay-state/process/appFaceApp/face-domain.json`:
+  `{ "faceDomain": "face.spirit.andyflinn.com" }`. It is read on every ask, so
+  no restart;
+- let the face node ask your appFaceApp (route and serve come in through the
+  api door, and denial is the absence of a grant):
+  `{"verb":"jobs.authGrant","key":"<FACE_NODE_KEY>","path":"appFaceApp"}`;
+- grant `join` to your own node's key:
+  `{"verb":"jobs.api","ask":{"grantFace":{"grant":{"name":"join","id":"<YOUR_NODE_KEY>"}}}}`.
 
 grantFace refuses a name another key holds (409 `slot-held`) and changes nothing.
 
 **5. Test**, from anywhere:
 
 ```
-curl -sS https://join.face.spirit.andyflinn.com/
+curl -sS -H 'Content-Type: application/json' -d '{"verb":"app.state"}' https://join.face.spirit.andyflinn.com/api/spirit
 ```
 
 The first visit takes a few seconds, while Caddy asks the face node about
-`join` and fetches its certificate. Expected: a 501 naming `last-leg-not-built`
-and your node's key. A name you never granted gets no certificate at all.
+`join` and fetches its certificate. Expected:
+`{"ok":true,"app":"appFaceAppServer","verb":"app.state","host":"join.face.spirit.andyflinn.com"}`.
+A name you never granted gets no certificate at all.
 
 ## What each failure means
 
 | you see | it means |
 |---|---|
 | a TLS error | Caddy was refused a certificate. The face node said the name is not granted (grantFace, face-domain.json, or your node did not answer), or the global `on_demand_tls` block is missing. |
-| `502 owner-unreachable` | the face node could not post to your node: it is not a member of the relay, or your node has not accepted its key. |
-| `504 owner-did-not-answer` | the post went, and no answer came back in time. Your node may be off. |
-| `404 no-such-route` | your node answered, and has no grant row for that name. |
-| `501 last-leg-not-built` | **the route works**: browser, face, your node, and back. Step 2 is next. |
+| `404 no-such-route`, `why: owner-unreachable` | your node refused the face node's ask, or it never reached it: the face node is not a member of the relay, your node has not accepted its key, or its key has no `appFaceApp` grant (step 4). |
+| `404 no-such-route`, `why: owner-did-not-answer` | the ask went, and no answer came back in time. Your node may be off. |
+| `404 no-such-route`, `why: not-granted` | your node answered, and has no grant row for that name. |
+| `503 app-not-running` | your node's appFaceAppServer is not running: list `process/js/appFaceAppServer` (step 4). |
+| `{"ok":true,"app":"appFaceAppServer",...}` | **the route works**: browser, face, your node, and back. |
 
 ## Updating
 

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Caddy serves face.<domain> and *.face.<domain> and proxies them to the
-# face node's puppetPost, with a certificate per name fetched ON DEMAND.
+# face node's appFaceApp process, on its own port (its face.json), with a
+# certificate per name fetched ON DEMAND.
 #
 #   Andy, 2026-09-27: "make me the appropriate scripts in ./bash/", and
 #   "yes" to on-demand certificates instead of a DreamHost key.
@@ -32,7 +33,7 @@ ASK_URL="http://127.0.0.1:$FACE_PORT/.well-known/spirit-name"
 mkdir -p "$SITES_DIR"
 say "write $SITE_FILE for $FACE_DOMAIN and *.$FACE_DOMAIN -> 127.0.0.1:$FACE_PORT"
 cat > "$SITE_FILE" <<SITE
-# Written by bash/face-tls. The face node's puppetPost, for every name
+# Written by bash/face-tls. The face node's appFaceApp, for every name
 # under $FACE_DOMAIN. reverse_proxy keeps the visitor's Host header, which is
 # how appFaceApp knows which name was asked for.
 $FACE_DOMAIN, *.$FACE_DOMAIN {

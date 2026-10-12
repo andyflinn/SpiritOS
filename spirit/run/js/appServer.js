@@ -478,6 +478,35 @@ try {
   } catch (e) {}
 } catch (e) {}
 
+// ── THE NODE'S FACTS ON THE SPIRIT OBJECT (goal/G19.10) ──────────────────
+//
+//   Andy, 2026-10-12: "The appServer have a definite need/use for all 3: the
+//   node/puppets key, the owners public key, and the nodes port: if they are
+//   not allowed to read the files, they should have that stuff passted with
+//   the spirit object that comes with the appServers passed interface."
+//
+// The port is SPIRIT_PORT above. The other two, and the node's name, are what
+// the node hands every server it starts as --node {name, publicKey, ownerKey}
+// (jobs.startNodeServers), read here once, at the start, like --pipe:
+//
+//   spirit.core.node.const.NODE_NAME   the node's name ('' while it has none)
+//   spirit.core.node.const.NODE_KEY    the node's public key
+//   spirit.core.node.const.OWNER_KEY   its owner's public key; '' when the node
+//                                      owns itself or nobody owns it
+//
+// All public. A server never opens identity.json or owner.json for them; no
+// --node, or a malformed one, leaves all three ''.
+(function nodeFacts() {
+  const at = process.argv.indexOf('--node');
+  let node = null;
+  try { node = at !== -1 ? JSON.parse(String(process.argv[at + 1] || '')) : null; } catch (e) { node = null; }
+  const o = node && typeof node === 'object' ? node : {};
+  function str(v) { return typeof v === 'string' ? v : ''; }
+  spirit.core.node.const.NODE_NAME = str(o.name);
+  spirit.core.node.const.NODE_KEY = str(o.publicKey);
+  spirit.core.node.const.OWNER_KEY = str(o.ownerKey);
+}());
+
 module.exports = {
   spirit:spirit,
   createAppServer: createAppServer,

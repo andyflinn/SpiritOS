@@ -18,13 +18,39 @@ const auth = require('../run/js/relayAuth');
 // Beside the face since goal/G13.2: the cache is appFaceApp's own, not the node's.
 const fr = require('../run/process/js/appFaceApp/faceRoute');
 
+// THE OWNER'S SIGNER IS THE TEST'S OWN SINCE goal/G19.10. Andy, 2026-10-12:
+// "there shall be no test helpers inside node." answerRoute had no caller in
+// the node, only here, so it lives here: it makes the signed routes the
+// cache is driven with. Its message is the one faceRoute's routeMessage
+// verifies, so a route signed here and kept by the cache proves the two agree.
+// routeIsSigned (the holding node's check) went with it and is not kept: a
+// check of a test's own copy asserts nothing about the node. The cache's
+// refusals below are the node's.
+const ROUTE_MS = fr.ROUTE_MS;
+function routeMessage(ownerKey, name, to, until, faceKey) {
+  var NL = String.fromCharCode(10);
+  return 'face-route' + NL + String(ownerKey || '') + NL + String(name || '') + NL +
+    String(to || '') + NL + String(Number(until) || 0) + NL + String(faceKey || '');
+}
+function answerRoute(rows, name, owner, sign, nowMs, faceKey) {
+  var n = String(name || '');
+  var row = rows && Object.prototype.hasOwnProperty.call(rows, n) ? rows[n] : null;
+  if (!row || !row.to) return { route: 'none', name: n };
+  if (owner && row.to === owner.publicKey) return { route: 'mine', name: n };
+  var until = (nowMs == null ? Date.now() : nowMs) + ROUTE_MS;
+  var face = String(faceKey || '');
+  return {
+    route: 'to', name: n, to: row.to, until: until, face: face,
+    sig: sign(owner.privateKey, routeMessage(owner.publicKey, n, row.to, until, face)),
+  };
+}
+
 test.startTest('A face name routes to the node that holds it, on the owner\'s signed word only');
 
 const owner = auth.generateIdentity('owner');
 const joe = auth.generateIdentity('joe');
 const stranger = auth.generateIdentity('stranger');
 const face = auth.generateIdentity('face');   // the puppet that asks
-const bob = auth.generateIdentity('bob');
 const FACE = 'face.spirit.example';
 
 // ── THE NAME IN A HOST ────────────────────────────────────────────────
@@ -43,51 +69,38 @@ const FACE = 'face.spirit.example';
   }
 }
 
-// ── THE OWNER'S ANSWER: MINE, A SIGNED ROUTE, OR NONE ─────────────────
+// ── A ROUTE THAT IS NOT THE OWNER'S WORD IS NOT A ROUTE ──────────────
+//
+// Since goal/G19.10 asked of the node's own code, the cache (routeIsSigned,
+// which this once asked, left the node with answerRoute).
 const rows = { join: { to: owner.publicKey }, joe: { to: joe.publicKey } };
 const T0 = 1000000;
-{
-  const mine = fr.answerRoute(rows, 'join', owner, auth.sign, T0, face.publicKey);
-  const to = fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
-  const none = fr.answerRoute(rows, 'nobody', owner, auth.sign, T0, face.publicKey);
-  const inherited = fr.answerRoute(rows, 'toString', owner, auth.sign, T0, face.publicKey);
-  if (mine.route === 'mine' && to.route === 'to' && to.to === joe.publicKey && to.until === T0 + fr.ROUTE_MS
-      && fr.routeIsSigned(to, owner.publicKey, auth.verify, { selfKey: joe.publicKey, fromKey: face.publicKey, now: T0 }) && none.route === 'none' && inherited.route === 'none') {
-    test.check('the owner answers "mine" for its own name, a route signed by its key for joe\'s, valid an hour, and '
-      + '"none" for a name it never granted, including one that only an object\'s prototype has (toString)');
-  } else {
-    test.fail('answers: mine ' + JSON.stringify(mine) + ', to ' + JSON.stringify(to && { route: to.route, until: to.until })
-      + ', none ' + JSON.stringify(none) + ', toString ' + JSON.stringify(inherited));
-  }
-}
-
-// ── A ROUTE THAT IS NOT THE OWNER'S WORD IS NOT A ROUTE ──────────────
-{
-  const good = fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
-  const redirected = Object.assign({}, good, { to: stranger.publicKey });
-  const longer = Object.assign({}, good, { until: good.until + 1 });
-  const byStranger = fr.answerRoute(rows, 'joe', stranger, auth.sign, T0, face.publicKey);
-  const at = { selfKey: joe.publicKey, fromKey: face.publicKey, now: T0 };
-  const holds = fr.routeIsSigned(good, owner.publicKey, auth.verify, at);
-  const refused = [
-    ['to changed', redirected], ['until changed', longer], ['signed by another key', byStranger],
-  ].filter(function (c) { return fr.routeIsSigned(c[1], owner.publicKey, auth.verify, at); });
-  if (holds && !refused.length) {
-    test.check('a route verifies only as the owner signed it: changing where it points or how long it lasts, or '
-      + 'signing it with another key, breaks it');
-  } else {
-    test.fail('routeIsSigned: good ' + holds + '; accepted anyway: ' + refused.map(function (c) { return c[0]; }).join(', '));
-  }
-}
-
-// ── THE PUPPET'S CACHE TAKES ONLY THE OWNER'S ANSWER TO ITS QUESTION ──
 function cacheAt(clock) {
   return fr.createRouteCache({ ownerKey: owner.publicKey, verify: auth.verify, now: function () { return clock.t; } });
 }
 {
+  const good = answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
+  const redirected = Object.assign({}, good, { to: stranger.publicKey });
+  const longer = Object.assign({}, good, { until: good.until + 1 });
+  const reFaced = Object.assign({}, good, { face: stranger.publicKey });
+  const byStranger = answerRoute(rows, 'joe', stranger, auth.sign, T0, face.publicKey);
+  const kept = [
+    ['to changed', redirected], ['until changed', longer], ['face changed', reFaced], ['signed by another key', byStranger],
+  ].filter(function (c) { return cacheAt({ t: T0 }).take(c[1], owner.publicKey, 'Q', 'Q'); });
+  const holds = cacheAt({ t: T0 }).take(good, owner.publicKey, 'Q', 'Q');
+  if (holds && !kept.length) {
+    test.check('the cache keeps a route only as the owner signed it: changing where it points, how long it lasts or '
+      + 'whose face it is, or signing it with another key, breaks it');
+  } else {
+    test.fail('cache: good taken ' + holds + '; taken anyway: ' + kept.map(function (c) { return c[0]; }).join(', '));
+  }
+}
+
+// ── THE PUPPET'S CACHE TAKES ONLY THE OWNER'S ANSWER TO ITS QUESTION ──
+{
   const clock = { t: T0 };
   const c = cacheAt(clock);
-  const answer = fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
+  const answer = answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
   const forged = Object.assign({}, answer, { to: stranger.publicKey });
   const fromStranger = c.take(answer, stranger.publicKey, 'Q1', 'Q1');
   const wrongHash = c.take(answer, owner.publicKey, 'Q2', 'Q1');
@@ -109,7 +122,7 @@ function cacheAt(clock) {
 {
   const clock = { t: T0 };
   const c = cacheAt(clock);
-  c.take(fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'Q', 'Q');
+  c.take(answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'Q', 'Q');
   clock.t = T0 + fr.ROUTE_MS - 1;
   const justBefore = c.lookup('joe');
   clock.t = T0 + fr.ROUTE_MS;
@@ -117,13 +130,13 @@ function cacheAt(clock) {
   // A route the owner signed for ten hours is still kept only one.
   const clock2 = { t: T0 };
   const c2 = cacheAt(clock2);
-  c2.take(fr.answerRoute(rows, 'joe', owner, auth.sign, T0 + 9 * fr.ROUTE_MS, face.publicKey), owner.publicKey, 'Q', 'Q');
+  c2.take(answerRoute(rows, 'joe', owner, auth.sign, T0 + 9 * fr.ROUTE_MS, face.publicKey), owner.publicKey, 'Q', 'Q');
   clock2.t = T0 + fr.ROUTE_MS;
   const capped = c2.lookup('joe');
   // The target refused: ask again.
   const clock3 = { t: T0 };
   const c3 = cacheAt(clock3);
-  c3.take(fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'Q', 'Q');
+  c3.take(answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'Q', 'Q');
   c3.drop('joe');
   const dropped = c3.lookup('joe');
   if (justBefore && justBefore.to && at === null && capped === null && dropped === null) {
@@ -139,8 +152,8 @@ function cacheAt(clock) {
 {
   const clock = { t: T0 };
   const c = cacheAt(clock);
-  c.take(fr.answerRoute(rows, 'nobody', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'Q', 'Q');
-  c.take(fr.answerRoute(rows, 'join', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'R', 'R');
+  c.take(answerRoute(rows, 'nobody', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'Q', 'Q');
+  c.take(answerRoute(rows, 'join', owner, auth.sign, T0, face.publicKey), owner.publicKey, 'R', 'R');
   const noneNow = c.lookup('nobody');
   const mineNow = c.lookup('join');
   clock.t = T0 + fr.NONE_MS;
@@ -155,53 +168,11 @@ function cacheAt(clock) {
   }
 }
 
-// ── THE NODE THAT HOLDS THE NAME: ONLY A LIVE ROUTE, FOR IT, FROM ITS FACE ─
-//
-// wsl-claude's finding at fab98e4, go from claude-windows: routeIsSigned
-// checked the signature alone, so a route stayed good for ever (a name taken
-// back kept routing to whoever replayed it), a route for joe verified at bob,
-// and anyone holding a copy could drive joe's app process. Now the route
-// carries the asking puppet's key ('face'), inside what the owner signs.
-{
-  const good = fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
-  const ok = fr.routeIsSigned(good, owner.publicKey, auth.verify, { selfKey: joe.publicKey, fromKey: face.publicKey, now: T0 + 1 });
-  const expired = fr.routeIsSigned(good, owner.publicKey, auth.verify, { selfKey: joe.publicKey, fromKey: face.publicKey, now: good.until });
-  const atBob = fr.routeIsSigned(good, owner.publicKey, auth.verify, { selfKey: bob.publicKey, fromKey: face.publicKey, now: T0 + 1 });
-  const copied = fr.routeIsSigned(good, owner.publicKey, auth.verify, { selfKey: joe.publicKey, fromKey: stranger.publicKey, now: T0 + 1 });
-  const reFaced = fr.routeIsSigned(Object.assign({}, good, { face: stranger.publicKey }), owner.publicKey, auth.verify,
-    { selfKey: joe.publicKey, fromKey: stranger.publicKey, now: T0 + 1 });
-  if (ok && good.face === face.publicKey && !expired && !atBob && !copied && !reFaced) {
-    test.check('the node holding the name takes a route only while it is live, only if it names that node, and only '
-      + 'from the puppet it was issued to: expired, shown to another node, presented by someone else, or with the face '
-      + 'swapped after signing, it fails');
-  } else {
-    test.fail('THE HOLDING NODE ACCEPTS WHAT IT SHOULD NOT: good ' + ok + ' (face ' + (good.face ? 'carried' : 'MISSING') + '), '
-      + 'expired ' + expired + ', at bob ' + atBob + ', from a copier ' + copied + ', face swapped ' + reFaced
-      + '. A replayed, misdirected or copied route drives the app process');
-  }
-}
-
-// ── NO WAY TO GET THE WEAK CHECK BY FORGETTING AN ARGUMENT ─────────────
-//
-// wsl-claude, at 7bc92b7: routeIsSigned without 'at' still answered the
-// signature alone, so a holding-node caller that forgot 'at' would silently
-// get the check that let replayed and copied routes through. Split at
-// 3bef2806: routeSignatureHolds is the cache's signature-only question, and
-// routeIsSigned refuses without selfKey and fromKey.
-{
-  const good = fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
-  const bare = fr.routeIsSigned(good, owner.publicKey, auth.verify);
-  const halfSelf = fr.routeIsSigned(good, owner.publicKey, auth.verify, { selfKey: joe.publicKey, now: T0 + 1 });
-  const halfFrom = fr.routeIsSigned(good, owner.publicKey, auth.verify, { fromKey: face.publicKey, now: T0 + 1 });
-  const cacheSays = typeof fr.routeSignatureHolds === 'function' && fr.routeSignatureHolds(good, owner.publicKey, auth.verify);
-  if (bare === false && halfSelf === false && halfFrom === false && cacheSays === true) {
-    test.check('the holding node\'s check refuses when it is not told who it is and who presented the route, and the '
-      + 'signature-only question lives apart, as routeSignatureHolds, for the cache');
-  } else {
-    test.fail('without at ' + bare + ', only selfKey ' + halfSelf + ', only fromKey ' + halfFrom
-      + ', routeSignatureHolds ' + cacheSays + '. Forgetting an argument must not buy the weak check');
-  }
-}
+// THE NODE THAT HOLDS THE NAME, AND NO WEAK CHECK BY A FORGOTTEN ARGUMENT:
+// asserted of routeIsSigned until goal/G19.10 (wsl-claude's findings at
+// fab98e4 and 7bc92b7). It left the node, a test helper with no caller, and
+// its checks with it; they come back with the code, the day a member's node
+// takes a forwarded route.
 
 // ── THE OWNER'S PLAIN ANSWER: "THE OWNER OF THIS NAME IS <KEY>" ─────────
 //
