@@ -14,7 +14,7 @@
 //      Its other user, onboard.js, then blocks every known agent, not only the live ones, which closes the gap it
 //      left to the listener.
 //   2  THE PAGE: a bubble, and so a tab, for every agent in agents; one not in live carries data-away="1" and is not
-//      marked working. Opening it asks scope.get with its key, as for a live one.
+//      marked working. Opening it asks profile.get with its key, as for a live one (scope.get until goal/G10.8).
 //
 // THE WORLD: a real desk server with its own state; an agent that last wrote 20 minutes ago is made by rewriting the
 // at of its records in desk.db while the server is down (there is no clock to turn); then the page, fed that row.
@@ -94,7 +94,7 @@ async function theServer() {
   return row;
 }
 
-// A small DOM of created nodes, as deskScopePane.js has one.
+// A small DOM of created nodes, as deskScopePane.js had one (retired with agent scopes, goal/G10.8).
 function node(tag) {
   let html = '';
   const e = { tagName: String(tag || 'div').toUpperCase(), value: '', textContent: '', className: '', style: {}, dataset: {}, children: [], listeners: {}, parentNode: null, hidden: false, attrs: {}, id: '',
@@ -143,7 +143,7 @@ async function thePage(served) {
       const v = Object.keys(ask)[0];
       asked.push({ verb: v, args: ask[v] });
       if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 'k/G1', label: JSON.stringify(goalRow) }], more: false } });
-      if (v === 'scope.get') return Promise.resolve({ status: 200, body: { folder: 'spirit/run/shell/textEditor/' } });
+
       if (v === 'profile.get') return Promise.resolve({ status: 200, body: { name: 'ollama-gemma', nick: 'gemma' } });
       return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', chat: [], chatMore: false } });
     },
@@ -167,10 +167,12 @@ async function thePage(served) {
   doc.getElementById('desk-tabs').appendChild(t);
   bubble(t, { type: 'click', bubbles: true, currentTarget: doc.getElementById('desk-tabs'), preventDefault: function () {}, stopPropagation: function () {} });
   await settled();
-  const got = asked.filter(function (a) { return a.verb === 'scope.get'; });
-  if (got.length && got[got.length - 1].args.agent === GEMMA.key) test.check('opening gemma\'s tab asks scope.get with its key');
-  else test.fail(OWED + 'scope.get asked ' + short(got));
+  // SINCE goal/G10.8 THE PANE IS THE PROFILE: agent scopes went ("all agents in desk have "/" file scope"), so opening
+  // an away agent's tab asks profile.get by its key, as for a live one.
+  const got = asked.filter(function (a) { return a.verb === 'profile.get'; });
+  if (got.length && got[got.length - 1].args.agent === GEMMA.key) test.check('opening gemma\'s tab asks profile.get with its key');
+  else test.fail(OWED + 'profile.get asked ' + short(got));
   const pane = byId['desk-agent'] ? byId['desk-agent'].innerHTML : '';
-  if (/spirit\/run\/shell\/textEditor\//.test(pane) && !/No key known/.test(pane)) test.check('its pane shows its scope, spirit/run/shell/textEditor/');
+  if (!/No key known/.test(pane) && !asked.some(function (a) { return a.verb === 'scope.get'; })) test.check('its pane knows its key and asks no scope');
   else test.fail(OWED + 'its pane reads ' + short(pane));
 }

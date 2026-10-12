@@ -12,8 +12,8 @@
 //
 //   1  the agent's desk grant is revoked (none held is no failure)
 //   2  the agent is forgotten from his contact book
-//   3  the agent's scope at the desk is set to '' (nothing). The profile stays: profile.set refuses an empty name
-//      and no verb deletes one.
+//   The profile stays: profile.set refuses an empty name and no verb deletes one. (A third step cleared the agent's
+//   scope until goal/G10.8 removed agent scopes, every agent being /.)
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
 const kernel = require('../../../js/kernel.js');
@@ -47,11 +47,6 @@ async function main() {
   const forgot = await ask('contact.forget', { publicKey: agent });
   if (!ok(forgot) && forgot.status !== 404) end(1, 'removeAgent: the contact was not forgotten: ' + forgot.text);
   say(ok(forgot) ? 'forgotten from the contact book' : 'it was not in the contact book');
-
-  // 3. THE SCOPE, through the desk's own owner verb.
-  const scope = await ask('jobs.api', { ask: { desk: { 'scope.set': { agent: agent, folder: '' } } } });
-  if (!ok(scope)) end(1, 'removeAgent: the scope was not cleared: ' + scope.text);
-  say('scope set to nothing');
   end(0, 'removeAgent: done');
 }
 

@@ -144,7 +144,6 @@ async function partB() {
   await verb(andyPort, { verb: 'jobs.authGrant', key: agentKey, path: 'desk' });
   const joined = spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + mi.token], { cwd: clone, encoding: 'utf8', timeout: 180000 });
   await waitFor(function () { return deskAsk('profile.set', { agent: agentKey, name: 'gemma', nick: 'gemma' }).then(function (r) { return r.status === 200; }); });
-  await waitFor(function () { return deskAsk('scope.set', { agent: agentKey, folder: 'src/' }).then(function (r) { return r.status === 200; }); });
   if (joined.status !== 0) { test.fail('the world: onboard.js exited ' + joined.status + ': ' + short(String(joined.stdout) + String(joined.stderr))); return; }
 
   // The agent writes the red and finishes it, through its own node, as a real agent does.

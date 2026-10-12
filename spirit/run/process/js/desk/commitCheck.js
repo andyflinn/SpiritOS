@@ -131,7 +131,7 @@ function checkItems(ids) {
         if (current.indexOf(f.goal) === -1) { reasons.push('- ' + id + ': not an item of the current goal'); return one(i + 1); }
         if (f.status === 'done' || f.status === 'closed') { reasons.push('- ' + id + ': ' + f.status + ' already; nothing is owed on it'); return one(i + 1); }
         if (f.go !== true) { reasons.push('- ' + id + ': Andy has not pressed Go on it'); return one(i + 1); }
-        return scopeAndGrants(id).then(function () { return redWriterBuilds(id); }).then(function () {
+        return coreGrants(id).then(function () { return redWriterBuilds(id); }).then(function () {
           fs.writeFileSync(path.join(gitDir(), 'commitCheck.item'), id);
           end(0, 'commitCheck: ' + id + ' has his Go; the commit is taken');
         });
@@ -141,24 +141,17 @@ function checkItems(ids) {
   });
 }
 
-// ── the scope and the core grants (goal/G4.23) ───────────────────────
+// ── the core grants (goal/G4.23) ───────────────────────────────────
 // Andy: "it should refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a
-// grant request in the item?", "the default: nothing", "the scope still has a grant-lock on core files.". Every staged
-// file must lie in this agent's one scope (scope.get, as he set it); a staged core file (spirit/run/js/coreFiles.js) also
-// needs a granted G check on the item naming its path under spirit/run. Refused without it, and the refusal puts one
-// open G check "core grant: <path>" under the item, once, so his List shows it.
-function scopeAndGrants(id) {
+// grant request in the item?". A staged core file (spirit/run/js/coreFiles.js) needs a granted G check on the item
+// naming its path under spirit/run. Refused without it, and the refusal puts one open G check "core grant: <path>"
+// under the item, once, so his List shows it.
+// NO SCOPE SINCE goal/G10.8: Andy, 2026-10-12, "all agents in desk have "/" file scope", the per-agent setting removed
+// from desk and commitCheck ("b"). Every agent commits anywhere in the repo; the core grants still hold.
+function coreGrants(id) {
   const staged = git(['diff', '--cached', '--name-only']).stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
   const top = git(['rev-parse', '--show-toplevel']).stdout.trim();
-  return desk('scope.get', { agent: '' }).then(function (scope) {
-    // One field (goal/G4.23; Andy: "you set one field: '' = nothing '/' = repo-root"): '' nothing, '/' the repo root,
-    // else a folder.
-    const one = typeof scope.folder === 'string' ? scope.folder : '';
-    const outside = one === '/' ? [] : staged.filter(function (f) { return one === '' || f.indexOf(one) !== 0; });
-    if (outside.length) {
-      end(1, 'commitCheck: REFUSED (scope): outside the scope Andy set for this agent (' + (one === '' ? 'none yet' : one === '/' ? '/ (the repo root)' : one) + '):\n' +
-        outside.map(function (f) { return '- ' + f; }).join('\n'));
-    }
+  return Promise.resolve().then(function () {
     const core = staged.filter(function (f) { return require('../../../js/coreFiles.js').isCore(f, top); });
     if (!core.length) return null;
     const under = function (f) { return f.replace(/^spirit\/run\//, ''); };

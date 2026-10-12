@@ -13,7 +13,7 @@
 //   node spirit/run/process/js/deskClient/publishData.js <port> [--asks N] [--only packets] [--out <dir>]
 //
 //   1  unless --only packets: spirit/test/measurePlatform.js --agent <agent> (harness, capacity) into agents/<agent>/
-//   2  N read-only desk asks (scope.get) from this node, then their figures from its own traffic log: packets.json
+//   2  N read-only desk asks (profile.get; scope.get until goal/G10.8 removed agent scopes) from this node, then their figures from its own traffic log: packets.json
 //      {posts, waitMs {median, max}, flight {median, max}, retried, refusals} and packets.md; platform.md names the
 //      agent, the commit and the box
 //   3  unless --only packets or --out: commits agents/<agent>/ (the commit check's standing grant takes a commit whose
@@ -138,7 +138,7 @@ async function main() {
 
   // 2. THE PACKET FIGURES: N read-only desk asks, timed by this node's own traffic rows.
   const since = new Date(Date.now() - 1000).toISOString();
-  for (let i = 0; i < asks; i++) await desk('scope.get', { agent: '' });
+  for (let i = 0; i < asks; i++) await desk('profile.get', { agent: '' });
   await new Promise(function (r) { setTimeout(r, 1500); });
   const rows = closingRows(clone, since);
   const waits = rows.filter(function (r) { return typeof r.waitMs === 'number'; });

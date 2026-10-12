@@ -372,7 +372,7 @@ const GROUP_CHAT = 'desk/G0.0';
 function walkState() {
   // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
   // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
-  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), scopes: Object.create(null), profiles: Object.create(null), current: '' };
+  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), profiles: Object.create(null), current: '' };
   s.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [] };
   s.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
   s.items[GROUP_CHAT].closed = true;
@@ -675,12 +675,10 @@ function apply(s, r, b, item, goalOf) {
       Object.keys(s.items).forEach(function (id) { const m = s.items[id]; if (m.phaseWith === r.by) { m.phaseWith = ''; if (m.with === r.by) m.with = ''; } });
       return;
     // AN AGENT'S SCOPE (goal/G4.23), by its key, as he set it last; the handler refused anything malformed.
-    // AN AGENT'S SCOPE (goal/G4.23), one field, as he set it last: '' nothing, '/' the repo root, else a folder. Records
-    // written while it was a list replay to the same meaning: [] is '', [''] (the root) is '/', [f] is f.
     // AN AGENT'S PROFILE (goal/G4.23), his, as he set it last: its name and its nick.
+    // (Agent scopes went with goal/G10.8, every agent being /: an old scope.set record falls to the default and changes
+    // nothing.)
     case 'profile.set': s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick) }; return;
-    case 'scope.set': s.scopes[String(b.agent)] = typeof b.folder === 'string' ? b.folder
-      : (Array.isArray(b.folders) && b.folders.length ? (String(b.folders[0]) === '' ? '/' : String(b.folders[0])) : ''); return;
     // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
     // that, i then can solicit an answer from others." The taker's name goes on his latest line under the item,
     // and the item is the taker's to answer until it does; the handler refuses a take with no line or one already
@@ -2046,23 +2044,9 @@ appServer.serve({
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
-  // AGENT SCOPES (goal/G4.23). Andy: "i alone, i definitely will consult you", "ahh, the default: nothing.", and "you
-  // set one field: '' = nothing '/' = repo-root all that are selectable from drop-down". scope.set is his alone: one
-  // field per agent, by its key: '' nothing, '/' the repo root, or a repo folder ending in '/'. scope.get answers it,
-  // agent '' being the caller; an agent never set answers ''. The commit check reads it (commitCheck.js). Desk verbs,
-  // not node verbs.
-  'scope.set': {
-    request: { agent: '', folder: '' }, reply: { change: 0 },
-    handler: function (a, caller) {
-      ownerOnly(caller);
-      const w = writerOf(caller);
-      if (!a.agent) throw refused('bad-request');
-      const f = a.folder;
-      const ok = f === '' || f === '/' || (/\/$/.test(f) && !/^\//.test(f) && !/(^|\/)\.\.(\/|$)/.test(f) && f.indexOf('\\') === -1);
-      if (!ok) throw refused('bad-request');
-      return { change: write('scope.set', { agent: a.agent, folder: f, by: w.by, key: w.key }).change };
-    },
-  },
+  // NO AGENT SCOPES SINCE goal/G10.8. Andy, 2026-10-12: "all agents in desk have "/" file scope", the per-agent
+  // setting removed from desk and commitCheck ("b"). What fences an agent is the desk itself: Go, its item, the core
+  // grants.
   // AGENT PROFILES (goal/G4.23). Andy: "so two more fields for repo-root-agents: name <agent-name> nick: <wc | wsl |
   // ubi>", "build them now.", "the profiles are for me, in desk. a dataset that deskServer stores for me and let's you
   // see." profile.set is his alone; profile.get answers any agent's ('' the caller). A name passes the label rule
@@ -2083,13 +2067,6 @@ appServer.serve({
     handler: function (a, caller) {
       const p = walkState().profiles[a.agent || writerOf(caller).key];
       return { name: p ? p.name : '', nick: p ? p.nick : '' };
-    },
-  },
-  'scope.get': {
-    request: { agent: '' }, reply: { folder: '' },
-    handler: function (a, caller) {
-      const key = a.agent || writerOf(caller).key;
-      return { folder: walkState().scopes[key] || '' };
     },
   },
   // TAKING THE BOX (goal/G4.20 point 9): an agent takes the box before a change it will write (cap, split, an

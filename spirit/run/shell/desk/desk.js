@@ -273,30 +273,23 @@ function deskBubblesHtml() {
   if (!known.length) return '';
   var working = deskWorkingAgents();
   // EACH BUBBLE IS A TAB (goal/G4.23). Andy: "the red-bordered agent bubbles become tab-headers again, with their own
-  // pane for scope-configuration." data-tab="agent:<name>" opens that agent's scope pane; the bubble keeps its state.
+  // pane for scope-configuration." data-tab="agent:<name>" opens that agent's pane (its profile since goal/G10.8); the bubble keeps its state.
   return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + known.map(function (n) {
     var away = live.indexOf(n) === -1;
     var busy = !away && working.indexOf(n) !== -1;
     var on = deskTab === 'agent:' + n;
     return '<span data-bubble="' + deskEsc(n) + '" data-tab="agent:' + deskEsc(n) + '"' +
-      (away ? ' data-away="1" title="away: not heard from in 10 minutes; open its scope"' : busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its scope"') +
+      (away ? ' data-away="1" title="away: not heard from in 10 minutes; open its profile"' : busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its profile"') +
       ' style="display:inline-block;cursor:pointer;padding:2px 10px;margin-left:6px;border-radius:12px;font-weight:' + (on ? 'bold' : 'normal') +
       ';border:2px ' + (away ? 'dashed #888;opacity:0.6' : 'solid ' + (busy ? '#d00' : '#555')) + '">' + deskEsc(n) + '</span>';
   }).join('');
 }
 
-// ── AN AGENT'S SCOPE PANE (goal/G4.23) ───────────────────────────────
+// ── AN AGENT'S PANE: ITS PROFILE (goal/G4.23) ────────────────────────
 //
-//   Andy: "i alone" set an agent's scope; "file/folder selector in it a shell element"; "i'll do the third when the
-//   ui arrives"; and "you set one field: '' = nothing '/' = repo-root all that are selectable from drop-down". The pane
-//   shows the agent's one scope (scope.get by its key, from the goal row's agents) and sets it: a folder from the
-//   path selector on the shell's tree, or the repo root. Every edit is a scope.set, and the pane draws only the answer
-//   of the scope.get after it, never what it guessed.
+//   The pane showed the agent's scope and set it until goal/G10.8. Andy, 2026-10-12: "all agents in desk have "/" file
+//   scope", the per-agent setting removed from desk and commitCheck ("b"). What stays is the profile, name and nick.
 var deskAgentName = '';
-var deskAgentScope = '';
-// The root button and its words, offered only while the scope is not '/' already (Andy: "[set-to-repo-root] only needs
-// to be offered if the agent doesn't already have that scope.").
-var deskAgentRootParts = [];
 var deskAgentProfile = null;
 var deskAgentNote = '';
 function deskAgentKey() {
@@ -307,91 +300,23 @@ function deskAgentDraw() {
   var el = document.getElementById('desk-agent');
   if (!el) return;
   var label = document.getElementById('desk-agent-label');
-  if (label) label.textContent = 'Scope of ' + deskAgentName + ': the one folder it may commit in (core files still need your grant)';
-  // ONE FIELD, SHOWN AS IT IS: '' nothing, '/' the repo root, else the folder.
-  var one = deskAgentScope;
-  deskAgentRootParts.forEach(function (n) { n.hidden = one === '/'; });
-  el.innerHTML = '<span data-scope-current>' + (one === '' ? '(nothing: this agent may commit nothing)' : one === '/' ? '/ (the repo root)' : deskEsc(one)) + '</span>' +
+  if (label) label.textContent = deskAgentName + ': every agent may commit anywhere in the repo; core files still need your grant';
+  el.innerHTML = (deskAgentKey() ? '' : '<div class="job-start-error">No key known for ' + deskEsc(deskAgentName) + '.</div>') +
     (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
-}
-function deskAgentLoad() {
-  var key = deskAgentKey();
-  if (!key) { deskAgentScope = ''; deskAgentNote = 'No key known for ' + deskAgentName + '.'; deskAgentDraw(); return Promise.resolve(); }
-  return deskAsk('scope.get', { agent: key }).then(function (r) {
-    deskAgentScope = typeof r.folder === 'string' ? r.folder : '';
-    deskAgentNote = '';
-    deskAgentDraw();
-  }, function (e) { deskAgentNote = 'Not read: ' + ((e && e.message) || e); deskAgentDraw(); });
-}
-function deskAgentSet(folder) {
-  var key = deskAgentKey();
-  if (!key) return;
-  deskAsk('scope.set', { agent: key, folder: folder }).then(deskAgentLoad, function (e) {
-    deskAgentNote = 'Not set: ' + ((e && e.message) || e);
-    deskAgentDraw();
-  });
 }
 function deskAgentOpen(name) {
   deskAgentName = name;
-  deskAgentScope = '';
   deskAgentNote = '';
   deskAgentProfile = null;
   deskAgentDraw();
   var slot = document.getElementById('desk-agent-picker');
-  var make = deskApi && deskApi.ui && deskApi.ui.elements && deskApi.ui.elements.createPathSelector;
-  if (slot && typeof make === 'function') {
-    var picker = make({
-      foldersOnly: true,
-      files: function () { return (spirit.shell && typeof spirit.shell.currentFiles === 'function' && spirit.shell.currentFiles()) || []; },
-    });
-    // ONE LINE (Andy: "The fs-scope should take only one line of agent configuration. [folder-dropdown] [set]
-    // 'current/scope/'   'for advanced agents' [set-to-repo-root]"). A pick only selects ("one accidental click and a
-    // folder is granted, just like that"); [set] replaces the one scope with the chosen folder, and with nothing chosen
-    // sends nothing.
-    var setOne = document.createElement('button');
-    setOne.setAttribute('type', 'button');
-    setOne.setAttribute('data-scope-set', '1');
-    setOne.textContent = 'set';
-    setOne.addEventListener('click', function () {
-      if (picker.value) deskAgentSet('spirit/run/' + picker.value);
-    });
-    var advanced = document.createElement('span');
-    advanced.className = 'job-manifest-note';
-    advanced.textContent = ' for advanced agents ';
+  if (slot) {
     slot.innerHTML = '';
     // ONE LINE WITH ROOM BETWEEN ITS PARTS (Andy: "misses horizontal spacing between items").
     slot.style.display = 'flex';
     slot.style.alignItems = 'center';
     slot.style.flexWrap = 'wrap';
     slot.style.gap = '12px';
-    slot.appendChild(picker);
-    slot.appendChild(setOne);
-    slot.appendChild(advanced);
-    // THE REPO ROOT, ARMED (Andy: "i need \"/\" as an option", "give me an arm-button", then "[set-to-repo-root]").
-    // The shell's tree holds spirit/run only, so the root is a button of its own: the first click arms it, the second
-    // sets the one scope to '/' (the whole repo); a click elsewhere disarms it.
-    var whole = document.createElement('button');
-    whole.setAttribute('type', 'button');
-    whole.setAttribute('data-scope-root', '1');
-    var armed = false;
-    var paint = function () {
-      whole.textContent = armed ? 'set-to-repo-root: sure?' : 'set-to-repo-root';
-      if (armed) whole.setAttribute('data-armed', '1'); else whole.removeAttribute('data-armed');
-    };
-    paint();
-    whole.addEventListener('click', function () {
-      if (!armed) {
-        armed = true;
-        paint();
-        if (deskApi && typeof deskApi.armUntilElsewhere === 'function') deskApi.armUntilElsewhere(function () { armed = false; paint(); });
-        return;
-      }
-      armed = false;
-      paint();
-      deskAgentSet('/');
-    });
-    slot.appendChild(whole);
-    deskAgentRootParts = [advanced, whole];
     // NAME AND NICK, KEPT BY THE DESK FOR ANDY (Andy: "so two more fields for repo-root-agents: / name <agent-name> /
     // nick: <wc | wsl | ubi>", and "the profiles are for me, in desk"). profile.set is owner-only on the server; the
     // nick is what makes a line of his starting "<nick>:" that agent's to take.
@@ -415,8 +340,7 @@ function deskAgentOpen(name) {
     save.addEventListener('click', deskAgentProfileSave);
     slot.appendChild(save);
   }
-  deskAgentProfileLoad();
-  return deskAgentLoad();
+  return deskAgentProfileLoad();
 }
 function deskAgentProfileLoad() {
   var key = deskAgentKey();
@@ -1288,7 +1212,7 @@ spirit.shell.activateApp({
         // AN AGENT'S SCOPE (goal/G4.23), opened from its bubble.
         '<div data-pane="agent" hidden>' +
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
-          '<div class="stat-tile wide"><div class="label">Add a folder</div><div id="desk-agent-picker"></div></div>' +
+          '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
       '</div>';
     deskHeader(api);

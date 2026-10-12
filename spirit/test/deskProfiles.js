@@ -11,7 +11,7 @@
 // THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
 //   1  desk verbs profile.set {agent: <key>, name, nick}, Andy alone (an agent is refused not-owner), and profile.get
 //      {agent: <key>} answering {name, nick}, agent '' being the caller; any agent may read any profile ("let's you
-//      see"). Unset fields answer ''. The scope stays scope.set/scope.get, one field (G4.23, already built).
+//      see"). Unset fields answer ''. (The scope, scope.set/scope.get, went with goal/G10.8.)
 //   2  A name passes fieldRules.problem (the label rule), else bad-request. A nick is 1-8 of a-z and 0-9, else
 //      bad-request, and one agent's alone: a nick another agent holds is refused taken.
 //   3  A line of Andy's that starts "<nick>:" (case ignored, under any item) is taken by the agent with that nick, as

@@ -228,7 +228,6 @@ function pointAt(home, relayUrl) {
   }
 
   test.subHeading('4. Andy\'s removal script undoes his side');
-  await deskAsk('scope.set', { agent: agentKey, folder: '/' }, ANDY);
   if (!fs.existsSync(REMOVE)) { test.fail(OWED + 'there is no ' + path.basename(REMOVE) + ' beside onboard.js'); }
   else {
     const rm = run(REMOVE, [String(andyPort), agentKey], clone);
@@ -240,9 +239,7 @@ function pointAt(home, relayUrl) {
     const c = await verb(andyPort, { verb: 'contact.get', key: agentKey });
     if (!(c.body.person)) test.check('Andy\'s node no longer holds the agent as a contact');
     else test.fail(OWED + 'Andy\'s contact.get of the agent answered ' + c.status + ' ' + short(c.body));
-    const s = await deskAsk('scope.get', { agent: agentKey }, ANDY);
-    if (s.status === 200 && (s.body || {}).folder === '') test.check('the agent\'s scope is cleared');
-    else test.fail(OWED + 'scope.get answered ' + short(s));
+    // (Its third step, the agent's scope cleared, went with agent scopes in goal/G10.8.)
   }
 })().catch(function (e) {
   test.fail('the suite threw: ' + (e && e.stack || e));

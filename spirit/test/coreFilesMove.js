@@ -21,7 +21,7 @@
 //      spirit/run/shell/<app>/ whose <app>.json says "intrinsic": true. isCore returns false for a file in
 //      a shell/<app>/ whose manifest says "intrinsic": false (desk.json and deskDetails.json today) and for
 //      an ordinary non-core path (e.g. spirit/test/something.js).
-//   D  commitCheck.js reads coreFiles.js from the new location (one require line); spirit/test/deskScopes.js
+//   D  commitCheck.js reads coreFiles.js from the new location (one require line); spirit/test/deskCoreGrants.js
 //      does the same (readers follow the file). This is checked by file text alone: the moved require path
 //      is present, the old one is absent.
 //
@@ -38,7 +38,7 @@ const RUN = path.join(__dirname, '..', 'run');
 const NEW_PATH = path.join(RUN, 'js', 'coreFiles.js');
 const OLD_PATH = path.join(RUN, 'process', 'js', 'desk', 'coreFiles.js');
 const COMMIT_CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
-const DESK_SCOPES_TEST = path.join(__dirname, 'deskScopes.js');
+const DESK_SCOPES_TEST = path.join(__dirname, 'deskCoreGrants.js'); // deskScopes.js until goal/G10.8 removed agent scopes
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 220); }
 
@@ -106,7 +106,7 @@ if (core && typeof core.isCore === 'function') {
   for (let i = 0; i < 9; i++) test.fail(OWED + 'skipping isCore case ' + (i + 1) + ' until isCore is exported from the new location');
 }
 
-test.subHeading('D. readers follow the file: commitCheck.js and deskScopes.js require from the new path');
+test.subHeading('D. readers follow the file: commitCheck.js and deskCoreGrants.js require from the new path');
 if (fs.existsSync(COMMIT_CHECK)) {
   const src = fs.readFileSync(COMMIT_CHECK, 'utf8');
   const movedIn = /require\s*\(\s*['\"][^'\"]*spirit\/run\/js\/coreFiles(?:\.js)?['\"]\s*\)/.test(src)
@@ -121,10 +121,10 @@ if (fs.existsSync(DESK_SCOPES_TEST)) {
   const src = fs.readFileSync(DESK_SCOPES_TEST, 'utf8');
   const movedIn = /require\s*\(\s*['\"][^'\"]*\/js\/coreFiles(?:\.js)?['\"]\s*\)/.test(src);
   const oldOut = !/require\s*\(\s*['\"][^'\"]*process\/js\/desk\/coreFiles(?:\.js)?['\"]\s*\)/.test(src);
-  if (movedIn && oldOut) test.check('deskScopes.js requires coreFiles.js from the new location, not the old');
-  else test.fail(OWED + 'deskScopes.js require line: moved-in=' + movedIn + ', old-out=' + oldOut);
+  if (movedIn && oldOut) test.check('deskCoreGrants.js requires coreFiles.js from the new location, not the old');
+  else test.fail(OWED + 'deskCoreGrants.js require line: moved-in=' + movedIn + ', old-out=' + oldOut);
 } else {
-  test.fail(OWED + 'deskScopes.js not found at ' + DESK_SCOPES_TEST);
+  test.fail(OWED + 'deskCoreGrants.js not found at ' + DESK_SCOPES_TEST);
 }
 
 test.reportSuccessFailureCount();

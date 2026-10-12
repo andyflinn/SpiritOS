@@ -1,39 +1,18 @@
 'use strict';
 
-// goal/G4.23: agent scopes — each agent bound to folders Andy sets, enforced by the commit check, core files locked
-// behind his grant. Red on today's tree; wsl-claude wrote it, claude-windows builds it.
-//   Andy, 2026-10-04, under goal/G4.20, G4.22 and G4.23: "it should refuse to commit a core file that was not granted,
-//   and raise an ERROR icon in my list, and a grant request in the item?"; "i alone, i definitely will consult you";
-//   "ahh, the default: nothing. it can read everything?  we check it's competence..."; "beside the agents key, this
-//   might be a growing dataset."; "the scope still has a grant-lock on core files."; "basicall run/js and intrinsics";
-//   "your initial scope is repo root"; then his Go on goal/G4.23. The box (v6) holds the rest.
+// spirit/test/deskCoreGrants.js
+// The core grants of the commit check (goal/G4.23), kept when goal/G10.8 removed agent scopes. This was deskScopes.js;
+// its scope sections went with the mechanism. Andy, 2026-10-12: "all agents in desk have "/" file scope", the per-agent
+// setting removed from desk and commitCheck ("b"), "all in this item". What stays, his words of 2026-10-04: "it should
+// refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a grant request in the
+// item?", "the scope still has a grant-lock on core files.", "basicall run/js and intrinsics".
 //
-// THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
-//   1  THE SCOPE IS ONE FIELD, desk state by the agent's key (Andy, 2026-10-04: "throw out all that list-management
-//      code while your at it. you set one field: '' = nothing / '/' = repo-root / all that are selectable from
-//      drop-down, as is-"): desk verbs scope.set {agent: <key>, folder: <''|'/'|a repo path ending in '/'>}, Andy alone
-//      (an agent is refused not-owner), anything else refused bad-request; scope.get {agent: <key>} answering
-//      {folder}; agent '' is the
-//      caller itself. A folder is a repo-relative path ending in '/', or '' for the repo root. An agent never set
-//      answers folder '' (his "the default: nothing"). Records written before, with folders [...], replay as one field:
-//      [''] as '/', [] as '', [x] as x, which only desk.js's replay reads. No list code is left in commitCheck.js or the
-//      desk page (no reader of the old answer: until his node restarts, commits wait, as he has accepted before).
-//   2  THE CORE TABLE: spirit/run/js/coreFiles.js (since goal/G6.7) exports isCore(repoPath): every file under spirit/run/js/,
-//      and every file in the folder of a shell app whose manifest (spirit/run/shell/<name>/<name>.json) says
-//      "intrinsic": true. The one table the commit check reads and this test reads.
-//   3  THE COMMIT CHECK, on top of today's item-and-Go rule: every staged file must lie inside one of the committing
-//      agent's folder (scope.get {agent: ''} through its own deskClient), else the commit is refused and nothing is
-//      committed. A staged core file also needs a granted G check on the item whose words hold its path relative to
-//      spirit/run (as G4.25's "core grant: js/jobs.js — ..."); refused without it, and the refusal adds to the item one
-//      open G check "core grant: <that path>" (his "a grant request in the item"; asks then raises his ❌), once.
-//
-// FOUND IN THE DRY RUN: with "the default: nothing", every commit of an agent Andy has not scoped is refused. So
-//   deskRules.js section E (its agent never scoped) goes red until it sets a scope, the builder's to move; and live,
-//   claude-windows and wsl-claude cannot commit after this lands until he sets our scopes to the repo root.
-// LEFT OPEN, not asserted: the scope pane (the agent bubbles as tab headers, the path selector element on the shell's
-// tree) — its element API is not shaped yet, and it gets its red once the server side stands; whether
-// spirit/run/node_modules counts as core (RECOMMENDED, NOT YET RULED in the box); the scopes of the agents working
-// today, which he sets in Desk ("your initial scope is repo root"), not code.
+// ASSERTED
+//   1  THE CORE TABLE: spirit/run/js/coreFiles.js isCore(repoPath): every file under spirit/run/js/, and every file in
+//      the folder of a shell app whose manifest says "intrinsic": true.
+//   2  THE COMMIT CHECK: with Go on the item, a file anywhere in the repo is taken (no scope since goal/G10.8); a
+//      staged core file needs a granted G check on the item naming its path under spirit/run; refused without it, the
+//      refusal adding one open G check "core grant: <path>", once; granted, the same commit is taken.
 
 const fs = require('fs');
 const os = require('os');
@@ -45,7 +24,7 @@ const appClient = require('../run/js/appClient.js');
 const apiDoor = require('../run/js/apiDoor.js');
 const packet = require('../run/js/client/packet.js');
 
-const OWED = 'OWED by goal/G4.23: ';
+const OWED = 'OWED by goal/G4.23 (core grants): ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
@@ -63,8 +42,8 @@ const ANDY = { owner: true, key: DESK_KEY, label: 'andy' };
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(JSON.stringify(x)).slice(0, 220); }
 
-test.startTest('goal/G4.23: agent scopes, enforced at the commit, core files locked behind his grant');
-const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desk-scopes-'));
+test.startTest('goal/G4.23: core files locked behind his grant at the commit (no agent scopes since goal/G10.8)');
+const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desk-coregrants-'));
 const deskState = path.join(scratch, 'desk-state');
 const clientState = path.join(scratch, 'client-state');
 fs.mkdirSync(deskState, { recursive: true });
@@ -142,45 +121,17 @@ async function main() {
   await desk('press', { id: 'k/G1', what: 'end-design' }, ANDY);
   await desk('press', { id: 'k/G1.1', what: 'go' }, ANDY);
 
-  test.subHeading('1. the scope is desk state by the agent\'s key, set by Andy alone');
-  const none = await desk('scope.get', { agent: '' }, SELF_AT_DESK);
-  if (none.status === 200 && (none.body || {}).folder === '') test.check('an agent never scoped answers folder \'\': it may commit nothing');
-  else test.fail(OWED + 'scope.get for an unscoped agent answered ' + none.status + ' ' + short(none.body));
-  const byAgent = await desk('scope.set', { agent: SELF_KEY, folder: '/' }, SELF_AT_DESK);
-  if ((byAgent.body || {}).code === 'not-owner') test.check('an agent setting a scope is refused not-owner');
-  else test.fail(OWED + 'an agent\'s scope.set answered ' + byAgent.status + ' ' + short(byAgent.body));
-  const set = await desk('scope.set', { agent: SELF_KEY, folder: 'spirit/run/shell/ticTacToe/' }, ANDY);
-  const mine = await desk('scope.get', { agent: '' }, SELF_AT_DESK);
-  const his = await desk('scope.get', { agent: SELF_KEY }, ANDY);
-  const other = await desk('scope.get', { agent: '' }, OTHER_AT_DESK);
-  const f = function (r) { return JSON.stringify((r.body || {}).folder); };
-  if (set.status === 200 && f(mine) === '"spirit/run/shell/ticTacToe/"' && f(his) === f(mine) && f(other) === '""') test.check('Andy sets it by key; the agent reads its own, Andy reads it by key, another agent is not touched');
-  else test.fail(OWED + 'scope.set ' + set.status + ' ' + short(set.body) + '; own ' + f(mine) + ', by key ' + f(his) + ', other ' + f(other));
-
-  // ONE FOLDER PER AGENT (Andy, 2026-10-04, under goal/G4.23: "we need only one scope per agent, not a long list."):
-  // ONE FIELD: a folder that is no repo path ending in '/' (and not '' or '/') is refused bad-request, the scope kept.
-  const odd = await desk('scope.set', { agent: SELF_KEY, folder: '../outside' }, ANDY);
-  const still = await desk('scope.get', { agent: SELF_KEY }, ANDY);
-  if ((odd.body || {}).code === 'bad-request' && f(still) === '"spirit/run/shell/ticTacToe/"') test.check('a folder that is no repo path is refused bad-request, and the scope is kept');
-  else test.fail(OWED + 'scope.set with ../outside answered ' + odd.status + ' ' + short(odd.body) + '; the scope is now ' + f(still));
-  const code = function (file) { return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); };
-  // desk.js is spared: replaying the records already in desk.db, written as lists, has to read them (claude-windows's
-  // review of this red). Its verbs answer and take one folder, which the checks above hold.
-  const lists = [CHECK, path.join(RUN, 'shell', 'desk', 'desk.js')].filter(function (file) { return /\bfolders\b/.test(code(file)); });
-  if (!lists.length) test.check('no list code is left: no "folders" in commitCheck.js or the desk page (desk.js reads old records only)');
-  else test.fail(OWED + 'list code ("folders") still in ' + lists.map(function (x) { return path.relative(RUN, x); }).join(', '));
-
-  test.subHeading('2. the core table: run/js and the intrinsic apps');
+  test.subHeading('1. the core table: run/js and the intrinsic apps');
   let core = null;
   try { core = require('../run/js/coreFiles.js'); } catch (e) { core = null; }
   const cases = [['spirit/run/js/jobs.js', true], ['spirit/run/js/client/shell.js', true], ['spirit/run/shell/deskDetails/deskDetails.js', false],
     ['spirit/run/shell/files/files.js', true], ['spirit/run/shell/desk/desk.js', false], ['spirit/run/shell/chatter/chatter.js', false],
-    ['spirit/test/deskScopes.js', false], ['design/README.md', false], ['spirit/run/process/js/desk/desk.js', false]];
+    ['spirit/test/deskCoreGrants.js', false], ['design/README.md', false], ['spirit/run/process/js/desk/desk.js', false]];
   const wrong = core && typeof core.isCore === 'function' ? cases.filter(function (c) { return core.isCore(c[0]) !== c[1]; }) : cases;
   if (!wrong.length) test.check('isCore: run/js and the intrinsic apps\' folders (files) are core; deskDetails (intrinsic: false since 6698275a), desk, chatter, tests, design and process folders are not');
   else test.fail(OWED + (core ? 'isCore wrong on ' + short(wrong) : 'no spirit/run/js/coreFiles.js exporting isCore'));
 
-  test.subHeading('3. the commit check refuses what lies outside the scope, and a core file nobody granted');
+  test.subHeading('2. the commit check takes any file with Go, and refuses a core file nobody granted');
   kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: 400, historyMax: 100 }), '--pipe', clientPipe, '--state', clientState, '--node', JSON.stringify({ name: 'claude-windows', publicKey: SELF_KEY })], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'], env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'deskclient-job', SPIRIT_CALLBACK_URL: nodeUrl + '/api/spirit' }) }));
   await up('deskClient');
@@ -191,28 +142,18 @@ async function main() {
   const install = await run(process.execPath, [CHECK, 'install', String(node.address().port)], repo);
   if (install.status !== 0) { test.fail('commitCheck install answered ' + install.status + ' ' + String(install.stderr).trim().slice(0, 160)); return; }
 
-  const inside = await commitWith(repo, 'spirit/run/shell/ticTacToe/game.js', 'x', 'k/G1.1: inside the scope');
+  const inside = await commitWith(repo, 'spirit/run/shell/ticTacToe/game.js', 'x', 'k/G1.1: an app file');
   const n1 = await commits(repo);
-  if (inside.status === 0 && n1 === 1) test.check('a file inside the agent\'s folder is taken');
-  else test.fail('inside the scope the commit answered ' + inside.status + ' ' + String(inside.stderr).trim().slice(0, 160));
-  const outside = await commitWith(repo, 'other/notes.txt', 'x', 'k/G1.1: outside the scope');
-  const n2 = await commits(repo);
-  if (outside.status !== 0 && n2 === 1 && /scope/i.test(outside.stderr + outside.stdout)) test.check('a file outside it is refused, saying scope, and nothing is committed');
-  else test.fail(OWED + 'outside the scope the commit answered ' + outside.status + ' (' + n2 + ' commits): ' + String(outside.stderr).trim().slice(0, 160));
-  await desk('scope.set', { agent: SELF_KEY, folder: '' }, ANDY);
-  const unscoped = await commitWith(repo, 'spirit/run/shell/ticTacToe/two.js', 'x', 'k/G1.1: no scope at all');
-  if (unscoped.status !== 0 && (await commits(repo)) === 1) test.check('with folder \'\' the same folder is refused too: the default is nothing');
-  else test.fail(OWED + 'with no scope the commit answered ' + unscoped.status);
-
-  await desk('scope.set', { agent: SELF_KEY, folder: '/' }, ANDY);
-  const anywhere = await commitWith(repo, 'other/notes.txt', 'x', 'k/G1.1: the repo root is the scope');
-  if (anywhere.status === 0 && (await commits(repo)) === 2) test.check('with the repo root as its scope, the same file is taken');
-  else test.fail(OWED + 'with the root as scope the commit answered ' + anywhere.status + ' ' + String(anywhere.stderr).trim().slice(0, 160));
+  if (inside.status === 0 && n1 === 1) test.check('a file of an app is taken');
+  else test.fail('the app file commit answered ' + inside.status + ' ' + String(inside.stderr).trim().slice(0, 160));
+  const anywhere = await commitWith(repo, 'other/notes.txt', 'x', 'k/G1.1: anywhere in the repo');
+  if (anywhere.status === 0 && (await commits(repo)) === 2 && !/scope/i.test(anywhere.stderr + anywhere.stdout)) test.check('a file anywhere in the repo is taken too: no scope since goal/G10.8');
+  else test.fail('OWED by goal/G10.8: a file outside any folder answered ' + anywhere.status + ' ' + String(anywhere.stderr + anywhere.stdout).trim().slice(0, 160));
   const coreOne = await commitWith(repo, 'spirit/run/js/core.js', 'x', 'k/G1.1: a core file, not granted');
   const n3 = await commits(repo);
   const checks = ((await desk('item.checks', { id: 'k/G1.1' }, ANDY)).body || {}).checks || [];
   const asked = checks.filter(function (c) { return c.kind === 'G' && c.state === 'open' && c.words.indexOf('js/core.js') !== -1; });
-  if (coreOne.status !== 0 && n3 === 2 && /grant/i.test(coreOne.stderr + coreOne.stdout)) test.check('a core file nobody granted is refused, saying grant, even inside the scope');
+  if (coreOne.status !== 0 && n3 === 2 && /grant/i.test(coreOne.stderr + coreOne.stdout)) test.check('a core file nobody granted is refused, saying grant');
   else test.fail(OWED + 'the ungranted core file: commit ' + coreOne.status + ' (' + n3 + ' commits): ' + String(coreOne.stderr).trim().slice(0, 160));
   if (asked.length === 1) test.check('and the refusal put one open grant under the item: ' + asked[0].number + ' "' + asked[0].words + '"');
   else test.fail(OWED + 'open G checks naming js/core.js after the refusal: ' + short(checks));

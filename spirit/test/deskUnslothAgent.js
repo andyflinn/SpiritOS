@@ -219,6 +219,28 @@ async function suite() {
   const there = git(remote, ['log', '-1', '--format=%s', 'HEAD']).stdout.trim() || git(remote, ['log', '-1', '--all', '--format=%s']).stdout.trim();
   if (pushed.ok !== false && there === 'goal/G1.1: mine') test.check('push sends the branch to its remote');
   else test.fail(OWED + 'push answered ' + short(pushed) + '; the remote has ' + short(there));
+
+  // AGENT SCOPES ARE GONE (Q15 to Q19): Andy, 2026-10-12, "all agents in desk have "/" file scope", the setting
+  // removed from desk and commitCheck ("b"), "all in this item". Read in the code, comments stripped, so a comment that
+  // tells the history does not count as the mechanism.
+  test.subHeading('6. agent scopes are gone');
+  const code = function (rel) {
+    let t = '';
+    try { t = fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch (e) { return ''; }
+    return t.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
+  };
+  const still = [
+    ['spirit/run/process/js/desk/desk.js', /'scope\.(set|get)'\s*:|case 'scope\.set'|scopes:/],
+    ['spirit/run/process/js/desk/commitCheck.js', /scope\.get|REFUSED \(scope\)/],
+    ['spirit/run/process/js/desk/removeAgent.js', /scope\.set/],
+    ['spirit/run/process/js/deskClient/publishData.js', /scope\.get/],
+    ['spirit/run/shell/desk/desk.js', /scope\.(set|get)|data-scope-/],
+  ].filter(function (p) { return p[1].test(code(p[0])); }).map(function (p) { return p[0]; });
+  if (!still.length) test.check('no scope.set or scope.get in the desk, commitCheck, removeAgent, publishData or the Desk face');
+  else test.fail(OWED + 'agent scopes are still in ' + still.join(', '));
+  const retired = ['spirit/test/deskScopes.js', 'spirit/test/deskScopePane.js'].filter(function (f) { return fs.existsSync(path.join(ROOT, f)); });
+  if (!retired.length) test.check('the scope suites are retired with the mechanism');
+  else test.fail(OWED + 'still in the tree: ' + retired.join(', '));
 }
 
 suite().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
