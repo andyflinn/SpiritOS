@@ -12,8 +12,7 @@
 //    generic thing."; net.fetch opened to agents with a verb file js/net/fetch.json ("Yes to that.").
 //
 // WHAT IS ASSERTED (the box)
-//   1. THE VERB FILE: spirit/run/js/net/fetch.json describes net.fetch, and the net AGENTS.md no longer says none
-//      is described; the family then lists it (introSpector.family, read against the real folder).
+//   1. SINCE goal/G19.9: no verb file describes net.fetch, and the family of js/net lists nothing for an agent.
 //   2. THE OBJECT, process/js/deskUnsloth/tools.js, createTools({ask}): describe(namespace) turns the node's
 //      introspection into OpenAI tools (name = the verb with its dot as an underscore, description = the file's,
 //      parameters typed from the request's examples), and none when the list is empty; run(call) reads the name
@@ -178,19 +177,14 @@ async function suite() {
   const NODE_URL = 'http://127.0.0.1:' + node.address().port;
 
   // ── 1. THE VERB FILE ────────────────────────────────────────────────────
-  test.subHeading('1. net.fetch is described to agents by its verb file');
-  let verbFile = null;
-  try { verbFile = JSON.parse(fs.readFileSync(path.join(RUN, 'js', 'net', 'fetch.json'), 'utf8')); } catch (e) { verbFile = null; }
-  if (verbFile && typeof verbFile.description === 'string' && /url/.test(verbFile.description) && /proxy list/.test(verbFile.description)) test.check('spirit/run/js/net/fetch.json describes net.fetch: the url, and the owner\'s proxy list deciding sites and keys');
-  else test.fail(OWED + 'spirit/run/js/net/fetch.json is ' + short(verbFile));
-  let agentsMd = '';
-  try { agentsMd = fs.readFileSync(path.join(RUN, 'js', 'net', 'AGENTS.md'), 'utf8'); } catch (e) { agentsMd = ''; }
-  if (agentsMd && !/No verb here has a file/.test(agentsMd) && /fetch/.test(agentsMd)) test.check('the net AGENTS.md no longer says none is described, and names fetch');
-  else test.fail(OWED + 'the net AGENTS.md still says none is described, or is missing');
+  // SINCE goal/G19.9 NET.FETCH IS NO TOOL FOR AGENTS. Andy, 2026-10-12: "node fetch should NOT be allowed to agents", and
+  // a suite "ensuring a js/net/fetch.json is not allowed to exists" (netNoAgentTool.js). This section asserted the verb
+  // file and its AGENTS.md (goal/G14.6); it now asserts that the family of js/net describes nothing to an agent.
+  test.subHeading('1. net.fetch is described to no agent');
   let family = null;
   try { family = require('../run/js/introSpector.js').family(path.join(RUN, 'js', 'net'), { declared: ['fetch'], prefix: 'net.' }); } catch (e) { family = null; }
-  if (family && family.verbs['net.AGENTS.fetch'] && !family.stale.length) test.check('the family of js/net now carries net.AGENTS.fetch, with no stale file');
-  else test.fail(OWED + 'the net family: ' + short(family && { verbs: Object.keys(family.verbs), stale: family.stale }));
+  if (!fs.existsSync(path.join(RUN, 'js', 'net', 'fetch.json')) && family && !family.verbs['net.AGENTS.fetch']) test.check('no js/net/fetch.json, and the family of js/net carries no net.AGENTS.fetch');
+  else test.fail('goal/G19.9: the net family still describes fetch: ' + short(family && { verbs: Object.keys(family.verbs), stale: family.stale }));
 
   // ── 2. THE OBJECT ───────────────────────────────────────────────────────
   test.subHeading('2. tools.js: describe from the introspection, run through the node, generic');
