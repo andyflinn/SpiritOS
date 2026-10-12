@@ -1,8 +1,8 @@
 {
- "change": 37182,
+ "change": 37183,
  "line": 8510,
  "goal": "goal/G19",
- "writtenAt": "2026-10-12T14:32:37.798Z",
+ "writtenAt": "2026-10-12T14:32:39.731Z",
  "items": [
   {
    "id": "goal/G19",
@@ -43,7 +43,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -1075,10 +1075,9 @@
    "id": "goal/G19.6",
    "title": "Git helpers: deskClient pull, publishData, pushOrigin",
    "goal": "goal/G19",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
