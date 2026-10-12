@@ -12,7 +12,7 @@
 //
 // THE SHAPE ASSERTED, the red writer's reading, posted under goal/G8.11 for him to overrule:
 //   deskVerify gains three verbs of its own (no grant of his: an app's own verbs, until he rules it intrinsic):
-//     now {}                 -> {running: {id, suite, since}, queued: [id]}   running.id '' when idle
+//     now {}                 -> {running: {id, suite, since}, queued: [{kind, id}]}   running.id empty when idle
 //     records.search {text}  -> {items: [{key, label}], more}  its dataset rows, newest first, text matched on the
 //                               suite or title; a search with an empty query, bucket-bounded, never a list
 //     stop {}                -> {stopped}  ends the suite running now; the claim it belonged to is rejected, its why
@@ -181,7 +181,7 @@ async function faceHalf() {
   fake.items = [goal];
   const at = new Date().toISOString();
   fake.verifier = {
-    now: function () { return { running: { id: 'tb/G1.2', suite: 'spirit/test/zzRunning.js', since: at }, queued: ['tb/G1.3'] }; },
+    now: function () { return { running: { id: 'tb/G1.2', suite: 'spirit/test/zzRunning.js', since: at }, queued: [{ kind: 'item', id: 'tb/G1.3' }] }; }, // since goal/G19.3 the queue is {kind, id}, as now declares it
     'records.search': function () { return { items: [{ key: '9', label: JSON.stringify({ suite: 'zzRecorded.js', title: 'a record title', outcome: 'red', commit: 'abc1234', at: at }) }], more: false }; },
     stop: function () { return { stopped: true }; },
   };

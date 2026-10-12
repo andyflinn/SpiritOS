@@ -1088,7 +1088,7 @@ function deskVerifyHtml() {
       ? 'Item ' + deskEsc(run.id) + ' · suite ' + deskEsc(run.suite || '(choosing)') +
         (run.since ? ' · since ' + deskTime(run.since) : '')
       : (live && live.doing !== 'idle' ? '' : 'Idle' + (deskVerifyLast ? '; last checked ' + deskEsc(deskVerifyLast) : ''))) +
-    '</div><div>' + (queued.length ? 'Waiting: ' + queued.map(deskEsc).join(', ') : 'Nothing waiting') + '</div>' +
+    '</div>' +
     (deskVerifyNote ? '<div class="job-manifest-note">' + deskEsc(deskVerifyNote) + '</div>' : '') +
     // HIS BUTTONS (goal/G14.3). Andy, 2026-10-12: "the Buttons in the verifier then read: [run the full harness button]
     // [stop the run][re- run:.....]", the full harness "(armable)" and his alone; "re-run:" names the item, and
@@ -1098,7 +1098,12 @@ function deskVerifyHtml() {
       (deskArmed === 'desk-verify-full' ? 'Run the full harness: sure?' : 'Run the full harness') + '</button>' +
     ' <button type="button" id="desk-verify-stop"' + (run.id || run.suite ? '' : ' disabled') + '>Stop the run</button>' +
     (item ? ' <button type="button" data-reverify="' + deskEsc(item) + '">Verify ' + deskEsc(item) + ' again</button>' : '') +
-    '</div></div>';
+    '</div>' +
+    // THE QUEUE, BELOW THE TAB'S OWN ELEMENTS (goal/G19.3). Andy, 2026-10-12: "the verifier tab may keep an updated
+    // queue list below it's current ui elements." One line per waiting run, kind and id, as deskVerify's now says it.
+    '<div class="label">Waiting</div>' +
+    (queued.length ? queued.map(function (q) { return '<div>' + deskEsc(String((q && q.kind) || '')) + ' ' + deskEsc(String((q && q.id) || '')) + '</div>'; }).join('') : '<div class="job-manifest-note">Nothing waiting</div>') +
+    '</div>';
   // THE RECORDS LIST IS GONE (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
   // latest status." It listed the dataset's newest rows, which read as a log beside a live run; the tab now shows the
   // run and nothing else. records.search stays a verb of deskVerify's - the dataset is still readable - but the tab

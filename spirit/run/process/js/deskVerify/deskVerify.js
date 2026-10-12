@@ -82,6 +82,18 @@ const newest = db.prepare('SELECT outcome FROM results WHERE suite = ? AND title
 // EVERY ROW, NEWEST FIRST (goal/G8.11), for the verifier tab's records.search: the rowid is the order they were kept.
 const newestRows = db.prepare('SELECT rowid, suite, title, outcome, "commit", dirty, at FROM results ORDER BY rowid DESC');
 const addRow = db.prepare('INSERT INTO results (suite, title, outcome, "commit", dirty, at) VALUES (?, ?, ?, ?, ?, ?)');
+// EVERY RUN IS VERIFIER HISTORY (goal/G19.3). Andy, 2026-10-12: "and we make sure it doesn't stop working until the
+// queue is worked off.", then "so the runs must be stored verifier history, in verifier.db" (this file, verify.db). A
+// run is a row from the moment it is queued: queued, running, ended, with what it came to. The queue in memory is only
+// the order of the rows not ended, so a restart takes them up again in that order; a run that was running starts over
+// from the beginning (Andy, of a stopped suite: "we will not support resume").
+db.exec('CREATE TABLE IF NOT EXISTS runs (rowid INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, id TEXT NOT NULL,' +
+  ' state TEXT NOT NULL, outcome TEXT NOT NULL, queuedAt TEXT NOT NULL, startedAt TEXT NOT NULL, endedAt TEXT NOT NULL);' +
+  'CREATE INDEX IF NOT EXISTS runs_state ON runs (state);');
+const runQueued = db.prepare('INSERT INTO runs (kind, id, state, outcome, queuedAt, startedAt, endedAt) VALUES (?, ?, \'queued\', \'\', ?, \'\', \'\')');
+const runStarted = db.prepare('UPDATE runs SET state = \'running\', startedAt = ? WHERE rowid = ?');
+const runEnded = db.prepare('UPDATE runs SET state = \'ended\', outcome = ?, endedAt = ? WHERE rowid = ?');
+const runsOpen = db.prepare('SELECT rowid, kind, id FROM runs WHERE state != \'ended\' ORDER BY rowid');
 
 // THE TREE IT MEASURED. Read once per call and cached for a moment: a run posts thousands of records and the commit
 // does not move inside one. The repo is the checkout holding this file, which is the clone deskVerify runs in.
@@ -471,6 +483,13 @@ let checking = false;
 // and an id already waiting or already being checked is not queued again: the repeat cost whole suite runs.
 let reading = false;
 const watchQueue = [];
+// A job joins the queue as a row, and the row is the record (goal/G19.3).
+function enqueue(job) {
+  const row = runQueued.run(String(job.kind), String(job.id), new Date().toISOString());
+  watchQueue.push({ kind: String(job.kind), id: String(job.id), row: Number(row.lastInsertRowid) });
+}
+// What the last restart left unended, taken up in order before anything new.
+runsOpen.all().forEach(function (r) { watchQueue.push({ kind: String(r.kind), id: String(r.id), row: Number(r.rowid) }); });
 const goalsRun = Object.create(null);
 function queuedAlready(job) {
   return watchQueue.some(function (q) { return q.kind === job.kind && q.id === job.id; }) ||
@@ -498,11 +517,20 @@ async function drainQueue() {
   try {
     while (watchQueue.length) {
       const job = watchQueue.shift();
+      if (job.row) runStarted.run(new Date().toISOString(), job.row);
+      let outcome = 'ended';
       try {
-        if (job.kind === 'goal') await goalRun(job.id);
-        else if (job.kind === 'full') await fullRun(job.id);
-        else await claimCheck(job.id);
-      } catch (e) { /* the desk is the record; a failed check is asked again by its next word */ }
+        let r = null;
+        if (job.kind === 'goal') r = await goalRun(job.id);
+        else if (job.kind === 'full') r = await fullRun(job.id);
+        else r = await claimCheck(job.id);
+        if (r && r.unchecked) outcome = 'not checked';
+        else if (r && typeof r.rejected === 'boolean') outcome = r.rejected ? 'rejected' : 'passed';
+      } catch (e) {
+        /* the desk is the record; a failed check is asked again by its next word */
+        outcome = 'broke: ' + String((e && e.message) || e).slice(0, 200);
+      }
+      if (job.row) runEnded.run(outcome, new Date().toISOString(), job.row);
     }
   } finally { checking = false; }
 }
@@ -543,11 +571,13 @@ async function watchOnce() {
       if (!page.more || !recs.length) break;
     }
   } finally { reading = false; }
-  queued.forEach(function (job) { watchQueue.push(job); });
+  queued.forEach(enqueue);
   if (queued.length) drainQueue();
   return { read: read, queued: queued };
 }
 const watcher = setInterval(function () { watchOnce().catch(function () { /* next tick */ }); }, WATCH_MS);
+// The runs a restart found unended are worked off at once (goal/G19.3), on this node only, as the watcher's are.
+if (watchQueue.length) setTimeout(function () { mode().then(function (m) { if (m.mode === 'desk') drainQueue(); }, function () {}); }, 500);
 if (watcher.unref) watcher.unref();
 
 // THE SUITES FOLDER, which only his full run walks (goal/G14.3); the goal run takes its suites from the items.
@@ -772,9 +802,10 @@ appServer.serve({
   //   records.search the dataset's rows, newest first, one bucket, as every search in this tree answers
   //   stop           his intervention: the run ends and its claim is rejected saying so, never passed
   now: {
-    request: {}, reply: { running: { id: '', suite: '', since: '' }, queued: [''] },
+    // THE QUEUE AS {kind, id} (goal/G19.3): declared as [''] it was refused whenever work waited, and the tab vanished.
+    request: {}, reply: { running: { id: '', suite: '', since: '' }, queued: [{ kind: '', id: '' }] },
     handler: function () {
-      return { running: { id: running.id, suite: running.suite, since: running.since }, queued: watchQueue.slice() };
+      return { running: { id: running.id, suite: running.suite, since: running.since }, queued: watchQueue.map(function (q) { return { kind: q.kind, id: q.id }; }) };
     },
   },
   'records.search': {
@@ -799,7 +830,7 @@ appServer.serve({
     request: { id: '' }, reply: { queued: true },
     handler: function (a) {
       const job = { kind: 'full', id: String(a.id || '') };
-      if (!queuedAlready(job)) watchQueue.push(job);
+      if (!queuedAlready(job)) enqueue(job);
       drainQueue();
       return { queued: true };
     },
