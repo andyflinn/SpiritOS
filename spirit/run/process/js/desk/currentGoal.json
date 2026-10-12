@@ -1,5 +1,5 @@
 {
- "change": 40948,
+ "change": 40950,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -181,10 +181,9 @@
    "id": "goal/G19.1",
    "title": "Seats kept on first connect, given up when evicted",
    "goal": "goal/G19",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -2422,7 +2421,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Shell: published objects only from the node's own puppets.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- js/client/shell.js:1983-1994 and :2208 deliver a streamed object from any fromKey. These ignore the sender: shell/chatter/chatter.js:347, shell/desk/desk.js:441 and :1131, shell/deskDetails/deskDetails.js:374, shell/ruleDetails/ruleDetails.js:213. Any contact can push objects into the master's apps (a change:1e12 freezes the desk view; a fake chat line can name another peer). Only deskUnslothRemote checks the sender (:448).\n\nDECIDED (Andy, 2026-10-12): \"The shell takes only streams from ID's that it explicitly or implicitly asks for. Implicit is: the own local node, and any puppet owned, including owned relays.\"\nSHAPE: the shell's delivery of a streamed object (js/client/shell.js) checks the sender before any app sees it: the own node, an owned puppet or an owned relay, or a key an app asked to hear from by name; anything else is dropped there, once, for every app, so no app has to check.\n",
@@ -2436,6 +2435,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-12T12:45:13.073Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
