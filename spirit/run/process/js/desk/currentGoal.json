@@ -1,8 +1,8 @@
 {
- "change": 34298,
+ "change": 34299,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T07:40:33.485Z",
+ "writtenAt": "2026-10-12T07:40:35.892Z",
  "items": [
   {
    "id": "goal/G18",
@@ -36,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -209,10 +209,9 @@
    "id": "goal/G18.2",
    "title": "probabilityStringMatch.js",
    "goal": "goal/G18",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
