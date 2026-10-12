@@ -1,8 +1,8 @@
 {
- "change": 34355,
+ "change": 34374,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T08:08:10.460Z",
+ "writtenAt": "2026-10-12T08:12:38.185Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,12 +11,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G18.3"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -410,9 +409,12 @@
    "id": "goal/G18.3",
    "title": "probabilityStringObjectMatch",
    "goal": "goal/G18",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -420,11 +422,22 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/probabilityStringObjectMatch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/probabilityStringObjectMatch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -512,6 +525,15 @@
      "state": "passed",
      "by": "claude-windows",
      "at": "2026-10-12T08:07:32.347Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/probabilityStringObjectMatch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-12T08:08:48.711Z"
     }
    ],
    "chat": [
@@ -584,6 +606,26 @@
      "by": "desk",
      "at": "2026-10-12T08:08:10.048Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:09:59.452Z",
+     "text": "Built at 6a4f7aa9 under your G1: probabilityStringObjectMatch(string, object), keys and string values of it and its nested objects (arrays and empty strings out), weighted (S - L)/S/(n - 1), summed over probabilityStringMatch; a cycle is measured once.\nFiles: probabilityStringObjectMatch.js and its test, 8 green, each answer checked against the box formula computed in the test; probabilityStringMatch still 10 green.\nThe third, probabilityBucket, is yours to spec."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:10:00.124Z",
+     "text": "commit 6a4f7aa9604b5535b34fb19fd319842c6b152726: goal/G18.3: probabilityStringObjectMatch.js, the second probabilit* module\n- spirit/run/js/probabilityStringObjectMatch.js\n- spirit/test/probabilityStringObjectMatch.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T08:10:07.557Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:10:10.078Z",
+     "text": "deskVerify: passed, at 6a4f7aa9 (pulled). 1 suite ran green."
     }
    ]
   }
