@@ -434,7 +434,7 @@ function walkState() {
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
-    alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null),
+    alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null), checkHigh: Object.create(null),
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false,
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
@@ -522,7 +522,7 @@ function apply(s, r, b, item, goalOf) {
       return;
     case 'check.add': {
       const kind = String(b.kind);
-      const number = kind + (it.checks.filter(function (c) { return c.kind === kind; }).length + 1);
+      const number = nextCheckNumber(it, kind);
       it.checks.push({ number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: String(b.asked || ''), at: String(b.asked ? r.at : '') });
       // A QUESTION RAISED BY A CHAT LINE (goal/G2.21) marks that line with this number, so the chat shows which line
       // the red question came from while the line's own text stays exactly as the agent wrote it.
@@ -697,7 +697,7 @@ function apply(s, r, b, item, goalOf) {
         const settled = it.checks.some(function (c) { return isCoreGrant(c) && c.state !== 'open' && c.words === words; });
         if (settled) { it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); }); return; }
         if (open.length) { open[0].words = words; open[0].at = r.at; it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open') || c === open[0]; }); }
-        else it.checks.push({ number: 'G' + (it.checks.filter(function (c) { return c.kind === 'G'; }).length + 1), kind: 'G', words: words, test: '', state: 'open', by: 'desk', at: r.at });
+        else it.checks.push({ number: nextCheckNumber(it, 'G'), kind: 'G', words: words, test: '', state: 'open', by: 'desk', at: r.at });
       } else if (open.length) {
         it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); });
       }
@@ -735,6 +735,17 @@ function apply(s, r, b, item, goalOf) {
     }
     default: return;
   }
+}
+
+// A CHECK NUMBER IS NEVER LENT TWICE (goal/G19.5). Andy, 2026-10-12, to "Should check numbers never repeat": "yes."
+// Numbers were count + 1, and item.files.add removes a grant that is no longer owed, so a grant raised again took the
+// number of the one removed and a press meant for one could land on the other. Each item remembers the highest number
+// it ever gave, kind by kind, in the walk (so a replay gives the same numbers), and the next is one above it.
+function nextCheckNumber(it, kind) {
+  let high = it.checkHigh[kind] || 0;
+  it.checks.forEach(function (c) { if (c.kind === kind) { const n = Number(String(c.number).slice(kind.length)) || 0; if (n > high) high = n; } });
+  it.checkHigh[kind] = high + 1;
+  return kind + (high + 1);
 }
 
 function press(s, it, what, r, goalOf, b) {

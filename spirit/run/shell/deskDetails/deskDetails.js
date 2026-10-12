@@ -219,6 +219,9 @@ function ddBoxRows() {
 // blur that changed nothing releases instead of writing. Focus and blur arrive more than once (the element, the body),
 // so the flag is what keeps one take and one release.
 var ddBoxFocused = false;
+// THE ITEM THE BOX WAS FOCUSED ON (goal/G19.5): the blur writes there, whatever item is open by then. Andy: "yes." to
+// "the dialog box write only to the item it was opened for".
+var ddBoxFocusId = '';
 var ddBoxAtFocus = '';
 var ddBoxLoaded = false;  // true once item.box has answered for the open item (goal/G9.15)
 function ddBoxHtml() {
@@ -468,17 +471,19 @@ function ddAdd() {
 function ddBoxFocus() {
   if (ddBoxFocused) return;
   ddBoxFocused = true;
+  ddBoxFocusId = ddId;
   var el = document.getElementById('dd-box-input');
   ddBoxAtFocus = el ? String(el.value || '') : '';
-  ddWrite('box.take', { id: ddId });
+  ddWrite('box.take', { id: ddBoxFocusId });
 }
 function ddBoxBlur() {
   if (!ddBoxFocused) return;
   ddBoxFocused = false;
   var el = document.getElementById('dd-box-input');
   var text = el ? String(el.value || '') : '';
-  if (text !== ddBoxAtFocus) ddWrite('box.write', { id: ddId, text: text, version: ddVersion }).then(function () { ddLoad(); });
-  else ddWrite('box.release', { id: ddId }).then(function () { ddPaint(); });
+  var id = ddBoxFocusId || ddId;
+  if (text !== ddBoxAtFocus) ddWrite('box.write', { id: id, text: text, version: ddVersion }).then(function () { ddLoad(); });
+  else ddWrite('box.release', { id: id }).then(function () { ddPaint(); });
 }
 function ddRename() {
   var title = ddValue('dd-name');

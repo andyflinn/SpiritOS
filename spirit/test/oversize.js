@@ -48,6 +48,8 @@ let kid = null;
   kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
   await call('session.set', { json: JSON.stringify({ goal: { id: 'o/G1', title: 'Goal' }, items: [{ id: 'o/G1.1', title: 'Item', blocks: ['o/G1'] }] }) }, CW);
+  // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude holds o/G1.1.
+  await call('item.take', { id: 'o/G1.1' }, WSL);
 
   // ── THE EDGE: the largest accepted comes back whole, one more is refused ──
   test.subHeading('the edge: the largest chat line and box come back whole; one character more is refused');
