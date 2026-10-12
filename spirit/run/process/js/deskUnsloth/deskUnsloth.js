@@ -305,11 +305,21 @@ const TOOL_ROUNDS = 3;
 // AND deskUnsloth's own (goal/G10.8): its file and git verbs, rooted at its clone, listed by its own introspection and
 // asked through its node as any caller asks them, so the fence below holds for the model as for everyone.
 const TOOL_NAMESPACES = ['desk', 'fs', 'deskUnsloth'];
+// NOTHING RUNS ON THE DESK WHILE HE IS DISCONNECTED (goal/G18.9). Found in the record on 2026-10-12: his signoff
+// reached the desk, and an answer already in flight went on writing (two check.set, a chat.add, item.status,
+// item.files.add), each write making him live again for ten minutes. So a desk or deskUnsloth tool asked while he is
+// disconnected is refused, and the model is told so. The tools' descriptions (AGENTS...) are still read: the test
+// describes them after it disconnects him, and a description writes nothing. His fs reads stay, they reach no desk.
+function offTheDesk(verb) {
+  const body = { ok: false, code: 'not-offered', error: 'disconnected', extra: { why: PERSONA + ' is disconnected from the desk, so ' + verb + ' is not run' } };
+  return { status: 400, body: body, text: JSON.stringify(body) };
+}
 const tools = require('./tools').createTools({
   ask: function (verb, args) { return spirit.core.ask(verb, args, NODE_URL); },
   routes: {
     desk: {
       ask: function (verb, args) {
+        if (!connected && String(verb).indexOf('AGENTS') !== 0) return Promise.resolve(offTheDesk(verb));
         return askNode({ deskClient: { desk: { verb: String(verb), json: JSON.stringify(args || {}) } } })
           .then(function (body) { return { status: body && body.ok === false ? 400 : 200, body: body, text: JSON.stringify(body) }; });
       },
@@ -318,6 +328,7 @@ const tools = require('./tools').createTools({
     },
     deskUnsloth: {
       ask: function (verb, args) {
+        if (!connected && String(verb).indexOf('AGENTS') !== 0) return Promise.resolve(offTheDesk(verb));
         const one = {}; one[String(verb)] = args || {};
         return spirit.core.ask('jobs.api', { ask: { deskUnsloth: one } }, NODE_URL).then(function (r) {
           const body = (r && r.body) || {};
@@ -1002,6 +1013,8 @@ function linesOf(answer) {
 }
 
 function post(id, text) {
+  // An answer that comes back after a disconnect is said here and nowhere else (goal/G18.9).
+  if (!connected) { say('disconnected: the answer for ' + id + ' is not posted'); return Promise.resolve({ dropped: true }); }
   return desk('chat.add', { id: id, text: text });
 }
 function postAll(id, texts) {
@@ -1049,7 +1062,18 @@ function drain() {
 // flight from starting a second loop.
 // AT START, CONNECTED ONLY ON 🧵 (goal/G10.9): Andy, 2026-10-12, "Connect should be refused while the loaded model has
 // no 🧵." The loaded pair and its mark are the known list's (models.json), read without asking the studio.
-let connected = loadedRecommended();
+// THE SWITCH IS KEPT (goal/G18.9). Andy, 2026-10-12: "The connected/disconnected status of levant needs to be persisted,
+// otherwise he will be re-connected every time i update his node/deskUnsloth... and restart." So switch.json in the
+// state folder holds his last word, and a start is connected only when it said connected (or was never said) and the
+// model still has 🧵.
+const SWITCH_FILE = 'switch.json';
+function keptSwitch() {
+  try { const k = JSON.parse(fs.readFileSync(path.join(STATE, SWITCH_FILE), 'utf8')); return k && typeof k.connected === 'boolean' ? k.connected : true; } catch (e) { return true; }
+}
+function keepSwitch(on) {
+  try { fs.writeFileSync(path.join(STATE, SWITCH_FILE), JSON.stringify({ connected: on === true, at: new Date().toISOString() }, null, 2) + '\n'); } catch (e) { say('switch.json could not be written: ' + e.message); }
+}
+let connected = keptSwitch() && loadedRecommended();
 let looping = false;
 
 function setConnected(on) {
@@ -1061,6 +1085,9 @@ function setConnected(on) {
   if (on === connected) return Promise.resolve({ connected: connected });
   if (!on) {
     connected = false;
+    keepSwitch(false);
+    // What waited for an answer is dropped with him (goal/G18.9); a connect starts from the present anyway.
+    waiting.length = 0;
     publishState();
     say(PERSONA + ' leaves the desk: signing off');
     return desk('signoff', {}).then(function () { return { connected: false }; }, function (e) {
@@ -1069,6 +1096,7 @@ function setConnected(on) {
     });
   }
   connected = true;
+  keepSwitch(true);
   caughtUp = false;
   publishState();
   say(PERSONA + ' is back at the desk, from the present');
