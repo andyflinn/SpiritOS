@@ -1,8 +1,8 @@
 {
- "change": 34725,
+ "change": 34820,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T09:43:40.031Z",
+ "writtenAt": "2026-10-12T09:57:42.202Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,12 +11,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G18.6"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -1315,9 +1314,12 @@
    "id": "goal/G18.6",
    "title": "deskUnslothRemote refinements",
    "goal": "goal/G18",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -1325,18 +1327,49 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothModels.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothPairs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRecommend.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRemoteTabs.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1370,8 +1403,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskUnslothRemote refinements: several OpenAI compatible connections, kept in the connect tab.\n\nDESIGN (Andy, 2026-10-12): \"i have an OpenAI account with 10 bucks to spend on it. I want my Account URL/token pairs saved in connection.json, now an array. i want to maintain that array in the connect tab.\"\n\nPROPOSED SHAPE\n- connection.json becomes an array of {name, url, key}, one of them the one in use. The name is his choice (openai, studio), a label under the field rules, and is shown instead of the url. Andy, on naming the pairs: \"good Idea, yes.\" It stays in deskUnsloth's state folder under relay-state/, which git ignores, so no key reaches the remote.\n- The connect tab lists the pairs by name: the key never shown or sent back (as today). Per pair: use, remove. Below: add a name, a url and a key, probed as connection.set probes today.\n- deskUnsloth's verbs: connection.set {name, url, key} adds a pair or replaces the one of that name; connection.remove {name}; connection.use {name}. state answers the names and urls, and which is in use. These are deskUnsloth's own verbs, not the node's.\n- A switch takes effect on the next call, as a connection.set does today.\n- The available-models list, the chosen model and the 🧵 marks are kept per pair, so a switch back finds them as left. Andy asked: \"this kind of means that the \\\"available models\\\" drop-down list must be kept by account as well, correct?\"; answered yes.\n\nWHAT OPENAI DOES NOT HAVE (deskUnsloth.js @ 7edbd860)\n- The model list reads Unsloth studio routes: api/models/cached-gguf, api/models/gguf-variants, api/inference/status. OpenAI answers none of them, only /v1/models.\n- model.load is a studio load; OpenAI has nothing to load, a model is named per call.\n- Chat and the 🧵 tool-call test are /v1/chat/completions, which OpenAI answers; they work unchanged.\n- So with an OpenAI pair in use, the configure tab lists /v1/models and picking one sets the model, with no load. Andy: \"the OpenAI caveats are noted. and accepted.\"\n\nCOST\n- OpenAI bills every call by tokens; Levant reading the desk in a loop spends without anyone typing.\n- No spending guard in deskUnsloth: the account carries its own cap. Andy: \"i have a hard cap on my OpenAI account, i just did it for testing.\"\n",
-   "version": 3,
+   "box": "deskUnslothRemote refinements: several OpenAI compatible connections, kept in the connect tab.\n\nDESIGN (Andy, 2026-10-12): \"i have an OpenAI account with 10 bucks to spend on it. I want my Account URL/token pairs saved in connection.json, now an array. i want to maintain that array in the connect tab.\"\n\nPROPOSED SHAPE\n- connection.json becomes an array of {name, url, key}, one of them the one in use. The name is his choice (openai, studio), a label under the field rules, and is shown instead of the url. Andy, on naming the pairs: \"good Idea, yes.\" It stays in deskUnsloth's state folder under relay-state/, which git ignores, so no key reaches the remote.\n- The connect tab lists the pairs by name: the key never shown or sent back (as today). Per pair: use, remove. Below: add a name, a url and a key, probed as connection.set probes today.\n- deskUnsloth's verbs: connection.set {name, url, key} adds a pair or replaces the one of that name; connection.remove {name}; connection.use {name}. state answers the names and urls, and which is in use. These are deskUnsloth's own verbs, not the node's.\n- A switch takes effect on the next call, as a connection.set does today.\n- The available-models list, the chosen model and the 🧵 marks are kept per pair, so a switch back finds them as left. Andy asked: \"this kind of means that the \\\"available models\\\" drop-down list must be kept by account as well, correct?\"; answered yes.\n\nBUILD DETAILS (claude-windows, at Go)\n- An old connection.json, one {url, key}, is read as one pair named studio, in use, its model the configuration's; it is rewritten as an array at the first change.\n- models.json keeps a known list per pair name; an old file, one list, is read as the studio pair's. Stored data stays readable.\n- A pair is told to be a studio or a plain OpenAI server by whether api/models/cached-gguf answers.\n- connection.set uses the pair it saves, as today; removing the pair in use is refused with its reason; a name follows the label rule (rule/12).\n- A switch disconnects Levant (one signoff), so Connect checks the 🧵 of the new pair's model again.\n\nWHAT OPENAI DOES NOT HAVE (deskUnsloth.js @ 7edbd860)\n- The model list reads Unsloth studio routes: api/models/cached-gguf, api/models/gguf-variants, api/inference/status. OpenAI answers none of them, only /v1/models.\n- model.load is a studio load; OpenAI has nothing to load, a model is named per call.\n- Chat and the 🧵 tool-call test are /v1/chat/completions, which OpenAI answers; they work unchanged.\n- So with an OpenAI pair in use, the configure tab lists /v1/models and picking one sets the model, with no load. Andy: \"the OpenAI caveats are noted. and accepted.\"\n\nCOST\n- OpenAI bills every call by tokens; Levant reading the desk in a loop spends without anyone typing.\n- No spending guard in deskUnsloth: the account carries its own cap. Andy: \"i have a hard cap on my OpenAI account, i just did it for testing.\"\n",
+   "version": 4,
    "checks": [
     {
      "number": "Q1",
@@ -1451,6 +1484,51 @@
      "by": "desk",
      "at": "2026-10-12T09:43:39.551Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:43:57.712Z",
+     "text": "taking: red first, in my clone."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T09:47:12.865Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T09:50:13.960Z",
+     "text": "Levant: <tool_call>\n<function=desk_chat_add>\n<parameter=id>\ngoal/G18.6\n</parameter>\n<parameter=text>\ntaking: joining the build after the design is green; the Remote's code is next.\n</parameter>\n</function>\n</tool_call>"
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-12T09:53:24.961Z",
+     "text": "Levant: <tool_call>\n<function=fs_read>\n<parameter=path>\njs/probabilityBucket.js\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=fs_read>\n<parameter=path>\njs/probabilityStringMatch.js\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=fs_read>\n<parameter=path>\njs/probabilityStringObjectMatch.js\n</parameter>\n</function>\n</tool_call>"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:56:07.509Z",
+     "text": "commit 3e1fc72a5a6de97a5533f53dcb64396ad9361af9: goal/G18.6: named URL/key pairs for deskUnsloth, kept in the connect tab\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothModels.js\n- spirit/test/deskUnslothPairs.js\n- spirit/test/deskUnslothRecommend.js\n- spirit/test/deskUnslothRemoteTabs.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T09:56:16.344Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T09:56:23.235Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T09:56:29.156Z",
+     "text": "Claimed, in 3e1fc72a. Files: deskUnsloth.js, deskUnslothRemote.js, and the suites deskUnslothPairs (new), deskUnslothModels, deskUnslothRecommend, deskUnslothRemoteTabs.\nYour node keeps its files: the old connection.json is read as one pair named studio, and the old models.json as studio's list; both become the new shape at the first change.\nTo use OpenAI: in the connect tab, name openai, url https://api.openai.com/v1, your key, Save and use; then pick a model in configure and test it for the 🧵."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T09:57:21.475Z",
+     "text": "deskVerify: passed, at 3e1fc72a (pulled). 4 suites ran green."
     }
    ]
   }
