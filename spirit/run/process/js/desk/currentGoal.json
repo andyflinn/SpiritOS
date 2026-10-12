@@ -1,8 +1,8 @@
 {
- "change": 35074,
+ "change": 35549,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T10:33:53.414Z",
+ "writtenAt": "2026-10-12T11:03:43.003Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,12 +11,13 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G18.7",
-    "goal/G18.8"
+    "goal/G18.8",
+    "goal/G18.9"
    ],
    "go": false,
    "alone": false,
@@ -38,10 +39,9 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 3,
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -1617,9 +1617,12 @@
    "id": "goal/G18.7",
    "title": "deskUnsloth: max_completion_tokens for OpenAI",
    "goal": "goal/G18",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G18"
    ],
@@ -1627,24 +1630,34 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
      "path": "run/js/deskUnsloth.js",
      "by": "ollama agent node",
      "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothPairs.js",
+     "by": "claude-windows",
+     "core": false
     }
    ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1950,6 +1963,691 @@
      "by": "desk",
      "at": "2026-10-12T10:33:53.043Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:34:07.741Z",
+     "text": "Next after goal/G18.8, which is in its build: one item at a time. I start this red the moment G18.8 is claimed."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:34:11.682Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:34:29.836Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:34:45.708Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:35:06.053Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:35:19.312Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:35:30.944Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:35:48.519Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:35:59.830Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:36:11.164Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:36:25.404Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:36:42.537Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:37:03.710Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:37:24.119Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:37:35.724Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:37:50.519Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:38:04.352Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:38:11.209Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:38:54.729Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:39:01.226Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:39:15.914Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:39:22.549Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:39:36.846Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:39:43.298Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:39:57.883Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:40:04.301Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:40:44.339Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:40:51.075Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:41:06.097Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:41:12.711Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:41:27.259Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:41:34.067Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:41:47.920Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:41:54.498Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:42:08.698Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:42:15.275Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:42:29.521Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:42:36.062Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:42:50.079Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:42:56.709Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:43:10.636Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:43:17.253Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:43:31.050Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:43:37.283Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:43:51.755Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:43:58.296Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:44:12.904Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:44:19.378Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:44:33.634Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:44:40.391Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:44:54.588Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:45:00.873Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:45:15.303Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:45:21.461Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:45:36.161Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:45:42.781Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:45:57.257Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:46:03.900Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:46:17.953Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:46:24.496Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:46:39.092Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:46:45.371Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:47:00.357Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:47:06.879Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:47:21.442Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:47:28.216Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:47:42.592Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:47:49.424Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:48:03.455Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:48:09.983Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:48:24.617Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:48:31.401Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:48:45.792Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:48:53.652Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:49:07.869Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:49:14.629Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:49:28.957Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:49:35.612Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:49:50.334Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:49:56.648Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:50:11.312Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:50:17.922Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:50:32.102Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:50:38.920Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:50:53.370Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:50:59.962Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:51:14.358Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:51:20.866Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:51:35.396Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:51:41.880Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:51:56.507Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:52:03.344Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:52:17.805Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:52:24.542Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:52:39.009Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:52:46.442Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:53:14.008Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:53:20.279Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:53:35.004Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:53:41.881Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:53:56.103Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:54:02.487Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:54:17.143Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:54:23.645Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:54:38.376Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:54:45.038Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:54:59.422Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:55:06.276Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:55:21.255Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:55:27.809Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:55:42.444Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:55:49.082Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:56:04.140Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:56:13.788Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:56:27.884Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:56:34.572Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:56:49.350Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:56:56.918Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:57:12.414Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:57:20.029Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:57:27.904Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:57:41.399Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:57:48.684Z",
+     "text": "taking: red first, in my clone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:58:03.577Z",
+     "text": "G18.8 is claimed, so this is next, but the item is not marked code, so it has no red to take; that is also why it keeps posting limbo.\nPlease press code on it, and I start the red."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:58:07.616Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:58:15.118Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:58:29.600Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:58:36.570Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:58:51.254Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:58:58.392Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:00:21.997Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:00:23.375Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:03:03.029Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:03:04.316Z",
+     "text": "commit 227b0ad48033d2ae77fd8b40a015924827092ac1: goal/G18.7: max_completion_tokens for OpenAI, the reasoning mark\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/test/deskUnslothPairs.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:03:10.968Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:03:18.270Z",
+     "text": "Claimed, in 227b0ad4. Files: deskUnsloth.js, deskUnslothPairs.js.\nOn your node it works once deskUnsloth restarts on this code; then test gpt models again for the 🧵, and the reasoning ones get 🤔.\nNote: deskVerify will not pull while design/reviews/claude-clowd/ sits untracked in your tree."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T11:03:18.969Z",
+     "text": "deskVerify: passed, at 24533a26 (dirty, not pulled). 1 suite ran green."
     }
    ]
   },
@@ -1957,8 +2655,8 @@
    "id": "goal/G18.8",
    "title": "Desk: an agent answers only a line it has taken",
    "goal": "goal/G18",
-   "status": "build",
-   "with": "claude-windows",
+   "status": "waiting for deskVerify",
+   "with": "",
    "buttons": [],
    "blocking": [
     "goal/G18"
@@ -1967,17 +2665,148 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskArchive.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChanges.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatQuestion.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChecksPanel.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskClientNext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskEarJobs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskForAgents.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskG3.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskGroupChat.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskItemsFind.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskKnownAgents.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLiveFixes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskNudge.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPanels.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPhases.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskProfiles.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedWriterBuild.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRuleChatPublish.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRules.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskSearchLines.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskTakeToAnswer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskWaive.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskWriterKey.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "claude-windows",
    "waived": true,
    "rules": [
     {
@@ -2012,8 +2841,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Desk: an agent answers only a line it has taken.\n\nDESIGN (Andy, 2026-10-12): \"answering a chat line is a \"take\" item, i will solicit contributions after that, from specific agents.\"\n- Found live on goal/G18.7: Levant answered every line, his and the other agents', and rewrote the item's checks; a take would have stopped all but one answer.\n\n- Andy, on goal/G18.7: \"no agent should answer without taking. too much chatter otherwise.\"\n\nWHAT IS THERE (desk.js @ 3e1fc72a)\n- line.take {id} (goal/G2.2): an agent takes Andy's latest line under an item and is the only one to answer until it does; a second take is refused taken.\n- But the take is optional: an agent that never took a line may still chat.add, and once the taker has answered, anyone may post again.\n\nPROPOSED SHAPE\n- An agent posts under an item only while it holds the take of Andy's latest line there, or holds the item itself (item.take), so its own work notes (taking, the claim's file list, a red question) still go; everything else is refused. Its answer releases a line take, as today. Andy, to \"Agreed?\": \"yes.\", and \"We need to secure desk a little better again chatterboxes like Levant/OpenAI\".\n- Soliciting is there already: a line of his starting with an agent's nick (\"cw: ...\") is taken for that agent (goal/G2.2).\n- A take is offered only on a line of Andy's not yet answered: one line of his, one answer.\n- Andy and the desk itself post as today.\n- How he solicits a contribution from a named agent is left out of this item; Andy, asked to clear the questions: \"cw. please eliminate the Q's so my go button works\".\n",
-   "version": 4,
+   "box": "Desk: an agent answers only a line it has taken.\n\nDESIGN (Andy, 2026-10-12): \"answering a chat line is a \"take\" item, i will solicit contributions after that, from specific agents.\"\n- Found live on goal/G18.7: Levant answered every line, his and the other agents', and rewrote the item's checks; a take would have stopped all but one answer.\n\n- Andy, on goal/G18.7: \"no agent should answer without taking. too much chatter otherwise.\"\n\nWHAT IS THERE (desk.js @ 3e1fc72a)\n- line.take {id} (goal/G2.2): an agent takes Andy's latest line under an item and is the only one to answer until it does; a second take is refused taken.\n- But the take is optional: an agent that never took a line may still chat.add, and once the taker has answered, anyone may post again.\n\nPROPOSED SHAPE\n- An agent posts under an item only while it holds the take of Andy's latest line there, or holds the item itself (item.take), so its own work notes (taking, the claim's file list, a red question) still go; everything else is refused. Its answer releases a line take, as today. Andy, to \"Agreed?\": \"yes.\", and \"We need to secure desk a little better again chatterboxes like Levant/OpenAI\".\n- Soliciting is there already: a line of his starting with an agent's nick (\"cw: ...\") is taken for that agent (goal/G2.2).\n- A take is offered only on a line of Andy's not yet answered: one line of his, one answer.\n- Andy and the desk itself post as today.\n- How he solicits a contribution from a named agent is left out of this item; Andy, asked to clear the questions: \"cw. please eliminate the Q's so my go button works\".\n- The team chat desk/G0.0 follows the take rule like every item (it was open to every agent under goal/G3.10). Andy, asked: \"follow the take rules.\"\n",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -2041,6 +2870,24 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-12T10:30:32.082Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "0 stay open to every agent, or follow the take rule like every item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T10:38:32.151Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Shall I look into it as an item of its own, \"deskUnsloth: a provider switch leaves Levant live on the desk\"?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-12T10:40:27.321Z"
     }
    ],
    "chat": [
@@ -2103,6 +2950,115 @@
      "by": "desk",
      "at": "2026-10-12T10:31:29.629Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:35:44.338Z",
+     "text": "Built and green in my clone; the regression is still running: so far 18 older suites have test agents that post without a take, which I am changing to take first.\nOne conflict with an earlier ruling: goal/G3.10 made the team chat desk/G0.0 a place where \"Andy and every agent write it with chat.add\"; the take rule closes it to agents unless they take your line there.\nShould the team chat desk/G0.0 stay open to every agent, or follow the take rule like every item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T10:38:05.830Z",
+     "text": "Q4: 0 stay open to every agent, or follow the take rule like every item?\n\nfollow the take rules.\n\ni know why Levant still looks \"present\", i first switched to unsloth, instead of first disconnecting Levant. so a switch between Levant-providers should sign him off first."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:38:50.307Z",
+     "text": "Recorded (box v5): the team chat follows the take rule; I am changing its suite to match.\nOn Levant: a switch already signs him off first since goal/G18.6 (connection.use disconnects with a signoff when he is connected), yet the desk still lists ollama agent node as live. So either the signoff did not land, or deskUnsloth on your node ran older code at the switch.\nShall I look into it as an item of its own, \"deskUnsloth: a provider switch leaves Levant live on the desk\"?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T10:40:12.327Z",
+     "text": "Q5: Shall I look into it as an item of its own, \"deskUnsloth: a provider switch leaves Levant live on the desk\"?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:40:40.687Z",
+     "text": "Added as goal/G18.9, box written. It comes after G18.8 and G18.7."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:57:17.227Z",
+     "text": "commit 24533a26cc415c653891f08b8edf74c77681f715: goal/G18.8: an agent answers only a line it has taken\n- spirit/run/process/js/desk/desk.js\n- spirit/test/agentOnboard.js\n- spirit/test/deskArchive.js\n- spirit/test/deskChanges.js\n- spirit/test/deskChatQuestion.js\n- spirit/test/deskChatSearch.js\n- spirit/test/deskChecksPanel.js\n- spirit/test/deskClientNext.js\n- spirit/test/deskEarJobs.js\n- spirit/test/deskForAgents.js\n- spirit/test/deskG3.js\n- spirit/test/deskGroupChat.js\n- spirit/test/deskItemsFind.js\n- spirit/test/deskKnownAgents.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskNudge.js\n- spirit/test/deskPanels.js\n- spirit/test/deskPhases.js\n- spirit/test/deskProfiles.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/deskRuleChatPublish.js\n- spirit/test/deskRules.js\n- spirit/test/deskSearchLines.js\n- spirit/test/deskTakeToAnswer.js\n- spirit/test/deskWaive.js\n- spirit/test/deskWriterKey.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:57:24.634Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T10:57:32.173Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:57:37.379Z",
+     "text": "Claimed, in 24533a26. Files: desk.js, the new deskTakeToAnswer.js, and 24 suites whose test agents now take before they post (the list is on the item).\nThe rule holds on your desk once the desk server restarts on this code.\nFound on the way, for goal/G18.9 or an item of its own: on an item with your Go, a take brings its limbo line back each time the holder's word flips; that is the limbo line G18.7 keeps posting."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T11:00:28.603Z",
+     "text": "deskVerify: rejected, at 992aa4c6 (dirty, not pulled). Red: spirit/test/deskTakeToAnswer.js: the listed test file is missing from this checkout"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T11:00:29.487Z",
+     "text": "verify rejected: spirit/test/deskTakeToAnswer.js: the listed test file is missing from this checkout"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T11:01:09.377Z",
+     "text": "deskVerify did not pull because your tree is dirty: one untracked folder, design/reviews/claude-clowd/, which is not mine. G18.8 is pushed at 24533a26.\nOnce you commit or move that folder, a verify.again (or the Verifier's run) will pull and check it."
+    }
+   ]
+  },
+  {
+   "id": "goal/G18.9",
+   "title": "deskUnsloth: a provider switch leaves Levant live on the desk",
+   "goal": "goal/G18",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskUnsloth: a provider switch leaves Levant live on the desk.\n\nFOUND (Andy, 2026-10-12): \"i know why Levant still looks \"present\", i first switched to unsloth, instead of first disconnecting Levant. so a switch between Levant-providers should sign him off first.\"; asked whether to look into it as an item of its own: \"yes\".\n\nWHAT IS THERE (deskUnsloth.js @ 3e1fc72a)\n- connection.use already disconnects Levant with one signoff when he is connected (usePair, goal/G18.6, box v4: \"A switch disconnects Levant\").\n- Yet after his switch the desk still lists ollama agent node as live (item.get goal/G18 live, read 2026-10-12).\n\nTO FIND before any fix: whether the signoff left deskUnsloth and reached the desk, and what the desk counts as live.\n\nALSO (Andy, 2026-10-12): \"We'll need to add this: The connected/disconnected status of levant needs to be persisted, otherwise he will be re-connected every time i update his node/deskUnsloth... and restart.\"\n- Today deskUnsloth starts connected whenever the loaded model has 🧵 (deskUnsloth.js, let connected = loadedRecommended()), whatever his last switch said.\n- So the switch is kept in deskUnsloth's state folder, and a start is connected only when his last switch said connected and the model still has 🧵.\n",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-12T10:52:40.748Z",
+     "text": "We'll need to add this: The connected/disconnected status of levant needs to be persisted, otherwise he will be re-connected every time i update his node/deskUnsloth... and restart."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T10:53:09.702Z",
+     "text": "Recorded (box v2). Today a start reconnects him whenever the loaded model has 🧵; the item keeps your switch in deskUnsloth's state folder, and a start follows it."
     }
    ]
   }
