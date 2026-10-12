@@ -1,8 +1,8 @@
 {
- "change": 34375,
+ "change": 34435,
  "line": 8510,
  "goal": "goal/G18",
- "writtenAt": "2026-10-12T08:12:40.036Z",
+ "writtenAt": "2026-10-12T08:33:12.182Z",
  "items": [
   {
    "id": "goal/G18",
@@ -11,11 +11,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G18.4"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -99,6 +100,11 @@
      "by": "andy",
      "at": "2026-10-12T07:41:12.097Z",
      "text": "new Item probabilityStringObjectMatch"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:13:32.109Z",
+     "text": "add the third item: \"probabilityBucket\""
     }
    ]
   },
@@ -625,6 +631,207 @@
      "by": "andy",
      "at": "2026-10-12T08:10:10.078Z",
      "text": "deskVerify: passed, at 6a4f7aa9 (pulled). 1 suite ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G18.4",
+   "title": "probabilityBucket",
+   "goal": "goal/G18",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G18"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-12: \"add the third item: \\\"probabilityBucket\\\"\"\n\nThe goal: three core modules in run/js, probabilit<Name>.js, built one by one; their integration argued after. Built: probabilityStringMatch (goal/G18.2, a9a0c252) and probabilityStringObjectMatch (goal/G18.3, 6a4f7aa9). Andy on G18.3: \"we look for the best matching contact not for the perfect one (this will become obvious in our 3rd item: probabilityBucket)\".\n\nTHE SPEC, proposed, Andy, 2026-10-12:\n\"like bucket.js\n\nthe following differences \n\n1. function createProbabilityBucket(capacity)\n2. seatFor(probability, item)\n\nmake sense, objecs are simply dropped into the the probabilityBucket with their probability, and probabilityBucket sorts that into it's table all by itself.\n\nthoughts?\"\n\nDECIDED, Andy, 2026-10-12:\n\"The Bucket knows NOTHING about string matching, it will only know how to sort-add objects by probability.\n\ninternally its table carries objects like this: { probability, object }\n\nthe serialize will only serialize and measure the object portion of its array-entries.\n\nmake sense?\"\n- \"the bucket fills up with objects of probability 0, until those objects are pushed out by higher-probability objects.\"\n- \"the ONLY job of probabilityBucket is inserting by highest-probability at the top, and limiting the serialized object, this way the bucket needs no compare-callback, nothing.\n\nand the whole system is simpler,\"\n\nTHE SHAPE, from those words: createProbabilityBucket(capacity) answers two functions and nothing else: seatFor(probability, object), which seats it by probability, highest at the top, an equal one behind those already in, and pushes the lowest out when full, answering whether it got a seat (a probability not a number or outside 0 to 1 gets none); and serialize(map, maxBytes), as bucket.js has it, over the objects alone, best first, cut at the byte ceiling, saying more and truncated.\n\nHOW IT IS USED (the integration, argued after), Andy, 2026-10-12: \"let's say: Desk Item search, the desk reads items, newest to oldest, up to MAX_SCANNED_ITEMS, compares every item against the search string, gets a probability as result, then drops the (probability,item) combination into the bucket. at the end calls serialize, done.\"\n- Presence and nearness stay the peer search's: \"The peer search will be able to weigh those extra concern on its own, and pass the combined probability into the bucket with the object, that additional concern is already handled today with the old version.\"\n\nFOUND\n- today bucket.js holds a fixed number of slots and evicts the weakest by a compare function; searchBucket.js and gradedSearch.js drive it.",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "My guess at its shape: open it with a query string and a number of slots, offer it objects one at a time, it scores each by probabilityStringObjectMatch and keeps the best; how do you want it?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:27:58.065Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "And should items() give the items alone, best first, or each with its probability?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:28:00.315Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "And a probability of 0, outside 0 to 1, or not a number: turned away?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:28:02.481Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Agreed?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:28:04.464Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Is that the shape?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-12T08:28:06.433Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:13:54.664Z",
+     "text": "Added as goal/G18.4, your words in the box.\nMy guess at its shape: open it with a query string and a number of slots, offer it objects one at a time, it scores each by probabilityStringObjectMatch and keeps the best; how do you want it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:17:44.316Z",
+     "text": "like bucket.js\n\nthe following differences \n\n1. function createProbabilityBucket(capacity)\n2. seatFor(probability, item)\n\nmake sense, objecs are simply dropped into the the probabilityBucket with their probability, and probabilityBucket sorts that into it's table all by itself.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:18:16.250Z",
+     "text": "Makes sense: no compare function, the probability is the order, highest first, an equal one behind those already in; seatFor(probability, item) answers whether it got a seat, and the rest stays as bucket.js has it (items, size, capacity, more, offered, serialize with its byte ceiling).\nTwo things to settle: is a probability of 0 (no match at all) turned away rather than seated, and a value outside 0 to 1 or not a number refused?\nAnd should items() give the items alone, best first, or each with its probability?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:21:04.856Z",
+     "text": "The Bucket knows NOTHING about string matching, it will only know how to sort-add objects by probability.\n\ninternally its table carries objects like this: { probability, object }\n\nthe serialize will only serialize and measure the object portion of its array-entries.\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:21:28.010Z",
+     "text": "Yes: the table holds {probability, object}, sorted by probability alone, and serialize maps and measures only the objects; nothing in it knows of strings.\nLeft: items() giving the objects alone, best first, as serialize does?\nAnd a probability of 0, outside 0 to 1, or not a number: turned away?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:22:21.377Z",
+     "text": "the bucket fills up with objects of probability 0, until those objects are pushed out by higher-probability objects."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:22:40.530Z",
+     "text": "Recorded: 0 is seated like any probability, pushed out only by a higher one.\nMy defaults for the last two, unless you say otherwise: items() gives the objects alone, best first; a probability that is not a number or lies outside 0 to 1 is turned away.\nAgreed?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:24:33.110Z",
+     "text": "the ONLY job of probabilityBucket is inserting by highest-probability at the top, and limiting the serialized object, this way the bucket needs no compare-callback, nothing.\n\nand the whole system is simpler,"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:24:57.530Z",
+     "text": "Recorded, and the shape it gives is in the box (v5): createProbabilityBucket(capacity) with two functions only, seatFor(probability, object) and serialize(map, maxBytes), the second over the objects alone, best first, cut at the byte ceiling, saying more.\nNo items(), size(), capacity() or offered(): the bucket does its two jobs.\nIs that the shape?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:27:31.190Z",
+     "text": "let's say: Desk Item search, the desk reads items, newest to oldest, up to MAX_SCANNED_ITEMS, compares every item against the search string, gets a probability as result, then drops the (probability,item) combination into the bucket. at the end calls serialize, done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:28:08.879Z",
+     "text": "That is the shape exactly: the caller scans, scores and drops, the bucket seats and serializes; your example is in the box (v6) as the use, for the integration after.\nEvery red Q here is passed: ready for your Go, and the commit of run/js/probabilityBucket.js will ask your core grant."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:29:50.559Z",
+     "text": "do you agree that this is the better, or at least simpler shape? with these three little modules?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:30:08.510Z",
+     "text": "Simpler, yes, and better where it counts: three pure pieces, each tested alone, and the bucket holds no opinion at all, not even a compare; today that opinion is spread over gradedSearch, searchBucket and bucket.\nTwo costs to watch at the integration: the peer search also weighs presence and nearness, which the caller must now fold into the probability before seatFor; and keys count as strings, so short field names (via, name) carry the most weight in every object; measure that on real contacts.\nNeither argues against the shape."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:32:03.027Z",
+     "text": "The peer search will be able to weigh those extra concern on its own, and pass the combined probability into the bucket with the object, that additional concern is already handled today with the old version."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:32:23.231Z",
+     "text": "Agreed, and recorded (v7): the peer search folds presence and nearness into the probability it hands seatFor. Ready for your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-12T08:32:41.202Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T08:32:53.771Z",
+     "text": "Green: settled, no open questions, box current (v7)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-12T08:33:11.722Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
