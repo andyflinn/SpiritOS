@@ -1,5 +1,5 @@
 {
- "change": 58107,
+ "change": 58108,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -1470,10 +1470,9 @@
    "id": "goal/G22.5",
    "title": "EnsureIdentity",
    "goal": "goal/G22",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
