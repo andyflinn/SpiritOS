@@ -1,5 +1,5 @@
 {
- "change": 56867,
+ "change": 56951,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -15,7 +15,8 @@
    "blocking": [],
    "blocked": [
     "goal/G22.1",
-    "goal/G22.2"
+    "goal/G22.2",
+    "goal/G22.3"
    ],
    "go": false,
    "alone": false,
@@ -50,17 +51,15 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "Using the stack-frame tests as design-enforcement tool.\n\nWHAT EXISTS (paths under spirit/test/)\n- tools/wirePaths.js records, during the suites it drives, every call stack inside our own code that reaches a bottom, and ranks the paths. A stack sees where code arrives, not what it resembles, so it finds a second route to the same place even when no name or text is shared.\n- Its bottoms: wire (the network), fs-write, crypto, child-process, and two components, presenceNode and postQueue.\n- oneDoorStacks.js (goal/G19.14) is the enforcing suite: one test per bottom that names a door. It runs that row's suites and fails on any stack with a production frame (spirit/run/) and no frame in the door. Stacks with no production frame are a suite unit-testing the component and are not counted. A run that never reaches the component fails.\n- Two doors are enforced today: nobody but peerPost reaches presenceNode, and nobody but peerPost reaches postQueue.\n- oneDoorStacks.js is part of run all: runAll.js and deskVerify's full run both take every suite in spirit/test.\n\nHOW IT ENFORCES A DESIGN\n- A design rule of the form \"only this door may reach that component\" becomes one row: the door, the component, and the suites that drive it.\n- The wire, fs-write, crypto and child-process bottoms are measured but have no door yet; each ruling such as \"only X writes to disk\" costs one row.\n\nITS LIMIT\n- It sees only the paths the driven suites walk: a row is as good as its suites, and a path no suite exercises stays invisible.",
-   "version": 2,
+   "box": "Using the stack-frame tests as design-enforcement tool.\n\nWHAT EXISTS (paths under spirit/test/)\n- tools/wirePaths.js records, during the suites it drives, every call stack inside our own code that reaches a bottom, and ranks the paths. A stack sees where code arrives, not what it resembles, so it finds a second route to the same place even when no name or text is shared.\n- Its bottoms: wire (the network), fs-write, crypto, child-process, and two components, presenceNode and postQueue.\n- oneDoorStacks.js (goal/G19.14) is the enforcing suite: one test per bottom that names a door. It runs that row's suites and fails on any stack with a production frame (spirit/run/) and no frame in the door. Stacks with no production frame are a suite unit-testing the component and are not counted. A run that never reaches the component fails.\n- Two doors are enforced today: nobody but peerPost reaches presenceNode, and nobody but peerPost reaches postQueue.\n- oneDoorStacks.js is part of run all: runAll.js and deskVerify's full run both take every suite in spirit/test.\n\nHOW IT ENFORCES A DESIGN\n- A design rule of the form \"only this door may reach that component\" becomes one row: the door, the component, and the suites that drive it.\n- The wire, fs-write, crypto and child-process bottoms are measured but have no door yet; each ruling such as \"only X writes to disk\" costs one row.\n\nITS LIMIT\n- It sees only the paths the driven suites walk: a row is as good as its suites, and a path no suite exercises stays invisible.\n\nITEMS\n- goal/G22.3: the gg plugin, a goal-governance plugin desk mounts from its plugin folder.\n",
+   "version": 7,
    "checks": [],
    "chat": [
     {
@@ -194,6 +193,90 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T08:58:37.870Z",
      "text": "Added: goal/G22.2, \"Nobody but peerPost talks to a relay\"; its box holds the rule and what will make it fail."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:38:44.064Z",
+     "text": "Ok. Now we have arrived at this point:\n\nthe red for 22.2 has verified that the entry for no direct call to relays is as row in the stack-frame check. great.\n\nwhat i want now, is the first desk-plugin: it a 'gg' goal-governance plugin, where the plugin sets the parameters (Gate-Frame / Target Frame)and generates the equivalent of a 22.2 type item.\n\nthe \"create-goal\" inputs in the default panel of desk, will offer a dropdown for goal type: default [generic], and this first plugin will handle new stack frame items, and govern the goal, by inserting itself ahead for desks event/input handler. the plugin itself will ensure that the goal always stays open, that 22.1 is always open, etc... if the done-button is ever seen or not.\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:39:10.705Z",
+     "text": "It makes sense: a goal type picked at create-goal, generic by default; a stack-frame goal is governed by the gg plugin, which turns a gate frame and a target frame into a 22.2-type item and refuses Done and Close on the goal and on its rerun item, ahead of desk's own handling.\nWhat would make it work without an agent each time: the doors become data (one file listing gate, target and suites) that wirePaths and stackFrameTestItems read, so the plugin adds a door by writing a row of data, not by editing test code.\nThe one thing it cannot know by itself is which suites drive a door; that is measured, so either a generated item carries a measuring step for an agent, or the row starts on the whole harness.\nAnd the plugin hook ahead of desk's handler is a new extension point in desk.js, so its shape is a design item of its own.\nShall the first item be that hook, or the doors-as-data file?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:46:05.423Z",
+     "text": "a gg-plugin is simply a goal-governance plugin, it implies that for this type of goal, it is the first to handle events. those are the mechanical controls it can implement.\n\nit has a companion dialog, where the gate and endpoint functions can be entered. for that goal, (or a bubble in the goal-dialog itself, i'd prefer a dialog, where the items of this goal, \n\nit's sort of like a pluggable version of goal/G0 that is also a special goal, always \"open\" (it's actually closed)\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:46:35.993Z",
+     "text": "Yes. A gg plugin owns its goal type: it sees every event for that goal first, and its mechanical controls (no Done, no Close, the rerun item kept open) live there instead of in desk.js.\nThat is what goal/G0 already is, hard-wired: desk.js special-cases desk/G0.0 in about ten places (closed from the start, no buttons, no verify, never regresses, never brought back). A gg plugin is the same thing made pluggable, so the group chat could later become a plugin too.\nThe companion dialog takes the gate and endpoint for a new door and makes the 22.2-type item.\nYour line breaks off at \"a dialog, where the items of this goal,\": what should that dialog show of the goal's items?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:47:27.567Z",
+     "text": "yes. the plugin on first mount, get itself a fixed goal-key, and then that goal and the plugin live hand-in-hand"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:47:55.911Z",
+     "text": "Recorded in the goal box: the gg plugin as you have described it, fixed goal key on first mount included.\nStill open: what the companion dialog shows of the goal's items."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:48:49.605Z",
+     "text": "probably doesn't need a dropdown in the create goal interface, desk just scans the plugin folder, and mounts what it finds."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:49:12.913Z",
+     "text": "Box updated: no goal-type dropdown; desk scans its plugin folder and mounts every plugin it finds, each taking its fixed goal key on first mount."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:51:46.170Z",
+     "text": "\"claude-windows 11:49 Box updated: no goal-type dropdown; desk scans its plugin folder and mounts every plugin it finds, each taking its fixed goal key on first mount.\"\n\nyes, that's much simpler. that way it gets a free chat, and everything, it just inserts additional bubbles in the goals, or becomes a dialog button instead of a label, in the list of goals...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:52:09.673Z",
+     "text": "Recorded: the plugin goal gets chat and box for free; the plugin adds bubbles, or makes its goal label a button that opens its dialog."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:53:16.911Z",
+     "text": "so the plugin on first mount, gets it's private goal, and the list-display, just has a button in the label column, that leads to the private UI for that plugin."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:53:40.120Z",
+     "text": "Recorded: a private goal per plugin on first mount; in the List its label column holds a button that opens the plugin's private UI."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:54:33.140Z",
+     "text": "create 22.3 and move these points into the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:55:10.172Z",
+     "text": "Created goal/G22.3, \"gg plugin: goal governance by a mounted plugin\", with the plugin points in its box; the goal box now lists it under ITEMS."
     }
    ]
   },
@@ -516,6 +599,168 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T09:19:12.547Z",
      "text": "Done already: claimed at b29bf3ac, and deskVerify passed it (stackFrameTestItems green)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:24:20.021Z",
+     "text": "deskVerify: passed, at cefcd947 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:24:41.130Z",
+     "text": "why did it pass?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:25:00.830Z",
+     "text": "deskVerify runs only the suites an item lists, and I set this item's list to stackFrameTestItems.js alone, which is green because the row now exists.\nI took oneDoorStacks off the list so the claim would check that the row exists, not the fixes; with it on, the claim fails on the 7 paths.\nG22.1 lists oneDoorStacks, so a verify.again there fails as you want. Say so and I put oneDoorStacks back on this list too."
+    }
+   ]
+  },
+  {
+   "id": "goal/G22.3",
+   "title": "gg plugin: goal governance by a mounted plugin",
+   "goal": "goal/G22",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G22"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "gg plugin: goal governance by a mounted plugin.\n\nDECIDED (Andy, 2026-10-13)\n- A gg plugin is a goal-governance plugin: for its type of goal it is the first to handle every desk event, and the mechanical controls it implements live there, not in desk.js.\n- No goal-type choice at create-goal: desk scans its plugin folder and mounts every plugin it finds; the first plugin governs stack-frame goals.\n- The stack-frame plugin sets the parameters (gate frame and target frame) and generates the equivalent of a goal/G22.2 item from them.\n- It governs its goal: the goal always stays open, and its rerun item (as goal/G22.1) always stays open, whether a Done button is ever seen or not.\n- It has a companion dialog where the gate and endpoint functions are entered.\n- It is a pluggable version of goal/G0: a special goal that is always open while actually closed.\n- On its first mount the plugin gets its own private goal with a fixed key, and from then on that goal and the plugin live hand in hand; the goal has its chat, box and everything else for free, and in the list of goals it shows a button in the label column that opens the plugin's private UI.\n\nTHIS RENDITION (Andy, 2026-10-13) does only:\n- Mount every plugin in desk's plugin folder, organized with the same pattern as shell apps and processes.\n- The stackFrameChecks plugin, governing in full in this item: its goal and its rerun item always stay open, and its dialog takes a gate and an endpoint and makes the goal/G22.2-type item.\n- In the main list, a button replacing the label of each plugin's private goal, which opens the plugin's private UI.\n- When this item is done, a goal \"Maintain this plugin\" follows.\n- The plugin folder: each plugin's server half at spirit/run/process/js/desk/plugins/js/<name>/<name>.js with its .json beside it, its private UI at spirit/run/shell/desk/plugins/<name>/.\n",
+   "version": 5,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T09:59:26.255Z",
+     "text": "this first rendition is only going to do the following:\n\n- mount all plugins from desks plugin folder, organized with the same pattern that shell-apps and processes are organized.\n- this stackFrameChecks plugin\n- the label-replacement button, in the main list, for the plugins private goal, that opens the plugins private UI.\n\nworks?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T09:59:58.631Z",
+     "text": "Works. The pattern would put each plugin's server half at process/js/desk/plugins/js/<name>/<name>.js with its .json beside it, and its private UI at shell/desk/plugins/<name>/, since face elements live in shell.\nScope recorded in the box as your three points.\nOne thing to pin before the red: in this rendition, does stackFrameChecks already govern (keep its goal and rerun item open, make items from the dialog), or only mount with its private goal and a UI that opens?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T10:02:12.013Z",
+     "text": "Let's do it in this item. when done. we'll make a goal:  \"Maintain this plugin...\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:02:33.222Z",
+     "text": "Recorded: stackFrameChecks governs in full in this item, and a \"Maintain this plugin\" goal follows it. Ready for your Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T10:02:50.088Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:03:10.035Z",
+     "text": "Green, box current (v4); the one thing not yet yours is the folder I proposed: plugins at process/js/desk/plugins/js/<name>/, their UI at shell/desk/plugins/<name>/."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T10:04:14.893Z",
+     "text": "Yes. We'll use your folder structure for both, shell and process side. decision."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:04:32.430Z",
+     "text": "Recorded the folders in the box. I take the red on your Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T10:04:41.923Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
