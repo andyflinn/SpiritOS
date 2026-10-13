@@ -113,7 +113,8 @@ async function serverHalf() {
     // THE GOAL RUN (Q2): the suites on its items' lists, and nothing else.
     rec('goal.emptied', { id: 'fe/G1' });
     await waitFor(function () { return said('verify.pass', 'fe/G1').length > 0; }, 20000);
-    const ranSuites = published.filter(function (o) { return o && o.doing && o.doing !== 'idle'; }).map(function (o) { return String(o.suite); });
+    // Since goal/G21.3 a run publishes its pull first, before any suite, so an object with no suite named is not a suite.
+    const ranSuites = published.filter(function (o) { return o && o.doing && o.doing !== 'idle' && o.suite; }).map(function (o) { return String(o.suite); });
     if (!fs.existsSync(MARK) && ranSuites.length && ranSuites.every(function (s) { return /zzGoalIn\.js$/.test(s); })) test.check('an emptied goal runs the suites on its items\' lists only, never the whole folder');
     else test.fail(OWED + 'the emptied goal ran ' + short(ranSuites) + (fs.existsSync(MARK) ? ', zzGoalOut.js among them' : ''));
     if (lines().length === 1 && said('verify.pass', 'fe/G1').length === 1) test.check('one report line in the goal chat, and the goal its verify.pass');

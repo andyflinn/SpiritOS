@@ -1,6 +1,6 @@
 {
   "label": "Verifier's dataset",
-  "description": "Keeps verify.db, a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1). Started by the node; reached by jobs.api on the loopback door. Runs are not stored at all.",
+  "description": "Keeps verify.db, a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1), and beside a red its failure text, capped (goal/G21.3); every run it makes is a row too (goal/G19.3), with the line it posted. Both are read with search (goal/G21.3). Started by the node; reached by jobs.api on the loopback door.",
   "kind": "server",
   "operated": "node",
   "args": [
@@ -37,7 +37,32 @@
     {
       "name": "pull",
       "default": "git pull --ff-only",
-      "description": "The command run before an item check, in the checkout, when the tree is CLEAN (goal/G16.13). Andy, 2026-10-11: \"pull git when a status change occurs in desk.\" A dirty tree is never pulled - his uncommitted work is his - and is checked as it stands, with the item's result line saying so. Empty: no pull; a suite hands a probe script so no test runs a real git pull."
+      "description": "The command run before an item check, in the checkout, when the tree is CLEAN (goal/G16.13). Andy, 2026-10-11: \"pull git when a status change occurs in desk.\" A dirty tree is never pulled - his uncommitted work is his - and is checked as it stands, with the item's result line saying so. Empty: no pull; a suite hands a probe script so no test runs a real git pull. Spawned and awaited since goal/G21.3, so now and stop answer while it runs."
+    },
+    {
+      "name": "repo",
+      "default": "",
+      "description": "The checkout it measures: its suites, its pull and its commits (goal/G21.3). Empty: the clone holding this server. A suite hands a scratch repo, so no test runs anything in a real checkout."
+    },
+    {
+      "name": "idleMs",
+      "default": "3600000",
+      "description": "The idle hour (goal/G8.4, brought back by goal/G21.3): this long with no desk write and no phase held by its agent, and the node is idle. Published with every run object, so the tab counts down to this server's own hour."
+    },
+    {
+      "name": "idleCheckMs",
+      "default": "60000",
+      "description": "How often it reads whether the node is idle (goal/G21.3): the newest desk write from a cursor of its own, and the items its agent holds."
+    },
+    {
+      "name": "publish",
+      "default": "",
+      "description": "The idle chore's publish command, the node's port appended (goal/G21.3). Empty: process/js/deskClient/publishData.js, which measures, writes agents/<agent>/ and commits it under the standing grant. A suite hands a probe so no test commits or pushes."
+    },
+    {
+      "name": "choresRepo",
+      "default": "",
+      "description": "The checkout the idle chores write agents/<agent>/ into and run the publish in (goal/G21.3). Empty: the repo it measures. A suite hands a scratch repo."
     }
   ]
 }

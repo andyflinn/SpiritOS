@@ -172,8 +172,12 @@ async function sender() {
     else test.fail(OWED + 'the fake node received ' + short(node.bodies.slice(0, 3)));
     if (node.bodies.length === 2) test.check('one post per assertion, never grouped');
     else test.fail(OWED + node.bodies.length + ' posts for two assertions');
-    if (/beta holds/.test(printed) && /detail 42/.test(printed) && !recs.some(function (r) { return /detail 42/.test(JSON.stringify(r)); })) {
-      test.check('the detail is printed beside the title and kept out of the record');
+    // Since goal/G21.3 the red's record carries what was printed for it as its failure text, beside the key and never
+    // in it (Andy's box: "deskVerify keeps, beside each failing test's outcome, its failure text"); a green carries none.
+    const beta = recs.filter(function (r) { return r.title === 'beta holds'; })[0] || {};
+    const alpha = recs.filter(function (r) { return r.title === 'alpha holds'; })[0] || {};
+    if (/beta holds/.test(printed) && /detail 42/.test(printed) && beta.title === 'beta holds' && /detail 42/.test(String(beta.failure)) && alpha.failure === undefined) {
+      test.check('the detail is printed beside the title, and a red\'s record carries it as its failure text, the title alone the key');
     } else test.fail(OWED + 'printed ' + short(printed.replace(/[*✅❌]+/g, '').replace(/[\r\n]+/g, ' | ').replace(/ {2,}/g, ' ')) + '; records ' + short(recs));
 
     // GROWN IN THE VERIFY (claude-windows): the quick suite above exits before its own posts land, so only the

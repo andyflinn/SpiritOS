@@ -29,6 +29,9 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
+const appClient = require('../../../js/appClient.js');
+const probabilityStringMatch = require('../../../js/probabilityStringMatch.js').probabilityStringMatch;
+const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -51,8 +54,6 @@ db.exec('CREATE TABLE IF NOT EXISTS results (rowid INTEGER PRIMARY KEY AUTOINCRE
   'CREATE INDEX IF NOT EXISTS results_outcome ON results (outcome);' +
   'CREATE INDEX IF NOT EXISTS results_dirty ON results (dirty);' +
   'CREATE INDEX IF NOT EXISTS results_test ON results (suite, title);');
-const newest = db.prepare('SELECT outcome FROM results WHERE suite = ? AND title = ? ORDER BY rowid DESC LIMIT 1');
-const addRow = db.prepare('INSERT INTO results (suite, title, outcome, "commit", dirty, at) VALUES (?, ?, ?, ?, ?, ?)');
 // EVERY RUN IS VERIFIER HISTORY (goal/G19.3). Andy, 2026-10-12: "and we make sure it doesn't stop working until the
 // queue is worked off.", then "so the runs must be stored verifier history, in verifier.db" (this file, verify.db). A
 // run is a row from the moment it is queued: queued, running, ended, with what it came to. The queue in memory is only
@@ -76,29 +77,71 @@ const runWaiting = db.prepare('UPDATE runs SET state = \'waiting\', startedAt = 
 const runRequeued = db.prepare('UPDATE runs SET state = \'queued\' WHERE rowid = ?');
 const runCommit = db.prepare('UPDATE runs SET "commit" = ? WHERE rowid = ?');
 const runsOpen = db.prepare('SELECT rowid, kind, id, state, "commit" AS commitAt, startedAt FROM runs WHERE state != \'ended\' ORDER BY rowid');
+// THE WHY BESIDE THE RED, AND THE LINE BESIDE THE RUN (goal/G21.3). Andy's box: "deskVerify keeps, beside each failing
+// test's outcome, its failure text (capped), so the why is in the record", and a run is searched with "its outcome and
+// the line it posted". Added to a verify.db that predates them, guarded, as the commit column was; '' where none.
+if (!db.prepare('PRAGMA table_info(results)').all().some(function (c) { return c.name === 'failure'; })) {
+  db.exec('ALTER TABLE results ADD COLUMN failure TEXT NOT NULL DEFAULT \'\'');
+}
+if (!db.prepare('PRAGMA table_info(runs)').all().some(function (c) { return c.name === 'line'; })) {
+  db.exec('ALTER TABLE runs ADD COLUMN line TEXT NOT NULL DEFAULT \'\'');
+}
+const runLine = db.prepare('UPDATE runs SET line = ? WHERE rowid = ?');
+const runCommitAt = db.prepare('UPDATE runs SET "commit" = ? WHERE rowid = ? AND "commit" = \'\'');
 
 // THE TREE IT MEASURED. Read once per call and cached for a moment: a run posts thousands of records and the commit
-// does not move inside one. The repo is the checkout holding this file, which is the clone deskVerify runs in.
-const REPO = (function () {
+// does not move inside one. The repo is the checkout holding this file, which is the clone deskVerify runs in; the
+// `repo` argument names another (goal/G21.3), so a suite measures a scratch repo and never a real checkout.
+const REPO = values.repo ? path.resolve(String(values.repo)) : (function () {
   for (let d = __dirname; ; d = path.dirname(d)) {
     if (fs.existsSync(path.join(d, '.git'))) return d;
     if (path.dirname(d) === d) return '';
   }
 }());
-let seen = { at: 0, commit: '', dirty: '' };
-function tree() {
-  const now = Date.now();
-  if (now - seen.at < 2000) return seen;
-  const git = function (args) { const r = spawnSync('git', args, { cwd: REPO, encoding: 'utf8' }); return r.status === 0 ? String(r.stdout || '').trim() : ''; };
-  // The dirty tree is the modified files against the commit, sorted, and empty exactly when the tree is clean
-  // (goal/G8.1's box), so a result measured on a dirty tree is never taken for one measured at a commit.
-  const porcelain = git(['status', '--porcelain']);
-  const dirty = porcelain ? porcelain.split('\n').map(function (l) { return l.slice(3).trim(); }).filter(Boolean).sort().join(' ') : '';
-  // `short` for what a person reads: the result line on an item names the commit it
-  // checked (goal/G16.13), and the full hash is not what he compares against a log.
-  seen = { at: now, commit: git(['rev-parse', 'HEAD']), short: git(['rev-parse', '--short', 'HEAD']), dirty: dirty };
-  return seen;
+// ── GIT NEVER FREEZES IT (goal/G21.3) ────────────────────────────────────
+//
+//   Andy's box: "deskVerify answers at once even mid-run: the git work that blocks it now (pull, ancestry checks —
+//   spawnSync) no longer freezes it."
+//
+// Every git call and the pull are spawned and awaited, so `now` and `stop` are answered while they run. Do not put a
+// spawnSync back on any path a run takes: the tab then shows a verifier that does not answer.
+function sh(cmd, args, opts) {
+  return new Promise(function (resolve) {
+    const out = [];
+    const err = [];
+    let kid = null;
+    try {
+      kid = args ? spawn(cmd, args, Object.assign({ cwd: REPO, windowsHide: true }, opts || {}))
+        : spawn(cmd, Object.assign({ cwd: REPO, shell: true, windowsHide: true }, opts || {}));
+    } catch (e) { resolve({ status: 1, stdout: '', stderr: String((e && e.message) || e) }); return; }
+    if (kid.stdout) kid.stdout.on('data', function (d) { out.push(String(d)); });
+    if (kid.stderr) kid.stderr.on('data', function (d) { err.push(String(d)); });
+    kid.on('error', function (e) { resolve({ status: 1, stdout: out.join(''), stderr: String((e && e.message) || e) }); });
+    kid.on('close', function (code) { resolve({ status: code, stdout: out.join(''), stderr: err.join('') }); });
+  });
 }
+function gitOut(args) { return sh('git', args).then(function (r) { return r.status === 0 ? String(r.stdout || '').trim() : ''; }); }
+let seen = { at: 0, commit: '', short: '', dirty: '' };
+let treeReading = null;
+function tree() {
+  if (Date.now() - seen.at < 2000) return Promise.resolve(seen);
+  // One read at a time: the records of a run arrive by the hundred, and each would otherwise start its own git.
+  if (treeReading) return treeReading;
+  treeReading = (async function () {
+    // The dirty tree is the modified files against the commit, sorted, and empty exactly when the tree is clean
+    // (goal/G8.1's box), so a result measured on a dirty tree is never taken for one measured at a commit.
+    const porcelain = await gitOut(['status', '--porcelain']);
+    const dirty = porcelain ? porcelain.split('\n').map(function (l) { return l.slice(3).trim(); }).filter(Boolean).sort().join(' ') : '';
+    // `short` for what a person reads: the result line on an item names the commit it
+    // checked (goal/G16.13), and the full hash is not what he compares against a log.
+    const commit = await gitOut(['rev-parse', 'HEAD']);
+    const short = await gitOut(['rev-parse', '--short', 'HEAD']);
+    seen = { at: Date.now(), commit: commit, short: short, dirty: dirty };
+    return seen;
+  }()).finally(function () { treeReading = null; });
+  return treeReading;
+}
+function forgetTree() { seen = { at: 0, commit: '', short: '', dirty: '' }; }
 
 // ── THE PULL, AND IT GOES FIRST (goal/G16.13) ────────────────────────────
 //
@@ -116,17 +159,20 @@ function tree() {
 // rather than a silent measurement of something else (wsl-claude's point, 2026-10-11,
 // recorded in this item's box).
 const PULL = String(values.pull === undefined ? 'git pull --ff-only' : values.pull).trim();
-function pullFirst() {
+async function pullFirst() {
   // READ NOW, NOT FROM THE CACHE (goal/G19.2): a run that starts within two seconds of the last one was judged on that
   // run's tree, so a file left uncommitted in between read as clean and was pulled over - and the undo trusts this word.
-  seen = { at: 0, commit: '', short: '', dirty: '' };
-  const before = tree();
+  if (treeReading) await treeReading.catch(function () {});
+  forgetTree();
+  const before = await tree();
   if (before.dirty) return 'dirty, not pulled';
   if (!PULL) return 'no pull command set';
-  const r = spawnSync(PULL, { cwd: REPO, shell: true, encoding: 'utf8' });
+  // Spawned and awaited (goal/G21.3): a pull that waits on the network no longer freezes now and stop.
+  const r = await sh(PULL, null);
   // HEAD may have moved, so the commit this check reports is read again rather than
-  // taken from the cache the pull just invalidated.
-  seen = { at: 0, commit: '', short: '', dirty: '' };
+  // taken from the cache the pull just invalidated (and a read begun during the pull is not trusted either).
+  if (treeReading) await treeReading.catch(function () {});
+  forgetTree();
   return r.status === 0 ? 'pulled' : 'pull failed: ' + String(r.stderr || r.stdout || '').trim().split('\n')[0];
 }
 
@@ -159,6 +205,10 @@ function mode() {
 // a hung suite prints no FAILURE line, so without this it read as all green and brought the Done button. Andy's gate
 // has two guards and this is the second. The manifest's `suiteMs` names it; a suite hands a short one.
 const SUITE_MS = Number(values.suiteMs) > 0 ? Number(values.suiteMs) : 600000;
+// THE IDLE HOUR (goal/G8.4, brought back by goal/G21.3; the rule is below, at idleOnce). Declared here because every
+// published object carries it.
+const IDLE_MS = Number(values.idleMs) > 0 ? Number(values.idleMs) : 60 * 60 * 1000;
+let idleState = { idle: false, since: '', holding: [], chores: '' };
 // WHAT IT IS DOING, FOR THE VERIFIER TAB (goal/G8.11). Andy, 2026-10-09: "shouldn't i have, if the desk verifier is
 // mounted and running, a verifier tab in desk, right after [musings], that allows me to monitor a) status and progress
 // of the running verifier, and if/when necessary, allow intervention?" Nothing outside this server could see the run,
@@ -226,26 +276,59 @@ const testsSeen = db.prepare('SELECT COUNT(DISTINCT title) AS n FROM results WHE
 function expectedOf(rel) {
   try { return Number((testsSeen.get(path.basename(String(rel))) || {}).n) || 0; } catch (e) { return 0; }
 }
+//   stopAsked a Stop was taken and the run has not ended yet (goal/G21.3), so the tab says "stop asked"
+//   idleMs    idle: the hour the countdown counts to, this server's own (goal/G21.3), so the tab never guesses it
+//   holding   idle: the items its agent holds a phase on, which keep the node busy however long the quiet
+//   chores    idle: what the idle chores did, one line, '' until they have run
 let lastWriteAt = '';
+let lastSaid = null;
 function say(o) {
   const one = {
     doing: String(o.doing || 'idle'), id: String(o.id || ''), suite: String(o.suite || ''),
     index: Number(o.index) || 0, of: Number(o.of) || 0, tests: Number(o.tests) || 0,
     expected: Number(o.expected) || 0, line: String(o.line || ''), since: String(o.since || ''),
+    stopAsked: stopped === true,
+    idleMs: IDLE_MS, holding: idleState.holding.slice(), chores: String(idleState.chores || ''),
   };
+  lastSaid = one;
   appServer.publish(one);
 }
 function sayIdle(line) {
-  say({ doing: 'idle', line: line || 'idle, nothing running', since: lastWriteAt || new Date().toISOString() });
+  say({ doing: 'idle', line: line || (idleState.chores ? 'idle; ' + idleState.chores : 'idle, nothing running'),
+    since: idleState.since || lastWriteAt || new Date().toISOString() });
 }
+// The newest object said again with the stop marked, so the tab shows "stop asked" at once and not at the next suite.
+function sayAgain() { if (lastSaid) say(Object.assign({}, lastSaid)); }
 
-// HIS INTERVENTION (goal/G8.11): the suite running now is ended, and the claim it belonged to is rejected saying so.
-// A stopped run is never a pass - the same rule as the time limit, for the same reason: nothing was measured.
+// ── A STOP IS KEPT FOR THE WHOLE RUN (goal/G21.3) ────────────────────────
+//
+//   Andy's box: "A Stop is kept for the whole run, whenever it is pressed (a suite running, pulling, between suites,
+//   waiting for a commit), and deskVerify checks it before each suite; the tab shows "stop asked" until the run ends."
+//
+// It was taken only while a suite process ran, so a Stop pressed during the pull or between two suites answered
+// stopped: false and the run went on. Now: while a run is on (`checking`), the Stop is kept in `stopped` until that run
+// ends - drainQueue clears it after each run, never at a run's start - and every run checks it before each suite; the
+// suite running now, if any, is ended at once. With no run on, the claims waiting for their commit are the run: each is
+// ended, with one line saying so. Nothing at all to stop answers stopped: false.
+// HIS INTERVENTION (goal/G8.11): the claim it belonged to is rejected saying so. A stopped run is never a pass - the
+// same rule as the time limit, for the same reason: nothing was measured.
 function stopRun() {
-  if (!runningKid) return { stopped: false };
-  stopped = true;
-  killTree(runningKid);
-  return { stopped: true };
+  if (checking) {
+    stopped = true;
+    if (runningKid) killTree(runningKid);
+    sayAgain();
+    return { stopped: true };
+  }
+  if (waitingFor.length) {
+    const jobs = waitingFor.splice(0);
+    jobs.forEach(function (job) {
+      const text = 'deskVerify: stopped by hand from the verifier tab while waiting for ' + shortOf(job.commit) + '; nothing was checked. Claim again to have it checked.';
+      if (job.row) { runEnded.run('stopped by hand', new Date().toISOString(), job.row); runLine.run(text, job.row); }
+      desk('chat.add', { id: job.id, text: text });
+    });
+    return { stopped: true };
+  }
+  return { stopped: false };
 }
 
 // THE VERBS ONLY SUITES CALLED WENT UNDER goal/G19.11: mode, suites, loop.once, idle, chore.once, goal.check,
@@ -279,7 +362,8 @@ function suitesOf(id) {
 // The tab reads `running` while this runs, so it is cleared however the check ends (goal/G8.11).
 function claimCheck(id) {
   // The tab reads the run from what this publishes, so the end of a check says idle however it ended (goal/G8.12).
-  const idle = function () { running = { id: '', suite: '', since: '' }; stopped = false; sayIdle(); };
+  // The stop is not cleared here: drainQueue clears it once the whole run has ended (goal/G21.3).
+  const idle = function () { running = { id: '', suite: '', since: '' }; sayIdle(); };
   // AND A CHECK THAT BREAKS STILL SAYS SO (goal/G16.13, found by claude-windows: "your
   // verifier now shows nothing running and the item still says waiting, with no result
   // line, so the run that ended or was stopped wrote nothing"). The line is the whole
@@ -290,6 +374,7 @@ function claimCheck(id) {
     const port = Number(spirit.core.node.const.SPIRIT_PORT);
     const text = 'deskVerify: the check of ' + String(id) + ' broke before it finished: ' + ((e && e.message) || e)
       + '. Nothing was measured, so this is not a pass.';
+    noteLine(text);
     return spirit.core.ask('jobs.api', { ask: { desk: { 'chat.add': { id: String(id), text: text } } } },
       'http://127.0.0.1:' + port).catch(function () { /* said on stderr below */ })
       .then(function () { throw e; });
@@ -306,24 +391,30 @@ function commitsLacking(id, port) {
       const m = /^commit ([0-9a-f]{7,40})\b/.exec(String(l && l.text || ''));
       if (m && hashes.indexOf(m[1]) === -1) hashes.push(m[1]);
     });
-    return hashes.filter(function (h) {
-      return spawnSync('git', ['merge-base', '--is-ancestor', h, 'HEAD'], { cwd: REPO, encoding: 'utf8' }).status !== 0;
-    });
+    // Awaited one by one, never spawnSync (goal/G21.3): the ancestry check no longer freezes now and stop.
+    return (async function () {
+      const lacking = [];
+      for (const h of hashes) if (!(await holds(h))) lacking.push(h);
+      return lacking;
+    }());
   }, function () { return []; });
 }
+// THE LINE A RUN POSTED, kept on its row (goal/G21.3), so a search over runs answers what it said.
+function noteLine(text) { if (runningJob && runningJob.row) runLine.run(String(text), runningJob.row); }
 async function claimCheckRun(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  stopped = false;
   running = { id: String(id), suite: '', since: new Date().toISOString() };
+  say({ doing: 'item', id: id, line: 'pulling before checking ' + id, since: running.since });
   // FIRST, BEFORE ANYTHING IS ASKED OR RUN (goal/G16.13): the tree this check will
   // measure is brought up to date, or said to be dirty, before the item's own facts
   // are read — so the suites that run are the suites the item now lists.
-  const pulled = pullFirst();
+  const pulled = await pullFirst();
   // ONE LINE ON THE ITEM, WHATEVER HAPPENS (goal/G16.13). Andy, 2026-10-11: "How do i
   // FUCKING know the result of verifier? it said it ran 16.5, but i don't see where the
   // result is, or if 16.5 passed." Called directly it answered only its caller and
   // wrote nothing, so a verdict existed and he could not see it. Said once per check.
   const report = function (text) {
+    noteLine(text);
     return spirit.core.ask('jobs.api', { ask: { desk: { 'chat.add': { id: String(id), text: text } } } },
       'http://127.0.0.1:' + port).catch(function () { /* the verdict below still stands */ });
   };
@@ -334,7 +425,7 @@ async function claimCheckRun(id) {
   // measured, so it is neither a pass nor a reject, and the line says which commit it waits for.
   const lacking = await commitsLacking(id, port);
   if (lacking.length) {
-    const at0 = tree();
+    const at0 = await tree();
     await report('deskVerify: not checked, at ' + (at0.short || at0.commit || 'an unknown commit') + ' (' + pulled + '): the tree lacks the item\'s commit '
       + lacking.map(function (h) { return h.slice(0, 8); }).join(', ') + '. Nothing was measured, so this is not a pass.');
     return { rejected: false, unchecked: true, lacking: lacking };
@@ -346,8 +437,12 @@ async function claimCheckRun(id) {
     // no reds, and no reds asked verify.pass - so it took the Done button without one assertion having run. A list with
     // nothing on it, and a listed file that is gone, are both rejections now, and the missing file is named.
     if (!list.length) reds.push({ suite: '(no test file on the item\'s list)', failures: ['nothing to run, so nothing passed'] });
+    let byHand = false;
     for (const rel of list) {
       const file = path.join(REPO, rel);
+      // THE STOP IS CHECKED BEFORE EACH SUITE (goal/G21.3): one pressed during the pull or between suites ends the
+      // check here, before the next suite starts.
+      if (stopped) { byHand = true; reds.push({ suite: rel, failures: ['stopped by hand from the verifier tab before it ran, so nothing was measured'] }); break; }
       if (leavesTests(rel)) { reds.push({ suite: rel, failures: ['the path leaves spirit/test, so it was not run'] }); continue; }
       if (!fs.existsSync(file)) { reds.push({ suite: rel, failures: ['the listed test file is missing from this checkout'] }); continue; }
       running = { id: String(id), suite: rel, since: new Date().toISOString() };
@@ -363,7 +458,7 @@ async function claimCheckRun(id) {
       const run = await runSuite(file, port, told);
       const said = run.said;
       // STOPPED BY HAND (goal/G8.11): the rest of the list is not run either - he stopped the check, not one suite.
-      if (run.stopped) { reds.push({ suite: rel, failures: ['stopped by hand from the verifier tab, so nothing was measured'] }); break; }
+      if (run.stopped) { byHand = true; reds.push({ suite: rel, failures: ['stopped by hand from the verifier tab, so nothing was measured'] }); break; }
       // Stopped at the time limit: red, whatever it printed. Its own lines still come, so a suite that failed and then
       // hung names both.
       if (run.timedOut) reds.push({ suite: rel, failures: ['stopped at the time limit of ' + SUITE_MS + 'ms, so it counts as red'] });
@@ -378,7 +473,7 @@ async function claimCheckRun(id) {
     // A RED HERE TAKES BACK THE DONE OF EVERY SETTLED ITEM LISTING THE SUITE (goal/G19.2), as a goal run's does; the
     // item checked now is open, so it is never among them.
     const undo = await regress(failed, pulled, 'item check');
-    const at = tree();
+    const at = await tree();
     const where = 'at ' + (at.short || at.commit || 'an unknown commit') + ' (' + pulled + ')' + regressSaid(undo);
     if (!reds.length) {
       // ALL GREEN IS ITS WORD TOO (goal/G8.3, found by claude-windows verifying b93a54d1): Andy, "only deskVerify brings
@@ -392,8 +487,8 @@ async function claimCheckRun(id) {
     // something failed.
     await report('deskVerify: rejected, ' + where + '. Red: ' + why);
     return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.reject': { id: String(id), why: why } } } }, 'http://127.0.0.1:' + port)
-      .then(function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; },
-        function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; });
+      .then(function () { return { rejected: true, stopped: byHand, reds: reds.map(function (x) { return x.suite; }) }; },
+        function () { return { rejected: true, stopped: byHand, reds: reds.map(function (x) { return x.suite; }) }; });
   });
 }
 
@@ -493,8 +588,9 @@ const WAIT_MS = Number(values.waitMs) > 0 ? Number(values.waitMs) : 60000;
 const GIVE_UP_MS = Number(values.waitGiveUpMs) > 0 ? Number(values.waitGiveUpMs) : 60 * 60 * 1000;
 function holds(commit) {
   // Only a hash is handed to git: the desk refuses anything else at the claim, and this never trusts that alone.
-  if (!/^[0-9a-f]{7,40}$/.test(String(commit))) return false;
-  return spawnSync('git', ['merge-base', '--is-ancestor', String(commit), 'HEAD'], { cwd: REPO, encoding: 'utf8' }).status === 0;
+  if (!/^[0-9a-f]{7,40}$/.test(String(commit))) return Promise.resolve(false);
+  // Awaited, never spawnSync (goal/G21.3).
+  return sh('git', ['merge-base', '--is-ancestor', String(commit), 'HEAD']).then(function (r) { return r.status === 0; });
 }
 function shortOf(commit) { return String(commit || '').slice(0, 8); }
 async function startWaiting(job, pulled) {
@@ -503,9 +599,11 @@ async function startWaiting(job, pulled) {
   waitingFor.push(job);
   if (job.said) return;
   job.said = true;
-  const t = tree();
-  await desk('chat.add', { id: job.id, text: 'deskVerify: not checked, waiting for ' + shortOf(job.commit) + ': the tree, at ' +
-    (t.short || t.commit || 'an unknown commit') + ' (' + pulled + '), does not hold the commit the ' + (job.kind === 'red' ? 'red ' : '') + 'claim was made at. Nothing was measured, so this is neither a pass nor a reject; it is checked once the commit arrives.' });
+  const t = await tree();
+  const text = 'deskVerify: not checked, waiting for ' + shortOf(job.commit) + ': the tree, at ' +
+    (t.short || t.commit || 'an unknown commit') + ' (' + pulled + '), does not hold the commit the ' + (job.kind === 'red' ? 'red ' : '') + 'claim was made at. Nothing was measured, so this is neither a pass nor a reject; it is checked once the commit arrives.';
+  if (job.row) runLine.run(text, job.row);
+  await desk('chat.add', { id: job.id, text: text });
 }
 let waitTicking = false;
 async function waitOnce() {
@@ -514,17 +612,22 @@ async function waitOnce() {
   try {
     const m = await mode();
     if (m.mode !== 'desk' || checking) return;
-    pullFirst();
+    await pullFirst();
+    // Read after the pull: a Stop pressed while it ran has ended the waiting runs, and they are not taken up again.
     for (const job of waitingFor.slice()) {
-      if (holds(job.commit)) {
+      if (waitingFor.indexOf(job) === -1) continue;
+      if (await holds(job.commit)) {
+        if (waitingFor.indexOf(job) === -1) continue;
         waitingFor.splice(waitingFor.indexOf(job), 1);
         if (job.row) runRequeued.run(job.row);
         watchQueue.push(job);
       } else if (Date.now() - job.since >= GIVE_UP_MS) {
+        if (waitingFor.indexOf(job) === -1) continue;
         waitingFor.splice(waitingFor.indexOf(job), 1);
-        if (job.row) runEnded.run('gave up waiting', new Date().toISOString(), job.row);
-        await desk('chat.add', { id: job.id, text: 'deskVerify: gave up waiting for ' + shortOf(job.commit) + ': the tree still lacks it after ' +
-          Math.round((Date.now() - job.since) / 60000) + ' minutes, so nothing was checked. Push it and claim again.' });
+        const text = 'deskVerify: gave up waiting for ' + shortOf(job.commit) + ': the tree still lacks it after ' +
+          Math.round((Date.now() - job.since) / 60000) + ' minutes, so nothing was checked. Push it and claim again.';
+        if (job.row) { runEnded.run('gave up waiting', new Date().toISOString(), job.row); runLine.run(text, job.row); }
+        await desk('chat.add', { id: job.id, text: text });
       }
     }
   } finally { waitTicking = false; }
@@ -542,7 +645,6 @@ async function waitOnce() {
 // expected here, so it presses neither verify.pass nor verify.reject, and it never runs the undo (verify.regress).
 async function redCheck(id, commit) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  stopped = false;
   running = { id: String(id), suite: '', since: new Date().toISOString() };
   try {
     const list = await suitesOf(id);
@@ -552,6 +654,8 @@ async function redCheck(id, commit) {
     if (!list.length) unrun.push('the item lists no test file');
     for (const rel of list) {
       const file = path.join(REPO, rel);
+      // The stop is checked before each suite (goal/G21.3).
+      if (stopped) { unrun.push(rel + ' was not run: stopped by hand'); break; }
       if (leavesTests(rel)) { unrun.push(rel + ' leaves spirit/test, so it was not run'); continue; }
       if (!fs.existsSync(file)) { unrun.push(rel + ' is missing from this checkout'); continue; }
       running = { id: String(id), suite: rel, since: new Date().toISOString() };
@@ -569,52 +673,75 @@ async function redCheck(id, commit) {
       else if (run.timedOut) unrun.push(rel + ' was stopped at the time limit of ' + SUITE_MS + 'ms, printing no red');
       else greens.push(rel);
     }
-    const t = tree();
+    const t = await tree();
     const at = shortOf(commit) || t.short || t.commit || 'an unknown commit';
     const confirmed = reds.length > 0 && !greens.length && !unrun.length;
     const text = confirmed
       ? 'deskVerify: red confirmed at ' + at + ': ' + reds.join(', ')
       : 'deskVerify: red not confirmed at ' + at + ': ' + greens.map(function (g) { return g + ' is already green'; }).concat(unrun).join('; ');
+    noteLine(text);
     await desk('chat.add', { id: String(id), text: text });
     return { red: true, confirmed: confirmed };
   } finally {
     running = { id: '', suite: '', since: '' };
-    stopped = false;
     sayIdle();
   }
 }
 
 async function drainQueue() {
-  if (checking) return;
+  // NOT WHILE THE IDLE CHORES RUN (goal/G21.3): publishData runs the harness, and two runs on one host fight over the
+  // lab ports (goal/G8.9). The chores drain the queue themselves when they end.
+  if (checking || choring) return;
   checking = true;
   try {
     while (watchQueue.length) {
       const job = watchQueue.shift();
-      // A JOB THAT NAMES A COMMIT WAITS FOR IT (goal/G19.13): pulled first, and not run until the tree holds it.
-      if (job.commit) {
-        const pulled = pullFirst();
-        if (!holds(job.commit)) { await startWaiting(job, pulled); continue; }
-      }
-      if (job.row) runStarted.run(new Date().toISOString(), job.row);
+      // ON FROM HERE, SO A STOP DURING ITS PULL IS ITS STOP (goal/G21.3).
       runningJob = job;
       let outcome = 'ended';
       try {
+        // A JOB THAT NAMES A COMMIT WAITS FOR IT (goal/G19.13): pulled first, and not run until the tree holds it.
+        if (job.commit) {
+          running = { id: String(job.id), suite: '', since: new Date().toISOString() };
+          say({ doing: 'item', id: job.id, line: 'pulling, to see whether the tree holds ' + shortOf(job.commit), since: running.since });
+          const pulled = await pullFirst();
+          running = { id: '', suite: '', since: '' };
+          if (stopped) {
+            const text = 'deskVerify: stopped by hand from the verifier tab while pulling for ' + shortOf(job.commit) + '; nothing was checked. Claim again to have it checked.';
+            noteLine(text);
+            await desk('chat.add', { id: job.id, text: text });
+            if (job.row) runEnded.run('stopped by hand', new Date().toISOString(), job.row);
+            continue;
+          }
+          if (!(await holds(job.commit))) { runningJob = null; await startWaiting(job, pulled); continue; }
+        }
+        if (job.row) runStarted.run(new Date().toISOString(), job.row);
         let r = null;
         if (job.kind === 'goal') r = await goalRun(job.id);
         else if (job.kind === 'full') r = await fullRun(job.id);
         else if (job.kind === 'red') r = await redCheck(job.id, job.commit);
         else r = await claimCheck(job.id);
-        if (r && r.red) outcome = r.confirmed ? 'red confirmed' : 'red not confirmed';
+        if (r && r.stopped) outcome = 'stopped by hand';
+        else if (r && r.red) outcome = r.confirmed ? 'red confirmed' : 'red not confirmed';
         else if (r && r.unchecked) outcome = 'not checked';
         else if (r && typeof r.rejected === 'boolean') outcome = r.rejected ? 'rejected' : 'passed';
       } catch (e) {
         /* the desk is the record; a failed check is asked again by its next word */
         outcome = 'broke: ' + String((e && e.message) || e).slice(0, 200);
+      } finally {
+        // THE STOP ENDS WITH ITS RUN (goal/G21.3): kept from the press to here, and never carried into the next run.
+        runningJob = null;
+        stopped = false;
       }
-      runningJob = null;
-      if (job.row) runEnded.run(outcome, new Date().toISOString(), job.row);
+      // Reached only by a run that ran (a wait or a stop while pulling continued above, its row already said). The
+      // commit it measured at is kept for a run that named none, so a search over runs answers it.
+      if (job.row) {
+        const t = await tree();
+        runCommitAt.run(String(t.commit || ''), job.row);
+        runEnded.run(outcome, new Date().toISOString(), job.row);
+      }
     }
-  } finally { checking = false; runningJob = null; }
+  } finally { checking = false; runningJob = null; stopped = false; }
 }
 async function watchOnce() {
   // One read at a time: a tick that arrives while the last is still reading does nothing.
@@ -692,19 +819,20 @@ function suiteFiles() {
   }).sort();
 }
 // A LIST OF SUITES, ONE AT A TIME (goal/G14.3): what the goal run and his full run share. `doing` is what the tab
-// shows, 'goal' or 'full'. The stop flag is cleared before the first suite and after the last, so a Stop ends this
-// run and never the next one - it was cleared only by an item check, and a full run stopped by hand left the next
-// full run stopped at its first suite.
+// shows, 'goal' or 'full'. A Stop ends this run and never the next one: since goal/G21.3 drainQueue clears the flag
+// when the run has ended, and it is not cleared here at the start, where it lost a Stop pressed during the pull.
 async function runList(doing, goalId, list) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   const reds = [];
   // The suites that printed a red, apart from the missing and the stopped ones: what the undo reads (goal/G19.2).
   const failed = [];
-  stopped = false;
+  let byHand = false;
   for (const where of list) {
     const index = list.indexOf(where) + 1;
     const expected = expectedOf(where);
     const file = path.join(REPO, where);
+    // The stop is checked before each suite (goal/G21.3).
+    if (stopped) { byHand = true; reds.push(where + ': not run, stopped by hand'); break; }
     if (leavesTests(where)) { reds.push(where + ': the path leaves spirit/test, so it was not run'); continue; }
     if (!fs.existsSync(file)) { reds.push(where + ': missing from this checkout'); continue; }
     running = { id: '', suite: where, since: new Date().toISOString() };
@@ -717,18 +845,17 @@ async function runList(doing, goalId, list) {
     };
     told(0);
     const run = await runSuite(file, port, told);
-    if (run.stopped) { reds.push(where + ': stopped by hand'); break; }
+    if (run.stopped) { byHand = true; reds.push(where + ': stopped by hand'); break; }
     if (run.timedOut) reds.push(where + ': stopped at the time limit of ' + SUITE_MS + 'ms');
     else if (/FAILURE #/.test(run.said)) { reds.push(where); failed.push(where); }
   }
   running = { id: '', suite: '', since: '' };
-  stopped = false;
   // THE REPORT IS ONE LINE (goal/G8.7, Andy: "both"): what went red, in the goal's own chat, where he reads it. Since
   // goal/G19.2 the caller writes it, after the undo below, so the one line also says what the red took back.
   const text = reds.length
     ? doing + ' run on ' + list.length + ' suites: red in ' + reds.join(', ')
     : doing + ' run on ' + list.length + ' suites: all green';
-  return { ran: list, reds: reds, failed: failed, text: text };
+  return { ran: list, reds: reds, failed: failed, text: text, stopped: byHand };
 }
 
 // ── A RED TAKES A DONE BACK (goal/G19.2) ─────────────────────────────────
@@ -769,7 +896,7 @@ async function regress(failed, pulled, doing) {
       if (at.suites.indexOf(suite) === -1) at.suites.push(suite);
     });
   }
-  const t = tree();
+  const t = await tree();
   const where = 'at ' + (t.short || t.commit || 'an unknown commit') + ' (' + pulled + ')';
   const goals = Object.create(null);
   for (const id of Object.keys(byId).sort()) {
@@ -829,12 +956,15 @@ async function goalSuites(goalId) {
 // otherwise the line on the goal names what was, and says the goal is not passed. The tree is pulled first, as an
 // item's check pulls it (goal/G16.13), so the undo below knows whether the red was measured on a clean, pulled tree.
 async function goalRun(goalId) {
-  const pulled = pullFirst();
+  say({ doing: 'goal', id: goalId, line: 'pulling before the goal run of ' + goalId, since: new Date().toISOString() });
+  const pulled = await pullFirst();
   const r = await runList('goal', goalId, await goalSuites(goalId));
   const undo = await regress(r.failed, pulled, 'goal');
-  const t = tree();
+  const t = await tree();
   const where = ' (at ' + (t.short || t.commit || 'an unknown commit') + ', ' + pulled + ')';
-  await desk('chat.add', { id: String(goalId), text: r.text + where + (r.reds.length ? ', so the goal is not passed' : '') + regressSaid(undo) });
+  const text = r.text + where + (r.reds.length ? ', so the goal is not passed' : '') + regressSaid(undo);
+  noteLine(text);
+  await desk('chat.add', { id: String(goalId), text: text });
   if (!r.reds.length) await desk('verify.pass', { id: String(goalId) });
   sayIdle();
   return Object.assign(r, { rejected: r.reds.length > 0 });
@@ -846,11 +976,14 @@ async function goalRun(goalId) {
 async function fullRun(goalId) {
   const rel = function (f) { return path.relative(REPO, path.join(SUITES_DIR, f)).split(path.sep).join('/'); };
   // Pulled first, and a red here takes a Done back like any run's (goal/G19.2); it still passes nothing.
-  const pulled = pullFirst();
+  say({ doing: 'full', id: goalId, line: 'pulling before the full run', since: new Date().toISOString() });
+  const pulled = await pullFirst();
   const r = await runList('full', goalId, suiteFiles().map(rel));
   const undo = await regress(r.failed, pulled, 'full');
-  const t = tree();
-  await desk('chat.add', { id: String(goalId), text: r.text + ' (at ' + (t.short || t.commit || 'an unknown commit') + ', ' + pulled + ')' + regressSaid(undo) });
+  const t = await tree();
+  const text = r.text + ' (at ' + (t.short || t.commit || 'an unknown commit') + ', ' + pulled + ')' + regressSaid(undo);
+  noteLine(text);
+  await desk('chat.add', { id: String(goalId), text: text });
   sayIdle();
   return r;
 }
@@ -863,14 +996,299 @@ function desk(verb, args) {
     .then(function (r) { return r && r.status === 200 && r.body ? r.body : {}; }, function () { return {}; });
 }
 
+// ── THE WHY, KEPT AND CAPPED (goal/G21.3) ────────────────────────────────
+//
+//   Andy's box: "deskVerify keeps, beside each failing test's outcome, its failure text (capped), so the why is in the
+//   record."
+//
+// The failure text is what the suite printed for the red: its title and the detail after it (testSupport.fail sends
+// it with the record). Capped HERE, the one gate, in bytes ("bytes copied, bytes counted", 2026-10-10), cut on a
+// character boundary. A green keeps none. A red that stays red writes no new row, as goal/G8.1 rules, but its newest
+// row takes the newest why: the record answers why it is red now, not why it went red first.
+const FAILURE_MAX = 1024;
+function capBytes(text, max) {
+  const s = String(text || '');
+  if (Buffer.byteLength(s, 'utf8') <= max) return s;
+  let out = Buffer.from(s, 'utf8').subarray(0, max).toString('utf8');
+  // A character cut in half decodes as U+FFFD: drop it, so what is kept is only what was sent.
+  while (out.length && out.charCodeAt(out.length - 1) === 0xFFFD) out = out.slice(0, -1);
+  return out;
+}
+const newestRow = db.prepare('SELECT rowid, outcome, failure FROM results WHERE suite = ? AND title = ? ORDER BY rowid DESC LIMIT 1');
+const setFailure = db.prepare('UPDATE results SET failure = ? WHERE rowid = ?');
+const addRowWhy = db.prepare('INSERT INTO results (suite, title, outcome, "commit", dirty, at, failure) VALUES (?, ?, ?, ?, ?, ?, ?)');
 // A ROW IS WRITTEN for a test's first record or a change of outcome, and nothing else.
-function keep(suite, title, outcome) {
-  const last = newest.get(suite, title);
-  if (last && last.outcome === outcome) return { written: false };
-  const t = tree();
-  addRow.run(suite, title, outcome, t.commit, t.dirty, new Date().toISOString());
+async function keep(suite, title, outcome, failure) {
+  const why = outcome === 'red' ? capBytes(failure, FAILURE_MAX) : '';
+  // The tree first, then the read and the write with no wait between them, so a record sent twice at once (verifyPost
+  // resends what had not come back) still writes one row.
+  const t = await tree();
+  const last = newestRow.get(suite, title);
+  if (last && last.outcome === outcome) {
+    if (outcome === 'red' && why && why !== last.failure) setFailure.run(why, last.rowid);
+    return { written: false };
+  }
+  addRowWhy.run(suite, title, outcome, t.commit, t.dirty, new Date().toISOString(), why);
   return { written: true };
 }
+
+// ── THE DESK, WHEREVER THIS NODE READS IT (goal/G21.3) ───────────────────
+// On his node the desk is a server of this node; on an agent's node the desk is his, reached through the agent's
+// deskClient (which answers the desk's own body), and the node's own desk server is not his desk.
+function deskVia(m, verb, args) {
+  if (m && m.mode === 'agent') {
+    const port = Number(spirit.core.node.const.SPIRIT_PORT);
+    return spirit.core.ask('jobs.api', { ask: { deskClient: { desk: { verb: verb, json: JSON.stringify(args || {}) } } } }, 'http://127.0.0.1:' + port)
+      .then(function (r) { return r && r.status === 200 && r.body && r.body.ok !== false ? r.body : {}; }, function () { return {}; });
+  }
+  return desk(verb, args);
+}
+
+// ── ONE SEARCH VERB, OVER TESTS AND RUNS (goal/G21.3) ────────────────────
+//
+//   Andy's box: "deskVerify answers one search verb, bucket-bounded with the partial flag, over: tests and suites (the
+//   official latest state of a single test, or every test in a suite: outcome, commit, time, failure text; filters:
+//   suite, test words, outcome, commit, item, since) and runs (each check it made, item or full run: commit, queued,
+//   started, ended, its outcome and the line it posted; filters: item, commit, kind, since). The same verb runs on
+//   every node's deskVerify; agents may call it (give it a verb description file so it's an agent tool), nothing is
+//   written through it."
+//
+// A list is a search (Andy's rule): newest first, each matching row offered to one probability bucket, the test words
+// grading the title (a title they do not touch is left out), the other filters exact. Past SEARCH_SCANNED matching
+// rows, or past one answer's room, `more` says the answer is partial. It reads verify.db and, for `item`, the item's
+// file list; it writes nothing. A filter that does not belong to `over` is ignored, as the verb file says.
+const SEARCH_ROOM = appClient.ANSWER_MAX - 512;
+const SEARCH_SCANNED = 1000;
+const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since'];
+function searchBytes(key, label) { return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(label) }], more: false }), 'utf8'); }
+function searchBucket(walk) {
+  const bucket = createProbabilityBucket(SEARCH_SCANNED);
+  let more = false;
+  let scanned = 0;
+  for (const one of walk) {
+    if (scanned >= SEARCH_SCANNED) { more = true; break; }
+    scanned += 1;
+    if (searchBytes(one.pair.key, one.pair.label) > SEARCH_ROOM) { more = true; continue; }
+    bucket.seatFor(one.probability, one.pair);
+  }
+  const r = bucket.serialize(null, SEARCH_ROOM);
+  return { items: r.items, more: r.more || more };
+}
+function refusedWhy(why) { const e = new Error(why); e.refusal = 'bad-request'; e.extra = { why: why }; return e; }
+function rowsOf(sql, params) {
+  const st = db.prepare(sql);
+  return typeof st.iterate === 'function' ? st.iterate.apply(st, params) : st.all.apply(st, params);
+}
+async function search(a) {
+  const over = String(a.over || '');
+  if (over !== 'tests' && over !== 'runs') throw refusedWhy('search needs over: "tests" or "runs"');
+  const commit = String(a.commit || '').trim().toLowerCase();
+  if (commit && !/^[0-9a-f]{1,40}$/.test(commit)) return { items: [], more: false };
+  const since = String(a.since || '').trim();
+  const where = [];
+  const params = [];
+  if (over === 'runs') {
+    if (a.item) { where.push('id = ?'); params.push(String(a.item)); }
+    if (a.kind) { where.push('kind = ?'); params.push(String(a.kind)); }
+    if (commit) { where.push('"commit" LIKE ?'); params.push(commit + '%'); }
+    if (since) { where.push('queuedAt >= ?'); params.push(since); }
+    const sql = 'SELECT rowid, kind, id, state, outcome, queuedAt, startedAt, endedAt, "commit" AS commitAt, line FROM runs' +
+      (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
+    const walk = (function* () {
+      for (const r of rowsOf(sql, params)) {
+        yield { probability: 0, pair: { key: String(r.rowid), label: JSON.stringify({ kind: r.kind, id: r.id, state: r.state, commit: r.commitAt || '',
+          queued: r.queuedAt, started: r.startedAt, ended: r.endedAt, outcome: r.outcome, line: r.line || '' }) } };
+      }
+    }());
+    return searchBucket(walk);
+  }
+  // TESTS: the newest row of each test is its official latest state.
+  if (a.suite) { where.push('suite = ?'); params.push(path.basename(String(a.suite))); }
+  if (a.outcome) { where.push('outcome = ?'); params.push(String(a.outcome)); }
+  if (commit) { where.push('"commit" LIKE ?'); params.push(commit + '%'); }
+  if (since) { where.push('at >= ?'); params.push(since); }
+  if (a.item) {
+    const m = await mode();
+    const got = await deskVia(m, 'item.get', { id: String(a.item) });
+    let it = null;
+    try { it = JSON.parse((got && got.item) || 'null'); } catch (e) { it = null; }
+    const suites = (it && Array.isArray(it.files) ? it.files : []).map(function (f) { return String((f && f.path) || ''); })
+      .filter(function (p) { return /^spirit\/test\/.+\.js$/.test(p); }).map(function (p) { return path.basename(p); });
+    if (!suites.length) return { items: [], more: false };
+    where.push('suite IN (' + suites.map(function () { return '?'; }).join(', ') + ')');
+    suites.forEach(function (s) { params.push(s); });
+  }
+  const sql = 'SELECT rowid, suite, title, outcome, "commit" AS commitAt, at, failure FROM results WHERE rowid IN' +
+    ' (SELECT MAX(rowid) FROM results GROUP BY suite, title)' + (where.length ? ' AND ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
+  const words = String(a.test || '').trim();
+  const walk = (function* () {
+    for (const r of rowsOf(sql, params)) {
+      const p = words ? probabilityStringMatch(words, String(r.title)) : 0;
+      if (words && !(p > 0)) continue;
+      yield { probability: p, pair: { key: String(r.rowid), label: JSON.stringify({ suite: r.suite, title: r.title, outcome: r.outcome,
+        commit: r.commitAt, at: r.at, failure: r.failure || '' }) } };
+    }
+  }());
+  return searchBucket(walk);
+}
+
+// ── THE IDLE HOUR AND ITS CHORES (goal/G8.4, built at last by goal/G21.3) ─
+//
+//   Andy's box: "The idle hour comes back and its chores are done (goal/G8.4, never built): a node is idle after an
+//   hour with no desk write and no phase held by its agent; then its deskVerify runs publishData for its agent
+//   (measure, write agents/<agent-name>/, commit under the standing grant) and writes the test-state report from its
+//   own dataset, never by re-running suites. All code, no model. The tab's countdown counts to that hour and shows what
+//   the chores did."
+//
+// THE RULE IS goal/G8.4's, as it stood until goal/G19.11 removed it with its verbs: an hour since the newest write the
+// desk holds AND no open item held by this node's agent (`with` naming it, by its profile name or the node's name).
+// The newest write is read from the desk's own `changes`, from a cursor of its own (the watcher's is another reader);
+// the first read walks the record once, page by page - its cost, stated. On an agent's node the desk is read through
+// its deskClient. Checked every idleCheckMs; the chores run ONCE per quiet stretch: a newer write starts a new one.
+//
+// THE CHORES, in this order, so the commit publishData makes carries the report:
+//   1. the test-state report, agents/<agent>/testState.json and testState.md, from verify.db's newest row per test -
+//      inside agents/<agent>/ because the commit check's standing grant (goal/G4.33) takes only a commit whose files
+//      all lie in the agent's own folder, and publishData commits that folder whole;
+//   2. publishData for the agent (its harness and capacity in a worktree, its packets, the commit, the push).
+// A node with no agent (his desk node runs no deskClient) has nobody to publish for: the chores say so and do nothing.
+// No chore runs while a check runs, and no check starts while the chores run (two runs fight over the lab ports).
+const IDLE_CHECK_MS = Number(values.idleCheckMs) > 0 ? Number(values.idleCheckMs) : 60000;
+const PUBLISH = String(values.publish || '').trim();
+const CHORES_REPO = values.choresRepo ? path.resolve(String(values.choresRepo)) : REPO;
+const CHORE_MS = 30 * 60 * 1000;
+const PUBLISH_DATA = path.join(__dirname, '..', 'deskClient', 'publishData.js');
+let idleCursor = { n: 0, at: '' };
+let choresFor = '';
+let choring = false;
+let idleTicking = false;
+let agentKnown = '';
+let idleSaid = '';
+async function newestWrite(m) {
+  for (let i = 0; i < 10000; i++) {
+    const page = await deskVia(m, 'changes', { n: idleCursor.n, line: 0 });
+    const recs = Array.isArray(page.records) ? page.records : [];
+    // Records come in the order they were written, so the last one is the newest; a page with nothing new keeps it.
+    if (recs.length) idleCursor.at = String(recs[recs.length - 1].at || idleCursor.at);
+    if (Number(page.n) > idleCursor.n) idleCursor.n = Number(page.n);
+    if (!page.more || !recs.length) break;
+  }
+  return idleCursor.at;
+}
+async function agentOf(m) {
+  if (agentKnown) return agentKnown;
+  if (m.mode !== 'agent') return '';
+  const p = await deskVia(m, 'profile.get', { agent: '' });
+  const name = String((p && p.name) || '');
+  // A folder name and nothing else: the report is written under agents/<name>/.
+  if (/^[A-Za-z0-9._-]{1,64}$/.test(name) && name !== '.' && name !== '..') agentKnown = name;
+  return agentKnown;
+}
+async function heldBy(m, names) {
+  const found = await deskVia(m, 'items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false });
+  return ((found && found.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } })
+    .filter(function (it) { return it && it.with && names.indexOf(String(it.with)) !== -1; })
+    .map(function (it) { return String(it.id); });
+}
+async function idleOnce() {
+  if (idleTicking || choring) return;
+  idleTicking = true;
+  try {
+    const m = await mode();
+    if (m.mode === 'none') return;
+    const since = await newestWrite(m);
+    const agent = await agentOf(m);
+    const names = [agent, String(spirit.core.node.const.NODE_NAME || '')].filter(Boolean);
+    const holding = names.length ? await heldBy(m, names) : [];
+    const quiet = !!since && Date.now() - Date.parse(since) >= IDLE_MS;
+    idleState.since = since;
+    idleState.holding = holding;
+    idleState.idle = quiet && !holding.length;
+    // Said only when it changed, so a quiet node does not publish every idleCheckMs.
+    const now = JSON.stringify([since, holding, idleState.idle, idleState.chores]);
+    if (!checking && !running.id && now !== idleSaid) { idleSaid = now; sayIdle(); }
+    if (idleState.idle && !checking && choresFor !== since) {
+      choresFor = since;
+      await chores(m, agent);
+    }
+  } finally { idleTicking = false; }
+}
+const newestEach = db.prepare('SELECT suite, title, outcome, "commit" AS commitAt, at, failure FROM results WHERE rowid IN (SELECT MAX(rowid) FROM results GROUP BY suite, title) ORDER BY suite, title');
+async function writeTestState(dir, agent, m) {
+  const rows = newestEach.all();
+  const t = await tree();
+  const bySuite = Object.create(null);
+  rows.forEach(function (r) {
+    const s = bySuite[r.suite] || (bySuite[r.suite] = { suite: r.suite, tests: 0, green: 0, red: 0, newestAt: '' });
+    s.tests += 1;
+    if (r.outcome === 'red') s.red += 1; else s.green += 1;
+    if (String(r.at) > s.newestAt) s.newestAt = String(r.at);
+  });
+  const reds = rows.filter(function (r) { return r.outcome === 'red'; })
+    .map(function (r) { return { suite: r.suite, title: r.title, commit: r.commitAt, at: r.at, failure: r.failure || '' }; });
+  const report = {
+    agent: agent, node: String(spirit.core.node.const.NODE_NAME || ''), measuredAt: new Date().toISOString(), commit: t.short || t.commit || '',
+    from: 'verify.db: the newest row of each test this node\'s deskVerify keeps; no suite was run for this report',
+    note: rows.length ? '' : (m.mode === 'agent' ? 'no records: an agent node\'s deskVerify keeps none (goal/G8.2)' : 'no records yet'),
+    tests: rows.length, green: rows.length - reds.length, red: reds.length,
+    suites: Object.keys(bySuite).sort().map(function (k) { return bySuite[k]; }),
+    reds: reds,
+  };
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'testState.json'), JSON.stringify(report, null, 2) + '\n');
+  const md = ['# Test state: ' + agent, '',
+    '**Written ' + report.measuredAt.slice(0, 10) + ' by deskVerify at `' + report.commit + '`, from its own dataset; no suite was re-run.**', '',
+    report.tests + ' tests, ' + report.green + ' green, ' + report.red + ' red.' + (report.note ? ' ' + report.note + '.' : ''), '',
+    '| suite | tests | green | red | newest |', '|---|---|---|---|---|']
+    .concat(report.suites.map(function (s) { return '| ' + s.suite + ' | ' + s.tests + ' | ' + s.green + ' | ' + s.red + ' | ' + s.newestAt + ' |'; }))
+    .concat(['', '## Red', ''])
+    .concat(reds.length ? reds.map(function (r) { return '- `' + r.suite + '` ' + r.title + ' (`' + String(r.commit).slice(0, 8) + '`, ' + r.at + ')' + (r.failure ? ': ' + r.failure.replace(/\s+/g, ' ') : ''); }) : ['none'])
+    .concat(['']);
+  fs.writeFileSync(path.join(dir, 'testState.md'), md.join('\n'));
+  return report;
+}
+function runPublish() {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  return new Promise(function (resolve) {
+    let kid = null;
+    const out = [];
+    try {
+      kid = PUBLISH ? spawn(PUBLISH + ' ' + port, { cwd: CHORES_REPO, shell: true, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' })
+        : spawn(process.execPath, [PUBLISH_DATA, String(port)], { cwd: CHORES_REPO, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
+    } catch (e) { resolve('publishData did not start: ' + ((e && e.message) || e)); return; }
+    const timer = setTimeout(function () { killTree(kid); }, CHORE_MS);
+    kid.stdout.on('data', function (d) { out.push(String(d)); });
+    kid.stderr.on('data', function (d) { out.push(String(d)); });
+    kid.on('error', function (e) { clearTimeout(timer); resolve('publishData did not start: ' + ((e && e.message) || e)); });
+    kid.on('close', function (code) {
+      clearTimeout(timer);
+      const last = out.join('').trim().split('\n').filter(Boolean).pop() || '';
+      resolve(code === 0 ? 'publishData: published' + (last ? ' (' + last.trim().slice(0, 200) + ')' : '')
+        : 'publishData failed, exit ' + code + (last ? ': ' + last.trim().slice(0, 200) : ''));
+    });
+  });
+}
+async function chores(m, agent) {
+  choring = true;
+  const did = [];
+  try {
+    if (!agent) did.push('no agent on this node, so nothing is published');
+    else {
+      try {
+        const rep = await writeTestState(path.join(CHORES_REPO, 'agents', agent), agent, m);
+        did.push('testState written: agents/' + agent + '/testState.json (' + rep.tests + ' tests, ' + rep.red + ' red)');
+      } catch (e) { did.push('testState not written: ' + ((e && e.message) || e)); }
+      did.push(await runPublish());
+    }
+  } finally { choring = false; }
+  idleState.chores = did.join('; ') + ' (' + new Date().toISOString() + ')';
+  idleSaid = '';
+  if (!checking && !running.id) sayIdle();
+  if (watchQueue.length) drainQueue();
+}
+const idler = setInterval(function () { idleOnce().catch(function () { /* next tick */ }); }, IDLE_CHECK_MS);
+if (idler.unref) idler.unref();
+setTimeout(function () { idleOnce().catch(function () { /* next tick */ }); }, 1000).unref();
 
 // ITS VERBS: what the desk face and the suites post to, and nothing else (goal/G19.11 removed the eight only suites
 // called; see the note where suites() stood).
@@ -880,12 +1298,15 @@ appServer.serve({
   // answers.
   //   now            what runs, for which item, since when, and what waits
   //   stop           his intervention: the run ends and its claim is rejected saying so, never passed
-  // (records.search stood between them; the tab stopped asking it in goal/G8.12, and it went in goal/G19.11.)
+  // (records.search stood between them; the tab stopped asking it in goal/G8.12, and it went in goal/G19.11. The one
+  // search of goal/G21.3, below, is a read for agents and for him, not for the tab.)
   now: {
     // THE QUEUE AS {kind, id} (goal/G19.3): declared as [''] it was refused whenever work waited, and the tab vanished.
-    request: {}, reply: { running: { id: '', suite: '', since: '' }, queued: [{ kind: '', id: '' }] },
+    // stopAsked (goal/G21.3): a Stop was taken and the run it stops has not ended, so the tab says "stop asked".
+    request: {}, reply: { running: { id: '', suite: '', since: '' }, queued: [{ kind: '', id: '' }], stopAsked: false },
     handler: function () {
-      return { running: { id: running.id, suite: running.suite, since: running.since }, queued: watchQueue.map(function (q) { return { kind: q.kind, id: q.id }; }) };
+      return { running: { id: running.id, suite: running.suite, since: running.since }, queued: watchQueue.map(function (q) { return { kind: q.kind, id: q.id }; }),
+        stopAsked: stopped === true && checking };
     },
   },
   stop: {
@@ -906,15 +1327,34 @@ appServer.serve({
   // ONE RECORD, AS IT HAPPENS (his words above). The answer says whether it was kept: a repeat of the same outcome is
   // not, and that is the whole of the de-duplication - the history is the flips. Only his clone keeps anything: on an
   // agent's node "it will never commit", so a record there is taken and answered, and nothing is stored.
+  // THE WHY TRAVELS WITH THE RED (goal/G21.3): `failure`, optional, is the text the suite printed for it; capped by keep.
   record: {
-    request: { suite: '', title: '', outcome: '' }, reply: { written: true },
+    request: { suite: '', title: '', outcome: '', failure: '' }, reply: { written: true },
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
+      const known = ['suite', 'title', 'outcome', 'failure'];
+      return Object.keys(a).every(function (k) { return known.indexOf(k) !== -1; }) &&
+        typeof a.suite === 'string' && typeof a.title === 'string' && typeof a.outcome === 'string' &&
+        (a.failure === undefined || typeof a.failure === 'string');
+    },
     handler: function (a) {
       const suite = String(a.suite || '');
       const title = String(a.title || '');
       const outcome = String(a.outcome || '');
       if (!suite || !title) throw new Error('a record needs its suite and its title');
       if (outcome !== 'red' && outcome !== 'green') throw new Error('an outcome is red or green');
-      return mode().then(function (m) { return m.mode === 'desk' ? keep(suite, title, outcome) : { written: false }; });
+      return mode().then(function (m) { return m.mode === 'desk' ? keep(suite, title, outcome, a.failure) : { written: false }; });
     },
+  },
+  // ONE SEARCH, OVER TESTS OR RUNS (goal/G21.3). A read: nothing is written through it. Every key is optional; `over`
+  // is required. The verb file beside this server (search.json) makes it an agent tool.
+  search: {
+    request: { over: '', suite: '', test: '', outcome: '', commit: '', item: '', kind: '', since: '' },
+    reply: { items: [{ key: '', label: '' }], more: false },
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
+      return Object.keys(a).every(function (k) { return SEARCH_KEYS.indexOf(k) !== -1 && typeof a[k] === 'string'; });
+    },
+    handler: function (a) { return search(a); },
   },
 });

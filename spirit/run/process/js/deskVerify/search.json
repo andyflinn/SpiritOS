@@ -1,0 +1,13 @@
+{
+  "description": "Search what this node's deskVerify keeps; a read, nothing is written. over \"tests\": the latest state of each test (its newest row), answering {suite, title, outcome, commit, at, failure} per item, filtered by suite (file name), test (words graded against the title; a title they do not touch is left out), outcome (red or green), commit (a hash prefix), item (the tests of that item's listed suites) and since (an ISO time; rows at or after it). over \"runs\": each check it made, answering {kind, id, state, commit, queued, started, ended, outcome, line}, filtered by item, kind (item, red, goal, full), commit and since (queued at or after it). Every key but over is optional; a filter that does not belong to over is ignored. Answers {items: [{key, label: the row as json}], more}, newest first, bucket-bounded: more true means the answer is partial, so narrow the filters.",
+  "request": {
+    "over": "",
+    "suite": "",
+    "test": "",
+    "outcome": "",
+    "commit": "",
+    "item": "",
+    "kind": "",
+    "since": ""
+  }
+}

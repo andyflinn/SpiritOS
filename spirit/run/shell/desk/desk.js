@@ -1042,13 +1042,34 @@ function deskVerifyAsk(verb, args) {
   });
 }
 // Asked once at mount and on every open of the tab: a node either runs one or does not.
+// THE TAB STAYS (goal/G21.3). Andy's box: "The Verifier tab stays once the page has loaded; only the first ask at load
+// decides whether a verifier runs here. A later missed answer keeps the tab and shows "not answering"." Any failed ask
+// set deskVerifier to null and redrew the tabs, so one slow answer made the tab vanish under him. Now a failed ask
+// changes nothing while a verifier is known; it only marks it not answering until the next answer.
+var deskVerifyMissed = false;
+var DESK_STOP_NOTE = 'deskVerify answered: stop asked;';
 function deskAskVerifier() {
   return deskVerifyAsk('now', {}).then(function (body) {
     deskVerifier = body;
+    deskVerifyMissed = false;
     if (body.running && body.running.id) deskVerifyLast = String(body.running.id);
     deskDrawTabs();
     deskDrawVerifier();
-  }, function () { deskVerifier = null; deskDrawTabs(); });
+  }, function () {
+    if (!deskVerifier) return;
+    deskVerifyMissed = true;
+    deskDrawVerifier();
+  });
+}
+// EVERY PRESS SAYS IT WAS SENT, THEN WHAT CAME BACK (goal/G21.3). Andy's box: "Every press in the tab shows at once
+// that it was sent, then what deskVerify answered." The note is drawn before the ask goes out and replaced by the answer.
+function deskVerifyPressed(sent) {
+  deskVerifyNote = sent;
+  deskDrawVerifier();
+}
+function deskVerifyAnswered(text) {
+  deskVerifyNote = text;
+  deskDrawVerifier();
 }
 // goal/G8.12: opening the tab reads what runs; the records list it used to fetch is gone with Andy's "only show the
 // latest status", so nothing here asks for rows any more.
@@ -1071,7 +1092,7 @@ var DESK_IDLE_MIN = 60; // the idle hour (goal/G8.4), which the countdown counts
 function deskVerifyIdlePct(since) {
   var ms = Date.now() - Date.parse(since);
   if (isNaN(ms)) return null;
-  return Math.max(0, Math.min(100, Math.round((ms / 60000) / DESK_IDLE_MIN * 100)));
+  return Math.max(0, Math.min(100, Math.round((ms / 60000) / deskVerifyIdleMin() * 100)));
 }
 // The phase is on the bar itself, as `data-phase`: run while a check runs, countdown while the idle hour fills, done
 // when it is spent or nothing has been published - which is also when it is grey. Grey is a muted look and not a
@@ -1081,6 +1102,21 @@ function deskVerifyBarHtml(pct, phase) {
   return '<div><progress id="desk-verify-bar" data-phase="' + phase + '" max="100" value="' + pct + '" style="width:100%' +
     (grey ? ';filter:grayscale(1);opacity:0.45' : '') + '"></progress></div>';
 }
+// THE SERVER'S OWN HOUR (goal/G21.3): deskVerify publishes idleMs with every object; DESK_IDLE_MIN stands only for a
+// verifier that does not say.
+function deskVerifyIdleMin() {
+  var ms = deskVerifyRun && Number(deskVerifyRun.idleMs);
+  return ms > 0 ? ms / 60000 : DESK_IDLE_MIN;
+}
+// WHAT THE CHORES DID, OR WHY THE HOUR DOES NOT COUNT (goal/G21.3): the chores are ruled now (goal/G8.4's, brought
+// back), so the tab says what they did, and a phase held by the node's agent is named as what keeps it busy.
+function deskVerifyIdleSaid() {
+  var r = deskVerifyRun || {};
+  var holding = Array.isArray(r.holding) ? r.holding : [];
+  if (holding.length) return 'Busy: its agent holds ' + holding.map(function (h) { return deskEsc(String(h)); }).join(', ') + ', so the idle hour does not count.';
+  if (r.chores) return 'Idle time reached; the chores: ' + deskEsc(String(r.chores));
+  return 'Idle time reached; the chores are starting.';
+}
 function deskVerifyBar() {
   var r = deskVerifyRun;
   if (!r) return deskVerifyBarHtml(0, 'done') + '<div>Nothing measured yet on this node.</div>';
@@ -1088,8 +1124,7 @@ function deskVerifyBar() {
     var pct = deskVerifyIdlePct(r.since);
     if (pct === null) return deskVerifyBarHtml(0, 'done') + '<div>Idle; no desk write to count the hour from.</div>';
     return deskVerifyBarHtml(pct, pct >= 100 ? 'done' : 'countdown') +
-      '<div>' + (pct >= 100 ? 'Idle time reached; no chores are ruled yet, so nothing runs.'
-        : 'Idle, the hour filling: ' + pct + '%') + '</div>';
+      '<div>' + (pct >= 100 ? deskVerifyIdleSaid() : 'Idle, the hour filling: ' + pct + '%') + '</div>';
   }
   var of = Number(r.of) || 0;
   var index = Number(r.index) || 0;
@@ -1106,8 +1141,9 @@ function deskVerifyCountdown(since) {
   if (!since) return '';
   var ms = Date.now() - Date.parse(since);
   if (isNaN(ms)) return '';
-  var left = Math.ceil(DESK_IDLE_MIN - ms / 60000);
-  if (left <= 0) return '<div>Idle time reached; no chores are ruled yet, so nothing runs.</div>';
+  var held = deskVerifyRun && Array.isArray(deskVerifyRun.holding) && deskVerifyRun.holding.length;
+  var left = Math.ceil(deskVerifyIdleMin() - ms / 60000);
+  if (left <= 0 || held) return '<div>' + deskVerifyIdleSaid() + '</div>';
   return '<div>Idle in ' + left + ' min of quiet.</div>';
 }
 function deskVerifyHtml() {
@@ -1116,7 +1152,12 @@ function deskVerifyHtml() {
   var queued = Array.isArray(deskVerifier.queued) ? deskVerifier.queued : [];
   var item = (deskVerifyRun && deskVerifyRun.id) || run.id || deskVerifyLast;
   var live = deskVerifyRun;
-  var out = '<div class="stat-tile wide"><div class="label">Running now</div>' + deskVerifyBar() +
+  // STOP ASKED UNTIL THE RUN ENDS (goal/G21.3): the newest published object says it, else the last now.
+  var stopAsked = live ? live.stopAsked === true : deskVerifier.stopAsked === true;
+  var out = '<div class="stat-tile wide"><div class="label">Running now</div>' +
+    (deskVerifyMissed ? '<div id="desk-verify-missing" class="job-manifest-note">deskVerify is not answering; the tab stays, and the next answer replaces this.</div>' : '') +
+    deskVerifyBar() +
+    (stopAsked ? '<div id="desk-verify-stopasked">Stop asked: the run ends before its next suite.</div>' : '') +
     // ONE STATUS LINE, REPLACED (goal/G8.12): the newest published line, and nothing kept behind it.
     (live ? '<div id="desk-verify-line">' + deskEsc(live.line) + '</div>' : '') +
     (live && live.doing === 'idle' ? deskVerifyCountdown(live.since) : '') +
@@ -1173,6 +1214,10 @@ function deskVerifyTicking(on) {
 function deskVerifyEvent(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.doing !== 'string') return;
   deskVerifyRun = obj;
+  // A published object is an answer too: the verifier is there (goal/G21.3). The Stop's note goes once the run it
+  // stopped has ended.
+  deskVerifyMissed = false;
+  if (obj.doing === 'idle' && obj.stopAsked !== true && deskVerifyNote.indexOf(DESK_STOP_NOTE) === 0) deskVerifyNote = '';
   if (obj.id) deskVerifyLast = String(obj.id);
   if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' }, queued: [] }; deskDrawTabs(); }
   deskDrawVerifier();
@@ -1380,8 +1425,15 @@ spirit.shell.activateApp({
       // THE FULL HARNESS, ARMED THEN SENT (goal/G14.3), on the current goal, whose chat takes the report line.
       if (t.id === 'desk-verify-full') {
         deskArmOrFire('desk-verify-full', function () {
+          deskVerifyPressed('Full run sent; waiting for deskVerify\'s answer.');
           var sent = function (id) {
-            return deskVerifyAsk('full.run', { id: id }).then(function () { return deskVerifyRefresh(); }, function () { return deskVerifyRefresh(); });
+            return deskVerifyAsk('full.run', { id: id }).then(function (b) {
+              deskVerifyAnswered(b && b.queued ? 'deskVerify answered: the full run is queued' + (id ? ', its line to ' + id : '') + '.' : 'deskVerify answered without queueing the full run.');
+              return deskVerifyRefresh();
+            }, function (e) {
+              deskVerifyAnswered('The full run was not taken: ' + ((e && e.message) || e) + '.');
+              return deskVerifyRefresh();
+            });
           };
           // THE DESK'S CURRENT GOAL WHEN THE LIST SHOWS NONE (goal/G19.2). With no goal row on screen (a search, Goals
           // Only off the current goal) it sent id '', and the report line had no goal to land on and failed in silence.
@@ -1398,10 +1450,18 @@ spirit.shell.activateApp({
         return;
       }
       if (t.id === 'desk-verify-stop') {
-        deskVerifyAsk('stop', {}).then(function () { return deskVerifyRefresh(); }, function () { return deskVerifyRefresh(); });
+        deskVerifyPressed('Stop sent; waiting for deskVerify\'s answer.');
+        deskVerifyAsk('stop', {}).then(function (b) {
+          deskVerifyAnswered(b && b.stopped ? DESK_STOP_NOTE + ' the run ends before its next suite.' : 'deskVerify answered: nothing was running to stop.');
+          return deskVerifyRefresh();
+        }, function (e) {
+          deskVerifyAnswered('The Stop was not taken: ' + ((e && e.message) || e) + '.');
+          return deskVerifyRefresh();
+        });
         return;
       }
       var again = t.getAttribute && t.getAttribute('data-reverify');
+      if (again) deskVerifyPressed('Re-verify of ' + again + ' sent; waiting for the desk\'s answer.');
       // THE RE-VERIFY GOES TO THE DESK, not to deskVerify (goal/G8.10): the record is the word its watcher reads, so
       // his node's verifier picks it up wherever it runs.
       if (again) deskAsk('verify.again', { id: again }).then(function () {

@@ -19,7 +19,8 @@ let PAD_SPACES = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_SPACES += ' '
 //
 // ONLY WHEN DESKVERIFY STARTED THE RUN: `--verify-port <port>` names its node. A suite run by hand posts nothing and
 // costs exactly what it costs today, which is what keeps `node spirit/test/<suite>.js` the thing it has always been.
-// The suite's own file name is the other half of a test's key; the record carries no detail and no runtime values.
+// The suite's own file name is the other half of a test's key; a green carries no detail and no runtime values, and
+// since goal/G21.3 a red carries what fail printed as its failure text, beside the key and never part of it.
 const VERIFY_PORT = (function () {
   const at = process.argv.indexOf('--verify-port');
   const p = at !== -1 ? Number(process.argv[at + 1]) : 0;
@@ -28,9 +29,13 @@ const VERIFY_PORT = (function () {
 const SUITE = require('path').basename(String(process.argv[1] || ''));
 // WHAT HAS NOT COME BACK YET, so a suite that exits right after its report does not take its last records with it.
 const pending = new Set();
-function record(title, outcome) {
+// THE WHY OF A RED TRAVELS WITH IT (goal/G21.3): Andy's box, "deskVerify keeps, beside each failing test's outcome, its
+// failure text (capped), so the why is in the record." `failure` is what fail printed, title and detail; deskVerify
+// caps it, the one gate. The title alone is still the key.
+function record(title, outcome, failure) {
   if (!VERIFY_PORT || !title) return;
   const rec = { suite: SUITE, title: String(title), outcome: outcome };
+  if (outcome === 'red' && failure) rec.failure = String(failure);
   pending.add(rec);
   fetch('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {
     method: 'POST', headers: { 'content-type': 'application/json' }, // verb AND ask, as kernel.core.ask sends it: a node answers a body with no verb 'no such verb' (found by
@@ -45,11 +50,25 @@ function settleRecords() {
   if (!VERIFY_PORT || !pending.size) return;
   const left = Array.from(pending);
   pending.clear();
-  try {
-    require('child_process').spawnSync(process.execPath,
-      [require('path').join(__dirname, 'verifyPost.js'), String(VERIFY_PORT), JSON.stringify(left)],
-      { stdio: 'ignore', timeout: 10000 });
-  } catch (e) { /* the records are a record, not the suite's verdict */ }
+  // IN BATCHES THAT FIT A COMMAND LINE (goal/G21.3): a red's failure text can be long, and Windows refuses a command
+  // line past about 32 KB, which would lose every record left. A record too long alone goes without its failure text.
+  const ROOM = 24000;
+  const batches = [];
+  let one = [];
+  left.forEach(function (r) {
+    let rec = r;
+    if (Buffer.byteLength(JSON.stringify([rec]), 'utf8') > ROOM) rec = { suite: r.suite, title: r.title, outcome: r.outcome };
+    if (one.length && Buffer.byteLength(JSON.stringify(one.concat([rec])), 'utf8') > ROOM) { batches.push(one); one = []; }
+    one.push(rec);
+  });
+  if (one.length) batches.push(one);
+  batches.forEach(function (batch) {
+    try {
+      require('child_process').spawnSync(process.execPath,
+        [require('path').join(__dirname, 'verifyPost.js'), String(VERIFY_PORT), JSON.stringify(batch)],
+        { stdio: 'ignore', timeout: 10000 });
+    } catch (e) { /* the records are a record, not the suite's verdict */ }
+  });
 }
 
 // ── SUITES CLEAN UP THE HOMES THEY CREATE (cycle R17) ────────────────
@@ -301,7 +320,7 @@ const test = {
     fail: function(str, detail){
         this.failureCount++;
         this.comment('FAILURE #' + this.counter + '.' + this.failureCount + ': ' + str + (detail ? ' — ' + detail : '') + ' ' + ICON.ERROR);
-        record(str, 'red');
+        record(str, 'red', String(str) + (detail ? ' — ' + detail : ''));
     },
 
     // ── DECLARED, AND NOT BUILT YET ──────────────────────────────────

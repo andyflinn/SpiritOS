@@ -92,7 +92,10 @@ function writeIndex(out, agent) {
     row('the box', 'platform.md', read('capacity.json') || read('packets.json')),
     row('harness', 'harness.txt', read('harness.json')),
     row('capacity', 'capacity.md', read('capacity.json')),
-    row('packets', 'packets.md', read('packets.json')), '',
+    row('packets', 'packets.md', read('packets.json')),
+    // THE TEST STATE (goal/G21.3): written by deskVerify's idle chores into this folder just before they run this
+    // script, from its own dataset; listed here so the front page names it.
+    row('test state', 'testState.md', read('testState.json')), '',
     '## Studies', '',
   ].concat(studies.length ? studies.map(function (d) { return '- [' + d + '](studies/' + d + '/)'; }) : ['none yet']).concat(['']);
   fs.writeFileSync(path.join(out, 'README.md'), lines.join('\n'));

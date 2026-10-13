@@ -21,7 +21,10 @@ if (!Number.isInteger(port) || port <= 0 || !Array.isArray(records) || !records.
 
 (async function () {
   for (const r of records) {
-    const body = JSON.stringify({ verb: 'jobs.api', ask: { deskVerify: { record: { suite: String(r.suite || ''), title: String(r.title || ''), outcome: String(r.outcome || '') } } } });
+    // The failure text of a red goes along when the suite sent one (goal/G21.3).
+    const rec = { suite: String(r.suite || ''), title: String(r.title || ''), outcome: String(r.outcome || '') };
+    if (typeof r.failure === 'string' && r.failure) rec.failure = r.failure;
+    const body = JSON.stringify({ verb: 'jobs.api', ask: { deskVerify: { record: rec } } });
     try {
       await fetch('http://127.0.0.1:' + port + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: body });
     } catch (e) { /* the node is gone; a record nobody could take is not a suite's problem */ }
