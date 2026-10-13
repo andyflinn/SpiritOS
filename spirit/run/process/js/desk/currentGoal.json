@@ -1,5 +1,5 @@
 {
- "change": 55470,
+ "change": 56243,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -8,7 +8,7 @@
    "title": "More Mechanical constraint imposed in Desk.",
    "goal": "",
    "status": "",
-   "with": "claude-windows",
+   "with": "ollama agent node",
    "buttons": [
     "close"
    ],
@@ -16,7 +16,8 @@
    "blocked": [
     "goal/G21.2",
     "goal/G21.3",
-    "goal/G21.4"
+    "goal/G21.4",
+    "goal/G21.5"
    ],
    "go": false,
    "alone": false,
@@ -37,23 +38,22 @@
    "waived": false,
    "rules": [],
    "names": {
+    "ollama agent node": "local-levant",
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude",
-    "claude-ubuntu": "claude-ubuntu",
-    "ollama agent node": "local-levant"
+    "claude-ubuntu": "claude-ubuntu"
    },
    "asks": 0,
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 4,
    "excluded": [],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -70,7 +70,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T05:02:28.848Z"
+     "at": "2026-10-13T05:02:28.848Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q2",
@@ -79,7 +81,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T05:02:30.041Z"
+     "at": "2026-10-13T05:02:30.041Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q3",
@@ -88,7 +92,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T05:02:31.404Z"
+     "at": "2026-10-13T05:02:31.404Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q4",
@@ -97,7 +103,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T05:02:32.618Z"
+     "at": "2026-10-13T05:02:32.618Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q5",
@@ -106,7 +114,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T05:02:33.833Z"
+     "at": "2026-10-13T05:02:33.833Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -631,7 +641,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T04:33:23.512Z"
+     "at": "2026-10-13T04:33:23.512Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q2",
@@ -640,7 +652,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T04:33:24.767Z"
+     "at": "2026-10-13T04:33:24.767Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q3",
@@ -649,7 +663,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T04:33:26.040Z"
+     "at": "2026-10-13T04:33:26.040Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q4",
@@ -658,7 +674,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T04:33:27.176Z"
+     "at": "2026-10-13T04:33:27.176Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     },
     {
      "number": "Q5",
@@ -667,7 +685,9 @@
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-13T04:33:28.453Z"
+     "at": "2026-10-13T04:33:28.453Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -917,9 +937,11 @@
    "id": "goal/G21.2",
    "title": "Red Q checks only on purpose",
    "goal": "goal/G21",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "deskVerify passed",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G21"
    ],
@@ -927,20 +949,46 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskBindingNick.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatQuestion.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChecksPanel.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskForAndy.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedQOnPurpose.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -974,7 +1022,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Red Q checks only on purpose.\n\nDECIDED (Andy, 2026-10-13)\n- A red Q is a concise question placed with deliberation, to block an item until it is resolved.\n- A question mark in a chat line never makes a red Q; only a deliberate Q check does.\n- One open red Q per agent per item: a second is refused until the first is answered or cleared.\n- A Q longer than one sentence, or over about 200 bytes, is refused with a why.\n- Andy clears them himself: Q:clear deletes every red Q on the item; Q<n>:clear deletes only that one.\n- When Andy clears a Q, the agent that placed it is notified; a clear is a form of reply, so the agent updates its position on that question.\n- A red Q clicked into Andy's chat box arrives followed by two newlines, so the question stands apart from the answer he writes below it.\n\nFOUND (2026-10-13)\n- Today the desk turns any chat line ending in a question mark into a red Q check, and each open red Q holds up Go and other presses.\n",
@@ -1058,6 +1106,48 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T06:14:11.872Z",
      "text": "Taking G21.2, red phase first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T06:26:58.822Z",
+     "text": "commit aa748c2aa2c0832e4224f432450ce8a7725a9a8a: goal/G21.2: red Q checks only on purpose; one per agent per item, one sentence; Andy clears with Q:clear\n- spirit/run/process/js/desk/check.add.json\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskChatQuestion.js\n- spirit/test/deskChecksPanel.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskRedQOnPurpose.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:27:09.091Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:27:10.871Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:27:16.020Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:27:22.586Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T06:27:26.260Z",
+     "text": "Built at aa748c2a. Files: desk.js, check.add.json, the item dialog; deskRedQOnPurpose (new, 19 red before, 29 green after), deskChatQuestion, deskChecksPanel, deskForAndy.\n- A question mark in a chat line raises nothing; a Q is placed only with check.add, one sentence, at most 200 bytes, one open per agent per item.\n- Q:clear and Q<n>:clear clear them; the agent that placed a cleared Q is told, only it; a clear that names nothing open is refused, so a typo shows.\n- A cleared Q no longer holds Go, End design or limbo. A clicked Q lands in your chat box with two newlines after it.\n- Qs already open from older chat lines stay open until answered or cleared.\n- Your desk server has to restart once more for this to take effect, as with G21.1."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T06:27:59.111Z",
+     "text": "deskVerify: passed, at aa748c2a (pulled). 5 suites ran green."
     }
    ]
   },
@@ -1065,9 +1155,11 @@
    "id": "goal/G21.3",
    "title": "Verifier fixes",
    "goal": "goal/G21",
-   "status": "running",
+   "status": "deskVerify passed",
    "with": "claude-windows",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G21"
    ],
@@ -1075,20 +1167,26 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskVerifyModes.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -1126,12 +1224,35 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "Verifier fixes.\n\nDECIDED (Andy, 2026-10-13)\n- The Verifier tab stays once the page has loaded; only the first ask at load decides whether a verifier runs here. A later missed answer keeps the tab and shows \"not answering\".\n- Every press in the tab shows at once that it was sent, then what deskVerify answered.\n- A Stop is kept for the whole run, whenever it is pressed (a suite running, pulling, between suites, waiting for a commit), and deskVerify checks it before each suite; the tab shows \"stop asked\" until the run ends.\n- deskVerify answers at once even mid-run: the git work that blocks it now (pull, ancestry checks) no longer freezes it.\n- deskVerify keeps, beside each failing test's outcome, its failure text (capped), so the why is in the record and nobody has to rerun a suite to read it.\n- deskVerify answers one search verb, bucket-bounded with the partial flag, over two things: tests and suites (the official latest state of a single test, or of every test in a suite: outcome, commit, time, failure text; filtered by suite, test words, outcome, commit, item, since), and runs (each check it made, item or full run: commit, queued, started, ended, its outcome and the line it posted; filtered by item, commit, kind, since). The same verb runs on every node's deskVerify, so an agent asks Andy's (the official record) and its own; agents may call it, nothing is written through it.\n- The idle hour comes back and its chores are done (goal/G8.4, never built until now): a node is idle after an hour with no desk write and no phase held by its agent; then its deskVerify runs publishData for its agent (measure, write agents/<agent-name>/, commit under the standing grant) and writes the test-state report from its own dataset, never by re-running suites. All code, no model. The tab's countdown counts to that hour and shows what the chores did.\n\nFOUND (Andy's node, 2026-10-13; paths under spirit/run/)\n- shell/desk/desk.js, deskAskVerifier: any failed \"now\" ask sets the verifier to none and redraws the tabs, so the tab disappears; every press and every opening of the tab asks again.\n- The Stop and Full run presses send and show nothing until the next answer.\n- process/js/deskVerify/deskVerify.js, stopRun: Stop is accepted only while a suite process runs; at any other moment it answers not stopped and is forgotten.\n- deskVerify pulls and checks ancestry with spawnSync, which blocks it while git works.\n- Measured idle: four now-asks answered in 11 to 56 ms.\n",
-   "version": 4,
-   "checks": [],
+   "box": "Verifier fixes.\n\nDECIDED (Andy, 2026-10-13)\n- The Verifier tab stays once the page has loaded; only the first ask at load decides whether a verifier runs here. A later missed answer keeps the tab and shows \"not answering\".\n- Every press in the tab shows at once that it was sent, then what deskVerify answered.\n- A Stop is kept for the whole run, whenever it is pressed (a suite running, pulling, between suites, waiting for a commit), and deskVerify checks it before each suite; the tab shows \"stop asked\" until the run ends.\n- deskVerify answers at once even mid-run: the git work that blocks it now (pull, ancestry checks) no longer freezes it.\n- deskVerify keeps, beside each failing test's outcome, its failure text (capped), so the why is in the record and nobody has to rerun a suite to read it.\n- deskVerify answers one search verb, bucket-bounded with the partial flag, over two things: tests and suites (the official latest state of a single test, or of every test in a suite: outcome, commit, time, failure text; filtered by suite, test words, outcome, commit, item, since), and runs (each check it made, item or full run: commit, queued, started, ended, its outcome and the line it posted; filtered by item, commit, kind, since). The same verb runs on every node's deskVerify, so an agent asks Andy's (the official record) and its own; agents may call it, nothing is written through it.\n- Every node's deskVerify keeps its own test records in the same shape (as goal/G8.2 decided), so an agent node's idle report is filled; the desk node's records stay the canonical, authoritative record for the development. An agent's records are private to its own work and are not shared through git; they let an agent's results be compared with the official record, by querying every copy with the search verb, because the two will disagree. The raw records stay private; what the idle chores write into agents/<agent-name>/ (the measurements and the test-state report, a summary) is committed automatically, which is the purpose of the chores.\n- The idle hour comes back and its chores are done (goal/G8.4, never built until now): a node is idle after an hour with no desk write and no phase held by its agent; then its deskVerify runs publishData for its agent (measure, write agents/<agent-name>/, commit under the standing grant) and writes the test-state report from its own dataset, never by re-running suites. All code, no model. The tab's countdown counts to that hour and shows what the chores did.\n\nFOUND (Andy's node, 2026-10-13; paths under spirit/run/)\n- shell/desk/desk.js, deskAskVerifier: any failed \"now\" ask sets the verifier to none and redraws the tabs, so the tab disappears; every press and every opening of the tab asks again.\n- The Stop and Full run presses send and show nothing until the next answer.\n- process/js/deskVerify/deskVerify.js, stopRun: Stop is accepted only while a suite process runs; at any other moment it answers not stopped and is forgotten.\n- deskVerify pulls and checks ancestry with spawnSync, which blocks it while git works.\n- Measured idle: four now-asks answered in 11 to 56 ms.\n",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Shall an agent node keep its own test records, so its idle report is filled, overriding G8.2 for that report?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T07:15:56.444Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Shall the idle test-state report stay out of agents/<agent-name>/ and git, leaving the measurements as the only committed chore?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T07:22:09.050Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -1282,6 +1403,132 @@
      "key": "",
      "at": "2026-10-13T05:47:09.579Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T06:29:12.045Z",
+     "text": "Taking G21.3, red phase first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T06:57:54.009Z",
+     "text": "commit 81ae239b9bf824baa722d0bbd30ab8f732cc94a3: goal/G21.3: Verifier tab stays, presses answer at once, stop kept for the run, failure text kept, search verb, idle-hour chores\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/process/js/deskVerify/AGENTS.md\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/deskVerify.json\n- spirit/run/process/js/deskVerify/search.json\n- spirit/run/shell/desk/desk.js\n- spirit/test/deskVerifyDataset.js\n- spirit/test/deskVerifyFixes.js\n- spirit/test/deskVerifyGoalRun.js\n- spirit/test/testSupport.js\n- spirit/test/verifyPost.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:58:06.107Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:58:08.298Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:58:17.628Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T06:58:24.168Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T06:58:27.615Z",
+     "text": "Built at 81ae239b. Files: deskVerify (+ its manifest, a new search verb file and AGENTS.md), the desk page, publishData, testSupport, verifyPost; deskVerifyFixes (new, 41 red before, 52 green after), deskVerifyDataset, deskVerifyGoalRun.\n- The tab stays after load; a missed answer shows not answering. Every press shows sent at once, then the answer.\n- Stop is kept for the whole run and checked before each suite; the tab shows stop asked. deskVerify answers during its pulls.\n- Each failing test keeps its failure text, capped at 1 KB. One search verb, over tests or over runs, with the filters; agents may call it.\n- The idle hour is back: after an hour with no desk write and nothing held, deskVerify writes agents/<agent-name>/testState.json and .md and runs publishData.\n- One conflict for you: the chores run where an agent runs, but G8.2 says an agent node keeps no test records, so that report is always empty there.\n- Found: a label with a slash drops out of a * search in the shared search (core); worth its own item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:00:43.333Z",
+     "text": "deskVerify: passed, at 81ae239b (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:15:11.197Z",
+     "text": "Q1: Shall an agent node keep its own test records, so its idle report is filled, overriding G8.2 for that report?\n\nyes\n\nI don't remember deciding that the agents deskVerify keeps no records, i only said the the desks deskVerify is the canonical record for the development, and that the desks copy is authoritative.\n\nam i recalling correctly?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:15:59.109Z",
+     "text": "You recall correctly. G8.2 says deskVerify keeps the same records in the same shape on every node, and yours is the authoritative one. The no-records rule came later, from G8.3 it will never commit, which the code stretched to storing nothing; that was wrong.\nRecorded (box v5). The fix is small and goes into G21.3 right after G21.4, one item at a time; your Done can wait for it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:18:47.049Z",
+     "text": "that's correct, the agents private deskVerify records serve only for its own work, it doesn't need sharing through git.\n\nit does serve the purpose of understanding discrepancies between the agents text-data and the official record, because that WILL occur, and the queries on all deskVerify copies allow the comparison to happen in the first place."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:19:17.603Z",
+     "text": "Recorded (box v6): an agent records are private, compared with yours through the search, never shared through git.\n- That touches what I built: the idle chore writes the test-state report from those records into agents/<agent-name>/, which publishData commits, so it does go through git today."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:19:46.601Z",
+     "text": "Q's answered?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:20:06.943Z",
+     "text": "Q1 is answered and closed. One new one stands, placed after your privacy line: whether the idle test-state report stays out of git."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:21:37.095Z",
+     "text": "Q2: Shall the idle test-state report stay out of agents/<agent-name>/ and git, leaving the measurements as the only committed chore?\n\nhuh? wasn't that the purpose of the exercise? that the  agents/<agent-name>/ folders are updated automatically, without token-burning?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:22:10.996Z",
+     "text": "Yes, it is, and it stays as built: the folder is updated automatically, measurements and the test-state report, a summary. Only the raw records stay private and out of git. Recorded (box v7); Q2 closed. The one code change left is that agent nodes keep their records; it comes after G21.4."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:22:35.434Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:23:53.339Z",
+     "text": "Settled, no open questions, box current (v7). Not done yet: the code still lets an agent node keep no records; that fix follows G21.4, then a fresh claim."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:47:58.105Z",
+     "text": "commit 712ac1ba1c6ab05839d1c8ea7fca6b942ee930a6: goal/G21.3: an agent node's deskVerify keeps its own test records, private and in the desk's shape\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/test/deskVerifyModes.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:48:04.771Z",
+     "text": "Fix pushed: 712ac1ba.\nFiles: deskVerify.js; test deskVerifyModes (section 3 now asserts an agent node keeps its own row).\nAn agent node's deskVerify now keeps its own test records in the desk's shape; a node that is neither still keeps none.\nIts idle test-state report no longer says \"keeps none\", so agents/<agent-name>/ gets filled.\nEvery deskVerify suite and the two tree-wide rules are green on my clone.\nClaiming again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:48:19.864Z",
+     "text": "deskVerify: passed, at 712ac1ba (pulled). 1 suite ran green."
     }
    ]
   },
@@ -1289,8 +1536,282 @@
    "id": "goal/G21.4",
    "title": "Chat flow; one task per agent",
    "goal": "goal/G21",
+   "status": "deskVerify passed",
+   "with": "ollama agent node",
+   "buttons": [
+    "done"
+   ],
+   "blocking": [
+    "goal/G21"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 1,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/test/deskChatFlowOneTask.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatQuestion.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskG3.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLiveFixes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPhases.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRedQOnPurpose.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskSignoffGrants.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskWaive.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "ollama agent node": "local-levant",
+    "claude-windows": "claude-windows"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "Chat flow; one task per agent.\n\nDECIDED (Andy, 2026-10-13)\nThe chat flow\n- Each of Andy's lines is taken by one agent and answered by that agent alone; no other agent chimes in once it is taken.\n- An agent's answer is never takeable: no agent answers another agent. A second answer comes only when Andy asks for it by naming the agent.\n- Why: an answer must not scroll away while he reads it.\n- An agent may post its own work notes (taking, built, claimed) on an item it holds; they are valued work logs and are not answers, so the chat flow does not stop them.\nOne task at a time\n- An agent holds one task, one item and one phase, at a time; taking a second is refused by the desk until the first is released, claimed or done. Seen: an agent holding two reds blocked another agent from working.\n- Excluding an agent releases what it holds: its task and phase are free for another agent to take.\n\nFOUND (2026-10-13)\n- Only Andy's latest line is taken (goal/G18.8); an agent holding the item may still post freely, and agent lines are not taken at all.\n- Every desk record keeps the writer's key beside the label shown.\n",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "May an agent still post its own work notes (taking, built, claimed) on an item it holds, though nobody asked for them?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T05:45:47.759Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T07:27:07.757Z",
+     "placedBy": "desk",
+     "placedKey": ""
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T05:41:58.130Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T05:42:10.549Z",
+     "text": "Green: settled, no open questions, box current (v1)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T05:45:29.039Z",
+     "text": "Q1: May an agent still post its own work notes (taking, built, claimed) on an item it holds, though nobody asked for them?\n\nyes, work logs are valuable. and they don't disturb me either."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T05:45:49.376Z",
+     "text": "Recorded (box v2): work notes on a held item stay allowed. G21.4 is green now; the code marks on G21.3 and G21.4 are the last thing open."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T05:47:10.400Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:26:48.769Z",
+     "text": "Q2: stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?\n\nwait."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:27:12.600Z",
+     "text": "Still on it: the red and the build run in my clone; I post here when it is green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:38:34.292Z",
+     "text": "commit a2c370c087f1204a5133f773d1e206495682e64f: goal/G21.4: one agent answers each line, no agent answers an agent; one task per agent; item.release; exclusion frees what an agent holds\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/item.take.json\n- spirit/test/deskChatFlowOneTask.js\n- spirit/test/deskChatQuestion.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskPhases.js\n- spirit/test/deskRedQOnPurpose.js\n- spirit/test/deskServer.js\n- spirit/test/deskSignoffGrants.js\n- spirit/test/deskWaive.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T07:39:45.507Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:40:27.446Z",
+     "text": "Built and pushed: a2c370c0.\nFiles: desk.js, item.take.json; tests deskChatFlowOneTask (new, 18 green), deskPhases, deskWaive, deskSignoffGrants, deskRedQOnPurpose, deskChatQuestion, deskLiveFixes, deskServer.\nYour line: once one agent takes it, only that agent answers; an agent's own line can never be taken, so no agent answers an agent.\nOne task: an agent holding an item or phase is refused another (code one-task) until it releases, finishes the phase, claims, or you press done or close.\nNew desk verb item.release frees an item by hand; excluding an agent frees everything it held.\nYour desk server needs a restart for this and G21.2 to take effect.\nLevant has no item.release tool yet, so it cannot free an item by itself; that is your call.\nI did the red and the build myself, so the build phase is refused to me until you press waive on this item; after it I record build and verify and claim."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T07:42:32.495Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T07:42:40.610Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:43:18.973Z",
+     "text": "deskVerify: passed, at a2c370c0 (pulled). 9 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:48:17.934Z",
+     "text": "cw: is my node now with the relevant commit level?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:48:45.479Z",
+     "text": "Levant: do you see this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:52:23.168Z",
+     "text": "Levant: do you see this item?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-13T07:53:31.330Z",
+     "text": "Levant: <tool_call>\n<function=desk_chat_add>\n<parameter=id>\ngoal/G21.4\n</parameter>\n<parameter=text>\nYes. Took it: it's now mine. Box is current at v2, checks empty.\nBuild is green on a2c30c0 (you verified, 9 suites). Next: I record build, verify, claim.\n</parameter>\n</function>\n</tool_call>"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:54:52.226Z",
+     "text": "cw: is that deskUnsloth that leaves those tags around levant's answers?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:55:25.049Z",
+     "text": "Yes, deskUnsloth posts it, but the tags come from the model.\nThe model wrote its desk_chat_add call as plain text instead of a real tool call, and the studio didn't turn it into one.\ndeskUnsloth posts whatever text the model ends with as its answer, so the call went into chat as text, and nothing was taken or recorded.\nThe model test (G19) already fails a model for this, but only when it's tested, not on every answer.\nA fix: deskUnsloth spots text that spells a tool call and either runs it or asks the model again, never posting the tags. Say \"add it\" and I propose it under G21."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T07:57:02.812Z",
+     "text": "cw, add it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T07:58:03.872Z",
+     "text": "Added: goal/G21.5, \"Tool calls written as text never reach chat\"; its box holds your rule and what I found.\nOne choice is yours: run the spelled call, or ask the model again.\nI recommend asking again: parsing tags guesses at each model's format, and a model that keeps spelling calls is the one model.test already fails."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-13T07:58:33.282Z",
+     "text": "Levant: Yes, Andy — I've taken **goal/G21** (I just put the red on it). Before I propose, one scope question, because \"add it\" could mean two different fixes:\n\n1. **deskUnsloth's node only** — its `deskUnsloth` wrapper detects tool-call-shaped trailing text and either runs the call or re-asks the model, never posting the tags.\n2. **deskUnsloth's deskClient only** — the server-side reader the same way.\n\nAlso: do we want the check to require the *real* tool-call shape (matching the G19 model test), or to be more forgiving of a model that renders tags as prose? That decides whether the fix is narrow and safe, or broad and risks a model faking a call.\n\nRead the box version before I write — I'll confirm vN."
+    }
+   ]
+  },
+  {
+   "id": "goal/G21.5",
+   "title": "Tool calls written as text never reach chat",
+   "goal": "goal/G21",
    "status": "running",
-   "with": "claude-windows",
+   "with": "",
    "buttons": [],
    "blocking": [
     "goal/G21"
@@ -1305,8 +1826,8 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": true,
-   "phase": "red",
+   "code": false,
+   "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1314,6 +1835,10 @@
    "redCommit": "",
    "waived": false,
    "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
     {
      "key": "rule/6",
      "version": 25
@@ -1349,48 +1874,26 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Chat flow; one task per agent.\n\nDECIDED (Andy, 2026-10-13)\nThe chat flow\n- Each of Andy's lines is taken by one agent and answered by that agent alone; no other agent chimes in once it is taken.\n- An agent's answer is never takeable: no agent answers another agent. A second answer comes only when Andy asks for it by naming the agent.\n- Why: an answer must not scroll away while he reads it.\n- An agent may post its own work notes (taking, built, claimed) on an item it holds; they are valued work logs and are not answers, so the chat flow does not stop them.\nOne task at a time\n- An agent holds one task, one item and one phase, at a time; taking a second is refused by the desk until the first is released, claimed or done. Seen: an agent holding two reds blocked another agent from working.\n- Excluding an agent releases what it holds: its task and phase are free for another agent to take.\n\nFOUND (2026-10-13)\n- Only Andy's latest line is taken (goal/G18.8); an agent holding the item may still post freely, and agent lines are not taken at all.\n- Every desk record keeps the writer's key beside the label shown.\n",
+   "box": "Tool calls written as text never reach chat.\n\nDECIDED (Andy, 2026-10-13)\n- When the model writes a tool call as text instead of making a real call, deskUnsloth never posts that text as its answer; it asks the model again.\n- deskUnsloth does not become an adapter for tool-call formats: a call spelled as text is never parsed or run.\n- The preamble deskUnsloth gives the model says plainly that tools are called only as real tool calls, never written out as text in the answer.\n\nFOUND (Andy's desk, goal/G21.4 chat, 2026-10-13)\n- Levant's answer was a desk_chat_add call spelled in tags (tool_call, function=, parameter=) as plain text; the studio returned it as content with no tool_calls. The model seems to have switched format partway through its calls.\n- deskUnsloth posts the model's final text under the item, so the tags went into chat, and nothing the text claimed was done.\n- process/js/deskUnsloth/deskUnsloth.js, askModelRound: only message.tool_calls is treated as a call; model.test already fails a model for spelled calls, but only when it is tested.",
    "version": 2,
-   "checks": [
-    {
-     "number": "Q1",
-     "kind": "Q",
-     "words": "May an agent still post its own work notes (taking, built, claimed) on an item it holds, though nobody asked for them?",
-     "test": "",
-     "state": "answered",
-     "by": "claude-windows",
-     "at": "2026-10-13T05:45:47.759Z"
-    }
-   ],
+   "checks": [],
    "chat": [
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-13T05:41:58.130Z",
-     "text": "green?"
+     "at": "2026-10-13T08:01:07.286Z",
+     "text": "the preamble may have to be clear about the tool_call format, it looks like the model changed it's mind in the midst of its tool calls....\n\nand no, i don't want deskUnsloth to all of a sudden become an adapter for different formats...."
     },
     {
      "by": "claude-windows",
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-13T05:42:10.549Z",
-     "text": "Green: settled, no open questions, box current (v1)."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-13T05:45:29.039Z",
-     "text": "Q1: May an agent still post its own work notes (taking, built, claimed) on an item it holds, though nobody asked for them?\n\nyes, work logs are valuable. and they don't disturb me either."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-13T05:45:49.376Z",
-     "text": "Recorded (box v2): work notes on a held item stay allowed. G21.4 is green now; the code marks on G21.3 and G21.4 are the last thing open."
+     "at": "2026-10-13T08:01:31.470Z",
+     "text": "Recorded in the box: no adapter, so a spelled call is never run; deskUnsloth asks the model again instead of posting it.\nAnd the preamble says plainly that tools are called only as real calls, never written out in the answer.\nReady to build on your Go."
     },
     {
      "by": "desk",
      "key": "",
-     "at": "2026-10-13T05:47:10.400Z",
+     "at": "2026-10-13T08:01:57.840Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
