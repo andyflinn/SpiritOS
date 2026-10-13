@@ -1,5 +1,5 @@
 {
- "change": 56385,
+ "change": 56388,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G21.2"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -50,10 +48,7 @@
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows",
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -937,10 +932,11 @@
    "id": "goal/G21.2",
    "title": "Red Q checks only on purpose",
    "goal": "goal/G21",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G21"
@@ -1022,7 +1018,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Red Q checks only on purpose.\n\nDECIDED (Andy, 2026-10-13)\n- A red Q is a concise question placed with deliberation, to block an item until it is resolved.\n- A question mark in a chat line never makes a red Q; only a deliberate Q check does.\n- One open red Q per agent per item: a second is refused until the first is answered or cleared.\n- A Q longer than one sentence, or over about 200 bytes, is refused with a why.\n- Andy clears them himself: Q:clear deletes every red Q on the item; Q<n>:clear deletes only that one.\n- When Andy clears a Q, the agent that placed it is notified; a clear is a form of reply, so the agent updates its position on that question.\n- A red Q clicked into Andy's chat box arrives followed by two newlines, so the question stands apart from the answer he writes below it.\n\nFOUND (2026-10-13)\n- Today the desk turns any chat line ending in a question mark into a red Q check, and each open red Q holds up Go and other presses.\n",
