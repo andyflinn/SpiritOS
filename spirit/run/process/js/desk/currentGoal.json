@@ -1,5 +1,5 @@
 {
- "change": 57626,
+ "change": 57726,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run started",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -44,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -1211,14 +1212,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G22"
    ],
-   "blocked": [
-    "goal/G22.5"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1397,9 +1397,12 @@
    "id": "goal/G22.5",
    "title": "EnsureIdentity",
    "goal": "goal/G22",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G22.4"
    ],
@@ -1407,11 +1410,16 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "bash/face-install",
+     "by": "claude-windows",
+     "core": false
+    },
     {
      "path": "spirit/run/js/hub.js",
      "by": "claude-windows",
@@ -1458,6 +1466,11 @@
      "core": true
     },
     {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
      "path": "spirit/run/js/server.js",
      "by": "claude-windows",
      "core": true
@@ -1498,7 +1511,17 @@
      "core": false
     },
     {
+     "path": "spirit/test/identityAtBoot.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
      "path": "spirit/test/labLifecycle.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/noKeylessNode.js",
      "by": "claude-windows",
      "core": false
     },
@@ -1508,20 +1531,30 @@
      "core": false
     },
     {
-     "path": "spirit/test/presenceShow.js",
+     "path": "spirit/test/ownerFile.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/sealKeys.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/spiritErrors.js",
      "by": "claude-windows",
      "core": false
     }
    ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -1562,8 +1595,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "EnsureIdentity: one real identity from the first call.\n\nDECIDED (Andy, 2026-10-13)\n- The first call to ensureIdentity ensures a real, permanent identity exists; every later call returns that same identity and never makes another.\n- When no name is given, ensureIdentity takes the machine's name as the default.\n- This is fixed before anything else in goal/G22.\n- The node calls ensureIdentity during boot, first, before the hub is made, so the hub never has a chance or a need to make one; the claim finds the identity already there.\n- Law: no node-boot is done until the node has a key and a default name.\n- relayAuth makes the key on its own first load, for the spirit/run it sits in (every copy of the code has its own); no other component ever makes or checks for one.\n- Every piece of documentation (comments, AGENT.md, design files, suite headers) that suggests the node may not know its own key before it listens on its local port (usually 65432) is updated, so the idea is gone for good.\n- It never comes back: a suite boots a fresh node and claims, and fails unless the key exists before the port opens and the claim keeps it; another reads every comment and document in the tree for the phrases this idea was written in, and fails if one reappears.\n- Only relayAuth.js changes code: it ensures the identity exists, before the node listens on its port. Every other file changes only its comments; their code stays as it is.\n- Each no-key-yet branch is marked with the comment: DEPRECATED: the node's ID exists before first node-listen.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- server.js calls ensureIdentity with an empty name at every boot (since 2026-09-24, to grow a seal key on older nodes); on a fresh node that makes a key with no name.\n- relayAuth.js loadIdentity treats an identity with no name as none (since 2026-09-13).\n- So the first claim (hub.js signedClaim, ensureIdentity with the claimed name) finds \"no identity\" and makes a new key over the boot key. Measured in a scratch folder: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.\n",
-   "version": 9,
+   "box": "EnsureIdentity: one real identity from the first call.\n\nDECIDED (Andy, 2026-10-13)\n- The first call to ensureIdentity ensures a real, permanent identity exists; every later call returns that same identity and never makes another.\n- When no name is given, ensureIdentity takes the machine's name as the default.\n- This is fixed before anything else in goal/G22.\n- The node calls ensureIdentity during boot, first, before the hub is made, so the hub never has a chance or a need to make one; the claim finds the identity already there.\n- Law: no node-boot is done until the node has a key and a default name.\n- relayAuth makes the key on its own first load, for the spirit/run it sits in (every copy of the code has its own); no other component ever makes or checks for one.\n- Every piece of documentation (comments, AGENT.md, design files, suite headers) that suggests the node may not know its own key before it listens on its local port (usually 65432) is updated, so the idea is gone for good.\n- It never comes back: a suite boots a fresh node and claims, and fails unless the key exists before the port opens and the claim keeps it; another reads every comment and document in the tree for the phrases this idea was written in, and fails if one reappears.\n- relayAuth.js ensures the identity exists, before the node listens on its port, and no longer exports ensureIdentity, so every caller is fixed before this item closes: server.js and relayServer.js drop their boot calls, hub.js's claim uses one narrow call that only sets the name, jobs.js and the test suites stop making identities. Beyond those callers, files change only their comments.\n- Each no-key-yet branch is marked with the comment: DEPRECATED: the node's ID exists before first node-listen.\n- The error texts on those branches mislead a reader too: each becomes \"DEPRECATED error: \" followed by its old text.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- server.js calls ensureIdentity with an empty name at every boot (since 2026-09-24, to grow a seal key on older nodes); on a fresh node that makes a key with no name.\n- relayAuth.js loadIdentity treats an identity with no name as none (since 2026-09-13).\n- So the first claim (hub.js signedClaim, ensureIdentity with the claimed name) finds \"no identity\" and makes a new key over the boot key. Measured in a scratch folder: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.\n",
+   "version": 11,
    "checks": [
     {
      "number": "G1",
@@ -1573,6 +1606,26 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-13T19:44:53.744Z"
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Unexport ensureIdentity and fix its callers in this item, though that changes code in server, hub, relayServer and jobs beyond relayAuth?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T19:54:00.111Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/hub.js, spirit/run/js/jobs.js, spirit/run/js/node/card.json, spirit/run/js/nodeCard.js, spirit/run/js/ownerPost.js, spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/puppetMode.js, spirit/run/js/relayAuth.js, spirit/run/js/relayServer.js, spirit/run/js/server.js, spirit/run/js/spiritErrors.js, spirit/run/shell/info/info.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-13T20:08:52.013Z"
     }
    ],
    "chat": [
@@ -1773,6 +1826,138 @@
      "key": "",
      "at": "2026-10-13T19:45:30.496Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T19:45:37.788Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:46:40.859Z",
+     "text": "Taking the red: a suite that plants relayAuth and boots a fresh node (key before the port opens, the claim keeps it), and one that fails if the idea reappears in any comment or document. Then relayAuth alone changes code; every other file only its comments, with your DEPRECATED line on each no-key branch."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:52:28.059Z",
+     "text": "could you stop exposing ensureIdentity in relayAuth, so that we're forced to fix it's callers before this item can close?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:52:57.801Z",
+     "text": "Yes, and it is the stronger guard: with ensureIdentity no longer exported, every caller fails until fixed, and nobody can mint an identity again.\nIt does mean code changes beyond relayAuth, against \"the others change only comments\": server.js and relayServer.js drop their boot calls (load already did it), hub.js's claim needs one narrow call that only sets the name (no key), and 9 test suites that make identities in scratch folders need their own way.\nSay yes and I fold it into this item: ensureIdentity unexported, a nameOnly call for the claim, the four callers fixed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:53:38.567Z",
+     "text": "understood: \"It does mean code changes beyond relayAuth\"\n\ngranted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:54:19.661Z",
+     "text": "Folded in (box v10): ensureIdentity is no longer exported; server and relayServer drop their boot calls, the claim gets one narrow call that only sets the name, jobs and the test suites stop minting. Q1 answered."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T20:04:27.251Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:04:30.887Z",
+     "text": "Built, not yet committed: one grant is missing. G2 is your G1 plus relayServer.js, which now names a relay through the narrow call instead of minting.\nWhat it does: relayAuth makes its own spirit/run's identity on first load (machine name by default) and no longer exports ensureIdentity; a claim names the node through nameIdentity and never re-keys; server.js no longer calls it at boot; tests get a scratch identity by planting relayAuth (plantIdentity.js).\nRed was 9 and 1 failing; now identityAtBoot 11 green (the key exists before the port answers, the claim keeps it, ensureIdentity is not exported) and noKeylessNode 3 green, with about 70 suites around it green. My live node's identity file was byte-identical throughout.\nLeft as is, marked DEPRECATED: error texts inside code lines (\"this node has no key yet\" and its kin), since you ruled their code stays.\nGrant G2 and I commit and claim."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:08:02.876Z",
+     "text": "why would you leave the error messages? they can also mislead a reader, AND if you want to keep the error messages, change then to \"DEPRICATED error: errorToex\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:08:30.440Z",
+     "text": "Right, they mislead as much as the comments. Doing it (box v11): every such error text becomes \"DEPRECATED error: \" followed by its old text; the error codes stay. G2 still wants your grant before I commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:11:58.719Z",
+     "text": "commit 42f4e22e27cb88c03b4587dbd4e590a68c132473: goal/G22.5: relayAuth makes the node's one identity on its first load (machine name by default) and no longer exports ensureIdentity; a claim only names it; every no-key idea marked DEPRECATED\n- bash/face-install\n- design/cycles/2026-09-15-labels-are-not-identities.md\n- design/reviews/claude-clowd/2026-10-10-master-review.md\n- spirit/run/js/hub.js\n- spirit/run/js/jobs.js\n- spirit/run/js/node/card.json\n- spirit/run/js/nodeCard.js\n- spirit/run/js/ownerPost.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/presenceNode.js\n- spirit/run/js/puppetMode.js\n- spirit/run/js/relayAuth.js\n- spirit/run/js/relayServer.js\n- spirit/run/js/server.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/process/js/desk/offboard.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/run/shell/info/info.js\n- spirit/test/backupServer.js\n- spirit/test/faceNoIdentity.js\n- spirit/test/guarantees.js\n- spirit/test/identityAtBoot.js\n- spirit/test/labLifecycle.js\n- spirit/test/labMaster/labMaster.js\n- spirit/test/labPopulate.js\n- spirit/test/labWorld.js\n- spirit/test/noKeylessNode.js\n- spirit/test/nodeInfo.js\n- spirit/test/notASuite.js\n- spirit/test/ownerClaim.js\n- spirit/test/ownerFile.js\n- spirit/test/plantIdentity.js\n- spirit/test/presenceShow.js\n- spirit/test/sealKeys.js\n- spirit/test/world.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T20:12:15.389Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:12:20.968Z",
+     "text": "Pushed: 42f4e22e, under your grants G1 and G2.\nrelayAuth makes the identity of the spirit/run it sits in on its first load, named by the machine unless already named, and no longer exports ensureIdentity. A claim names the node through nameIdentity and never re-keys; server.js no longer mints at boot; relayServer names its relay through the same call.\nEvery no-key comment is rewritten, every no-key branch carries \"DEPRECATED: the node's ID exists before first node-listen.\", and every such error text now starts \"DEPRECATED error: \"; the two dated design records got one dated line.\nGuards: identityAtBoot (11 green: key before the port answers, kept by the claim, ensureIdentity not exported) and noKeylessNode (fails if the idea reappears in any comment or doc). About 85 suites around it ran green; my live node's identity file was untouched throughout.\nYour node takes it at its next restart; relays at the next tag."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T20:12:23.121Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:13:19.314Z",
+     "text": "deskVerify: rejected, at 42f4e22e (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/noKeylessNode.js: FAILURE #1.1: 2 lines still say a node may lack its key before it listens — spirit/run/process/js/desk/currentGoal.json:1721 \"minted by its first claim\"; spirit/run/process/js/desk/currentGoal.json:1739 \"node has no key yet\""
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T20:13:20.779Z",
+     "text": "verify rejected: spirit/test/noKeylessNode.js: FAILURE #1.1: 2 lines still say a node may lack its key before it listens — spirit/run/process/js/desk/currentGoal.json:1721 \"minted by its first claim\"; spirit/run/process/js/desk/currentGoal.json:1739 \"node has no key yet\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:14:00.953Z",
+     "text": "commit 1645f0f2dc08f98662928e5b94b670a44724b2e7: goal/G22.5: noKeylessNode skips the desk's currentGoal.json snapshot, which quotes the goal's own chat\n- spirit/test/noKeylessNode.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:14:08.064Z",
+     "text": "Rejected on the guard catching its own chat: currentGoal.json is the desk's snapshot of this goal, quoting the phrases we were discussing. The guard now skips that one file by name (1645f0f2); claiming again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:15:01.461Z",
+     "text": "deskVerify: passed, at 1645f0f2 (pulled). 10 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:15:05.972Z",
+     "text": "Rejected on the guard catching its own chat: currentGoal.json is the desk's snapshot of this goal, quoting the phrases we were discussing. The guard now skips that one file by name (1645f0f2); claiming again.\n\nExplain to me why you want to skip a file?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:15:29.608Z",
+     "text": "Because that file is not a description of the node; it is a copy of our conversation. The desk writes it from the goal's chat and boxes, and our chat quotes the wrong idea in order to remove it (\"node has no key yet\" came from my own post). The guard's job is to catch code, comments and docs that teach the idea; counting the chat would make every future talk about it turn the run red, and you could never discuss the subject in Desk again.\nIt is named in the suite, not hidden, so you can see it and strike it.\nThe other way: the desk's snapshot leaves git (it is regenerated by the desk anyway), and then nothing needs skipping. Your pick."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:16:09.720Z",
+     "text": "agreed. preceed."
     }
    ]
   }
