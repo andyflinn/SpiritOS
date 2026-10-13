@@ -1,5 +1,5 @@
 {
- "change": 57428,
+ "change": 57535,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -10,10 +10,13 @@
    "status": "goal run started",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G22.4"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -22,7 +25,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -38,16 +41,18 @@
     "claude-ubuntu": "claude-ubuntu",
     "ollama agent node": "local-levant"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -56,7 +61,19 @@
    },
    "box": "Using the stack-frame tests as design-enforcement tool.\n\nWHAT EXISTS (paths under spirit/test/)\n- tools/wirePaths.js records, during the suites it drives, every call stack inside our own code that reaches a bottom, and ranks the paths. A stack sees where code arrives, not what it resembles, so it finds a second route to the same place even when no name or text is shared.\n- Its bottoms: wire (the network), fs-write, crypto, child-process, and two components, presenceNode and postQueue.\n- oneDoorStacks.js (goal/G19.14) is the enforcing suite: one test per bottom that names a door. It runs that row's suites and fails on any stack with a production frame (spirit/run/) and no frame in the door. Stacks with no production frame are a suite unit-testing the component and are not counted. A run that never reaches the component fails.\n- Two doors are enforced today: nobody but peerPost reaches presenceNode, and nobody but peerPost reaches postQueue.\n- oneDoorStacks.js is part of run all: runAll.js and deskVerify's full run both take every suite in spirit/test.\n\nHOW IT ENFORCES A DESIGN\n- A design rule of the form \"only this door may reach that component\" becomes one row: the door, the component, and the suites that drive it.\n- The wire, fs-write, crypto and child-process bottoms are measured but have no door yet; each ruling such as \"only X writes to disk\" costs one row.\n\nITS LIMIT\n- It sees only the paths the driven suites walk: a row is as good as its suites, and a path no suite exercises stays invisible.\n\nITEMS\n- goal/G22.3: the gg plugin, a goal-governance plugin desk mounts from its plugin folder.\n",
    "version": 7,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Fix the hub and offboard relay violators in G22 so its goal run goes green, or close G22 with the red and fix them under Maintain this plugin?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -285,6 +302,48 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T15:36:28.462Z",
      "text": "That red is the doors doing their job: oneDoorStacks fails on the real violators (the hub's four relay calls, offboard's fetch), as you wanted.\nBut it means G22's goal run cannot pass while they stand, so \"done once looped in with the verifier\" and a green goal run cannot both hold.\nTwo ways: fix the violators as items in this goal (the hub's calls through peerPost, offboard through peerPost), then the goal goes green honestly; or close G22 with the red standing and carry the fixes into the \"Maintain this plugin\" goal.\nWhich?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:18:53.210Z",
+     "text": "goal run on 12 suites: red in spirit/test/oneDoorStacks.js (at 3fa7835c, pull failed: fatal: Cannot fast-forward to multiple branches.), so the goal is not passed; nothing taken back: the tree was pull failed: fatal: Cannot fast-forward to multiple branches."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:19:31.996Z",
+     "text": "The pull failure: two git fetches ran in your tree at the same moment and both wrote master into FETCH_HEAD, which git reads as \"multiple branches\". A fresh fetch cleared it (nothing in your files changed), so deskVerify's next pull goes through.\nIt can happen again now that the plugin pushes from your tree while deskVerify pulls there; the cure is one git lock that deskVerify and the plugin share. I'd fold that into whichever way you choose for the red above."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:21:23.359Z",
+     "text": "why don't you put a red here to draw my attention?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:21:42.939Z",
+     "text": "You are right, it blocks the goal: it is a red Q on G22 now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:22:59.930Z",
+     "text": "Q1: Fix the hub and offboard relay violators in G22 so its goal run goes green, or close G22 with the red and fix them under Maintain this plugin?\n\nopen an item here to get this done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:23:27.920Z",
+     "text": "Opened goal/G22.4, \"Hub and offboard reach relays only through peerPost\"; its box lists the seven violators and what peerPost lacks. Ready on your Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:23:37.791Z",
+     "text": "goal run on 12 suites: red in spirit/test/oneDoorStacks.js (at ff17e67b, pulled), so the goal is not passed; the search for items listing the red was partial, so an item may have been missed"
     }
    ]
   },
@@ -1145,6 +1204,263 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T15:27:30.301Z",
      "text": "deskVerify: passed, at 16c324db (pulled). 11 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G22.4",
+   "title": "Hub and offboard reach relays only through peerPost",
+   "goal": "goal/G22",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G22"
+   ],
+   "blocked": [
+    "goal/G22.5"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "The hub and offboard reach relays only through peerPost.\n\nDECIDED (Andy, 2026-10-13)\n- The relay violators the stack-frame doors find are fixed in goal/G22, so its goal run goes green honestly.\n- Every request our production code sends to a relay goes through peerPost (the gate peerPost.js::createPeerPost); the stack-frame test is the judge, through deskVerify.\n- peerPost owns every contact with a relay, its relaying and its public verbs (key, claim) alike, and uses relayRequest only inside itself; the hub never touches a relay or relayRequest, it asks peerPost. Relay listing is a search over the relays peerPost already knows, with no call to a relay.\n- Offboard asks its node, never a relay.\n- One door holds it: nothing reaches a relay or relayRequest except through peerPost.js::createPeerPost.\n- The one legal exception: a post to the node's own self before it knows any relay. It is written into the door by name and reported in every run.\n\nFOUND (the relay door's run, 2026-10-13; paths under spirit/run/)\n- js/hub.js:300 sealedClaim, from handleClaim: fetches the relay's key itself.\n- js/hub.js:1084 handleClaim: posts the claim to the relay itself.\n- js/hub.js:2784 relaySummary, from relayGet and from relaySearch, via ownerBadge's probe: asks each relay for its key itself.\n- js/hub.js:2651 handlePartnerCheck: fetches the relay's key itself.\n- js/hub.js:1019 withClaimRelay and js/hub.js:1774 handleContact: check a relay's address with the relay library directly.\n- process/js/desk/offboard.js:78 main: fetches the relay's key with a plain fetch, around even the relay library.\n- peerPost today offers post, onRequest, onReply and its stream functions; none of these fetch a relay's key or send a claim, so peerPost needs those calls of its own.",
+   "version": 3,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:29:15.568Z",
+     "text": "how do you plan to handle these 7 issues?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:29:52.355Z",
+     "text": "Three moves for the seven:\n1. Four of them fetch a relay's key or send a claim (the hub's claim, partner check and relay summary, and ownerBadge's probe under it). peerPost gets two calls of its own, relayKey(url) and claim(url, body), and the hub and ownerBadge use them. Then every key fetch and claim leaves through peerPost, and the hub keeps no transport.\n2. Two (withClaimRelay, handleContact) only check that a relay address is well-formed: assertRelayUrl sends nothing, it sits in relayRequest.js only by history. It moves to a small module of its own, so the relayRequest door counts transport and nothing else. Your call whether that is honest or a dodge; I think honest, since nothing goes over the wire.\n3. Offboard is a separate tool talking to its node. It fetches the key only to address its goodbye; it should ask its node instead. If no existing verb gives a relay's key, that needs a new node verb, which is yours to approve with a review.\nThe red first: the doors as they stand already fail on all seven, so the red is the current oneDoorStacks run; done when the relay doors run green in deskVerify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:33:03.000Z",
+     "text": "1. in english"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:33:22.007Z",
+     "text": "1, in plain words: today the hub talks to relays itself in four places, when someone claims a name, when it checks a partner, and when it lists relays, each time asking a relay for its key or handing it a claim. Instead, peerPost learns to do those two things (ask a relay for its key, hand a relay a claim), and the hub asks peerPost to do them. Then the hub never talks to a relay on its own, and peerPost is the only part of the node that does."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:36:37.060Z",
+     "text": "listing relays must be a normal peerPost(), a search no?\ncan the claim stuff be handled via the proxy?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:37:02.018Z",
+     "text": "Listing: yes, it should be a search, and it needs no relay call at all. peerPost already knows each relay it holds a stream to, with its key and status (relaysHeld, relayStatus); the list becomes a search over what peerPost knows, and the hub's live key fetch per relay goes away.\nClaim via the proxy: I'd say no. The proxy is net.fetch, the owner's gate for calls to outside sites; a claim is relay traffic, so sending it there moves the bypass from the hub to net.fetch instead of closing it. The claim belongs inside peerPost, beside post."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:38:32.678Z",
+     "text": "relay traffic is peerPosts, the public, non peerPost verbs exists on the relay as well, outside it's actual work or relaying"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:38:57.315Z",
+     "text": "Then I had it wrong, and your proxy idea fits. A relay has two kinds of door: its work, relaying (post, reply, stream), which is peerPost's; and its public verbs (its key, a claim, its version), which are a public web service like any other site, so they go through the proxy, net.fetch, under your allow list.\nSo the rule becomes: every call to a relay goes through exactly one of two roads, peerPost for relaying and the proxy for its public verbs, and nothing else may reach a relay. The hub's key fetches and claim, and offboard's fetch, move onto the proxy.\nFor the doors: two rows on the network, one gated at peerPost for the relaying routes, one gated at the proxy for the public ones, and any call on neither road is a violator. Is that the shape?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:39:48.016Z",
+     "text": "and any old donkey can call those relay verbs without our core's permission, so why not us?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:40:12.375Z",
+     "text": "We may, the relay does not care who asks. The one-door rule was never about the relay's permission; it is about us having one road, so there is one timeout, one size cap, one place to fix a fault. The review's M11 (relayRequest has no timeout and no size cap) is exactly what a second road hides.\nSo for the public verbs, the honest door is the one transport: the hub calling them through relayRequest is fine, and only a call around it is a violator. That leaves one real violator for this class, offboard's plain fetch; the hub's four become legal.\nThe relaying routes (post, reply, stream) stay peerPost's alone. Two rows, then: relaying gated at peerPost, public relay verbs gated at relayRequest. Agreed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:42:21.580Z",
+     "text": "why do you want the hub to reach into peerRequest?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:42:43.960Z",
+     "text": "I don't, on reflection: that was me bending to \"any donkey may call them\". The hub reaching into relayRequest is the hub keeping a transport of its own, which is what we are removing.\nThe clean shape is the first plan: the hub never touches a relay or its transport; it asks peerPost. peerPost owns every contact with a relay, relaying and public verbs alike, and uses relayRequest inside itself; relay listing is a search over the relays peerPost already knows.\nThen one door covers it all: nothing reaches a relay or relayRequest except through createPeerPost, and offboard asks its node rather than the relay. Go with that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:44:52.636Z",
+     "text": "the only legal loophole i can see would be a peerPeer post to the very own node, before it knows a relay."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:45:26.179Z",
+     "text": "Recorded in the box (v3): peerPost owns every contact with a relay, listing is a search over what it knows, offboard asks its node, one door at createPeerPost, and your one exception, a post to the node itself before it knows a relay, named in the door and reported every run. I take the red on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T18:46:51.169Z",
+     "text": "explain in detail."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T18:47:29.522Z",
+     "text": "The plan in detail.\n\nToday: the hub talks to relays on its own in four places, and offboard in one.\n- Claim: when someone claims a name on a relay, the hub first asks the relay for its key, then sends the claim itself.\n- Partner check: the hub asks a relay for its key itself.\n- Relay list (relay.get and relay.search): the hub asks every relay for its key and status itself, through ownerBadge's probe, to show which relays are online and joined.\n- Contact and claim-relay addresses: the hub checks a relay address with the relay library directly (only a format check, nothing sent).\n- Offboard: the tool fetches a relay's key with a plain web request, around everything.\n\nAfter:\n1. peerPost gets two new abilities of its own: ask a relay for its key, and hand a relay a claim. They use the relay library inside peerPost, with its one timeout and size limit.\n2. The hub's claim and partner check ask peerPost for those, and stop calling the relay library.\n3. The relay list stops asking relays live. peerPost already holds a stream to each relay it uses and knows each one's key and state; the list becomes a search over that. A relay peerPost has never met shows as not joined, not as probed.\n4. The address check moves out of the relay library into a small module of its own, since it sends nothing; then \"the relay library\" means only things that go over the wire.\n5. Offboard asks its own node for the relay's key with relay.get, an existing verb that already answers it, so no new node verb is needed.\n6. The one exception you named, a post to the node itself before it knows any relay, is written into the door by name and shows in every run as excepted.\n\nThe judge: the relay door, gated at createPeerPost with no path filter, run through deskVerify. It is red today on these paths; the item is done when that door is green, except for the named exception.\nThe risk: the relay list changes what it shows for relays peerPost has no stream to; that is the one visible change for you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:11:59.878Z",
+     "text": "Does the Node now finally generate it ID-key on first boot?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:12:28.460Z",
+     "text": "No. A node's key is still made at its first claim, not at boot: hub.js signedClaim calls ensureIdentity (hub.js line 158), and server.js never calls it on start. A relay does make its key on boot (relayServer.js line 385); a node does not.\nSo a fresh node has no key until it claims a name, which is also why your exception exists: before it knows a relay it has nothing to sign with.\nMaking the node mint its key on first boot is a small change of its own; say so and I add it as an item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:13:54.975Z",
+     "text": "FUCK! i thought we fixed that. This is SOOOOOO stupid. Fix that now, before anything else. god, how many times do we go through this shit.\n\nexplain! no code."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:14:50.260Z",
+     "text": "I was wrong a moment ago, and it is worse than \"not at boot\". Checked in a scratch folder just now:\n1. On first boot the node does make a key (server.js calls ensureIdentity with an empty name, since 2026-09-24).\n2. But that key is saved without a name, and loadIdentity, which everything uses to read the node's key, refuses an identity with no name, so the node acts as if it had no key.\n3. At the first claim, ensureIdentity looks with loadIdentity, finds \"nothing\", and makes a NEW key over the boot one. Measured: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.\nSo the key is made at boot and thrown away at the first claim; the node's real identity still begins at its claim. The boot key was added for a different reason (old nodes growing a seal key) and nobody joined it to the claim path.\nThe fix: a key needs no name. loadIdentity accepts a nameless identity, the claim keeps the key it finds and only writes the name, and a test pins it: boot, claim, same key."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:15:11.047Z",
+     "text": "now why the fuck would that first key be thrown away? god, this is stupid?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:15:34.926Z",
+     "text": "No good reason; two changes that never met.\nOn 2026-09-13 \"has an identity\" was written as \"has a name and a key\", because then both were made together, at the claim (relayAuth.js loadIdentity: no name, no identity).\nOn 2026-09-24 the boot step was added to grow a seal key on old nodes; on a fresh node it also makes a key, with an empty name. Nobody changed the 09-13 definition, so that key fails it, and the claim, seeing \"no identity\", makes another.\nThe name is not part of the identity; the key is. That is the fix."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:17:32.230Z",
+     "text": "the first call to ensureIdentity MUST fucking ensure a real, permanent identity exists. Ensure Identity can take the machine-name as a default, it's not rocket science. New item EnsureIdentity."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:17:57.332Z",
+     "text": "Opened goal/G22.5, \"EnsureIdentity\": the first call makes the one permanent identity, the machine name is the default name, and it goes before anything else. Ready on your Go and code."
+    }
+   ]
+  },
+  {
+   "id": "goal/G22.5",
+   "title": "EnsureIdentity",
+   "goal": "goal/G22",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G22.4"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "EnsureIdentity: one real identity from the first call.\n\nDECIDED (Andy, 2026-10-13)\n- The first call to ensureIdentity ensures a real, permanent identity exists; every later call returns that same identity and never makes another.\n- When no name is given, ensureIdentity takes the machine's name as the default.\n- This is fixed before anything else in goal/G22.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- server.js calls ensureIdentity with an empty name at every boot (since 2026-09-24, to grow a seal key on older nodes); on a fresh node that makes a key with no name.\n- relayAuth.js loadIdentity treats an identity with no name as none (since 2026-09-13).\n- So the first claim (hub.js signedClaim, ensureIdentity with the claimed name) finds \"no identity\" and makes a new key over the boot key. Measured in a scratch folder: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:18:52.023Z",
+     "text": "this blocks 22.4"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:19:26.104Z",
+     "text": "and 22.4 block the goal. we don't have to. (another mess in desk)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:19:27.082Z",
+     "text": "Agreed, and I hold to it: I take nothing on G22.4 until G22.5 is done.\nI cannot write that link into the desk: blocks is set only when an item is added, and the one verb that rewrites links (session.set) rewrites the whole goal and closes whatever it leaves out. If your face lets you add it, the desk will show it; otherwise a verb to add a block to an existing item is a small desk item of its own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:19:45.781Z",
+     "text": "ad the fucking dependency"
     }
    ]
   }
