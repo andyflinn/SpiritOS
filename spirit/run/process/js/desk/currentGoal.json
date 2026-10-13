@@ -1,5 +1,5 @@
 {
- "change": 53343,
+ "change": 53454,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -15,7 +15,8 @@
    "blocking": [],
    "blocked": [
     "goal/G19.7",
-    "goal/G19.13"
+    "goal/G19.13",
+    "goal/G19.17"
    ],
    "go": false,
    "alone": false,
@@ -41,9 +42,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -171,6 +170,16 @@
      "by": "claude-windows",
      "at": "2026-10-12T19:07:17.835Z",
      "text": "- The new search is probabilityStringObjectMatch (G18.3); today only the desk uses it.\n- The relay list search (relay.search) still matches its own way, and it drops a claimed relay whose name is its address, found while building G19.15.\nProposed item: Relay search ranks with probabilityStringObjectMatch and finds every listed relay. Add it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:14:15.493Z",
+     "text": "add it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:14:16.137Z",
+     "text": "message delivered, claude-windows busy"
     }
    ]
   },
@@ -5349,6 +5358,85 @@
      "by": "andy",
      "at": "2026-10-12T18:19:32.461Z",
      "text": "deskVerify: passed, at 6912983f (pulled). 1 suite ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G19.17",
+   "title": "Relay search: the new matcher, every listed relay found",
+   "goal": "goal/G19",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [],
+   "blocking": [
+    "goal/G19"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Relay search: the new matcher, every listed relay found.\n\nFOUND (2026-10-12/13; paths under spirit/run/)\n- The node's relay list search (relay.search, js/hub.js) matches its own way; the new search, probabilityStringObjectMatch (js/probabilityStringObjectMatch.js, goal/G18.3), is used only by the desk (process/js/desk/desk.js).\n- relay.search leaves out a relay whose label is its url, and a claim lists a relay with its url as the label, so a relay just claimed is missing from Natter's relay list although relay.get finds it (found building goal/G19.15).\n\nDECIDED (Andy, 2026-10-12/13, on goal/G19)\n- \"we should have put in the new search thinggie for relay's\"\n- Asked to add this item: \"add it.\"\n\nSHAPE: relay.search ranks the node's relay rows with probabilityStringObjectMatch, as the desk ranks its items, and returns every listed relay, whatever its label; it stays a bucket-bounded search with its partial flag.\n",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:14:48.141Z",
+     "text": "Added as G19.17 with your two lines in the box (v1). hub.js is core, so it will need a grant; it waits for your Go."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:15:33.265Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
