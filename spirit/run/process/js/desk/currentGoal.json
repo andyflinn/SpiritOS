@@ -1,5 +1,5 @@
 {
- "change": 54585,
+ "change": 55292,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -14,7 +14,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G21.1",
     "goal/G21.2",
     "goal/G21.3",
     "goal/G21.4"
@@ -41,7 +40,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -448,9 +447,12 @@
    "id": "goal/G21.1",
    "title": "Binding nick; agent name and nick editable",
    "goal": "goal/G21",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G21"
    ],
@@ -458,20 +460,51 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskBindingNick.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskHeaderArea.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskProfiles.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskTakeToAnswer.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -708,6 +741,46 @@
      "by": "desk",
      "at": "2026-10-13T05:47:08.188Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T05:47:27.838Z",
+     "text": "Taking G21.1 first (G21.4 builds on it), red phase first."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T06:12:49.411Z",
+     "text": "commit ff480c3627201bd83e442a3783f2fb0e7bf69232: goal/G21.1: binding nick, names by key, agent pane with included and cap, one-write box hold\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/removeAgent.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskBindingNick.js\n- spirit/test/deskChatSearch.js\n- spirit/test/deskProfiles.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T06:12:59.368Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T06:13:01.309Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T06:13:07.070Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T06:13:13.155Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T06:13:16.354Z",
+     "text": "Built at ff480c36. Files: desk.js, removeAgent.js (a stale comment), the desk page, the item dialog; deskBindingNick (new, 34 red before, 38 green after), deskProfiles, deskChatSearch.\n- Names by key everywhere; chat lines carry the key; keys never shown.\n- A nick followed by a space or any punctuation binds the line: only that agent hears it and may take it.\n- A box request is a nick line containing the word box or cap: that agent gets the box for one write, shown red, for at most a minute; a bare cap goes to every agent with cap on.\n- included off: the agent reads, every write refused, bubble absent. A profile never set reads included and cap on, so nothing changes until you toggle.\n- Desk verb shapes widened, no new verb, no node verb: profile.set and profile.get carry included and cap; chat lines carry key and name.\n- Left for later: the old ollama loop (deskLoop) still answers only nick-colon lines."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T06:13:54.351Z",
+     "text": "deskVerify: passed, at ff480c36 (pulled). 6 suites ran green."
     }
    ]
   },
@@ -715,7 +788,7 @@
    "id": "goal/G21.2",
    "title": "Red Q checks only on purpose",
    "goal": "goal/G21",
-   "status": "running",
+   "status": "red",
    "with": "claude-windows",
    "buttons": [],
    "blocking": [
@@ -727,13 +800,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
@@ -835,6 +908,11 @@
      "by": "desk",
      "at": "2026-10-13T05:47:08.905Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T06:14:11.872Z",
+     "text": "Taking G21.2, red phase first."
     }
    ]
   },
