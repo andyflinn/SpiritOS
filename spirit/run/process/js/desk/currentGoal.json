@@ -1,5 +1,5 @@
 {
- "change": 56378,
+ "change": 56382,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -15,8 +15,7 @@
    "blocking": [],
    "blocked": [
     "goal/G21.2",
-    "goal/G21.3",
-    "goal/G21.4"
+    "goal/G21.3"
    ],
    "go": false,
    "alone": false,
@@ -46,13 +45,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1535,10 +1536,10 @@
    "id": "goal/G21.4",
    "title": "Chat flow; one task per agent",
    "goal": "goal/G21",
-   "status": "deskVerify passed",
+   "status": "closed",
    "with": "ollama agent node",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G21"
@@ -1641,7 +1642,7 @@
     "ollama agent node": "local-levant",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Chat flow; one task per agent.\n\nDECIDED (Andy, 2026-10-13)\nThe chat flow\n- Each of Andy's lines is taken by one agent and answered by that agent alone; no other agent chimes in once it is taken.\n- An agent's answer is never takeable: no agent answers another agent. A second answer comes only when Andy asks for it by naming the agent.\n- Why: an answer must not scroll away while he reads it.\n- An agent may post its own work notes (taking, built, claimed) on an item it holds; they are valued work logs and are not answers, so the chat flow does not stop them.\nOne task at a time\n- An agent holds one task, one item and one phase, at a time; taking a second is refused by the desk until the first is released, claimed or done. Seen: an agent holding two reds blocked another agent from working.\n- Excluding an agent releases what it holds: its task and phase are free for another agent to take.\n\nFOUND (2026-10-13)\n- Only Andy's latest line is taken (goal/G18.8); an agent holding the item may still post freely, and agent lines are not taken at all.\n- Every desk record keeps the writer's key beside the label shown.\n",
@@ -1821,10 +1822,9 @@
    "id": "goal/G21.5",
    "title": "Tool calls written as text never reach chat",
    "goal": "goal/G21",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
