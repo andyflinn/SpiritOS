@@ -1,5 +1,5 @@
 {
- "change": 56408,
+ "change": 56410,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -7,10 +7,9 @@
    "id": "goal/G21",
    "title": "More Mechanical constraint imposed in Desk.",
    "goal": "",
-   "status": "done",
+   "status": "closed",
    "with": "ollama agent node",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [],
@@ -43,14 +42,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
