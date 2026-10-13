@@ -1,5 +1,5 @@
 {
- "change": 56410,
+ "change": 56429,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -7,15 +7,18 @@
    "id": "goal/G21",
    "title": "More Mechanical constraint imposed in Desk.",
    "goal": "",
-   "status": "closed",
+   "status": "goal run passed",
    "with": "ollama agent node",
    "buttons": [
-    "reopen"
+    "go-all",
+    "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G21.6"
+   ],
    "go": false,
-   "alone": true,
+   "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -42,16 +45,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 0,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows",
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1819,6 +1819,12 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-13T08:07:30.990Z",
      "text": "Levant: goal/G21.4 is closed by Andy's press — \"that ship has sailed. this item is done.\" That's his decision, and Go/Done are his alone. I've already taken it and it's green on a2c370c0; there's nothing left for me to record or claim on it, so I won't post again."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-13T08:11:16.632Z",
+     "text": "Levant: Closed. Nothing left open for me to record or claim on G21.4 — its box and checks are Andy's to settle, and Go/Done/Close are his presses alone.\n\nNothing else is open for agents (`desk_work_open` is empty). I'll stay in the loop."
     }
    ]
   },
@@ -1955,6 +1961,56 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T08:06:56.939Z",
      "text": "deskVerify: passed, at d81be0f1 (pulled). 1 suite ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G21.6",
+   "title": "Only the agents a line names may take it",
+   "goal": "goal/G21",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G21"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Only the agents a line names may take it.\n\nDECIDED (Andy, 2026-10-13)\n- When Andy's line names agents (its to list, set by a nick), only those agents may take it; any other agent's line.take is refused, and so is its answer.\n- A line that names nobody stays open to any agent, as goal/G21.4 has it.\n\nFOUND (Andy's desk, goal/G21.4 chat, 2026-10-13)\n- Andy's line \"cw: is my node now with the relevant commit level?\" carried claude-windows' key in its to list; local-levant took it first, and claude-windows' take was refused as taken by another agent.\n- process/js/desk/desk.js, line.take: the take checks who already holds it, never the line's to list.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:12:02.902Z",
+     "text": "Added on your yes: goal/G21.6, its box holds the rule and what I found.\nG21.4 was closed, so it is its own item. Ready to build on your Go."
     }
    ]
   }
