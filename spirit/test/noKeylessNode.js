@@ -75,6 +75,10 @@ function files() {
   return out.map(function (f) { return f.split('\\').join('/'); }).filter(function (f) {
     if (f === SELF) return false;
     if (f.indexOf('spirit/run/brains/') === 0) return false;
+    // THE DESK'S OWN SNAPSHOT OF THE CURRENT GOAL (goal/G22.5): currentGoal.json is written by the desk from the
+    // goal's chat and boxes, so it quotes these phrases while the goal discusses removing them. It is data, not
+    // documentation or code; named here alone, so nothing else is excused.
+    if (f === 'spirit/run/process/js/desk/currentGoal.json') return false;
     if (f.indexOf('/node_modules/') !== -1) return false;
     if (!/\.(js|json|md)$/i.test(f)) return false;
     return fs.existsSync(path.join(REPO, f));
