@@ -1,5 +1,5 @@
 {
- "change": 53340,
+ "change": 53343,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -3190,10 +3190,9 @@
    "id": "goal/G19.11",
    "title": "Hygiene: temp_loop, localEar leftovers, dead code, stale notes",
    "goal": "goal/G19",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
