@@ -25,8 +25,8 @@
 // THE FORMS, DECIDED BY ANDY (goal/G22.3's box, 2026-10-13), not this page's to loosen: the gate is narrow, one
 // spirit/run/<file>.js::<function>, and a whole module named as the gate is cheating; the endpoint is wide, a whole
 // module, spirit/run/<file>.js, or Node's own, node:<http|https|fetch joined by +>, which takes its request paths.
-// Every input carries its data-field (gate, endpoint, paths, suites) and is checked as typed, what is wrong said beside
-// it, the button off while any is wrong.
+// Every input carries its data-field (gate, endpoint, paths, suites) and is checked as typed, what is wrong said below
+// it inside its framed block, the button off while any is wrong.
 
 (function () {
   var win = typeof window !== 'undefined' ? window : {};
@@ -84,36 +84,53 @@
     if (s) return s + ' is not a suite\'s file name, <name>.js, with no folder';
     return list.some(function (x, i) { return list.indexOf(x) !== i; }) ? 'a suite is named twice' : '';
   }
-  // What a right field names, beside it.
-  function said(pre, field) {
+  // What goes in a field, in words, on its block's first line: for an empty or wrong field what goes in it, for a right
+  // one what its value means (goal/G22.3).
+  var EMPTY = {
+    gate: 'the one function every call must pass through: spirit/run/<file>.js::<function>',
+    endpoint: 'what the gate guards: a whole module, spirit/run/<file>.js, or Node\'s own network calls, node:http+https+fetch',
+    paths: 'the request paths a node: endpoint is watched on, comma-separated; a module takes none',
+    suites: 'the test suites run while the probe watches, comma-separated file names',
+  };
+  function says(pre, field) {
     var v = value(pre + field).trim();
-    if (field === 'gate') return v ? 'one function, ' + v.split('::')[1] + ', in ' + v.split('::')[0] : 'one function: spirit/run/<file>.js::<function>';
-    if (field === 'endpoint') return !v ? 'a whole module: spirit/run/<file>.js, or node:http+https+fetch' : /^node:/.test(v) ? 'Node\'s own ' + v.slice(5).split('+').join(', ') + ', on its paths' : 'the whole module ' + v + ', every function it exports';
-    if (field === 'paths') return listOf(v).length ? 'counted on ' + listOf(v).join(', ') : 'a node: endpoint\'s request paths, comma-separated';
-    return listOf(v).length ? listOf(v).length + ' suite(s), each checked by the desk to be there' : 'the suites that drive it, comma-separated; none yet is its red';
+    if (!v || why(pre, field)) return EMPTY[field];
+    if (field === 'gate') return 'one function, ' + v.split('::')[1] + ', in ' + v.split('::')[0];
+    if (field === 'endpoint') return /^node:/.test(v) ? 'Node\'s own network calls: ' + v.slice(5).split('+').join(', ') : 'every function of ' + v;
+    if (field === 'paths') return 'only the requests to ' + listOf(v).join(', ');
+    return 'the test suites run while the probe watches: ' + listOf(v).join(', ');
   }
-  // Every field of a form, every time one is typed in: what it names or what is wrong beside each, its button off while
-  // any is wrong.
+  // Every field of a form, every time one is typed in: what it means on its block's first line, what is wrong below its
+  // input, its button off while any is wrong.
   function check(pre) {
     var wrong = false;
     FIELDS.forEach(function (f) {
-      var left = document.getElementById(pre + f + '-left');
       var w = why(pre, f);
       if (w) wrong = true;
+      var head = document.getElementById(pre + f + '-says');
+      if (head) head.textContent = says(pre, f);
+      var left = document.getElementById(pre + f + '-left');
       if (!left) return;
-      left.textContent = w || said(pre, f);
-      left.className = w ? 'job-start-error' : 'job-manifest-note';
+      left.textContent = w;
+      left.className = 'job-start-error';
     });
     var b = document.getElementById(pre === 'sfc-' ? 'sfc-make' : 'sfc-d-save');
     if (b) b.disabled = wrong;
   }
+  // EACH INPUT IN ITS OWN FRAMED BLOCK (goal/G22.3). Andy, 2026-10-13: "input fields will look less crappy if arranged
+  // in a block, that itself act's like an inline element". So a block per field, inline-block, framed and padded, with
+  // its leading 1em: its name in bold and what goes in it in words, then the input, then what is wrong with it.
   function fieldsHtml(pre) {
-    var place = { gate: 'one function: spirit/run/js/peerPost.js::post', endpoint: 'a whole module: spirit/run/js/presenceNode.js, or node:http+https+fetch',
-      paths: 'a node: endpoint\'s paths: /api/relay/', suites: 'serverSurface.js, everyVerb.js' };
+    var place = { gate: 'spirit/run/js/peerPost.js::createPeerPost', endpoint: 'spirit/run/js/presenceNode.js, or node:http+https+fetch',
+      paths: '/api/relay/', suites: 'serverSurface.js, everyVerb.js' };
     var label = { gate: 'Gate', endpoint: 'Endpoint', paths: 'Paths', suites: 'Suites' };
     return FIELDS.map(function (f) {
-      return '<label class="field-label grow">' + label[f] + '<input type="text" id="' + pre + f + '" data-field="' + f + '" placeholder="' + esc(place[f]) + '"></label>' +
-        '<span id="' + pre + f + '-left" class="job-manifest-note"></span>';
+      return '<div class="sfc-field" data-block="' + pre + f + '" style="display:inline-block;vertical-align:top;box-sizing:border-box;width:30em;max-width:100%;' +
+          'margin-top:1em;margin-right:1em;padding:0.5em 0.75em;border:1px solid var(--spirit-line, #e2e5e9);border-radius:var(--spirit-radius, 8px)">' +
+          '<div><b>' + label[f] + ':</b> <span id="' + pre + f + '-says" class="job-manifest-note">' + esc(EMPTY[f]) + '</span></div>' +
+          '<input type="text" id="' + pre + f + '" data-field="' + f + '" placeholder="' + esc(place[f]) + '" style="box-sizing:border-box;width:100%;margin-top:0.5em">' +
+          '<div id="' + pre + f + '-left" class="job-start-error"></div>' +
+        '</div>';
     }).join('');
   }
   function doorOf(pre) {
@@ -228,8 +245,8 @@
     dlg.innerHTML =
       '<div id="sfc-dialog-body" class="stat-tile wide" style="margin-top:1em"><div class="label">Door ' + esc(d.id) + ', asked by ' + esc(d.item) + '</div>' +
         '<div class="start-job-form card" style="margin-top:1em">' + fieldsHtml('sfc-d-') +
-          '<button type="button" id="sfc-d-save" style="margin-right:1em">Save</button>' +
-          '<button type="button" id="sfc-d-remove" style="margin-right:1em">Remove</button></div>' +
+          '<div style="margin-top:1em"><button type="button" id="sfc-d-save" style="margin-right:1em">Save</button>' +
+          '<button type="button" id="sfc-d-remove" style="margin-right:1em">Remove</button></div></div>' +
         '<div class="start-job-form card" style="margin-top:1em">' +
           '<button type="button" id="sfc-d-run" style="margin-right:1em">Run</button>' +
           '<button type="button" id="sfc-d-stop" style="margin-right:1em">Stop</button>' +
@@ -325,7 +342,7 @@
           'its endpoint passes through its gate. Add one below (the plugin also makes its item "Nobody but &lt;gate&gt; reaches ' +
           '&lt;endpoint&gt;"); open one to edit it, remove it, or run its check alone and read the paths around its gate.</div></div>' +
         '<div class="start-job-form card" style="margin-top:1em">' + fieldsHtml('sfc-') +
-          '<button type="button" id="sfc-make" style="margin-right:1em">Add the door</button>' +
+          '<div style="margin-top:1em"><button type="button" id="sfc-make" style="margin-right:1em">Add the door</button></div>' +
         '</div>' +
         '<div id="sfc-note" class="job-start-error" style="margin-top:1em"></div>' +
         '<div class="stat-tile wide" style="margin-top:1em"><div class="label">The doors</div><div id="sfc-doors"></div></div>' +

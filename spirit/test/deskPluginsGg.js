@@ -56,7 +56,10 @@
 //      ONE button, Open, 1em after itself, that opens the door's dialog; the form adds a door with paths and suites
 //      (data-field on each, a wrong suite name said as typed). The dialog holds the door's values as inputs, Save
 //      (update), Remove, Run and Stop: Run shows running, then the verdict and each path around the gate on its own
-//      line. The goal's items below the doors, the chat below them.
+//      line. The goal's items below the doors, the chat below them. Andy, 2026-10-13: "input fields will look less
+//      crappy if arranged in a block, that itself act's like an inline element": each input, in the form and in the
+//      dialog, sits in its own inline-block framed block, its name and what goes in it in words above the input; a
+//      filled field's words read what its value means, updated as typed.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -705,6 +708,36 @@ function clickTab(el, tab) {
     const suitesIn = inputs2.filter(function (i) { return /id="sfc-suites"/.test(i); })[0] || '';
     if (/data-field="paths"/.test(pathsIn) && /data-field="suites"/.test(suitesIn)) test.check('the add form has a paths and a suites input, data-field="paths" and data-field="suites"');
     else test.fail(OWED + 'the add form\'s inputs: ' + short(inputs2));
+    // EACH INPUT IN ITS OWN FRAMED BLOCK (goal/G22.3). Andy, 2026-10-13: "input fields will look less crappy if arranged
+    // in a block, that itself act's like an inline element". So each field is a block, display:inline-block with a
+    // border and padding and its leading 1em: first its name and what goes in it in words, then the input.
+    const blockOf = function (whole, pre, f) {
+      const open = new RegExp('<div[^>]*data-block="' + pre + f + '"[^>]*>').exec(whole);
+      if (!open) return null;
+      const rest = whole.slice(open.index + open[0].length);
+      const next = rest.search(/<div[^>]*data-block="/);
+      return { open: open[0], body: next === -1 ? rest : rest.slice(0, next) };
+    };
+    const NAMES = { gate: 'Gate', endpoint: 'Endpoint', paths: 'Paths', suites: 'Suites' };
+    const blocksRight = function (whole, pre) {
+      return ['gate', 'endpoint', 'paths', 'suites'].filter(function (f) {
+        const b = blockOf(whole, pre, f);
+        if (!b) return true;
+        const s = b.open;
+        const atName = b.body.indexOf('<b>' + NAMES[f]);
+        const atSays = b.body.indexOf('id="' + pre + f + '-says"');
+        const atInput = b.body.search(new RegExp('<input[^>]*id="' + pre + f + '"'));
+        const atLeft = b.body.indexOf('id="' + pre + f + '-left"');
+        return !(/display:\s*inline-block/.test(s) && /border:/.test(s) && /padding:/.test(s) && /margin-top:\s*1em/.test(s) &&
+          atName !== -1 && atSays > atName && atInput > atSays && atLeft > atInput);
+      });
+    };
+    const addWrong = blocksRight(box.innerHTML, 'sfc-');
+    if (!addWrong.length) test.check('the add form holds each of its four inputs in its own inline-block framed block: its name, what goes in it, then the input');
+    else test.fail(OWED + 'the add form\'s blocks are not right for ' + short(addWrong) + ': ' + short(box.innerHTML));
+    const emptySays = ['gate', 'endpoint', 'paths', 'suites'].filter(function (f) { return !doc.getElementById('sfc-' + f + '-says').textContent; });
+    if (!emptySays.length) test.check('each empty field of the add form says in words what goes in it (gate: ' + doc.getElementById('sfc-gate-says').textContent + ')');
+    else test.fail(OWED + 'the add form says nothing for ' + short(emptySays));
     typedAs('sfc-gate', 'gate', 'spirit/run/js/peerPost.js::post');
     typedAs('sfc-endpoint', 'endpoint', 'spirit/run/js/postQueue.js');
     let left2 = typedAs('sfc-suites', 'suites', 'serverSurface.js, ../hub.js');
@@ -735,6 +768,16 @@ function clickTab(el, tab) {
     if (dlg.hidden === false && /data-field="gate"/.test(dInputs.join('')) && /data-field="suites"/.test(dInputs.join('')) && val('sfc-d-gate') === DOORS[1].gate && val('sfc-d-endpoint') === DOORS[1].endpoint && val('sfc-d-paths') === '/api/relay/') {
       test.check('Open shows the door\'s dialog with its values in inputs carrying data-field');
     } else test.fail(OWED + 'the dialog after Open: hidden ' + dlg.hidden + ', ' + short(dHtml) + ', gate ' + short(val('sfc-d-gate')));
+    const dWrong = blocksRight(dHtml, 'sfc-d-');
+    if (!dWrong.length) test.check('the dialog holds each of its four inputs in its own inline-block framed block: its name, what goes in it, then the input');
+    else test.fail(OWED + 'the dialog\'s blocks are not right for ' + short(dWrong) + ': ' + short(dHtml));
+    const dSays = function (f) { return doc.getElementById('sfc-d-' + f + '-says').textContent; };
+    if (dSays('endpoint') === 'Node\'s own network calls: http, https, fetch') test.check('the dialog\'s filled endpoint reads what it means: ' + dSays('endpoint'));
+    else test.fail(OWED + 'the dialog\'s endpoint node:http+https+fetch reads ' + short(dSays('endpoint')));
+    typedAs('sfc-d-gate', 'gate', 'spirit/run/js/peerPost.js::createPeerPost');
+    if (dSays('gate') === 'one function, createPeerPost, in spirit/run/js/peerPost.js') test.check('the dialog\'s gate block reads what its value means, as typed: ' + dSays('gate'));
+    else test.fail(OWED + 'the dialog\'s gate spirit/run/js/peerPost.js::createPeerPost reads ' + short(dSays('gate')));
+    typedAs('sfc-d-gate', 'gate', DOORS[1].gate);
     const dButtons = ['sfc-d-run', 'sfc-d-stop', 'sfc-d-save', 'sfc-d-remove', 'sfc-d-close'].map(function (id) { return (new RegExp('<button[^>]*id="' + id + '"[^>]*>').exec(dHtml) || [''])[0]; });
     if (dButtons.every(function (b) { return b && /margin-right:1em/.test(b); }) && /margin-top:1em/.test((/<div[^>]*id="sfc-dialog-body"[^>]*>/.exec(dHtml) || /<div[^>]*>/.exec(dHtml) || [''])[0])) test.check('the dialog has Run, Stop, Save, Remove and Close, each 1em after itself, in a block with its leading 1em');
     else test.fail(OWED + 'the dialog\'s buttons: ' + short(dButtons));
