@@ -219,18 +219,38 @@ function deskUnslothRemoteDrawWarnings() {
 // i want to maintain that array in the connect tab."; each named, "good Idea, yes.", the name shown instead of the url.
 // One row per pair: the one in use marked, the others with use and remove (deskUnsloth refuses removing the one in
 // use). The key is never drawn: deskUnsloth never sends it.
+// THE HOUSE TABLE WITH THE GREEN DOT (goal/G14.9). Andy: "the connect tab: the list is UGLY, and has no indication of
+// which OpenAI compatible server deskUnsloth is connected to. why not a beautiful table like other places have where
+// the currently connected AI server is marked with a green dot or something." The jobs-table and job-row of Natter's
+// relay list, its headerless mark column first, and its GREEN_CIRCLE: on the pair in use while a server answers there,
+// on no row when nothing answers.
+var deskUnslothRemotePairArmed = '';    // the armed button (goal/G14.9): 'use:<name>' or 'remove:<name>', or ''
 function deskUnslothRemoteDrawPairs() {
   var box = document.getElementById('dur-pairs');
   if (!box) return;
   var escape = deskUnslothRemoteApi && deskUnslothRemoteApi.escapeHtml ? deskUnslothRemoteApi.escapeHtml : function (t) { return String(t); };
-  var pairs = (deskUnslothRemoteState && Array.isArray(deskUnslothRemoteState.connections)) ? deskUnslothRemoteState.connections : [];
-  box.innerHTML = pairs.length ? pairs.map(function (p) {
-    var name = escape(p.name);
-    return '<div class="start-job-form">' +
-      '<div class="grow"><b>' + name + '</b>' + (p.use ? ' <span class="job-manifest-note">in use</span>' : '') + '</div>' +
-      (p.use ? '' : '<button type="button" data-use="' + name + '">use</button> <button type="button" data-remove="' + name + '">remove</button>') +
-      '</div>';
-  }).join('') : '<div class="job-manifest-note">No server is kept yet: add one below.</div>';
+  var s = deskUnslothRemoteState;
+  var pairs = (s && Array.isArray(s.connections)) ? s.connections : [];
+  var answers = !!(s && s.server && s.server.answers === true);
+  if (!pairs.length) { box.innerHTML = '<div class="job-manifest-note">No server is kept yet: add one below.</div>'; return; }
+  box.innerHTML = '<table class="jobs-table"><thead><tr><th></th><th>Name</th><th></th></tr></thead><tbody>' +
+    pairs.map(function (p) {
+      var name = escape(p.name);
+      var connected = p.use && answers;
+      var armedUse = !p.use && deskUnslothRemotePairArmed === 'use:' + String(p.name);
+      var armedRemove = !p.use && deskUnslothRemotePairArmed === 'remove:' + String(p.name);
+      return '<tr class="job-row">' +
+        '<td title="' + (connected ? 'connected: a server answers here' : p.use ? 'in use, but nothing answers here' : 'not in use') + '">' +
+          (connected ? deskUnslothRemoteIcon('GREEN_CIRCLE') : '') + '</td>' +
+        '<td>' + name + '</td>' +
+        '<td>' + (p.use ? '<span class="job-manifest-note">in use</span>'
+          // USE AND REMOVE ARE ARMED (goal/G14.9). Andy's box: both buttons in the account rows, "Remove" and "Use",
+          // become two-press armed buttons. The first press arms one, the second acts; a press elsewhere disarms it
+          // (the shell's armUntilElsewhere).
+          : '<button type="button" data-use="' + name + '"' + (armedUse ? ' data-armed="1"' : '') + '>' + (armedUse ? 'use: switch to it, sure?' : 'use') + '</button>' +
+            ' <button type="button" data-remove="' + name + '"' + (armedRemove ? ' data-armed="1"' : '') + '>' + (armedRemove ? 'remove: sure?' : 'remove') + '</button>') + '</td>' +
+        '</tr>';
+    }).join('') + '</tbody></table>';
 }
 
 // USE AND REMOVE, from a row of the pairs: deskUnsloth answers, and the state and the models are asked again.
@@ -240,6 +260,17 @@ function deskUnslothRemotePairPress(event) {
   var use = t.getAttribute('data-use');
   var remove = t.getAttribute('data-remove');
   if (!use && !remove) return;
+  var press = use ? 'use:' + use : 'remove:' + remove;
+  if (deskUnslothRemotePairArmed !== press) {
+    deskUnslothRemotePairArmed = press;
+    deskUnslothRemoteDrawPairs();
+    if (deskUnslothRemoteApi && typeof deskUnslothRemoteApi.armUntilElsewhere === 'function') {
+      deskUnslothRemoteApi.armUntilElsewhere(function () { deskUnslothRemotePairArmed = ''; deskUnslothRemoteDrawPairs(); });
+    }
+    return;
+  }
+  deskUnslothRemotePairArmed = '';
+  deskUnslothRemoteDrawPairs();
   var target = deskUnslothRemoteTarget;
   var verb = use ? 'connection.use' : 'connection.remove';
   deskUnslothRemoteAsk(target, verb, { name: use || remove }).then(function (said) {
@@ -767,6 +798,7 @@ spirit.shell.activateApp({
       deskUnslothRemoteChatPending = '';
       deskUnslothRemoteBusy = false;
       deskUnslothRemoteTestArmed = false;
+      deskUnslothRemotePairArmed = '';
       deskUnslothRemoteDrawChatLines();
       var url = document.getElementById('dur-server-url');
       if (url) url.value = '';

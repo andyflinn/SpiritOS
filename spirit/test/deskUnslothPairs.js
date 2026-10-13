@@ -340,8 +340,12 @@ async function faceHalf() {
   else test.fail(OWED + 'the key stays in the field');
 
   const n1 = calls.length;
+  // Since goal/G14.9 Use and Remove are two-press armed buttons (Andy's box: both buttons in the account rows): the
+  // first press arms, the second sends (deskUnslothConnectTable.js holds the arm itself).
+  doc.getElementById('dur-pairs').fire('click', clickOn({ 'data-use': 'studio' }));
   doc.getElementById('dur-pairs').fire('click', clickOn({ 'data-use': 'studio' }));
   await settled();
+  doc.getElementById('dur-pairs').fire('click', clickOn({ 'data-remove': 'studio' }));
   doc.getElementById('dur-pairs').fire('click', clickOn({ 'data-remove': 'studio' }));
   await settled();
   const used = calls.slice(n1).filter(function (c) { return c.verb === 'connection.use'; })[0];
