@@ -13,7 +13,8 @@
 // the probe runs that row's suites, each of which boots a real node, and
 // every stack that reached the endpoint is read. A stack with a
 // production frame (spirit/run/...) and no frame in the door is a path
-// around it, and fails the test.
+// around it, and fails the test. A row with a door and no `file` (the
+// relay row, goal/G22.2) is judged the same way over the wire it watches.
 //
 // A STACK WITH NO PRODUCTION FRAME IS NOT COUNTED: a suite calling the
 // component itself to unit-test it. Andy ruled tests are not subject to
@@ -31,9 +32,15 @@ test.startTest('One door, by stack: nobody but the door reaches its components')
 
 Object.keys(wirePaths.BOTTOMS).forEach(function (name) {
   const row = wirePaths.BOTTOMS[name];
-  if (!row.door || !row.file) return;
-  const title = 'nobody but ' + short(row.door) + ' has a path to ' + short(row.file);
-  test.subHeading(short(row.door) + ' -> ' + short(row.file) + ' (driven by ' + row.suites.join(', ') + ')');
+  if (!row.door) return;
+  // A row with no `file` watches a bottom of node's (the wire, for the
+  // relay row of goal/G22.2): named by what it reaches, a relay when the
+  // row counts only relay traffic.
+  const reached = row.file ? short(row.file) : (row.relayOnly ? 'a relay' : name);
+  const title = row.file
+    ? 'nobody but ' + short(row.door) + ' has a path to ' + reached
+    : 'nobody but ' + short(row.door) + ' talks to ' + reached;
+  test.subHeading(short(row.door) + ' -> ' + reached + ' (driven by ' + row.suites.join(', ') + ')');
 
   const run = wirePaths.measure(name, row.suites, false);
   if (run.status) test.comment('a driven suite exited ' + run.status + ': the run may have reached less than it should');

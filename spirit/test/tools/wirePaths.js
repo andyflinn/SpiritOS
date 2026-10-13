@@ -203,6 +203,41 @@ const BOTTOMS = {
     door: 'spirit/run/js/peerPost.js',
     suites: ['serverSurface.js', 'everyVerb.js'],
   },
+  // ── NOBODY BUT peerPost TALKS TO A RELAY (goal/G22.2) ────────────────
+  //
+  // The wire again, judged as a door: every request production code sends
+  // TO A RELAY must have peerPost on its stack. oneDoorStacks.js holds the
+  // verdict, as for the two rows above.
+  //
+  // `relayOnly` counts a request only when it is addressed to a relay. Not
+  // by host: a lab relay listens on 127.0.0.1 exactly like a process's own
+  // node, so "not loopback" would miss every relay a suite starts. BY PATH:
+  // every route a relay answers for a member sits under /api/relay/ (key,
+  // stream, claim, post, reply; relayServer.js's public table), and a node
+  // answers none of them (server.js: "A node no longer answers any relay
+  // route"), so a process asking its own node (/api/spirit, /api/events)
+  // is never counted. /api/version is answered by both and asks nothing of
+  // a relay's members, so it is left out.
+  //
+  // `global: 'fetch'` because global fetch goes through undici and never
+  // through http.request: without it a fetch to a relay is invisible here.
+  //
+  // `suites`, MEASURED: agentOnboard.js runs onboard.js and offboard.js
+  // against a lab relay and a real node, and reached all five relay routes
+  // (key, stream, claim, post, reply) from eleven production scopes, the
+  // fetch in offboard.js among them. serverSurface.js adds one scope no
+  // other reached (hub.js asking a relay for its key at enrol). everyVerb.js
+  // reached nothing the two did not, so it is not here.
+  relay: {
+    watch: [
+      { mod: 'http', fn: 'request' },
+      { mod: 'https', fn: 'request' },
+      { global: 'fetch' },
+    ],
+    door: 'spirit/run/js/peerPost.js',
+    relayOnly: true,
+    suites: ['agentOnboard.js', 'serverSurface.js'],
+  },
 };
 
 // ── OUR OWN CODE, AND NOTHING ELSE ──────────────────────────────────
@@ -304,6 +339,10 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
       try { target = new URL(String(a.href || a)).pathname; } catch (e) { target = String(a); }
       const opts = args[1];
       method = (opts && opts.method) || 'GET';
+    } else if (a && typeof a === 'object' && typeof a.url === 'string') {
+      // A fetch Request (goal/G22.2): its url and its own method.
+      try { target = new URL(a.url).pathname; } catch (e) { target = a.url; }
+      method = (args[1] && args[1].method) || a.method || 'GET';
     } else if (a && typeof a === 'object') {
       method = a.method || 'GET';
       target = String(a.path || a.pathname || '');
@@ -329,7 +368,9 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
 
   // `label` says which endpoint a call is: the request line for the wire,
   // the function's own name for a module of ours.
-  const patch = function (mod, method, label) {
+  // `keep`, when given, decides from the endpoint whether a call counts at
+  // all (a relayOnly row: see relayBound below).
+  const patch = function (mod, method, label, keep) {
     const original = mod[method];
     if (typeof original !== 'function') return;
     mod[method] = function () {
@@ -339,7 +380,7 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
       if (stack.length) {
         let where = '';
         try { where = label ? label(arguments) : endpointOf(arguments); } catch (e) { where = '(unreadable)'; }
-        count(where + '\t' + stack.join(' < '));
+        if (!keep || keep(where)) count(where + '\t' + stack.join(' < '));
       }
       return original.apply(this, arguments);
     };
@@ -417,8 +458,21 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   // `probe(require('fs'), 'writeFileSync')` works identically and
   // `probe(seal.seal)` does not exist as a shape at all.
   const row = BOTTOMS[process.env.SPIRIT_WIRE_BOTTOM] || BOTTOMS.wire;
+  // ADDRESSED TO A RELAY, read off the request path (goal/G22.2; the why is
+  // at the `relay` row). An endpoint the probe could not read is counted:
+  // a request nobody can place must not pass as one that went elsewhere.
+  const relayBound = function (where) {
+    return where === '(unreadable)' || / \/api\/relay\//.test(where);
+  };
+  const keep = row.relayOnly ? relayBound : null;
   if (row.file) watchFile(row);
-  else (row.watch || []).forEach(function (b) { patch(require(b.mod), b.fn); });
+  else {
+    (row.watch || []).forEach(function (b) {
+      // A GLOBAL, such as fetch: patched on globalThis, read like a request.
+      if (b.global) patch(globalThis, b.global, null, keep);
+      else patch(require(b.mod), b.fn, null, keep);
+    });
+  }
 
   // WRITTEN AT EXIT, NOT PER CALL. Appending on every request would make
   // the instrument a participant in what it measures, and this harness
