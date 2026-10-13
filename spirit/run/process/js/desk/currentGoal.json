@@ -1,5 +1,5 @@
 {
- "change": 56388,
+ "change": 56396,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -7,7 +7,7 @@
    "id": "goal/G21",
    "title": "More Mechanical constraint imposed in Desk.",
    "goal": "",
-   "status": "",
+   "status": "goal run started",
    "with": "ollama agent node",
    "buttons": [
     "close"
@@ -42,13 +42,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "ollama agent node"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -932,10 +935,9 @@
    "id": "goal/G21.2",
    "title": "Red Q checks only on purpose",
    "goal": "goal/G21",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
