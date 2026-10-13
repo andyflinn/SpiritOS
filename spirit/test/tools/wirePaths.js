@@ -236,6 +236,11 @@ function rowOf(d) {
 }
 // A list that does not read leaves BOTTOMS without doors; oneDoorStacks.js and stackFrameTestItems.js say so in red.
 try { doors().forEach(function (d) { if (d && d.gate && d.endpoint) BOTTOMS[doorKey(d)] = rowOf(d); }); } catch (e) { /* said by the suites */ }
+// A DOOR MEASURED BEFORE IT IS LISTED (goal/G22.3): measure() given a door object passes it down as SPIRIT_WIRE_DOOR,
+// so an agent can say what a proposed gate or endpoint would read without writing the plugin's list, which is Andy's.
+try {
+  if (process.env.SPIRIT_WIRE_DOOR) { const d = JSON.parse(process.env.SPIRIT_WIRE_DOOR); BOTTOMS[doorKey(d)] = rowOf(d); }
+} catch (e) { /* an unreadable door is measured as nothing, and its empty run says so */ }
 
 // ── A FRAME CARRIES ITS FUNCTION, SO A GATE CAN NAME ONE (goal/G22.3) ──
 //
@@ -243,18 +248,225 @@ try { doors().forEach(function (d) { if (d && d.gate && d.endpoint) BOTTOMS[door
 // NAME V8 PRINTS, before any "[as alias]": "Object.post", "peerPost.post" and "async post" are all "post"; "new Thing"
 // is "Thing"; "Object.holdStreams [as hold]" is "holdStreams", the function's own name as its file defines it, not the
 // property it was reached through. "<anonymous>" is no name.
-function frameName(file, line, v8name) {
+//
+// ── AND THE FUNCTIONS IT IS WRITTEN INSIDE: THE COMPLETE FRAME (goal/G22.3) ──
+//
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to undo: "you can construct a complete stackframe for
+// anything that reaches endpoint. do it." A frame carries, after its own function, every named function its position
+// is written inside in the source, innermost first, each after " in ":
+//
+//   spirit/run/js/peerPost.js:657 in sendAttempt in createPeerPost
+//   spirit/run/js/peerPost.js:899:post in createPeerPost
+//
+// WHY: peerPost's instance functions (post, onRequest, holdStreams, sendAttempt, pump ...) are all written inside
+// createPeerPost, which has returned long before any of them runs, so no live frame names it. The source does.
+// Anonymous enclosing functions are left out (they cannot be a gate); the frame's own function is not repeated.
+function frameName(file, line, v8name, enclosing) {
   let n = String(v8name || '').replace(/\s*\[as [^\]]*\]\s*$/, '').replace(/^(async|new)\s+/, '').trim();
   n = n.split('.').pop();
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(n)) n = '';
-  return file + ':' + line + (n ? ':' + n : '');
+  const outer = (enclosing || []).slice();
+  if (n && outer[0] === n) outer.shift();
+  return file + ':' + line + (n ? ':' + n : '') + outer.map(function (o) { return ' in ' + o; }).join('');
 }
-// A GATE MATCHES a frame in its file whose function is its function. A gate without "::function" matches nothing.
+// A GATE file::F MATCHES a frame in that file whose function is F OR that is written anywhere inside F (Andy's decision
+// above frameName). A gate without "::function" matches nothing.
 function gateMatches(frame, gate) {
   const g = /^(.+)::([A-Za-z_$][A-Za-z0-9_$]*)$/.exec(String(gate));
   if (!g) return false;
-  const f = /^(.+):(\d+):([A-Za-z_$][A-Za-z0-9_$]*)$/.exec(String(frame));
-  return !!f && f[1] === g[1] && f[3] === g[2];
+  const f = /^(.+?):(\d+)(?::([A-Za-z_$][A-Za-z0-9_$]*))?((?: in [A-Za-z_$][A-Za-z0-9_$]*)*)$/.exec(String(frame));
+  if (!f || f[1] !== g[1]) return false;
+  if (f[3] === g[2]) return true;
+  return f[4].split(' in ').indexOf(g[2]) > 0;
+}
+
+// ── WHERE EACH FUNCTION IS WRITTEN: A SCANNER, NOT A PARSER (goal/G22.3) ──
+//
+// No JavaScript parser is in the tree (no acorn, no node_modules beyond chokidar and readdirp), and Node's own acorn is
+// internal. So a small scanner: tokens, skipping comments, strings, template literals (their ${} expressions scanned as
+// code) and regex literals (a "/" where an operand may start), with every bracket matched. Over the tokens it finds
+// every function and where it starts and ends, by offset:
+//
+//   function [name] (...) {...}      its own name, else the name it is assigned to or the property it sits under
+//   [async] (...) => ... / x => ...  the name it is assigned to or sits under; an expression body ends at the first
+//                                    , ; ) ] } outside its brackets
+//   name (...) {...}                 a method in an object or class (after { , ; } or get set static async *)
+//   class [name] ... {...}           a class, named like a function
+//
+// Anything else is anonymous. What it gets wrong it gets wrong quietly in a frame's " in " chain, which only ever WIDENS
+// what a gate matches by a name the file really has; tested on peerPost.js, hub.js and presenceNode.js when built.
+const KEYWORDS = new Set(('if for while switch catch with function return typeof instanceof in of new delete void throw ' +
+  'case do else yield await class const let var try finally super this import export default extends').split(' '));
+const REGEX_AFTER = new Set('return typeof instanceof in of new delete void throw case do else yield await'.split(' '));
+const PUNCT = ['>>>=', '...', '===', '!==', '**=', '<<=', '>>=', '>>>', '&&=', '||=', '??=', '=>', '==', '!=', '<=', '>=',
+  '&&', '||', '??', '?.', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '**', '<<', '>>'];
+
+function scanTokens(src) {
+  const toks = [];
+  const braces = []; // 'b' for a {, 't' for a template's ${
+  let i = 0;
+  const n = src.length;
+  if (src.slice(0, 2) === '#!') { while (i < n && src[i] !== '\n') i++; }
+  const regexMayStart = function () {
+    const p = toks[toks.length - 1];
+    if (!p) return true;
+    if (p.t === 'id') return REGEX_AFTER.has(p.v);
+    if (p.t === 'p') return p.v !== ')' && p.v !== ']' && p.v !== '++' && p.v !== '--';
+    return false;
+  };
+  // A template's text from i (just past ` or a closing } of ${), to its end or to the next ${.
+  const templateText = function () {
+    while (i < n) {
+      const c = src[i];
+      if (c === '\\') { i += 2; continue; }
+      if (c === '`') { i++; return; }
+      if (c === '$' && src[i + 1] === '{') { toks.push({ t: 'p', v: '${', s: i, e: i + 2 }); braces.push('t'); i += 2; return; }
+      i++;
+    }
+  };
+  while (i < n) {
+    const c = src[i];
+    if (c === ' ' || c === '\t' || c === '\n' || c === '\r' || c === '\f' || c === '\v' || c === '﻿' || c === ' ') { i++; continue; }
+    if (c === '/' && src[i + 1] === '/') { while (i < n && src[i] !== '\n') i++; continue; }
+    if (c === '/' && src[i + 1] === '*') { const e = src.indexOf('*/', i + 2); i = e === -1 ? n : e + 2; continue; }
+    const s = i;
+    if (c === '"' || c === "'") {
+      i++;
+      while (i < n && src[i] !== c && src[i] !== '\n') i += src[i] === '\\' ? 2 : 1;
+      i++;
+      toks.push({ t: 's', v: src.slice(s + 1, i - 1), s: s, e: i });
+      continue;
+    }
+    if (c === '`') { i++; toks.push({ t: 's', v: '', s: s, e: s + 1 }); templateText(); continue; }
+    if (/[A-Za-z_$]/.test(c) || c.charCodeAt(0) > 127) {
+      while (i < n && (/[A-Za-z0-9_$]/.test(src[i]) || src.charCodeAt(i) > 127)) i++;
+      toks.push({ t: 'id', v: src.slice(s, i), s: s, e: i });
+      continue;
+    }
+    if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1] || ''))) {
+      while (i < n && /[0-9A-Za-z_.]/.test(src[i])) i++;
+      toks.push({ t: 'n', v: '', s: s, e: i });
+      continue;
+    }
+    if (c === '/' && regexMayStart()) {
+      i++;
+      let cls = false;
+      while (i < n && src[i] !== '\n') {
+        const r = src[i];
+        if (r === '\\') { i += 2; continue; }
+        if (r === '[') cls = true; else if (r === ']') cls = false; else if (r === '/' && !cls) break;
+        i++;
+      }
+      i++;
+      while (i < n && /[A-Za-z]/.test(src[i])) i++;
+      toks.push({ t: 'r', v: '', s: s, e: i });
+      continue;
+    }
+    if (c === '{') { braces.push('b'); toks.push({ t: 'p', v: '{', s: s, e: ++i }); continue; }
+    if (c === '}') {
+      const was = braces.pop();
+      toks.push({ t: 'p', v: '}', s: s, e: ++i });
+      if (was === 't') templateText();
+      continue;
+    }
+    let p = c;
+    for (let k = 0; k < PUNCT.length; k++) { if (src.startsWith(PUNCT[k], i)) { p = PUNCT[k]; break; } }
+    i += p.length;
+    toks.push({ t: 'p', v: p, s: s, e: i });
+  }
+  return toks;
+}
+
+// Every function in a source text: [{ name, start, end }], offsets, name '' when anonymous.
+function functionRanges(src) {
+  const toks = scanTokens(src);
+  // Brackets matched both ways; a ${ closes with a }.
+  const match = new Array(toks.length).fill(-1);
+  const open = [];
+  toks.forEach(function (t, k) {
+    if (t.t !== 'p') return;
+    if (t.v === '(' || t.v === '[' || t.v === '{' || t.v === '${') open.push(k);
+    else if (t.v === ')' || t.v === ']' || t.v === '}') { const o = open.pop(); if (o !== undefined) { match[o] = k; match[k] = o; } }
+  });
+  const is = function (k, v) { return k >= 0 && k < toks.length && toks[k].t === 'p' && toks[k].v === v; };
+  const id = function (k) { return k >= 0 && k < toks.length && toks[k].t === 'id' ? toks[k].v : ''; };
+  // The name a function or class starting at token k is assigned to or sits under: x = ..., a.x = ..., x: ..., 'x': ...
+  const assigned = function (k) {
+    const p = k - 1;
+    if (!(is(p, '=') || is(p, ':') || is(p, '||=') || is(p, '??=') || is(p, '&&='))) return '';
+    const left = toks[p - 1];
+    if (!left) return '';
+    if (left.t === 'id' && !KEYWORDS.has(left.v)) return left.v;
+    if (left.t === 's' && /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(left.v)) return left.v;
+    return '';
+  };
+  const out = [];
+  const add = function (name, first, last) { if (last >= first && last < toks.length) out.push({ name: name, start: toks[first].s, end: toks[last].e }); };
+  for (let k = 0; k < toks.length; k++) {
+    const t = toks[k];
+    if (t.t === 'id' && t.v === 'function' && !is(k - 1, '.')) {
+      let j = k + 1;
+      if (is(j, '*')) j++;
+      const own = id(j) && !is(j, '(') ? id(j) : '';
+      if (own) j++;
+      if (!is(j, '(') || match[j] === -1 || !is(match[j] + 1, '{')) continue;
+      const first = id(k - 1) === 'async' ? k - 1 : k;
+      add(own || assigned(first), first, match[match[j] + 1]);
+    } else if (t.t === 'id' && t.v === 'class' && !is(k - 1, '.')) {
+      let j = k + 1;
+      const own = id(j) && id(j) !== 'extends' ? id(j) : '';
+      while (j < toks.length && !is(j, '{')) j = match[j] > j ? match[j] + 1 : j + 1;
+      if (j < toks.length && match[j] > j) add(own || assigned(k), k, match[j]);
+    } else if (t.t === 'p' && t.v === '=>') {
+      let first = -1;
+      if (is(k - 1, ')') && match[k - 1] !== -1) first = match[k - 1];
+      else if (id(k - 1)) first = k - 1;
+      if (first === -1) continue;
+      if (id(first - 1) === 'async') first--;
+      let last;
+      if (is(k + 1, '{') && match[k + 1] > k) last = match[k + 1];
+      else {
+        let j = k + 1;
+        last = k;
+        while (j < toks.length) {
+          const u = toks[j];
+          if (u.t === 'p' && (u.v === ',' || u.v === ';' || u.v === ')' || u.v === ']' || u.v === '}')) break;
+          last = match[j] > j ? match[j] : j;
+          j = last + 1;
+        }
+      }
+      add(assigned(first), first, last);
+    } else if (t.t === 'id' && !KEYWORDS.has(t.v) && is(k + 1, '(') && match[k + 1] > k && is(match[k + 1] + 1, '{')) {
+      const p = toks[k - 1];
+      const before = !p || (p.t === 'p' && (p.v === '{' || p.v === ',' || p.v === ';' || p.v === '}' || p.v === '*')) ||
+        (p.t === 'id' && (p.v === 'get' || p.v === 'set' || p.v === 'static' || p.v === 'async'));
+      if (before) add(t.v, k, match[match[k + 1] + 1]);
+    }
+  }
+  return out;
+}
+
+// For a file and a 1-based line and column, the named functions written around that position, innermost first.
+// Each file is read and scanned once per process; a file that does not read gives no chain.
+const rangesByFile = new Map();
+function enclosingAt(file, line, col) {
+  let entry = rangesByFile.get(file);
+  if (!entry) {
+    entry = { lines: [0], ranges: [] };
+    try {
+      const src = fs.readFileSync(file, 'utf8');
+      for (let k = 0; k < src.length; k++) if (src.charCodeAt(k) === 10) entry.lines.push(k + 1);
+      entry.ranges = functionRanges(src);
+    } catch (e) { /* no chain */ }
+    rangesByFile.set(file, entry);
+  }
+  const at = entry.lines[Number(line) - 1];
+  if (at === undefined) return [];
+  const off = at + Math.max(0, Number(col) - 1);
+  return entry.ranges
+    .filter(function (r) { return r.name && r.start <= off && off < r.end; })
+    .sort(function (a, b) { return b.start - a.start; })
+    .map(function (r) { return r.name; });
 }
 
 // ── OUR OWN CODE, AND NOTHING ELSE ──────────────────────────────────
@@ -320,19 +532,21 @@ function framesOf(holder) {
   const lines = String(holder.stack || '').split('\n').slice(1);
   const out = [];
   // THE FUNCTION'S NAME IS KEPT (goal/G22.3): "at <name> (<file>:<line>:<col>)", or "at <file>:<line>:<col>" with no
-  // name; frameName() says which part of the name is kept.
+  // name; frameName() says which part of the name is kept. THE COLUMN IS READ (goal/G22.3) so the position is exact
+  // when enclosingAt() finds the functions it is written inside; the frame shows the line only.
   lines.forEach(function (line) {
-    let m = /^\s*at\s+(.*?)\s+\(([^()]+):(\d+):\d+\)\s*$/.exec(line);
+    let m = /^\s*at\s+(.*?)\s+\(([^()]+):(\d+):(\d+)\)\s*$/.exec(line);
     let fn = '';
     let file = '';
     let at = '';
-    if (m) { fn = m[1]; file = m[2]; at = m[3]; } else {
-      m = /\bat\s+([^()\s]+):(\d+):\d+\s*$/.exec(line);
-      if (m) { file = m[1]; at = m[2]; }
+    let col = '';
+    if (m) { fn = m[1]; file = m[2]; at = m[3]; col = m[4]; } else {
+      m = /\bat\s+([^()\s]+):(\d+):(\d+)\s*$/.exec(line);
+      if (m) { file = m[1]; at = m[2]; col = m[3]; }
     }
     const name = file && ours(file);
     if (!name) return;
-    out.push(frameName(name, at, fn));
+    out.push(frameName(name, at, fn, enclosingAt(file, at, col)));
   });
   return out;
 }
@@ -619,6 +833,9 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
 function measure(bottom, targets, all) {
   const { spawnSync } = require('child_process');
   const os = require('os');
+  // A door object, listed or not, is measured under its key (SPIRIT_WIRE_DOOR above).
+  const door = bottom && typeof bottom === 'object' ? bottom : null;
+  if (door) bottom = doorKey(door);
 
   // A door's key carries a path, "::" and "->" (doorKey), none of them a file name's: reduced to a plain word.
   const log = path.join(os.tmpdir(), 'spirit-wire-' + process.pid + '-' + String(bottom).replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 80) + '.tsv');
@@ -633,6 +850,7 @@ function measure(bottom, targets, all) {
     // the wire, because a probe that watched something other than what
     // was asked for is worse than one that refused.
     SPIRIT_WIRE_BOTTOM: bottom,
+    SPIRIT_WIRE_DOOR: door ? JSON.stringify(door) : '',
     // EVERY SUITE PROCESS IS INSTRUMENTED AND NO SUITE KNOWS. runAll is
     // not touched, and a suite that had to opt in is a suite that can
     // forget to — which would make the quiet paths the unwatched ones.
@@ -670,7 +888,7 @@ function measure(bottom, targets, all) {
   return { out: String(r.stdout || ''), status: r.status, counts: counts };
 }
 
-module.exports = { BOTTOMS: BOTTOMS, measure: measure, LIST: LIST, doors: doors, doorKey: doorKey, frameName: frameName, gateMatches: gateMatches };
+module.exports = { BOTTOMS: BOTTOMS, measure: measure, LIST: LIST, doors: doors, doorKey: doorKey, frameName: frameName, gateMatches: gateMatches, functionRanges: functionRanges, enclosingAt: enclosingAt };
 
 if (require.main === module) {
   // ── ONE SUITE, NOT THE HARNESS — AND THAT IS ANDY'S SIMPLIFICATION ──

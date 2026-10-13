@@ -49,7 +49,10 @@ test.subHeading('the frame and the gate');
   else test.fail('OWED by goal/G22.3: frameName gives ' + JSON.stringify(got) + ' against ' + JSON.stringify(cases.map(function (c) { return c[1]; })));
   const gm = wirePaths.gateMatches;
   const ok = typeof gm === 'function' && gm(F + ':802:post', F + '::post') && !gm(F + ':900:sendAttempt', F + '::post') &&
-    !gm(F + ':802', F + '::post') && !gm('spirit/run/js/hub.js:5:post', F + '::post') && !gm(F + ':802:post', F);
+    !gm(F + ':802', F + '::post') && !gm('spirit/run/js/hub.js:5:post', F + '::post') && !gm(F + ':802:post', F) &&
+    // The complete frame (goal/G22.3): written inside counts, in its own file only.
+    gm(F + ':657 in sendAttempt in createPeerPost', F + '::createPeerPost') && gm(F + ':899:post in createPeerPost', F + '::createPeerPost') &&
+    !gm('spirit/run/js/hub.js:5:post in createPeerPost', F + '::createPeerPost') && !gm(F + ':657 in sendAttempt', F + '::pump');
   if (ok) test.check('a gate file::function matches a frame in that file with that function, and nothing else; a gate with no function matches nothing');
   else test.fail('OWED by goal/G22.3: gateMatches is ' + typeof gm + ' or matches wrongly');
 })();
@@ -59,18 +62,35 @@ test.subHeading('the frame and the gate');
 // records that function below its own stack. A fixture planted under a temp spirit/run/ (ours() names it as the
 // repo's) calls http.request from an anonymous .then placed by placeFromThen; the request is destroyed before it
 // connects, to a port nobody listens on. Red here means a door like the relay's can never see its gate.
-test.subHeading('a callback carries its placer');
-(function () {
+// The fixture runs under the probe watching the wire, and the line recorded for its request path comes back: '' when
+// nothing was recorded.
+function underProbe(prefix, name, source, marker) {
   const fs = require('fs');
   const os = require('os');
   const path = require('path');
   const { spawnSync } = require('child_process');
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-async-placer-'));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   const dir = path.join(home, 'spirit', 'run', 'js');
   fs.mkdirSync(dir, { recursive: true });
-  const fixture = path.join(dir, 'asyncPlacer.js');
+  const fixture = path.join(dir, name);
   const log = path.join(home, 'wire.tsv');
-  fs.writeFileSync(fixture, [
+  fs.writeFileSync(fixture, source.join('\n'));
+  const probe = path.join(__dirname, 'tools', 'wirePaths.js').replace(/\\/g, '/');
+  const env = Object.assign({}, process.env, {
+    SPIRIT_WIRE_LOG: log, SPIRIT_WIRE_BOTTOM: 'wire',
+    NODE_OPTIONS: ((process.env.NODE_OPTIONS || '') + ' --require ' + probe).trim(),
+  });
+  spawnSync(process.execPath, [fixture], { env: env, encoding: 'utf8', timeout: 20000 });
+  let raw = '';
+  try { raw = fs.readFileSync(log, 'utf8'); } catch (e) { raw = ''; }
+  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* left in tmp */ }
+  return raw.split('\n').filter(function (l) { return l.indexOf(marker) !== -1; })[0] || '';
+}
+function framesOfLine(line) { return line.slice(line.indexOf('\t', line.indexOf('\t') + 1) + 1).split(' < '); }
+
+test.subHeading('a callback carries its placer');
+(function () {
+  const line = underProbe('spirit-async-placer-', 'asyncPlacer.js', [
     "'use strict';",
     "const http = require('http');",
     'function placeFromThen() {',
@@ -82,23 +102,44 @@ test.subHeading('a callback carries its placer');
     '}',
     'placeFromThen();',
     '',
-  ].join('\n'));
-  const probe = path.join(__dirname, 'tools', 'wirePaths.js').replace(/\\/g, '/');
-  const env = Object.assign({}, process.env, {
-    SPIRIT_WIRE_LOG: log, SPIRIT_WIRE_BOTTOM: 'wire',
-    NODE_OPTIONS: ((process.env.NODE_OPTIONS || '') + ' --require ' + probe).trim(),
-  });
-  spawnSync(process.execPath, [fixture], { env: env, encoding: 'utf8', timeout: 20000 });
-  let raw = '';
-  try { raw = fs.readFileSync(log, 'utf8'); } catch (e) { raw = ''; }
-  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* left in tmp */ }
-  const line = raw.split('\n').filter(function (l) { return l.indexOf('/selftest/async') !== -1; })[0] || '';
-  const frames = line.slice(line.indexOf('\t', line.indexOf('\t') + 1) + 1).split(' < ');
+  ], '/selftest/async');
   const placer = 'spirit/run/js/asyncPlacer.js::placeFromThen';
-  if (frames.some(function (f) { return wirePaths.gateMatches(f, placer); })) {
+  if (framesOfLine(line).some(function (f) { return wirePaths.gateMatches(f, placer); })) {
     test.check('a request made in an anonymous .then records the named function that placed the callback');
   } else {
     test.fail('OWED by goal/G22.3: a request made in an anonymous .then lost its placer placeFromThen; recorded: ' + (line || '(nothing)'));
+  }
+})();
+
+// ── A FRAME CARRIES THE FUNCTIONS IT IS WRITTEN INSIDE (goal/G22.3) ──
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box): "you can construct a complete stackframe for anything that reaches
+// endpoint. do it." A factory's instance functions are written inside the factory, which has returned long before any
+// of them runs, so no live frame names it; the probe names it from the source. makeThing returns { go }, go is called
+// from outside, and the gate fixture::makeThing must hold for it. Red here means peerPost.js::createPeerPost can never
+// hold for post, onRequest or sendAttempt.
+test.subHeading('a frame carries what it is written inside');
+(function () {
+  const line = underProbe('spirit-lexical-', 'lexicalThing.js', [
+    "'use strict';",
+    "const http = require('http');",
+    'function makeThing() {',
+    '  return {',
+    '    go: function () {',
+    "      const req = http.request({ host: '127.0.0.1', port: 9, path: '/selftest/lexical', method: 'POST' });",
+    "      req.on('error', function () {});",
+    '      req.destroy();',
+    '    },',
+    '  };',
+    '}',
+    'const thing = makeThing();',
+    'thing.go();',
+    '',
+  ], '/selftest/lexical');
+  const gate = 'spirit/run/js/lexicalThing.js::makeThing';
+  if (framesOfLine(line).some(function (f) { return wirePaths.gateMatches(f, gate); })) {
+    test.check('thing.go(), called from outside, holds the gate of the factory makeThing it is written inside');
+  } else {
+    test.fail('OWED by goal/G22.3: thing.go() does not hold the gate ' + gate + ' it is written inside; recorded: ' + (line || '(nothing)'));
   }
 })();
 
