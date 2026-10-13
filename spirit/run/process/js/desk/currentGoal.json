@@ -1,5 +1,5 @@
 {
- "change": 57411,
+ "change": 57425,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -7,10 +7,10 @@
    "id": "goal/G22",
    "title": "Using the stack-frame tests as design-enforcement tool.",
    "goal": "",
-   "status": "goal run started",
-   "with": "claude-windows",
+   "status": "closed",
+   "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -42,11 +42,9 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [],
-   "live": [
-    "claude-windows"
-   ],
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -273,6 +271,18 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T09:55:10.172Z",
      "text": "Created goal/G22.3, \"gg plugin: goal governance by a mounted plugin\", with the plugin points in its box; the goal box now lists it under ITEMS."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T15:36:06.938Z",
+     "text": "goal run on 12 suites: red in spirit/test/oneDoorStacks.js (at 3fa7835c, pulled), so the goal is not passed; the search for items listing the red was partial, so an item may have been missed"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T15:36:28.462Z",
+     "text": "That red is the doors doing their job: oneDoorStacks fails on the real violators (the hub's four relay calls, offboard's fetch), as you wanted.\nBut it means G22's goal run cannot pass while they stand, so \"done once looped in with the verifier\" and a green goal run cannot both hold.\nTwo ways: fix the violators as items in this goal (the hub's calls through peerPost, offboard through peerPost), then the goal goes green honestly; or close G22 with the red standing and carry the fixes into the \"Maintain this plugin\" goal.\nWhich?"
     }
    ]
   },
