@@ -1,5 +1,5 @@
 {
- "change": 53846,
+ "change": 53850,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -7,7 +7,7 @@
    "id": "goal/G19",
    "title": "October 10 review items",
    "goal": "",
-   "status": "",
+   "status": "goal run started",
    "with": "claude-windows",
    "buttons": [
     "close"
@@ -34,7 +34,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -3822,10 +3822,9 @@
    "id": "goal/G19.13",
    "title": "Desk: a claim carries its commit; deskVerify waits for it",
    "goal": "goal/G19",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
