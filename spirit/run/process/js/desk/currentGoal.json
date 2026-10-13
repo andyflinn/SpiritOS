@@ -1,5 +1,5 @@
 {
- "change": 53850,
+ "change": 53856,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -7,15 +7,16 @@
    "id": "goal/G19",
    "title": "October 10 review items",
    "goal": "",
-   "status": "goal run started",
+   "status": "done",
    "with": "claude-windows",
    "buttons": [
-    "close"
+    "close",
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -28,6 +29,8 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": false,
    "rules": [],
    "asks": 1,
@@ -176,6 +179,16 @@
      "by": "desk",
      "at": "2026-10-13T01:14:16.137Z",
      "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:35:45.200Z",
+     "text": "Tagged v-2026-10-13-03-35 on origin/master (4a814b2b). Both relays take it within ten minutes.\nAfter that, restart your node and the ollama node; I restart mine. Until each end runs it, card checks between old and new fail."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:37:47.202Z",
+     "text": "goal run on 17 suites: all green (at 4a814b2b, pulled)"
     }
    ]
   },
@@ -258,6 +271,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -1265,6 +1280,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -1519,6 +1536,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -1701,6 +1720,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -1868,6 +1889,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -2040,6 +2063,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -2231,6 +2256,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -2472,6 +2499,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -2827,6 +2856,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -3086,6 +3117,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -3326,6 +3359,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -3673,6 +3708,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -3871,6 +3908,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -4141,6 +4180,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -4578,6 +4619,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -5164,6 +5207,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
@@ -5464,6 +5509,8 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
    "waived": true,
    "rules": [
     {
