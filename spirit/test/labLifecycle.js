@@ -217,11 +217,14 @@ async function run() {
   //   spirit-3 but she cannot find anybody in contacts" — "her relay
   //   shows green."
   //
-  // She had no `relay-presence` job at all. presenceNode.start returns at
-  // its first line when the node has no identity, and a brand-new node
-  // has none: it boots empty and the key is minted by the first CLAIM.
-  // Nothing started presence again, so the node sat enrolled and
+  // She had no `relay-presence` job at all: nothing started one for the
+  // seat her claim had just taken, so the node sat enrolled and
   // unconnected until somebody restarted it.
+  //
+  // Since goal/G22.5: a node's identity exists from its first boot, before
+  // it listens (relayAuth.js on its first load), so the key is no part of
+  // this any more. What is asserted is that the key the node booted with
+  // is the key it holds after the claim, and that the claim connects it.
   //
   // EVERY NEW NODE GOES THROUGH EXACTLY THAT SEQUENCE, which is why this
   // is asserted here rather than left to the live suites: labWorld writes
@@ -253,17 +256,18 @@ async function run() {
   if (!relayUp || !avatarUp) {
     test.fail('need both fixtures up: relay=' + relayUp + ' avatar=' + avatarUp);
   } else {
-    // The avatar booted with no identity — a fresh clone of the tree, the
-    // way a new node arrives. Before claiming it should have no presence
-    // job, because there is nobody to be present AS.
-    // jobs.list is gone (puppets/G2): a job's label is "<type> (<status>)".
-    const before = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.search' });
-    const beforeKinds = (((before.body && before.body.items) || []).map(function (j) { return j.label.split(' (')[0]; }));
-
-    if (beforeKinds.indexOf('relay-presence') === -1) {
-      test.check('a node with no key holds no presence — there is nobody to be present as');
+    // Since goal/G22.5: the avatar, a fresh clone of the tree the way a new
+    // node arrives, has its key from its first boot, before it listens.
+    // So it is asserted to HAVE one before the claim, and the claim below
+    // is asserted to keep it.
+    const avatarHome = path.join(
+      require('./labMaster/labPaths').FIXTURE_ROOT, AVATAR_NAME, 'spirit', 'run'
+    );
+    const bootKey = (auth.loadIdentity(avatarHome) || {}).publicKey || '';
+    if (bootKey) {
+      test.check('a fresh node has its key from boot, before anything claims');
     } else {
-      test.fail('presence before a key: ' + beforeKinds.join(', '));
+      test.fail('the fresh avatar booted with no key');
     }
 
     // POINT IT AT THE FIXTURE RELAY FIRST. `withChosenRelay` refuses a
@@ -273,9 +277,6 @@ async function run() {
     // the file is written the way labWorld writes one.
     //
     // No restart needed: ownerBadge.loadRelays reads the file per call.
-    const avatarHome = path.join(
-      require('./labMaster/labPaths').FIXTURE_ROOT, AVATAR_NAME, 'spirit', 'run'
-    );
     // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
     fs.mkdirSync(path.join(avatarHome, 'relay-state'), { recursive: true });
     fs.writeFileSync(
@@ -297,6 +298,13 @@ async function run() {
       test.check('it can take a seat on the fixture relay');
     } else {
       test.fail('claim: ' + claimed.status + ' ' + JSON.stringify(claimed.body));
+    }
+    // Since goal/G22.5: the claim names the node and never re-keys it.
+    const afterKey = (auth.loadIdentity(avatarHome) || {}).publicKey || '';
+    if (bootKey && afterKey === bootKey) {
+      test.check('and the claim keeps the key the node booted with');
+    } else {
+      test.fail('the claim changed the node\'s key');
     }
 
     // NO RESTART between the claim and the question. That is the whole

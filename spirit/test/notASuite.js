@@ -82,6 +82,10 @@ module.exports = [
   // fs.cpSync that took the whole 143 MB tree — media, the brains vault
   // and relay-state's private key with it (2026-09-20).
   'plantRun.js',
+  // A helper, not a suite (goal/G22.5): an identity in a scratch root, made by
+  // planting relayAuth.js there and letting its first load make it, since
+  // relayAuth no longer exports ensureIdentity.
+  'plantIdentity.js',
   // A helper, not a suite: a desk server in memory, for the suites that
   // mount Desk once it keeps nothing in its own folder (desk/G1.4).
   'deskFake.js',

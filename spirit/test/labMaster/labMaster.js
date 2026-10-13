@@ -1184,7 +1184,9 @@ async function buildLiveWorld(body) {
 
   const me = workIdentity();
   if (!me) {
-    return { status: 409, error: 'the work node has no identity yet — open it once and claim a name first' };
+    // Since goal/G22.5 a node's identity exists from its first boot, before it listens: none here means the
+    // work node has never been started from this tree.
+    return { status: 409, error: 'the work node\'s identity.json could not be read — start the work node once' };
   }
   steps.push('work node is ' + me.name + ', and its identity was read and not touched');
 
@@ -1263,16 +1265,11 @@ async function buildLiveWorld(body) {
   //    invite, the peer consumes it. A hand-written allow entry would
   //    prove nothing about whether joining works.
   const peerIdFile = path.join(peer.home, 'relay-state', 'identity.json');
-  let peerId = readJson(peerIdFile, null);
+  // Since goal/G22.5 a node's identity exists from its first boot, before it listens, so there is nothing
+  // to poke into existence: no identity.json here means the peer never started.
+  const peerId = readJson(peerIdFile, null);
   if (!peerId || !peerId.publicKey) {
-    // The node makes its own on first claim; poke it so it exists.
-    await livePost('http://127.0.0.1:' + peer.port + '/api/spirit',
-      { verb: 'relay.claim', name: peerName });
-    await napFor(800);
-    peerId = readJson(peerIdFile, null);
-  }
-  if (!peerId || !peerId.publicKey) {
-    return { status: 502, error: peerName + ' has no identity yet — is it running?' };
+    return { status: 502, error: peerName + '\'s identity.json could not be read — has it ever started?' };
   }
 
   // WHETHER IT IS ALREADY ON, asked of the node rather than the relay —

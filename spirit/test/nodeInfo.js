@@ -712,34 +712,29 @@ function theFirstDescription() {
     test.fail('too long: ' + again.length);
   }
 
-  // ── A NODE MINTED AFTER ITS OWN BOOT ────────────────────────────────
+  // ── THE BOOT HOOK FINDS A KEY AT BOOT ───────────────────────────────
   //
-  // The boot hook runs before a fresh node has a key: `ensureIdentity` is
-  // called by the first CLAIM. So hub.signedClaim ensures too, or every
-  // new node answers a blank card until somebody restarts it — which is
-  // the window every new node passes through, and the one this feature is
-  // for. Proven here as the sequence it actually is.
+  // Since goal/G22.5: a node's identity exists from its first boot, made
+  // by relayAuth.js on its first load and so before server.js reaches its
+  // boot hook, and the hook describes the node on that first boot. Proven
+  // here as the sequence it now is: the identity relayAuth's first load
+  // makes (planted in the root, plantIdentity.js) is described at once.
   const late = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-late-'));
-  if (nodeCard.ensureDescription(late) === '') {
-    test.check('a node booting before it has a key writes nothing, because there is nothing to describe');
-  } else {
-    test.fail('described a node with no identity');
-  }
-  auth.saveIdentity(late, auth.generateIdentity('newcomer'));
+  require('./plantIdentity.js').ensureAt(late);
   if (/^this node described for the first time /.test(nodeCard.ensureDescription(late))) {
-    test.check('and gets one the moment its key exists, which is when it is claimed');
+    test.check('the boot hook finds a key at boot and describes the node on its first boot');
   } else {
-    test.fail('still blank after minting: ' + JSON.stringify(nodeCard.read(late)));
+    test.fail('blank at first boot: ' + JSON.stringify(nodeCard.read(late)));
   }
   fs.rmSync(late, { recursive: true, force: true });
 
-  // A NODE WITH NO KEY HAS NOTHING TO DESCRIBE, and must not be a crash
-  // on the first line of boot.
+  // A DIRECTORY WITH NO identity.json IN IT must not be a crash: the guard
+  // stays (DEPRECATED on a node, whose ID exists before first node-listen).
   const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-nokey-'));
   if (nodeCard.ensureDescription(empty) === '') {
     test.check('and a directory with no identity in it is left alone rather than thrown at');
   } else {
-    test.fail('wrote into a keyless directory');
+    test.fail('wrote into a directory with no identity');
   }
   fs.rmSync(empty, { recursive: true, force: true });
 }

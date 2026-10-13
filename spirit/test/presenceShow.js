@@ -141,7 +141,8 @@ async function removeFromLab(label) {
   if (!url) return 'no lab relay in labMaster\'s table — nothing to remove from';
 
   const me = auth.loadIdentity(WORK_RUN);
-  if (!me || !me.privateKey) return 'your node has no identity, so nothing can be signed';
+  // Since goal/G22.5 a node's identity exists from its first boot, before it listens.
+  if (!me || !me.privateKey) return 'your node\'s identity.json could not be read, so nothing can be signed';
 
   // NAMED BY KEY, not by label. This looked the label up in the relay's
   // roll; there is no such door, and the owner's view of its own roster

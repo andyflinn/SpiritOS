@@ -74,7 +74,9 @@ function installedRelay(identity) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-installed-'));
   // The mailbox's own key, which is not the owner's, made before
   // createRelay reads it (world.js does the same).
-  auth.ensureIdentity(home, 'relay');
+  // Since goal/G22.5 made the way a relay makes it: relayAuth's first load,
+  // then named 'relay' (plantIdentity.js).
+  require('./plantIdentity.js').ensureAt(home, 'relay');
   ownHome(home, identity);
   return { home: home, box: createRelay(home) };
 }

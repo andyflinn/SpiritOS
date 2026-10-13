@@ -150,8 +150,9 @@ const arrivals = require('./arrivals').createArrivals({
 });
 
 
-// A relay's own identity is made in relayServer.js. A personal node's
-// identity is made on its first claim (hub.js).
+// Every identity, a relay's and a personal node's, is ensured by
+// relayAuth.js on its first load, from its own position in spirit/run,
+// before this file listens (goal/G22.5, Andy 2026-10-13).
 
 // The small, fixed set of paths the page needs to boot at all, served
 // unconditionally by the static route below, checked before fileServable —
@@ -1238,23 +1239,21 @@ contactBook.syncMarks(ROOT_DIR);
   // ── AN IDENTITY FROM BEFORE CYCLE 10 GAINS ITS SEAL KEY AT BOOT ────
   //
   // R2 verifies: "an identity from before this cycle gains a seal key on
-  // FIRST START and says so". It did not. `ensureIdentity` grows the
-  // second keypair in place, and on a node it was reached only from
-  // `signedClaim` (hub.js) — the claim path — so a node that already has
-  // its seat never claims again and never grew one. A relay did, because
-  // relayServer.js calls it at boot.
+  // FIRST START and says so". `ensureIdentity` grows the second keypair in
+  // place; on a node nothing at boot called it once, so a node that
+  // already held its seat never grew one.
   //
   // WHAT THAT COST, measured between the two agent nodes on 2026-09-24:
   // both updated to the flag-day tag, both booted clean, and both served
   // a card with sealKey "". A card with no cipher key is nothing to seal
   // to, so each refused to post to the other — correctly, and for ever,
-  // because nothing in a running node would ever have grown the key. The
-  // flag day cannot be crossed by an existing node without this line.
+  // because nothing in a running node would ever have grown the key.
   //
-  // BESIDE ensureDescription, and for the same reason: both are things a
-  // node must have before anybody can ask it anything.
-  try { require('./relayAuth').ensureIdentity(ROOT_DIR, ''); }
-  catch (e) { /* a node with no identity yet is answered by the claim path */ }
+  // NOTHING HERE CALLS IT NOW (goal/G22.5, Andy 2026-10-13): relayAuth.js
+  // ensures the identity of the spirit/run it sits in on its FIRST LOAD —
+  // keys, seal key and a default name — and this file requires it (through
+  // hub.js) long before it listens. No other component makes or checks for
+  // one.
   // THE END OF A DOWNTIME (cycle-11/C3). Andy: "a re-start row documents the
   // downtime?", "... the end-of-a-downtime". Everything between the last
   // row and this one reads "this node was not running", not "nothing
@@ -2072,8 +2071,8 @@ contactBook.syncMarks(ROOT_DIR);
   // on its own roster precisely so it has an ordinary address.
   introSpector.claim(loopbackVerbs, 'relay', 'hub.js', {
     // THE ROUTER IS HANDED IN so a claim can connect the node it just
-    // enrolled. A brand-new node has no key at boot, so presence bailed
-    // and never tried again — see handleClaim.
+    // enrolled: the streams opened at boot were to the relays it was
+    // already on, and the new seat needs one of its own — see handleClaim.
     // The relay's own claim answer comes back, `mine` beside it.
     'relay.claim': { request: { url: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
       hub.handleClaim(rq, rs, readJsonBody, {

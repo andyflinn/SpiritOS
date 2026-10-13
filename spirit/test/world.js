@@ -65,16 +65,17 @@ function assemble(s) {
   s.relays.forEach(function (name) {
     const home = tmpHome(name);
     homes[name] = home;
-    // THE MAILBOX'S OWN KEY, which is not the owner's. server.js makes it
-    // with ensureIdentity(ROOT_DIR, 'relay') on the first --relay boot,
-    // and relay.js says so at relayPublicKey(): "the owner is a peer
+    // THE MAILBOX'S OWN KEY, which is not the owner's. Since goal/G22.5
+    // relayAuth.js makes it on its first load and relayServer.js names it
+    // 'relay' (nameIdentity), done here the same way (plantIdentity.js);
+    // relay.js says so at relayPublicKey(): "the owner is a peer
     // who claimed, the mailbox is the box."
     //
     // This file used to save the OWNER there instead, so every world it
     // built had a relay whose key was its owner's — and any check that
     // distinguishes the two would have passed without distinguishing
     // anything. Made before createRelay, which reads the file.
-    keys[name] = auth.ensureIdentity(home, 'relay');
+    keys[name] = require('./plantIdentity.js').ensureAt(home, 'relay');
     // owner.json, as bash/install-units writes it — the relay's file naming
     // its owner's key, not the owner's identity.
     if (owner) ownHome(home, owner);

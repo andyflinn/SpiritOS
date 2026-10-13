@@ -801,8 +801,8 @@ function createPeerPost(opts) {
   // them. Absent for a recipient on a relay this node holds.
   function post(relayUrl, toKey, text, hints, how) {
     var id = me();
-    if (!id || !id.privateKey) {
-      return Promise.resolve({ ok: false, status: 500, error: 'this node has no identity' });
+    if (!id || !id.privateKey) { // DEPRECATED: the node's ID exists before first node-listen.
+      return Promise.resolve({ ok: false, status: 500, error: 'DEPRECATED error: this node has no identity' });
     }
     if (!toKey) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
     if (typeof text !== 'string' || !text) {

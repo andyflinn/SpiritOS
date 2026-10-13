@@ -127,7 +127,7 @@ test.subHeading('a node is a puppet when owner.json names a key');
 test.subHeading('a node may own itself: owner.json naming its own ID is not a puppet');
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-self-'));
-  auth.ensureIdentity(root, 'self');
+  require('./plantIdentity.js').ensureAt(root, 'self'); // since goal/G22.5, the way a node makes its own
   const self = JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'identity.json'), 'utf8')).publicKey;
   const puppet = puppetMode.puppetIn(root, function () {});
   plantOwner(root, self);

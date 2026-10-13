@@ -288,15 +288,16 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
     test.check('--node {"name","publicKey"} reached the server, and no private key is anywhere in its arguments');
   } else test.fail(OWED + 'the server was started with ' + JSON.stringify(probeArgv && probeArgv.map(function (a) { return String(a).slice(0, 60); })));
 
-  // A NODE NOT NAMED YET IS STILL A NODE. Found on a fresh lab node: its
-  // identity is made nameless (ensureIdentity(root, '')), loadIdentity
-  // answers null for it, --node went missing, and the backup crash-looped
-  // on "no --node" for as long as the node ran.
-  test.subHeading('A node not yet named hands --node too, with its public key');
+  // A NODE NOBODY HAS NAMED HANDS --node TOO. Since goal/G22.5 the identity
+  // relayAuth makes on its first load is named by the machine (os.hostname()),
+  // and that name and the public key are what its servers are handed. (Found
+  // once on a fresh lab node with --node missing and the backup crash-looping;
+  // the identity now exists, named, before the node listens.) Made here the
+  // way a node makes it: relayAuth planted in the root (plantIdentity.js).
+  test.subHeading('A node nobody has named hands --node too: the machine name and its public key');
   const bareRun = path.join(scratch, 'bare', 'spirit', 'run');
   fs.mkdirSync(path.join(bareRun, 'process', 'js', 'probe'), { recursive: true });
-  const bareId = auth.generateIdentity('');
-  auth.saveIdentity(bareRun, bareId);
+  const bareId = require('./plantIdentity.js').ensureAt(bareRun);
   const bareArgv = path.join(scratch, 'bare-argv.json');
   fs.writeFileSync(path.join(bareRun, 'process', 'js', 'probe', 'probe.json'), JSON.stringify({ kind: 'server', operated: 'node', args: [] }));
   fs.writeFileSync(path.join(bareRun, 'process', 'js', 'probe', 'probe.js'),
@@ -309,9 +310,9 @@ test.startTest('desk/G1.7: a copy of relay-state/process/, never the node keys')
   const bareAt = bare ? bare.indexOf('--node') : -1;
   let bareNode = null;
   try { bareNode = bareAt !== -1 ? JSON.parse(bare[bareAt + 1]) : null; } catch (e) { bareNode = null; }
-  if (bareNode && bareNode.publicKey === bareId.publicKey && JSON.stringify(bare).indexOf(bareId.privateKey) === -1) {
-    test.check('a nameless node\'s server got --node with its public key, and no private key');
-  } else test.fail(OWED + 'a nameless node started its server with ' + JSON.stringify(bare && bare.map(function (a) { return String(a).slice(0, 50); })));
+  if (bareNode && bareNode.publicKey === bareId.publicKey && bareNode.name === os.hostname() && JSON.stringify(bare).indexOf(bareId.privateKey) === -1) {
+    test.check('a node nobody named hands its server --node with the machine name and its public key, and no private key');
+  } else test.fail(OWED + 'a node nobody named started its server with ' + JSON.stringify(bare && bare.map(function (a) { return String(a).slice(0, 50); })));
 
   test.subHeading('T10: spiritHome in relay-state/config.json moves the whole .SpiritOS folder');
   const elsewhere = path.join(scratch, 'elsewhere');

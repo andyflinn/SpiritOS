@@ -346,9 +346,11 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
 // DIRECTLY. It was green every day.
 //
 // Nothing asserted that STARTING A NODE calls it. And nothing did: on a
-// node `ensureIdentity` was reached only from the claim path, and a node
-// that already holds its seat never claims again. A relay grew one at
-// boot, which is why every relay was fine and every node was not.
+// node nothing at boot called `ensureIdentity` then, so a node that
+// already held its seat never grew the second pair. A relay grew one at
+// boot, which is why every relay was fine and every node was not. (Since
+// goal/G22.5 relayAuth.js also ensures the identity on its own first load,
+// so a node has its key, whole, before it listens.)
 //
 // MEASURED 2026-09-24, between the two agents' own machines: both nodes
 // updated to the flag-day tag, both booted clean, and both served a card
@@ -399,8 +401,9 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
     test.fail('the fixture is wrong: a stripped identity already had a seal key');
   }
 
-  // THE MIGRATION, as the boot path calls it.
-  auth2.ensureIdentity(home, '');
+  // THE MIGRATION, as the boot path runs it: since goal/G22.5 that is
+  // relayAuth's own first load in the node's root (plantIdentity.js).
+  require('./plantIdentity.js').ensureAt(home);
   const after = card2.verify(card2.describe(home));
 
   if (after && after.sealKey && after.publicKey === old.publicKey &&
@@ -414,17 +417,22 @@ test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to')
 
   // THE JOIN, structurally: does starting a node reach the migration at
   // all? This is the half that was missing, and the only half that was
-  // ever wrong.
-  const boot = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
-  const calls = boot.split(String.fromCharCode(10)).filter(function (line) {
-    return /ensureIdentity\s*\(/.test(line) && !/^\s*\/\//.test(line);
+  // ever wrong. Since goal/G22.5 the call is relayAuth.js's own, on its
+  // first load, for the spirit/run it sits in; server.js reaches it by
+  // requiring relayAuth (through hub.js) before it listens.
+  const authSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relayAuth.js'), 'utf8');
+  const calls = authSrc.split(String.fromCharCode(10)).filter(function (line) {
+    return /ensureIdentity\s*\(\s*path\.resolve\(\s*__dirname/.test(line) && !/^\s*\/\//.test(line);
   });
+  const boot = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
+  const hubSrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8');
+  const reached = /require\('\.\/hub'\)/.test(boot) && /require\('\.\/relayAuth'\)/.test(hubSrc);
 
-  if (calls.length >= 1) {
-    test.check('and the node boot path calls the migration (' + calls.length +
+  if (calls.length >= 1 && reached) {
+    test.check('and the node boot path calls the migration (relayAuth\'s first load, ' + calls.length +
       ' site) — the half that did not exist, and whose absence silenced every node');
   } else {
-    test.fail('NOTHING IN server.js CALLS ensureIdentity. A node that already holds a ' +
+    test.fail('NOTHING ON THE BOOT PATH ENSURES THE IDENTITY. A node that already holds a ' +
       'relay seat never claims again, so it will never grow a seal key, will serve a ' +
       'card nobody can seal to, and will be silent while appearing healthy.');
   }

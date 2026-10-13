@@ -1,3 +1,3 @@
 {
-  "description": "What this node tells strangers about itself: {ok, name, description, publicKey, descriptionMax}; 409 when the node has no key yet."
+  "description": "What this node tells strangers about itself: {ok, name, description, publicKey, descriptionMax}. The key exists from the node's first boot, before it listens; 409 only when identity.json cannot be read."
 }

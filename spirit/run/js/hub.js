@@ -155,19 +155,20 @@ const relayRequest = wire.relayRequest;
 // they do in the world: the owner reads a token and a word down the same
 // phone call.
 function signedClaim(rootDir, name, invite, inviteLabel) {
-  const id = auth.ensureIdentity(rootDir, name);
-  // AND THE OTHER HALF OF THE CARD, at the one moment a node can have
-  // been booted without a key to describe.
+  // The key is already there (relayAuth's first load, goal/G22.5); the
+  // claim only names it — the claimed name over an empty name or the
+  // machine-name default, keys never touched (relayAuth.nameIdentity).
+  const id = auth.nameIdentity(rootDir, name);
+  // DEPRECATED: the node's ID exists before first node-listen.
+  if (!id) throw new Error('DEPRECATED error: this node has no identity');
+  // AND THE OTHER HALF OF THE CARD.
   //
   //   Andy: "the node assigns the first name when redeeming an invite.
   //   but on boot: the node should fill the description."
   //
-  // Both are true and neither alone is enough. server.js fills the gap on
-  // every boot, but `ensureIdentity` above is where a fresh node's key
-  // comes into existence — after that boot ran — so a node minted by its
-  // first claim would answer a blank card until somebody restarted it.
-  // That is exactly the window this whole thing exists to close, and it
-  // is the window every NEW node passes through.
+  // server.js fills the description on every boot, and the node's key
+  // exists before that boot listens (goal/G22.5), so this finds it filled
+  // and writes nothing. DEPRECATED: the node's ID exists before first node-listen.
   try { nodeCard.ensureDescription(rootDir); }
   catch (e) { /* a caption must never be the reason a claim fails */ }
   const body = {
@@ -273,7 +274,11 @@ function signedClaim(rootDir, name, invite, inviteLabel) {
 // because substituting it then requires forging a signature by the
 // pinned key.
 function sealedClaim(url, rootDir, name, invite, inviteLabel, known) {
-  const body = signedClaim(rootDir, name, invite, inviteLabel);
+  let body = null;
+  // A refusal from signedClaim is this promise's refusal, never a throw
+  // out of the caller's request handler.
+  try { body = signedClaim(rootDir, name, invite, inviteLabel); }
+  catch (e) { return Promise.reject(e); }
 
   const wrap = function (relayPublicKey, relaySealKey) {
     const wrapped = seal.seal(relaySealKey, body.publicKey, relayPublicKey,
@@ -1050,13 +1055,13 @@ function createHub(rootDir) {
   //   spirit-3 but she cannot find anybody in contacts" — "her relay
   //   shows green."
   //
-  // She had no `relay-presence` job at all. presenceNode.start returns at
-  // its first line when the node has no identity, and a brand-new node
-  // has none: it boots empty, and the key is minted by THIS function, at
-  // the first claim. Nothing ever started presence again, so the node sat
-  // there enrolled and unconnected until somebody restarted it.
+  // She had no `relay-presence` job at all: nothing started one for the
+  // seat this function had just taken, so the node sat there enrolled and
+  // unconnected until somebody restarted it. (Since goal/G22.5 a node's
+  // identity exists from its first boot, before it listens; what a claim
+  // adds is the seat, and the seat needs its stream.)
   //
-  // EVERY NEW NODE GOES THROUGH EXACTLY THAT SEQUENCE. Boot, claim,
+  // EVERY NEW SEAT GOES THROUGH EXACTLY THAT SEQUENCE. Boot, claim,
   // nothing. It could not search, could not be posted to, and could not
   // receive — while looking bound, because the badge is read off the
   // public roll and `claimed` means "you have a row here", not "you are
@@ -1959,7 +1964,7 @@ function createHub(rootDir) {
   // both sides of a question should not also be holding an HTTP response.
   function handleNodeCard(req, res) {
     var card = nodeCard.read(rootDir);
-    if (!card) { fail(res, 409, 'this node has no key yet'); return; }
+    if (!card) { fail(res, 409, 'DEPRECATED error: this node has no key yet'); return; } // DEPRECATED: the node's ID exists before first node-listen.
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(Object.assign({ ok: true }, card)));
   }
@@ -2210,8 +2215,8 @@ function createHub(rootDir) {
     const id = packet.randomId();
     const cmd = JSON.stringify({ verb: named, body: body || {} });
     const me = auth.loadIdentity(rootDir);
-    if (!me || !me.privateKey) {
-      return Promise.resolve({ ok: false, status: 500, error: 'no identity to sign with' });
+    if (!me || !me.privateKey) { // DEPRECATED: the node's ID exists before first node-listen.
+      return Promise.resolve({ ok: false, status: 500, error: 'DEPRECATED error: no identity to sign with' });
     }
     const sig = auth.sign(me.privateKey, auth.commandMessage(me.publicKey, toKey, id, cmd));
     const made = packet.encode('', { cmd: cmd, sig: sig }, { id: id });

@@ -66,7 +66,7 @@ async function main() {
   // 3. THE SEAT.
   const card = await ask('node.card', {});
   const me = ok(card) ? String(card.body.publicKey || '') : '';
-  if (!me) end(1, 'offboard: the node has no key: ' + card.text);
+  if (!me) end(1, 'DEPRECATED error: offboard: the node has no key: ' + card.text); // DEPRECATED: the node's ID exists before first node-listen.
   let url = given;
   if (!url) {
     const relays = await ask('relay.search', { q: '' });

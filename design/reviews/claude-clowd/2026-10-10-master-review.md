@@ -210,6 +210,7 @@ Detail for the table rows
 • appApi.js. 013dc827 removed appClient.startAll, and spirit/test/appApi.js:108 was not rewritten with the other suites.
 • FACE.md. appFaceApp now reads only relay-state/process/appFaceApp/face-domain.json, and the node's fs.save refuses to write under relay-state. The doc also never says to list process/js/appFaceApp and appFaceAppServer on the owner's node or to grant appFaceApp to the face node's key; appFaceApp declares dependencies: [], so nothing prompts it. bash/FACE.md:9,23, bash/face-tls:3,35 and bash/systemd/spirit-face.service:13-15 still name puppetPost.
 • Private key. ownerKey() calls auth.loadIdentity(ROOT), which loads relay-state/identity.json with its private key, against the rule at spirit/run/js/jobs.js:458-463 and desk/G2.4. On a nameless node it returns null, so a self-owned node posts to itself.
+  Since goal/G22.5 (2026-10-13) a node's identity exists from its first boot, before it listens; this no longer holds.
 Low
 • spiritErrors.define throws on duplicates, but both callers wrap it in if (!byCode(...)), so a future clash is silently adopted (spirit/run/js/spiritErrors.js:89-95).
 • The auto-assigned id is never read and depends on declaration order (spiritErrors.js:82, 95).

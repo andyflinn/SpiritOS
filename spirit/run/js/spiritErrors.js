@@ -309,7 +309,7 @@ define('relay-no-identity', {
 });
 define('node-no-key', {
   status: 409, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['this node has no key yet'],
+  texts: ['DEPRECATED error: this node has no key yet'], // DEPRECATED: the node's ID exists before first node-listen.
 });
 define('relay-no-key', {
   status: 409, presence: NONE, retry: 'no', fault: 'relay',
@@ -317,7 +317,7 @@ define('relay-no-key', {
 });
 define('node-no-identity', {
   status: 500, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['this node has no identity'],
+  texts: ['DEPRECATED error: this node has no identity'], // DEPRECATED: the node's ID exists before first node-listen.
 });
 define('request-failed', {
   status: 500, presence: NONE, retry: 'after', fault: 'node',
@@ -481,7 +481,7 @@ define('not-a-command', {
 // it would be signed with could not be read.
 define('no-identity', {
   status: 500, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['no identity to sign with'],
+  texts: ['DEPRECATED error: no identity to sign with'], // DEPRECATED: the node's ID exists before first node-listen.
   note: 'An owner command must be signed with this node identity key before ' +
     'it goes out, and the key could not be loaded. Not something the caller did.',
 });

@@ -206,7 +206,8 @@ if [ -n "$FACE_KEY" ]; then
   say "ON YOUR OWN NODE, accept this key as a contact (the face node):"
   echo "      $FACE_KEY"
 else
-  warn "the face node has no key yet: it gets one when it first joins the relay"
+  # DEPRECATED: the node's ID exists before first node-listen.
+  warn "DEPRECATED error: the face node has no key yet: it gets one when it first joins the relay"
 fi
 
 say "caddy site for $FACE_DOMAIN"

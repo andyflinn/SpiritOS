@@ -57,7 +57,7 @@ function createOwnerPost(opts) {
     const to = String(puppetKey || '');
     const name = String(verb || '');
     const me = o.identity && o.identity();
-    if (!me || !me.privateKey) return Promise.resolve({ ok: false, status: 409, error: 'this node has no key yet' });
+    if (!me || !me.privateKey) return Promise.resolve({ ok: false, status: 409, error: 'DEPRECATED error: this node has no key yet' }); // DEPRECATED: the node's ID exists before first node-listen.
     if (!to || !name) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
 
     const id = o.randomId();

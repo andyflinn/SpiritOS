@@ -64,7 +64,8 @@ function ok(r) { return r && r.status >= 200 && r.status < 300 && r.body && r.bo
 function deskClient(what, args) { const one = {}; one[what] = args; return ask('jobs.api', { ask: { deskClient: one } }); }
 
 async function main() {
-  // 1. THE SEAT. A fresh node has no key until its first claim makes one, so the key is read after it.
+  // 1. THE SEAT. The node's key exists from its first boot (goal/G22.5); it is read after the claim, which is
+  // where the seat it sits in is taken.
   let url = given;
   if (!url) {
     const relays = await ask('relay.search', { q: '' });
@@ -91,7 +92,7 @@ async function main() {
   }
   const card = await ask('node.card', {});
   const me = ok(card) ? String(card.body.publicKey || '') : '';
-  if (!me) end(1, 'onboard: the node has no key even after its claim: ' + card.text);
+  if (!me) end(1, 'DEPRECATED error: onboard: the node has no key even after its claim: ' + card.text); // DEPRECATED: the node's ID exists before first node-listen.
 
   // 2. THE DESK NODE: the one node found under the desk label. Asked a few times while nobody answers, because the
   // stream to a relay just claimed on may still be opening; the search answers who is online.

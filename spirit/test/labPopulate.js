@@ -443,7 +443,8 @@ async function up(scenarioName) {
   // READ ONLY. See the rule at the top of this file.
   const me = auth.loadIdentity(WORK_RUN);
   if (!me || !me.publicKey || !me.privateKey) {
-    console.log('Your node has no identity yet — claim a name on a relay first.');
+    // Since goal/G22.5 a node's identity exists from its first boot, before it listens.
+    console.log('Your node\'s identity.json could not be read — start your node once from this tree.');
     console.log('Nothing was changed.');
     return;
   }

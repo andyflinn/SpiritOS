@@ -20,6 +20,11 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+// Since goal/G22.5 relayAuth does not export ensureIdentity: its first load
+// ensures the identity of the root it sits in. So each "start" below plants
+// relayAuth in the scratch root and loads it (plantIdentity.js), which is
+// exactly what a node's boot does.
+const plantIdentity = require('./plantIdentity.js');
 
 test.startTest('An identity signs with one key and seals with another');
 
@@ -78,7 +83,7 @@ test.subHeading('ONE FILE — the ruling, and what depends on it');
 
 {
   const dir = home();
-  auth.ensureIdentity(dir, 'onefile');
+  plantIdentity.ensureAt(dir, 'onefile');
   const saved = JSON.parse(fs.readFileSync(identityFile(dir), 'utf8'));
   if (saved.privateKey && saved.sealPrivateKey) {
     test.check('both pairs are in identity.json — one thing to protect, back up, and lose');
@@ -106,7 +111,7 @@ test.subHeading('THE MIGRATION: an old node stays itself');
   old.description = 'enrolled at three relays under this key';
   auth.saveIdentity(dir, old);
 
-  const grown = auth.ensureIdentity(dir, 'ignored-name');
+  const grown = plantIdentity.ensureAt(dir, 'ignored-name');
 
   if (grown.publicKey === old.publicKey && grown.privateKey === old.privateKey) {
     test.check('THE SIGNING KEY IS UNTOUCHED — every relay it is enrolled at still knows it');
@@ -118,10 +123,10 @@ test.subHeading('THE MIGRATION: an old node stays itself');
   } else {
     test.fail('an old identity did not gain a seal key');
   }
-  // The name argument is for MINTING. An existing identity must not be
-  // renamed by whatever the caller happened to pass at boot.
+  // Since goal/G22.5: a name offered afterwards (nameIdentity) only fills an
+  // empty name or the machine-name default; a name somebody chose stands.
   if (grown.name === 'veteran' && grown.description === old.description) {
-    test.check('its name and description survive — the argument names a new identity, it does not rename an old one');
+    test.check('its name and description survive — a name offered later does not rename a chosen one');
   } else {
     test.fail('the migration overwrote fields it had no business touching: ' + grown.name);
   }
@@ -138,10 +143,10 @@ test.subHeading('It happens once, and quietly ever after');
 
 {
   const dir = home();
-  auth.ensureIdentity(dir, 'stable');
+  plantIdentity.ensureAt(dir, 'stable');
   const first = JSON.parse(fs.readFileSync(identityFile(dir), 'utf8'));
-  auth.ensureIdentity(dir, 'stable');
-  auth.ensureIdentity(dir, 'stable');
+  plantIdentity.ensureAt(dir, 'stable');
+  plantIdentity.ensureAt(dir, 'stable');
   const third = JSON.parse(fs.readFileSync(identityFile(dir), 'utf8'));
   if (third.sealPrivateKey === first.sealPrivateKey && third.privateKey === first.privateKey) {
     test.check('three starts, one seal key — a node does not rotate itself out of its own correspondence');

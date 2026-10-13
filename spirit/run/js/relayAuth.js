@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 // What a label and a description may be, said once for both sides of the
 // wire. It requires nothing at all — that is what lets the browser have
 // the same copy — so this is another one-way edge.
@@ -445,10 +446,16 @@ function writeOwner(rootDir, key) {
 // died. Found on 2026-09-13 by serverSurface.js's hub sweep, which was
 // the first thing ever to call those routes against a booted process.
 //
-// Answering `null` is the fix rather than a try/catch at each signing
-// site, because null is a state every caller ALREADY handles and handles
-// well: "no identity on this node", said out loud, with a status. There
-// were eleven signing sites and one of this.
+// Answering `null` for a key that cannot sign is the fix rather than a
+// try/catch at each signing site: there were eleven signing sites and one
+// of this. A node's own identity exists from its first boot (goal/G22.5,
+// ensureIdentity below and the first-load call at the foot of this file),
+// so on a node null means a torn or hand-mangled file, never "not yet".
+//
+// A NAME IS NOT WHAT MAKES IT AN IDENTITY (goal/G22.5). Keys that sign are.
+// This used to answer null for an identity with no name, and ensureIdentity
+// read that null as "none" and made a NEW key over it — so a node booted
+// nameless was re-keyed by every restart and again by its first claim.
 //
 // The parse is done once, here, and the result thrown away — crypto
 // caches nothing for us, but a malformed key fails identically every
@@ -457,7 +464,7 @@ function loadIdentity(rootDir) {
   try {
     const raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8');
     const parsed = JSON.parse(raw);
-    if (!parsed || !parsed.name || !parsed.privateKey) return null;
+    if (!parsed || !parsed.privateKey) return null;
     // Not a format check — an actual parse by the thing that will use it.
     // Anything this accepts, sign() accepts.
     privateKeyFromB64(parsed.privateKey);
@@ -553,25 +560,85 @@ function saveIdentity(rootDir, id) {
   protectFile(file);
 }
 
-function ensureIdentity(rootDir, name) {
+// ── ONE IDENTITY, MADE ONCE, NEVER MADE AGAIN (goal/G22.5) ───────────
+//
+// Andy's rulings, 2026-10-13 (goal/G22.5 box), decisions and not this
+// file's to loosen:
+//   - The first call to ensureIdentity ensures a real, permanent identity
+//     exists; every later call returns that same identity and never makes
+//     another.
+//   - When no name is given, the machine's name (os.hostname()) is the
+//     default name.
+//   - relayAuth.js NO LONGER EXPORTS ensureIdentity. It is called once,
+//     by this file's own first load, for the spirit/run it sits in; the
+//     one thing any other component may do to the identity is name it
+//     (nameIdentity below), which never touches a key.
+//
+// THE NAMING RULE, as built from those:
+//   - an identity with keys, named or not, is KEPT: its keys are never
+//     regenerated;
+//   - one with no name gets the machine's name;
+//   - a name given (nameIdentity) over an empty name or over the
+//     machine-name default is written, keys unchanged: so a claim names
+//     the node without re-keying it, and a relay naming itself 'relay'
+//     over its first-load default keeps working;
+//   - otherwise the name it has stands;
+//   - only when there is no identity with keys is one made, named by the
+//     machine.
+// Nothing is written when nothing changed, so a boot over a whole identity
+// touches no file.
+function nameFor(stored, given) {
+  var machine = os.hostname();
+  var have = typeof stored === 'string' ? stored.trim() : '';
+  if (!have) return given || machine;
+  if (given && have === machine) return given;
+  return have;
+}
+
+function ensureIdentity(rootDir) {
   var existing = loadIdentity(rootDir);
   if (existing && existing.privateKey && existing.publicKey) {
     // IN PLACE, KEEPING THE IDENTITY (cycle 10, R2). Every node alive
     // predates sealing, and its Ed25519 key IS its identity — every relay
     // it is enrolled at knows it by that key, so regenerating would make
     // it a stranger. It gains the second pair and stays itself.
+    var next = existing;
     var grown = withSealKey(existing);
+    if (grown) next = grown;
+    var stored = typeof next.name === 'string' ? next.name.trim() : '';
+    var wanted = nameFor(next.name, '');
+    if (wanted !== stored) next = Object.assign({}, next, { name: wanted });
+    if (next === existing) return existing;
+    saveIdentity(rootDir, next);
     if (grown) {
-      saveIdentity(rootDir, grown);
       try { console.log('    identity gained a seal key (cycle 10) — the signing key is unchanged'); }
       catch (e) { /* nowhere to say it */ }
-      return grown;
     }
-    return existing;
+    return next;
   }
-  var id = generateIdentity(name);
+  var id = generateIdentity(nameFor('', ''));
   saveIdentity(rootDir, id);
   return id;
+}
+
+// ── NAMING THE IDENTITY THAT EXISTS, AND NOTHING ELSE ────────────────
+//
+// The one export that writes to an identity on a caller's behalf (Andy,
+// 2026-10-13, goal/G22.5). It never makes one and never touches a key:
+// with no identity there it answers null and writes nothing. A name is
+// written under the naming rule above (over an empty name or the machine
+// default; otherwise the name it has stands), and the identity as it now
+// stands is returned.
+function nameIdentity(rootDir, name) {
+  var id = loadIdentity(rootDir);
+  if (!id) return null;
+  var given = String(name == null ? '' : name).trim();
+  var stored = typeof id.name === 'string' ? id.name.trim() : '';
+  var wanted = nameFor(id.name, given);
+  if (wanted === stored) return id;
+  var next = Object.assign({}, id, { name: wanted });
+  saveIdentity(rootDir, next);
+  return next;
 }
 
 // checkClaim STOOD HERE. Its one job left was `open` mode — "a relay
@@ -661,5 +728,26 @@ module.exports = {
   writeOwner,
   loadIdentity,
   saveIdentity,
-  ensureIdentity,
+  // ensureIdentity is NOT exported (Andy, 2026-10-13, goal/G22.5): the
+  // first load below is its only caller.
+  nameIdentity,
 };
+
+// ── THE IDENTITY OF THE spirit/run THIS FILE SITS IN, ON FIRST LOAD ──
+//
+// Andy's ruling, 2026-10-13 (goal/G22.5 box): relayAuth knows where the
+// key goes from its own position in spirit/run. On its FIRST LOAD it
+// ensures the identity of the spirit/run it sits in exists, so no other
+// component ever has to make or check for one, EVER, and the node has its
+// key before it listens on its port.
+//
+// The law: no node-boot is done until the node has a key and a default
+// name.
+//
+// FROM __dirname, NEVER process.cwd(): the key belongs to the tree this
+// file is part of, whoever started the process and from wherever. Once per
+// process, because require caches the module. And it never throws out of
+// require: a disc that refuses the write is said by whatever asks for the
+// identity next, not by a module that would not load.
+try { ensureIdentity(path.resolve(__dirname, '..')); }
+catch (e) { /* see above: never out of require */ }

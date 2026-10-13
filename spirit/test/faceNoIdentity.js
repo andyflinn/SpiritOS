@@ -14,7 +14,8 @@
 // WHAT IS ASSERTED
 //   T1  jobs.startNodeServers hands every server --node {name, publicKey, ownerKey}: the owner's
 //       public key when another key owns the node, '' when it owns itself or has none, and for
-//       a nameless node too. Nothing private in any argument.
+//       a node nobody named, which since goal/G22.5 carries the machine name (os.hostname()).
+//       Nothing private in any argument.
 //   T2  appServer puts the three facts on the spirit object it hands a server, beside
 //       SPIRIT_PORT: spirit.core.node.const.NODE_NAME, NODE_KEY, OWNER_KEY; '' without --node.
 //   T3  appFaceApp opens neither identity.json nor owner.json: no loadIdentity, no loadOwner,
@@ -51,8 +52,11 @@ function probeNode(label, idName, owner) {
   const run = path.join(scratch, label, 'spirit', 'run');
   fs.mkdirSync(path.join(run, 'process', 'js', 'probe'), { recursive: true });
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
-  const id = auth.generateIdentity(idName);
-  auth.saveIdentity(run, id);
+  // Since goal/G22.5: no name given is the identity relayAuth's first load makes, named by the
+  // machine; made here by planting relayAuth in the root (plantIdentity.js).
+  let id = null;
+  if (idName) { id = auth.generateIdentity(idName); auth.saveIdentity(run, id); }
+  else id = require('./plantIdentity.js').ensureAt(run);
   if (owner === 'self') auth.writeOwner(run, id.publicKey);
   else if (owner) auth.writeOwner(run, owner);
   const out = path.join(scratch, label + '-argv.json');
@@ -102,9 +106,9 @@ function factsOf(args) {
     test.check('a node owning itself, and a node nobody owns, hand ownerKey \'\': there is no owner to ask');
   } else test.fail(OWED + 'self-owned handed ' + JSON.stringify(self.node) + ', unowned ' + JSON.stringify(none.node));
   const bare = await startedWith(jobs, probeNode('bare', '', OWNER));
-  if (bare.node && bare.node.ownerKey === OWNER && !bare.leaked) {
-    test.check('a node not named yet hands --node too, its owner included');
-  } else test.fail(OWED + 'a nameless owned node handed ' + JSON.stringify(bare.node));
+  if (bare.node && bare.node.ownerKey === OWNER && bare.node.name === os.hostname() && !bare.leaked) {
+    test.check('a node nobody named hands --node too, with the machine name, its owner included');
+  } else test.fail(OWED + 'an owned node nobody named handed ' + JSON.stringify(bare.node));
 
   test.subHeading('T2: appServer puts the facts on the spirit object, beside SPIRIT_PORT');
   const handed = await factsOf(['--node', JSON.stringify({ name: 'puppet', publicKey: 'NODEKEY', ownerKey: OWNER })]);

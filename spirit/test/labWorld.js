@@ -753,8 +753,9 @@ function createWorld(opts) {
 // yet. Each is a feature request with a test already waiting for it.
 //
 // 1. A NODE CANNOT BE TOLD WHO IT IS OR WHICH RELAYS IT USES, from
-//    outside itself. Identity lands via a first claim made in the
-//    browser, and relays.json is written by Natter. So this helper
+//    outside itself. Since goal/G22.5 its key exists from its first boot,
+//    named by the machine; the name a person picks arrives with a claim
+//    made in the browser, and relays.json is written by Natter. So this helper
 //    writes both files into a fake node's home and restarts it. Cost:
 //    the setup path a real person takes is never exercised by any test,
 //    which is exactly where a first-run bug would live.

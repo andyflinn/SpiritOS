@@ -467,6 +467,7 @@ signs nothing at all — verified against a live relay: `GET
   nothing; four kinds of junk are not a badge; and *"ownerBadge signs
   nothing at all to ask it"* — a source check that `auth.sign(` does not
   appear in live code there.
+  Since goal/G22.5 (2026-10-13) a node's identity exists from its first boot, before it listens; this no longer holds.
 - `spirit/test/protocolSurface.js` — the register and the tree agree in
   both directions after `/api/relay/status` and `statusMessage` are
   struck from 0010.

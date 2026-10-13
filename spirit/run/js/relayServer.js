@@ -378,11 +378,12 @@ const relay = createRelay.createRelay(undefined, {
 // A relay is a party to conversations, and `relay` is the caption it
 // answers to, not an identity. A node that keeps one file per peer cannot
 // file the relay anywhere without a key, so the relay gets one: made
-// once, on the first relay boot, into this process's own relay-state
-// beside allow.json. It is handed out through /api/relay/key
-// (relay.relayPublicKey), and it is NOT the owner's key — the owner is a
-// peer who claimed, the relay is the box.
-require('./relayAuth').ensureIdentity(ROOT_DIR, 'relay');
+// once, by relayAuth.js on its first load (goal/G22.5), into this
+// process's own relay-state beside allow.json. Here it is only NAMED
+// 'relay' over the machine-name default, keys untouched. It is handed out
+// through /api/relay/key (relay.relayPublicKey), and it is NOT the owner's
+// key — the owner is a peer who claimed, the relay is the box.
+require('./relayAuth').nameIdentity(ROOT_DIR, 'relay');
 
 // handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
 // goal/G16.2 with the device enrolment.

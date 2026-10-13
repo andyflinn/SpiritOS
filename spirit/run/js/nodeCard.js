@@ -93,8 +93,9 @@ function asks(text) {
 //   name         what the identity was minted with, not a public label —
 //                labels belong to relays, one each, and a node has as
 //                many as it has enrolments. It is here because it is
-//                often the only word a fresh node has, and an empty card
-//                is worse than a weak one
+//                often the only word a node has beside its key — the
+//                machine's name, by default, from its first boot
+//                (goal/G22.5) — and an empty card is worse than a weak one
 //   description  the owner's own sentence about this node
 //   publicKey    the identity — in the signed bytes on purpose, so the
 //                blob is self-contained and can be checked without the
@@ -211,7 +212,7 @@ function cardFrom(id) {
 // contents are kept beside the counter and compared.
 function describe(rootDir) {
   const id = auth.loadIdentity(rootDir);
-  if (!id || !id.privateKey) return '';
+  if (!id || !id.privateKey) return ''; // DEPRECATED: the node's ID exists before first node-listen.
   const owner = ownerOf(rootDir, id);
   // The owner rides on a copy: identity.json is saved by advance and never holds it.
   return cardFrom(Object.assign({}, advance(rootDir, id, owner), { owner: owner }));
@@ -295,7 +296,7 @@ function verify(text) {
 // the only part that IS the identity.
 function read(rootDir) {
   const id = auth.loadIdentity(rootDir);
-  if (!id) return null;
+  if (!id) return null; // DEPRECATED: the node's ID exists before first node-listen.
   return {
     name: String(id.name || ''),
     description: String(id.description || ''),
@@ -341,7 +342,7 @@ function firstDescription(now) {
 
 function ensureDescription(rootDir, now) {
   const id = auth.loadIdentity(rootDir);
-  if (!id) return '';
+  if (!id) return ''; // DEPRECATED: the node's ID exists before first node-listen.
   if (String(id.description || '').trim()) return String(id.description);
 
   const said = firstDescription(now);
@@ -362,7 +363,7 @@ function ensureDescription(rootDir, now) {
 // an empty `id.name` was removed by goal/G16.2; the rule stands.)
 function setName(rootDir, text) {
   const id = auth.loadIdentity(rootDir);
-  if (!id) return { ok: false, status: 409, error: 'this node has no key yet' };
+  if (!id) return { ok: false, status: 409, error: 'DEPRECATED error: this node has no key yet' }; // DEPRECATED: the node's ID exists before first node-listen.
 
   const bad = fieldRules.problem(text);
   if (bad) return { ok: false, status: 400, error: bad };
@@ -381,7 +382,7 @@ function setDescription(rootDir, text) {
   if (bad) return { ok: false, status: 400, error: bad };
 
   const saved = auth.setDescription(rootDir, fieldRules.normalize(text));
-  if (!saved) return { ok: false, status: 409, error: 'this node has no key yet' };
+  if (!saved) return { ok: false, status: 409, error: 'DEPRECATED error: this node has no key yet' }; // DEPRECATED: the node's ID exists before first node-listen.
   // WHAT WAS ACTUALLY STORED goes back, not what was sent. A caller that
   // echoes its own input is a caller that will draw 140 characters into a
   // field holding 128.
@@ -410,7 +411,7 @@ function setDescription(rootDir, text) {
 // a restart, so a failed save refuses before anything is published.
 function rotate(rootDir) {
   const id = auth.loadIdentity(rootDir);
-  if (!id || !id.privateKey) return { ok: false, status: 409, error: 'this node has no key yet' };
+  if (!id || !id.privateKey) return { ok: false, status: 409, error: 'DEPRECATED error: this node has no key yet' }; // DEPRECATED: the node's ID exists before first node-listen.
   const pair = require('crypto').generateKeyPairSync('x25519');
   id.sealPublicKey = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
   id.sealPrivateKey = pair.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64');

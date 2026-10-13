@@ -33,7 +33,7 @@ function puppetIn(rootDir, log) {
     if (broken === null) moaned = null;
     if (!owner) return { puppet: false, owner: '' };
     const self = auth.loadIdentity(String(rootDir || ''));
-    if (self && self.publicKey === owner) return { puppet: false, owner: '' };
+    if (self && self.publicKey === owner) return { puppet: false, owner: '' }; // DEPRECATED: the node's ID exists before first node-listen.
     return { puppet: true, owner: owner };
   };
 }
