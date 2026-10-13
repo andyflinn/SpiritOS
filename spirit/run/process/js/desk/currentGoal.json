@@ -1,5 +1,5 @@
 {
- "change": 57425,
+ "change": 57428,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -7,10 +7,10 @@
    "id": "goal/G22",
    "title": "Using the stack-frame tests as design-enforcement tool.",
    "goal": "",
-   "status": "closed",
+   "status": "goal run started",
    "with": "",
    "buttons": [
-    "reopen"
+    "close"
    ],
    "blocking": [],
    "blocked": [],
@@ -42,9 +42,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 0,
+   "waiting": 1,
    "excluded": [],
-   "live": [],
+   "live": [
+    "claude-windows"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
