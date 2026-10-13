@@ -54,6 +54,54 @@ test.subHeading('the frame and the gate');
   else test.fail('OWED by goal/G22.3: gateMatches is ' + typeof gm + ' or matches wrongly');
 })();
 
+// ── A CALLBACK'S STACK CARRIES THE FUNCTION THAT PLACED IT (goal/G22.3) ──
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box): the probe uses async_hooks, so a callback placed by a named function
+// records that function below its own stack. A fixture planted under a temp spirit/run/ (ours() names it as the
+// repo's) calls http.request from an anonymous .then placed by placeFromThen; the request is destroyed before it
+// connects, to a port nobody listens on. Red here means a door like the relay's can never see its gate.
+test.subHeading('a callback carries its placer');
+(function () {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  const { spawnSync } = require('child_process');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-async-placer-'));
+  const dir = path.join(home, 'spirit', 'run', 'js');
+  fs.mkdirSync(dir, { recursive: true });
+  const fixture = path.join(dir, 'asyncPlacer.js');
+  const log = path.join(home, 'wire.tsv');
+  fs.writeFileSync(fixture, [
+    "'use strict';",
+    "const http = require('http');",
+    'function placeFromThen() {',
+    '  return Promise.resolve().then(function () {',
+    "    const req = http.request({ host: '127.0.0.1', port: 9, path: '/selftest/async', method: 'POST' });",
+    "    req.on('error', function () {});",
+    '    req.destroy();',
+    '  });',
+    '}',
+    'placeFromThen();',
+    '',
+  ].join('\n'));
+  const probe = path.join(__dirname, 'tools', 'wirePaths.js').replace(/\\/g, '/');
+  const env = Object.assign({}, process.env, {
+    SPIRIT_WIRE_LOG: log, SPIRIT_WIRE_BOTTOM: 'wire',
+    NODE_OPTIONS: ((process.env.NODE_OPTIONS || '') + ' --require ' + probe).trim(),
+  });
+  spawnSync(process.execPath, [fixture], { env: env, encoding: 'utf8', timeout: 20000 });
+  let raw = '';
+  try { raw = fs.readFileSync(log, 'utf8'); } catch (e) { raw = ''; }
+  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* left in tmp */ }
+  const line = raw.split('\n').filter(function (l) { return l.indexOf('/selftest/async') !== -1; })[0] || '';
+  const frames = line.slice(line.indexOf('\t', line.indexOf('\t') + 1) + 1).split(' < ');
+  const placer = 'spirit/run/js/asyncPlacer.js::placeFromThen';
+  if (frames.some(function (f) { return wirePaths.gateMatches(f, placer); })) {
+    test.check('a request made in an anonymous .then records the named function that placed the callback');
+  } else {
+    test.fail('OWED by goal/G22.3: a request made in an anonymous .then lost its placer placeFromThen; recorded: ' + (line || '(nothing)'));
+  }
+})();
+
 let doors = [];
 try { doors = wirePaths.doors(); } catch (e) { test.fail('OWED by goal/G22.3: the list of doors does not read: ' + ((e && e.message) || e)); }
 if (!doors.length) test.fail('OWED by goal/G22.3: the list of doors is empty');

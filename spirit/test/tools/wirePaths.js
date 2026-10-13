@@ -309,8 +309,15 @@ function callStack() {
   const was = Error.stackTraceLimit;
   Error.stackTraceLimit = 24;
   Error.captureStackTrace(holder, callStack);
-  const lines = String(holder.stack || '').split('\n').slice(1);
   Error.stackTraceLimit = was;
+  const out = framesOf(holder);
+  if (placers) joinPlacers(out, placers());
+  return out;
+}
+
+// One captured stack, as frames of ours, nearest first.
+function framesOf(holder) {
+  const lines = String(holder.stack || '').split('\n').slice(1);
   const out = [];
   // THE FUNCTION'S NAME IS KEPT (goal/G22.3): "at <name> (<file>:<line>:<col>)", or "at <file>:<line>:<col>" with no
   // name; frameName() says which part of the name is kept.
@@ -330,9 +337,74 @@ function callStack() {
   return out;
 }
 
+// ── A CALLBACK'S STACK IS JOINED TO ITS PLACER'S (goal/G22.3) ───────
+//
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to undo: "the probe uses async_hooks: when a callback
+// is placed, it keeps the placer's stack and joins it under the callback's stack, so the walk reaches the named function
+// that set it up." Test-only, and probed runs are slower for it; that price was accepted with the decision.
+//
+// WHY: a callback runs on a fresh stack. peerPost's relay post (`Promise.resolve().then(function () { return
+// request(...) })`) reached the wire with no frame of the named function that queued it, so no gate could match it.
+//
+// THE JOINT IS A FRAME OF ITS OWN, PLACED: "<callback's frames> < (placed by) < <placer's frames> < (placed by) < ...".
+// It is joined with the same " < " every reader splits on, and it starts with neither "spirit/run/" nor a file, so it
+// is never a production frame, never matches a gate, and is never last (no joint without frames after it).
+//
+// BOUNDED: at most JOIN_HOPS placers, JOIN_FRAMES frames in all, and a frame already in the stack is not repeated.
+const PLACED = '(placed by)';
+const JOIN_HOPS = 8;
+const JOIN_FRAMES = 64;
+let placers = null; // set by the probe: the current callback's chain of placer stacks, nearest first
+function joinPlacers(out, chain) {
+  if (!chain) return;
+  const seen = new Set(out);
+  for (let i = 0; i < chain.length && i < JOIN_HOPS; i++) {
+    const frames = framesOf(chain[i]).filter(function (f) { return !seen.has(f); });
+    if (!frames.length) continue;
+    if (out.length) out.push(PLACED);
+    for (let j = 0; j < frames.length && out.length < JOIN_FRAMES; j++) { seen.add(frames[j]); out.push(frames[j]); }
+    if (out.length >= JOIN_FRAMES) break;
+  }
+}
+
 // ── PROBE MODE ──────────────────────────────────────────────────────
 if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   const counts = new Map();
+
+  // ── EVERY PLACED CALLBACK KEEPS ITS PLACER'S STACK (goal/G22.3, Andy's decision above joinPlacers) ──
+  //
+  // init: an async resource (a promise, a timer, a socket) is being created, which is the moment a callback is placed.
+  // Its stack is captured there, and its chain is that stack followed by the chain of what was running when it was
+  // placed (the current execution's resource; the trigger when that one has none), cut to JOIN_HOPS. The chain copies
+  // references, so a record never holds more than JOIN_HOPS stacks however long a loop of callbacks runs.
+  //
+  // CAPTURED, NOT FORMATTED: V8 formats `.stack` on first read, so a placer nobody reaches the endpoint from costs the
+  // capture and never the formatting. The limit is raised and restored around it, as in callStack().
+  //
+  // FREED on destroy (a promise's when it is collected). MAX_RECORDS drops the oldest past that, so a process that
+  // creates resources faster than it collects them stays bounded; a callback whose placer was dropped records its own
+  // stack only, which is what it recorded before the decision.
+  const asyncHooks = require('async_hooks');
+  const records = new Map();
+  // MEASURED 2026-10-13 (node 24.20): a capture from inside the hook costs ~25 microseconds even at one frame, so a
+  // promise-bound loop of 200k awaits went from 0.06 s to 26 s; the suites that drive the doors wait on I/O and did
+  // not move (the relay door's two: 59.3 s without, 58.7 s with). The price Andy accepted with the decision.
+  const MAX_RECORDS = 20000;
+  const placed = function placed(asyncId, type, triggerAsyncId) {
+    const holder = {};
+    const was = Error.stackTraceLimit;
+    Error.stackTraceLimit = 24;
+    Error.captureStackTrace(holder, placed);
+    Error.stackTraceLimit = was;
+    const up = records.get(asyncHooks.executionAsyncId()) || records.get(triggerAsyncId);
+    records.set(asyncId, up ? [holder].concat(up.slice(0, JOIN_HOPS - 1)) : [holder]);
+    if (records.size > MAX_RECORDS) records.delete(records.keys().next().value);
+  };
+  asyncHooks.createHook({
+    init: placed,
+    destroy: function (asyncId) { records.delete(asyncId); },
+  }).enable();
+  placers = function () { return records.get(asyncHooks.executionAsyncId()) || null; };
 
   // ── WHICH ENDPOINT, NOT ONLY WHICH STACK ────────────────────────────
   //
