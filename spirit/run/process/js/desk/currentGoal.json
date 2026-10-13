@@ -1,5 +1,5 @@
 {
- "change": 56396,
+ "change": 56408,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -7,15 +7,16 @@
    "id": "goal/G21",
    "title": "More Mechanical constraint imposed in Desk.",
    "goal": "",
-   "status": "goal run started",
+   "status": "done",
    "with": "ollama agent node",
    "buttons": [
-    "close"
+    "close",
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -49,8 +50,7 @@
     "ollama agent node"
    ],
    "working": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -525,6 +525,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:43:53.293Z",
      "text": "Checked all four boxes side by side. Not all green yet, three findings:\n- Order: G21.4 needs G21.1 first, since its rules go by the key on each line and by the included toggle, both built in G21.1; G21.2 and G21.3 stand alone. The desk has no verb that adds that edge without rewriting the whole session, so I keep the order by building G21.1 before G21.4.\n- G21.3 and G21.4 are not marked code, though both are code; the code mark is yours.\n- One question is still open in G21.4, placed there as its only red Q: my own work notes on an item I hold."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:10:55.870Z",
+     "text": "goal run on 18 suites: all green (at d8f3da9e, pulled)"
     }
    ]
   },
