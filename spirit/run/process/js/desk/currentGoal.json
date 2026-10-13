@@ -1,5 +1,5 @@
 {
- "change": 57535,
+ "change": 57626,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run started",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,14 +44,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1400,24 +1397,122 @@
    "id": "goal/G22.5",
    "title": "EnsureIdentity",
    "goal": "goal/G22",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G22.4"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/jobs.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/node/card.json",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeCard.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peerPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/presenceNode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/puppetMode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayAuth.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/desk/offboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/onboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/info/info.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/backupServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceNoIdentity.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/guarantees.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labLifecycle.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/nodeInfo.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceShow.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": false,
    "phase": "",
@@ -1427,16 +1522,59 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "EnsureIdentity: one real identity from the first call.\n\nDECIDED (Andy, 2026-10-13)\n- The first call to ensureIdentity ensures a real, permanent identity exists; every later call returns that same identity and never makes another.\n- When no name is given, ensureIdentity takes the machine's name as the default.\n- This is fixed before anything else in goal/G22.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- server.js calls ensureIdentity with an empty name at every boot (since 2026-09-24, to grow a seal key on older nodes); on a fresh node that makes a key with no name.\n- relayAuth.js loadIdentity treats an identity with no name as none (since 2026-09-13).\n- So the first claim (hub.js signedClaim, ensureIdentity with the claimed name) finds \"no identity\" and makes a new key over the boot key. Measured in a scratch folder: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.",
-   "version": 1,
-   "checks": [],
+   "box": "EnsureIdentity: one real identity from the first call.\n\nDECIDED (Andy, 2026-10-13)\n- The first call to ensureIdentity ensures a real, permanent identity exists; every later call returns that same identity and never makes another.\n- When no name is given, ensureIdentity takes the machine's name as the default.\n- This is fixed before anything else in goal/G22.\n- The node calls ensureIdentity during boot, first, before the hub is made, so the hub never has a chance or a need to make one; the claim finds the identity already there.\n- Law: no node-boot is done until the node has a key and a default name.\n- relayAuth makes the key on its own first load, for the spirit/run it sits in (every copy of the code has its own); no other component ever makes or checks for one.\n- Every piece of documentation (comments, AGENT.md, design files, suite headers) that suggests the node may not know its own key before it listens on its local port (usually 65432) is updated, so the idea is gone for good.\n- It never comes back: a suite boots a fresh node and claims, and fails unless the key exists before the port opens and the claim keeps it; another reads every comment and document in the tree for the phrases this idea was written in, and fails if one reappears.\n- Only relayAuth.js changes code: it ensures the identity exists, before the node listens on its port. Every other file changes only its comments; their code stays as it is.\n- Each no-key-yet branch is marked with the comment: DEPRECATED: the node's ID exists before first node-listen.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- server.js calls ensureIdentity with an empty name at every boot (since 2026-09-24, to grow a seal key on older nodes); on a fresh node that makes a key with no name.\n- relayAuth.js loadIdentity treats an identity with no name as none (since 2026-09-13).\n- So the first claim (hub.js signedClaim, ensureIdentity with the claimed name) finds \"no identity\" and makes a new key over the boot key. Measured in a scratch folder: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.\n",
+   "version": 9,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/hub.js, spirit/run/js/jobs.js, spirit/run/js/node/card.json, spirit/run/js/nodeCard.js, spirit/run/js/ownerPost.js, spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/puppetMode.js, spirit/run/js/relayAuth.js, spirit/run/js/server.js, spirit/run/js/spiritErrors.js, spirit/run/shell/info/info.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-13T19:44:53.744Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -1461,6 +1599,180 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T19:19:45.781Z",
      "text": "ad the fucking dependency"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:20:43.283Z",
+     "text": "Added: G22.5 blocks G22.4, written through session.set with every G22 item listed as it was, so nothing else moved (checked: G22.1 to G22.3 closed as before, G22.4 waits on G22.5)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:22:13.191Z",
+     "text": "no. Call ensureIdentity during boot, before hub has a chance or a need."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:22:47.077Z",
+     "text": "Recorded (box v2): ensureIdentity runs at boot first, before the hub is made, with the machine name as default; the claim finds it already there. Today the hub is made at server.js line 89 and the boot call sits at line 1256, after it. Ready on your Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:23:05.220Z",
+     "text": "\"No node-boot is done until the node has a key and a default name\". rule. decision. LAW."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:23:45.447Z",
+     "text": "Recorded as law in the box (v4), and proposed as rule/13 in the rules, type code: \"A node boot ends with a key and a default name\". It is proposed until you activate it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:23:50.389Z",
+     "text": "where does ensureIdentity live?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:24:07.371Z",
+     "text": "In spirit/run/js/relayAuth.js, line 556, beside loadIdentity (line 456) and generateIdentity (line 343). Its callers: server.js at boot (line 1256), hub.js signedClaim at the claim (line 158), and relayServer.js at a relay's boot (line 385)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:26:09.904Z",
+     "text": "so, we make sure that during require('relayAuth'), on relayAuth's first load, the damn key exists, there is no reason any other component should have to worry about that, EVER."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:26:43.194Z",
+     "text": "Agreed on the point: no other component ever worries about the key. One catch with \"on first load\": loading relayAuth has no folder of its own. 13 production files and 120 test suites load it, many pointing it at scratch folders, and tools like offboard load it too, so a key made at load would land in whatever tree the loader runs from, test runs included.\nThe same guarantee without that: relayAuth makes the key on its first use, the first time anyone asks for the identity of a folder. Every reader goes through it, so no one can ever see \"no key\"; nothing is written by a load that never asks.\nAnd the node's boot asks first, so for the node it is at boot in practice. Use, or load?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:27:44.801Z",
+     "text": "why would the fucking loader have any cwd other than spirit/run?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:28:14.140Z",
+     "text": "You're right, it need not care about cwd at all: relayAuth knows where it sits, spirit/run/js, so its own spirit/run is the root, and every copy of the code (the lab's planted copies too) carries its own. On first load it makes that root's key if missing. That works.\nTwo side effects, both fine I think: any test run in a fresh checkout makes that checkout's node key (relay-state is not in git); and a relay keeps the machine name rather than \"relay\", unless relayServer still names it at its boot.\nBuilding it that way on your Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:29:17.357Z",
+     "text": "we call node js/server.js. no? so AGAIN,\n\nwhy would the fucking loader have any cwd other than spirit/run?\n\n????????"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:29:38.534Z",
+     "text": "For the node, none: it is started as node js/server.js in spirit/run, so its cwd is spirit/run.\nThe others are not the node: test suites are started from the repo root (node spirit/test/x.js), and deskVerify and agents run them from there, so their cwd is the repo root.\nWhich is why relayAuth will not use cwd at all: it takes the spirit/run it sits in, which is right for every one of them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:30:21.274Z",
+     "text": "now the node-code does shit for test scripts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:30:41.643Z",
+     "text": "No, and it won't. relayAuth uses the spirit/run it sits in because that is the node's own home; that is the whole reason. Tests were only a side effect I mentioned, not a reason: they point relayAuth at their own scratch folders themselves, as they do today, and the node code changes nothing for them.\nSo: on its first load relayAuth makes its home's key if missing, machine name as default name. That is all."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:31:34.766Z",
+     "text": "nevermind. relayAuth KNOWS where the key goes, also because it knows its position within run. that's enough to make it happen."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:33:41.216Z",
+     "text": "add to this:\n\nUDATE ANY documentation that would suggest the node doesn't know its own key before it listens to it's local port (usually 65432), and disspell this idea once and for all."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:34:06.532Z",
+     "text": "Added to the box (v6): every comment, AGENT.md line, design file and suite header that suggests the node may not know its key before it listens on its port is rewritten, so the idea is gone for good. A first search already finds candidates in a dozen files (hub, jobs, nodeCard, relayAuth among them); the build will read each and fix every one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:36:26.658Z",
+     "text": "documentation and comments are important. (this is why i suggested forbidding comments altogether at some point)\n\nthis MUST fixed in all comments, design docs, agent.md's. i don't want this SHIT popping up EVER again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:36:50.694Z",
+     "text": "Understood: every comment, design doc and AGENT.md, no exceptions.\nTo keep it from ever coming back, two guards in the same item: a suite that boots a fresh node and claims, and fails unless the key exists before the port opens and the claim keeps it; and a suite that reads every comment and document in the tree for the phrases this idea was written in (\"no identity yet\", \"minted by its first claim\", \"nameless\", and the ones the sweep finds), and fails if one reappears."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:37:10.531Z",
+     "text": "i will grant access to core files just to fix the comments."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:37:44.518Z",
+     "text": "Thank you. Every candidate file I found is core (relayAuth, server, hub, jobs, nodeCard and more), so before asking I am sweeping the tree for exactly the files that say it; then one grant per file, as G checks on this item, nothing wider."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:40:15.959Z",
+     "text": "The sweep is done: the idea sits in 12 core files, 2 desk tools, 9 test files and 2 design docs. It is not only words: the code makes it true (a nameless key reads as none, and the claim mints a new one), so comments and code are fixed together.\nThe grant is up as G1 on this item, one button for all 12 core files: relayAuth, server, hub, jobs, presenceNode, nodeCard, ownerPost, peerPost, spiritErrors, node/card.json, puppetMode, shell/info.\nBesides the comments, the \"this node has no key yet\" refusals in nodeCard, ownerPost, hub, peerPost and info lose their reason to exist and go, and presence no longer has a \"no identity\" case to bail on."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:42:09.608Z",
+     "text": "relayAuth changes code (ensure idendity exists, before node listens on its port. the others change only the comments."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:42:30.006Z",
+     "text": "Recorded: relayAuth is the only code change; every other file changes only its comments, and their \"no key yet\" branches stay as they are. Ready on your grant (G1), Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:43:52.051Z",
+     "text": "the no-key-yet branches will be commented on as \"DEPRICATED: the nodes ID exists before first node-listen.\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T19:44:12.268Z",
+     "text": "Recorded: every no-key-yet branch gets the comment \"DEPRECATED: the node's ID exists before first node-listen.\""
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T19:44:50.340Z",
+     "text": "thanks for correcting my keaboardage."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T19:45:30.496Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
