@@ -1,5 +1,5 @@
 {
- "change": 58089,
+ "change": 58099,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run started",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,14 +45,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2784,6 +2781,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T23:50:18.087Z",
      "text": "go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T23:50:42.475Z",
+     "text": "Go for which: building G22.7 (the Caddy address; it still needs your Go and code press there), or the flag-day tag of G22.6 now, before G22.7?"
     }
    ]
   },
@@ -2791,34 +2794,60 @@
    "id": "goal/G22.7",
    "title": "Relay reads a stranger's real address behind Caddy",
    "goal": "goal/G22",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G22"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {},
    "asks": 0,
    "half": false,
@@ -2826,7 +2855,14 @@
    "box": "Relay reads a stranger's real address behind Caddy.\n\nDECIDED (Andy, 2026-10-14)\n- Before the flag-day tag of goal/G22.6, a relay behind Caddy counts a stranger by the address Caddy forwards (X-Forwarded-For), not by 127.0.0.1, so the address table holds one entry per real address.\n\nFOUND (2026-10-14)\n- On the VPS every request reaches the relay from Caddy on 127.0.0.1, so since goal/G22.6 (113d1327) all strangers share one entry of the address table and one busy stranger blocks the rest.\n- The forwarded address can be forged by anyone who reaches the relay directly; it may only be trusted when the request came from the local Caddy.",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T23:52:17.228Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
