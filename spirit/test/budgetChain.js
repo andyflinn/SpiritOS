@@ -142,126 +142,11 @@ test.subHeading('A target this box can reach is simply asked');
   }
 }
 
-test.subHeading('A partner is handed less than this relay has');
-
-{
-  // THE HOP ITSELF, observed by injection. `askPartner` is a dependency
-  // (relay.js), so a suite can be the partner and read what it was given
-  // without a second process.
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bc-'));
-  const owner = auth.generateIdentity('owner');
-  ownHome(home, owner);
-  const seen = [];
-  const box = createRelay(home, {
-    askPartner: function (url, relayKey, text, budgetMs) {
-      seen.push(budgetMs);
-      return Promise.resolve(null);
-    },
-  });
-  auth.saveIdentity(home, auth.generateIdentity('relay'));
-  claimOwner(box, owner, 'owner', 'fx');
-
-  const alice = auth.generateIdentity('alice');
-  const minted = box.mint('owner', 'alice', 7, '');
-  box.claim('alice', auth.sign(alice.privateKey, auth.claimMessage('alice')),
-    alice.publicKey, 'fx-alice', minted.invite.token, 'alice');
-
-  // A partner to aim at, and a peer that lives only there.
-  const far = auth.generateIdentity('farrelay');
-  const farOwner = auth.generateIdentity('farowner');
-  const fminted = box.mint('owner', 'farowner', 7, '');
-  box.claim('farowner', auth.sign(farOwner.privateKey, auth.claimMessage('farowner')),
-    farOwner.publicKey, 'fx-far', fminted.invite.token, 'farowner');
-  box.setPartner(owner, farOwner.publicKey, 'https://far.example', far.publicKey, 'h');
-
-  const bertrand = auth.generateIdentity('bertrand');
-  const text = JSON.stringify({ v: 1, body: { hello: 1 } });
-  const sig = auth.sign(alice.privateKey, auth.postMessage(alice.publicKey, bertrand.publicKey, text));
-
-  box.routePost(alice.publicKey, bertrand.publicKey, text, sig,
-    { hints: [far.publicKey], hintSig: auth.sign(alice.privateKey, auth.hintMessage(sig, [far.publicKey])) },
-    4000);
-
-  if (seen.length === 1 && seen[0] < 4000 && seen[0] > 0) {
-    test.check('the partner is given ' + seen[0] + ' ms of the 4000 this relay was asked for');
-  } else {
-    test.fail('what the partner was handed: ' + JSON.stringify(seen));
-  }
-
-  // AND THE MARGIN IS WHAT MAKES IT SAFE. The far end finishes first, so
-  // this relay still has time to carry the answer back to alice.
-  if (seen[0] <= 4000 - 400) {
-    test.check('and the margin left is enough to carry an answer home — that is why it tightens');
-  } else {
-    test.fail('the partner got almost everything: ' + seen[0]);
-  }
-}
-
-test.subHeading('A hop refuses before the wire when the far side could not use it');
-
-{
-  // ANDY'S QUESTION, ASKED OF THE CODE: "if the timeout is diminished to 0
-  // at any point in the request chain, an error is returned immediately?"
-  //
-  // It was not, at first. The floor in `routes.open` guards what a box
-  // GRANTS; it does not guard what the box is about to HAND ON, and those
-  // differ by HOP_MARGIN_MS. So a 600 ms budget passed the local floor,
-  // left 100 ms for the partner, and was refused at the far end — after a
-  // round trip spent learning something computable here.
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bcf-'));
-  const owner = auth.generateIdentity('owner');
-  ownHome(home, owner);
-  const asked = [];
-  const box = createRelay(home, {
-    askPartner: function (url, relayKey, text, budgetMs) {
-      asked.push(budgetMs);
-      return Promise.resolve(null);
-    },
-  });
-  auth.saveIdentity(home, auth.generateIdentity('relay'));
-  claimOwner(box, owner, 'owner', 'fx');
-  const alice = auth.generateIdentity('alice');
-  const m = box.mint('owner', 'alice', 7, '');
-  box.claim('alice', auth.sign(alice.privateKey, auth.claimMessage('alice')),
-    alice.publicKey, 'fx-a', m.invite.token, 'alice');
-  const far = auth.generateIdentity('far');
-  const fo = auth.generateIdentity('fo');
-  const fm = box.mint('owner', 'fo', 7, '');
-  box.claim('fo', auth.sign(fo.privateKey, auth.claimMessage('fo')),
-    fo.publicKey, 'fx-f', fm.invite.token, 'fo');
-  box.setPartner(owner, fo.publicKey, 'https://far.example', far.publicKey, 'h');
-
-  function forwardWith(budget) {
-    const bert = auth.generateIdentity('bert' + budget);
-    const text = JSON.stringify({ v: 1, body: { hello: budget } });
-    const sig = auth.sign(alice.privateKey, auth.postMessage(alice.publicKey, bert.publicKey, text));
-    return box.routePost(alice.publicKey, bert.publicKey, text, sig, {
-      hints: [far.publicKey],
-      hintSig: auth.sign(alice.privateKey, auth.hintMessage(sig, [far.publicKey])),
-    }, budget);
-  }
-
-  const thin = forwardWith(600);
-  if (thin && thin.ok === false && thin.tooLittleTime === true) {
-    test.check('600 ms is refused here, because 100 would be left and 100 is not enough');
-  } else {
-    test.fail('600 ms forward: ' + JSON.stringify(thin));
-  }
-  if (asked.length === 0) {
-    test.check('and nothing crossed the wire to find that out');
-  } else {
-    test.fail('a doomed forward was sent anyway, with ' + JSON.stringify(asked));
-  }
-
-  // AND IT IS A FLOOR, NOT A FEAR. Enough is enough: what remains has
-  // only to clear the far side's floor, not to be generous.
-  const ok = forwardWith(800);
-  if (ok && ok.status === 202 && asked.length === 1 && asked[0] === 300) {
-    test.check('while 800 goes, leaving 300 — above the floor is above the floor');
-  } else {
-    test.fail('800 ms forward: ' + JSON.stringify(ok) + ' asked ' + JSON.stringify(asked));
-  }
-}
+// "A PARTNER IS HANDED LESS THAN THIS RELAY HAS" and "A HOP REFUSES BEFORE
+// THE WIRE" STOOD HERE: the budget handed onward to a partner relay, less
+// HOP_MARGIN_MS. A relay carries nothing onward since partnering went (Andy's
+// decision, goal/G22.6), so there is no next hop to hand a budget to; what
+// stays is the table granting the asker min(asked, ceiling), above and below.
 
 test.subHeading('The asker is told what it was granted, and stops when the relay does');
 
@@ -322,7 +207,7 @@ async function overTheWire() {
   for (let n = 0; n < 40 && !up; n += 1) {
     await sleep(200);
     try {
-      const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
+      const r = await require('./relayDoor').keyStatus(base);
       if (r.status === 200) up = true;
     } catch (e) { /* not yet */ }
   }

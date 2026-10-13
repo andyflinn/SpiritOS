@@ -139,8 +139,10 @@ general one was cheap to ask.
 ## What it does not say
 
 It is not an argument for making answers hostile or stingy. A relay should
-answer a **good** question generously and cheaply — `GET /api/relay/key`
-returns four fields for a question worth asking, and costs 97 bytes flat.
+answer a **good** question generously and cheaply — the relay's card (the
+answer to a card ask on its one door; `GET /api/relay/key` until goal/G22.6
+closed it) returns its key statement for a question worth asking, at a
+fixed cost.
 Precision is rewarded; imprecision is simply not subsidised.
 
 Nor is it a licence to refuse rather than fix. When a caller asks a vague

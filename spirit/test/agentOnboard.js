@@ -19,7 +19,7 @@
 //      the seat's name. The relay is the one row of the node's relay-state/relays.json (goal/G16.3).
 //   2  Exit 0 only when the desk read answered. Without Andy's desk grant: a non-zero exit, and its words name the
 //      grant. Run again after the grant, it finishes: a second run is not refused for the seat it already holds.
-//   3  The desk node's key is the relay's owner key (GET /api/relay/key answers ownerKey).
+//   3  The desk node's key is the relay's owner key (the relay's card, asked on its one door, answers ownerKey).
 //   Since goal/G19.15 (Andy, 2026-10-12): onboard.js <port> <name:token> <desk label> [relay url]. The relay is the
 //   url given ("what does it matter which relay an agent is a member of to participate in my team?"), and the desk
 //   is the one node a search for the label finds, whoever owns the relay ("even if i don't own the relay my agents
@@ -152,9 +152,6 @@ function pointAt(home, relayUrl, relayKey) {
   require('../run/js/relayKeys.js').list(home, relayUrl, 'spirit', relayKey);
   require('../run/js/nodeStore.js').open(home).close();
 }
-function relayKeyOf(relayUrl) {
-  return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.json(); }).then(function (j) { return (j && j.relayPublicKey) || ''; });
-}
 
 (async function () {
   if (!fs.existsSync(SCRIPT)) {
@@ -172,9 +169,9 @@ function relayKeyOf(relayUrl) {
   const relayPort = await freePort();
   startNode(relayHome, relayPort, ['--relay']);
   const relayUrl = 'http://127.0.0.1:' + relayPort;
-  const relayUp = await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); }, 15000);
-  if (!relayUp) { test.fail('the scratch relay never answered /api/relay/key'); return; }
-  const relayKey = await relayKeyOf(relayUrl);
+  const relayUp = await require('./relayDoor').awaitRelayDoor(relayUrl);
+  if (!relayUp) { test.fail('the scratch relay never answered a card ask on its one door'); return; }
+  const relayKey = relayUp.relayPublicKey || '';
 
   includeList.add(andyHome, 'process/js/desk');
   pointAt(andyHome, relayUrl, relayKey);

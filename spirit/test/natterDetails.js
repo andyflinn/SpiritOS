@@ -131,7 +131,8 @@ function revokeTarget(label, out) {
 // should be one single invite block").
 // `peers` and `policy` went with their panels (Andy: "i want that panel
 // gone"; "makes no sense anymore either. gotta go, too").
-const OWNER_PANELS = ['relaylabel', 'invite', 'partners'];
+// `partners` went with partnering (Andy's decision, goal/G22.6).
+const OWNER_PANELS = ['relaylabel', 'invite'];
 
 // The group's own bar. It carries `.nd-group-fold` and deliberately NOT
 // `.nd-fold`, so the handler can tell a click on the group from a click
@@ -190,11 +191,6 @@ function mountApp(opts) {
         rows: opts.rows || [],
         relayStatus: opts.relayStatus || {},
       });
-    } else if (verb === 'relay.partnerCheck') {
-      // Read-only eligibility. The fixture answers what a public roll
-      // would have proved, so a test can drive both outcomes without a
-      // second relay.
-      text = JSON.stringify(opts.partnerCheck || { ok: false, error: 'no fixture' });
     } else if (url.indexOf('/api/hub/post') === 0) {
       // What the node answers a post with: peerPost's own settle, whose
       // `text` is the packet envelope the far end replied in.
@@ -935,13 +931,14 @@ function theOwnerGroupFolds() {
 
     owner.openGroup();
     const open = owner.body().innerHTML;
-    // `natter-peers` and `natter-policy` went with their panels. What is
-    // left in the group is what the group was always for: the things you
-    // do to the BOX — its name, its invites, its partners.
-    if (/natter-mint/.test(open) && /natter-relaylabel/.test(open) && /natter-partners/.test(open)) {
-      test.check('and opening it brings all of them at once');
+    // `natter-peers` and `natter-policy` went with their panels, and the
+    // partner panel with partnering (goal/G22.6). What is left in the group
+    // is what the group was always for: the things you do to the BOX — its
+    // name and its invites.
+    if (/natter-mint/.test(open) && /natter-relaylabel/.test(open) && !/natter-partners/.test(open)) {
+      test.check('and opening it brings both at once, and no partner panel');
     } else {
-      test.fail('group opened and did not draw its members');
+      test.fail('group opened and did not draw its members (or still drew a partner panel)');
     }
 
     // A MEMBER SEES NO GROUP AT ALL. It is not an empty bar for somebody
@@ -1017,114 +1014,32 @@ function theOwnerGroupFolds() {
 // rather than discovered: if it is wanted, it is a button beside Forget
 // in contactsDetails, not a panel here.
 
-// ── THE PARTNER PANEL, AND THE TWO STEPS THAT ARE NOT ONE ────────────
+// ── THE PARTNER PANEL STOOD HERE, AND IS GONE (goal/G22.6) ───────────
 //
-//   Andy: "via owner input, both can establish that fact."
-//
-// The owner types WHERE, because a key is not an address and nothing on
-// this wire maps one to the other. The roll supplies the proof.
-//
-// TWO STEPS, AND THE FIRST GRANTS NOTHING. `relay.partnerCheck` is
-// read-only — it fetches a public roll and compares a key. Only a yes
-// leads to the owner verb, so there is exactly one path that writes a
-// peer row and the check is not on it.
-function thePartnerPanelChecksBeforeItAdds() {
-  test.subHeading('A partnership is checked against a public roll before it is made');
+// Two checks drove it: a partnership checked with relay.partnerCheck before
+// the owner's `partner` verb was posted, and a refused check promoting
+// nobody. Partnering as a permission is gone by Andy's decision (goal/G22.6),
+// and with it the panel. What is owed is that nothing on this screen asks
+// for a partnership any more.
+function noPartnerPanel() {
+  test.subHeading('There is no partner panel, and nothing asks for a partnership (goal/G22.6)');
 
   const app = mountApp({
     rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, roll: { relayKey: 'RELAYKEY' } }],
-    relayStatus: { [OWNED]: { key: 'RELAYKEY', partners: [] } },
-    partnerCheck: {
-      ok: true, url: 'https://lab.example',
-      relayKey: 'THEIR-RELAY-KEY', relayLabel: 'the lab', ownerLabel: 'bella',
-    },
+    relayStatus: { [OWNED]: { key: 'RELAYKEY' } },
   });
 
   return settle().then(function () {
-    const panel = {
-      querySelector: function (sel) {
-        if (sel === '.nd-partner-url') return { value: 'https://lab.example' };
-        if (sel === '.nd-partner-key') return { value: 'HER-KEY' };
-        if (sel === '.nd-partner-out') return out;
-        return null;
-      },
-    };
-    const out = { textContent: '', className: '' };
-    const go = { getAttribute: function () { return null; } };
-    go.closest = function (sel) {
-      if (sel === '.nd-partner-go') return go;
-      if (sel === '.natter-partners') return panel;
-      return null;
-    };
-
-    app.open('partners').body().fire('click', { target: go });
-
-    return settle().then(function () {
-      const checked = app.log.filter(function (c) { return c.verb === 'relay.partnerCheck'; });
-      const asked = checked.length ? JSON.parse(checked[0].body) : null;
-      if (asked && asked.publicKey === 'HER-KEY' && asked.url === 'https://lab.example') {
-        test.check('it asks whether that key owns that relay, before promoting anybody');
-      } else {
-        test.fail('checked with: ' + JSON.stringify(asked));
-      }
-
-      // AND THEN THE OWNER VERB, carrying THEIR relay's key — pinned from
-      // the same roll that proved the ownership, so a later forward hop
-      // can verify them signing as themselves.
-      const posts = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; });
-      const sent = posts.length ? JSON.parse(posts[posts.length - 1].body) : null;
-      const body = sent && sent.body;
-      if (body && body.partner && body.partner.relayKey === 'THEIR-RELAY-KEY' &&
-          body.partner.key === 'HER-KEY') {
-        test.check('and then posts the partnership, pinning THEIR relay key rather than their own');
-      } else {
-        test.fail('posted: ' + JSON.stringify(body));
-      }
-    });
-  });
-}
-
-// A REFUSAL STOPS AT THE CHECK. Nothing is posted, nothing is promoted,
-// and the reason is the one the roll gave — "that relay is owned by
-// somebody else" is a different problem from "that relay is down", and
-// the screen must not flatten them.
-function aRefusedCheckPromotesNobody() {
-  test.subHeading('And a relay somebody else owns is refused before anything is posted');
-
-  const app = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, roll: { relayKey: 'RELAYKEY' } }],
-    relayStatus: { [OWNED]: { key: 'RELAYKEY', partners: [] } },
-    partnerCheck: { ok: false, error: 'that relay is owned by somebody else (carol)' },
-  });
-
-  return settle().then(function () {
-    const out = { textContent: '', className: '' };
-    const panel = {
-      querySelector: function (sel) {
-        if (sel === '.nd-partner-url') return { value: 'https://carols.example' };
-        if (sel === '.nd-partner-key') return { value: 'HER-KEY' };
-        if (sel === '.nd-partner-out') return out;
-        return null;
-      },
-    };
-    const go = { getAttribute: function () { return null; } };
-    go.closest = function (sel) {
-      if (sel === '.nd-partner-go') return go;
-      if (sel === '.natter-partners') return panel;
-      return null;
-    };
-
-    const before = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; }).length;
-    app.open('partners').body().fire('click', { target: go });
-
-    return settle().then(function () {
-      const after = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; }).length;
-      if (after === before && /somebody else/.test(out.textContent)) {
-        test.check('nothing is posted, and the screen says whose relay it actually is');
-      } else {
-        test.fail('posts ' + before + '->' + after + ', said "' + out.textContent + '"');
-      }
-    });
+    app.openGroup();
+    return settle();
+  }).then(function () {
+    const drawn = app.body().innerHTML;
+    const asked = app.log.filter(function (c) { return c.verb === 'relay.partnerCheck'; });
+    if (!/natter-partners|nd-partner/.test(drawn) && asked.length === 0) {
+      test.check('the owner\'s group draws no partner panel, and relay.partnerCheck is never asked');
+    } else {
+      test.fail('a partner panel or check remains: ' + asked.length + ' checks, panel ' + /natter-partners/.test(drawn));
+    }
   });
 }
 
@@ -1965,8 +1880,7 @@ ownedMailbox()
   .then(anUnboundNodeCanStillClaim)
   .then(aRelayNotYetListedIsOfferedTheClaim)
   .then(aRelayThatIsDownOffersNoClaim)
-  .then(thePartnerPanelChecksBeforeItAdds)
-  .then(aRefusedCheckPromotesNobody)
+  .then(noPartnerPanel)
   .then(theOwnerGroupFolds)
   .then(anOwnerEventRefreshesTheScreen)
   .then(theClaimFormReadsInTheOrderYouAreTold)

@@ -75,10 +75,13 @@ async function main() {
     if (rows.length !== 1) end(1, 'offboard: with no relay url given, the node must list exactly one relay; it lists ' + rows.length + ' — name one: ' + USAGE);
     url = String(rows[0].key);
   }
-  let relayKey = null;
-  try { relayKey = await (await fetch(url.replace(/\/+$/, '') + '/api/relay/key')).json(); } catch (e) { relayKey = null; }
-  const relay = relayKey && String(relayKey.relayPublicKey || '');
-  if (!relay) end(1, 'offboard: the relay at ' + url + ' did not give its key');
+  // THE RELAY'S KEY, ASKED OF THIS NODE, never of the relay (goal/G22.4: "Offboard asks its node, never a relay").
+  // relay.get answers the relay's row, and a relay this node holds a seat on carries the key its card named
+  // (roll.relayKey). The relay's public GET /api/relay/key this read before is closed (goal/G22.6).
+  const got = await ask('relay.get', { key: url });
+  const row = ok(got) && got.body.relay ? got.body.relay : null;
+  const relay = String((row && row.roll && row.roll.relayKey) || '');
+  if (!relay) end(1, 'offboard: the node did not give the key of the relay at ' + url + ' (holds it no seat there?): ' + (got && got.text));
   // No answer is expected (see the header): the wait is short and its end is not a failure.
   await kernel.peerPost(relay, '', { removePeer: { key: me } }, { node: node, waitMs: 1500 }).catch(function () { return null; });
   say('the seat on ' + url + ' is given up');

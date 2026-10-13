@@ -7,8 +7,10 @@
 // so `cat routingTable.json` no longer answers anything. This is what an
 // owner types instead:
 //
-//   node js/relayDump.js                 counts: members, invites, partners
-//   node js/relayDump.js key <publicKey> one member, and any partnership
+//   node js/relayDump.js                 counts: members, invites
+//   node js/relayDump.js key <publicKey> one member
+//
+// (Partners were counted here until the partner roll went, goal/G22.6.)
 //   node js/relayDump.js label <label>   who holds a label (at most 10)
 //
 // NEVER A WHOLE-ROLL PRINT. The roll is not served to anybody (0012
@@ -29,12 +31,6 @@ function ownerKeyOf(rootDir) {
   return auth.loadOwner(rootDir);
 }
 
-function short(key) {
-  const s = String(key || '');
-  // The tail is the kernel's one cut (apiAuth/G1.11).
-  return s.length > 20 ? s.slice(0, 12) + '…' + require('./kernel.js').keyTail(s) : s;
-}
-
 function run(rootDir, args, out) {
   if (!relayStore.available()) {
     out('node:sqlite is not available in Node ' + process.version + ' (22.13 or later)');
@@ -48,22 +44,14 @@ function run(rootDir, args, out) {
   try {
     const verb = args[0];
     if (!verb) {
-      const partners = store.partners.all();
-      const byStatus = {};
-      partners.forEach(function (p) { byStatus[p.status] = (byStatus[p.status] || 0) + 1; });
       out('members   ' + store.members.count());
       out('invites   ' + store.invites.all().length);
-      out('partners  ' + partners.length +
-        (partners.length ? '  ' + JSON.stringify(byStatus) : ''));
       return 0;
     }
     if (verb === 'key' && args[1]) {
       const m = store.members.get(args[1]);
       if (!m) { out('no member with that key'); return 1; }
       out(JSON.stringify(m, null, 2));
-      store.partners.byOwner(m.publicKey).forEach(function (p) {
-        out('partner   ' + p.status + '  ' + p.url + '  relay ' + short(p.relayKey));
-      });
       return 0;
     }
     if (verb === 'label' && args[1]) {

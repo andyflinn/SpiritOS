@@ -295,7 +295,9 @@ function commandSignatureOk(publicKey, from, to, id, text, sig, atMs) {
 // addressed to it are sealed like any other — which means a node must
 // learn its CIPHER key, and learn it in a way a carrier cannot choose.
 //
-// `GET /api/relay/key` was unsigned, and answerRelay.js already said in
+// The relay's key statement (then `GET /api/relay/key`, since goal/G22.6
+// the answer to a card ask on its one door) was unsigned, and
+// answerRelay.js already said in
 // as many words what that was worth: the re-check *"compares against an
 // UNSIGNED answer and so catches nothing an attacker could not forge."*
 // That was tolerable while the answer was only an identity to pin. It

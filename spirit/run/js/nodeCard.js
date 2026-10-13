@@ -112,7 +112,7 @@ function asks(text) {
 // what it holds.
 //   owner        WHO OWNS THIS NODE (goal/G19.8): the key owner.json names, or '' when the node owns itself. Andy,
 //                2026-10-12: "so the relays owner code and the puppets owner code should be the same." A relay
-//                says its owner on /api/relay/key; a node says it here, signed, and a master reads it with the
+//                says its owner on its card (the answer to a card ask, goal/G22.6); a node says it here, signed, and a master reads it with the
 //                same comparison (ownerBadge.ownedBy). Added on a flag day: a card signed without it does not
 //                verify, and none is defaulted.
 function cardFields(id) {

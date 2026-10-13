@@ -29,6 +29,10 @@ a node
                                  device.html    ← already two, ad-hoc
 ```
 
+*(Both gone: `device.html` with the device enrolment, goal/G16.2, and
+`relay.html` with the relay's public door, goal/G22.6. A relay now answers
+only its one door and its members' stream.)*
+
 **The shell is an instance of this, not an exception to it** — and it is
 not one yet. `AGENT.md:72`: *"Target: every app will live at
 `app/<appName>/<appName>.js` plus sibling manifest. Today nine ids still

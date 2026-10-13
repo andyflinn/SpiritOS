@@ -110,7 +110,7 @@ async function startRelay(w, port) {
   for (let n = 0; n < 40; n += 1) {
     await sleep(200);
     try {
-      const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
+      const r = await require('./relayDoor').keyStatus(base);
       if (r.status === 200) { w.base = base; return base; }
     } catch (e) { /* not up yet */ }
   }
@@ -137,25 +137,18 @@ async function run() {
     return;
   }
 
-  test.subHeading('Two relays, partnered; amy on A, bella on B');
+  // TWO RELAYS, NOT PARTNERED: partnering as a permission is gone (Andy's
+  // decision, goal/G22.6). Each owner is still a member of the other's
+  // relay, so B has every reason to know A and still hears nothing of it.
+  test.subHeading('Two relays; amy on A, bella on B');
 
   const A = buildRelay('a', ['amy']);
   const B = buildRelay('b', ['bella']);
-  // The old model, as a fixture, as hintWire uses it: each owner a member
-  // of the other's relay, then promoted. Acquisition is cycle 5.
   [[B, A.owner, 'ownera'], [A, B.owner, 'ownerb']].forEach(function (p) {
     const minted = p[0].box.mint('owner' + p[0].tag, p[2], 7, '');
     p[0].box.claim(p[2], auth.sign(p[1].privateKey, auth.claimMessage(p[2])),
       p[1].publicKey, 'fx-x-' + p[2], minted.invite.token, p[2]);
   });
-  const urlA = 'http://127.0.0.1:' + PORTS[0];
-  const urlB = 'http://127.0.0.1:' + PORTS[1];
-  const okA = A.box.setPartner(A.owner, B.owner.publicKey, urlB, B.box.relayPublicKey(), 'h1');
-  const okB = B.box.setPartner(B.owner, A.owner.publicKey, urlA, A.box.relayPublicKey(), 'h2');
-  if (!okA.ok || !okB.ok) {
-    test.fail('partnership fixture: ' + JSON.stringify(okA) + ' / ' + JSON.stringify(okB));
-    return;
-  }
   const aKey = A.box.relayPublicKey();
   const rollOnA = relayStore.open(A.home).members.count();
   relayStore.closeAll();
@@ -164,10 +157,8 @@ async function run() {
     test.fail('a relay did not come up: ' + (A.out || '') + (B.out || ''));
     return;
   }
-  // NOTHING TO DIAL (R13, gap cycle 8): partners hold no streams, so the
-  // two are partnered the moment both answer. This slept 1.5 s for the
-  // dial at boot.
-  test.check('both relays up, and partnered');
+  // NOTHING TO DIAL: a relay holds no stream to another relay.
+  test.check('both relays up');
 
   // amy's client, with sseClient's published seams: the timer records the
   // reconnect delay it schedules, and no jitter, so the delay is exact.
@@ -215,11 +206,10 @@ async function run() {
   await until(function () { return !!A.exited; }, 5000);
 
   const bye = /SIGTERM — told (\d+) stream\(s\) to come back in 3s/.exec(A.out);
-  // EXACTLY ONE: amy. It was at least two — amy, and B's partner link —
-  // until R13 took partner streams away; a second here now would be a
-  // partner stream that should not exist.
+  // EXACTLY ONE: amy. A second here would be a stream that should not
+  // exist — only members hold one.
   if (A.exited && A.exited.code === 0 && bye && Number(bye[1]) === 1) {
-    test.check('A exits 0 and says it told 1 stream to come back in 3s — amy; no partner holds one');
+    test.check('A exits 0 and says it told 1 stream to come back in 3s — amy; no other relay holds one');
   } else {
     test.fail('exit=' + JSON.stringify(A.exited) + ' out=' + JSON.stringify(A.out.slice(-300)));
   }
@@ -239,17 +229,13 @@ async function run() {
     test.fail('reconnect delays scheduled: ' + JSON.stringify(delays));
   }
 
-  // THE PARTNER, SEEN FROM B (R13, gap cycle 8). This checked that B saw
-  // A's partner stream close and told bella "A is gone". There is no
-  // partner stream now, so a partner is never in B's presence at all:
-  // bella hears nothing about A, arriving or leaving. B learns A is down
-  // the next time it asks A something and gets no answer (relay.js,
-  // partnerLive) — a change members can see, named to Andy by wsl-claude
-  // on 2026-09-22.
+  // A, SEEN FROM B. Another relay is never in B's presence at all (no
+  // relay holds a stream on another): bella hears nothing about A,
+  // arriving or leaving.
   await sleep(500);
   const aboutA = bellaHeard.filter(function (p) { return p && p.key === aKey; });
   if (aboutA.length === 0) {
-    test.check('bella hears nothing about A — a partner is not a presence on B, arriving or leaving');
+    test.check('bella hears nothing about A — another relay is not a presence on B, arriving or leaving');
   } else {
     test.fail('bella heard about A: ' + JSON.stringify(aboutA));
   }

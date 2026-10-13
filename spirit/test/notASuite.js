@@ -66,6 +66,10 @@ module.exports = [
   // A helper, not a suite: an owned relay the way the install makes one
   // (goal/G16.8), and the owner's claim on it, in process.
   'ownerClaim.js',
+  // A helper, not a suite (goal/G22.6): the relay's one door as a suite
+  // knocks on it — the card ask for readiness and the key, a stranger's
+  // claim, paced past the relay's address table.
+  'relayDoor.js',
   // A BUILDER, not a suite (cycle 2): the four worlds an app server can
   // find itself in — a relay nobody claimed, a relay with every seat
   // taken, an owner node that is not running, a second relay with a

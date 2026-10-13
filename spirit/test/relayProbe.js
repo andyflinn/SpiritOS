@@ -8,9 +8,11 @@
 // that matters — not "does it pass" but "is it stronger than before"
 // (design/cleanup/2026-09-11-live-surface-tests.md).
 //
-// Read-only, and it signs nothing: everything it asks is public, so it
-// needs no key and can be run by anyone, from anywhere, including after a
-// deploy from a machine that is not the owner's.
+// Read-only. Since goal/G22.6 a relay answers no unsigned GET: it is asked
+// who it is with a card ask on its one door, signed by a key made in memory
+// for this reading and written nowhere, so it can still be run by anyone,
+// from anywhere. Its card asks are paced past the relay's address table
+// (relayDoor.js), one a second from this address.
 //
 // SAFE BY DEFAULT. With no argument it prints usage and touches no
 // network at all, so the harness can run it as a no-op and nothing
@@ -19,20 +21,26 @@
 //   node spirit/test/relayProbe.js https://spirit.andyflinn.com
 //   node spirit/test/relayProbe.js http://127.0.0.1:65425 --json
 
+const door = require('./relayDoor');
+
 const TIMEOUT_MS = 10000;
-const LATENCY_SAMPLES = 7;
+const LATENCY_SAMPLES = 3;
 
 // The capability fingerprint. A 404 means the route is not deployed;
 // ANY other answer means it is there and merely declined us — which is
 // exactly the distinction a deploy check needs, and it needs no
 // credentials to make.
 const SURFACE = [
-  ['GET', '/api/version'],
-  ['GET', '/api/relay/key'],
   ['GET', '/api/relay/stream'],
-  ['POST', '/api/relay/claim'],
   ['POST', '/api/relay/post'],
   ['POST', '/api/relay/reply'],
+
+  // THE PUBLIC DOOR, CLOSED BY goal/G22.6 (Andy, 2026-10-13): a relay still
+  // answering any of these runs code from before it.
+  ['GET', '/api/version'],
+  ['GET', '/api/relay/key'],
+  ['POST', '/api/relay/claim'],
+  ['GET', '/'],
 
   // ROUTES THAT SHOULD ANSWER 404 NOW, and they are on this list for
   // exactly that: a fingerprint is for telling one deploy from another,
@@ -110,23 +118,12 @@ async function main() {
 
   const reading = { url: url, at: new Date().toISOString() };
 
+  // A RELAY'S VERSION IS NOT PUBLIC since goal/G22.6 closed GET
+  // /api/version: it reaches the relay's owner in his relay-status report.
+  // A box still answering the route is running code from before that.
   const version = await ask(url, 'GET', '/api/version');
-  if (version.status === 200) {
-    try {
-      const v = JSON.parse(version.text);
-      reading.commit = v.commit;
-      reading.dirty = v.dirty;
-      reading.source = v.source;
-      reading.relay = v.relay;
-      reading.startedAt = v.startedAt;
-      reading.uptimeSec = Math.round((Date.now() - Date.parse(v.startedAt)) / 1000);
-      reading.untracked = v.untracked || 0;
-    } catch (e) { reading.commit = 'unparseable'; }
-  } else {
-    // The absence of this route is itself a version signal, and will be
-    // until every box has been updated once.
-    reading.commit = version.status === 404 ? 'pre-version' : 'unreachable';
-  }
+  reading.commit = version.status === 404 ? 'not public (goal/G22.6)'
+    : version.status ? 'pre-G22.6 (still answers /api/version)' : 'unreachable';
 
   // ── `members` STOOD HERE, AND IS NOT A THING TO REPORT ───────────
   //
@@ -143,17 +140,15 @@ async function main() {
   // to its owner over the owner's own stream (relay.statusToOwner) — a
   // box telling the person who runs it, unasked, rather than a door
   // anybody can knock on.
-  const said = await ask(url, 'GET', '/api/relay/key');
+  // WHO IT IS: its card, asked on its one door (goal/G22.6).
+  const said = await door.cardAsk(url);
   reading.relay = {};
-  if (said.status === 200) {
-    try {
-      const body = JSON.parse(said.text);
-      reading.relay = {
-        label: body.relayLabel || '',
-        owner: body.ownerLabel || '',
-        key: (body.relayPublicKey || '').slice(-8),
-      };
-    } catch (e) { /* leave empty */ }
+  if (said.ok) {
+    reading.relay = {
+      label: said.said.relayLabel || '',
+      owner: said.said.ownerLabel || '',
+      key: (said.said.relayPublicKey || '').slice(-8),
+    };
   }
 
   reading.surface = {};
@@ -162,10 +157,14 @@ async function main() {
     reading.surface[method + ' ' + path] = answer.status;
   }
 
+  // Each sample a card ask, paced past the address table; the time is the
+  // ask alone, not the wait before it.
   const samples = [];
   for (let n = 0; n < LATENCY_SAMPLES; n += 1) {
-    const one = await ask(url, 'GET', '/api/relay/key');
-    if (one.status) samples.push(one.ms);
+    await new Promise(function (r) { setTimeout(r, door.GAP_MS); });
+    const began = Date.now();
+    const one = await door.postDoor(url, door.signedPost(require('../run/js/relayAuth').generateIdentity('probe'), '', door.CARD_ASK).body);
+    if (one.status) samples.push(Date.now() - began);
   }
   reading.latency = samples.length
     ? { min: Math.min.apply(null, samples), median: median(samples), max: Math.max.apply(null, samples) }

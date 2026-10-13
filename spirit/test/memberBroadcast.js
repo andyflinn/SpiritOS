@@ -41,20 +41,18 @@ function routesAbout(bag, key) {
 
 test.startTest('Every member hears what is new, whole');
 
-const L = world.build({ title: 'three members and a partner', peers: ['bert', 'john', 'mary'] });
+const L = world.build({ title: 'three members and a stranger', peers: ['bert', 'john', 'mary'] });
 if (!L.ok) { test.fail(L.error); test.reportSuccessFailureCount(); process.exit(1); }
 const box = L.box;
 const relayKey = box.relayPublicKey();
 const bert = L.peer('bert');
 const john = L.peer('john');
 
-// A partner on the roll. It used to hold a stream here, and the broadcast
-// had to skip it; since R13 (cycle 8) a partner holds none, so "it stops at
-// the partnership" is true by construction — checked below as a refusal.
-const partner = auth.generateIdentity('relay-partner');
-relayStore.open(L.home).partners.put({
-  relayKey: partner.publicKey, url: 'http://partner.example', ownerKey: 'o', status: 'partnered', since: 'x',
-});
+// A KEY THIS RELAY DOES NOT HOLD. It was a partner relay until partnering
+// went (Andy's decision, goal/G22.6); a stranger may ask the relay's door
+// for its card and a claim, and may post to a member, but holds no stream —
+// so a broadcast has no way to reach it, checked below as a refusal.
+const partner = auth.generateIdentity('a-stranger');
 
 const bertBag = [];
 const johnBag = [];
@@ -66,9 +64,9 @@ const partnerOpen = open(box, partner, partnerBag);
 test.subHeading('A rename reaches every member, whole');
 
 if (partnerOpen && partnerOpen.ok === false && partnerOpen.status === 403) {
-  test.check('the partner cannot hold a stream here (R13), so no broadcast has a way to reach it');
+  test.check('a key this relay does not hold cannot open a stream here, so no broadcast has a way to reach it');
 } else {
-  test.fail('a partner stream was admitted: ' + JSON.stringify(partnerOpen));
+  test.fail('a stranger stream was admitted: ' + JSON.stringify(partnerOpen));
 }
 
 {
@@ -90,9 +88,9 @@ if (partnerOpen && partnerOpen.ok === false && partnerOpen.status === 403) {
     test.fail('john was told his own rename');
   }
   if (routesAbout(partnerBag, john.publicKey).length === 0) {
-    test.check('and it stops at the partnership — nothing reached the partner');
+    test.check('and it stops at the roll — nothing reached the stranger');
   } else {
-    test.fail('a partner heard a member\'s rename');
+    test.fail('a stranger heard a member\'s rename');
   }
 }
 

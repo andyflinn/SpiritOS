@@ -137,7 +137,7 @@ async function startRelay(w, port) {
   for (let n = 0; n < 40; n += 1) {
     await sleep(200);
     try {
-      const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
+      const r = await require('./relayDoor').keyStatus(base);
       if (r.status === 200) {
         // ── IS THIS THE RELAY WE STARTED? ───────────────────────────
         //

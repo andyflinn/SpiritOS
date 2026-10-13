@@ -85,11 +85,15 @@ if (labPaths && /portBase/.test(labPaths)) {
   else test.fail(OWED + 'the base reads ' + short({ withEnv: shifted, without: plain, threw: sub.threw }));
 } else test.fail(OWED + 'no port base to move the range with');
 
-test.subHeading('2. the one non-lab case takes its port from the OS');
-const hint = code(read(path.join(TEST_DIR, 'hintWire.js')));
-if (hint === null) test.fail('the world: spirit/test/hintWire.js is gone');
-else if (!HINT_PORTS.test(hint) && /listen\(0/.test(hint)) test.check('hintWire asks the OS for its ports, holding no 4876x literal');
-else test.fail(OWED + 'hintWire still holds ' + short((hint.match(HINT_PORTS) || []).slice(0, 4)));
+// 2. THE ONE NON-LAB CASE, hintWire, STOOD HERE: it was deleted with the partner
+// carrying it tested (Andy's decision, goal/G22.6: partnering as a permission goes). What
+// it guarded — no 4876x port literal — is still held below, for every suite.
+test.subHeading('2. no suite holds the old hintWire port pair');
+const hinted = fs.readdirSync(TEST_DIR).filter(function (f) {
+  return /\.js$/.test(f) && f !== 'labRunLock.js' && HINT_PORTS.test(code(read(path.join(TEST_DIR, f))) || '');
+});
+if (!hinted.length) test.check('no suite binds a 4876x port');
+else test.fail(OWED + 'still holding a 4876x literal: ' + hinted.join(', '));
 
 test.subHeading('3. labMaster holds one run at a time per host');
 const master = code(read(MASTER));

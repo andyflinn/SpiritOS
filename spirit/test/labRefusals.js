@@ -36,7 +36,7 @@ const limits = require('../run/js/limits');
 const rule = require('../run/js/fieldRules.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { ownHome } = require('./ownerClaim');
-const { sealedClaimBody } = require('./labWorld');
+const door = require('./relayDoor');
 
 const RELAY_PORT = require('./labMaster/labPaths').labPort(15);
 const RELAY_NAME = 'abuse-relay';
@@ -63,23 +63,22 @@ async function post(pathname, body) {
 // never the gate.
 async function claim(label) {
   const id = auth.generateIdentity('probe');
-  // Sealed to the relay, like every claim now (cycle 10, R9) — so a 400
-  // here is the LABEL rule refusing, never the seal check.
-  return post('/api/relay/claim', await sealedClaimBody(ORIGIN, id, {
+  // Sealed to the relay, like every claim now (cycle 10, R9), and a post on
+  // its one door (goal/G22.6) — so a 400 here is the LABEL rule refusing,
+  // never the seal check.
+  return door.claimBodyOnDoor(ORIGIN, id, {
     name: label,
     publicKey: id.publicKey,
     sig: auth.sign(id.privateKey, auth.claimMessage(label)),
-  }));
+  });
 }
 
 async function waitServing(timeoutMs) {
   const startedAt = Date.now();
   for (;;) {
     /* eslint-disable no-await-in-loop */
-    try {
-      const res = await fetch(ORIGIN + '/api/relay/key');
-      if (res.status === 200) return true;
-    } catch (e) { /* not yet */ }
+    // Serving when it answers a card ask on its one door (goal/G22.6).
+    if ((await door.keyStatus(ORIGIN)).status === 200) return true;
     if (Date.now() - startedAt > timeoutMs) return false;
     await sleep(200);
   }
@@ -151,11 +150,11 @@ async function run() {
   // WITH NO INVITE since goal/G16.8: `sender` is the owner the install
   // named. The caption claimed is the one under test (labels are not
   // identities).
-  const ordinary = await post('/api/relay/claim', await sealedClaimBody(ORIGIN, sender, {
+  const ordinary = await door.claimBodyOnDoor(ORIGIN, sender, {
     name: '../etc: Andy Flinn 🌱',
     publicKey: sender.publicKey,
     sig: auth.sign(sender.privateKey, auth.claimMessage('../etc: Andy Flinn 🌱')),
-  }));
+  });
   if (ordinary.status === 201) {
     test.check('while spaces, punctuation, emoji and even ../etc are a fine caption — addressing is by key');
   } else {
@@ -181,7 +180,7 @@ async function run() {
   // that key in its own roll, and posts addressed to it are answered
   // like anybody's. It is the one address guaranteed to exist on a box
   // this suite has not spent an invite on.
-  const relayKey = (await (await fetch(ORIGIN + '/api/relay/key')).json()).relayPublicKey;
+  const relayKey = ((await door.relayKeyOf(ORIGIN)) || {}).relayPublicKey;
   if (!relayKey) { test.fail('the relay published no key of its own'); return; }
   const target = { publicKey: relayKey };
   // One byte past the WIRE bound, derived. It was 16385 — one past a

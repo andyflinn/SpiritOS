@@ -26,7 +26,7 @@ It runs exactly two long-lived processes:
 | Process | Port | Role |
 |---|---|---|
 | Caddy | 80, 443 | TLS, HTTP→HTTPS redirect, proxy |
-| `node js/server.js --relay --port 65430` | 65430 | Mailbox only (`/api/relay/*` + brochure) |
+| `node js/server.js --relay --port 65430` | 65430 | Mailbox only: the one door (`POST /api/relay/post`, `/reply`) and the members' stream. No brochure, no public key route, no `/api/version` (goal/G22.6) |
 
 systemd unit: `spirit-relay.service`  
 Working directory: `/root/SpiritOS/spirit/run`  
@@ -104,8 +104,10 @@ Prints:
 - systemd enabled / active
 - listeners on 65430 / 80 / 443
 - warning if **65420** is bound
-- `GET https://spirit.andyflinn.com/api/relay/key` (200 with `relayPublicKey`)
-- `GET http://127.0.0.1:65430/api/relay/key`
+- a signed card ask on the relay's one door over HTTPS, by
+  `node bash/card-ask.js https://spirit.andyflinn.com` (its card, `relayPublicKey` in it)
+- the same on loopback, `node bash/card-ask.js http://127.0.0.1:65430`
+  (the public `GET /api/relay/key` is closed since goal/G22.6)
 
 Does not change anything. First command after SSH.
 
@@ -351,11 +353,14 @@ Good:
 - `spirit-relay` enabled + active
 - Node on `:65430`, Caddy on `:80` and `:443`
 - 65420 quiet
-- HTTPS `key` returns JSON with `relayPublicKey`
-- local `:65430` `key` returns JSON with `relayPublicKey`
+- HTTPS card ask answered, JSON with `relayPublicKey`
+- local `:65430` card ask answered, JSON with `relayPublicKey`
 
-`curl -I https://spirit.andyflinn.com/api/relay/key` may print **404**
-because the mailbox has no HEAD handler. Use GET (`./bash/status` does).
+A relay answers no curl GET any more: `/api/relay/key`, `/api/version` and
+the brochure are closed (goal/G22.6) and answer **404**. Ask with
+`node bash/card-ask.js <url>`, as `./bash/status` does. Behind Caddy every
+stranger's request arrives from 127.0.0.1, so two card asks within a second
+share one address-table entry; the script waits out the ban the relay names.
 
 ---
 
@@ -393,7 +398,8 @@ This was observed live on 2026-09-23 between the two agents' own boxes:
 wsl-claude's node was updated to cycle-10 code while spirit-3 was not, and
 it went **mute outward** — posts left as `sent` and were never receipted,
 because a receipt is itself an outward message. `GET /api/relay/key` on
-spirit-3 returns no `sealKey`, which is the whole story in one field.
+spirit-3 returned no `sealKey`, which is the whole story in one field. (That
+route is closed since goal/G22.6; a card ask on the door answers it now.)
 
 ### What the update does NOT do for you
 

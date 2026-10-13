@@ -127,8 +127,27 @@ define('target-busy', {
 define('target-unreached', {
   status: 502, presence: NONE, retry: 'after', fault: 'relay',
   texts: ['target could not be reached'],
-  note: 'The leg to a partner failed. Says nothing about the person, only ' +
-    'about the road.',
+  note: 'The relay could not hand the request to the target. Says nothing ' +
+    'about the person, only about the road.',
+});
+// THE RELAY'S ADDRESS TABLE (Andy's decision, goal/G22.6): a key the relay
+// does not hold is held by the address it asks from. Too early is the
+// address asking again inside its ban, which doubled; busy is a new address
+// finding no slot free or expired. Both name when to come back.
+define('address-too-early', {
+  status: 429, presence: NONE, retry: 'after', fault: 'caller',
+  prefixes: ['too early — wait'],
+  note: 'This address asked the relay again inside its ban; the ban doubled. Wait retryAfterMs.',
+});
+define('address-busy', {
+  status: 503, presence: NONE, retry: 'after', fault: 'relay',
+  texts: ['busy'],
+  note: 'The relay\'s strangers\' table is full and no entry has expired. Wait retryAfterMs.',
+});
+define('claim-key-mismatch', {
+  status: 403, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['the claim names a different key than the one that signed it'],
+  note: 'A claim on the one door names a key other than the post\'s own signer (goal/G22.6).',
 });
 define('no-answer', {
   status: 504, presence: NONE, retry: 'after', fault: 'target',
@@ -282,6 +301,12 @@ define('reply-too-big', {
 
 // ── THIS NODE, AND THE RELAY, NOT BEING READY ────────────────────────
 
+// The node's claim and key ask go through its router (peerPost, goal/G22.6);
+// a hub built without one cannot reach a relay at all.
+define('no-router', {
+  status: 503, presence: NONE, retry: 'no', fault: 'node',
+  texts: ['this node has no router to claim with'],
+});
 define('no-relay-url', {
   status: 503, presence: NONE, retry: 'no', fault: 'node',
   // The path left the text with the list itself (goal/G16.3): the list is
@@ -395,13 +420,8 @@ define('proxy-bad-entry', {
   texts: ['key: an environment variable name'],
   note: 'A proxy verb was given a malformed key name, website or method.',
 });
-define('partner-no-stream', {
-  status: 403, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['a partner holds no stream here'],
-  note: 'A partner relay tried to open a stream (R13, cycle 8). Partners ' +
-    'hold none: a partner\'s answer is the reply to its own post. Only an ' +
-    'older relay that still dials at boot sees this.',
-});
+// `partner-no-stream` STOOD HERE: partnering is gone (goal/G22.6) and no
+// relay says it.
 define('no-such-peer', {
   status: 404, alsoStatus: [403], presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such peer'],

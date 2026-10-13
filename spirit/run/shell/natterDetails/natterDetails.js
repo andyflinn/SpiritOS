@@ -994,46 +994,6 @@ function ndWhen(iso) {
 // found by handle, and it verifies against the relay's roll before it
 // writes a row — so this cannot add a key the relay does not actually
 // carry, however stale this screen's copy of the list is.
-// ── THE KEY FROM THE ROW INTO THE PARTNER FORM ───────────────────────
-//
-// Nothing on the wire: the key is already in this page, on the button
-// that was clicked. The form's placeholder promised "or use the list
-// above" and the list was showing eight characters of it, so the only
-// way to obey the instruction was to go and read who.json.
-//
-// Leaves the URL alone. The key identifies who owns the far relay; the
-// address is the thing a person actually has to know and type, and
-// guessing it from a label would be inventing a fact (PARTNERS.md: "a
-// key is not an address").
-
-// Picking a candidate fills BOTH fields, because unlike the Partner
-// button on a peer row this one knows the address as well — it came from
-// the relay whose roll named that key as owner.
-// `pick` is the shell's contact selector: value is the chosen key, row the chosen row (its url among it).
-function ndPartnerPicked(pick) {
-  var key = pick.value || '';
-  var body = ndBody();
-  if (!body) return;
-
-  var url = (pick.row && pick.row.url) || '';
-
-  var keyField = body.querySelector('.nd-partner-key');
-  var urlField = body.querySelector('.nd-partner-url');
-  var out = body.querySelector('.nd-partner-out');
-
-  if (keyField) keyField.value = key;
-  if (urlField) urlField.value = url;
-
-  if (out) {
-    out.className = 'job-manifest-note nd-partner-out';
-    // The empty option is a real choice — it clears rather than doing
-    // nothing, so a mis-click is undoable without a reload.
-    out.textContent = key
-      ? 'filled in — “Check and add” will verify it against their roll'
-      : '';
-  }
-}
-
 // ── REMOVING AN ENROLMENT, WHICH IS A POST LIKE EVERYTHING ELSE ─────
 //
 // `removePeer` addressed to the relay's own key. Two presses, because
@@ -1044,105 +1004,16 @@ function ndPartnerPicked(pick) {
 // says out loud: un-inviting somebody while leaving their token working
 // would be a lie.
 
-// ── PARTNER RELAYS ──────────────────────────────────────────────────
+// ── THE PARTNER RELAYS PANEL STOOD HERE ──────────────────────────────
 //
-//   Andy: "every relay can promote a peer to 'partner' status in the
-//   peer-ledger… a non-owner peer possesses his own relay somewhere. and
-//   via owner input, both can establish that fact."
-//
-// TIER ONE, so this changes nothing about routing. What it does is make
-// the relationship a fact in the ledger — see design/relay/PARTNERS.md.
-//
-// THE OWNER TYPES THE URL, and that is load-bearing rather than lazy: a
-// KEY IS NOT AN ADDRESS. Nothing on this wire maps one to the other, and
-// nothing should — that is the DNS-shaped question this system has
-// avoided. So a human supplies where, and the roll supplies the proof.
-// ── WHO HERE IS ALREADY ELIGIBLE, COMPUTED FROM WHAT IS IN HAND ──────
-//
-//   Andy: "the drop box in this one should just show peers that are
-//   eligible for partnership, if possible."
-//
-// Possible for a real subset, and the subset is the one that matters.
-// Eligibility is "owns a relay elsewhere", which in general is only
-// provable by reading THEIR relay's roll — and its address is the thing
-// being asked for, so it cannot be known in advance.
-//
-// But for every relay this node is on, `relay.status` already returned
-// the roster, and a roster names its `owner: true` row BY KEY. So the
-// question "which peers enrolled here are the owner of another relay I
-// know about" is answerable with no request at all — and for those, the
-// URL is known too, so selecting one fills both fields and the check that
-// follows is certain to pass, because it re-reads the roll this answer
-// came from.
-//
-// WHAT IT CANNOT SEE, stated in the panel rather than hidden: somebody
-// who owns a relay this node has never heard of. A key is not an address
-// (PARTNERS.md), which is why the owner supplies it — so the free-text
-// fields remain the real path and this is only a shortcut. Silence from
-// the picker is "none that I know of", never "nobody is eligible".
-function ndPartnerCandidates() {
-  if (!ndBadge || !ndBadge.owned) return [];
-
-  // NO ROSTER (goal/G19.1): the probe never sets one, so this read the
-  // owner of each other relay off a list that was always empty. What the
-  // probe does carry is each relay's owner BY KEY (roll.ownerKey, from the
-  // key door). Whether that owner is enrolled HERE is no longer known in
-  // advance; "Check and add" asks the relay, which is the authority.
-  var mine = (ndBadge.roll || {}).ownerKey || '';
-  var already = Object.create(null);
-  (((ndBadge.report || {}).partners) || []).forEach(function (p) {
-    if (p && p.key) already[p.key] = true;
-  });
-
-  var out = [];
-  ndRows.forEach(function (row) {
-    // Not this relay: a relay is not its own partner, and that is a
-    // question about the BOX (relay.js, setPartner).
-    if (!row || row.url === ndUrl) return;
-    var roll = row.roll || {};
-    var theirOwner = roll.ownerKey || '';
-    if (!theirOwner || theirOwner === mine || already[theirOwner]) return;
-    out.push({
-      key: theirOwner,
-      url: row.url,
-      hereLabel: roll.owner || '(no label)',
-      relayLabel: roll.relayLabel || row.label || row.url,
-    });
-  });
-  return out;
-}
-
-function ndPartnerPickerHtml(existing) {
-  if (!ndBadge || !ndBadge.owned) return '';
-  var candidates = ndPartnerCandidates();
-  if (!candidates.length) {
-    // Said plainly, and only once there is something to compare against —
-    // on a node with one relay this is the normal state and not a fault.
-    return ndRows.length > 1
-      ? '<div class="job-manifest-note">Nobody enrolled here owns another relay on your list' +
-        (existing && existing.length ? ' that is not already a partner' : '') + '.</div>'
-      : '';
-  }
-  // THE SHELL'S CONTACT SELECTOR (apiAuth/G1.7) replaces the <select> built here: an empty slot now, filled by
-  // ndMountPartnerPick after each paint with these rows, which are relay owners, not everybody.
-  ndPickRows = candidates.map(function (c) {
-    return { key: c.key, label: c.hereLabel + ' — owns ' + c.relayLabel, url: c.url };
-  });
-  return '<div class="start-job-form card">' +
-    '<label class="field-label grow">Someone you already know' +
-    '<div class="nd-partner-slot"></div></label>' +
-    '</div>';
-}
-var ndPickRows = [];
-function ndMountPartnerPick() {
-  var body = ndBody();
-  var slot = body && body.querySelector('.nd-partner-slot');
-  var elements = ndApi && ndApi.ui && ndApi.ui.elements;
-  if (!slot || !elements || typeof elements.createContactSelector !== 'function') return;
-  slot.appendChild(elements.createContactSelector({
-    contacts: ndPickRows, className: 'nd-partner-pick', placeholder: 'choose a peer who owns a relay you use…',
-  }));
-}
+// The owner's list of partner relays, the picker of eligible owners, and
+// the Check-and-add and Break controls (ndPartnerCandidates,
+// ndPartnerPickerHtml, ndMountPartnerPick, ndPartnersHtml, ndPartnerAdd,
+// ndPartnerDrop, ndPartnerPicked). Partnering as a permission is gone by
+// Andy's decision (goal/G22.6, 2026-10-13): "the partner roll and the
+// partner budget are removed" — a relay carries posts to its members from
+// any relay, so there is nothing for an owner to grant here, and the
+// relay no longer answers the `partner` and `unpartner` verbs.
 
 // ── "ON PARTNER RELAYS" STOOD HERE, AND IS GONE (2026-09-17) ─────────
 //
@@ -1172,141 +1043,6 @@ function ndMountPartnerPick() {
 // partnerships, ranks, bounds its answer, and marks each row with the
 // partner it came through (`vias`) — which is the same fact this
 // tabulated, asked for rather than downloaded.
-
-function ndPartnersHtml() {
-  if (!ndBadge || !ndBadge.owned) return '';
-  var report = ndBadge.report;
-  var rows = (report && report.partners) || [];
-
-  var body;
-  if (!rows.length) {
-    body = '<div class="job-log-empty">no partners — this relay reaches only its own members</div>';
-  } else {
-    // AND HERE TOO, though a partner already has the one caption no other
-    // row can wear — its URL, in the next column. The ending stays for
-    // the case that column cannot cover: one person meshing several of
-    // their own relays, all called the same thing, where Break is
-    // irreversible and the urls are the only things that differ.
-    var counts = ndCountLabels(rows, function (p) { return p && p.label; });
-
-    body = '<table class="job-table"><thead><tr>' +
-      '<th>Partner</th><th>Their relay</th><th>Since</th><th></th>' +
-      '</tr></thead><tbody>' +
-      rows.map(function (p) {
-        var key = String(p.key || '');
-        return '<tr>' +
-          '<td>' + ndEscapeHtml(p.label || '(no label)') +
-            ndTellApart(counts, p.label, key) + '</td>' +
-          '<td>' + ndEscapeHtml(p.url || '') + '</td>' +
-          '<td>' + ndEscapeHtml(ndWhen(p.since)) + '</td>' +
-          '<td><button type="button" class="cancel-btn nd-partner-drop"' +
-            ' data-partner-key="' + ndEscapeHtml(key) + '">Break</button></td>' +
-        '</tr>';
-      }).join('') +
-      '</tbody></table>';
-  }
-
-  return ndPanel('partners', ndIcon.LINK, 'Partner relays (' + rows.length + ')',
-    body +
-    ndPartnerPickerHtml(rows) +
-    '<div class="start-job-form card">' +
-    '<label class="field-label grow">Their relay' +
-      '<input type="text" class="nd-partner-url" placeholder="https://their-relay.example"></label>' +
-    '<label class="field-label grow">Who owns it' +
-      // It said "or use the list above" while the list offered no way to
-      // do that. The Partner button on each enrolled row fills this now,
-      // so the sentence is true — say which button rather than gesturing
-      // upward.
-      '<input type="text" class="nd-partner-key" placeholder="paste their key"></label>' +
-    '<button type="button" class="cancel-btn nd-partner-go">Check and add</button>' +
-    '</div>' +
-    '<div class="job-manifest-note">A partner is somebody enrolled here who owns a relay ' +
-      'of their own. This checks that before adding them — their relay says publicly who ' +
-      'owns it, and the key has to be theirs.</div>' +
-    '<div class="job-manifest-note nd-partner-out"></div>',
-    'natter-partners');
-}
-
-// TWO STEPS, AND THE FIRST ONE GRANTS NOTHING. `relay.partnerCheck` is
-// read-only: it fetches a PUBLIC roll and compares a key. Only if that
-// says yes does the second step post an owner verb — so there is exactly
-// one path that writes a peer row, and the check is not on it.
-function ndPartnerAdd(button) {
-  var panel = button.closest('.natter-partners');
-  var out = panel.querySelector('.nd-partner-out');
-  var url = panel.querySelector('.nd-partner-url').value.trim();
-  var key = panel.querySelector('.nd-partner-key').value.trim();
-
-  function say(text, bad) {
-    out.className = 'job-manifest-note nd-partner-out ' + (bad ? 'is-error' : 'is-token');
-    out.textContent = text;
-  }
-
-  if (!url || !key) { say('a partner needs their relay and the key that owns it', true); return; }
-
-  var relayKey = ndRelayKey();
-  if (!relayKey) { ndNoKey(out, 'nd-partner-out'); return; }
-
-  say('asking that relay who owns it…');
-  ndAsk('relay.partnerCheck', { publicKey: key, url: url }).then(function (said) {
-    if (!said || !said.ok) {
-      say((said && said.error) || 'could not check that relay', true);
-      return;
-    }
-    // THE PROOF CAME BACK, so now the owner verb. `relayKey` here is
-    // THEIR relay's own key, captured from the same roll that proved
-    // the ownership — pinned now so a later forward hop can verify them
-    // signing as themselves.
-    say('they own it — adding…');
-    ndApi.peerPost('relay', relayKey, {
-      partner: { key: key, url: said.url, relayKey: said.relayKey },
-    }).then(function (r) {
-      var answer = r && r.reply;
-      if (r && r.ok && answer && answer.ok !== false) {
-        say('partnered with ' + (said.relayLabel || said.url));
-        ndChanged = true;
-        ndLoad();
-        return;
-      }
-      say((answer && answer.error) || (r && r.error) || 'refused', true);
-    });
-  });
-}
-
-// Two presses, like every other destructive control on this screen.
-function ndPartnerDrop(button) {
-  var panel = button.closest('.natter-partners');
-  var out = panel.querySelector('.nd-partner-out');
-  var key = button.getAttribute('data-partner-key') || '';
-  if (!key || !out) return;
-
-  if (button.getAttribute('data-armed') !== 'yes') {
-    button.setAttribute('data-armed', 'yes');
-    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
-    button.textContent = 'Really break?';
-    out.className = 'job-manifest-note nd-partner-out';
-    out.textContent = 'they keep their seat here; only the partnership ends. Press again.';
-    return;
-  }
-  button.removeAttribute('data-armed');
-  button.textContent = 'Break';
-
-  var relayKey = ndRelayKey();
-  if (!relayKey) { ndNoKey(out, 'nd-partner-out'); return; }
-
-  ndApi.peerPost('relay', relayKey, { unpartner: { key: key } }).then(function (r) {
-    var answer = r && r.reply;
-    if (r && r.ok && answer && answer.ok !== false) {
-      out.className = 'job-manifest-note nd-partner-out is-token';
-      out.textContent = 'partnership ended';
-      ndChanged = true;
-      ndLoad();
-      return;
-    }
-    out.className = 'job-manifest-note nd-partner-out is-error';
-    out.textContent = (answer && answer.error) || (r && r.error) || 'refused';
-  });
-}
 
 // ── ONE INVITE BLOCK ─────────────────────────────────────────────────
 //
@@ -1457,27 +1193,13 @@ function ndRender() {
     // to "did that work" is the row that appears under the form — and
     // adjacency could not deliver it, because either of the two could be
     // the one that is shut.
-    // ── REACH IS NOT ADMINISTRATION ──────────────────────────────────
-    //
-    //   Andy: "'On Partner relays' is inside the 'Managing my Relay'
-    //   block so non-owning members don't see it because of that."
-    //
-    // It was, and that made the whole point of the step invisible to the
-    // people it was for. The relay answers `{partners:true}` to any
-    // member now, and the panel renders for anyone bound here — and then
-    // the fold above it hid the result from everybody but the owner.
-    //
-    // This is about who you can SEE from here, not about running the box.
-    // A member with no relay of their own has reach; they have nothing to
-    // manage.
+    // The partner relays panel that closed this fold went with partnering
+    // (goal/G22.6).
     ndOwnerGroupHtml(
       ndRelayLabelHtml() +
-      ndInvitePanel() +
-
-      ndPartnersHtml()
+      ndInvitePanel()
     );
     // The device panel was removed by goal/G16.2 with the device enrolment.
-  ndMountPartnerPick();
 }
 
 // NOTHING REPAINTS THIS SCREEN ANY MORE except ndRender, and ndRender
@@ -1830,12 +1552,6 @@ spirit.shell.activateApp({
       var revokeBtn = target.closest('.nd-inv-revoke');
       if (revokeBtn) { ndRevoke(revokeBtn); return; }
 
-      var partnerGo = target.closest('.nd-partner-go');
-      if (partnerGo) { ndPartnerAdd(partnerGo); return; }
-
-      var partnerDrop = target.closest('.nd-partner-drop');
-      if (partnerDrop) { ndPartnerDrop(partnerDrop); return; }
-
       var relayLabelBtn = target.closest('.nd-relay-label-go');
       if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }
 
@@ -1869,22 +1585,8 @@ spirit.shell.activateApp({
     // worse answer than the button it already has.
     //
     // Rename was the other one, and went to Info with its panel.
-    // ── A SELECT NEEDS `change`, NOT `click` ───────────────────────────
-    //
-    // Every other control on this screen is delegated on click, because
-    // the panels repaint wholesale and a listener bound to an element
-    // goes with the next repaint. A <select> is the one that cannot join
-    // them: click fires when the list OPENS, so the handler would read
-    // the value the user is about to replace.
-    //
-    // `change` bubbles, so it delegates the same way and survives the
-    // same repaints.
-    ndBody().addEventListener('change', function (event) {
-      var target = event.target;
-      if (!target || !target.closest) return;
-      var pick = target.closest('.nd-partner-pick');
-      if (pick) { ndPartnerPicked(pick); }
-    });
+    // The `change` listener for the partner picker stood here; the picker
+    // went with partnering (goal/G22.6).
 
     ndBody().addEventListener('keydown', function (event) {
       if (event.key !== 'Enter') return;

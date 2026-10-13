@@ -113,9 +113,8 @@ const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || s
   fs.writeFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, JSON.stringify(environment, null, 2), 'utf8');
 }
 
-// The desktop shell. A relay's brochure (relay.html) is served by
-// relayServer.js; this node serves it only by its literal path, as a
-// boot asset.
+// The desktop shell. (A relay's brochure, relay.html, is gone with the
+// relay's public door: Andy's decision, goal/G22.6.)
 const HOME_PAGE = 'index.html';
 
 // THE LOG, read as a table. One store for both directions, keyed by hash
@@ -159,10 +158,9 @@ const arrivals = require('./arrivals').createArrivals({
 // this is what lets js/kernel.js sit in kernel.js's UNSERVABLE_FILES
 // (blocking the *generic* read/list capability: loadFile, scanFolder, the
 // Files app, the fs-watcher) while still working as the page's own boot
-// script. Both index.html and relay.html are listed unconditionally
-// (not just whichever HOME_PAGE resolved to) — either is reachable by its
-// own literal path regardless of mode, this just keeps both bootable.
-const BOOT_ASSETS = ['index.html', 'relay.html', 'js/kernel.js', 'js/client/shell.js', 'favicon.svg'];
+// script. relay.html stood beside index.html here until the brochure was
+// killed with the relay's public door (goal/G22.6).
+const BOOT_ASSETS = ['index.html', 'js/kernel.js', 'js/client/shell.js', 'favicon.svg'];
 
 const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
@@ -1323,7 +1321,9 @@ contactBook.syncMarks(ROOT_DIR);
   // the device-offer it answered was removed by goal/G16.2.
   const answerer = require('./answerRelay').createAnswerer({
     rootDir: ROOT_DIR,
-    request: require('./hub').relayRequest,
+    // THE RELAY'S CARD, through the router (goal/G22.6). Late-bound: the
+    // router is built just below, and nothing asks before it exists.
+    askKey: function (url) { return peerRouter.relayKey(url); },
   });
 
   peerRouter = require('./peerPost').createPeerPost({
@@ -1386,7 +1386,8 @@ contactBook.syncMarks(ROOT_DIR);
     //
     //   a PERSON  — the card on their contact row (cycle 10's R3), which is why
     //               the card had to be kept before this could exist
-    //   a RELAY   — the signed statement on `/api/relay/key` (cycle 10's R9),
+    //   a RELAY   — the signed statement on its card (cycle 10's R9; a card
+    //               ask on its one door since goal/G22.6),
     //               learned when the relay's identity was pinned and
     //               never separately
     //
@@ -1749,7 +1750,9 @@ contactBook.syncMarks(ROOT_DIR);
     // nothing was pinned, so the pinner never ran.
     pinRelay: answerer.relayKey,
   });
-  peerRouter.startStreams(require('./hub').relayRequest).catch(() => {});
+  // Which relays hold a seat for this node is asked of each relay's card,
+  // through this router (goal/G22.6: GET /api/relay/key is closed).
+  peerRouter.startStreams(require('./hub').relayKeyAsk(peerRouter)).catch(() => {});
 
   // ── THE CLAIMS, WHERE THE DEPENDENCIES ARE ─────────────────────────
   //
@@ -2059,7 +2062,8 @@ contactBook.syncMarks(ROOT_DIR);
   // happened to land in the same group. `relay.claim` obviously reaches
   // out. `relay.status` is less obvious and matters more: it LOOKS like
   // a read of local configuration, and it is not. ownerBadge.probe
-  // fetches /api/relay/key from every configured relay, so an offline
+  // asks every configured relay for its card (a card ask on its one door,
+  // goal/G22.6), so an offline
   // box answers 502 and a caller that assumed otherwise draws an empty
   // relay list and calls it the truth. That is exactly the confusion the
   // wire flag exists to make impossible to arrive at by accident.
@@ -2075,19 +2079,20 @@ contactBook.syncMarks(ROOT_DIR);
     'relay.claim': { request: { url: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
       hub.handleClaim(rq, rs, readJsonBody, {
         router: peerRouter,
-        probe: require('./hub').relayRequest,
+        probe: require('./hub').relayKeyAsk(peerRouter),
       });
     } },
-    // Eligibility, read-only: does this peer own the relay at that url?
-    // Answered off a PUBLIC roll, so it grants nothing — the promotion
-    // itself is an owner verb posted to the relay like any other.
-    'relay.partnerCheck': { request: { publicKey: '', url: '' }, reply: { ok: true, url: '', relayKey: '', relayLabel: '', ownerLabel: '' }, handler: function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody); } },
+    // Read-only: does this peer own the relay at that url? Answered off the
+    // relay's card, through peerPost (goal/G22.6). Partnering as a
+    // permission is gone (goal/G22.6), so it promotes nothing; the verb
+    // stands until Andy rules on it.
+    'relay.partnerCheck': { request: { publicKey: '', url: '' }, reply: { ok: true, url: '', relayKey: '', relayLabel: '', ownerLabel: '' }, handler: function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody, { router: peerRouter }); } },
     // `relay.roster` STOOD HERE — the public roll of a relay this node
     // is not on, "what a partnership makes visible". Deleted 2026-09-17
     // with the only screen that drew it; see the tombstone in hub.js.
     // relay.status is gone: a list is a search (puppets/G2). One probe
     // serves a search and the gets that follow it (hub.js, PROBE_FRESH_MS).
-    'relay.search': { request: { q: '', name: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, mustPick: false, name: '' }, handler: proxyVerb(function (b) { return hub.relaySearch(b); }) },
+    'relay.search': { request: { q: '', name: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, mustPick: false, name: '' }, handler: proxyVerb(function (b) { return hub.relaySearch(b, { router: peerRouter }); }) },
     'relay.get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { router: peerRouter }); }) },
     // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by the url
     // relay.search hands out. The list is node state and the node its only

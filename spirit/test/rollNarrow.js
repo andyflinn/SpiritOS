@@ -180,10 +180,13 @@ if (!/handleRelayWho|expandKeys/.test(allJs)) {
 
 test.subHeading('And the questions it used to answer have homes');
 
-if (/['"]\/api\/relay\/key['"]/.test(server)) {
-  test.check('who a box is and who runs it — GET /api/relay/key, fixed cost');
+// WHO A BOX IS: since goal/G22.6 its card, the answer to a card ask on its
+// one door (relay.js relayCard), at fixed cost; GET /api/relay/key is closed.
+const relaySrc = codeOf(path.join('js', 'relay.js'));
+if (/function relayCard\b/.test(relaySrc) && !/['"]\/api\/relay\/key['"]/.test(server)) {
+  test.check('who a box is and who runs it — the relay\'s card on its one door, fixed cost');
 } else {
-  test.fail('the key door is missing');
+  test.fail('the relay\'s card is missing, or the closed key route is back');
 }
 
 const badge = codeOf(path.join('js', 'ownerBadge.js'));

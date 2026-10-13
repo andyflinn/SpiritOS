@@ -275,14 +275,15 @@ function removeRelay(rootDir, url) {
 // `probe` below had already stopped fetching it, and only suites still
 // called these. Andy: "nothing is allowed to return a roster", and a row
 // never says who owns the relay — "ownership is only determined by one
-// identified key. The relay knows it." That key is what /api/relay/key
-// answers, and `probe` compares it with this node's own.
+// identified key. The relay knows it." That key is what the relay's card
+// answers (a card ask on its one door, goal/G22.6), and `probe` compares it
+// with this node's own.
 
 // ── ONE OWNERSHIP RULE, FOR A RELAY AND A NODE (goal/G19.8) ──────────
 //
 //   Andy, 2026-10-12: "so the relays owner code and the puppets owner code should be the same."
 //
-// Owned means: the owner the box itself states is this node's key. A relay states it on /api/relay/key (probe,
+// Owned means: the owner the box itself states is this node's key. A relay states it on its card (probe,
 // below); a node states it on its signed card (nodeCard, read by contacts.setCard). Both ask this, and nothing else.
 function ownedBy(saidOwnerKey, myKey) {
   var said = String(saidOwnerKey || '');
@@ -343,9 +344,14 @@ function summarize(rows) {
 // and the only one that was not a question about other people. It was
 // asking each relay to remember what this node did.
 //
-// Now: `GET /api/relay/key` says who the box is and who runs it, at 97
-// fixed bytes; `relayKeys` says where this node holds a seat, off disk.
-// Neither answer has a membership term in it.
+// Now: the relay's card says who the box is and who runs it, at a fixed
+// size; `relayKeys` says where this node holds a seat, off disk. Neither
+// answer has a membership term in it.
+//
+// `request(url)` asks one relay for its card and answers { status, text },
+// `text` the relay's signed key statement. Since goal/G22.6 that is a card
+// ask on the relay's one door through the node's peerPost (hub.relayKeyAsk);
+// GET /api/relay/key is closed.
 //
 // `owned` is now a COMPARISON rather than a search — is the key this box
 // names as its owner my key — which is the same fact the roll row
@@ -366,7 +372,7 @@ function probe(rootDir, request, myKey) {
 
   return Promise.all(relays.map(function (relay) {
     return Promise.resolve()
-      .then(function () { return request(relay.url, 'GET', '/api/relay/key'); })
+      .then(function () { return request(relay.url); })
       .then(function (answer) {
         var said = null;
         try { said = JSON.parse(answer && answer.text); }
@@ -407,8 +413,7 @@ function probe(rootDir, request, myKey) {
         if (badge.claimed) {
           badge.roll = {
             owner: (said && said.ownerLabel) || '',
-            // Who owns it, by key: natterDetails offers that owner as a
-            // partner where it is a member of another relay on the list.
+            // Who owns it, by key.
             ownerKey: (said && said.ownerKey) || '',
             relayKey: (said && said.relayPublicKey) || '',
             relayLabel: (said && said.relayLabel) || '',

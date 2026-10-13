@@ -12,7 +12,7 @@ const peerSearch = require('./peerSearch');
 const presence = require('./presence');
 const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
-// The relay's data on disc (cycle 3): members, invites, partners.
+// The relay's data on disc (cycle 3): members and invites.
 const relayStore = require('./relayStore');
 // The same validation the file gets at boot, so the owner's `config` verb
 // (reconfigure) cannot accept a figure a restart would then refuse.
@@ -134,7 +134,24 @@ function allowanceFor(ramLimitMB) {
   return Math.max(1, Math.floor(mb * STREAMS_PER_MB));
 }
 
-var CLAIM_PER_MIN = 10;
+// ── STRANGERS ARE HELD BY ONE TABLE OF REQUESTING ADDRESSES (goal/G22.6) ──
+//
+// Andy's decision (goal/G22.6, 2026-10-13): "Strangers are held by one table
+// of requesting addresses, as many entries as the relay has members, each
+// entry: request count, time of last request, originating address, ban time
+// (starting at 1000 ms). An address that asks again before its ban time is
+// over has its ban time doubled. A new address takes the first expired slot
+// ... The table lives in memory only; nothing about a stranger is written to
+// disk. An address that comes back after its ban ended starts again at 1 s.
+// An IPv6 address is counted by its /64 block. It replaces the per-address
+// claim limit." And, 2026-10-14: the first request from an unknown address is
+// answered and puts the address into the table; when the table is full with
+// nothing expired, that request is rejected with the error "busy".
+//
+// So an address NOT in the table is answered and entered at the first free
+// or expired slot, or refused busy when there is none; an address already in
+// the table is held to its ban. The per-address claim limit is gone.
+var STRANGER_BAN_START_MS = 1000;
 
 // ── POSTING HAD NO LIMIT AT ALL, AND THAT WAS NOT A DECISION ─────────
 //
@@ -148,7 +165,7 @@ var CLAIM_PER_MIN = 10;
 // HALF OF IT WAS ALREADY THERE, which is worth stating so this is not
 // mistaken for a box with no defences: `routes.open` caps a requester's
 // OUTSTANDING posts (`too many in flight`: DEFAULT_PER_MEMBER, one, for a
-// member since 2026-10-02; DEFAULT_PER_REQUESTER for the other classes) and the
+// member since 2026-10-02) and the
 // table caps the box (DEFAULT_MAX). That is the stock — what is held —
 // and it is fair per requester already. What was missing is the FLOW:
 // posts that complete promptly cost nothing against a stock limit, so a
@@ -170,42 +187,12 @@ var CLAIM_PER_MIN = 10;
 //
 // NAMED IN THE REFUSAL — a page that knows it
 // is rate-limited waits, where `not now` makes it guess.
-// ── TWO BUDGETS, BECAUSE A PARTNER'S POST IS A MEMBER'S DEMAND ───────
 //
-//   Andy: "the budget for posts from partners must be a different POST
-//   budget from members. Why? Because even incoming posts from partners
-//   satisfy a need from my members. In fact, I need to tax the members to
-//   keep my partners operational."
-//
-// A forward arriving from a partner is not foreign traffic: somebody's
-// member is being reached because they want to be reachable. So the
-// partner pool is infrastructure for member reach, funded out of the same
-// total — and kept SEPARATE so that a partner having a bad day degrades
-// reach without starving the members who paid for it.
-//
-// That separation is also what lets this box stay incurious about who at
-// the far end sent anything. The pool IS the isolation, so there is no
-// bucket per foreign member and nothing here learns who talks how much
-// (CAPACITY.md, decided 0c).
+// ONE BUDGET, THE MEMBERS'. A second pool for posts a partner relay
+// forwarded stood beside it; partnering as a permission is gone (Andy's
+// decision, goal/G22.6), and with it the partner roll and the partner
+// budget. A stranger is held by the address table instead.
 var MEMBER_PER_MIN = 600;
-
-// THE PARTNER POOL'S FLOOR, and the floor is all there is for now.
-//
-//   Grok: "floor in work, then observedPartnerFraction x total, taxed
-//   from the member pool. Idle -> floor, not zero."
-//
-// IDLE MEANS FLOOR, NEVER ZERO, and that is the half worth not getting
-// wrong: a pool of zero is a bootstrap deadlock. An unused partnership
-// could never carry the first packet that would make it used, so the
-// fraction could never rise, so the pool would stay zero for ever.
-//
-// The fraction is MEASURED here (meterRead().partnerFraction) and not yet
-// ACTED ON: computing the pool from it is the governor's job, and the
-// governor divides observed headroom that does not exist until the ring
-// has run on a real box. So this is the starting declaration, in force
-// until there is something to divide — not a constant anybody chose as
-// correct.
-var PARTNER_FLOOR_PER_MIN = 60;
 
 var WINDOW_MS = 60 * 1000;
 var RATE_KEY_SWEEP_AT = 1000;
@@ -216,8 +203,8 @@ var RATE_KEY_SWEEP_AT = 1000;
 //   a DISC-client."
 //
 // routingTable.json STOOD HERE — read whole at boot into a map, rewritten
-// whole on every claim, rename and removal. The roll, the invites and the
-// partner roll are tables in relay-state/relay.db now (relayStore.js), and
+// whole on every claim, rename and removal. The roll and the invites are
+// tables in relay-state/relay.db now (relayStore.js), and
 // every question about them is a query. A relay that still holds the old
 // file imports it once and keeps it as routingTable.json.imported (D8, see
 // design/DEPRECATIONS.md); its legacy handling (D1) went with the reader.
@@ -227,50 +214,19 @@ var RATE_KEY_SWEEP_AT = 1000;
 // same discipline holds: data on somebody's box is renamed and kept, never
 // deleted by a boot.
 
-// A HOP'S SHARE OF THE BUDGET, spent before the next hop sees it.
-//
-// What this relay hands a partner is what it was given, less enough to
-// carry the partner's answer back to the member still waiting. Declared,
-// not measured — like `HINTS_PER_POST`, and marked so nobody reads it as
-// evidence. What must be true of it is only that it is greater than one
-// return trip and small against the ceiling; 500 ms against 5 s is both.
-//
-// The consequence is the point: a partner is always given LESS than this
-// relay has, so it finishes first, and this relay still has time to pass
-// its answer on. Every hop inward is tighter, and no hop needs to know
-// how deep it is.
-var HOP_MARGIN_MS = 500;
-
-// ── HOW LONG A PARTNER MAY BE QUIET AND STILL COUNT AS LIVE (R13) ────────
-//
-//   Grok (review): "N = 15 minutes. Quiet is normal. After 15 min still try
-//   one post before you skip that partner for hints. Do not treat 'no
-//   traffic' as dead at 2 minutes." Andy agreed (2026-09-22, cycle 8).
-//
-// Liveness used to be the partner's held stream. There is none now: a
-// partner is live when it last ANSWERED within this window (R12's `last`),
-// and a partner quiet for longer is still asked once — only a partner that
-// has been quiet this long AND failed its one try since is skipped, and
-// only until this long again has passed.
-// Read from partnerAvailability.js, where the node reads it too (R42), so
-// the relay's bench and a node's belief cannot drift apart.
-var PARTNER_QUIET_MS = require('./partnerAvailability').QUIET_MS;
-
-// `deps.askPartner(url, relayKey, text, budgetMs)` answers a promise of the partner's
-// reply text, or null. INJECTED, never reached for: it is this relay's own
-// peerPost over relayRequest, wired in server.js, which is the one
-// interface everything speaks through (AGENT.md, Comms). A relay built
-// without it simply does not propagate — which is every existing test, and
-// is why they did not have to change.
+// A HOP'S SHARE OF THE BUDGET (HOP_MARGIN_MS), the partner liveness window
+// (PARTNER_QUIET_MS) and the injected `deps.askPartner` STOOD HERE. This relay
+// no longer carries anything onward to a partner relay: partnering as a
+// permission is gone (Andy's decision, goal/G22.6), and a relay carries
+// posts to its OWN members from any sender instead.
 function createRelay(rootDir, deps) {
   deps = deps || {};
-  var askPartner = typeof deps.askPartner === 'function' ? deps.askPartner : null;
-  // The clock partner liveness reads (R13), injectable so a suite can pass
-  // fifteen minutes without waiting them.
+  // The clock the stranger address table reads (goal/G22.6), injectable so
+  // a suite can pass a ban without waiting it.
   var clock = typeof deps.now === 'function' ? deps.now : Date.now;
   rootDir = rootDir || path.join(__dirname, '..');
-  // THE ROLL, THE INVITES AND THE PARTNER ROLL — on disc, asked by query
-  // (cycle 3, relayStore.js). Nothing of them is resident here.
+  // THE ROLL AND THE INVITES — on disc, asked by query (cycle 3,
+  // relayStore.js). Nothing of them is resident here.
   //
   // Fetched per use rather than held: open() is a cached lookup, so this
   // costs nothing, and a handle closed underneath the relay (a test
@@ -278,7 +234,6 @@ function createRelay(rootDir, deps) {
   var store = {
     get members() { return relayStore.open(rootDir).members; },
     get invites() { return relayStore.open(rootDir).invites; },
-    get partners() { return relayStore.open(rootDir).partners; },
     transaction: function (fn) { return relayStore.open(rootDir).transaction(fn); },
     // What the roll occupies on disc — the figure `discLimitMB` bounds
     // (cycle 9). Fetched the same way as the rest: through open().
@@ -309,21 +264,99 @@ function createRelay(rootDir, deps) {
     if (activeRows[key]) rememberActive(key);
   }
   var ownerKey = auth.loadOwner(rootDir);
-  var claimHits = Object.create(null);
   // Posts routed, per sender key. The sender is the identity that was
   // RESOLVED, never a name they chose — the reasoning is in the note on
   // `rateOk` below, and it is why the old per-name limit was worthless.
-  // TWO POOLS, TWO BUCKETS. Keyed on the resolved sender either way — a
-  // member key or a partner's relay key — never on
-  // anything the sender chose.
   var memberHits = Object.create(null);
-  var partnerHits = Object.create(null);
 
-  // What a partner may spend right now. A function rather than a constant
-  // because the governor will compute it; today it answers the floor, and
-  // the call site should not have to change when that stops being true.
-  function partnerPerMin() {
-    return PARTNER_FLOOR_PER_MIN;
+  // ── THE STRANGERS' TABLE (goal/G22.6, Andy's decision; see the note on
+  // STRANGER_BAN_START_MS) ───────────────────────────────────────────────
+  //
+  // In RAM only, and keyed by ADDRESS, never by key: a key is free to mint,
+  // an address is not. Nothing about a stranger is written to disk. Its
+  // length is the number of members this relay holds (at least one, so an
+  // owner's first claim on an empty roll has a slot to take).
+  //
+  // Each entry: { address, count, last, ban }. An entry is EXPIRED once
+  // `last + ban` has passed; an expired entry's slot is the first a new
+  // address takes, and the same address coming back to an expired entry
+  // starts again at STRANGER_BAN_START_MS.
+  var strangers = [];
+
+  // AN IPv6 ADDRESS IS COUNTED BY ITS /64 (Andy's decision): one host owns
+  // a whole /64, so counting single addresses would hand it 2^64 slots. An
+  // IPv4 address mapped into IPv6 (::ffff:a.b.c.d) is the IPv4 address.
+  function addressKey(address) {
+    var a = String(address == null ? '' : address).trim().toLowerCase();
+    var mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(a);
+    if (mapped) return mapped[1];
+    if (a.indexOf(':') === -1) return a;
+    var zone = a.indexOf('%');
+    if (zone !== -1) a = a.slice(0, zone);
+    var halves = a.split('::');
+    var head = halves[0] ? halves[0].split(':') : [];
+    var tail = halves.length > 1 && halves[1] ? halves[1].split(':') : [];
+    var groups = halves.length > 1
+      ? head.concat(new Array(Math.max(0, 8 - head.length - tail.length)).fill('0'), tail)
+      : head;
+    return groups.slice(0, 4).map(function (g) { return (parseInt(g, 16) || 0).toString(16); })
+      .join(':') + '::/64';
+  }
+
+  function strangerSlots() {
+    var members = 0;
+    try { members = store.members.count(); } catch (e) { members = 0; }
+    return Math.max(1, members);
+  }
+
+  // One request from a stranger at `address`: { ok: true } to go on, or the
+  // refusal. Asked before the signature is checked: an address cannot be
+  // forged at this socket, so a flood is turned away before it costs this
+  // box a verification.
+  function strangerAdmit(address) {
+    var key = addressKey(address);
+    var now = clock();
+    var size = strangerSlots();
+    if (strangers.length > size) strangers.length = size;
+    var at = -1;
+    for (var i = 0; i < strangers.length; i += 1) {
+      if (strangers[i] && strangers[i].address === key) { at = i; break; }
+    }
+    if (at !== -1) {
+      var e = strangers[at];
+      if (now < e.last + e.ban) {
+        // TOO EARLY: the ban doubles, counted from this request.
+        e.ban *= 2;
+        e.last = now;
+        e.count += 1;
+        return {
+          ok: false, status: 429, error: 'too early — wait ' + e.ban + ' ms',
+          code: 'address-too-early', retryAfterMs: e.ban,
+        };
+      }
+      // BACK AFTER ITS BAN: answered, and it starts again at one second.
+      strangers[at] = { address: key, count: e.count + 1, last: now, ban: STRANGER_BAN_START_MS };
+      return { ok: true };
+    }
+    // A NEW ADDRESS takes the first free or expired slot, or is refused busy.
+    var slot = -1;
+    for (var j = 0; j < size; j += 1) {
+      var s = strangers[j];
+      if (!s || now >= s.last + s.ban) { slot = j; break; }
+    }
+    if (slot === -1) {
+      var soonest = null;
+      strangers.forEach(function (s) {
+        var left = s.last + s.ban - now;
+        if (soonest === null || left < soonest) soonest = left;
+      });
+      return {
+        ok: false, status: 503, error: 'busy', busy: true, code: 'address-busy',
+        retryAfterMs: Math.max(0, soonest || 0),
+      };
+    }
+    strangers[slot] = { address: key, count: 1, last: now, ban: STRANGER_BAN_START_MS };
+    return { ok: true };
   }
 
   // ── THE METER, WHICH MATTERS MORE THAN THE GATE ──────────────────────
@@ -385,23 +418,18 @@ function createRelay(rootDir, deps) {
   // outstanding routes seen — the RAM meter beside the bandwidth one,
   // since CAPACITY.md's governor reads several and not a fixed pair.
   //
-  // `fromPartner` is counted as a COUNT, not as an identity: two integers
-  // per slot, so the relay can say what share of its work crossed a
-  // partnership without holding anything about who did it. That share is
-  // the input Grok's formula wants — "observedPartnerFraction x total" —
-  // and measuring it is this file's job where dividing by it is the
-  // governor's.
-  function meterNote(bytes, fromPartner) {
+  // A PARTNER COUNT stood beside these (the share of work that crossed a
+  // partnership); it went with the partner budget (goal/G22.6).
+  function meterNote(bytes) {
     var second = Math.floor(Date.now() / 1000);
     var head = meter.slots[meter.slots.length - 1];
     if (!head || head.second !== second) {
-      head = { second: second, bytes: 0, posts: 0, peak: 0, partnerPosts: 0 };
+      head = { second: second, bytes: 0, posts: 0, peak: 0 };
       meter.slots.push(head);
       if (meter.slots.length > METER_SLOTS) meter.slots.shift();
     }
     head.bytes += bytes;
     head.posts += 1;
-    if (fromPartner) head.partnerPosts += 1;
     // `size()` rather than a counter of our own, and it sweeps expired
     // entries on the way past — so the peak is live routes, never a
     // backlog of ones that timed out.
@@ -415,10 +443,9 @@ function createRelay(rootDir, deps) {
   function meterRead() {
     var cut = Math.floor(Date.now() / 1000) - METER_SLOTS;
     var live = meter.slots.filter(function (s) { return s.second > cut; });
-    var bytes = 0, posts = 0, peak = 0, partnerPosts = 0;
+    var bytes = 0, posts = 0, peak = 0;
     live.forEach(function (s) {
       bytes += s.bytes; posts += s.posts;
-      partnerPosts += (s.partnerPosts || 0);
       if (s.peak > peak) peak = s.peak;
     });
     return {
@@ -426,12 +453,6 @@ function createRelay(rootDir, deps) {
       bytes: bytes,
       posts: posts,
       peakRoutes: peak,
-      // THE INPUT THE PARTNER POOL IS WAITING FOR. Measured now, acted on
-      // by the governor later — today the pool answers its floor. Zero
-      // when nothing has crossed a partnership, which is the common case
-      // on a relay with no partners and is why the floor exists.
-      partnerPosts: partnerPosts,
-      partnerFraction: posts ? (partnerPosts / posts) : 0,
       // The one figure a governor would divide. Honest about the window
       // rather than extrapolated from a short one.
       bytesPerSec: live.length ? Math.round(bytes / live.length) : 0,
@@ -448,8 +469,10 @@ function createRelay(rootDir, deps) {
   // ONE REQUEST MAY BE AIMED AT A MEMBER AT A TIME, and that number is
   // router.js's, not this file's and not the owner's. It was briefly read
   // from relay-state/config.json; a limit an owner can widen is not a
-  // limit (2026-09-21), and it bounds what a PARTNER may aim at a member,
-  // so it protects parties other than the owner.
+  // limit (2026-09-21), and it bounds what a STRANGER may aim at a member,
+  // so it protects parties other than the owner. Counted per sender
+  // (goal/G22.6, M5 of the review of 2026-10-10): one sender holding a
+  // member's slot does not make that member busy for anybody else.
   // ITS OWN KEY GOES IN (goal/G16.2): a question to the relay itself is not
   // counted against the per-target slot a member gets (router.js, selfKey).
   var routes = routerTable.createRouter({ selfKey: relayPublicKey() || '' });
@@ -980,333 +1003,21 @@ function createRelay(rootDir, deps) {
   // the row ("a row in the roll doesn't know who the owner is"). This is
   // how they are ASKED FOR, without asking for any membership.
   //
-  // This is the last thing `handlePartnerCheck` needed the roll for.
-  // A partner promotion has to be verifiable — "the key marked owner over
-  // there is the key of the peer here" — and setPartner's own note leans
-  // on that proof being a PUBLIC page: "a node reporting a public page is
-  // not laundering privilege; it saw nothing this box could not have
-  // seen." Still true, and now it is one page rather than a ledger.
+  // Part of the relay's card: what a card ask is answered with (goal/G22.6).
   //
-  // Empty on a relay nobody has claimed, which is a real answer: that box
-  // has no owner yet, and partner promotion refuses it for that reason.
+  // Empty on a relay nobody owns, which is a real answer: that box has no
+  // owner yet.
   function ownerPublic() {
     return { ownerKey: ownerKey || '', ownerLabel: ownerLabel() };
   }
 
-  // ── PARTNERSHIP, TIER ONE: THE FLAG AND NOTHING ELSE ────────────────
-  //
-  //   Andy: "every relay can promote a peer to 'partner' status in the
-  //   peer-ledger… a non-owner peer possesses his own relay somewhere."
-  //
-  // After this, a relay KNOWS who its partners are and nothing routes
-  // differently. That is the whole of the tier, and it is useful alone:
-  // the flag is what everything after it depends on, and until the route
-  // table exists a relay simply refuses a stranger exactly as before.
-  //
-  // WHAT IS STORED IS THIS RELAY'S OWN RELATIONSHIP, never their members
-  // (design/relay/PARTNERS.md):
-  //
-  //   partner: { url, relayKey, since }
-  //
-  // Three facts about a peer's row here. `url` because A KEY IS NOT AN
-  // ADDRESS — nothing on this wire maps one to the other, which is why
-  // the owner supplies it. `relayKey` because the forward hop in a later
-  // tier must verify the partner signing as itself, and the moment to
-  // capture that is while somebody is looking at the roll that proves
-  // the partnership.
-  //
-  // 0006 IS UNTOUCHED. Their ledger is not here and never will be — the
-  // hard rule is that a relay never persists one — so routingTable.json
-  // keeps its shape, `peers` and nothing else, which labPersistence
-  // asserts.
-  //
-  // THE RECIPROCITY CHECK IS NOT HERE, and that is deliberate. The proof
-  // is public: anybody may GET `/api/relay/key` on the other relay and
-  // read which key owns it (`ownerKey`). So the owner's NODE fetches it
-  // and this stores the conclusion, and a relay still never makes an
-  // outbound request. A node reporting a public page is not laundering
-  // privilege; it saw nothing this box could not have seen.
-  function setPartner(who, key, url, relayKey, hash) {
-    var peerKey = String(key == null ? '' : key).trim();
-    if (!peerKey) return { ok: false, status: 400, error: 'peer key required' };
+  // ── THE PARTNER ROLL STOOD HERE (setPartner, clearPartner, partners, the
+  // partner identity at the door and the partner liveness bench). Removed
+  // by Andy's decision (goal/G22.6, 2026-10-13): "Partnering as a permission
+  // goes ... a relay carries posts to its members from any relay ... the
+  // partner roll and the partner budget are removed". A relay.db that still
+  // holds a partners table opens as before; nothing reads it.
 
-    var row = findByKey(peerKey);
-    if (!row) return { ok: false, status: 404, error: 'no such peer' };
-
-    var at = String(url == null ? '' : url).trim().replace(/\/+$/, '');
-    if (!at) return { ok: false, status: 400, error: 'partner relay url required' };
-    var theirKey = String(relayKey == null ? '' : relayKey).trim();
-    if (!theirKey) return { ok: false, status: 400, error: 'partner relay key required' };
-    // Their relay's key, not their own. Two keys, two jobs — you verify
-    // ownership against the OWNER row and you pin the RELAY key for the
-    // hop, and conflating them is the likeliest bug in this design.
-    if (theirKey === peerKey) {
-      return { ok: false, status: 400, error: 'that is the peer’s own key, not their relay’s' };
-    }
-
-    // ── A RELAY IS NOT ITS OWN PARTNER ─────────────────────────────────
-    //
-    //   Andy: "the relays need to be different, the owners? why?"
-    //
-    // This read `if (row.owner)` and refused, with the reason "the
-    // owner's own row is this box, and partnering with yourself would be
-    // a route to where you already are". That is the same sentence as
-    // "not this box" only while ONE KEY OWNS ONE RELAY. Own twenty and
-    // your key is `owner: true` on all twenty, while A and B are
-    // genuinely different machines — so the check refused the thing it
-    // was never about.
-    //
-    // "Not the owner" was shorthand. Only "not this box" was ever the
-    // invariant, and the vocabulary to say it exactly was already here:
-    // the line above insists the RELAY key differs from the PEER key —
-    // two keys, two jobs — and then the old gate conflated them anyway,
-    // one line later, by testing whose key sits in allow.json.
-    //
-    // It is also STRICTER than what it replaced. The old check would
-    // happily partner this box with itself through any non-owner peer
-    // who named this relay's own url; this one cannot, because the
-    // identity compared is the box's.
-    //
-    // Nothing else weakens. The reciprocity proof (decided 2 and 4) is
-    // the far roll showing that key marked owner — with one owner it
-    // proves "one key owns both", which is true, public, and checkable
-    // by key. No third party's consent is bypassed: partnering only
-    // creates routes between the two relays' own members, and the other
-    // relay's owner must promote this one in turn.
-    if (theirKey === relayPublicKey()) {
-      return { ok: false, status: 400, error: 'that is this relay' };
-    }
-
-    // THE PARTNER ROLL (cycle 3): a row keyed by relay key in the §5 shape,
-    // not a flag on this member's row. This verb is the deprecated model
-    // (NODE-AND-RELAY §6) writing to the new store until cycle 5 replaces
-    // it with injection and the minting cycle. One partnership per member,
-    // as before: promoting a member to a different relay replaces theirs.
-    var had = store.partners.byOwner(peerKey)[0] || null;
-    if (had && had.url === at && had.relayKey === theirKey) {
-      return { ok: true, status: 200, unchanged: true, partner: partnerView(had) };
-    }
-
-    store.transaction(function () {
-      store.partners.removeOwner(peerKey);
-      store.partners.put({
-        relayKey: theirKey, url: at, ownerKey: peerKey, status: 'partnered',
-        // Written once, like claimedAt: it says when this partnership
-        // began, and a re-promotion to the same relay does not reach here.
-        since: (had && had.since) || new Date().toISOString(),
-      });
-    });
-    var made = store.partners.get(theirKey);
-
-    ownerEvent('partner-added', {
-      key: peerKey, label: row.publicLabel || '', relayAt: at, cause: hash,
-    });
-    return { ok: true, status: 200, partner: partnerView(made) };
-  }
-
-  // The shape callers have always been handed for a partnership.
-  function partnerView(p) {
-    return p ? { url: p.url, relayKey: p.relayKey, since: p.since } : null;
-  }
-
-  // BREAKING IS ONE SIDE'S DECISION, and needs no protocol. A partnership
-  // is two unilateral choices that happen to agree (PARTNERS.md) — so
-  // this clears the flag here and the other relay finds out, if it ever
-  // matters, by being refused.
-  function clearPartner(who, key, hash) {
-    var peerKey = String(key == null ? '' : key).trim();
-    if (!peerKey) return { ok: false, status: 400, error: 'peer key required' };
-
-    var row = findByKey(peerKey);
-    if (!row) return { ok: false, status: 404, error: 'no such peer' };
-    var was = store.partners.byOwner(peerKey)[0] || null;
-    if (!was) return { ok: true, status: 200, unchanged: true };
-    store.partners.removeOwner(peerKey);
-
-    ownerEvent('partner-removed', {
-      key: peerKey, label: row.publicLabel || '', relayAt: was.url, cause: hash,
-    });
-    return { ok: true, status: 200, removed: partnerView(was) };
-  }
-
-  // Everything this relay partners with, for the owner's own report. Not
-  // on any public route: a partnership is a public statement of association
-  // between two relays, and there is no reason yet for a stranger to read
-  // one. Owner-only until somebody needs otherwise.
-  // ── A PARTNER RELAY, RECOGNISED BY THE KEY IT SIGNS WITH ───────────
-  //
-  // A partner is NOT a member and must never become one. Its relay key is
-  // not a row in `peers`, is not in the roll, and cannot claim a label —
-  // so `deviceIdentity` answers null for it, which is correct and is why
-  // this exists separately rather than as a branch inside that.
-  //
-  // THE PINNED KEY IS THE WHOLE PROOF. It was written down at promotion,
-  // by the owner, against a relay they had verified (PARTNERS.md item 2).
-  // Nothing here trusts a URL, a label, or anything the caller says about
-  // itself: the signature verifies against the pinned key or the caller is
-  // a stranger.
-  // ── THE PARTNERSHIP ANSWERED (cycle R12) ─────────────────────
-  //
-  // `since` said when a partnership began and nothing said when it last
-  // worked, so the only liveness this relay had was the partner STREAM —
-  // which R13 takes away. This is the column that replaces it.
-  //
-  // ANY ANSWER COUNTS, and that is deliberate. A partner replying "no
-  // matches" has demonstrably worked; a partner refusing has worked. What
-  // this records is that the partnership carried a packet there and back,
-  // never that the answer was liked. Only a promise that rejects — no
-  // answer at all — leaves the column where it was.
-  //
-  // Never an eviction: the roll is the reach (Andy). A partner silent for
-  // a month is still the only route to its members.
-  function partnerAnswered(relayKey) {
-    if (!relayKey) return;
-    delete partnerMissedAt[relayKey];
-    // BACK, AND SAID SO (R42) — once, on the first answer after it was
-    // announced unavailable, never on every answer.
-    if (partnerSaidDown[relayKey]) {
-      delete partnerSaidDown[relayKey];
-      announcePartner(relayKey, true);
-    }
-    try { store.partners.touch(relayKey, new Date(clock()).toISOString()); }
-    catch (e) { /* a column that will not take a stamp is not worth a dropped reply */ }
-  }
-
-  // ── IS A PARTNER LIVE? (R13) ─────────────────────────────────────────
-  //
-  // The held stream that answered this is gone (Andy + Grok, cycle 8). A
-  // partner is live when it answered within PARTNER_QUIET_MS. Quieter than
-  // that it is STILL asked, once: only a failed try since its last answer
-  // benches it, and only for another PARTNER_QUIET_MS. So a quiet partner
-  // costs at most one wasted post every fifteen minutes, and a partner that
-  // comes back is found by the next of those.
-  //
-  // The miss is kept in RAM, keyed by relay key: it is a fact about this
-  // process's last attempt, not about the partnership, and a restart that
-  // forgets it merely gives every partner its one try again.
-  var partnerMissedAt = Object.create(null);
-
-  function partnerMissed(relayKey) {
-    if (!relayKey) return;
-    var row = null;
-    try { row = store.partners.get(relayKey); } catch (e) { row = null; }
-    // A MISS WHILE IT IS STILL LIVE IS NOT RECORDED (found by Grok's
-    // review of the gap cycle, 2026-09-22). It was stamped regardless, so
-    // the moment the last answer aged past PARTNER_QUIET_MS that old miss
-    // benched the partner — with no post-quiet try, which gap R13 promises,
-    // and no "unavailable" broadcast, because it was live when it failed.
-    // Only a failure AFTER the quiet window is the one try that benches.
-    var last = row && row.last ? Date.parse(row.last) : NaN;
-    if (isFinite(last) && clock() - last < PARTNER_QUIET_MS) return;
-    partnerMissedAt[relayKey] = clock();
-    // UNAVAILABLE, AND SAID SO (R42) — at the moment it is benched: it was
-    // quiet past PARTNER_QUIET_MS and its one try just failed.
-    if (partnerSaidDown[relayKey]) return;
-    if (!row || row.status !== 'partnered') return;
-    if (partnerLive({ relayKey: relayKey, last: row.last })) return;
-    partnerSaidDown[relayKey] = true;
-    announcePartner(relayKey, false);
-  }
-
-  // ── A PARTNER'S AVAILABILITY, TOLD TO EVERY MEMBER (R42) ─────────────
-  //
-  //   Andy: "why put the answer in search when it could be broadcast?" —
-  //   "the broadcast says "unavailable" (right now) it doesn't say
-  //   "dead"" — "mechanism accepted, as just discussed." (2026-09-22)
-  //
-  // ON A CHANGE ONLY: benched, and back. With R13's fifteen-minute bench
-  // that is at most two per partner per fifteen minutes, whatever the
-  // traffic. `at` is what makes it "unavailable AS OF" — a node lets it go
-  // stale after the same fifteen minutes and sends as usual, and that send
-  // is this relay's next try (partnerAvailability.js).
-  //
-  // Its own event, not `presence`: presence is about members, and a node
-  // filters it by its contacts, which a relay key never is. No partner
-  // holds a stream (R13), so a broadcast reaches members only.
-  //
-  // RAM: which partners this process has announced as down, so each
-  // change is said once. A restart forgets it, and the worst that costs is
-  // one "back" never said for a partner nobody was told was gone.
-  var partnerSaidDown = Object.create(null);
-
-  function announcePartner(relayKey, live) {
-    presentNow.broadcast('partner', {
-      relayKey: relayKey, live: !!live, at: new Date(clock()).toISOString(),
-    });
-  }
-
-  function partnerLive(p) {
-    if (!p || !p.relayKey) return false;
-    var now = clock();
-    var last = p.last ? Date.parse(p.last) : NaN;
-    if (isFinite(last) && now - last < PARTNER_QUIET_MS) return true;
-    var missed = partnerMissedAt[p.relayKey];
-    return !(missed && now - missed < PARTNER_QUIET_MS);
-  }
-
-  // DID THE PARTNER ANSWER AT ALL? What askPartner settles with is
-  // peerPost's result, which resolves on silence too. A refusal from the
-  // partner is an answer (R12: "a partner refusing has worked"); our own
-  // wait running out, a connection that failed, or our own queue saying no
-  // are not — the partner said nothing.
-  function partnerSaidSomething(answer) {
-    if (!answer) return false;
-    if (answer.stillOpen || answer.queueFull) return false;
-    if (typeof answer.text === 'string') return true;
-    return answer.status !== 0 && answer.status !== undefined;
-  }
-
-  function heardFrom(relayKey, answer) {
-    if (partnerSaidSomething(answer)) partnerAnswered(relayKey);
-    else partnerMissed(relayKey);
-  }
-
-  function partnerByRelayKey(key) {
-    var k = String(key == null ? '' : key).trim();
-    if (!k) return null;
-    // One seek on the partner roll's key (cycle 3). This was a scan of the
-    // whole membership on the hot path — the unknown-token flood of §9b.
-    var p = store.partners.get(k);
-    return p && p.status === 'partnered' ? { publicKey: p.ownerKey, partner: p } : null;
-  }
-
-  // The identity a partner gets. Deliberately NOT shaped like a member's:
-  // no `peer`, no label, and `partner: true` so every gate downstream has
-  // to have thought about it rather than inheriting a member's standing by
-  // having the same fields.
-  function partnerIdentity(token) {
-    var row = partnerByRelayKey(token);
-    if (!row) return null;
-    return {
-      id: String(token).trim(),
-      publicKey: String(token).trim(),
-      owner: false,
-      partner: true,
-      // Whose relay it is — recorded for the log, never for a decision.
-      // Andy: "i might ban a peer, but still want his relays to help
-      // mine." Partnership is between relays; the owner's row is evidence
-      // of how it was made, not a standing condition.
-      ownerKey: row.publicKey,
-    };
-  }
-
-  function partners() {
-    return store.partners.all()
-      .filter(function (p) { return p.status === 'partnered'; })
-      .map(function (p) {
-        var owner = findByKey(p.ownerKey);
-        return {
-          key: p.ownerKey,
-          label: (owner && owner.publicLabel) || '',
-          url: p.url,
-          relayKey: p.relayKey,
-          since: p.since,
-          // When this partnership last carried a packet (cycle R12). ''
-          // for one that never has.
-          last: p.last || '',
-        };
-      });
-  }
 
   // Owner-only, and enforced by the caller: this is reached from
   // answerSelf's `owner` branch, which has already verified the post
@@ -1530,12 +1241,9 @@ function createRelay(rootDir, deps) {
     // members is exhausted. a member then must be ejected, before a new
     // claim can be satisfied." So a full relay refuses before anything else.
     //
-    // THE CLAIM LIMIT STAYS ON THE CONNECTION ADDRESS. The review (S13)
-    // asked for it per claimant; Andy dropped that: "drop it. with the
-    // explanation." The seats already bound who can ever get in, so this
-    // limit cannot create members and only slows somebody hammering the
-    // door; and a key is free, so counting per key would not slow them.
-    // The owner is never turned away, as below.
+    // STRANGERS ARE COUNTED BY ADDRESS, AT THE DOOR (goal/G22.6), never
+    // per key here: a key is free, so counting per key would not slow
+    // anybody. The owner is never turned away, as below.
     //
     // ── AN UNOWNED RELAY TAKES NO CLAIM AT ALL (goal/G16.8) ─────────────
     //
@@ -1565,19 +1273,15 @@ function createRelay(rootDir, deps) {
     if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
       return { ok: false, status: 403, error: 'bad claim signature' };
     }
-    if (!rateOk(claimHits, clientKey, CLAIM_PER_MIN)) {
-      return { ok: false, status: 429, error: 'too many claims' };
-    }
-    // PAST THE GATE, and this line is what bounds the owner's stream.
-    // Everything above is reachable by anyone on the internet without
-    // limit — /api/relay/claim is a public POST — so an event fired
-    // before here would let a stranger drive the owner's notifications
-    // as fast as they can send. That is the B1 hazard in a new dress: a
-    // thing keyed by caller-chosen input grows when a stranger reaches
-    // it, so a stranger must not reach it.
+    // THE PER-ADDRESS CLAIM LIMIT (ten a minute) STOOD HERE. Andy's
+    // decision (goal/G22.6): the strangers' address table at the door
+    // "replaces the per-address claim limit". `clientKey` is no longer read.
     //
-    // After here, an attempt has already spent one of ten a minute, so
-    // the existing limit caps the notices too. No second mechanism.
+    // PAST THE GATE, and this line is what bounds the owner's stream. A
+    // claim arrives on the one door from anybody, so an event fired before
+    // the signature would let a stranger drive the owner's notifications.
+    // After here the claim is proven, and a stranger reached it through the
+    // address table, which caps the notices too. No second mechanism.
     seen.gate = true;
 
     // ── THE OWNER-INVITE BRANCH STOOD HERE (cycle 3, Part B) ────────────
@@ -1833,6 +1537,12 @@ function createRelay(rootDir, deps) {
     }
     // A MEMBER IS ADDED — BROADCAST IT (0012, 2026-09-18; built in R28).
     if (out && out.ok && out.peer && out.peer.publicKey) {
+      // ALREADY CONNECTED, THEN ACTIVE NOW. The owner holds a stream before
+      // he holds a row (deviceIdentity resolves him by owner.json), and since
+      // goal/G22.6 his claim arrives on the one door while that stream is
+      // open: his row joins the active members here, or a search over the
+      // connected (walkRoll) would not find him until he reconnected.
+      if (presentNow.isPresent(out.peer.publicKey)) rememberActive(out.peer.publicKey);
       announceMember(out.peer.publicKey, seen.label || out.peer.publicLabel || '');
     }
     return out;
@@ -1856,8 +1566,8 @@ function createRelay(rootDir, deps) {
   // Grok's review asked for a new event instead, fearing a route would read
   // as a reconnect; Andy ruled route, and onRoute only merges (2026-09-22).
   //
-  // IT STOPS AT THE PARTNERSHIP (0019): partners' streams are skipped, and
-  // so is the member themself.
+  // Every member's stream but the member themself (0019). Only members hold
+  // a stream here.
   function announceMember(key, label) {
     var k = String(key || '').trim();
     if (!k) return 0;
@@ -1867,7 +1577,7 @@ function createRelay(rootDir, deps) {
     // the one lie this design cannot afford.
     if (presentNow.isPresent(k)) row.present = true;
     return presentNow.broadcast('route', row, function (id) {
-      return id !== k && !partnerIdentity(id);
+      return id !== k;
     });
   }
 
@@ -2027,8 +1737,9 @@ function createRelay(rootDir, deps) {
   // over a NAME. Deleted 2026-09-15 (R3).
   //
   // It existed for one caller, the owner badge, which now asks by KEY and
-  // signs nothing: /api/relay/key names the owner's key, and the node
-  // compares it with its own (ownerBadge.probe).
+  // signs nothing: the relay's card (the answer to a card ask, goal/G22.6)
+  // names the owner's key, and the node compares it with its own
+  // (ownerBadge.probe).
   //
   // THE REPORT DID NOT GO ANYWHERE. statusToOwner pushes it down the
   // owner's own stream on every open and every presence change, to one
@@ -2079,31 +1790,35 @@ function createRelay(rootDir, deps) {
   // deviceOffer, and the relay's own post() that carried it, were removed
   // by goal/G16.2 with the device enrolment they served.
 
-  // A PARTNER'S POST, HELD OPEN FOR ITS ANSWER (R13). By hash: what waits
-  // at this end is a connection, not a socket. Settles with the reply packet a stream would
-  // have carried — {hash, from, text, sig}, signed by this relay — or, when
-  // the time this relay granted runs out, with the refusal the partner
-  // would otherwise have learnt from its own timer.
-  var heldForPartner = Object.create(null);
+  // A POST HELD OPEN FOR ITS ANSWER (R13; goal/G22.6). By hash: what waits
+  // at this end is a connection, not a socket. A stranger holds no stream
+  // here, so its card ask, its claim and its post to a member are answered
+  // on the post itself; and the card ask and the claim are answered that way
+  // for everybody, so learning a relay's key or claiming a seat never needs
+  // a stream. Settles with the reply packet a stream would have carried —
+  // {hash, from, text, sig} — or, when the time this relay granted runs out,
+  // with the refusal the asker would otherwise have learnt from its own
+  // timer.
+  var heldOnPost = Object.create(null);
 
-  function holdForPartner(hash, grantedMs) {
+  function holdOnPost(hash, grantedMs) {
     return new Promise(function (resolve) {
       var slot = { resolve: resolve, timer: null };
-      heldForPartner[hash] = slot;
+      heldOnPost[hash] = slot;
       var wait = typeof grantedMs === 'number' && grantedMs > 0 ? grantedMs : routerTable.DEFAULT_TTL_MS;
       slot.timer = setTimeout(function () {
-        if (heldForPartner[hash] !== slot) return;
-        delete heldForPartner[hash];
+        if (heldOnPost[hash] !== slot) return;
+        delete heldOnPost[hash];
         resolve({ ok: false, status: 504, hash: hash, error: 'no answer yet' });
       }, wait);
       if (slot.timer && typeof slot.timer.unref === 'function') slot.timer.unref();
     });
   }
 
-  function settleForPartner(hash, packet) {
-    var slot = heldForPartner[hash];
+  function settleOnPost(hash, packet) {
+    var slot = heldOnPost[hash];
     if (!slot) return false;
-    delete heldForPartner[hash];
+    delete heldOnPost[hash];
     if (slot.timer) clearTimeout(slot.timer);
     slot.resolve(Object.assign({ ok: true, status: 200 }, packet));
     return true;
@@ -2237,12 +1952,7 @@ function createRelay(rootDir, deps) {
     }
 
     var label = labelOf(target);
-    // The row, and any partnership it carried: a removed member's relay is
-    // not this relay's partner either (as when the flag lived on the row).
-    store.transaction(function () {
-      store.members.remove(key);
-      store.partners.removeOwner(key);
-    });
+    store.members.remove(key);
 
     // A RING PURGE STOOD HERE — "their mail goes with them", because a
     // forget that leaves the letters behind is not forgetting. The
@@ -2324,9 +2034,10 @@ function createRelay(rootDir, deps) {
   //   Andy: "if `who` discloses the relay's key, why does the protocol
   //   forbid non-owner peers to obtain it as a destination?"
   //
-  // It did, and there was no protocol reason. The key is published
-  // unsigned at /api/relay/key — a node needs it to pin this box and to
-  // post THROUGH it — so the old refusal hid nothing. What it was really
+  // It did, and there was no protocol reason. The key is published to
+  // anybody who asks — a card ask on the one door since goal/G22.6 — since
+  // a node needs it to pin this box and to post THROUGH it, so the old
+  // refusal hid nothing. What it was really
   // doing was gating four owner verbs that check nothing themselves, all
   // in one undifferentiated `is this the owner`.
   //
@@ -2374,313 +2085,28 @@ function createRelay(rootDir, deps) {
   // asked by a peer and a verb nobody has heard of get the same answer,
   // so the set of things this box will do for somebody else is not
   // enumerable by asking.
-  // ── THE FORWARD'S HALF-FINISHED BUSINESS ─────────────────────────────
+  // ── THE PARTNER FORWARD AND THE CARRY ONWARD STOOD HERE ───────────────
   //
-  // A forward cannot be answered when it arrives: this relay has to ask
-  // one of its members and wait. What it must hold meanwhile — the
-  // function that answers the PARTNER who asked, and the originator and
-  // the partner that carried it, so the member who answers can be told the
-  // route back (cycle 3, NODE-AND-RELAY §9b) — rides IN the router's own
-  // entry as its `carry`, and expires with it (router.js `open`). In RAM,
-  // keyed by a hash nobody chose; not a route cache; never on disc.
-  //
-  // THERE WAS A `forwarding` MAP HERE until cycle 3. It was emptied only by
-  // a reply, so a forward whose member never answered stayed in RAM for
-  // good — while this comment said it was swept by the router's ttl.
+  // forwardToMine (a partner's `forward` verb, delivered to a member here),
+  // carryToPartner (a member's post wrapped and carried to a partner named
+  // by the sender's route hints), announceRoute, relayErrorToAsker and
+  // deliverForwardedReply. All of it rested on the partner roll — the only
+  // place a relay key had an address — and the roll is gone by Andy's
+  // decision (goal/G22.6, 2026-10-13): "Partnering as a permission goes ...
+  // a relay carries posts to its members from any relay". A post for one of
+  // this relay's members now arrives from its sender directly, on the one
+  // door, whoever the sender is (routePost); a relay carries nothing onward.
 
-  // inner hash -> { to, at } for a forward this relay sent to a partner.
-  // Only so that a signed reply can name the route it proved. In RAM,
-  // keyed by a hash derived from bytes, emptied on reply — or, when no reply
-  // comes, by relayErrorToAsker once askPartner settles (peerPost's wait).
-  var carrying = Object.create(null);
-
-  // WHAT A PARTNER'S FORWARD ACTUALLY DOES HERE.
-  //
-  // Returns an answer object to send back at once, or `null` when the
-  // packet is on its way to a member and the partner must wait.
-  function forwardToMine(packet, answerPartner, viaKey) {
-    var from = packet && packet.from;
-    var to = packet && packet.to;
-    var body = packet && packet.text;
-    var sig = packet && packet.sig;
-    if (!from || !to || typeof body !== 'string' || !body || !sig) {
-      return { ok: false, status: 400, error: 'forward needs from, to, text and sig' };
-    }
-    if (Buffer.byteLength(body, 'utf8') > MAX_ROUTED_TEXT) {
-      return { ok: false, status: 413, error: 'too big' };
-    }
-
-    // THE INNER SIGNATURE, VERIFIED HERE AND NOT TAKEN ON TRUST. The
-    // partner vouches by carrying it; this proves the sender it names
-    // actually signed these bytes, so a partner cannot put words in a
-    // real peer's mouth even if it wanted to.
-    var signed = auth.postSignatureFor(from, from, to, body, sig);
-    if (!signed) return { ok: false, status: 403, error: 'bad inner signature' };
-
-    // MY MEMBER, OR NOBODY. A forward is never re-forwarded: if this key
-    // is not on this box, the hunt ends here rather than going another
-    // hop. That is the one-hop rule as an absence of code.
-    var target = deviceIdentity(to);
-    if (!target) return { ok: false, status: 404, error: 'no such peer' };
-    if (!presentNow.isPresent(target.id)) {
-      return { ok: false, status: 503, error: 'peer not reachable' };
-    }
-
-    // THE HASH IS THE INNER ONE, derived from the bytes exactly as N1 and
-    // N2 each derive it (0011). Nobody sent it, and this relay arrives at
-    // the same number by holding the same packet — which is what lets the
-    // member's reply match a request it was never told the name of.
-    var innerHash = auth.requestHash(signed);
-    var opened = routes.open(innerHash, mineKey(), target.id, function () {
-      return presentNow.send(target.id, 'request', {
-        from: from, to: to, text: body, sig: sig,
-      });
-      // PARTNER CLASS. This opens under THIS relay's key, but the
-      // traffic is a partner's, and 0016 keeps it apart from a
-      // member's: a partner is another box whose behaviour we do not
-      // control, so it must not be able to spend the budget this relay
-      // needs to serve its own members.
-    }, { answer: answerPartner, from: from, at: String(viaKey || '') }, routerTable.PARTNER);
-    if (!opened || !opened.ok) return opened;
-
-    // ── `bytes` IS BYTES, NOW THAT `held` SITS BESIDE IT ──────────────
-    //
-    // It was `.length`, a count of UTF-16 units under a name that says
-    // bytes, and that was tolerable while nothing could contradict it. It
-    // is not tolerable now: a suite comparing `bytes` against
-    // Buffer.byteLength(held) would find them disagree on any non-ASCII
-    // payload, and the field that looks authoritative would be the wrong
-    // one. Found by spiritos-f6 reading this diff.
-    //
-    // This is the same defect the composer had this morning — `text.length`
-    // against a wire bound counted in bytes — and Andy's own reading of it:
-    // "the PACKAGE_MAX suffers from a problem similar to the HTTP endpoint
-    // issue". A quantity measured in the wrong unit under a name that
-    // claims otherwise. `trafficLog` still has it; that one is his call
-    // because it is a persisted field with readers.
-    // `held` is the string this relay is carrying, handed over unchanged.
-    // monitorEvent blanks it unless DEBUG is on, so the decision lives in
-    // one place and every call site simply says what it has.
-    monitorEvent('post', from, target.id, {
-      bytes: Buffer.byteLength(body, 'utf8'), hash: innerHash, via: 'partner', held: body,
-    });
-    return null;
-  }
-
-  // ── WRAPPING A MEMBER'S PACKET FOR A PARTNER ─────────────────────────
-  //
-  // The member's post is enclosed WHOLE — its own from, to, text and
-  // signature — as the text of an ordinary post from this relay to the
-  // partner. Same function, same signed shape, one level up: this relay
-  // is a client of the protocol here exactly as a node is, through the
-  // peerPost it already uses to ask partners to search.
-  //
-  // ── AND IT NEEDS TO BE TOLD WHERE TO SEND IT ─────────────────────────
-  //
-  // THE FIRST VERSION BROADCAST, AND WAS WRONG THREE TIMES OVER. It posted
-  // the wrapper to every partner in parallel and let the ones that do not
-  // hold the key refuse it. Andy, on each count:
-  //
-  //   — **Disclosure.** Every uninvolved partner receives a full copy of
-  //     a packet addressed to somebody else's member: from, to, text and
-  //     signature. A relay carries rather than reads, and that handed
-  //     N−1 relays something none of them had any business seeing.
-  //   — **Waste.** N posts for one delivery.
-  //   — *"and you burn your quota on all partners in parallel"* — and
-  //     this is the one that makes it FAIL rather than merely offend.
-  //     Each post lands in a different relay's PARTNER POOL, so nineteen
-  //     partners means nineteen pool units per forward, eighteen of them
-  //     spent on relays that can only answer `no such peer`. That is
-  //     `partners × members` returning as traffic after 0012 deleted it
-  //     as memory — and it is self-defeating, because a busy relay would
-  //     have its forwards throttled by partners it had been filling with
-  //     packets they could not use.
-  //
-  // SO THIS FAILS CLOSED. A forward goes to ONE named partner or nowhere.
-  //
-  // 0012 already said where the answer comes from — *"which partner comes
-  // from the node, which already has it"*. Until cycle 2 that hint had
-  // nowhere to ride and this door stayed shut. It rides now, as signed
-  // route hints beside the packet (routePost, partnerFromHints), and the
-  // relay picks ONE partner from them — still never a broadcast.
-  //
-  // Returns an answer to give the member now, or null when there is
-  // nothing to try — in which case the caller falls through to its own
-  // `no such peer`.
-  function carryToPartner(who, toToken, text, sig, atRelayKey, budgetMs) {
-    if (!askPartner || !atRelayKey) return null;
-    var list = (partners() || []).filter(function (p) {
-      return p.relayKey === atRelayKey;
-    });
-    // ONE, OR NONE. A named partner this box has actually promoted, or
-    // the caller falls through to `no such peer` as it always did.
-    if (list.length !== 1) return null;
-
-    // WILL IT FIT ONCE WRAPPED? Checked here, before anything is sent,
-    // because the wrapper below becomes the `text` of a post to the
-    // partner and is bounded there by MAX_ROUTED_TEXT. A packet that fits
-    // this hop but not the next would 413 at the far relay, after
-    // signing, where nothing can trim it (SURFACE.md §8). The sending node
-    // checks the same predicate at compose; this is the same rule, again,
-    // at the last place it can still be said honestly.
-    if (!limits.fitsWrapped(text, who.id, String(toToken), sig)) {
-      return { ok: false, status: 413, error: 'too big to tunnel' };
-    }
-
-    var signed = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
-    if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
-    var innerHash = auth.requestHash(signed);
-
-    // REGISTERED BEFORE IT LEAVES, exactly as a local post is: nothing
-    // goes out until the thing that will match its answer exists. The
-    // route's target is the far member, so when the reply comes back up
-    // the tunnel `routes.answer` checks it against the key the member
-    // actually replied with.
-    // WHAT IS LEFT FOR THE FAR SIDE. Undefined stays undefined: a caller
-    // that declared no budget is asking this box for its default, and has
-    // no opinion to pass on.
-    // AND NEVER MORE TIME THAN THIS RELAY WILL ACTUALLY HOLD THE ROUTE (S7,
-    // goal/G16.1). The budget passed on was the asker's minus one hop, with no
-    // reference to the router's own ceiling — so a generous asker was promised
-    // a window the route table would close first, and the far side spent
-    // effort on a reply that had nowhere to land. The router clamps its own
-    // entry (router.js, Math.min against ttlMs); this clamps what we PROMISE,
-    // so the promise and the table agree.
-    var onward = typeof budgetMs === 'number' && budgetMs > 0
-      ? Math.min(Math.max(0, budgetMs - HOP_MARGIN_MS), routes.ttlMs)
-      : undefined;
-
-    // AND REFUSE HERE IF THE FAR SIDE COULD NOT USE IT, which is the
-    // whole of "the next station down the chain better hurry" — applied
-    // one hop EARLIER than the station itself.
-    //
-    // The floor in `routes.open` guards what THIS box grants. It does not
-    // guard what this box is about to hand on, and those differ by
-    // HOP_MARGIN_MS: a 600 ms budget passes the local floor, leaves 100
-    // for the partner, and is refused at the far end — after a round trip
-    // spent learning something computable here. That is precisely the
-    // failure this design keeps removing, arriving in the one place it
-    // had not been looked for.
-    //
-    // So a forward that cannot leave the far side enough time is refused
-    // before anything crosses the wire. The asker hears the same answer
-    // either way; it just hears it now.
-    if (onward !== undefined && onward < routerTable.MIN_USEFUL_MS) {
-      return {
-        ok: false, status: 503,
-        error: 'not enough time to try',
-        tooLittleTime: true, wouldHave: onward,
-      };
-    }
-
-    var opened = routes.open(innerHash, who.id, String(toToken), function () {
-      var wrapper = JSON.stringify({
-        v: 1,
-        body: { forward: { from: who.id, to: String(toToken), text: text, sig: sig } },
-      });
-      var p = list[0];
-      askPartner(p.url, p.relayKey, wrapper, onward)
-        .then(function (answer) {
-          heardFrom(p.relayKey, answer);
-          var said = null;
-          try { said = JSON.parse((answer && answer.text) || ''); }
-          catch (e) { said = null; }
-          var out = (said && said.body) || null;
-          if (out && out.ok === true && out.forwarded) {
-            deliverForwardedReply(innerHash, out.forwarded);
-            return;
-          }
-          // THE ERROR TRAVELS DOWN THE CHAIN (Andy, 2026-09-19): the far
-          // relay refused — the target was not there, its reply was
-          // oversized — or said nothing at all. Either way the asking
-          // member hears it, rather than waiting out a silence.
-          relayErrorToAsker(innerHash, who.id,
-            (out && out.status) || (answer && answer.status) || 502,
-            (out && out.error) || (answer && answer.error) || 'the partner relay did not answer');
-        })
-        .catch(function () {
-          partnerMissed(p.relayKey);
-          relayErrorToAsker(innerHash, who.id, 502, 'the partner relay did not answer');
-        });
-      // It is on its way. Whether that partner holds the key is its
-      // answer to give, and saying `false` here would cancel the route
-      // the answer needs.
-    }, null, { kind: routerTable.MEMBER, ttlMs: budgetMs });
-    if (!opened || !opened.ok) return opened;
-
-    monitorEvent('post', who.id, String(toToken), {
-      bytes: Buffer.byteLength(text, 'utf8'), hash: innerHash, via: 'partner', held: text,
-    });
-    meterNote(text.length, false);
-    // Which partner this went to, so that a reply -- if one comes -- can
-    // say WHICH route was proven. Dropped as soon as it is used or the
-    // route expires; it is a fact about a request in flight, like the
-    // route table itself.
-    carrying[innerHash] = { to: String(toToken), at: list[0].relayKey };
-    return withStatus(opened, innerHash);
-  }
-
-  // The far member's reply, arriving as the answer to this relay's own
-  // post to a partner. NOT through routeReply, for the reason sendAnswer
-  // gives: that door begins with deviceIdentity, and the replier is not a
-  // member here. Everything else is identical — same table, same check
-  // that the replier is the route's target, same event on the requester's
-  // stream.
-  // -- A ROUTE THAT CARRIED A PACKET AND CAME BACK IS A FACT ----------
-  //
-  //   Andy: "what happens if the node, during a peer post, supplies
-  //   routes, the relay verifies the first one and it is valid: broadcast
-  //   then?"
-  //
-  // Yes -- and it dissolves the rule it looked like it was bending. The
-  // earlier boundary was about PROVENANCE: a route a member supplied was a
-  // hint, a route this relay found was a fact, and the first must never
-  // become the second. Verification makes provenance irrelevant, because
-  // **a false route cannot be verified.** The only thing anybody can get
-  // broadcast is a route that works, which is harmless by construction.
-  //
-  // THE BAR IS THE SIGNED REPLY, not the partner's acceptance. Acceptance
-  // proves only that a partner SAID it holds the key, which a partner that
-  // wanted to harvest packets would also say. A reply signed by the target
-  // key cannot be produced by anyone who does not hold that key -- so this
-  // threshold trusts nobody, including the partner that carried it.
-  //
-  // AND IT IS BROADCAST, NOT KEPT. This relay does not hold a route table
-  // (0012, 0013): it says what it learned and forgets, and the members
-  // that care write it down. A relay that rebooted is re-primed by them.
-  function announceRoute(innerHash, from) {
-    var carried = carrying[innerHash];
-    delete carrying[innerHash];
-    if (!carried || carried.to !== from) return;
-    presentNow.broadcast('route', { key: from, at: carried.at });
-  }
-
-  // ── AN ERROR FROM THE FAR SIDE, TOLD TO THE ONE WHO ASKED ─────────────
-  //
-  //   Andy: "before post arrives at N2 and an error occurs, only N1 will be
-  //   informed. If N2's reply exceeds size limit, then B will notify N2 of
-  //   its misconduct and send an error down the reply chain."
+  // ── THE RELAY'S OWN WORD FOR A ROUTE IT CLOSED ─────────────────────────
   //
   // NO NEW WORD ON THE WIRE. It goes as an ordinary `reply` for the same
-  // hash — but signed by THIS RELAY, `from` its own key, never N2's. A
-  // relay cannot manufacture N2's receipt and does not try: the asker's
-  // node sees a reply signed by somebody other than the target and knows
-  // it is the relay speaking (peerPost.onReply marks it `relayed`).
-  // Registered in 0010.
-  //
-  // The route is closed first, so a late answer from the far side has
-  // nothing left to settle and cannot be delivered twice.
-  function relayErrorToAsker(innerHash, requester, status, error) {
-    delete carrying[innerHash];
-    if (!routes.cancel(innerHash, requester)) return false;
-    monitorEvent('refused', requester, '', { why: String(error), hash: innerHash, via: 'partner' });
-    return replyAsRelay(innerHash, requester, status, error);
-  }
-
-  // The reply itself, for a route already closed by the caller. Shared by
-  // the partner error above and the stalled-reader cut (R35), which is
-  // the same situation seen from the other end: this relay knows the
-  // answer will not come, and says so for the hash the asker is holding.
+  // hash — but signed by THIS RELAY, `from` its own key, never the
+  // target's. A relay cannot manufacture the target's receipt and does not
+  // try: the asker's node sees a reply signed by somebody other than the
+  // target and knows it is the relay speaking (peerPost.onReply marks it
+  // `relayed`). Registered in 0010. Used by the stalled-reader cut (R35):
+  // this relay knows the answer will not come, and says so for the hash
+  // the asker is holding.
   function replyAsRelay(innerHash, requester, status, error) {
     var mine = auth.loadIdentity(rootDir);
     if (!mine || !mine.privateKey) return false;
@@ -2692,50 +2118,6 @@ function createRelay(rootDir, deps) {
       // The receipt covers the text it carries (S1, goal/G16.1), so even the
       // relay's own error cannot be swapped for another on the way.
       sig: auth.sign(mine.privateKey, auth.receiptMessage(innerHash, errorText)),
-    });
-  }
-
-  function deliverForwardedReply(innerHash, reply) {
-    var matched = routes.answer(innerHash, reply.from);
-    // A LATE OR STRAY REPLY LEAVES NOTHING BEHIND (S7, goal/G16.1): the
-    // carrying entry was kept until announceRoute or an error cleared it, so a
-    // reply that settled nothing left the hash in the table for the next
-    // answer at that key to be announced against.
-    if (!matched.ok) { delete carrying[innerHash]; return false; }
-
-    // ── AND IT IS PROVEN BEFORE IT IS BROADCAST (S2, goal/G16.1) ────────
-    //
-    // `routes.answer` proves WHO replied, which is what the comment below
-    // said and all it ever checked. It says nothing about WHAT they replied,
-    // and this relay then announced a route on the strength of it. A partner
-    // could carry a reply with the text rewritten and have this box tell
-    // every member, as a fact, which key to reach that peer at.
-    //
-    // The receipt covers the reply text since this item, so the text can be
-    // checked here against the signature the far end made. A reply that fails
-    // is the carrier's misconduct, not the asker's problem: the asker is told
-    // by this relay, in its own name, and no route is announced.
-    if (!auth.receiptSignatureOk(reply.from, innerHash, reply.text || '', reply.sig)) {
-      monitorEvent('refused', reply.from, matched.requester || '', { why: 'bad receipt on a forwarded reply', hash: innerHash, via: 'partner' });
-      relayErrorToAsker(innerHash, matched.requester || '', 502, 'the partner relay carried a reply that does not verify');
-      return false;
-    }
-    monitorEvent('reply', reply.from, matched.requester || '', {
-    // A SIZE IN THIS SYSTEM IS BYTES. Andy, 2026-09-26: "the payload cap is
-    // BYTES. that's the design, and the attitude, of node and relay." It was
-    // .length, a count of UTF-16 units under a name that says bytes, and it
-    // undercounted every non-ASCII payload.
-      bytes: Buffer.byteLength(reply.text || '', 'utf8'), hash: innerHash, via: 'partner',
-    });
-    // PROVEN, so everybody gets it. `routes.answer` has already checked
-    // that the replier is the key the route was opened for, which is what
-    // makes this a fact rather than a claim.
-    announceRoute(innerHash, reply.from);
-    return !!presentNow.send(matched.requester, 'reply', {
-      hash: innerHash,
-      from: reply.from,
-      text: reply.text || '',
-      sig: reply.sig,
     });
   }
 
@@ -2788,37 +2170,17 @@ function createRelay(rootDir, deps) {
   // sealed except the card" is a rule you can enforce by counting, while
   // "everything except the card and posts to the relay" needs a judgement
   // about every destination.
-  // ── THE ONE THING NOT SEALED YET, AND WHY (cycle 10, R9's rest) ─────
-  //
-  // A PARTNER IS NOT A MEMBER. It has no row in the roll and therefore no
-  // card, so this box has nowhere to read its cipher key from — and the
-  // partnership handshake, which is the natural place to carry one, does
-  // not carry keys today. Building that means changing how partnering
-  // works, which is partnership's cycle and not this one.
-  //
-  // WHAT IS AND IS NOT COVERED, precisely, so this is a scope line and
-  // not a hole somebody finds later:
-  //
-  //   SEALED    every packet a partner CARRIES — those are addressed to a
-  //             member and sealed to that member's card, so a partner
-  //             forwards what it cannot read. That is the property
-  //             PARTNERS.md always wanted, and it is the one that matters.
-  //   NOT YET   the wrapper around it: the instruction one relay gives
-  //             another (`search`, `forward`). Its contents are a query
-  //             and an envelope, never a person's words.
-  //
-  // The cost, said plainly: a proxy in front of either relay, and each
-  // relay's own terminator, can read WHICH members are being asked about.
-  // Not what anybody said.
-  function fromPartnerBox(who) { return !!(who && who.partner); }
+  // The partner wrapper's plaintext exception (fromPartnerBox) STOOD HERE:
+  // with partnering gone (goal/G22.6) nothing addressed to this box travels
+  // plain but the card ask.
 
   // OPENED ONCE, IN routePost (goal/G16.2). The question is opened there so
   // the one-verb rule below can refuse it before a route is opened, and the
   // opened text is handed here rather than opened a second time. `asked` is
   // { plain } or { refusal }; a refusal still leaves as an answer, as it
-  // always did.
+  // always did. A stranger's sealed claim opens the same way: sealed by the
+  // key that signed the post, to this relay's key.
   function openSelfAsk(text, who) {
-    if (fromPartnerBox(who)) return { plain: text };
     if (seal.isSealed(text)) {
       var mine = auth.loadIdentity(rootDir);
       var got = mine && seal.open(mine.sealPrivateKey, who && who.id, mine.publicKey, text);
@@ -2887,8 +2249,6 @@ function createRelay(rootDir, deps) {
   // check here. The worst it can do is lose one, and a lost card means
   // an answer it cannot seal — a refusal, never a plaintext answer.
   //
-  // A PARTNER IS NOT A MEMBER, so a partner's key is looked up where
-  // partner keys live; its cipher key came from its own signed door.
   // FROM RAM WHEN THEY ARE CONNECTED, which is every asker this is used
   // for: a relay answers the member who just posted, and a member who
   // posted is holding a stream. `findByKey` is the existing one-read
@@ -2903,12 +2263,14 @@ function createRelay(rootDir, deps) {
     return card.sealKey || '';
   }
 
-  function sealBack(mine, toKey, partner, text) {
-    // A partner gets the plain answer, for the reason given at
-    // `fromPartnerBox`: there is no card to seal to, and what travels is
-    // a query rather than anybody's words.
-    if (partner) return text;
-    var to = toKey && memberSealKey(toKey);
+  // `how.plain`: the card ask's answer, the one plaintext exception (Andy's
+  // decision, goal/G22.6: "One plaintext exception stays, the card ask").
+  // `how.sealKey`: the cipher key off the card a claim carried, verified
+  // against the key that signed it — a stranger has no row, so the claim's
+  // own card is the only place its key can come from.
+  function sealBack(mine, toKey, text, how) {
+    if (how && how.plain) return text;
+    var to = (how && how.sealKey) || (toKey && memberSealKey(toKey));
     var wrapped = to ? seal.seal(to, mine.publicKey, toKey, text) : null;
     return wrapped ? JSON.stringify(wrapped) : '';
   }
@@ -2919,14 +2281,14 @@ function createRelay(rootDir, deps) {
   // door as every verb's answer, with the same sealing and the same
   // receipt. A second exit would be a second protocol, and would be the
   // exit that quietly forgot to seal.
-  function sendSelfAnswer(hash, who, answer) {
+  function sendSelfAnswer(hash, who, answer, how) {
     var mine = auth.loadIdentity(rootDir);
     if (!mine || !mine.privateKey) return;
     // NO APP. A packet addressed to a relay has no app on any node to be
     // for, and the absence is what marks it as a system packet to
     // whoever decodes one. Andy: "nothing in node and relay should know
     // about apps."
-    var reply = sealBack(mine, who && who.id, fromPartnerBox(who), JSON.stringify({ v: 1, body: answer }));
+    var reply = sealBack(mine, who && who.id, JSON.stringify({ v: 1, body: answer }), how);
 
     // ── A REFUSAL IS HEARD EVEN WHEN IT CANNOT BE SEALED ─────────────
     //
@@ -2982,15 +2344,100 @@ function createRelay(rootDir, deps) {
       text: reply,
       sig: auth.sign(mine.privateKey, auth.receiptMessage(hash, reply)),
     };
-    // A PARTNER HOLDS NO STREAM (cycle 8's R13): its answer goes back as
-    // the reply to the post it asked with, which is still open, waiting.
-    if (settleForPartner(hash, packet)) return;
+    // A POST HELD FOR ITS ANSWER (holdOnPost) gets it as the reply to the
+    // post it asked with, which is still open, waiting; everybody else on
+    // their stream.
+    if (settleOnPost(hash, packet)) return;
     presentNow.send(matched.requester, 'reply', packet);
   }
 
-  // A card request is the one plain packet there is, and a relay answers
-  // `answerSelf` rather than a card — so this exists only to keep the
-  // refusal above from swallowing one, and to say so out loud.
+  // ── THE RELAY'S CARD: WHAT A CARD ASK IS ANSWERED WITH (goal/G22.6) ────
+  //
+  // Andy's decision (goal/G22.6, 2026-10-13): the door answers a card ask
+  // from a key it does not know "with the relay's key", and "there is no
+  // separate key request". So this is what the closed public key route answered,
+  // moved onto the one door: the identity key, the cipher key posts to it
+  // are sealed to, the signature over both and the label, its owner, and
+  // what it will carry. Self-signed, so it settles tampering and not
+  // introduction; a node pins it (answerRelay.js, relayKeys.js).
+  //
+  // `payloadMax` lets a sender tell "too big for me" from "too big for THAT
+  // box". It can only make a sender send less, so it needs no signature.
+  function relayCard() {
+    var own = ownerPublic();
+    return {
+      ok: true,
+      status: 200,
+      relayPublicKey: relayPublicKey(),
+      relaySealKey: relaySealKey(),
+      keySig: relayKeyStatement(),
+      relayLabel: relayLabel(),
+      ownerKey: own.ownerKey,
+      ownerLabel: own.ownerLabel,
+      payloadMax: limits.PAYLOAD_MAX,
+    };
+  }
+
+  // A CLAIM AND NOTHING ELSE: one verb, `claim` (goal/G16.2's one-verb rule
+  // already refused anything riding beside it).
+  function isClaimAsk(plain) {
+    var parsed = null;
+    try { parsed = JSON.parse(String(plain || '')); }
+    catch (e) { return false; }
+    var body = parsed && parsed.body;
+    return !!(body && typeof body === 'object' && body.claim && typeof body.claim === 'object' &&
+      Object.keys(body).length === 1);
+  }
+
+  // THE RELAY'S PUBLIC SERVICES: its card and a claim (Andy's decision,
+  // goal/G22.6). The only things a key this relay does not hold may ask it.
+  function isPublicAsk(plain) {
+    return isCardAsk(plain) || isClaimAsk(plain);
+  }
+
+  // ── A PUBLIC SERVICE, ANSWERED ON ITS OWN POST (goal/G22.6) ────────────
+  //
+  // For anybody — a stranger, the owner before he holds a row, a member
+  // claiming again — and always on the post that asked (holdOnPost), so
+  // neither learning the relay's key nor claiming a seat needs a stream.
+  //
+  // THE CLAIM KEEPS ITS INNER SIGNATURE (Andy's decision): `relay.claim`
+  // still verifies claimMessage(name) against the key it names, exactly as
+  // the closed public claim route did. And THE KEY THAT SIGNED THE POST IS THE KEY
+  // THAT CLAIMS — the check that route made on the sealing key — so nobody
+  // can carry a claim on behalf of a key they do not hold.
+  function answerPublic(hash, plain, who) {
+    if (isCardAsk(plain)) return sendSelfAnswer(hash, who, relayCard(), { plain: true });
+    var claimed = null;
+    try { claimed = JSON.parse(plain).body.claim; } catch (e) { claimed = null; }
+    var c = claimed || {};
+    var out;
+    if (String(c.publicKey || '') !== who.id) {
+      out = { ok: false, status: 403, error: 'the claim names a different key than the one that signed it' };
+    } else {
+      // The invite label rides beside the name: `name` is what this key
+      // wants to be called, `inviteLabel` the word the owner wrote on the
+      // invite (R1, 2026-09-15). The address the claim came from is no
+      // longer read: the address table held it at the door.
+      var result = claim(c.name, c.sig, c.publicKey, '', c.invite, c.inviteLabel, c.card);
+      out = {
+        ok: !!(result && result.ok),
+        status: (result && result.status) || 500,
+        // A 409 carries the peer already there, so the caller can tell
+        // "that key is mine already" from a refusal. The key is public.
+        peer: (result && result.peer) || undefined,
+        error: result && !result.ok ? result.error : undefined,
+      };
+    }
+    // Sealed to the card the claim carried, verified against the key that
+    // signed it; a member re-claiming without one is sealed to its row's.
+    var offered = typeof c.card === 'string' ? nodeCard.verify(c.card) : null;
+    var sealKey = offered && offered.publicKey === who.id ? offered.sealKey : '';
+    return sendSelfAnswer(hash, who, out, { sealKey: sealKey });
+  }
+
+  // A card request is the one plain packet there is. A relay answers it
+  // with its own card (relayCard, goal/G22.6), on the post that asked.
   function isCardAsk(text) {
     var parsed = null;
     try { parsed = JSON.parse(String(text || '')); }
@@ -3008,58 +2455,13 @@ function createRelay(rootDir, deps) {
     var body = (asked && asked.body) || null;
     var out = { ok: false, status: 404, error: 'no such peer' };
     var owner = isOwner(who);
-    var fromPartner = !!(who && who.partner);
-    // Set by the search branch when this relay must also ask its partners.
-    // Null for every other verb and for a partner-asked search, which is
-    // how the one-hop rule is carried from the gate to the send.
-    var pendingSearch = null;
     // Set by the search branch: a roll walk to run before anything is sent.
     var searching = null;
 
-    // ── WHAT A PARTNER MAY ASK, WHICH IS ONE THING ────────────────────
-    //
-    // Only `search`, and the answer is this relay's own members. Every
-    // other verb falls through to the same `no such peer` a stranger
-    // gets, so the set of things this box will do for a partner is not
-    // enumerable by asking — the same rule that already governs an
-    // ordinary member asking an owner verb.
-    // Dropping `body` rather than returning early, so the refusal leaves
-    // by the same door every other answer does — one send, at the foot of
-    // this function, with `out` still the default `no such peer`. An early
-    // return here would be a second exit that silently answered nothing.
-    // ── WHAT A PARTNER MAY ASK, AND IT IS A LIST OF TWO ──────────────
-    //
-    // `search` — a question about this relay's own members, answered by
-    // this relay. `forward` — carry an enclosed packet to one of this
-    // relay's members and bring back what they say.
-    //
-    // THERE IS NO THIRD, AND NO "GIVE ME YOUR MEMBERS"
-    // (decisions/0012). Everything else falls through to the same
-    // `no such peer` a stranger gets, so the set of things this box will
-    // do for a partner is not enumerable by asking.
-    if (fromPartner && !(body && (body.search || body.forward))) body = null;
-
-    // ── WHO THIS RELAY PARTNERS WITH — ANY MEMBER MAY ASK ──────────────
-    //
-    //   Andy: "we want to prove that with a partnership more peer id's
-    //   can be visible for every node bound to either partner."
-    //
-    // EVERY node bound here, which is why this is not owner-gated. The
-    // partner list already reaches the owner inside `relayStatus`; an
-    // ordinary member could see nothing, so "more identities visible"
-    // was true for exactly one person per relay.
-    //
-    // WHAT A MEMBER GETS, and it is less than the owner's view: where the
-    // partner is and which key it signs with. Not `ownerKey`, not the
-    // label this relay's owner filed it under, and none of the running
-    // stats — those are the owner's reading of a relationship they
-    // entered. A member needs the address to go and look, and the key to
-    // know what it is looking at.
-    //
-    // NOT ON ANY PUBLIC ROUTE, deliberately. A member learns the reach
-    // they were given by joining; a stranger reading /api/relay/key
-    // learns nothing about who this box talks to. Publishing the mesh is
-    // a different decision and nobody has taken it.
+    // WHAT A PARTNER MAY ASK (search, forward) and the `partners` verb
+    // STOOD HERE; partnering is gone (goal/G22.6). A key this relay does
+    // not hold never reaches this function: the door answers it the card
+    // ask and a claim (answerPublic) and refuses it everything else.
     // ── SEARCH, BECAUSE A LIST DOES NOT SCALE ──────────────────────────
     //
     //   Andy: "This approach will not be sustainable if there's even just
@@ -3071,9 +2473,9 @@ function createRelay(rootDir, deps) {
     // relay to render something nobody can read. So the relay answers the
     // question instead of shipping the material to answer it with.
     //
-    // ANY MEMBER MAY ASK, like `partners` above. The roll is already
-    // public in full, so a search over it gives away nothing new — what it
-    // saves is the transfer, and that saving is the entire point.
+    // ANY MEMBER MAY ASK. The roll is already public in full, so a search
+    // over it gives away nothing new — what it saves is the transfer, and
+    // that saving is the entire point.
     //
     // A FLOOR ON THE QUERY, because substring matching with no floor is
     // the roll again with extra steps: `a` would return everybody.
@@ -3083,54 +2485,10 @@ function createRelay(rootDir, deps) {
     // local handle. A search that implied "this is the john you meant"
     // would be the thing R1 exists to prevent.
     //
-    // Own members only, for now. Partner space becomes searchable when
-    // this relay holds its partners' members — tier two, the stream — and
-    // the shape of this answer does not change when it does.
-    // ── CARRYING A PACKET TO ONE OF MY OWN MEMBERS ───────────────────
-    //
-    //   Andy: "the A↔B protocol is an exact duplicate of the N1→A
-    //   protocol, but in both directions. AND the A↔B protocol simply
-    //   tunnels the N1→A and the N2→B protocol to the other partner."
-    //
-    // The enclosed packet is N1's, untouched: its own `from`, `to`, text
-    // and signature, exactly as N1 signed them. This relay verifies that
-    // signature and then behaves as though N1 had posted here directly —
-    // because, in every way that matters to the member receiving it, N1
-    // did.
-    //
-    // WHY THERE IS NO CERT (Andy: "the tunnel is the cheap implementation
-    // of the cheap cert"). Two signatures are already on the wire and
-    // between them they carry what a membership certificate was proposed
-    // to carry: the INNER proves N1 authored this and that the partner
-    // cannot have forged it, and the OUTER — checked before this function
-    // was reached, against the key pinned at promotion — proves a partner
-    // this box chose is vouching by carrying it. A self-signed claim of
-    // membership would add nothing, because only the partner's agreement
-    // makes such a claim true and the outer signature IS that agreement.
-    //
-    // ONE HOP, STRUCTURALLY. A forward is only accepted FROM a partner,
-    // and a forward is only ever delivered to one of this relay's OWN
-    // members — it is never re-forwarded. There is no second hop to
-    // refuse because there is no code that could take one.
-    if (body && body.forward && fromPartner) {
-      out = forwardToMine(body.forward, sendAnswer, who.id);
-      if (out === null) return;   // delivered; the answer comes when N2 replies
-    } else if (body && body.search) {
+    // OWN MEMBERS ONLY. The fan-out to partner relays and the merge of
+    // their answers went with partnering (goal/G22.6).
+    if (body && body.search) {
       var q = String((body.search.q) || '').trim().toLowerCase();
-
-      // ── ONE HOP, FULL STOP — ENFORCED, NOT DOCUMENTED ───────────────
-      //
-      // A member asking is answered from this relay's members AND from
-      // its partners. A PARTNER asking is answered from this relay's
-      // members alone, and never asks anyone else.
-      //
-      // That is the whole of no-transitivity, and it is enforceable here
-      // precisely because the two askers are distinguishable: without the
-      // partner gate above, a forwarded search would be indistinguishable
-      // from a member's and would fan out again, which is
-      // `partners x partners x members` and the arithmetic that kills a
-      // 1 GB box (PARTNERS.md).
-      var propagate = !fromPartner;
 
       // ── NO FLOOR. "a" IS A QUESTION AND IT HAS AN ANSWER ───────────
       //
@@ -3170,14 +2528,14 @@ function createRelay(rootDir, deps) {
         // a search over a large roll never stalls every other request on
         // this relay. The answer is composed when the walk ends —
         // `searching` hands the rest of this function to it.
-        searching = { q: q, propagate: propagate };
+        searching = { q: q };
       }
     }
 
     // What the walk produced, turned into this relay's answer. Only the
     // timing moved: this ran inline, straight after the walk, until the
     // walk stopped blocking.
-    function composeSearch(found, q, propagate) {
+    function composeSearch(found) {
         // ONE BUCKET, offered every row. Never a list of everyone — this
         // relay may hold a million members and `q` may be one letter.
         var matches = found.matches.map(function (row) {
@@ -3195,24 +2553,12 @@ function createRelay(rootDir, deps) {
         });
         var more = found.more;
 
-        // A MEMBER'S SEARCH IS NOT FINISHED YET. `propagate` is false for
-        // a partner asking, so their answer leaves immediately below and
-        // goes no further — one hop. For a member, this hands the send the
-        // rows this relay found and the query they were found with, and
-        // the answer waits for the partners.
-        if (propagate) {
-          pendingSearch = { q: q, mine: found.matches, more: more };
-        }
-
         // `more` rather than a page: a caller who sees it types another
         // letter, which is cheaper for everybody than a cursor — and with
         // results ordered by quality, the ones that did not fit are the
         // ones they wanted least. That now covers two kinds of "did not
         // fit": too many for the slots, and too many for the wire.
-        // The local answer has no `vias` -- nothing merged, so no row
-        // grew -- and its size is the ordinary one that always fitted.
-        // Checked anyway, because "it has always fitted" is what was true
-        // of the merged answer too.
+        // Cut to what fits the envelope this relay is about to send.
         var localFit = [];
         var localCut = false;
         for (var mi = 0; mi < matches.length; mi += 1) {
@@ -3226,15 +2572,6 @@ function createRelay(rootDir, deps) {
           more: more || localCut,
           matches: localFit,
         };
-    }
-    if (body && body.partners) {
-      out = {
-        ok: true,
-        status: 200,
-        partners: partners().map(function (p) {
-          return { url: p.url, relayKey: p.relayKey, since: p.since };
-        }),
-      };
     }
 
     // ── A MEMBER HANDS OVER ITS CARD (cycle 10, R20) ──────────────────
@@ -3443,31 +2780,9 @@ function createRelay(rootDir, deps) {
       out = reconfigure(body.config);
     }
 
-    // ── PARTNERSHIP, AND THE PROOF WAS READ BEFORE IT GOT HERE ──────
-    //
-    // Owner-only: who this relay partners with is the owner's decision
-    // about their own box, the same class as naming it.
-    //
-    // The reciprocity — that this peer really owns the relay at that url
-    // — was checked against that relay's PUBLIC key door by the owner's
-    // node before this post was signed. It is not re-checked here because
-    // a relay makes no outbound request, and because nothing about the
-    // check needs privilege: `/api/relay/key` (its `ownerKey`) is readable
-    // by anyone, which is what makes the node's report trustworthy rather
-    // than merely trusted.
-    if (body && body.partner && owner) {
-      out = setPartner(
-        who,
-        String(body.partner.key || ''),
-        String(body.partner.url || ''),
-        String(body.partner.relayKey || ''),
-        hash
-      );
-    }
-
-    if (body && body.unpartner && owner) {
-      out = clearPartner(who, String(body.unpartner.key || ''), hash);
-    }
+    // The owner's `partner` and `unpartner` verbs STOOD HERE. Partnering as
+    // a permission is gone (Andy's decision, goal/G22.6); asked now, they
+    // fall through to `no such peer` like any verb nobody has heard of.
 
     // `body.lever` — the owner's lever verb — STOOD HERE, deleted with the
     // Governor (cycle 8). Nothing is left to move; a lever is a gauge now.
@@ -3499,140 +2814,23 @@ function createRelay(rootDir, deps) {
     // key at all. The door it opened stays open: removing yourself is
     // still an own-row verb, and that is what keeps the gate honest.
 
-    // ── SENDING IS A FUNCTION NOW, because an answer can arrive late ──
+    // ── SENT WHEN THE ANSWER EXISTS ────────────────────────────────────
     //
-    // Everything answerSelf does is immediate except one thing: a search
-    // asked BY A MEMBER is also asked of this relay's partners, and their
-    // replies come back as the replies to its posts, whenever they come (R13). So the
-    // reply is sent by calling this rather than by falling off the end.
-    //
-    // Every other verb calls it at once and behaves exactly as before.
-    // THE BODY OF THIS MOVED OUT (cycle 10, R5) to `sendSelfAnswer`, so
-    // that the refusals `answerSelf` makes before any verb runs leave by
-    // the same door, sealed the same way. This is the name the verbs
-    // below call it by, and it carries the two things they do not have to
-    // repeat: which post is being answered, and who asked.
-    function sendAnswer(answer) {
-      sendSelfAnswer(hash, who, answer);
-    }
-
-    // ── ASK THE PARTNERS, AND MERGE WHAT COMES BACK ──────────────────
-    //
-    //   Andy: "search must be member gated. on propagated search is
-    //   partner gated."
-    //
-    // A MEMBER asking is answered from this relay AND its partners. A
-    // PARTNER asking is answered from this relay alone and asks nobody —
-    // `propagate` is false for them, which is the one-hop rule enforced
-    // rather than documented.
-    //
-    // THE MERGER DOES NOT TRUST ORDER. Each partner ranked its own reply
-    // with its own copy of peerSearch, at whatever version it is running,
-    // and concatenating sorted lists gives a list sorted by nothing. Every
-    // row is graded again here, which is also the only way a cap across
-    // the merged set means anything.
-    //
-    // A partner that is slow, down, or refuses contributes nothing and is
-    // not an error. The member gets this relay's own answer either way,
-    // which is what it would have got yesterday.
+    // Every verb answers at once except search, which answers when its walk
+    // of the connected members ends. The partner fan-out that also waited
+    // here went with partnering (goal/G22.6).
     if (searching) {
       walkRoll(searching.q, function (found) {
         if (!found) {
           out = { ok: false, status: 503, error: 'search failed' };
         } else {
-          composeSearch(found, searching.q, searching.propagate);
+          composeSearch(found);
         }
-        finish();
+        sendSelfAnswer(hash, who, out);
       });
       return;
     }
-    finish();
-
-    function finish() {
-    if (pendingSearch) {
-      // LIVE PARTNERS ONLY (cycle 3, NODE-AND-RELAY §10, decided by Andy).
-      // Live was "holds its stream here now" until R13 took the streams
-      // away; it is now "answered within fifteen minutes, or has not failed
-      // its one try since" (partnerLive). Asking one that is down held
-      // every search for the full timeout (the answer waits on all of
-      // them); leaving it out loses no more than search already gave up
-      // against a roll.
-      var partnerList = askPartner
-        ? (partners() || []).filter(partnerLive)
-        : [];
-      if (!partnerList.length) {
-        sendAnswer(out);
-        return;
-      }
-
-      var asked = partnerList.map(function (p) {
-        var text = JSON.stringify({ v: 1, body: { search: { q: pendingSearch.q } } });
-        return askPartner(p.url, p.relayKey, text)
-          .then(function (answer) {
-            heardFrom(p.relayKey, answer);
-            var said = null;
-            try { said = JSON.parse((answer && answer.text) || ''); }
-            catch (e) { said = null; }
-            var body = (said && said.body) || {};
-            if (!body || body.ok !== true) return null;
-            // A partner on an older release still answers its offline
-            // members, marked `present: false`. Online only is this relay's
-            // answer whoever else contributed (walkRoll), so those rows
-            // stop here; a row with no `present` is from a relay that
-            // only answers the connected.
-            var rows = (Array.isArray(body.matches) ? body.matches : [])
-              .filter(function (r) { return r && r.present !== false; });
-            return { via: p.relayKey, rows: rows };
-          })
-          .catch(function () { partnerMissed(p.relayKey); return null; });
-      });
-
-      Promise.all(asked).then(function (answers) {
-        var sources = [{ via: null, rows: pendingSearch.mine }];
-        var more = pendingSearch.more;
-        answers.forEach(function (a) {
-          if (!a) return;
-          sources.push(a);
-        });
-        // THE BUDGET GOES IN, AND WHAT COMES BACK FITS. peerSearch knows
-        // what a row is on the wire -- it is the module that puts `via`
-        // and `vias` on one -- so it is the module that can measure one.
-        var merged = peerSearch.merge(
-          sources, pendingSearch.q, peerSearch.SLOTS, MATCH_BUDGET);
-
-        sendAnswer({
-          ok: true,
-          status: 200,
-          more: more || merged.more,
-          matches: merged.matches.map(function (row) {
-            return {
-              publicKey: row.publicKey,
-              publicLabel: row.publicLabel,
-              claimedAt: row.claimedAt,
-              // WHICH PARTNER SUPPLIED IT. Andy: "it must accompany the
-              // found records with the partner ID supplying that result
-              // record" -- the thread a node follows to record a route.
-              via: row.via || undefined,
-              // AND EVERY OTHER RELAY IT WAS FOUND ON. Andy: "if you pay
-              // the price for search, may as well get valuable, cachable
-              // routing info with it." The fan-out already asked every
-              // partner and every answer already arrived; the merger used
-              // to keep the best row and discard the knowledge that three
-              // other relays hold the same peer.
-              //
-              // Absent when there is only one, so an ordinary answer is
-              // the same bytes it always was. `null` inside it means THIS
-              // relay, which a node already knows the identity of.
-              vias: (row.vias && row.vias.length > 1) ? row.vias : undefined,
-            };
-          }),
-        });
-      });
-      return;
-    }
-
-    sendAnswer(out);
-    }
+    sendSelfAnswer(hash, who, out);
   }
 
   // ── THE CONNECTED MEMBERS, WALKED WITHOUT BLOCKING ───────────────────
@@ -3682,46 +2880,10 @@ function createRelay(rootDir, deps) {
     })();
   }
 
-  // ── WHICH PARTNER, FROM THE SENDER'S HINTS (cycle 2) ─────────────────
+  // partnerFromHints STOOD HERE: which partner a member's signed route
+  // hints named. With no partner roll there is nobody to carry to, and the
+  // hints are no longer read (goal/G22.6).
   //
-  //   Andy: "1. live partners 2. minted partners 3. non-minted,
-  //   immediately returns error ('minting incomplete')."
-  //
-  // The hints are the sender's: the relays its contact is enrolled at,
-  // from the node's own contact row (0012 — the node has the answer). This
-  // relay knows which of them it partners with and which of those are
-  // live, so the ORDER is its call. It picks ONE — a forward goes to one
-  // named partner or nowhere (partnerTunnel.js, "never a broadcast") — and
-  // does not fall back to a second on failure: a refused forward is the
-  // sender's news, not a reason to disclose the packet to another relay.
-  //
-  // Live = answered within fifteen minutes, or not yet failed its one try
-  // since (partnerLive, R13). It was "holds its own stream to this relay"
-  // until the streams went. Either way a partner that is not live is still
-  // chosen when it is the only one named: the order is a preference, never
-  // a refusal.
-  function partnerFromHints(hints) {
-    var mine = (partners() || []);
-    var named = hints.filter(function (k) {
-      return mine.some(function (p) { return p.relayKey === k; });
-    });
-    var live = named.filter(function (k) {
-      return partnerLive(mine.filter(function (p) { return p.relayKey === k; })[0]);
-    });
-    return live[0] || named[0] || null;
-  }
-
-  // THE FIFTH ARGUMENT NAMES THE PARTNER, and it has two shapes:
-  //
-  //   a string       a partner key, trusted — the in-process hook the
-  //                  partner suites drive this path through
-  //   { hints, hintSig }   what the public route passes (cycle 2): the
-  //                  sender's route hints, signed beside the packet and
-  //                  verified here before this relay acts on them
-  //
-  // Until cycle 2 nothing on the wire supplied either, and forwarding was
-  // inert from outside. The hints are consumed here and never forwarded:
-  // the far hop receives `{from,to,text,sig}` byte for byte (SURFACE.md §8).
   // ── THE ORIGINATOR'S BUDGET, TIGHTENING INWARD ───────────────────────
   //
   //   Andy: "N1 sets a limit on its patience, which gets reduced down the
@@ -3738,43 +2900,54 @@ function createRelay(rootDir, deps) {
   // the number can only ever buy LESS than the box already allows. A hold
   // time a member could lengthen would not be a limit, it would be a
   // default.
-  function routePost(fromToken, toToken, text, sig, route, budgetMs) {
-    var atRelayKey = typeof route === 'string' ? route : null;
-    var hints = route && typeof route === 'object' && Array.isArray(route.hints) ? route.hints : null;
-    // A MEMBER, OR A PARTNER RELAY. In that order, because a member is the
-    // ordinary case and a partner key can never also be a member row.
-    //
-    //   Andy: "search must be member gated. on propagated search is
-    //   partner gated."
-    //
-    // Two gates, two authorities. Everything below still verifies the
-    // signature against whichever key was resolved, so admitting a partner
-    // here widens WHO may speak and nothing about what they may say —
-    // answerSelf decides that, per verb.
-    var who = deviceIdentity(fromToken) || partnerIdentity(fromToken);
-    // The refusal names the SENDER (goal/G19.1, Andy), the same on the post,
-    // the reply and the stream: an evicted node's peerPost acts on it.
-    if (!who) return { ok: false, status: 403, error: 'your id is not a valid sender here' };
+  //
+  // `clientKey` is the address the post came from (relayServer.js), read
+  // only for a sender this relay does not hold: the strangers' table.
+  function routePost(fromToken, toToken, text, sig, budgetMs, clientKey) {
+    var to = String(toToken == null ? '' : toToken);
+    // AN EMPTY TARGET IS THIS BOX (Andy's decision, goal/G22.6): "A stranger
+    // addresses the relay itself with an empty target (to: \"\"), since it
+    // does not know the relay's key yet."
+    var selfAddressed = to === '' || postedToSelf(to);
+    var target = selfAddressed ? null : deviceIdentity(to);
 
-    // A PARTNER MAY ONLY ADDRESS THIS BOX. It is not a member, so it has
-    // no business routing to this relay's members: that would be the
-    // second hop PARTNERS.md forbids, arriving by the side door. One hop
-    // means a partner talks to the RELAY and the relay talks to its own.
-    if (who.partner && !postedToSelf(toToken)) {
-      return { ok: false, status: 403, error: 'no such peer' };
+    // ── WHO IS ASKING: A MEMBER, OR A STRANGER ────────────────────────
+    //
+    // Andy's decision (goal/G22.6, 2026-10-13): "The door first looks at
+    // packets addressed to the relay itself: one from an unknown key is
+    // read and answered if it is the card ask (answered with the relay's
+    // key) or a claim, and refused otherwise; only packets for others need
+    // a known sender." And "a relay carries posts to its members from any
+    // relay". So a key this relay does not hold may post to THIS BOX (its
+    // public services, decided below once the post is opened) and to one
+    // of THIS RELAY'S MEMBERS. A post for anybody else needs a sender this
+    // relay holds: it is refused with the sentence that names the sender
+    // (goal/G19.1), the same on the post, the reply and the stream.
+    var who = deviceIdentity(fromToken);
+    if (!who) {
+      var strangerKey = String(fromToken == null ? '' : fromToken).trim();
+      if (!strangerKey || (!selfAddressed && !target)) {
+        return { ok: false, status: 403, error: 'your id is not a valid sender here' };
+      }
+      // HELD BY ITS ADDRESS, FIRST (strangerAdmit; Andy's address table).
+      var admitted = strangerAdmit(clientKey);
+      if (!admitted.ok) {
+        monitorEvent('refused', strangerKey, to, { why: admitted.busy ? 'busy' : 'too early' });
+        return admitted;
+      }
+      who = { id: strangerKey, publicKey: strangerKey, owner: false, stranger: true };
     }
 
-    // ── ONE LIMIT, FOR EVERY POST THIS BOX CARRIES ───────────────────
+    // ── ONE LIMIT, FOR EVERY POST A MEMBER SENDS ─────────────────────
     //
     //   Andy: "the relay-to-relay hop is just normal protocol-compliant
     //   traffic, like all other traffic... measurable, throttleable."
     //
-    // ABOVE THE postedToSelf BRANCH ON PURPOSE. It sat below it for an
-    // hour and that was a special case arriving by accident: a partner's
-    // search and a member's verb both address the BOX, take the early
-    // return, and were neither counted nor capped. A relay that meters
-    // packets to its members and not packets to itself is measuring the
-    // half of its work that is easiest to measure.
+    // ABOVE THE self-addressed BRANCH ON PURPOSE: a member's verb addresses
+    // the BOX, and a relay that meters packets to its members and not
+    // packets to itself is measuring the half of its work that is easiest
+    // to measure. A stranger is not charged here: the address table above
+    // holds it.
     //
     // AFTER THE SIGNATURE, NOT BEFORE IT (goal/G16.2, S4 of the review of
     // 2026-10-10). It sat first, so a flood could not make this box verify
@@ -3785,9 +2958,9 @@ function createRelay(rootDir, deps) {
     // after the signature check". So the post is proven first, once, over
     // the key it is addressed to, and only a proven sender is charged.
     //
-    // KEYED ON THE RESOLVED SENDER — a member key or a
-    // partner's relay key — never on anything the sender chose. The note
-    // on the old send limit is the reason, and is worth not relearning:
+    // KEYED ON THE RESOLVED SENDER — a member key — never on anything the
+    // sender chose. The note on the old send limit is the reason, and is
+    // worth not relearning:
     // "30 sends per minute per name, with the name chosen by the sender,
     // is 30 per minute per made-up string — rotate it and the budget
     // resets, which is exactly what an abuser does and never what a real
@@ -3798,27 +2971,22 @@ function createRelay(rootDir, deps) {
     // it is temporary, and a client that knows the cap
     // waits instead of guessing.
     // THE PROOF. Over the key the post is addressed to, as the sender signed
-    // it: this relay's own key for a question to itself, the member's
-    // canonical key for a member, and the token as given for a key this box
-    // does not hold (the carry path signs over the same).
-    var selfAddressed = postedToSelf(toToken);
-    var target = selfAddressed ? null : deviceIdentity(toToken);
-    var signed = auth.postSignatureFor(who.publicKey, who.id,
-      target ? target.id : String(toToken), text, sig);
+    // it: this relay's own key (or the empty target) for a question to
+    // itself, the member's canonical key for a member, and the token as
+    // given for a key this box does not hold.
+    var signed = null;
+    try {
+      signed = auth.postSignatureFor(who.publicKey, who.id, target ? target.id : to, text, sig);
+    } catch (e) { signed = null; }
     if (!signed) return { ok: false, status: 403, error: 'bad post signature' };
 
-    var fromPartner = !!who.partner;
-    var pool = fromPartner ? partnerHits : memberHits;
-    var perMin = fromPartner ? partnerPerMin() : MEMBER_PER_MIN;
-    if (!rateOk(pool, who.id, perMin)) {
-      monitorEvent('refused', who.id, String(toToken), {
-        why: 'rate', pool: fromPartner ? 'partner' : 'member',
-      });
+    if (!who.stranger && !rateOk(memberHits, who.id, MEMBER_PER_MIN)) {
+      monitorEvent('refused', who.id, to, { why: 'rate', pool: 'member' });
       return {
         ok: false, status: 429,
-        error: 'too many posts — limit is ' + perMin + ' a minute',
-        perMin: perMin,
-        pool: fromPartner ? 'partner' : 'member',
+        error: 'too many posts — limit is ' + MEMBER_PER_MIN + ' a minute',
+        perMin: MEMBER_PER_MIN,
+        pool: 'member',
       };
     }
 
@@ -3853,60 +3021,48 @@ function createRelay(rootDir, deps) {
       if (asked.plain != null && selfAskVerbCount(asked.plain) > 1) {
         return { ok: false, status: 400, error: 'one verb per request' };
       }
+      // THE PUBLIC SERVICES, AND ONLY THEY, FOR A STRANGER (Andy's
+      // decision, goal/G22.6): the card ask and a claim. Anything else from
+      // a key this relay does not hold is refused with the sentence that
+      // names the sender. A post that did not open is told so, on its post.
+      var isPublic = asked.plain != null && isPublicAsk(asked.plain);
+      if (who.stranger && !isPublic) {
+        if (asked.refusal) return asked.refusal;
+        monitorEvent('refused', who.id, mineKey(), { why: 'not a public service' });
+        return { ok: false, status: 403, error: 'your id is not a valid sender here' };
+      }
       var selfHash = auth.requestHash(selfSigned);
-      // A PARTNER THAT ASKS IS A PARTNER THAT IS UP (R42). Stamped as an
-      // answer is — R12's `last`, the bench cleared, and "back" said if it
-      // had been said gone — so a partnership revives the moment EITHER
-      // side speaks. Andy: "the partnership lies dormant without remedy ?"
-      // Only after the signature verified: a stranger cannot revive a row.
-      if (fromPartner) partnerAnswered(who.id);
       // Registered before it is answered, exactly as a peer-to-peer post
       // is: nothing leaves until the thing that will match its answer
-      // exists.
-      // THE SAME DISCRIMINATOR THE RATE LIMITER ALREADY USES. `who.partner`
-      // picks memberHits or partnerHits a few lines above; it picks the
-      // requester class here, so the two budgets cannot drift apart into
-      // disagreeing about who a sender is.
-      var opened = routes.open(selfHash, who.id, String(toToken),
+      // exists. Its target is this relay's own key whatever `to` said, so
+      // the empty target and the key are one route (router.js, selfKey).
+      var opened = routes.open(selfHash, who.id, mineKey(),
         function () { return true; },
-        null, {
-          kind: fromPartner ? routerTable.PARTNER : routerTable.MEMBER,
-          ttlMs: budgetMs,
-        });
+        null, { kind: routerTable.MEMBER, ttlMs: budgetMs });
       if (!opened || !opened.ok) return opened;
-      // METERED LIKE ANY OTHER POST. A search a partner asks costs this
-      // box real work and real bytes; leaving it out of the ring would
-      // make the governor blind to exactly the traffic partnering adds.
-      meterNote(text.length, fromPartner);
+      // METERED LIKE ANY OTHER POST.
+      meterNote(text.length);
 
-      // ── A PARTNER'S QUESTION IS ANSWERED ON ITS OWN POST (R13) ─────
+      // ── A PUBLIC SERVICE IS ANSWERED ON ITS OWN POST (goal/G22.6) ──
       //
-      //   Grok (review): "The forward path is already request-in /
-      //   reply-out. A held stream is a second bus." — "If a verb cannot
-      //   answer on the same post, it is not a partner verb yet." Andy
-      //   agreed (cycle 8).
-      //
-      // So the post stays open until answerSelf answers — at once for
-      // most verbs, when this relay's member replies for a forward, when
-      // the fan-out settles for a search — or until the time this relay
-      // granted runs out, and the reply to the post IS the answer. The
-      // waiter exists before answerSelf runs, because most verbs answer
-      // before it returns.
-      if (fromPartner) {
-        var heldAnswer = holdForPartner(selfHash, opened.grantedMs);
-        answerSelf(selfHash, asked, who);
+      // The card ask and the claim, for anybody: a stranger holds no
+      // stream, and neither learning a relay's key nor claiming a seat
+      // may need one. The post stays open until the answer exists (at
+      // once, for both), or until the time this relay granted runs out,
+      // and the reply to the post IS the answer. The waiter exists before
+      // the answer runs, because both answer before it returns.
+      if (isPublic) {
+        var heldAnswer = holdOnPost(selfHash, opened.grantedMs);
+        answerPublic(selfHash, asked.plain, who);
         return { ok: true, status: 200, hash: selfHash, held: heldAnswer };
       }
       answerSelf(selfHash, asked, who);
       return withStatus(opened, selfHash);
     }
 
-    // THE TEXT IS JUDGED BEFORE ANYBODY CARRIES IT (the Low of the review
-    // of 2026-10-10, folded into goal/G16.6). These two checks sat below
-    // the carry branch, so a text that was missing, not a string, or over
-    // the cap was handed to a partner first and refused only if it came
-    // back — paying a hop, and the partner's own refusal, for a packet
-    // this relay already knew it would not route.
+    // THE TEXT IS JUDGED BEFORE ANYTHING ELSE IS DONE WITH IT (the Low of
+    // the review of 2026-10-10, folded into goal/G16.6). A stranger's post
+    // has the same size limit as any post (Andy's decision, goal/G22.6).
     if (typeof text !== 'string' || !text) {
       return { ok: false, status: 400, error: 'text required' };
     }
@@ -3914,46 +3070,9 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 413, error: 'too big' };
     }
 
-    // `target` was resolved above, with the proof.
-
-    // ── NOT MINE: ASK THE PARTNERS TO CARRY IT ───────────────────────
-    //
-    // `no such peer` was the whole answer until now, and it was the right
-    // answer while this box was the only one that could deliver. With
-    // partners it is premature: the key may be a member of somebody this
-    // relay has verified and been verified by.
-    //
-    // ONLY FOR A MEMBER'S POST. A partner's post is never re-forwarded —
-    // that is the second hop, and the check is `!fromPartner` rather than
-    // a counter, so there is no arithmetic anybody can get wrong.
-    if (!target && !who.partner) {
-      // THE SENDER'S HINTS, CHECKED BEFORE THIS BOX ACTS ON THEM. Bounded,
-      // keys only, and signed by the sender over this packet's own
-      // signature — an unsigned or lifted hint block is a forged route
-      // claim, and a relay that followed one would carry a packet wherever
-      // a stranger pointed it.
-      if (hints && hints.length) {
-        if (hints.length > limits.HINTS_PER_POST ||
-            !hints.every(function (k) { return typeof k === 'string' && k && k.length <= 256; })) {
-          return { ok: false, status: 400, error: 'bad hints' };
-        }
-        if (!auth.hintsSigned(who.publicKey, sig, hints, route.hintSig)) {
-          return { ok: false, status: 403, error: 'bad hint signature' };
-        }
-        atRelayKey = partnerFromHints(hints);
-        // NONE OF THEM IS A PARTNER OF MINE. Refused at once, and said so,
-        // because the sender can do something about it and a silence
-        // cannot be told from a lost packet (Andy's third tier). STARTING
-        // the minting cycle with this relay's owner is cycle 5, with
-        // partner acquisition — here the refusal is the whole answer.
-        if (!atRelayKey) {
-          monitorEvent('refused', who.id, String(toToken), { why: 'minting incomplete' });
-          return { ok: false, status: 409, error: 'minting incomplete' };
-        }
-      }
-      var carried = carryToPartner(who, toToken, text, sig, atRelayKey, budgetMs);
-      if (carried) return carried;
-    }
+    // `target` was resolved above, with the proof. The carry to a partner
+    // named by the sender's route hints STOOD HERE; a relay carries nothing
+    // onward now (goal/G22.6), so a key not on this roll is `no such peer`.
 
     // ── A POST AT A KEY NOBODY HOLDS IS STILL SOMETHING THAT HAPPENED ──
     //
@@ -3977,8 +3096,6 @@ function createRelay(rootDir, deps) {
       monitorEvent('refused', who.id, String(toToken), { why: 'no such peer' });
       return { ok: false, status: 404, error: 'no such peer' };
     }
-
-    // The text was judged above, before the carry branch.
 
     // The message that VERIFIED, not a yes/no — the ±1 minute window
     // means three strings could have made this signature and the hash
@@ -4011,18 +3128,38 @@ function createRelay(rootDir, deps) {
     });
     // AND THE METER, counted where the bytes are known and the decision to
     // carry them has been made. Aggregate: `who` is not passed, and there
-    // is nowhere in `meterNote` to put it if it were — only whether it
-    // crossed a partnership, which is a count and not an identity.
-    meterNote(text.length, fromPartner);
-    return withStatus(routes.open(hash, who.id, target.id, function () {
+    // is nowhere in `meterNote` to put it if it were.
+    meterNote(text.length);
+    function deliver() {
       return presentNow.send(target.id, 'request', {
         from: who.id,
         to: target.id,
         text: text,
         sig: sig,
       });
-    }, null, {
-      kind: fromPartner ? routerTable.PARTNER : routerTable.MEMBER,
+    }
+
+    // ── A STRANGER'S POST TO A MEMBER, ANSWERED ON ITS OWN POST ─────────
+    //
+    // Andy's decision (goal/G22.6): "a relay carries posts to its members
+    // from any relay". A stranger holds no stream here, so the member's
+    // reply comes back as the answer to the post that asked (routeReply,
+    // through the route's `carry`), and is otherwise exactly the reply a
+    // member gets on its stream. The member's slot is counted per sender
+    // (router.js), so no stranger can keep a member busy for anybody else.
+    if (who.stranger) {
+      var heldReply = holdOnPost(hash, routes.ttlMs);
+      var carriedTo = routes.open(hash, who.id, target.id, deliver, {
+        answer: function (packet) { return settleOnPost(hash, packet); },
+      }, { kind: routerTable.MEMBER, ttlMs: budgetMs });
+      if (!carriedTo || !carriedTo.ok) {
+        settleOnPost(hash, carriedTo || { ok: false, status: 502, error: 'target could not be reached' });
+        return carriedTo;
+      }
+      return { ok: true, status: 200, hash: hash, held: heldReply };
+    }
+    return withStatus(routes.open(hash, who.id, target.id, deliver, null, {
+      kind: routerTable.MEMBER,
       ttlMs: budgetMs,
     }), hash);
   }
@@ -4068,52 +3205,23 @@ function createRelay(rootDir, deps) {
       bytes: typeof text === 'string' ? Buffer.byteLength(text, 'utf8') : 0, hash: hash,
     });
 
-    // ── A REPLY TO SOMETHING A PARTNER ASKED FOR ─────────────────────
+    // ── A REPLY TO A STRANGER'S POST (goal/G22.6) ─────────────────────
     //
-    // The member answered a packet that arrived through a partner, so the
-    // reply does not go down a stream — it goes back up the tunnel, as
-    // the answer to the partner's own post: the requester here is this
-    // relay, which holds no stream to itself.
-    //
-    // THE MEMBER'S REPLY TRAVELS WHOLE. Its text and its signature over
-    // the inner hash are passed through untouched, so N1 verifies N2's
-    // receipt itself and neither relay can alter what was said without
-    // breaking it.
+    // The member answered a post from a key this relay does not hold, which
+    // holds no stream here: the reply goes back as the answer to the
+    // stranger's own post, still open (routePost, holdOnPost). THE MEMBER'S
+    // REPLY TRAVELS WHOLE — its text and its signature over the hash — so
+    // the stranger verifies the member's receipt itself, exactly as one on
+    // a stream. (The partner tunnel that also answered through here went
+    // with partnering.)
     if (matched.carry && typeof matched.carry.answer === 'function') {
-      var carried = matched.carry;
-      var answerPartner = carried.answer;
-      // WILL IT FIT GOING BACK? (cycle 2) The reply is about to become
-      // this relay's own answer to its partner, wrapped whole. One that
-      // would not fit is refused HERE: the member learns its reply did not
-      // travel, and the partner relay is told why (limits.fitsWrappedReply),
-      // which passes it down the chain to its asking member as a reply
-      // signed by the relay itself (relayErrorToAsker).
-      if (!limits.fitsWrappedReply(typeof text === 'string' ? text : '', who.id, sig)) {
-        // Two sentences, two audiences: the replier is told what it did,
-        // the asker down the chain is told what happened to its answer.
-        answerPartner({ ok: false, status: 413, error: 'reply was oversized' });
-        return { ok: false, status: 413, error: 'reply too big to tunnel' };
-      }
-      answerPartner({
-        ok: true, status: 200,
-        forwarded: {
-          from: who.id,
-          text: typeof text === 'string' ? text : '',
-          sig: sig,
-        },
+      var landedOnPost = matched.carry.answer({
+        hash: hash,
+        from: who.id,
+        text: typeof text === 'string' ? text : '',
+        sig: sig,
       });
-      // THE ROUTE BACK, TO THE MEMBER WHO ANSWERED AND NOBODY ELSE
-      // (cycle 3, NODE-AND-RELAY §9b). The request came from `from` through
-      // partner `at`; a fresh signature from the originator, carried by a
-      // minted partner, is the proof. Sent with this 200 on ANY signed
-      // reply — a reply has no status, and whether the member took the
-      // request in is in its text, which this relay never reads. The node
-      // keeps it in its shadow (0018, R1). Not broadcast to the
-      // other members: that is open in §9b.
-      if (carried.at && carried.from) {
-        presentNow.send(who.id, 'route', { key: carried.from, at: carried.at });
-      }
-      return { ok: true, status: 200, delivered: true };
+      return { ok: true, status: 200, delivered: !!landedOnPost };
     }
 
     // ── A SIBLING IS A ROUTE TOO ─────────────────────────────────────
@@ -4128,20 +3236,14 @@ function createRelay(rootDir, deps) {
     // objection. It looks as though a node already knows which relay
     // carried a local post, since it chose one. It does not: when no
     // relay of its own names that key, `hub.handlePost` posts through
-    // whichever relay it is connected to and sends the contact's hints,
-    // and THIS BOX decides where the packet goes. Delivered to a member
-    // here, or forwarded to a partner — and until now only the second was
-    // announced, so a node could learn where a peer lives only by
-    // inference from a silence.
+    // whichever relay it is connected to, and THIS BOX decides whether the
+    // packet is delivered. So the delivery says so, on the `route` event:
+    // `at` is THIS relay's key, which is exactly what it means — the peer
+    // was reached here.
     //
-    // So the local delivery says so, in the same event and the same shape
-    // the partner path already uses (`announceRoute`, and the tunnel
-    // branch above). `at` is THIS relay's key, which is exactly what it
-    // means: the peer was reached here.
-    //
-    // NOT BROADCAST — to the member who asked and nobody else, which is
-    // the rule the partner branch states: a route is the asker's to keep,
-    // and everyone else's business is their own (NODE-AND-RELAY §9b).
+    // NOT BROADCAST — to the member who asked and nobody else: a route is
+    // the asker's to keep, and everyone else's business is their own
+    // (NODE-AND-RELAY §9b).
     var landed = presentNow.send(matched.requester, 'reply', {
       hash: hash,
       from: who.id,
@@ -4154,9 +3256,7 @@ function createRelay(rootDir, deps) {
     //
     // The asker learns where the target lives; the target learns where
     // the asker lives, which is what it needs to reach back without a
-    // search. The partner path already tells the replier (the tunnel
-    // branch above sends `{ key: carried.from }` to `who.id`), so this is
-    // the local half of a rule that was only ever half applied.
+    // search.
     //
     // Neither can be inferred by the node itself: the asker did not
     // choose this relay for this peer when it had no route to choose by,
@@ -4175,10 +3275,7 @@ function createRelay(rootDir, deps) {
     // everything else found discarded this cycle: known at the moment of
     // throwing away, and expensive to go back for.
     //
-    // ONLY FOR ITS OWN MEMBERS. The partner branches above announce a
-    // FOREIGN peer, whose label is a partner's to know and not this
-    // relay's, so they carry none and must not invent one. A relay is the
-    // authority on who is on IT.
+    // ONLY FOR ITS OWN MEMBERS. A relay is the authority on who is on IT.
     //
     // ── WHY NOT ON THE REQUEST AND THE REPLY, WHICH WOULD BE FREE ────
     //
@@ -4518,7 +3615,6 @@ function createRelay(rootDir, deps) {
     var snap = snapshot();
 
     return !!presentNow.send(ownerKey, 'relay-status', relayStatus.report({
-      partners: partners(),
       snapshot: snap,
       // THE SEATS, handed to the report by name (goal/G16.9). The snapshot
       // has carried them since they were built, but relayStatus reads
@@ -4536,9 +3632,9 @@ function createRelay(rootDir, deps) {
       // published, not a silent backstop." Published to the owner here,
       // which is the party that has a channel for it today; publishing to
       // members is the governor's announcement, capped at two minutes and
-      // not built. Partners are told on the reply, per the one-bus rule,
-      // and so need no announcement at all.
-      caps: { memberPerMin: MEMBER_PER_MIN, partnerPerMin: partnerPerMin() },
+      // not built. One budget, the members' (the partner budget went with
+      // partnering, goal/G22.6).
+      caps: { memberPerMin: MEMBER_PER_MIN },
       // THE BOUND THE OWNER CONFIGURED, and the gauges fixed inside it at
       // boot (cycle 8 — the Governor that moved them is gone). Absent on a
       // relay with no configuration.
@@ -4605,24 +3701,16 @@ function createRelay(rootDir, deps) {
   // Nothing needed it: the relay refuses an absent target itself (0006,
   // `503 peer not reachable`), a node learns presence from the `presence`
   // broadcasts and filters them by its own contacts, and the relay's own key
-  // is pinned (relayKeys) from GET /api/relay/key. A roll is reached by key
+  // is pinned (relayKeys) from its card ask. A roll is reached by key
   // or by search, never as a list.
 
   // The gate. Order is load-bearing at every step.
   function streamOpen(token, sig, sink) {
     // 1. Unknown identity first, before any bucket and before any crypto.
     //    B1's rule: a registry keyed by caller-chosen input grows when a
-    //    stranger reaches it, so a stranger must not reach it.
-    //    A PARTNER RELAY HOLDS NONE (R13, cycle 8). It used to, because a
-    //    reply left this box only through `presentNow.send`; now a
-    //    partner's answer is the reply to its own post (holdForPartner),
-    //    so a partner stream would only take a place in the allowance
-    //    members need. Refused by name, so an older relay that still dials
-    //    learns why rather than retrying a bare 403.
-    //    Grok (review): "A held stream is a second bus."
-    if (partnerIdentity(token)) {
-      return { ok: false, status: 403, error: 'a partner holds no stream here' };
-    }
+    //    stranger reaches it, so a stranger must not reach it. A stranger
+    //    holds no stream: what it asks is answered on its own post
+    //    (goal/G22.6).
     var who_ = deviceIdentity(token);
     if (!who_) return { ok: false, status: 403, error: 'your id is not a valid sender here' };
 
@@ -4686,8 +3774,8 @@ function createRelay(rootDir, deps) {
   // destroyed, and no answer can come.
   //
   // WHERE IT WAS ASKED, the asker is told now rather than at its
-  // deadline, in whichever way that asker waits: a partner through the
-  // tunnel's own answer, and a member or partner holding a stream by a reply signed by this relay.
+  // deadline, in whichever way that asker waits: a stranger on its own
+  // held post, and a member holding a stream by a reply signed by this relay.
   // `peer not reachable` is the word, and it is literally true from this
   // moment — they are absent. The REASON goes to the owner's monitor and
   // not onto the wire: the asker can do nothing different about a peer
@@ -4700,7 +3788,6 @@ function createRelay(rootDir, deps) {
     var why = 'stopped reading';
     routes.release(id).forEach(function (r) {
       if (r.as === 'requester') {
-        delete carrying[r.hash];
         monitorEvent('refused', id, r.target, { why: why, hash: r.hash, as: 'requester' });
         return;
       }
@@ -4725,9 +3812,7 @@ function createRelay(rootDir, deps) {
   // stopped reading (R35, streamSink.js), and absent for every other
   // close. Only the cut settles the routes: see failRoutesOf.
   function streamClose(token, sink, why) {
-    // THE SAME IDENTITIES streamOpen ADMITS — members and the owner. A
-    // partner was admitted too until R13, and cycle 3 found this had to
-    // close what it opened; with no partner stream there is none to close.
+    // THE SAME IDENTITIES streamOpen ADMITS — members and the owner.
     var who_ = deviceIdentity(token);
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
@@ -4765,18 +3850,14 @@ function createRelay(rootDir, deps) {
     // The other half of the pair. Read by server.js for the public
     // roll; set through the `relayLabel` verb in answerSelf.
     relayLabel: relayLabel,
-    // Who runs this box — key and label, both already public on the
-    // roll row marked `owner`. Served at GET /api/relay/key so a
-    // partner promotion can be verified without reading a membership.
+    // Who runs this box — key and label, part of the relay's card (the
+    // answer to a card ask on the one door, goal/G22.6).
     ownerPublic: ownerPublic,
     // Exported for the suite that drives it directly (ownerLog). The
     // browser reaches it through the `relayLabel` verb, like any peer.
     setRelayLabel: setRelayLabel,
-    // Who this relay partners with. Owner-only by where it is used —
-    // relayStatus puts it in the report, which reaches the owner alone.
-    partners: partners,
-    setPartner: setPartner,
-    clearPartner: clearPartner,
+    // The partner roll (partners, setPartner, clearPartner) stood here,
+    // removed with partnering (goal/G22.6).
     // `status` STOOD HERE and went with its route (R3). What an owner
     // learns about its relay arrives on the owner's stream —
     // statusToOwner, below — and is not something anybody asks for.

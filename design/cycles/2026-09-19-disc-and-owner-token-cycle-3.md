@@ -180,7 +180,7 @@ hears nothing; `spirit/test/router.js` — the carry comes back with the
 answer, and an unanswered request's carry is freed at expiry, asked of the
 garbage collector.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — no route is learnt across relays; hintWire.js was deleted with it. The carry's life in router.js is still asserted by `spirit/test/router.js` (built and done 2026-09-19).
 
 ### R10 — a search goes to live partners only
 
@@ -208,7 +208,7 @@ It belongs to the Governor cycle, where its numbers are measured.
 one that is down is not; a partner whose stream closes is no longer live;
 with none live, nobody is asked.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — a search answers from this relay's own members and asks no other relay; liveFanOut.js was deleted with the fan-out (built and done 2026-09-19).
 
 ### R11 — the shutdown is proven on the wire
 

@@ -77,24 +77,25 @@ else
 fi
 
 echo
-# THE RELAY'S KEY, NOT ITS ROLL (goal/G19.11). This asked for the roll, whose
-# route went on 2026-09-18, so a healthy relay read as down. A healthy relay
-# answers GET /api/relay/key with 200 and its relayPublicKey.
+# THE RELAY'S KEY, ASKED ON ITS ONE DOOR (goal/G22.6). Andy's decision: the
+# relay's public door is closed, its key route among it, and this "checks it
+# with a small node script that sends the card ask instead". A healthy relay
+# answers a signed card ask with its card, relayPublicKey in it.
 say "relay key (https://$DOMAIN)"
-if have curl; then
-  KEY_JSON=$(curl -fsS --max-time 8 "https://$DOMAIN/api/relay/key" 2>/dev/null || true)
+if have node; then
+  KEY_JSON=$(node "$REPO_ROOT/bash/card-ask.js" "https://$DOMAIN" 2>/dev/null || true)
   if contains "$KEY_JSON" '"relayPublicKey"'; then
     echo "$KEY_JSON"
-    ok "https key answered"
+    ok "https card ask answered"
   else
-    warn "https key failed (tls not up, or DNS, or node down)"
+    warn "https card ask failed (tls not up, or DNS, or node down)"
   fi
-  LOCAL_JSON=$(curl -fsS --max-time 5 "http://127.0.0.1:$NODE_PORT/api/relay/key" 2>/dev/null || true)
+  LOCAL_JSON=$(node "$REPO_ROOT/bash/card-ask.js" "http://127.0.0.1:$NODE_PORT" 2>/dev/null || true)
   if contains "$LOCAL_JSON" '"relayPublicKey"'; then
-    ok "local node :$NODE_PORT key answered"
+    ok "local node :$NODE_PORT card ask answered"
   else
     warn "local node :$NODE_PORT not answering"
   fi
 else
-  warn "curl not installed"
+  warn "node not installed"
 fi

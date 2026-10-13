@@ -225,7 +225,10 @@ async function run() {
   test.subHeading('An unknown sender is refused');
 
   const stranger = auth.generateIdentity('stranger');
-  const refused = post(B.box, stranger, B.box.relayPublicKey(), { partners: true });
+  // A MEMBER VERB (rename). The `partners` verb these asked went with
+  // partnering (goal/G22.6); a stranger is still refused anything but the
+  // relay's public services.
+  const refused = post(B.box, stranger, B.box.relayPublicKey(), { rename: { label: 'real' } });
   if (refused && refused.ok === false) {
     test.check('a key with no row is refused (' + refused.status + ')');
   } else {
@@ -244,7 +247,7 @@ async function run() {
 
   const before = replies(realSink);
   reads = [];
-  post(B.box, big.real, B.box.relayPublicKey(), { partners: true });
+  post(B.box, big.real, B.box.relayPublicKey(), { rename: { label: 'real' } });
   const reply = replies(realSink) > before ? lastReply(realSink, big.real, B.box.relayPublicKey()) : null;
   if (reply && reply.ok && reads.indexOf(big.real.publicKey) === -1) {
     test.check('a member with an open stream posts without its row being read from disc');
@@ -254,7 +257,7 @@ async function run() {
   }
 
   reads = [];
-  post(B.box, stranger, B.box.relayPublicKey(), { partners: true });
+  post(B.box, stranger, B.box.relayPublicKey(), { rename: { label: 'real' } });
   if (reads.filter(function (k) { return k === stranger.publicKey; }).length === 1) {
     test.check('and a stranger costs one keyed read of the disc, success or fail');
   } else {
@@ -267,7 +270,7 @@ async function run() {
   // Andy, cycle 3: labels serve search and display only. Before cycle 3 a
   // sender or a target could be named by label and resolved by a scan.
   const asLabel = post(B.box, { publicKey: 'real', privateKey: big.real.privateKey },
-    B.box.relayPublicKey(), { partners: true });
+    B.box.relayPublicKey(), { rename: { label: 'real' } });
   if (asLabel && asLabel.ok === false) {
     test.check('a sender named by label is refused, even signing with the right key (' + asLabel.status + ')');
   } else {

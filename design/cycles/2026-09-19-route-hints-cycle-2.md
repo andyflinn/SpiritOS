@@ -1,5 +1,8 @@
 # 2026-09-19 — route hints end to end
 
+> **2026-10-14, goal/G22.6:** Andy decided that partnering goes. R1, R2 and
+> R4–R7 are marked SUPERSEDED below; R3 (the node's contact routes) stands.
+
 **Status: CLOSED, 2026-09-19. Seven requirements, all done.** First scaffolding cycle of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
 locked in by Andy:
@@ -32,7 +35,7 @@ the payload. No new route, verb or event.
 **Verify:** `spirit/test/routeHints.js` — unsigned, lifted and over-bound
 hints refused; and `spirit/test/hintWire.js` — accepted from the wire (202).
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — the relay no longer reads hints, and routeHints.js and hintWire.js were deleted with the partner machinery (built and done 2026-09-19).
 
 ### R2 — the relay chooses one partner: live, then minted, else refused
 
@@ -48,7 +51,7 @@ locally whatever the hints say. Hints are dropped at this hop.
 minted), [D] goes to D, a non-partner hint is 409, a local target is
 delivered locally; `spirit/test/hintWire.js` — 409 over the wire.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — no relay chooses a partner; a relay carries posts to its own members from any relay (built and done 2026-09-19).
 
 ### R3 — the node sends hints from its contacts
 
@@ -75,7 +78,7 @@ wire. A member whose node holds that key as a contact stashes it in `routes`.
 **Verify:** `spirit/test/hintWire.js` — amy on A hears
 `{ key: bertrand, at: B's relay key }` after alice's hinted post is answered.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — no forward is made, so no route is announced (built and done 2026-09-19).
 
 ### R5 — nothing is tunnelled that cannot survive the tunnel
 
@@ -90,7 +93,7 @@ posts); the relay checks it again in `carryToPartner`. Either refuses with
 `spirit/test/hintWire.js` — 8,300 quotes pass the socket and are refused at
 A, never at B.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — nothing is tunnelled; `carryToPartner` is gone. The node's compose check (`checkTunnel`) still stands, unverified by a suite since routeHints.js went (built and done 2026-09-19).
 
 ### R6 — and the same on the way back
 
@@ -109,7 +112,7 @@ cannot know whether the request crossed a partnership, checks at compose
 far relay's 413 and its answer to the partner, and the node's compose check
 with and without `checkTunnel`.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — no reply is wrapped for a partner (built and done 2026-09-19).
 
 ### R7 — an error on the far side travels down the chain
 
@@ -134,7 +137,7 @@ with and without `checkTunnel`.
 `spirit/test/routeHints.js` — the asking node settles a relay-signed
 reply as a relayed failure.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — there is no far side; a post goes to the target's own relay (built and done 2026-09-19).
 
 ## Carried out of this cycle
 

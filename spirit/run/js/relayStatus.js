@@ -112,10 +112,8 @@ function report(opts) {
     // and must not be drawn the same.
     meter: o.meter || undefined,
 
-    // WHAT IT IS ALLOWING RIGHT NOW, beside what it moved. Two pools, so
-    // an owner watching a busy box can see which one is the constraint —
-    // a partner pool at its floor while member traffic is nowhere near
-    // its cap is a different problem from both being spent.
+    // WHAT IT IS ALLOWING RIGHT NOW, beside what it moved: the members'
+    // budget (the partner pool beside it went with partnering, goal/G22.6).
     caps: o.caps || undefined,
 
     // THE GOVERNOR (cycle 1). The owner's configured bound, the position
@@ -186,15 +184,8 @@ function report(opts) {
     // Labels and expiry, never the token itself. A token is a credential
     // — it is what somebody claims a row with — and a monitor is a view,
     // not a place to keep secrets where a screenshot can find them.
-    // WHO THIS RELAY PARTNERS WITH, and it is here rather than in the
-    // roll on purpose: a partnership is a public statement of
-    // association between two relays, and nothing needs a stranger to
-    // read one yet. The report reaches the owner alone.
-    //
-    // Their members are NOT here and never will be — a relay never
-    // persists a partner's ledger (PARTNERS.md, Andy's hard rule), so
-    // there is nothing to report but the partnership itself.
-    partners: Array.isArray(o.partners) ? o.partners : [],
+    // `partners` (who this relay partnered with) STOOD HERE; the partner
+    // roll is gone (Andy's decision, goal/G22.6).
 
     invites: liveInvites(o.invites, nowMs).map(function (row) {
       return {

@@ -13,16 +13,18 @@
 // current activity does not need (standing rule: RAM, the most expensive
 // resource, managed with utmost care).
 //
-// ONE DATABASE, THREE TABLES — only what grows (§8: every persisted dataset
+// ONE DATABASE, TWO TABLES — only what grows (§8: every persisted dataset
 // is bounded by disc; only what grows needs a table of its own):
 //
 //   members    the roll, by key. Labels are indexed for SEARCH AND DISPLAY
 //              only — every operation is by key (Andy, cycle 3).
 //   invites    the waiting room: live tokens, deleted when spent.
-//   partners   the partner roll in the shape NODE-AND-RELAY §5 gives it:
-//              by relay key, with a status. Today's partnerships are
-//              `partnered`; cycle 5 adds `injected` and `requested`, the
-//              minting cycle and the partner verbs. (Seam: rule 6.)
+//
+// A THIRD, `partners` (the partner roll), went with partnering as a
+// permission (Andy's decision, goal/G22.6). It is no longer created or
+// read; a relay.db that still holds one opens as before, the table left
+// where it is, because stored data must stay readable and keep working
+// across the flag day (same decision).
 //
 // identity.json, allow.json and config.json stay files: constant, tiny,
 // and the ones an owner may have to read or restore over SSH.
@@ -198,35 +200,10 @@ function open(rootDir) {
       invitedBy TEXT NOT NULL DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS invites_label ON invites (label);
-    CREATE TABLE IF NOT EXISTS partners (
-      relayKey TEXT PRIMARY KEY,
-      url      TEXT NOT NULL,
-      ownerKey TEXT NOT NULL DEFAULT '',
-      status   TEXT NOT NULL,
-      since    TEXT NOT NULL DEFAULT '',
-      last     TEXT NOT NULL DEFAULT ''
-    );
-    CREATE INDEX IF NOT EXISTS partners_owner ON partners (ownerKey);
   `);
 
-  // ── `last` ON A RELAY THAT ALREADY HAS A partners TABLE (cycle R12) ──
-  //
-  // `CREATE TABLE IF NOT EXISTS` does nothing to a table that exists, so a
-  // relay that ran before this column was added would never get it — and
-  // would fail on the first write rather than the first read, which is the
-  // worse end to find out.
-  //
-  // ADD COLUMN is the one schema change SQLite does cheaply and without
-  // rewriting the table. Guarded by asking what is there rather than by
-  // catching the error: an exception swallowed here would hide the next
-  // migration too.
-  try {
-    const cols = db.prepare('PRAGMA table_info(partners)').all()
-      .map(function (c) { return c.name; });
-    if (cols.indexOf('last') === -1) {
-      db.exec("ALTER TABLE partners ADD COLUMN last TEXT NOT NULL DEFAULT ''");
-    }
-  } catch (e) { /* a brand-new database already has it, from the CREATE above */ }
+  // THE partners TABLE AND ITS `last` MIGRATION (cycle R12) STOOD HERE; the
+  // partner roll is gone (goal/G22.6). An old table is not touched.
 
   // ── A ROW DOES NOT KNOW WHO OWNS THE RELAY (2026-09-19) ──────────────
   //
@@ -236,7 +213,7 @@ function open(rootDir) {
   //   Ownership is only determined by one identified key. The relay knows
   //   it."
   //
-  // That key is allow.json's (auth.ownerName), served at /api/relay/key.
+  // That key is allow.json's (auth.ownerName), on the relay's card.
   // Cycle 3 created `members` with an `owner` column copied from it at
   // claim time; a relay.db that has one loses it here, once. Idempotent:
   // asked of the table, not assumed.
@@ -289,21 +266,6 @@ function build(rootDir, db, key) {
     inviteDel: db.prepare('DELETE FROM invites WHERE token = ?'),
     inviteDelLabel: db.prepare('DELETE FROM invites WHERE label = ?'),
     inviteSweep: db.prepare('DELETE FROM invites WHERE expiresAt < ?'),
-    partnerAll: db.prepare('SELECT * FROM partners ORDER BY since'),
-    partnerGet: db.prepare('SELECT * FROM partners WHERE relayKey = ?'),
-    partnerByOwner: db.prepare('SELECT * FROM partners WHERE ownerKey = ?'),
-    partnerPut: db.prepare(`INSERT INTO partners (relayKey, url, ownerKey, status, since, last)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(relayKey) DO UPDATE SET url = excluded.url, ownerKey = excluded.ownerKey,
-        status = excluded.status, since = excluded.since, last = excluded.last`),
-    // WHEN A PARTNERSHIP LAST WORKED, written on its own (cycle R12).
-    // Separate from `put` because the two are different events with
-    // different authors: `put` is somebody deciding a partnership exists,
-    // this is the wire saying it still does. Touching one must not rewrite
-    // the other's fields.
-    partnerTouch: db.prepare('UPDATE partners SET last = ? WHERE relayKey = ?'),
-    partnerDel: db.prepare('DELETE FROM partners WHERE relayKey = ?'),
-    partnerDelOwner: db.prepare('DELETE FROM partners WHERE ownerKey = ?'),
   };
 
   function member(row) {
@@ -324,17 +286,6 @@ function build(rootDir, db, key) {
     return { token: row.token, label: row.label, expiresAt: row.expiresAt, invitedBy: row.invitedBy };
   }
 
-  function partner(row) {
-    if (!row) return null;
-    return {
-      relayKey: row.relayKey, url: row.url, ownerKey: row.ownerKey,
-      status: row.status, since: row.since,
-      // '' rather than null for a partnership that has never answered, so
-      // a caller ordering by it sorts rather than throws.
-      last: row.last || '',
-    };
-  }
-
   const store = {
     path: dbPath(rootDir),
 
@@ -343,14 +294,15 @@ function build(rootDir, db, key) {
     //   Andy, 2026-09-22: "DISC boundaries must be set also."
     //
     // The database and its rollback journal, which is the whole of what a
-    // relay writes that grows: members, invites and the partner roll. No
-    // traffic, no payloads (relayServer.js, NO TRAFFIC LOG), so this
-    // number moves only when membership does.
+    // relay writes that grows: members and invites. No traffic, no
+    // payloads (relayServer.js, NO TRAFFIC LOG), so this number moves only
+    // when membership does.
     //
     // MEASURED, NOT ESTIMATED. A per-member byte estimate would be a
     // guess that drifts with a schema change; the file on disc is the
-    // thing the owner's disc limit is actually about. Claims are rate
-    // limited (CLAIM_PER_MIN), so a stat on that path costs nothing.
+    // thing the owner's disc limit is actually about. A stranger's claims
+    // are held by the relay's address table (goal/G22.6), so a stat on
+    // that path costs nothing.
     bytes: function () {
       let total = 0;
       [dbPath(rootDir), dbPath(rootDir) + '-journal'].forEach(function (p) {
@@ -409,39 +361,6 @@ function build(rootDir, db, key) {
       sweepExpired: function (nowIso) { return q.inviteSweep.run(String(nowIso)).changes; },
     },
 
-    partners: {
-      all: function () { return q.partnerAll.all().map(partner); },
-      get: function (relayKey) { return partner(q.partnerGet.get(String(relayKey || ''))); },
-      byOwner: function (ownerKey) { return q.partnerByOwner.all(String(ownerKey || '')).map(partner); },
-      put: function (row) {
-        q.partnerPut.run(String(row.relayKey), String(row.url || ''), String(row.ownerKey || ''),
-          String(row.status || 'partnered'), String(row.since || ''), String(row.last || ''));
-        return partner(q.partnerGet.get(String(row.relayKey)));
-      },
-      // ── THE PARTNERSHIP ANSWERED (cycle R12) ──────────────────
-      //
-      // `since` says when a partnership began and nothing said when it
-      // last worked — so the only liveness a relay had was the partner
-      // STREAM, which R13 removes. This is what replaces it: the column
-      // that orders a search, so the partners most likely to answer are
-      // asked first.
-      //
-      // IT DOES NOT EVICT. Andy: the roll is the reach. A partner silent
-      // for a month is still the only route to its members, and a row
-      // dropped for quietness is connectivity thrown away to tidy a
-      // column.
-      //
-      // False when the row is not there, rather than creating one: a
-      // partnership is made deliberately, never by having answered.
-      touch: function (relayKey, atIso) {
-        return q.partnerTouch.run(
-          String(atIso || new Date().toISOString()), String(relayKey || '')
-        ).changes > 0;
-      },
-      remove: function (relayKey) { return q.partnerDel.run(String(relayKey || '')).changes > 0; },
-      removeOwner: function (ownerKey) { return q.partnerDelOwner.run(String(ownerKey || '')).changes; },
-    },
-
     // Several writes as one: all of them land or none do.
     transaction: function (fn) {
       db.exec('BEGIN');
@@ -471,14 +390,15 @@ function build(rootDir, db, key) {
 // not: a row's `name` becomes its `publicLabel`; the ring's `messages` and
 // `nextId` are not carried; an invite stamped `consumedAt` by the old
 // `consume` was spent, and is not imported. A member row's `partner` flag
-// becomes a `partnered` row in the partner roll, keyed by relay key.
+// became a row in the partner roll until goal/G22.6 removed the roll; it is
+// not carried now.
 function importLegacy(rootDir, store) {
   const state = path.join(rootDir, 'relay-state');
   const roll = path.join(state, 'routingTable.json');
   const inv = path.join(state, 'invites.json');
   const hasRoll = fs.existsSync(roll);
   const hasInv = fs.existsSync(inv);
-  if (!hasRoll && !hasInv) return { members: 0, invites: 0, partners: 0 };
+  if (!hasRoll && !hasInv) return { members: 0, invites: 0 };
 
   // AN UNREADABLE FILE STOPS THE IMPORT, AND THE RELAY WITH IT. Reading a
   // torn routingTable.json as empty would open a relay that has quietly
@@ -503,7 +423,7 @@ function importLegacy(rootDir, store) {
     if (Array.isArray(parsed)) invites = parsed;
   }
 
-  const counts = { members: 0, invites: 0, partners: 0 };
+  const counts = { members: 0, invites: 0 };
   store.transaction(function () {
     Object.keys(peers).forEach(function (k) {
       const row = peers[k];
@@ -516,16 +436,6 @@ function importLegacy(rootDir, store) {
         claimedAt: String(row.claimedAt || ''),
       });
       counts.members += 1;
-      if (row.partner && row.partner.relayKey) {
-        store.partners.put({
-          relayKey: String(row.partner.relayKey),
-          url: String(row.partner.url || ''),
-          ownerKey: key,
-          status: 'partnered',
-          since: String(row.partner.since || ''),
-        });
-        counts.partners += 1;
-      }
     });
     invites.forEach(function (row) {
       if (!row || !row.token || !row.label || row.consumedAt) return;

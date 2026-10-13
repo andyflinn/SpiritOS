@@ -71,11 +71,10 @@ const DECLARED = {
     'traffic', 'stats',
   ],
 
-  // THE RELAY'S PARTNER ROUTER. Deliberately almost nothing: a relay
-  // keeps nobody's intentions, so it has no store, and what it sends a
-  // partner IS the wrapper, which is why checkTunnel is off — a signed
-  // wrapper addressed to the partner itself is never tunnelled again.
-  'relayServer.js': ['rootDir', 'request', 'sealsPosts'],
+  // THE RELAY'S PARTNER ROUTER (relayServer.js: rootDir, request,
+  // sealsPosts) HAD AN ENTRY HERE; a relay builds no peerPost since
+  // partnering went (Andy's decision, goal/G22.6), so the node is the one
+  // production site.
 
   // THE APP SERVER (cycle 2, js/faceServer.js) HAD AN ENTRY HERE, and the
   // file is gone with goal/G13.2: a face is a process now and posts
@@ -200,9 +199,10 @@ test.subHeading('THE ONE THING THIS DOES NOT CHECK, said so nobody reads more in
   // for each hook's meaning, which is a suite per hook rather than one
   // walk. Named here rather than pretended at.
   // Three until goal/G13.2 took faceServer.js (2026-10-10): a face posts
-  // through its node now and builds no router of its own.
+  // through its node now and builds no router of its own. Two until
+  // goal/G22.6 took the relay's partner router.
   const sites = Object.keys(DECLARED).length;
-  if (sites === 2) {
+  if (sites === 1) {
     test.check('shape is compared, MEANING is not — ' + sites + ' sites, and a wiring that is ' +
       'wrong in a way somebody wrote down still passes here');
   } else {

@@ -30,17 +30,17 @@
 // So the claim this file makes is exactly the one a unit test cannot: the
 // marker SURVIVES THE TRIP. Every byte crosses a loopback socket.
 //
-// What a green run proves:
+// What a green run proves (since goal/G22.6 counted the slot per sender —
+// Andy's decision, taking M5 of the review of 2026-10-10):
 //   1. a relay a person would actually run — no configuration at all —
-//      allows one request per member at a time
+//      allows one request per sender at a member at a time
 //   2. one request reaches the target and a second, from somebody else,
-//      is refused 503
-//   3. the refusal is marked `busy` and carries `retryAfterMs` — so a
-//      scheduler can tell contention from a broken peer without reading
-//      error strings
-//   4. a different target is unaffected: the cap is the target's, not the
-//      table's
-//   5. when the target answers, the next asker gets in
+//      reaches it too: no sender can keep a member busy for anybody else
+//   3. the sender's own next request is refused 429 while its first waits
+//   4. a refusal that says when to come back keeps its marker and
+//      `retryAfterMs` across the wire (the address table's, now that a
+//      member never meets the target-busy one)
+//   5. when the target answers, the sender gets in again
 
 const os = require('os');
 const fs = require('fs');
@@ -115,7 +115,7 @@ async function startRelay(w, port) {
   for (let n = 0; n < 40; n += 1) {
     await sleep(200);
     try {
-      const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
+      const r = await require('./relayDoor').keyStatus(base);
       if (r.status === 200) { w.base = base; return base; }
     } catch (e) { /* not up yet */ }
   }
@@ -214,57 +214,60 @@ async function run() {
   }
   await until(function () { return atBob.requests.length > 0; }, 3000);
 
+  // ── THE SLOT IS PER SENDER (goal/G22.6) ───────────────────────────
+  //
+  // Andy's decision (goal/G22.6, taking M5 of the review of 2026-10-10):
+  // "the member's one slot in flight counted per sender ... so no stranger
+  // can keep a member busy". Carol is not held by alice's request to bob.
   const second = await post(W, carol, bob.publicKey, 'second');
-  if (second.status === 503) {
-    test.check('and carol is refused while bob is occupied: 503');
+  if (second.status === 202) {
+    test.check('and carol reaches bob too, while alice\'s request waits: the slot is alice\'s, not bob\'s');
   } else {
-    test.fail('second post: ' + JSON.stringify(second));
+    test.fail('second sender to bob: ' + JSON.stringify(second));
   }
 
-  test.subHeading('The refusal survives the trip, which is the whole point');
-
-  // relayServer builds the failure body by whitelist. Both of these were
-  // dropped there before this suite existed, and the router's own tests
-  // passed throughout.
-  if (second.body && second.body.busy === true) {
-    test.check('it is marked `busy` — not a bare 503 a scheduler must guess at');
+  // WHAT HOLDS A SENDER is its own one request in flight (0016): alice's
+  // next request, to anybody, is refused 429 while bob has not answered.
+  const again = await post(W, alice, dave.publicKey, 'alice again');
+  if (again.status === 429 && again.body && again.body.code === 'too-many-in-flight') {
+    test.check('while alice\'s next request is refused 429: one in flight per sender, wherever it is aimed');
   } else {
-    test.fail('busy marker lost on the wire: ' + JSON.stringify(second.body));
+    test.fail('alice\'s second request: ' + JSON.stringify(again));
   }
 
-  if (second.body && typeof second.body.retryAfterMs === 'number'
-      && second.body.retryAfterMs > 0) {
-    test.check('and it says when to come back, in ms, rather than leaving it to a guess');
+  test.subHeading('A refusal that says when to come back survives the trip');
+
+  // relayServer builds the failure body by whitelist, and `busy` and
+  // `retryAfterMs` were once dropped there while the router's own tests
+  // passed. With the slot per sender a member never meets the target-busy
+  // refusal (its own cap of one refuses it first), so the marker is proved
+  // on the refusal a relay does send: the strangers' address table, a
+  // second card ask from this one address inside its ban.
+  const door = require('./relayDoor');
+  const asker = auth.generateIdentity('stranger-asker');
+  await sleep(door.GAP_MS);
+  await door.postDoor(W.base, door.signedPost(asker, '', door.CARD_ASK).body);
+  const early = await door.postDoor(W.base, door.signedPost(asker, '', door.CARD_ASK).body);
+  if (early.status === 429 && early.json && typeof early.json.retryAfterMs === 'number' &&
+      early.json.retryAfterMs > 0 && early.json.code === 'address-too-early') {
+    test.check('the address table\'s refusal arrives marked (address-too-early) with retryAfterMs ' +
+      early.json.retryAfterMs + ' — not a bare status a scheduler must guess at');
   } else {
-    test.fail('retryAfterMs lost or zero: ' + JSON.stringify(second.body));
+    test.fail('the refusal lost its marker on the wire: ' + JSON.stringify(early));
   }
 
-  // BUSY AND UNREACHABLE ARE THE SAME STATUS AND OPPOSITE SITUATIONS, so
-  // a node that could only read the status would back off a healthy peer.
-  // This is the comparison that makes the marker worth carrying.
+  // UNREACHABLE IS TOLD APART: refused without `busy`.
   const stranger = auth.generateIdentity('stranger');
-  const absent = await post(W, alice, stranger.publicKey, 'nobody');
+  const absent = await post(W, dave, stranger.publicKey, 'nobody');
   if (absent.status !== 202 && !(absent.body && absent.body.busy)) {
     test.check('while an unreachable peer is refused WITHOUT `busy` — the two are told apart');
   } else {
     test.fail('unreachable looked busy: ' + JSON.stringify(absent));
   }
 
-  test.subHeading('The cap belongs to the target, and the answer frees it');
+  test.subHeading('The answer frees the sender\'s slot');
 
-  const elsewhere = await post(W, carol, dave.publicKey, 'to dave');
-  if (elsewhere.status === 202) {
-    test.check('carol reaches dave meanwhile: one busy member does not make the relay look full');
-  } else {
-    test.fail('other target: ' + JSON.stringify(elsewhere));
-  }
-  // DAVE ANSWERS IT, which releases carol's route: a member has one request
-  // in flight (0016, the member cap is 1 since 2026-10-02), and carol asks
-  // bob again below. Left open, this post would still be hers and "third"
-  // would be refused for carol's own traffic, not for bob's.
-  if (elsewhere.body && elsewhere.body.hash) await reply(W, dave, elsewhere.body.hash);
-
-  // bob answers, which is what releases the route — the reply is the
+  // bob answers alice, which is what releases her route — the reply is the
   // normal release and the timeout is only the fallback.
   const got = atBob.requests[0];
   // The node derives the hash from the bytes it holds; here the suite does
@@ -272,9 +275,9 @@ async function run() {
   const verified = got && auth.postSignatureFor(got.from, got.from, got.to, got.text, got.sig);
   if (verified) {
     await reply(W, bob, auth.requestHash(verified));
-    const third = await post(W, carol, bob.publicKey, 'third');
+    const third = await post(W, alice, dave.publicKey, 'third');
     if (third.status === 202) {
-      test.check('once bob answers, carol gets in — the refusal was a wait, not a wall');
+      test.check('once bob answers, alice gets in again — the refusal was a wait, not a wall');
     } else {
       test.fail('after reply: ' + JSON.stringify(third));
     }

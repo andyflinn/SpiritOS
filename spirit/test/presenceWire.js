@@ -125,17 +125,22 @@ function nodeFor(id) {
   // AND THE PIN, as server.js wires it: the stream header names the relay
   // it is for (goal/G16.12), so the node must know that relay's key before
   // the relay will open its stream.
-  const answerer = require('../run/js/answerRelay').createAnswerer({ rootDir: home, request: hub.relayRequest });
+  // THE RELAY'S KEY IS A CARD ASK THROUGH THE ROUTER (goal/G22.6: GET
+  // /api/relay/key is closed), wired as server.js wires it.
+  const router = createPeerPost({ rootDir: home, request: hub.relayRequest });
+  const answerer = require('../run/js/answerRelay').createAnswerer({
+    rootDir: home, askKey: function (url) { return router.relayKey(url); },
+  });
   const P = presenceNode.createPresence({
     rootDir: home,
     jobs: jobs,
-    router: createPeerPost({ rootDir: home, request: hub.relayRequest }),
+    router: router,
     pinRelay: answerer.relayKey,
   });
   opened.push({ close: function () { P.stop(); } });
-  // hub.relayRequest is the node's own outbound helper, so the probe is
-  // the one production uses rather than a stand-in for it.
-  return { P: P, jobs: jobs, started: P.start(hub.relayRequest) };
+  // hub.relayKeyAsk is what server.js hands start(), so the probe is the
+  // one production uses rather than a stand-in for it.
+  return { P: P, jobs: jobs, started: P.start(hub.relayKeyAsk(router)) };
 }
 
 // Every exit path closes the streams and kills the child. A suite that
@@ -167,12 +172,11 @@ async function awaitRelay(runDir, port) {
   kid.stdout.on('data', function (b) { said.push(String(b)); });
   kid.stderr.on('data', function (b) { said.push(String(b)); });
   const base = 'http://127.0.0.1:' + port;
+  // Up when it answers a card ask on its one door (goal/G22.6).
   for (let n = 0; n < 60; n += 1) {
     await sleep(200);
-    try {
-      const res = await fetch(base + '/api/relay/key');
-      if (res.ok) return { kid: kid, base: base, port: port };
-    } catch (e) { /* not up yet, or this port was taken */ }
+    const res = await require('./relayDoor').keyStatus(base);
+    if (res.status === 200) return { kid: kid, base: base, port: port, key: JSON.parse(res.text).relayPublicKey };
   }
   try { kid.kill(); } catch (e) { /* gone */ }
   lastRelaySaid = said.join('').trim();
@@ -199,33 +203,18 @@ async function run() {
   child = up.kid;
   PORT = up.port;
   BASE = up.base;
-  try { BASE_KEY = (await (await fetch(BASE + '/api/relay/key')).json()).relayPublicKey || ''; }
-  catch (e) { BASE_KEY = ''; }
+  BASE_KEY = up.key || '';
 
-  test.subHeading('The box will say what it is made of');
+  test.subHeading('The box no longer says what it is made of to anybody');
 
-  // Public on purpose: the question a deploy check asks must not need a
-  // private key, or it can only be asked from the owner's own machine.
-  const v1 = await (await fetch(BASE + '/api/version')).json();
-  const expected = lab.stamp && lab.stamp.commit;
-  if (v1 && v1.relay === true && expected && v1.commit === expected) {
-    test.check('the relay under test is running the commit under test: ' + v1.commit);
+  // GET /api/version on a relay is closed with its public door (Andy's
+  // decision, goal/G22.6): a relay's running version reaches its owner in
+  // his relay-status report, and a stranger meets only the card ask.
+  const version = await fetch(BASE + '/api/version').then(function (r) { return r.status; }, function () { return 0; });
+  if (version === 404) {
+    test.check('GET /api/version on a relay is 404 — the public door is closed');
   } else {
-    test.fail('version: ' + JSON.stringify(v1) + ' expected ' + expected);
-  }
-
-  // THE property, and the only one worth a spawned server to prove. The
-  // answer must describe the code that was LOADED, not the code on disk
-  // now — a process that re-read git per request would report a new
-  // commit the instant somebody pulled, without restarting, which is
-  // exactly the lie this exists to catch. A startedAt that never moves
-  // is that promise, observable from outside.
-  await sleep(400);
-  const v2 = await (await fetch(BASE + '/api/version')).json();
-  if (v2.startedAt === v1.startedAt && v2.commit === v1.commit) {
-    test.check('and the answer is taken once, at load — startedAt does not drift');
-  } else {
-    test.fail('answer moved: ' + JSON.stringify(v1) + ' -> ' + JSON.stringify(v2));
+    test.fail('GET /api/version on a relay answered ' + version);
   }
 
   test.subHeading('The route and the reader agree about the protocol');
@@ -365,8 +354,8 @@ async function run() {
   // relay's MEMORY, which is on disk.
   //
   // It has to answer as well, or a file on disk proves nothing about a
-  // process: the key door is what says the box came back up.
-  const said = await hub.relayRequest(BASE, 'GET', '/api/relay/key', null);
+  // process: a card ask on its one door is what says the box came back up.
+  const said = await require('./relayDoor').keyStatus(BASE);
   // relay.db since cycle 3, read through the store the way suites read
   // the roll (rollOf.js), and closed so the tree can be removed on Windows.
   let rows = [];

@@ -50,12 +50,13 @@ if (body && /contacts/.test(body)) {
 } else test.fail(OWED + 'createContactSelector takes no caller-supplied rows, so natterDetails cannot use it');
 
 test.subHeading('the hand-rolled select is gone');
+// natterDetails' one use of the selector was the partner picker, and it went with the partner panel when partnering
+// went (Andy's decision, goal/G22.6). What stays asserted is that no hand-rolled select came back in its place.
 const natter = fs.readFileSync(path.join(RUN, 'shell', 'natterDetails', 'natterDetails.js'), 'utf8');
-if (natter.indexOf('<select class="nd-partner-pick">') === -1 && /createContactSelector/.test(natter)) {
-  test.check('natterDetails builds no contact <select> of its own; it uses the shell\'s element ("this replaces it")');
+if (natter.indexOf('<select class="nd-partner-pick">') === -1 && !/<select\b/.test(natter)) {
+  test.check('natterDetails builds no contact <select> of its own (its partner picker went with partnering, goal/G22.6)');
 } else {
-  test.fail(OWED + 'natterDetails: hand-rolled select still there ' + (natter.indexOf('<select class="nd-partner-pick">') !== -1)
-    + ', uses createContactSelector ' + /createContactSelector/.test(natter));
+  test.fail(OWED + 'natterDetails: a hand-rolled select is there');
 }
 
 test.reportSuccessFailureCount();

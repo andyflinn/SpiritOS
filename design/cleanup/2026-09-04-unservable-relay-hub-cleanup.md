@@ -1,5 +1,7 @@
 # Cleanup: fold relay/hub into `fileServable` / `fileWritable`
 
+> 2026-10-13 (goal/G22.6): `relay.html`, the relay brochure kept servable below, is deleted with the relay's public door and is off `BOOT_ASSETS`.
+
 **Date:** 2026-09-04  
 **For:** implementation pass on `spirit/run/js/kernel.js` + tests (not a feature change)  
 **Do not touch:** App Builder, Type Designer, chat UI polish

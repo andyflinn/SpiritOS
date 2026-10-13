@@ -225,9 +225,9 @@ function run() {
 // EMPTY — which is why "a peer no relay names is refused at once" passes:
 // with no connected relay it falls through to the 503 below it. The whole
 // second half of the chooser was unexercised, and nothing else in the
-// tree reaches it: hubPost.js is the ONLY suite that calls handlePost,
-// routeHints.js and partnerAvailability.js never touch hub at all,
-// routeStash.js uses only hub.shadow and hintWire.js only hub.relayRequest.
+// tree reaches it: hubPost.js is the ONLY suite that calls handlePost, and
+// routeStash.js uses only hub.shadow. (routeHints.js, partnerAvailability.js
+// and hintWire.js went with partnering, goal/G22.6.)
 //
 // So an extraction preserving relaysNaming ordering and `via` — which the
 // checks above do pin — could change hint content, hint ORDER, or the

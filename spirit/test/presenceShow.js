@@ -116,14 +116,12 @@ async function labRelayUrl() {
 // downloading everybody is the pattern being removed, not an incidental
 // user of it.
 
-// A RELAY IS A PEER, AND A PEER IS A KEY. Off the key door, which answers
-// who a box is at fixed cost and tells nobody who is on it.
+// A RELAY IS A PEER, AND A PEER IS A KEY. Off its card, a card ask on its
+// one door (goal/G22.6), which answers who a box is at fixed cost and tells
+// nobody who is on it.
 async function relayKeyOf(url) {
-  try {
-    const res = await fetch(url + '/api/relay/key');
-    const body = await res.json();
-    return (body && body.relayPublicKey) || '';
-  } catch (e) { return ''; }
+  const body = await require('./relayDoor').relayKeyOf(url);
+  return (body && body.relayPublicKey) || '';
 }
 
 // THE STEP THAT MAKES WHITE HAPPEN WHILE SOMEBODY IS WATCHING.

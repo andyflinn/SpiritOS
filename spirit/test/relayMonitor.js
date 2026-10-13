@@ -437,10 +437,12 @@ test.subHeading('The relay as a peer, for its owner');
   //
   // THE ROSTER WAS DELETED IN CYCLE 3 (0012 widened: no member list served,
   // by request or by broadcast). What this guarded survives without it: a
-  // node learns the relay's key from its pin (GET /api/relay/key, seeded by
-  // presenceNode), and what matters HERE is that the relay answers any
-  // member who addresses it by that key — not only its owner.
-  const bellaAsks = JSON.stringify({ v: 1, body: { partners: true } });
+  // node learns the relay's key from its pin (its card, a card ask on the
+  // one door since goal/G22.6, seeded by presenceNode), and what matters
+  // HERE is that the relay answers any member who addresses it by that key
+  // — not only its owner. (It asked `partners`, a verb that went with
+  // partnering; any member verb shows the same.)
+  const bellaAsks = JSON.stringify({ v: 1, body: { search: { q: '' } } });
   const toRelay = w.box.routePost(w.bella.publicKey, relayKey, bellaAsks,
     auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, relayKey, bellaAsks)));
   const noRoster = !w.heard.bella.some(function (m) { return m.event === 'roster'; }) &&

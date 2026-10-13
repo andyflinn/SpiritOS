@@ -104,7 +104,7 @@ async function run() {
     let up = false;
     for (let n = 0; n < 40 && !up; n += 1) {
       await sleep(200);
-      try { up = (await hub.relayRequest(base, 'GET', '/api/relay/key', null)).status === 200; } catch (e) { /* not yet */ }
+      try { up = (await require('./relayDoor').keyStatus(base)).status === 200; } catch (e) { /* not yet */ }
     }
     if (!up) { test.fail('the relay did not come up'); return; }
 

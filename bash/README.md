@@ -42,7 +42,7 @@ labMaster. Kill it.
 | Script | What it does |
 |---|---|
 | `./bash/help` | This map. |
-| `./bash/status` | Units, ports, git SHA, the relay's key (`/api/relay/key`) over HTTPS and on loopback. Warns if labMaster is running, or if the relay runs as anyone but root. |
+| `./bash/status` | Units, ports, git SHA, the relay's key — a signed card ask on its one door by `bash/card-ask.js` (goal/G22.6 closed `/api/relay/key`) — over HTTPS and on loopback. Warns if labMaster is running, or if the relay runs as anyone but root. |
 | `./bash/install-units` | Write the relay's owner (`OWNER_KEY`), keep `relay-state/` mode 700, and install the systemd unit from `bash/systemd/` with this clone's own paths filled in. Runs as root. |
 | `./bash/start` `stop` `restart` | The relay Node process only. |
 | `./bash/boot-on` `boot-off` | Start relay at boot, or not. |

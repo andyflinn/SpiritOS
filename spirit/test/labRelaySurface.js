@@ -1,7 +1,9 @@
 'use strict';
 
 // Phase B: a --relay process 404s Jobs/fs/proxy/desktop APIs.
-// Brochure GET / is static (no who-list script).
+// Since goal/G22.6 it 404s its old public door too — the brochure (GET /),
+// /api/relay/key and /api/version — and answers only its one door and its
+// members' stream. Readiness is a card ask on that door.
 //
 //   node spirit/test/labRelaySurface.js
 
@@ -87,7 +89,7 @@ function ensureGone(id) {
     .catch(function () { return true; });
 }
 
-test.startTest('--relay public surface is mailbox + brochure only');
+test.startTest('--relay public surface is its one door and its members\' stream only');
 
 let weStartedMaster = false;
 let masterChild = null;
@@ -137,20 +139,28 @@ Promise.resolve()
     if (r.status === 200) test.check('start relay');
     else test.fail('start → ' + r.status + ' ' + r.text);
     return waitUntil(function () {
-      return request(ORIGIN + '/api/relay/key', 'GET', null)
+      return require('./relayDoor').keyStatus(ORIGIN)
         .then(function (x) { return x.status === 200; })
         .catch(function () { return false; });
-    }, 10000, 'key');
+    }, 10000, 'a card ask on the door');
   })
   .then(function () {
     return request(ORIGIN + '/', 'GET', null);
   })
   .then(function (r) {
-    if (r.status === 200 && r.text.indexOf('mailbox') !== -1 && r.text.indexOf('/api/relay/who') === -1) {
-      test.check('GET / is brochure, no roll script');
-    } else {
-      test.fail('GET / → ' + r.status + ' ' + r.text.slice(0, 160));
-    }
+    // THE BROCHURE IS GONE (Andy's decision, goal/G22.6).
+    if (r.status === 404) test.check('GET / is 404 — the brochure closed with the public door');
+    else test.fail('GET / → ' + r.status + ' ' + r.text.slice(0, 160));
+    return request(ORIGIN + '/api/relay/key', 'GET', null);
+  })
+  .then(function (r) {
+    if (r.status === 404) test.check('GET /api/relay/key is 404 — the key is a card ask on the door');
+    else test.fail('the key door still answers: ' + r.status);
+    return request(ORIGIN + '/api/version', 'GET', null);
+  })
+  .then(function (r) {
+    if (r.status === 404) test.check('GET /api/version is 404 on a relay');
+    else test.fail('/api/version still answers on a relay: ' + r.status);
     return request(ORIGIN + '/api/relay/who', 'GET', null);
   })
   .then(function (r) {

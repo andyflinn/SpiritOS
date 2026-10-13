@@ -65,12 +65,11 @@ async function waitUntil(fn, timeoutMs, label) {
   }
 }
 
-// A RELAY IS SERVING when its public roll answers. Expressed through
-// the one door below rather than opening a second: oneDoor.js counts
-// every reach for the wire in every file, tests included, and a number
-// that may only fall is the whole mechanism (AGENT.md, Comms).
+// A RELAY IS SERVING when it answers a card ask on its one door — its
+// public routes are closed (goal/G22.6) — through the suites' one door
+// helper (relayDoor.js), rather than opening a second.
 async function serving(port) {
-  const res = await hub(port, 'GET', '/api/relay/key', null);
+  const res = await require('./relayDoor').keyStatus('http://127.0.0.1:' + port);
   return res.status === 200;
 }
 
@@ -168,7 +167,7 @@ async function run() {
   if (up) {
     test.check('and the relay is really listening — a started row is not a serving process');
   } else {
-    test.fail('the relay never answered /api/relay/key on ' + RELAY_PORT);
+    test.fail('the relay never answered a card ask on ' + RELAY_PORT);
   }
 
   // ── A LAB RELAY TAKES THE MINIMUM (cycle 9, R12) ───────────────────

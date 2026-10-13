@@ -102,7 +102,8 @@ expectNotWritable('js/relayAuth.js', 'js/relayAuth.js');
 // ---- genuine browser assets stay open ----
 test.subHeading('Client assets stay servable');
 expectLoads('index.html (desktop homepage)', 'index.html');
-expectLoads('relay.html (--relay homepage)', 'relay.html');
+// relay.html (the --relay homepage) went with the relay's public door
+// (Andy's decision, goal/G22.6).
 expectLoads('favicon.svg', 'favicon.svg');
 expectLoads('js/client/shell.js (browser boot)', 'js/client/shell.js');
 // packet.js moved down here out of js/. If it ever stops serving, no app can

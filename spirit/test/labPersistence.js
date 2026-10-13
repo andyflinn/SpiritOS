@@ -28,7 +28,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const lab = require('./labMaster/ensureMaster.js');
 const { ownHome } = require('./ownerClaim');
-const { sealedClaimBody } = require('./labWorld');
+const door = require('./relayDoor');
 
 const RELAY_PORT = require('./labMaster/labPaths').labPort(19);
 const RELAY_NAME = 'persist-relay';
@@ -58,14 +58,9 @@ async function post(url, body) {
   }
 }
 
+// The relay's card, asked on its one door (goal/G22.6 closed GET /api/relay/key).
 async function roll() {
-  try {
-    const res = await fetch(ORIGIN + '/api/relay/key');
-    if (res.status !== 200) return null;
-    return await res.json();
-  } catch (e) {
-    return null;
-  }
+  return require('./relayDoor').relayKeyOf(ORIGIN);
 }
 
 async function waitServing(timeoutMs) {
@@ -143,12 +138,13 @@ async function run() {
 
   // THE OWNER'S CLAIM: signed like every other claim, and with no invite,
   // because owner.json already names his key (goal/G16.8).
-  // Sealed, like every claim now (cycle 10, R9).
-  const claimed = await post(ORIGIN + '/api/relay/claim', await sealedClaimBody(ORIGIN, andy, {
+  // Sealed, like every claim now (cycle 10, R9), and a post on the relay's
+  // one door (goal/G22.6).
+  const claimed = await door.claimBodyOnDoor(ORIGIN, andy, {
     name: 'andy',
     publicKey: andy.publicKey,
     sig: auth.sign(andy.privateKey, auth.claimMessage('andy')),
-  }));
+  });
   if (claimed.status === 201) {
     test.check('a signed claim takes the row, and the key the install named owns the box');
   } else {
@@ -170,14 +166,15 @@ async function run() {
   }
 
   // THE WHOLE DATABASE, and this is the half the old suite could not
-  // assert because the file used to hold mail too. Since cycle 3 it is
-  // three tables — the roll, the invites the owner minted, the partner
-  // roll — all the relay's own bookkeeping (decision 0006 — it stores
-  // nothing on anyone's behalf), so a fourth table is a relay that has
-  // started keeping something, which must not happen quietly.
+  // assert because the file used to hold mail too. Since goal/G22.6 it is
+  // two tables — the roll and the invites the owner minted (the partner
+  // roll went with partnering) — all the relay's own bookkeeping (decision
+  // 0006 — it stores nothing on anyone's behalf), so a third table on a
+  // fresh relay is a relay that has started keeping something, which must
+  // not happen quietly.
   const kept = onDisk ? onDisk.tables : [];
-  if (kept.join(',') === 'invites,members,partners') {
-    test.check('and the roll, invites and partners are all it holds — no table on anyone else’s behalf');
+  if (kept.join(',') === 'invites,members') {
+    test.check('and the roll and invites are all it holds — no table on anyone else’s behalf');
   } else {
     test.fail('relay.db holds: ' + JSON.stringify(kept) +
       ' — a relay stores nothing on anyone else’s behalf (decision 0006)');
@@ -247,11 +244,11 @@ async function run() {
   const other = auth.generateIdentity('impostor');
   // Sealed too — so the 403 below is the INVITE rule refusing a stranger,
   // which is what this asserts, and not the seal check refusing a shape.
-  const retaken = await post(ORIGIN + '/api/relay/claim', await sealedClaimBody(ORIGIN, other, {
+  const retaken = await door.claimBodyOnDoor(ORIGIN, other, {
     name: 'andy',
     publicKey: other.publicKey,
     sig: auth.sign(other.privateKey, auth.claimMessage('andy')),
-  }));
+  });
   if (retaken.status === 403 && /invite/.test(retaken.text)) {
     test.check('and a stranger is refused for want of an invite — the OWNERSHIP came back, not just the row');
   } else {

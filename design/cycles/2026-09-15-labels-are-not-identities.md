@@ -1,5 +1,7 @@
 # 2026-09-15 — labels are not identities
 
+> 2026-10-13 (goal/G22.6): `POST /api/relay/claim`, named below, is closed. A claim is a post on the relay's one door, sealed to its key; the fields described here travel inside it unchanged.
+
 **Status: CLOSED. Four requirements, all done, 2026-09-15.**
 
 Opened by Andy, reading the R8 commit. The thread ran from a loose end I

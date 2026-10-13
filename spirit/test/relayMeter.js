@@ -320,69 +320,23 @@ if (annAsks && annAsks.status === 429) {
   test.fail('the relay let a spent sender in by the side door: ' + JSON.stringify(annAsks));
 }
 
-// ── 5. TWO BUDGETS ───────────────────────────────────────────────────
+// ── 5. ONE BUDGET (goal/G22.6) ───────────────────────────────────────
 //
-//   Andy: "the budget for posts from partners must be a different POST
-//   budget from members… I need to tax the members to keep my partners
-//   operational."
-//   Grok: "split the rate-meter bucket into the two budgets before merge."
-//
-// A forward from a partner is one of THIS box's members being reached, so
-// the partner pool is infrastructure for member reach rather than an
-// allowance to a stranger. Kept separate so that a partner having a bad
-// day degrades reach without starving the members who paid for it — and
-// so that this box never has to ask WHO at the far end sent anything.
-// **The pool is the isolation.** That is what replaced Grok's per-member
-// buckets, which he withdrew.
+// Two budgets stood here, the members' and a partner pool with its floor
+// and its measured fraction (Andy: "the budget for posts from partners must
+// be a different POST budget from members"). Partnering as a permission is
+// gone, and "the partner roll and the partner budget are removed" (Andy's
+// decision, goal/G22.6): a stranger is held by the relay's address table,
+// so the posts a member sends are the one budget left.
 
-test.subHeading('A partner spends a different budget from a member');
+test.subHeading('One budget, the members\'; the partner pool is gone');
 
-// Two buckets and two numbers, not one of each. Asserted on the source
-// because the alternative is driving a partner to exhaustion through a
-// fixture, and what matters is that the pools cannot be the same object.
-if (/var memberHits = Object\.create\(null\);/.test(src) &&
-    /var partnerHits = Object\.create\(null\);/.test(src) &&
-    /MEMBER_PER_MIN/.test(src) && /PARTNER_FLOOR_PER_MIN/.test(src)) {
-  test.check('two buckets and two caps — a partner cannot spend a member’s budget');
+if (/var memberHits = Object\.create\(null\);/.test(src) && /MEMBER_PER_MIN/.test(src) &&
+    !/partnerHits|PARTNER_FLOOR_PER_MIN|partnerPerMin|partnerFraction/.test(src)) {
+  test.check('one bucket and one cap — no partner pool, floor or fraction left in relay.js');
 } else {
-  test.fail('the pools are not separate');
+  test.fail('relay.js still keeps a partner budget');
 }
-
-// AND THE REFUSAL SAYS WHICH POOL. An owner reading a 429 has to be able
-// to tell "my members are busy" from "a partner is hammering me", because
-// the two have different answers.
-if (/pool: fromPartner \? 'partner' : 'member'/.test(src)) {
-  test.check('and a refusal names the pool it came from');
-} else {
-  test.fail('the 429 does not say which budget was spent');
-}
-
-// ── IDLE MEANS FLOOR, NEVER ZERO ─────────────────────────────────────
-//
-//   Grok: "idle -> floor, not zero."
-//
-// A pool of zero is a bootstrap deadlock: an unused partnership could
-// never carry the first packet that would make it used, so the observed
-// fraction could never rise, so the pool would stay zero for ever. The
-// floor is what lets a cold partnership warm up.
-if (/PARTNER_FLOOR_PER_MIN = (\d+)/.test(src) &&
-    Number(/PARTNER_FLOOR_PER_MIN = (\d+)/.exec(src)[1]) > 0) {
-  test.check('and an idle partner pool is its floor, never zero — or nothing could ever start');
-} else {
-  test.fail('the partner floor is zero or missing');
-}
-
-// ── 6. THE FRACTION IS MEASURED, AS A COUNT ──────────────────────────
-//
-//   Grok: "floor in work, then observedPartnerFraction × total."
-//
-// The formula needs an observation this box did not previously make. It
-// is two integers per slot — posts, and how many of them crossed a
-// partnership — so the share is knowable without holding anything about
-// who did it. Measuring is this file's job; dividing by it is the
-// governor's, and the pool answers its floor until then.
-
-test.subHeading('And the relay measures the share of its work that crossed a partnership');
 
 const fresh = (function () {
   const bag = [];
@@ -391,35 +345,23 @@ const fresh = (function () {
   return said.length ? said[said.length - 1].data : null;
 })();
 
-if (fresh && fresh.meter && typeof fresh.meter.partnerFraction === 'number') {
-  test.check('the report carries the partner fraction the formula is waiting for');
+if (fresh && fresh.meter && typeof fresh.meter.posts === 'number' && !('partnerFraction' in fresh.meter) &&
+    !('partnerPosts' in fresh.meter)) {
+  test.check('the report\'s meter counts posts, and no longer a partner share');
 } else {
-  test.fail('no partnerFraction: ' + JSON.stringify(fresh && fresh.meter));
+  test.fail('meter: ' + JSON.stringify(fresh && fresh.meter));
 }
 
-// ZERO HERE, and that is the answer rather than a gap: this fixture has
-// no partners, so none of its work crossed one. A relay with no partners
-// is the common case and is exactly when the floor matters.
-if (fresh && fresh.meter && fresh.meter.partnerFraction === 0 &&
-    fresh.meter.partnerPosts === 0) {
-  test.check('and it is zero on a box with no partners — which is why the pool has a floor');
-} else {
-  test.fail('fraction should be zero here: ' + JSON.stringify(fresh && fresh.meter));
-}
-
-// ── AND THE CAPS ARE PUBLISHED, NOT SILENT ───────────────────────────
+// ── AND THE CAP IS PUBLISHED, NOT SILENT ─────────────────────────────
 //
 //   Grok: "starting cap is published (and named on 429), not a silent
 //   backstop."
 //
 // To the owner here, which is the party with a channel for it today.
-// Members get the governor's announcement, capped at two minutes and not
-// built; partners are told on the reply and need no announcement at all.
-if (fresh && fresh.caps && fresh.caps.memberPerMin > 0 && fresh.caps.partnerPerMin > 0) {
-  test.check('both caps travel with the report: member ' + fresh.caps.memberPerMin +
-    ', partner ' + fresh.caps.partnerPerMin);
+if (fresh && fresh.caps && fresh.caps.memberPerMin > 0 && !('partnerPerMin' in fresh.caps)) {
+  test.check('the cap travels with the report: member ' + fresh.caps.memberPerMin);
 } else {
-  test.fail('caps are not published: ' + JSON.stringify(fresh && fresh.caps));
+  test.fail('caps are not published as one: ' + JSON.stringify(fresh && fresh.caps));
 }
 
 // ── 7. THE RING HAS A FLOOR, IN BOTH DIRECTIONS ──────────────────────

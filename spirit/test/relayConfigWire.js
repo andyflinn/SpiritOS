@@ -77,7 +77,7 @@ async function startRelay(w, port, args) {
   for (let n = 0; n < 60; n += 1) {
     await sleep(200);
     try {
-      const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
+      const r = await require('./relayDoor').keyStatus(base);
       if (r.status === 200) { w.base = base; w.kid = kid; w.said = said; return base; }
     } catch (e) { /* not up yet */ }
   }
@@ -197,7 +197,7 @@ async function run() {
     test.fail('a hand-started relay answered: ' + JSON.stringify(asked).slice(0, 250));
   }
   // …and it is still serving, which is the whole point of that refusal.
-  const alive = await hub.relayRequest(w.base, 'GET', '/api/relay/key', null);
+  const alive = await require('./relayDoor').keyStatus(w.base);
   if (alive.status === 200) {
     test.check('and it is still answering after the refusal');
   } else {

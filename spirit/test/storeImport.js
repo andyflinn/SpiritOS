@@ -64,11 +64,13 @@ if (s.members.get('OLD') && s.members.get('OLD').publicLabel === 'legacy') {
   test.fail('legacy row: ' + JSON.stringify(s.members.get('OLD')));
 }
 
-const p = s.partners.get('RELAYB');
-if (p && p.status === 'partnered' && p.ownerKey === 'FRIEND' && p.url === 'https://b.example') {
-  test.check('a partner flag on a member row becomes a `partnered` row on the partner roll');
+// A PARTNER FLAG ON A MEMBER ROW became a row on the partner roll until
+// goal/G22.6 removed the roll (Andy's decision: "the partner roll and the
+// partner budget are removed"). The member it rode on still comes across.
+if (s.members.get('FRIEND') && s.members.get('FRIEND').publicLabel === 'grok' && s.partners === undefined) {
+  test.check('a member row carrying a partner flag comes across as a member, and no partner roll is made');
 } else {
-  test.fail('partner: ' + JSON.stringify(p));
+  test.fail('the partnered member: ' + JSON.stringify(s.members.get('FRIEND')) + ', store.partners ' + typeof s.partners);
 }
 
 if (s.invites.get('LIVE') && s.invites.get('SPENT') === null) {
@@ -89,7 +91,7 @@ if (names.indexOf('routingTable.json.imported') !== -1 && names.indexOf('invites
 
 relayStore.closeAll();
 const again = relayStore.open(H);
-if (again.members.count() === 3 && again.invites.all().length === 1 && again.partners.all().length === 1) {
+if (again.members.count() === 3 && again.invites.all().length === 1) {
   test.check('reopened, the counts are the same — the import ran once');
 } else {
   test.fail('after reopen: ' + again.members.count() + ' members');

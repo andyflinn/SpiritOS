@@ -27,10 +27,9 @@ const auth = require('./relayAuth');
 const limits = require('./limits.js');
 // The address book (contacts.js) is asked one question only, may this
 // key be COUNTED, and it is required where that is asked, below, not
-// here. A relay builds its own peerPost (relayServer.js, the partner
-// router) and passes no stats, so it never reaches that question; loading
-// the book at the top carried the node's contact code onto every relay
-// (goal/G16.9). The lazy require is the same seam contacts.js uses for
+// here. A relay builds no peerPost (its partner router went with
+// partnering, Andy's decision goal/G22.6), and loading the book at the top
+// carried the node's contact code onto every relay (goal/G16.9). The lazy require is the same seam contacts.js uses for
 // its own store.
 const nodeCard = require('./nodeCard');
 // The one sealing implementation (cycle 10, R4). oneDoor.js asserts it is
@@ -108,12 +107,12 @@ function createPeerPost(opts) {
   var rootDir = opts.rootDir;
   var request = opts.request;
   var waitMs = opts.waitMs || DEFAULT_WAIT_MS;
-  // THE TUNNEL CHECK AT COMPOSE (cycle 2). A NODE cannot know whether a
-  // packet will be carried across a partnership, so it refuses up front
-  // one that would not fit once wrapped (limits.fitsWrapped) — on every
-  // route, because a signed packet cannot be trimmed at the far hop. Off
-  // for a relay's own peerPost: what a relay sends a partner IS the
-  // wrapper, addressed to the partner itself, and is never tunnelled again.
+  // THE TUNNEL CHECK AT COMPOSE (cycle 2). Written for packets carried
+  // across a partnership: it refuses up front one that would not fit once
+  // wrapped (limits.fitsWrapped). Partnering is gone (Andy's decision,
+  // goal/G22.6) and no relay wraps a packet any more, so this bound is
+  // stricter than the one door needs; server.js still turns it on. Whether
+  // it goes is a question for its own item, not settled here.
   var checkTunnel = !!opts.checkTunnel;
   var setT = opts.setTimeoutImpl || setTimeout;
   var clearT = opts.clearTimeoutImpl || clearTimeout;
@@ -163,24 +162,18 @@ function createPeerPost(opts) {
   var cardKeeper = typeof opts.keepCard === 'function' ? opts.keepCard : null;
   // WHAT A PEER'S POSTS ARE SEALED TO (cycle 10, R5), by key. Injected
   // for the same reason as everything else node-only here: on a node it
-  // reads the contact card or the pinned relay key, on a relay it reads a
-  // partner's published key, and neither belongs in the file that moves
-  // packets. Given nothing, every post but a card is refused — which is
+  // reads the contact card or the pinned relay key, and that does not
+  // belong in the file that moves packets. Given nothing, every post but a card is refused — which is
   // the strict direction, and the right one to fail towards.
   var sealKeyFor = typeof opts.sealKeyFor === 'function' ? opts.sealKeyFor : null;
   // ── AND AN OPT-OUT THAT HAS TO BE ASKED FOR ────────────────────────
   //
   // Default ON, so a caller that forgets `sealKeyFor` gets refusals
   // rather than plaintext — fail closed, which is the whole shape of
-  // this cycle. The one caller that turns it off is a RELAY's partner
-  // router, and it says so in a named field rather than by omission, so
-  // "no key wired up" and "this traffic is deliberately not sealed yet"
-  // cannot be confused for each other.
-  //
-  // What that opt-out covers is argued in relay.js at `fromPartnerBox`:
-  // everything a partner CARRIES is sealed to its recipient; the wrapper
-  // around it is not, and cannot be until the partnership handshake
-  // carries a key.
+  // this cycle. The one caller that turned it off was a RELAY's partner
+  // router, which went with partnering (Andy's decision, goal/G22.6), so
+  // nothing in the tree sets it now; sealedLayering.js counts any setter
+  // that comes back.
   var sealsPosts = opts.sealsPosts !== false;
   function note(entry) {
     if (!traffic) return;
@@ -1359,8 +1352,8 @@ function createPeerPost(opts) {
     // a wrong diagnosis. The sentence was invented to explain a change
     // that needed no explaining, which is worse than the change.
     //
-    // Reachability, measured: the only `sealsPosts: false` in the tree is
-    // relayServer's partner router, and a relay passes no `store`. So
+    // Reachability, measured: nothing in the tree sets `sealsPosts: false`
+    // since relayServer's partner router went (goal/G22.6). So
     // wherever a store exists, sealing is required and an unsealed post
     // is refused above, before anything is opened. The third condition
     // never changes the outcome.
@@ -1800,6 +1793,200 @@ function createPeerPost(opts) {
     });
   }
 
+  // ── A RELAY'S PUBLIC SERVICES: ITS KEY AND A CLAIM (goal/G22.6) ──────
+  //
+  // Andy's decisions (goal/G22.6, 2026-10-13): "The relay's one door accepts
+  // a signed request from a key it does not know, for its public services
+  // only (its key, a claim), answers it like any reply ... so a node reaches
+  // a relay only through peerPost"; "One plaintext exception stays, the card
+  // ask; there is no separate key request"; "A stranger addresses the relay
+  // itself with an empty target (to: \"\")". And goal/G22.4: "peerPost owns
+  // every contact with a relay, its relaying and its public verbs (key,
+  // claim) alike".
+  //
+  // Both go to the relay's one door as ordinary signed posts, answered ON
+  // THE POST (a stranger holds no stream there), and both are checked here
+  // as any reply is: the relay's receipt over the hash this node computed.
+  //
+  // NOT THROUGH THE QUEUE AND NOT THROUGH refusalOf. A relay that refused
+  // this node is exactly where a new invite brings it back, so its key and
+  // its claim must still be askable; and these two answer on the post, so
+  // there is no stream slot for the queue to hold.
+  //
+  // PACED PAST THE RELAY'S ADDRESS TABLE. A stranger's address is banned for
+  // 1000 ms after each request and the ban doubles if it asks early, so the
+  // card ask and the claim that follows it are spaced past the first ban,
+  // and a ban the relay names (retryAfterMs) is waited out, never asked
+  // through.
+  var STRANGER_GAP_MS = 1100;
+  var PUBLIC_PATIENCE_MS = 30000;
+  var publicAskedAt = Object.create(null);
+
+  function pause(ms) { return new Promise(function (r) { setT(r, ms); }); }
+
+  function publicPost(relayUrl, to, text) {
+    // The node's key exists from relayAuth's first load (goal/G22.5).
+    var id = me();
+    var message = auth.postMessage(id.publicKey, to, text);
+    var hash = auth.requestHash(message);
+    var body = { from: id.publicKey, to: to, text: text, sig: auth.sign(id.privateKey, message) };
+    var u = String(relayUrl || '').replace(/\/+$/, '');
+    var started = Date.now();
+    function attempt() {
+      var wait = (publicAskedAt[u] || 0) + STRANGER_GAP_MS - Date.now();
+      return (wait > 0 ? pause(wait) : Promise.resolve()).then(function () {
+        publicAskedAt[u] = Date.now();
+        return request(u, 'POST', '/api/relay/post', body);
+      }).then(function (res) {
+        var said = null;
+        try { said = JSON.parse(res.text); } catch (e) { said = null; }
+        var banned = said && typeof said.retryAfterMs === 'number' &&
+          (res.status === 429 || (res.status === 503 && said.busy));
+        if (banned && Date.now() - started + said.retryAfterMs < PUBLIC_PATIENCE_MS) {
+          return pause(said.retryAfterMs + 50).then(function () {
+            publicAskedAt[u] = Date.now() - STRANGER_GAP_MS;
+            return attempt();
+          });
+        }
+        return { status: res.status, said: said || {}, hash: hash };
+      });
+    }
+    return attempt();
+  }
+
+  // The relay's reply packet, checked: signed by `relayKey` (or, for a card
+  // ask, by whichever key the card then names) over the hash this node
+  // computed and the text it carries.
+  function relayAnswer(got, relayKey) {
+    var pkt = got && got.said;
+    if (!got || got.status !== 200 || !pkt || !pkt.from || !pkt.sig || typeof pkt.text !== 'string') {
+      var refused = new Error((pkt && pkt.error) || ('the relay did not answer (' + (got && got.status) + ')'));
+      refused.status = got && got.status;
+      refused.code = pkt && pkt.code;
+      throw refused;
+    }
+    if (relayKey && pkt.from !== relayKey) throw new Error('the answer is not signed by that relay');
+    if (!auth.receiptSignatureOk(pkt.from, got.hash, pkt.text, pkt.sig)) {
+      throw new Error('the relay\'s answer does not verify');
+    }
+    return pkt;
+  }
+
+  // ── relayKey(url): THE RELAY'S CARD, LEARNT ON ITS ONE DOOR ────────────
+  //
+  // The card ask, unsealed, to the empty target. Resolves the relay's signed
+  // key statement { relayPublicKey, relaySealKey, keySig, relayLabel,
+  // ownerKey, ownerLabel, payloadMax } — accepted only when the answer is
+  // signed by the key it names and the statement verifies (relayKeySigned).
+  // Self-signed, so it settles tampering, not introduction: the pin does the
+  // rest (answerRelay.js, relayKeys.js).
+  function relayKey(relayUrl) {
+    var ask = JSON.stringify({ v: 1, body: { card: true } });
+    return publicPost(relayUrl, '', ask).then(function (got) {
+      var pkt = relayAnswer(got, '');
+      var said = null;
+      try { said = JSON.parse(pkt.text).body; } catch (e) { said = null; }
+      if (!said || said.ok === false || said.relayPublicKey !== pkt.from ||
+          !auth.relayKeySigned(said.relayPublicKey, said.relaySealKey, said.relayLabel, said.keySig)) {
+        throw new Error('that relay does not answer with a signed key — it may be running older code');
+      }
+      return {
+        relayPublicKey: String(said.relayPublicKey),
+        relaySealKey: String(said.relaySealKey || ''),
+        keySig: String(said.keySig || ''),
+        relayLabel: String(said.relayLabel || ''),
+        ownerKey: String(said.ownerKey || ''),
+        ownerLabel: String(said.ownerLabel || ''),
+        payloadMax: typeof said.payloadMax === 'number' ? said.payloadMax : undefined,
+      };
+    });
+  }
+
+  // ── THE CLAIM'S BODY (moved here from hub.signedClaim, goal/G22.6) ──────
+  //
+  // `name` is what this node wants to be CALLED; `inviteLabel` the word the
+  // relay owner wrote on the invite (labels are not identities, 2026-09-15). The signature covers `name` and
+  // only `name` (claimMessage) — THE CLAIM KEEPS ITS INNER SIGNATURE, Andy's
+  // decision — and the card rides beside it, covering itself. The token and
+  // the invite label travel together or the claim is refused.
+  function claimBody(name, invite, inviteLabel) {
+    // The key is already there (relayAuth's first load, goal/G22.5); the
+    // claim only names it — keys never touched (relayAuth.nameIdentity).
+    var id = auth.nameIdentity(rootDir, name);
+    // server.js fills the description on every boot; this stays for one
+    // emptied by hand. A caption must never be the reason a claim fails.
+    try { nodeCard.ensureDescription(rootDir); } catch (e) { /* the claim still goes */ }
+    var body = {
+      name: name,
+      publicKey: id.publicKey,
+      sig: auth.sign(id.privateKey, auth.claimMessage(name)),
+      // THE CARD, AT THE MOMENT OF ENROLMENT (cycle 10, R5): the relay
+      // seals its answers to this member with the key on it — this claim's
+      // own answer first of all.
+      card: nodeCard.describe(rootDir),
+    };
+    if (invite) body.invite = invite;
+    var onInvite = String(inviteLabel == null ? '' : inviteLabel).trim();
+    if (onInvite) body.inviteLabel = onInvite;
+    return body;
+  }
+
+  // ── claim(url, name, invite, inviteLabel, known): A SEAT, ON THE ONE DOOR
+  //
+  // `known` says whether this relay is already pinned, and is not optional
+  // (it was sealedClaim's rule, hub.js, and the reason is G14's: an omitted
+  // guard must not mean "do the unsafe thing"):
+  //
+  //   'first-contact'                   ask the relay's key first (relayKey)
+  //                                     and trust it: there is nothing to
+  //                                     compare against yet.
+  //   { relayPublicKey, relaySealKey }  seal to what the caller already
+  //                                     proved; no key ask.
+  //
+  // The claim is sealed to the relay's cipher key — an invite token is a
+  // credential, and TLS ends at Caddy — and posted to the relay's key.
+  // Resolves the relay's answer opened: { ok, status, peer?, error? }, with
+  // `relayPublicKey`, the key the seat is filed under (goal/G19.15).
+  function claim(relayUrl, name, invite, inviteLabel, known) {
+    var keyed;
+    if (known && typeof known === 'object' && known.relayPublicKey && known.relaySealKey) {
+      keyed = Promise.resolve({ relayPublicKey: String(known.relayPublicKey), relaySealKey: String(known.relaySealKey) });
+    } else if (known === 'first-contact') {
+      keyed = relayKey(relayUrl);
+    } else {
+      return Promise.reject(new Error(
+        'claim needs to know whether this relay is already pinned: pass ' +
+        "'first-contact' for a relay never met, or { relayPublicKey, relaySealKey } " +
+        'for one already proved. Omitting it is not a default.'));
+    }
+    return keyed.then(function (key) {
+      var body = claimBody(name, invite, inviteLabel);
+      var wrapped = seal.seal(key.relaySealKey, body.publicKey, key.relayPublicKey,
+        JSON.stringify({ v: 1, body: { claim: body } }));
+      if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
+      return publicPost(relayUrl, key.relayPublicKey, JSON.stringify(wrapped)).then(function (got) {
+        var pkt = relayAnswer(got, key.relayPublicKey);
+        var mine = me();
+        var plain = pkt.text;
+        if (seal.isSealed(plain)) {
+          var opened = seal.open(mine.sealPrivateKey, key.relayPublicKey, mine.publicKey, plain);
+          if (!opened) throw new Error('the relay\'s answer did not open for this node');
+          plain = opened.text;
+        }
+        var said = null;
+        try { said = JSON.parse(plain).body; } catch (e) { said = null; }
+        if (!said) throw new Error('the relay answered nothing this node can read');
+        return {
+          ok: said.ok === true,
+          status: Number(said.status) || (said.ok ? 200 : 500),
+          peer: said.peer || undefined,
+          error: said.ok ? undefined : String(said.error || 'refused'),
+          relayPublicKey: key.relayPublicKey,
+        };
+      });
+    });
+  }
+
   // ── WHAT THIS NODE HAD PROMISED BEFORE IT STOPPED (cycle R16) ────────
   //
   // Every entry comes back in its old order, its deadline shifted by the
@@ -1875,6 +2062,10 @@ function createPeerPost(opts) {
     post: post,
     onRequest: onRequest,
     onReply: onReply,
+    // A relay's public services on its one door (goal/G22.6): its card,
+    // and a claim.
+    relayKey: relayKey,
+    claim: claim,
     // What arrived while nobody was home, and what is still outstanding.
     arrived: function () { return arrived.slice(); },
     outstanding: function () { return Object.keys(waiting); },

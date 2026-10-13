@@ -468,8 +468,9 @@ async function run() {
     // key must already be pinned — pinned at stream-open, not lazily by
     // the code the door would have blocked.
     const relayPort = require('./labMaster/labPaths').labPort(25);
-    const said = await hub(relayPort, 'GET', '/api/relay/key');
-    const relayKey = said.body && said.body.relayPublicKey;
+    // Its card, asked on its one door (goal/G22.6 closed GET /api/relay/key).
+    const said = await require('./relayDoor').relayKeyOf('http://127.0.0.1:' + relayPort);
+    const relayKey = said && said.relayPublicKey;
     let pins = {};
     try {
       pins = JSON.parse(fs.readFileSync(

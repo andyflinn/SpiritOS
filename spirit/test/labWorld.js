@@ -24,7 +24,6 @@ const path = require('path');
 const auth = require('../run/js/relayAuth');
 const seal = require('../run/js/seal');
 const nodeCard = require('../run/js/nodeCard');
-const { relayRequest } = require('../run/js/relayRequest');
 // GAP 1 again: the node's own record of where it holds a seat.
 const relayKeys = require('../run/js/relayKeys');
 const buildStamp = require('../run/js/buildStamp');
@@ -191,22 +190,18 @@ async function answering(url) {
 // key that owns spirit.andyflinn.com lives in that file and regenerating
 // it would cost him the relay he already has.
 
-// ── A CLAIM IS SEALED TO THE RELAY (cycle 10, R9) ───────────────────
+// ── A CLAIM IS A POST ON THE RELAY'S ONE DOOR (goal/G22.6) ──────────
 //
-// The token is a credential, and the claim route is a direct POST that
-// cycle 10's R5 never reached — so it is sealed as hub.sealedClaim
-// seals it on a real node: everything but the claimer own key inside,
-// and the relay cipher key taken from its signed door.
-async function sealedClaimBody(relayUrl, id, body) {
-  const keyDoor = JSON.parse((await relayRequest(relayUrl, 'GET', '/api/relay/key', null)).text);
-  if (!auth.relayKeySigned(keyDoor.relayPublicKey, keyDoor.relaySealKey,
-    keyDoor.relayLabel, keyDoor.keySig)) {
-    throw new Error('that relay does not sign what it says its keys are');
-  }
-  const wrapped = seal.seal(keyDoor.relaySealKey, id.publicKey, keyDoor.relayPublicKey,
-    JSON.stringify(body));
-  if (!wrapped) throw new Error('could not seal the claim');
-  return { from: id.publicKey, sealed: wrapped };
+// POST /api/relay/claim is closed (Andy's decision, goal/G22.6). A claim is
+// a post from the claimer's key to the relay's, sealed to the relay's
+// cipher key learnt from a card ask, answered on the post — as
+// peerPost.claim does on a real node. `body` is the claim's body whole
+// (name, publicKey, sig, card, invite, inviteLabel); the answer comes back
+// in the shape the closed route gave, { ok, status, body }, so a suite
+// reads it as it read that route.
+async function claimOn(relayUrl, id, body) {
+  const r = await require('./relayDoor').claimBodyOnDoor(relayUrl, id, body);
+  return { ok: r.status >= 200 && r.status < 300, status: r.status, body: r.json };
 }
 function createWorld(opts) {
   opts = opts || {};
@@ -291,12 +286,14 @@ function createWorld(opts) {
     relay = await ensureNode('relay', 'relay', RELAY_PORT, { ramLimitMB: 128 }, owner.publicKey);
     if (!relay.ok) return relay;
     relay.url = 'http://127.0.0.1:' + RELAY_PORT;
-    if (!await answering(relay.url + '/api/relay/key')) {
+    // READY WHEN IT ANSWERS A CARD ASK ON ITS ONE DOOR (goal/G22.6: the
+    // relay's public routes are closed). Since goal/G19.15 a node files a
+    // relay under its key (node.db's relays table), so the lab learns it once.
+    const card = await require('./relayDoor').awaitRelayDoor(relay.url);
+    if (!card) {
       return { ok: false, error: 'lab relay did not answer on ' + relay.url };
     }
-    // Since goal/G19.15 a node files a relay under its key (node.db's relays table), so the lab learns it once.
-    try { relay.key = ((await (await fetch(relay.url + '/api/relay/key')).json()) || {}).relayPublicKey || ''; }
-    catch (e) { relay.key = ''; }
+    relay.key = card.relayPublicKey || '';
 
     // The relay's owner was written into its owner.json above, before it
     // started, as bash/install-units does (goal/G16.8); he now claims his
@@ -304,7 +301,7 @@ function createWorld(opts) {
     // node: a suite must not need Andy's key, and must never write to his
     // node's state.
     const ownerName = owner.name || 'labowner';
-    const claimed = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, owner, {
+    const claimed = await claimOn(relay.url, owner, {
       name: ownerName,
       publicKey: owner.publicKey,
       sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
@@ -312,7 +309,7 @@ function createWorld(opts) {
       // node: the relay seals its answers to the key on it, so an owner
       // enrolled without one can be told nothing.
       card: nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)),
-    }));
+    });
     if (!claimed.ok) {
       return { ok: false, error: 'lab owner could not claim: ' +
         JSON.stringify(claimed.body) + ' — the relay was not installed for this owner' };
@@ -340,14 +337,14 @@ function createWorld(opts) {
       // name here. Sent explicitly all the same: they are two different
       // things that happen to match in a lab, and writing `name` twice
       // is what says so.
-      const joined = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, id, {
+      const joined = await claimOn(relay.url, id, {
         name: name,
         publicKey: id.publicKey,
         sig: auth.sign(id.privateKey, auth.claimMessage(name)),
         invite: token,
         inviteLabel: name,
         card: nodeCard.cardFrom(Object.assign({ name: name }, id)),
-      }));
+      });
       if (!joined.ok) {
         return { ok: false, error: 'join ' + name + ': ' + JSON.stringify(joined.body) };
       }
@@ -491,13 +488,11 @@ function createWorld(opts) {
   // bottom is where cheats go: nothing here reaches past the protocol.
   // It speaks the protocol by hand because there is no node to speak it.
   async function askOn(relayUrl, ownerId, body) {
-    // The roll already carries it — no second endpoint, which is the
-    // same reason answerRelay.relayKey reads it there on a real node.
-    let relayKey = '';
-    try {
-      const said = await (await fetch(relayUrl + '/api/relay/key')).json();
-      relayKey = (said && said.relayPublicKey) || '';
-    } catch (e) { relayKey = ''; }
+    // THE RELAY'S CARD, asked on its one door (goal/G22.6) — the owner is a
+    // member, so this is no stranger's ask and the address table does not
+    // hold it.
+    const keyDoor = await require('./relayDoor').relayKeyOf(relayUrl);
+    const relayKey = (keyDoor && keyDoor.relayPublicKey) || '';
     if (!relayKey) return { ok: false, error: 'the lab relay published no key' };
 
     // THE SIGNATURE IS A HEADER AND NEVER A QUERY STRING. This sent it
@@ -526,19 +521,9 @@ function createWorld(opts) {
     // ── SEALED TO THE RELAY (cycle 10, R9) ──────────────────────────
     //
     // The box refuses an unsealed post addressed to itself, so the key it
-    // publishes is fetched from the same signed door a node uses — over
-    // the wire, because this lab talks to a real relay in another
-    // process. Sealed first, signed second (cycle 10's R11).
-    // Through the product's own transport rather than a bare `fetch`:
-    // oneDoor.js counts raw fetches here and is right to, and this is a
-    // door a NODE reaches for — so it should be reached the way a node
-    // reaches it.
-    const keyDoor = JSON.parse((await relayRequest(relayUrl, 'GET', '/api/relay/key', null)).text);
-    if (!auth.relayKeySigned(keyDoor.relayPublicKey, keyDoor.relaySealKey,
-      keyDoor.relayLabel, keyDoor.keySig)) {
-      stop.abort();
-      return { ok: false, error: 'that relay does not sign what it says its keys are' };
-    }
+    // publishes is the one its card answered above, verified there as a
+    // signed statement (relayDoor.cardAsk). Sealed first, signed second
+    // (cycle 10's R11).
     const wrapped = seal.seal(keyDoor.relaySealKey, ownerId.publicKey, relayKey,
       JSON.stringify({ app: 'relay', v: 1, body: body }));
     if (!wrapped) {
@@ -781,7 +766,8 @@ function createWorld(opts) {
 //    "delete" had never deleted.
 //
 // 3. CLOSED — `GET /api/version`, public, answering the commit the
-//    PROCESS loaded rather than whatever is on disk now. labMaster
+//    PROCESS loaded rather than whatever is on disk now (a node's; a
+//    relay's closed with its public door, goal/G22.6). labMaster
 //    stamps every copy it makes, so a fake node reports the commit it
 //    was taken from, and a suite can assert "the box under test is
 //    running the code under test" instead of hoping.
@@ -793,8 +779,9 @@ function createWorld(opts) {
 //    from relays.json, other than the Natter UI. Same shape as 1.
 // ---------------------------------------------------------------------
 
-// `sealedClaimBody` is exported for the lab suites that build their own
-// claims (labRefusals, labPersistence). One sealing site for the suites,
-// for the same reason the product has one: two that differ in a detail is
-// how the associated data gets dropped on one path.
-module.exports = { createWorld: createWorld, PREFIX: PREFIX, sealedClaimBody: sealedClaimBody };
+// `claimOn` is exported for the lab suites that build their own claims
+// (labRefusals, labPersistence, appServerWorlds). One claim site for the
+// suites, on the relay's one door (goal/G22.6), for the same reason the
+// product has one: two that differ in a detail is how the associated data
+// gets dropped on one path.
+module.exports = { createWorld: createWorld, PREFIX: PREFIX, claimOn: claimOn };

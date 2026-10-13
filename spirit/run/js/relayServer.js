@@ -16,8 +16,7 @@
 // cycle 3 — a relay needs a persistent disc and SSH.)
 //
 // What a relay IS stays in relay.js. This file is only the HTTP in front
-// of it: the public surface, the bind, the partner router and the
-// goodbye.
+// of it: the one door and the members' stream, the bind, and the goodbye.
 'use strict';
 
 const http = require('http');
@@ -28,10 +27,9 @@ const relayConfig = require('./relayConfig');
 const relayLimits = require('./relayLimits');
 const spirit = require('./kernel');
 const createRelay = require('./relay');
-// Resolved ONCE, here, as the process loads — see buildStamp.js. Asking
-// again later would report whatever is on disk now, which is the lie
-// this is meant to catch.
-const buildStamp = require('./buildStamp');
+// The build stamp for GET /api/version stood here; that route is closed
+// (goal/G22.6), and a relay's version reaches its owner in relay-status
+// (relay.js, RUNNING).
 const common = require('./serveCommon');
 const streamSink = require('./streamSink');
 // R36 phase B: a refusal carries the catalogue's code beside its sentence.
@@ -50,13 +48,9 @@ const DEFAULT_RELAY_PORT = 65430;
 // half a minute is a guess at that, not a Governor's tick any more.
 const FULL_RETRY_S = 30;
 
-const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
-const STARTED_AT = new Date().toISOString();
-
-// A relay's half: the peerPost it posts to partners from. Built after the
-// server is listening. (The streams it held to them, partnerLinks, went in
-// R13: a partner's answer is now the reply to the post that asked.)
-let partnerRouter = null;
+// The peerPost a relay posted to its partners from (partnerRouter) STOOD
+// HERE. A relay posts to nobody since partnering went (Andy's decision,
+// goal/G22.6).
 
 // Checked before verifyStartupCwd, on purpose — --help should work
 // regardless of which directory this was launched from.
@@ -64,8 +58,9 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(
     'Usage: node js/relayServer.js [--port <number>]\n' +
     '   or: node js/server.js --relay [--port <number>]   (the same process)\n\n' +
-    '  Runs a public relay: serves relay.html at / and /index.html, answers only\n' +
-    '  the relay routes (/api/relay/*) and 404s everything else.\n' +
+    '  Runs a public relay: answers only its one door (POST /api/relay/post, and\n' +
+    '  /api/relay/reply) and its members\' stream (GET /api/relay/stream), and\n' +
+    '  404s everything else. A card ask on the door answers with its key.\n' +
     '  Binds 0.0.0.0 (not loopback) and accepts any Host, since a relay is meant\n' +
     '  to be reached from the internet. A personal node is js/server.js.\n\n' +
     '  --port <number>   Listen on this port instead of the default (' + DEFAULT_RELAY_PORT + ').\n' +
@@ -100,7 +95,7 @@ function refuseToStart(why) {
 
 // ── THE RELAY'S DATA IS ON DISC, OR THERE IS NO RELAY (cycle 3) ──────
 //
-// Members, invites and the partner roll live in relay-state/relay.db
+// Members and invites live in relay-state/relay.db
 // through node:sqlite (relayStore.js), and RAM is its client — there is
 // no in-memory copy to fall back on. A Node too old to load the driver
 // (floor 22.13) cannot be a relay, and says so now rather than on the
@@ -263,36 +258,10 @@ function argMB(flag) {
   return mb;
 }
 
-// A PARTNER'S CIPHER KEY STOOD HERE, briefly, during cycle 10's R5.
-// It fetched the key from the partner's own signed door and sealed the
-// relay-to-relay wrapper to it — and was backed out the same hour,
-// because the OTHER half cannot be done that way: a partner answering has
-// no card to seal ITS reply to, since a partner is not a member of the
-// box it is partnered with.
-//
-// Sealing one direction only is worse than sealing neither: it looks
-// done. See relay.js, fromPartnerBox, for exactly what is and is not
-// covered, and why the fix belongs with the partnership handshake — which
-// is where a key could be exchanged once instead of fetched for ever.
-
-// HOW THIS RELAY ASKS A PARTNER, injected rather than reached for.
-//
-// LATE-BOUND on purpose: createRelay runs at module load and partnerRouter
-// is built after the server is listening, so this closes over the variable
-// rather than the value. A relay still booting answers from its own
-// members and propagates nothing.
-//
-// `post` is peerPost's, so the hash, the proof the partner read it, and
-// the dispatch of the answer back to this exact question are all the
-// interface's and none of relay.js's (AGENT.md, Comms).
+// HOW THIS RELAY ASKED A PARTNER (`askPartner`, over its own peerPost)
+// STOOD HERE; partnering as a permission is gone (Andy's decision,
+// goal/G22.6), and a relay makes no outbound request at all.
 const relay = createRelay.createRelay(undefined, {
-  askPartner: function (url, relayKey, text, budgetMs) {
-    if (!partnerRouter) return Promise.resolve(null);
-    // The partner is given LESS than this relay has (relay.js,
-    // HOP_MARGIN_MS), so it finishes first and this relay still has time
-    // to carry its answer back to the member waiting.
-    return partnerRouter.post(url, relayKey, text, null, { budgetMs: budgetMs });
-  },
   config: CONFIG,
 
   // ── THE OWNER'S `config` VERB NEEDS HANDS (cycle 9) ───────────────
@@ -381,145 +350,46 @@ const relay = createRelay.createRelay(undefined, {
 // once, by relayAuth.js on its first load (goal/G22.5), into this
 // process's own relay-state beside allow.json. Here it is only NAMED
 // 'relay' over the machine-name default, keys untouched. It is handed out
-// through /api/relay/key (relay.relayPublicKey), and it is NOT the owner's
-// key — the owner is a peer who claimed, the relay is the box.
+// as the answer to a card ask on the one door (relay.js relayCard,
+// goal/G22.6), and it is NOT the owner's key — the owner is a peer who
+// claimed, the relay is the box.
 require('./relayAuth').nameIdentity(ROOT_DIR, 'relay');
 
 // handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
 // goal/G16.2 with the device enrolment.
 
-// ── A CLAIM ARRIVES SEALED (cycle 10, R9) ───────────────────────────
+// ── THE PUBLIC DOOR IS CLOSED (goal/G22.6) ───────────────────────────
 //
-//   Andy: *"3. seal it. agreed."*
+// Andy's decision (goal/G22.6, 2026-10-13): "The relay's public door, the
+// one any curl can reach without key or signature, is killed in this item:
+// /api/relay/key, /api/relay/claim, /api/version and the brochure all
+// close. The relay keeps its one door (post) and its members' stream."
 //
-// `{ from, sealed }` — everything but the claimer's own key is inside,
-// and the token above all. Opened here, before a single field is read,
-// so no part of this route can be written to work on a plaintext claim.
-//
-// THE FLAG DAY IS THE WHOLE COMPATIBILITY STORY. An older node posting a
-// plain claim is refused with a sentence naming the reason, rather than
-// being accepted on the old terms — *"we're pre-alpha, old nodes MUST
-// update to stay in the game."* A relay that took both would be a relay
-// where the token is sometimes in the clear, which is the property this requirement
-// exists to remove.
-function openClaim(body) {
-  if (!body || !body.sealed || !body.from) return null;
-  const mine = require('./relayAuth').loadIdentity(ROOT_DIR);
-  if (!mine || !mine.sealPrivateKey) return null;
-  const got = require('./seal').open(mine.sealPrivateKey, body.from, mine.publicKey, body.sealed);
-  if (!got) return null;
-  try { return JSON.parse(got.text); } catch (e) { return null; }
-}
-
-function handleRelayClaim(req, res) {
-  readJsonBody(req).then(function (outer) {
-    const body = openClaim(outer);
-    if (!body) {
-      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({
-        error: 'a claim must be sealed to the cipher key this relay publishes at /api/relay/key',
-      }));
-      return;
-    }
-    // THE KEY THAT SEALED IT IS THE KEY THAT CLAIMS. Otherwise a claim
-    // could be sealed by one node on behalf of a key it does not hold —
-    // the signature would still be checked below, but the associated data
-    // would have bound the wrong party, and the two would disagree about
-    // who this is.
-    if (body.publicKey !== outer.from) {
-      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: 'the sealed claim names a different key than the one that sealed it' }));
-      return;
-    }
-    const result = relay.claim(
-      body && body.name,
-      body && body.sig,
-      body && body.publicKey,
-      common.clientKeyFor(req),
-      body && body.invite,
-      // THE WORD ON THE INVITE, which is not the name being claimed.
-      // `name` is what this key wants to be called; `inviteLabel` is what
-      // the owner wrote down to identify the person they were inviting,
-      // and it is matched and then forgotten (R1, 2026-09-15). A caller
-      // that sends only `name` gets the old behaviour, where the two were
-      // one string.
-      body && body.inviteLabel,
-      // THE CARD THEY ENROL WITH (cycle 10, R5). Verified inside `claim`
-      // against the key that signed the claim, and dropped if it belongs
-      // to anybody else. A claim without one is still taken; that member
-      // simply has no cipher key here until they send one.
-      body && body.card
-    );
-    res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-    // A 409 carries the peer that is already there so the caller can tell
-    // "that name is mine already" from "that name is someone else's". The
-    // key is public.
-    var payload = result.ok
-      ? result.peer
-      : (result.peer ? { error: result.error, peer: result.peer } : { error: result.error });
-    res.end(JSON.stringify(payload));
-  }).catch(function () {
-    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Invalid JSON body');
-  });
-}
-
+// What they did moved onto the one door, signed: the relay's key is the
+// answer to a card ask (relay.js relayCard), and a claim is a post sealed
+// to that key (relay.js answerPublic), both answered on the post itself.
+// A relay's version reaches its owner in his relay-status report. The
+// claim route's handler (handleRelayClaim, openClaim) and the brochure
+// (relay.html, favicon.svg) went with them.
 function isRelayPublicPath(method, pathname) {
-  if (pathname === '/' || pathname === '/index.html' || pathname === '/relay.html' || pathname === '/favicon.svg') {
-    return method === 'GET';
-  }
-  // The device page (/<key>/device) and POST /api/relay/device were
-  // removed by goal/G16.2 with the device enrolment.
-  // ── WHO THIS RELAY IS, AND NOTHING ELSE (2026-09-18) ───────────────
-  //
-  //   Andy: "the first two are easily replaced with GET /api/relay/key
-  //   or whatever."
-  //
-  // The two being the front door's "is this sender a relay?" and search's
-  // "which key do I address this box as" — both of which need a PIN, and
-  // the pin was being derived from the whole roll, once per relay per
-  // boot. ~147 KB at a thousand members to learn 44 bytes.
-  //
-  // Fixed cost per request, with no membership term in it, which is what
-  // earns it the exemption the roll is losing (0013, and 0010's
-  // granted-GET table).
-  if (method === 'GET' && pathname === '/api/relay/key') return true;
-  // The presence wire. Public in the same sense the rest is: reachable
-  // from the internet, and gated inside relay.streamOpen, which refuses
-  // an identity this box does not hold before it allocates anything.
+  // The presence wire, the members' stream: gated inside relay.streamOpen,
+  // which refuses an identity this box does not hold before it allocates
+  // anything.
   if (method === 'GET' && pathname === '/api/relay/stream') return true;
-  // WHAT IS THIS BOX MADE OF. Public, deliberately: the question a
-  // deploy check asks must not need a private key, or the check cannot
-  // run from anywhere but the owner's own machine — and a relay you
-  // cannot identify is one you cannot harden. What it gives away is a
-  // commit id for code the repository already holds.
-  if (method === 'GET' && pathname === '/api/version') return true;
-  if (method === 'POST' && pathname === '/api/relay/claim') return true;
-  // The router, and now the only way onto this box. Public in the sense
-  // the rest is: reachable from the internet, gated inside relay.js by a
-  // signature, and refused instantly if the peer is not there to receive
-  // it (decision 0006).
+  // THE ONE DOOR, and the reply that answers what came through it: gated
+  // inside relay.js by a signature, and refused instantly if the peer is
+  // not there to receive it (decision 0006).
   if (method === 'POST' && (pathname === '/api/relay/post' || pathname === '/api/relay/reply')) return true;
   return false;
 }
-
-// The brochure: what a browser gets at a relay's own address. relay.html
-// loads no scripts, so these four are the whole of it.
-const BROCHURE = {
-  '/': 'relay.html',
-  '/index.html': 'relay.html',
-  '/relay.html': 'relay.html',
-  '/favicon.svg': 'favicon.svg',
-};
 
 const server = http.createServer((req, res) => {
   // NO LOOPBACK OR HOST GATE, which is the node's first line and not this
   // one's: a relay is meant to be reached from the internet, and a
   // deployed relay is reached by whatever name the platform gave it. What
-  // stands in for that gate is not "nothing": isRelayPublicPath (below)
-  // reduces the answerable surface to the relay routes and the brochure,
-  // and the relay routes themselves are gated by the allow list and
-  // signature checks in relayAuth.js.
+  // stands in for that gate is not "nothing": isRelayPublicPath (above)
+  // reduces the answerable surface to the one door and the members'
+  // stream, and both are gated by signature checks in relayAuth.js.
   if (common.refuseTooBig(req, res)) return;
 
   const parsed = common.parseRequestPath(req, res);
@@ -533,50 +403,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && pathname === '/api/relay/key') {
-    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    // KEY AND LABEL ARE A PAIR (Andy), so a caller that reads one reads
-    // both, and nothing has to learn a second shape. Null on a relay that
-    // has not been restarted since it grew a key of its own.
-    // AND WHO RUNS IT, which a caller can ask for without asking for a
-    // membership list. It is what `relay.partnerCheck` needed the roll
-    // for, and the last thing it needed it for.
-    // AND WHAT POSTS TO IT ARE SEALED TO (cycle 10, R9), signed by the
-    // identity key named beside it. This answer was unsigned, and
-    // answerRelay.js said what that was worth — the re-check "compares
-    // against an UNSIGNED answer and so catches nothing an attacker could
-    // not forge". Tolerable for an identity to pin; not tolerable once
-    // the same answer carries the key every owner verb is sealed to,
-    // invite tokens included.
-    var own = relay.ownerPublic();
-    res.end(JSON.stringify({
-      relayPublicKey: relay.relayPublicKey(),
-      relaySealKey: relay.relaySealKey(),
-      keySig: relay.relayKeyStatement(),
-      relayLabel: relay.relayLabel(),
-      ownerKey: own.ownerKey,
-      ownerLabel: own.ownerLabel,
-      // ── AND WHAT IT WILL CARRY (cycle 10's R6) ────────────────────
-      //
-      // So a sender can tell "too big for me" from "too big for THAT
-      // box". Without it, the flag day's symptom is unreadable: an
-      // updated node posts a legal sealed packet, an un-updated relay
-      // answers 413, and the sender cannot distinguish a message that is
-      // genuinely oversized from a relay that has not been updated yet.
-      //
-      // UNSIGNED, like the label beside it, and that is fine because it
-      // can only make a sender send LESS. A relay that understated it
-      // would be refusing traffic it could carry — its own loss, and
-      // visible. A relay that overstated it would earn a 413 from
-      // itself, which is the same refusal the sender would have had.
-      //
-      // It is read off `limits`, never configured: a relay that could be
-      // told its own ceiling is a relay whose owner can promise what the
-      // code will not honour.
-      payloadMax: require('./limits').PAYLOAD_MAX,
-    }));
-    return;
-  }
+  // GET /api/relay/key STOOD HERE (closed by goal/G22.6): its answer is the
+  // relay's card, given to a card ask on the one door (relay.js relayCard).
 
   // GET /api/relay/who STOOD HERE — THE ROLL, DELETED 2026-09-18. See
   // the tombstone in server.js's history and decision 0012: no party may
@@ -633,20 +461,13 @@ const server = http.createServer((req, res) => {
         try { res.setHeader('Retry-After', String(FULL_RETRY_S)); }
         catch (e) { /* headers already sent */ }
       }
-      // A PARTNER IS TOLD WHY (gap R13; found by Grok's review of the gap
-      // cycle, 2026-09-22). deviceRefusal says only "not now" — right for a
-      // member or a stranger, whose refusal must not say which gate held —
-      // but its code's retry is "after", so an older relay that still dials
-      // its partners at boot was told to try again for ever. A partner's key
-      // is already known to be a partner, so the sentence tells nobody
-      // anything, and "retry: no" is what stops the dialling.
-      //
-      // AND SO IS A NODE THAT IS NOT A MEMBER (goal/G19.1, Andy, granted
+      // A NODE THAT IS NOT A MEMBER IS TOLD WHY (goal/G19.1, Andy, granted
       // 2026-10-12): the refusal names the sender, "your id is not a valid
       // sender here", code not-a-sender, as on a post and a reply, so an
       // evicted node's peerPost stops dialling and tells its user.
-      if (opened && opened.status === 403 && (opened.error === 'a partner holds no stream here' ||
-          spiritErrors.classify(403, opened.error).code === 'not-a-sender')) {
+      // (A partner relay was told the same here until partnering went.)
+      if (opened && opened.status === 403 &&
+          spiritErrors.classify(403, opened.error).code === 'not-a-sender') {
         res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({ error: opened.error, code: spiritErrors.classify(403, opened.error).code }));
         return;
@@ -683,32 +504,17 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method === 'GET' && pathname === '/api/version') {
-    common.sendVersion(res, BUILD, STARTED_AT, true);
-    return;
-  }
-
-  if (req.method === 'GET' && BROCHURE[pathname]) {
-    common.sendFile(res, path.join(ROOT_DIR, BROCHURE[pathname]));
-    return;
-  }
+  // GET /api/version and the brochure (/, /index.html, /relay.html,
+  // /favicon.svg) STOOD HERE, closed by goal/G22.6.
 
   if (req.method === 'POST') {
-    if (pathname === '/api/relay/claim') {
-      handleRelayClaim(req, res);
-      return;
-    }
+    // POST /api/relay/claim STOOD HERE (closed by goal/G22.6): a claim is a
+    // post on the one door, sealed to the relay's key.
 
     if (pathname === '/api/relay/post') {
       readJsonBody(req).then(function (body) {
-        // ROUTE HINTS, when the sender gave any (cycle 2): the relays its
-        // contact is enrolled at, signed beside the packet. Passed as an
-        // object, never as a bare key — a key from the wire must be
-        // verified before this box acts on it, and relay.routePost only
-        // trusts a bare string from in-process callers.
-        const route = body && Array.isArray(body.hints) && body.hints.length
-          ? { hints: body.hints, hintSig: body.hintSig }
-          : undefined;
+        // ROUTE HINTS are no longer read (goal/G22.6): with no partner to
+        // carry to, a relay has nothing to do with them.
         // `budgetMs` — how long the ASKER is still willing to wait, a
         // remaining duration and never a deadline. Informational: the
         // relay grants min(asked, its own ceiling), so a number from the
@@ -720,16 +526,19 @@ const server = http.createServer((req, res) => {
         const budgetMs = (body && typeof body.budgetMs === 'number' && isFinite(body.budgetMs))
           ? Math.max(0, body.budgetMs)
           : undefined;
+        // THE ADDRESS IT CAME FROM, read by relay.js only for a sender it
+        // does not hold: the strangers' address table (goal/G22.6).
         const posted = relay.routePost(
           body && body.from, body && body.to, body && body.text, body && body.sig,
-          route, budgetMs
+          budgetMs, common.clientKeyFor(req)
         );
-        // A PARTNER'S POST IS ANSWERED ON ITSELF (R13): relay.js hands back
-        // `held`, a promise of the answer, and this request stays open
-        // until it settles — with the reply packet, or with the refusal
-        // when the time this relay granted runs out. Every other post is
-        // answered at once, exactly as before.
-        // It never rejects: holdForPartner settles with the answer or, when
+        // A POST ANSWERED ON ITSELF (R13; goal/G22.6): a card ask, a claim,
+        // or a stranger's post to a member. relay.js hands back `held`, a
+        // promise of the answer, and this request stays open until it
+        // settles — with the reply packet, or with the refusal when the
+        // time this relay granted runs out. Every other post is answered at
+        // once, exactly as before.
+        // It never rejects: holdOnPost settles with the answer or, when
         // the time runs out, with 504 "no answer yet".
         if (posted && posted.held && typeof posted.held.then === 'function') {
           posted.held.then(writePosted);
@@ -929,46 +738,9 @@ server.listen(port, BIND_HOST, () => {
   // by hash on their own stream. A relay nobody is watching now does
   // exactly nothing about being watched.
 
-  // -- AND IT ASKS ITS PARTNERS ------------------------------------
-  //
-  // THROUGH ITS OWN POSTS, AND NOTHING HELD (R13, cycle 8). This dialled a
-  // stream to every partner at boot — "Both partners must have the mutual
-  // sseClients alive in this pass" (Andy, then) — because a partner's
-  // answer could only arrive on a stream. Grok's review: "The forward path
-  // is already request-in / reply-out. A held stream is a second bus."
-  // Andy agreed. The answer now comes back as the reply to the post, so
-  // there is nothing to dial and nothing to hold, and partnerLink.js is
-  // gone.
-  //
-  // Its own peerPost, signing as this relay's identity, with
-  // relayRequest injected — the same interface a node uses.
-  partnerRouter = require('./peerPost').createPeerPost({
-    rootDir: ROOT_DIR,
-    request: require('./relayRequest').relayRequest,
-    // NO TRAFFIC LOG. peerPost takes it injected precisely so a relay
-    // can omit it: that file is correct on a personal node and is "the
-    // worst thing in the system on a relay" (peerPost.js).
-    //
-    // ── NOT SEALED, AND ASKED FOR BY NAME (cycle 10, R5) ────────────
-    //
-    // peerPost seals by default and refuses when it cannot, so an
-    // absence here would read as "somebody forgot to wire the key up".
-    // This is not that: it is the one traffic in the tree deliberately
-    // left plain, and it says so.
-    //
-    // WHAT IS AND IS NOT COVERED is argued at relay.js, `fromPartnerBox`.
-    // In short: every packet a partner CARRIES is sealed to the member it
-    // is addressed to, so a partner forwards what it cannot read — the
-    // property PARTNERS.md always wanted. What travels plain is the
-    // WRAPPER: one relay's instruction to another, a query and an
-    // envelope, never a person's words.
-    //
-    // It cannot be closed from this side alone. A partner is not a member
-    // of the box it is partnered with, so there is no card to seal an
-    // ANSWER to — and sealing one direction only is worse than sealing
-    // neither, because it looks done.
-    sealsPosts: false,
-  });
+  // THE PEERPOST IT ASKED ITS PARTNERS THROUGH (partnerRouter, unsealed)
+  // was built here; partnering is gone (goal/G22.6), so a relay builds no
+  // peerPost and makes no outbound request.
 
   // THE GOVERNOR'S TICK STOOD HERE (cycle 1), every five seconds. Deleted in
   // cycle 8: the relay manages itself within a fixed allowance, set once at

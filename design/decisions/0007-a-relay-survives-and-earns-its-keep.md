@@ -1,5 +1,7 @@
 # 0007 — A relay has one job: survive, which includes earning its keep
 
+> 2026-10-13 (goal/G22.6): `relay.html`, the relay's public face named below, is deleted with the relay's public door; a relay answers only its one door and its members' stream.
+
 **Decided 2026-09-12 by Andy. Against `4a0d51e`. Nothing implemented.**
 
 > the relay must [have] one job only: "survive", this includes "earn your

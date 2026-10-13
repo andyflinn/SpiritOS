@@ -4,8 +4,10 @@
 // THE RELAY'S DATA ON DISC — the store itself, and the tool that reads it.
 //
 // Cycle 3 (design/cycles/2026-09-19-disc-and-owner-token-cycle-3.md): the
-// roll, the invites and the partner roll live in relay-state/relay.db and
-// RAM is their client. This suite asserts the store's contract directly —
+// roll and the invites live in relay-state/relay.db and RAM is their
+// client. (The partner roll lived there too until partnering went, Andy's
+// decision goal/G22.6; an old database that still holds the table opens
+// and keeps working.) This suite asserts the store's contract directly —
 // what relay.js and invites.js build on — and relayDump.js, the read-only
 // SSH view that replaced `cat routingTable.json`.
 
@@ -77,7 +79,7 @@ if (s.members.get('K2').publicLabel === 'bertie' && s.members.count() === 3) {
   test.fail('upsert: ' + JSON.stringify(s.members.get('K2')));
 }
 
-test.subHeading('Invites and the partner roll');
+test.subHeading('Invites');
 
 s.invites.add({ token: 'T1', label: 'zoe', expiresAt: '2026-01-01T00:00:00Z', invitedBy: K1 });
 s.invites.add({ token: 'T2', label: 'yan', expiresAt: '2099-01-01T00:00:00Z', invitedBy: K1 });
@@ -88,62 +90,14 @@ if (swept === 1 && s.invites.get('T1') === null && s.invites.get('T2')) {
   test.fail('sweep=' + swept + ' all=' + JSON.stringify(s.invites.all()));
 }
 
-s.partners.put({ relayKey: 'R1', url: 'http://r1', ownerKey: 'K3', status: 'partnered', since: 'x' });
-const p = s.partners.get('R1');
-if (p && p.status === 'partnered' && s.partners.byOwner('K3').length === 1) {
-  test.check('a partner row is by relay key, with a status, findable by the owner who holds it');
-} else {
-  test.fail('partner: ' + JSON.stringify(p));
-}
-
-test.subHeading('When a partnership last worked (R12)');
+// THE PARTNER ROLL'S CONTRACT (put, byOwner, touch and the `last` column,
+// R12 of cycle 8) STOOD HERE. The roll is gone with partnering (Andy's
+// decision, goal/G22.6); what stays owed is that old data keeps working.
+test.subHeading('A relay.db that still holds a partner roll (goal/G22.6)');
 
 {
-  // `since` says when a partnership BEGAN. Nothing said when it last
-  // carried anything, so the only liveness a relay had was the partner
-  // STREAM — which R13 removes. This is the column that replaces it, and
-  // what orders a search fan-out once it does.
-  if (p && p.last === '') {
-    test.check('a partnership that has never answered reads as empty, not null');
-  } else {
-    test.fail('a fresh partner row: ' + JSON.stringify(p));
-  }
-
-  const when = '2026-09-21T12:00:00.000Z';
-  s.partners.touch('R1', when);
-  const touched = s.partners.get('R1');
-
-  // AND IT TOUCHES NOTHING ELSE. `put` is somebody deciding a partnership
-  // exists; this is the wire saying it still does. Two events, two
-  // authors, and a stamp that rewrote `since` or `url` would let the
-  // second quietly undo the first.
-  if (touched.last === when && touched.since === 'x' && touched.url === 'http://r1') {
-    test.check('a partnership that answered is stamped, and nothing else on the row moves');
-  } else {
-    test.fail('after touch: ' + JSON.stringify(touched));
-  }
-
-  // NEVER CREATES A ROW. A partnership is made deliberately; having
-  // answered is not how one comes into being — and a relay that could be
-  // written into its own partner roll by anything that replied would have
-  // no partner roll at all.
-  if (s.partners.touch('NO-SUCH-RELAY') === false && s.partners.get('NO-SUCH-RELAY') === null) {
-    test.check('while a stamp for a relay that is not a partner creates nothing');
-  } else {
-    test.fail('touch created a row: ' + JSON.stringify(s.partners.get('NO-SUCH-RELAY')));
-  }
-}
-
-test.subHeading('A relay that ran before the column existed (R12)');
-
-{
-  // `CREATE TABLE IF NOT EXISTS` does nothing to a table that already
-  // exists, so a live relay would never get the new column — and would
-  // fail on the first WRITE rather than the first read, which is the worse
-  // end to find out.
-  //
-  // Built by hand rather than by mocking: the old schema, exactly as it
-  // shipped, then opened by today's code.
+  // The schema a relay shipped with, built by hand rather than mocked, with
+  // a member and a partner row in it, then opened by today's code.
   const oldHome = home();
   fs.mkdirSync(path.join(oldHome, 'relay-state'), { recursive: true });
   const { DatabaseSync } = require('node:sqlite');
@@ -161,23 +115,28 @@ test.subHeading('A relay that ran before the column existed (R12)');
     "VALUES ('OLD-R', 'http://old', 'OLD-K', 'partnered', 'then')");
   raw.close();
 
-  const migrated = relayStore.open(oldHome);
-  const row = migrated.partners.get('OLD-R');
-  if (row && row.since === 'then' && row.last === '') {
-    test.check('an existing partner roll gains the column without losing a row');
+  const opened = relayStore.open(oldHome);
+  opened.members.put({ publicKey: 'OLD-K', publicLabel: 'old', claimedAt: '2026-09-01' });
+  const kept = new DatabaseSync(path.join(oldHome, 'relay-state', 'relay.db'), { readOnly: true });
+  const left = kept.prepare('SELECT COUNT(*) AS n FROM partners').get().n;
+  kept.close();
+  if (opened.members.get('OLD-K') && opened.partners === undefined && left === 1) {
+    test.check('it opens and takes writes; the store offers no partner roll, and the old table is left untouched');
   } else {
-    test.fail('after opening an old database: ' + JSON.stringify(row));
+    test.fail('an old relay.db: member ' + JSON.stringify(opened.members.get('OLD-K')) +
+      ', store.partners ' + typeof opened.partners + ', partner rows left ' + left);
   }
+  opened.close();
 
-  // And the write that would have failed now works, which is the half a
-  // read-only check would have missed.
-  migrated.partners.touch('OLD-R', '2026-09-21T13:00:00.000Z');
-  if (migrated.partners.get('OLD-R').last === '2026-09-21T13:00:00.000Z') {
-    test.check('and the write that had nowhere to go now has somewhere');
-  } else {
-    test.fail('touch after migration: ' + JSON.stringify(migrated.partners.get('OLD-R')));
-  }
-  migrated.close();
+  // A FRESH relay.db has no partners table at all.
+  const fresh = home();
+  relayStore.open(fresh).close();
+  const f = new DatabaseSync(path.join(fresh, 'relay-state', 'relay.db'), { readOnly: true });
+  const tables = f.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all()
+    .map(function (r) { return r.name; });
+  f.close();
+  if (tables.join(',') === 'invites,members') test.check('and a fresh relay.db holds members and invites, nothing else');
+  else test.fail('a fresh relay.db holds ' + JSON.stringify(tables));
 }
 
 test.subHeading('All or nothing');
@@ -185,11 +144,11 @@ test.subHeading('All or nothing');
 try {
   s.transaction(function () {
     s.members.remove('K3');
-    s.partners.removeOwner('K3');
+    s.invites.remove('T2');
     throw new Error('half way');
   });
 } catch (e) { /* expected */ }
-if (s.members.get('K3') && s.partners.get('R1')) {
+if (s.members.get('K3') && s.invites.get('T2')) {
   test.check('a transaction that throws leaves both tables as they were');
 } else {
   test.fail('a failed transaction left half its writes');
@@ -229,7 +188,7 @@ function dump(args) {
 }
 
 const counts = dump([]);
-if (counts.code === 0 && /members\s+3/.test(counts.text) && /partners\s+1/.test(counts.text)) {
+if (counts.code === 0 && /members\s+3/.test(counts.text) && /invites\s+1/.test(counts.text) && !/partners/.test(counts.text)) {
   test.check('with no arguments it prints counts');
 } else {
   test.fail('counts: ' + JSON.stringify(counts));
@@ -241,8 +200,8 @@ if (counts.text.indexOf('MCowBQYDK2Vw') === -1 && counts.text.indexOf('andy') ==
 }
 
 const byKey = dump(['key', 'K3']);
-if (byKey.code === 0 && byKey.text.indexOf('"bert"') !== -1 && byKey.text.indexOf('http://r1') !== -1) {
-  test.check('a key lookup shows the row and any partnership it holds');
+if (byKey.code === 0 && byKey.text.indexOf('"bert"') !== -1 && !/partner/.test(byKey.text)) {
+  test.check('a key lookup shows the row (and no partnership: the roll is gone, goal/G22.6)');
 } else {
   test.fail('key: ' + JSON.stringify(byKey));
 }

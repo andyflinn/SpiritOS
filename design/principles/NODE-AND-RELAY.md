@@ -418,6 +418,9 @@ the relay cannot argue with: the Governor optimises, it never widens its own
 world.**
 
 **It also bounds a new capability safely.** Today
+*(Partnering as a permission is gone since 2026-10-13, goal/G22.6, and
+`askPartner` with it; a relay's key is learnt by a card ask on its one door,
+`GET /api/relay/key` being closed. Kept as the record.)*
 **`relay.js` makes no outbound request of any kind** (PARTNERS.md) —
 `askPartner` is injected by `server.js`. Autonomous partnering needs the
 relay to learn a candidate's key, one `GET /api/relay/key`. Keep the property
@@ -503,7 +506,8 @@ within that, including *no*.
 
 **What "verify" can stand on today, and what it cannot.** PARTNERS.md's
 handshake *"verified reciprocity against the far public roll"* — and the
-roll is gone (2026-09-18). `GET /api/relay/key` says who a box is and who
+roll is gone (2026-09-18). The relay's card (a card ask on its one door since
+goal/G22.6, which closed `GET /api/relay/key`) says who a box is and who
 runs it, which covers *"an actual relay"*. **Nothing on the wire says
 *"capable of partnership"*** — which is the same gap as §7: a box has no way
 to say what it speaks. One answer can serve both.
@@ -783,8 +787,9 @@ So the rule needs splitting:
 
 Today a node discovers what a relay speaks by receiving a **404**. That
 works and it is not a design. Divergent evolution wants additive-only
-change, or something that says what a box speaks — and `GET /api/relay/key`
-is the natural place, being the first thing anyone asks.
+change, or something that says what a box speaks — and the relay's card
+(the answer to a card ask on its one door, since goal/G22.6 closed `GET
+/api/relay/key`) is the natural place, being the first thing anyone asks.
 
 **Cheap now, expensive once the two trees have drifted.**
 
@@ -2675,8 +2680,9 @@ a claim that they still hold a seat.
 one thing determines ownership of a relay. First claim. No fleeting roll
 with automatic memory loss can mark a row as 'owner' … ownership is only
 determined by one identified key. The relay knows it. The owner, if not
-too forgetful, might know it too."* That key is `allow.json`'s, served at
-`GET /api/relay/key` (`ownerPublic`), and the node's badge is a comparison
+too forgetful, might know it too."* That key is `allow.json`'s, given on the
+relay's card (`ownerPublic`; a card ask on the one door since goal/G22.6
+closed `GET /api/relay/key`), and the node's badge is a comparison
 with its own key (`ownerBadge.probe`). The `members.owner` column went the
 same day, dropped from an existing relay.db when it opens; nothing on the
 wire marks a row as the owner's.

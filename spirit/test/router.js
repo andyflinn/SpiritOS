@@ -156,39 +156,30 @@ function run() {
     }
   }
 
-  test.subHeading('Three budgets, because they are three populations');
+  test.subHeading('One budget, because there is one population');
 
-  // Decision 0016. A member is one person; a partner is another box whose
-  // behaviour we do not control. A partner forward opens under the relay's
-  // OWN key for everybody at once, so sharing the member cap of 1 would
-  // refuse its second concurrent forward. (The RELAY class, for device
+  // Decision 0016 kept a member's budget and a partner relay's apart. The
+  // partner budget went with partnering as a permission (Andy's decision,
+  // goal/G22.6); a stranger's post is held by the relay's address table and,
+  // here, by the same cap as a member's. (The RELAY class, for device
   // offers, was removed by goal/G16.2.)
   {
-    const R = router.createRouter({ max: 100, maxPerRequester: { member: 1, partner: 2 } });
+    const R = router.createRouter({ max: 100, maxPerRequester: { member: 1 } });
 
     const first = R.open('m1', 'alice', 'tgt', function () { return true; }, null, router.MEMBER);
     const second = R.open('m2', 'alice', 'tgt2', function () { return true; }, null, router.MEMBER);
     if (first.ok && second.ok === false && second.status === 429) {
-      test.check('a member gets one in flight and the second is refused');
+      test.check('a requester gets one in flight and the second is refused');
     } else {
       test.fail('member: ' + JSON.stringify(first) + ' / ' + JSON.stringify(second));
     }
 
-    // Same key, different class — a partner forward is not that member
-    // spending their own slot, and it is capped in its own class.
-    const p1 = R.open('p1', 'alice', 'tgt5', function () { return true; }, null, router.PARTNER);
-    const p2 = R.open('p2', 'alice', 'tgt6', function () { return true; }, null, router.PARTNER);
-    const p3 = R.open('p3', 'alice', 'tgt7', function () { return true; }, null, router.PARTNER);
-    if (p1.ok && p2.ok && p3.ok === false && p3.status === 429 && p3.kind === router.PARTNER) {
-      test.check('a partner gets its own budget on the same key, is capped in its own class, and the refusal names which');
+    const p = R.open('p1', 'alice', 'tgt5', function () { return true; }, null, 'partner');
+    if (router.KINDS.length === 1 && router.KINDS[0] === 'member' && router.PARTNER === undefined &&
+        router.RELAY === undefined && p.ok === false && p.status === 500) {
+      test.check('there is one requester class; the partner class is gone (goal/G22.6) and refused as unknown');
     } else {
-      test.fail('partner: ' + JSON.stringify(p1) + ' / ' + JSON.stringify(p2) + ' / ' + JSON.stringify(p3));
-    }
-
-    if (router.KINDS.length === 2 && router.RELAY === undefined) {
-      test.check('there are two requester classes; the device-only RELAY class is gone (goal/G16.2)');
-    } else {
-      test.fail('classes: ' + JSON.stringify(router.KINDS));
+      test.fail('classes: ' + JSON.stringify(router.KINDS) + ' partner open: ' + JSON.stringify(p));
     }
   }
 
@@ -212,16 +203,8 @@ function run() {
       test.fail('OWED by Andy\'s experiment 1 (2026-10-02): default caps ' + JSON.stringify(R.caps)
         + ', second ' + JSON.stringify(second) + ', other ' + JSON.stringify(other));
     }
-    // A partner forwarding in posts under the relay's own key for
-    // everybody at once: it keeps the budget it had, or the member ceiling
-    // would starve it (the block above says why).
-    const r1 = R.open('d4', 'relayKey', 'tgt4', function () { return true; }, null, router.PARTNER);
-    const r2 = R.open('d5', 'relayKey', 'tgt5', function () { return true; }, null, router.PARTNER);
-    if (R.caps.partner === router.DEFAULT_PER_REQUESTER && r1.ok && r2.ok) {
-      test.check('and the partner class keeps its budget of ' + router.DEFAULT_PER_REQUESTER);
-    } else {
-      test.fail('partner class: ' + JSON.stringify(R.caps) + ' / ' + JSON.stringify(r2));
-    }
+    // The partner class's own budget stood checked here; it is gone with
+    // partnering (goal/G22.6).
     // The live relay passes only its own key (selfKey, goal/G16.2): no cap
     // option, so the defaults above are still the numbers it runs.
     const live = require('fs').readFileSync(require('path').join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
@@ -237,9 +220,9 @@ function run() {
   {
     const R = router.createRouter({ max: 100, maxPerRequester: 9 });
     R.open('c1', 'bob', 't1', function () { return true; }, null, router.MEMBER);
-    R.open('c2', 'bob', 't2', function () { return true; }, null, router.PARTNER);
-    if (R.countFor('bob') === 2 && R.countFor('bob', router.MEMBER) === 1) {
-      test.check('countFor sees every class; countFor with a class sees one');
+    R.open('c2', 'bob', 't2', function () { return true; }, null, router.MEMBER);
+    if (R.countFor('bob') === 2 && R.countFor('bob', router.MEMBER) === 2) {
+      test.check('countFor sees every entry of a requester, with or without the class named');
     } else {
       test.fail('all: ' + R.countFor('bob') + ' member: ' + R.countFor('bob', router.MEMBER));
     }
@@ -249,9 +232,9 @@ function run() {
   // changed underneath it.
   {
     const R = router.createRouter({ max: 100, maxPerRequester: 2 });
-    if (R.caps.member === 2 && R.caps.partner === 2
+    if (R.caps.member === 2 && R.caps.partner === undefined
         && R.maxPerRequester === 2) {
-      test.check('a plain number sets every class, exactly as it did before');
+      test.check('a plain number sets the cap, exactly as it did before');
     } else {
       test.fail('caps from a number: ' + JSON.stringify(R.caps));
     }
@@ -270,49 +253,54 @@ function run() {
     }
   }
 
-  test.subHeading('One target, many askers — a different kind of no');
+  test.subHeading('One target, one slot per sender — a different kind of no');
 
   // Andy: "cap the requests for a specific target at one, respond with
   // (not available), if this causes the calling node to keep the request
   // queued, nothing is lost."
   //
-  // The cap that needs no cooperation: a Sybil farm defeats a per-requester
-  // cap by being many requesters, but it cannot be many TARGETS.
+  // COUNTED PER SENDER since goal/G22.6 (Andy's decision, taking M5 of the
+  // review of 2026-10-10): "the member's one slot in flight counted per
+  // sender ... so no stranger can keep a member busy". The slot was bob's
+  // alone, so whoever held it made bob busy for everybody.
   {
     const R = router.createRouter({ max: 100, maxPerRequester: 99, maxPerTarget: 1 });
 
     const mine = R.open('t1', 'alice', 'bob', function () { return true; });
-    const theirs = R.open('t2', 'carol', 'bob', function () { return true; });
+    const again = R.open('t2', 'alice', 'bob', function () { return true; });
+    const theirs = R.open('t2b', 'carol', 'bob', function () { return true; });
 
-    if (mine.ok && theirs.ok === false && theirs.status === 503) {
-      test.check('one request reaches bob; a second from somebody else is refused');
+    if (mine.ok && again.ok === false && again.status === 503 && theirs.ok) {
+      test.check('one request from alice reaches bob, her second is refused, and carol is not held by alice\'s slot');
     } else {
-      test.fail('per target: ' + JSON.stringify(mine) + ' / ' + JSON.stringify(theirs));
+      test.fail('per target per sender: ' + JSON.stringify(mine) + ' / ' + JSON.stringify(again) + ' / ' + JSON.stringify(theirs));
     }
+    // The checks below read `theirs` as the refused one: it is alice's second.
+    const theirsRefused = again;
 
     // THE POINT OF THE WHOLE REFUSAL. "peer not reachable" is the same
     // 503 and the opposite situation, so a scheduler that could only read
     // the status would back off a perfectly healthy peer.
-    if (theirs.busy === true && typeof theirs.retryAfterMs === 'number' && theirs.retryAfterMs > 0) {
+    if (theirsRefused.busy === true && typeof theirsRefused.retryAfterMs === 'number' && theirsRefused.retryAfterMs > 0) {
       test.check('and it says busy, with when to come back — not merely 503');
     } else {
-      test.fail('busy marker: ' + JSON.stringify(theirs));
+      test.fail('busy marker: ' + JSON.stringify(theirsRefused));
     }
 
-    // A DIFFERENT TARGET IS UNAFFECTED. The cap is the target's, so one
+    // A DIFFERENT TARGET IS UNAFFECTED. The cap is a slot at bob, so one
     // popular member must not make the relay look full to everybody else.
     const other = R.open('t3', 'carol', 'dave', function () { return true; });
     if (other.ok) {
-      test.check('and carol reaches dave meanwhile — the cap is bob’s, not the table’s');
+      test.check('and carol reaches dave meanwhile — the cap is a slot at bob, not the table’s');
     } else {
       test.fail('other target refused: ' + JSON.stringify(other));
     }
 
     // The slot is the ANSWER's to free, exactly as with every other entry.
     R.answer('t1', 'bob');
-    const after = R.open('t4', 'carol', 'bob', function () { return true; });
-    if (after.ok && R.countForTarget('bob') === 1) {
-      test.check('once bob answers, the next asker gets in');
+    const after = R.open('t4', 'alice', 'bob', function () { return true; });
+    if (after.ok && R.countForTarget('bob', 'alice') === 1 && R.countForTarget('bob') === 2) {
+      test.check('once bob answers alice, her next request gets in; carol\'s slot at bob was never hers');
     } else {
       test.fail('after answer: ' + JSON.stringify(after) + ' count=' + R.countForTarget('bob'));
     }
@@ -330,16 +318,17 @@ function run() {
     const R = router.createRouter({ max: 100, maxPerRequester: 99 });
     const first = R.open('d1', 'asker1', 'popular', function () { return true; });
     const second = R.open('d2', 'asker2', 'popular', function () { return true; });
+    const again = R.open('d3', 'asker1', 'popular', function () { return true; });
 
     if (R.maxPerTarget === 1 && router.DEFAULT_PER_TARGET === 1) {
-      test.check('unconfigured, a member may be asked one thing at a time');
+      test.check('unconfigured, a member may be asked one thing at a time by each sender');
     } else {
       test.fail('default per-target is ' + R.maxPerTarget);
     }
-    if (first.ok && second.ok === false && second.busy === true) {
-      test.check('so a second asker is told busy, by default and with no configuration at all');
+    if (first.ok && second.ok && again.ok === false && again.busy === true) {
+      test.check('so a second asker gets in and the first asker\'s second request is told busy, with no configuration at all');
     } else {
-      test.fail('second asker: ' + JSON.stringify(second));
+      test.fail('second asker: ' + JSON.stringify(second) + ' / first asker again: ' + JSON.stringify(again));
     }
   }
 

@@ -150,12 +150,10 @@ async function post(url, body) {
 // The answer comes back inside the envelope the relay replied in, and
 // the body is what a caller wants — the same shape api.peerPost hands a
 // page (js/client/shell.js), reached the same way a page reaches it.
+// The relay's card, asked on its one door (goal/G22.6 closed GET /api/relay/key).
 async function relayKeyOf(relayUrl) {
-  try {
-    const res = await fetch(relayUrl + '/api/relay/key');
-    const parsed = await res.json();
-    return (parsed && parsed.relayPublicKey) || '';
-  } catch (e) { return ''; }
+  const card = await require('./relayDoor').relayKeyOf(relayUrl);
+  return (card && card.relayPublicKey) || '';
 }
 
 // ── A POST IS ANSWERED ON A STREAM, SO THE STREAM HAS TO BE OPEN ─────
@@ -578,7 +576,9 @@ async function up(scenarioName) {
     // here. Sent explicitly all the same: they are two different things
     // that happen to coincide in a lab, and writing the name twice is
     // what says so.
-    const joined = await post(LIVE_RELAY + '/api/relay/claim', {
+    // A claim is a post on the relay's one door, sealed to its key (goal/G22.6
+    // closed POST /api/relay/claim).
+    const joined = await require('./labWorld').claimOn(LIVE_RELAY, peer.id, {
       name: peer.name,
       publicKey: peer.id.publicKey,
       sig: auth.sign(peer.id.privateKey, auth.claimMessage(peer.name)),

@@ -1,13 +1,53 @@
 # Everything is a post — reducing the relay's surface to one door
 
-**Status: opened 2026-09-17 against `833d5d4`. Partly built.**
+**Status: opened 2026-09-17 against `833d5d4`. The public door closed 2026-10-13 (goal/G22.6).**
+
+## The relay's surface since goal/G22.6
+
+Andy, goal/G22.6 box, 2026-10-13: *"The relay's public door, the one any curl
+can reach without key or signature, is killed in this item: /api/relay/key,
+/api/relay/claim, /api/version and the brochure all close. The relay keeps its
+one door (post) and its members' stream."*
+
+| | | |
+|---|---|---|
+| `POST /api/relay/post` | **the one door**: signed posts, addressed by key | the protocol |
+| `POST /api/relay/reply` | a member's answer to what came through the door | the protocol |
+| `GET /api/relay/stream` | the members' stream, signed, members only | the protocol |
+| everything else | 404 | — |
+
+What the closed routes did moved onto the door, signed (relay.js):
+
+- **The relay's key is its card.** A card ask `{"v":1,"body":{"card":true}}`,
+  signed, unsealed, to the empty target `to: ""`, is answered on the post with
+  the relay's signed key statement (`relayCard`: `relayPublicKey`,
+  `relaySealKey`, `keySig`, `relayLabel`, `ownerKey`, `ownerLabel`,
+  `payloadMax`). The one plaintext exception stays the card ask; there is no
+  separate key request.
+- **A claim is a post** to the relay's key, sealed to its cipher key, body
+  `{ claim: { name, publicKey, sig, card, invite, inviteLabel } }`, answered on
+  the post sealed to the card it carried. The claim keeps its inner signature,
+  and the key that signs the post must be the key that claims.
+- **A key the relay does not hold** may ask only those two of the relay itself,
+  and may post to one of its members; everything else is refused 403 "your id is
+  not a valid sender here". Strangers are held by one in-memory table of
+  requesting addresses (an IPv6 address by its /64), as many entries as the
+  relay has members, ban time starting at 1000 ms and doubled on an early
+  repeat; a new address with no free or expired slot is refused "busy". It
+  replaced the per-address claim limit.
+- **Version** is no longer public; the owner's relay-status report carries it.
+- `bash/status` checks a relay with `bash/card-ask.js` instead of curl.
+
+The sections below are the record of how the surface got here. **Where they
+name `GET /api/relay/key`, `POST /api/relay/claim`, `GET /api/version` or the
+brochure as standing, that is history; the table above is the surface.**
 
 | | |
 |---|---|
 | **done** | **the roll is eradicated.** `GET /api/relay/who` is deleted, with `handleRelayWho` and `expandKeys`. Nothing in the tree reads it |
-| **done** | `GET /api/relay/key` — who a box is and who runs it, 97 bytes, flat |
+| **done, then closed** | `GET /api/relay/key` — who a box is and who runs it, 97 bytes, flat. Closed by goal/G22.6: a card ask on the door answers it |
 | **done** | `relayKeys.seat` — a node records its own enrolment at claim and reads it at boot |
-| **design** | 2b, 2c, 2d. 2a is superseded: `claim` need not carry the key, because the key door serves every moment rather than only the claim |
+| **design** | 2b, 2c, 2d. 2a is superseded: `claim` need not carry the key, because the key door serves every moment rather than only the claim. 2c is superseded by goal/G22.6: `/api/version` closed rather than becoming a file |
 
 `rollNarrow.js` is the guard: it goes red if any file under `run/` names
 the route, if the route returns, or if 0012 loses its widened rule.
@@ -54,7 +94,8 @@ thousand members.**
 ## 1. Where the surface is today
 
 Everything reachable from the internet on a relay, at `833d5d4`
-([server.js:920-944](../../spirit/run/js/server.js#L920-L944)):
+([server.js:920-944](../../spirit/run/js/server.js#L920-L944)) — history; the
+surface since goal/G22.6 is the table at the head of this note:
 
 | | | |
 |---|---|---|
@@ -93,8 +134,9 @@ from `server.js:680` to `server.js:902`.)
 
 ### 2a. `claim` carries the relay's key
 
-`POST /api/relay/claim` is public, needs no key, and is permanently outside
-the post rule by 0010's own reasoning. It answers
+*(Closed by goal/G22.6: a claim is a post on the one door now.)*
+`POST /api/relay/claim` was public, needed no key, and was held permanently
+outside the post rule by 0010's reasoning. It answered
 `{ ok, status: 201, peer, owner }`
 ([relay.js:1152](../../spirit/run/js/relay.js#L1152)).
 
@@ -134,6 +176,9 @@ relay's population, which is a [0013](../decisions/0013-a-relay-is-fixed-cost-pe
 violation on the reading side.
 
 ### 2c. `version` becomes a file
+
+*(Superseded by goal/G22.6: `GET /api/version` is closed on a relay, not made a
+file. The owner's relay-status report carries the running version.)*
 
 `VERSION`, `BUILD.commit`, `BUILD.dirty`, `BUILD.at`, `BUILD.source`,
 `BUILD.untracked` are all fixed at boot
@@ -660,7 +705,10 @@ everything lives.
 
   So four still read the roll whole on the happy path.
 
-  ### `GET /api/relay/key` — built 2026-09-18
+  ### `GET /api/relay/key` — built 2026-09-18, closed 2026-10-13
+
+  *(Closed by goal/G22.6. The same statement is now the relay's card, the
+  answer to a signed card ask on the one door; see the head of this note.)*
 
   > **Andy:** *"the first two are easily replaced with `GET /api/relay/key`
   > or whatever."*

@@ -104,20 +104,26 @@ test.subHeading('1. the router does not count a route whose target is the relay 
   const B = 'MCowBQYDK2VwAyEAselfTargetCapacityRequesterBBBBBBBBB=';
   const MEMBER_KEY = 'MCowBQYDK2VwAyEAselfTargetCapacityMemberTargetAAAAAA=';
   let routes = null;
-  try { routes = routerTable.createRouter({ selfKey: RELAY_KEY }); } catch (e) { routes = null; }
+  // A requester cap above one, so the per-target rule is what is measured
+  // (the partner class that had that budget went with partnering, goal/G22.6).
+  try { routes = routerTable.createRouter({ selfKey: RELAY_KEY, maxPerRequester: 9 }); } catch (e) { routes = null; }
   if (!routes) { test.fail(OWED + 'createRouter({selfKey}) threw'); }
   else {
     // Two different callers, both asking the relay itself, both in flight.
-    const one = routes.open('h-self-1', A, RELAY_KEY, function () {}, null, routerTable.PARTNER);
-    const two = routes.open('h-self-2', B, RELAY_KEY, function () {}, null, routerTable.PARTNER);
+    const one = routes.open('h-self-1', A, RELAY_KEY, function () {}, null, routerTable.MEMBER);
+    const two = routes.open('h-self-2', B, RELAY_KEY, function () {}, null, routerTable.MEMBER);
     if (one && one.ok !== false && two && two.ok !== false) test.check('two callers may have a self-addressed request in flight at once (the lock-out of S3 is gone)');
     else test.fail(OWED + 'a second self-addressed route was refused: first ' + short(one) + ', second ' + short(two));
 
-    // AND THE PERSON'S SLOT IS UNTOUCHED, which is the half that must not move.
-    const m1 = routes.open('h-mem-1', A, MEMBER_KEY, function () {}, null, routerTable.PARTNER);
-    const m2 = routes.open('h-mem-2', B, MEMBER_KEY, function () {}, null, routerTable.PARTNER);
-    if (m1 && m1.ok !== false && busy(m2)) test.check('and a member target still answers one at a time: the second is refused busy');
-    else test.fail(OWED + 'the member target slot moved: first ' + short(m1) + ', second ' + short(m2));
+    // AND THE PERSON'S SLOT IS UNTOUCHED, which is the half that must not
+    // move — one at a time PER SENDER since goal/G22.6 (Andy's decision,
+    // M5 of the review of 2026-10-10): A's second request to the member is
+    // refused busy, while B's first is not held by A's slot.
+    const m1 = routes.open('h-mem-1', A, MEMBER_KEY, function () {}, null, routerTable.MEMBER);
+    const m2 = routes.open('h-mem-2', A, MEMBER_KEY, function () {}, null, routerTable.MEMBER);
+    const m3 = routes.open('h-mem-3', B, MEMBER_KEY, function () {}, null, routerTable.MEMBER);
+    if (m1 && m1.ok !== false && busy(m2) && m3 && m3.ok !== false) test.check('and a member target still answers one at a time per sender: a sender\'s second is refused busy, another sender\'s first is not');
+    else test.fail(OWED + 'the member target slot moved: first ' + short(m1) + ', same sender ' + short(m2) + ', other sender ' + short(m3));
   }
 }
 

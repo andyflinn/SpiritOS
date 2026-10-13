@@ -113,6 +113,7 @@ let total = 0;
 let done = 0;
 let deferred = 0;
 let open = 0;
+let retired = 0;
 const broken = [];
 
 files.forEach(function (file) {
@@ -147,6 +148,25 @@ files.forEach(function (file) {
     if (/(?:^|\n)\**Status:\**\s*DEFERRED\s*$/m.test(body)) {
       broken.push(req.id + ': DEFERRED with no reason');
       test.fail(req.id + ' says DEFERRED and gives no reason — ' + req.title);
+      return;
+    }
+
+    // SUPERSEDED IS A LATER DECISION THAT REMOVED THE THING, and it too
+    // must carry its reason on the same line — the decision that removed
+    // it. Added for goal/G22.6 (Andy's decision: partnering goes, and the
+    // suites that verified route hints and partner carrying went with it).
+    // A requirement that was built and then decided away is neither done
+    // today nor deferred; calling it either would be the lie this suite
+    // exists to refuse.
+    const superseded = /(?:^|\n)\**Status:\**\s*SUPERSEDED:\s*(\S.*)/.exec(body);
+    if (superseded) {
+      retired += 1;
+      test.check(req.id + ' superseded by a later decision, named — ' + req.title);
+      return;
+    }
+    if (/(?:^|\n)\**Status:\**\s*SUPERSEDED\s*$/m.test(body)) {
+      broken.push(req.id + ': SUPERSEDED with no reason');
+      test.fail(req.id + ' says SUPERSEDED and names no decision — ' + req.title);
       return;
     }
 
@@ -201,7 +221,8 @@ test.subHeading('What a completion report has to account for');
 // wrote work". It does not answer "was what we agreed written", and the
 // two were reported as one. This is the second number.
 test.check(total + ' agreed requirement(s): ' + done + ' done, ' +
-  deferred + ' deferred with a reason, ' + open + ' still open');
+  deferred + ' deferred with a reason, ' + retired + ' superseded by a later decision, ' +
+  open + ' still open');
 
 if (!broken.length) {
   test.check('and none of them is merely asserted — every DONE names a test that exists');

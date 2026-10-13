@@ -42,7 +42,9 @@ const STATIC_ROUTES = [
   // Genuine browser assets and ordinary app data stay reachable.
   { path: '/js/client/shell.js', expect: 200, why: 'browser boot' },
   { path: '/index.html', expect: 200, why: 'desktop homepage' },
-  { path: '/relay.html', expect: 200, why: 'reachable by its own path in either mode' },
+  // relay.html, the relay's brochure, is gone with the relay's public door
+  // (Andy's decision, goal/G22.6), so a node no longer serves it either.
+  { path: '/relay.html', expect: 404, why: 'the relay brochure is gone (goal/G22.6)' },
   { path: '/favicon.svg', expect: 200, why: 'static asset' },
   { path: '/shell/natter/natter.js', expect: 200, why: 'the shell fetches app entry scripts' },
   // relays.json STOOD HERE and is gone from a fake node's home: it stopped

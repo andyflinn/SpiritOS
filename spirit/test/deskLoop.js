@@ -101,9 +101,6 @@ function pointAt(home, relayUrl, relayKey) {
   require('../run/js/relayKeys.js').list(home, relayUrl, 'spirit', relayKey);
   require('../run/js/nodeStore.js').open(home).close();
 }
-function relayKeyOf(relayUrl) {
-  return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.json(); }).then(function (j) { return (j && j.relayPublicKey) || ''; });
-}
 function handed(log) {
   try { return fs.readFileSync(log, 'utf8').split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); }); } catch (e) { return []; }
 }
@@ -124,10 +121,10 @@ function handed(log) {
   const relayPort = await freePort();
   startNode(relayHome, relayPort, ['--relay']);
   const relayUrl = 'http://127.0.0.1:' + relayPort;
-  const relayUp = await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); }, 15000);
-  if (!relayUp) { test.fail('the scratch relay never answered /api/relay/key'); return; }
+  const relayUp = await require('./relayDoor').awaitRelayDoor(relayUrl);
+  if (!relayUp) { test.fail('the scratch relay never answered a card ask on its one door'); return; }
   includeList.add(andyHome, 'process/js/desk');
-  const relayKey = await relayKeyOf(relayUrl);
+  const relayKey = relayUp.relayPublicKey || '';
   pointAt(andyHome, relayUrl, relayKey);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);

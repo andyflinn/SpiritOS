@@ -112,9 +112,10 @@ async function partB() {
   const relayPort = await freePort();
   startNode(relayHome, relayPort, ['--relay']);
   const relayUrl = 'http://127.0.0.1:' + relayPort;
-  await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); });
+  // Ready, and its key, off a card ask on its one door (goal/G22.6 closed GET /api/relay/key).
+  const relayCard = await require('./relayDoor').awaitRelayDoor(relayUrl);
   includeList.add(andyHome, 'process/js/desk');
-  const relayKey = await fetch(relayUrl + '/api/relay/key').then(function (r) { return r.json(); }).then(function (j) { return (j && j.relayPublicKey) || ''; });
+  const relayKey = (relayCard && relayCard.relayPublicKey) || '';
   pointAt(andyHome, relayUrl, relayKey);
   const andyPort = await freePort();
   startNode(andyHome, andyPort);

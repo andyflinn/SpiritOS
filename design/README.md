@@ -374,20 +374,11 @@ This directory contains the vision, principles, and architecture decisions for *
   without naming a transport, which is the point. Design, nothing built.
 - [The relay as a router](relay/ROUTER.md) — a peer drops a packet on a peer
   and gets a signed receipt. Decision 0006 implemented, plus the receipt.
-- [Partner relays](relay/PARTNERS.md) — *"if you can verify a peer, and we can
-  verify each other, then I can verify your peer."* One hop between two relays
-  and no further, so the trust stays inspectable. Shape agreed, nothing built;
-  decided, recommended and open are kept apart. **Tier three (2026-09-16)**
-  adds the public record: why a relay publishing a peer's self-description is
-  a register rather than a custodian and so does not touch 0006, why the
-  search row stays closed at key/label/present, and why procuring a
-  description on selection proves the route a post will take.
-  **Status at 9110393 (2026-09-17)** supersedes the "nothing is built"
-  header: partner streams and fanned search are built, and the four gates
-  that still refuse a packet across a partnership are named with their
-  lines — plus Andy's ruling that a relay vouches only for *"the fact
-  that they are verified by a trusted partner"*, and that vouching is what
-  a partnership consists of rather than an extra grant.
+- [Partner relays](relay/PARTNERS.md) — **obsolete since 2026-10-13
+  (goal/G22.6).** Partnering as a permission is gone: a relay carries posts to
+  its members from any relay, a member's slot is counted per sender, and the
+  partner roll and budget are removed. The page is the dated record of that;
+  the old design is in git at `d403629b`.
 - [A member's request budget — announced, and honoured](relay/REQUEST-BUDGET.md)
   — a relay tells its members nothing about what they are allowed, so a
   node learns its limits by being refused; and `peerPost` has no queue, so

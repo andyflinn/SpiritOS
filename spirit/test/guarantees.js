@@ -205,20 +205,28 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
       joined.length + ' members refused on reconnect: ' + JSON.stringify(turnedAway[0]));
   }
 
-  // A SECOND ROUTE TO A MEMBER ALREADY BUSY. This is half B doing its job,
-  // and it is what makes the count above a ceiling rather than a sample.
+  // A SECOND ROUTE TO A MEMBER ALREADY BUSY, FROM ANOTHER SENDER. Since
+  // goal/G22.6 a member's slot is counted per sender (Andy's decision,
+  // taking M5 of the review of 2026-10-10), so the owner reaches joined[0]
+  // although joined[1] already holds a request to it. What keeps the count
+  // a ceiling is the other cap: one request in flight per REQUESTER (0016),
+  // so the owner's next one, to anybody, is refused — and open routes stay
+  // within the requesters this relay holds.
   const again = post(w, w.owner, joined[0],
     JSON.stringify({ app: 'x', v: 1, body: { hi: 2 } }));
+  const third = post(w, w.owner, joined[1],
+    JSON.stringify({ app: 'x', v: 1, body: { hi: 3 } }));
 
   const live = w.box.routes.size();
 
-  if (opened === joined.length && again && again.ok === false && live <= allowance) {
-    test.check('every member can be reached at once (' + opened + '), a second route to a ' +
-      'busy member is refused, and ' + live + ' open routes never exceed the ' +
+  if (opened === joined.length && again && again.ok && third && third.ok === false && third.status === 429 &&
+      live <= allowance) {
+    test.check('every member can be reached at once (' + opened + '), another sender still reaches a ' +
+      'busy member, that sender\'s next request is refused, and ' + live + ' open routes never exceed the ' +
       allowance + ' seats bought');
   } else {
-    test.fail('opened ' + opened + ' of ' + joined.length + ', second route ' +
-      JSON.stringify(again) + ', live routes ' + live + ' against allowance ' + allowance);
+    test.fail('opened ' + opened + ' of ' + joined.length + ', another sender ' +
+      JSON.stringify(again) + ', its next ' + JSON.stringify(third) + ', live routes ' + live + ' against allowance ' + allowance);
   }
 }
 

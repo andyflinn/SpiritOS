@@ -20,7 +20,6 @@ const ownerBadge = require('./ownerBadge');
 const sseClient = require('./sseClient');
 // Which key a relay answers to, pinned when this node took its seat.
 const relayKeys = require('./relayKeys');
-const partnerAvailability = require('./partnerAvailability');
 
 function streamUrl(relayUrl, key) {
   return String(relayUrl).replace(/\/+$/, '') +
@@ -456,18 +455,13 @@ function createPresence(opts) {
         // addressed this to us. Presence has always been handled the same
         // way, one line above.
         //
-        // The relay says `{ key, at }` -- a peer, and the partner it was
-        // reached through. `onRoute` matches an EXISTING contact row and
+        // The relay says `{ key, at }` -- a peer, and the relay it was
+        // reached at. `onRoute` matches an EXISTING contact row and
         // writes the route on it; a key nobody here knows is dropped
         // where it lands.
         else if (msg.event === 'route' && onRoute) onRoute(url, msg.data);
-        // -- ONE OF THIS RELAY'S PARTNERS, AVAILABLE OR NOT (R42) --------
-        //
-        // "Unavailable as of `at`", never "dead": kept in RAM beside what
-        // this node knows, stale after fifteen minutes, and used only to
-        // put that partner last among the hints (partnerAvailability.js).
-        // Not correspondence, so not the traffic log — same as `route`.
-        else if (msg.event === 'partner') partnerAvailability.shared().note(url, msg.data);
+        // The `partner` event (a partner relay available or not, R42) STOOD
+        // HERE; partnering is gone (goal/G22.6) and no relay sends it.
         // The same socket carries the router now (ROUTER.md). This file
         // owns the connection and nothing else about them: it hands each
         // one to peerPost and forms no opinion, which is why the fence

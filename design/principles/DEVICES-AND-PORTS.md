@@ -124,7 +124,7 @@ nowhere to arrive.
 |---|---|
 | a device owned by a master | the relay, owned by the key that claimed it |
 | a control panel in the shell | `app/relayMonitor/` |
-| a public face | `relay.html` and the brochure |
+| a public face | none since goal/G22.6 (the brochure, `relay.html`, closed with the relay's public door); a stranger meets it through a card ask |
 | driven by its master over the protocol | the owner verbs — signed, routed, refusing everyone else |
 | reports to its master | the status report only an owner receives |
 | bounds set explicitly by the master | `ramLimitMB`, `discLimitMB` |

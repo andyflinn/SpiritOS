@@ -182,7 +182,8 @@ never `admit`) asks with an ordinary packet of app `api` (`apiDoor.js`):
 
 **Two numbers, because sealing made them two.** You compose against
 16,384; what travels is the sealed form, and the relay bounds that at
-22,528. A relay states its own ceiling in `GET /api/relay/key` as
+22,528. A relay states its own ceiling on its card (the answer to a card
+ask on its one door, goal/G22.6; it was `GET /api/relay/key`) as
 `payloadMax`, so a sender can tell *"too big for me"* from *"too big for
 that box"*.
 

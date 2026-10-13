@@ -48,7 +48,7 @@ const relayStore = require('../run/js/relayStore');
 
 const ensureMaster = require('./labMaster/ensureMaster');
 const labPaths = require('./labMaster/labPaths');
-const { sealedClaimBody } = require('./labWorld');
+const { claimOn } = require('./labWorld');
 
 // `asb-` for appServerBoundary, so these are identifiable as disposable
 // without anybody keeping a list — the same reasoning as labWorld's `lw-`
@@ -158,7 +158,8 @@ async function clear() {
 async function unclaimedRelay() {
   const relay = await makeNode('relay', 'relay', PORT_RELAY, { ramLimitMB: 128 });
   if (!relay.ok) return relay;
-  if (!await answering(relay.url + '/api/relay/key')) {
+  // Ready when it answers a card ask on its one door (goal/G22.6).
+  if (!await require('./relayDoor').awaitRelayDoor(relay.url)) {
     return { ok: false, error: 'the unclaimed relay did not answer on ' + relay.url };
   }
   // NOT CLAIMED, DELIBERATELY, AND CHECKED. "I did not claim it" is an
@@ -195,16 +196,17 @@ async function claimedRelay(opts) {
   const ownerName = owner.name || 'asbowner';
   const relay = await makeNode(name, 'relay', port, { ramLimitMB: ram }, owner.publicKey);
   if (!relay.ok) return relay;
-  if (!await answering(relay.url + '/api/relay/key')) {
+  // Ready when it answers a card ask on its one door (goal/G22.6).
+  if (!await require('./relayDoor').awaitRelayDoor(relay.url)) {
     return { ok: false, error: 'the relay did not answer on ' + relay.url };
   }
 
-  const claimed = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, owner, {
+  const claimed = await claimOn(relay.url, owner, {
     name: ownerName,
     publicKey: owner.publicKey,
     sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
     card: nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)),
-  }));
+  });
   if (!claimed.ok) {
     return { ok: false, error: 'the owner could not claim: ' + JSON.stringify(claimed.body) };
   }
@@ -216,47 +218,28 @@ async function claimedRelay(opts) {
   //
   // ── AND A RELAY CANNOT BE FILLED QUICKLY FROM ONE ADDRESS ─────────
   //
-  // MEASURED, on the first rehearsal of this builder, and it corrects the
-  // recipe rather than the code. Claim number ten was refused with
-  // `too many claims` — `relay.js:1559`, `CLAIM_PER_MIN = 10` at :148,
-  // over a `WINDOW_MS` of 60 seconds at :220, keyed by the caller's
-  // address. Every claim a suite makes comes from 127.0.0.1, so it is one
-  // caller and the tenth trips the limit.
-  //
-  // THAT IS THE DEFENCE WORKING, NOT AN OBSTACLE. Sixteen seats cannot be
-  // taken from one machine in under two minutes, which is a fact about
-  // the product that the recipe accidentally measured — and it belongs in
-  // the sample's README beside the recipe, because a reader who tries to
-  // reproduce the full state and meets a 429 will otherwise believe they
-  // have found the wall when they have found a different one.
-  //
-  // So the builder WAITS for the window rather than pretending: no
-  // X-Forwarded-For, no second interface, no lever. A world built by
-  // stepping around a gate is a world the gate is not in.
-  const CLAIMS_PER_WINDOW = 10;
-  const WINDOW_MS = 60 * 1000;
-  let sinceWait = 1; // the owner's claim is the first in this window
+  // Every claim a suite makes comes from 127.0.0.1, one address. The
+  // per-address claim limit that held them to ten a minute is gone; the
+  // relay's strangers' address table holds them now (goal/G22.6): one
+  // request a second from one address, the ban doubling if it asks early.
+  // relayDoor paces every stranger request past that ban and waits out any
+  // ban the relay names — no X-Forwarded-For, no second interface, no
+  // lever. A world built by stepping around a gate is a world the gate is
+  // not in.
   const joined = [];
   for (let i = 0; i < members; i += 1) {
-    if (sinceWait >= CLAIMS_PER_WINDOW) {
-      // A little past the window, because the limit is a sliding window
-      // and the oldest entry has to fall out of it, not merely age.
-      await sleep(WINDOW_MS + 2000);
-      sinceWait = 0;
-    }
-    sinceWait += 1;
     const label = 'asbm' + (i + 1);
     const row = invites.add(relay.home, { label: label, days: 1 });
     relayStore.open(relay.home).close();
     const id = auth.generateIdentity(label);
-    const res = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, id, {
+    const res = await claimOn(relay.url, id, {
       name: label,
       publicKey: id.publicKey,
       sig: auth.sign(id.privateKey, auth.claimMessage(label)),
       invite: row.token,
       inviteLabel: label,
       card: nodeCard.cardFrom(Object.assign({ name: label }, id)),
-    }));
+    });
     if (!res.ok) {
       // THE REFUSAL IS THE RESULT, NOT AN ERROR, when the point of the
       // world is that the relay is full. The caller is told how far it
@@ -285,15 +268,15 @@ async function claimedRelay(opts) {
     const row = invites.add(relay.home, { label: label, days: 1 });
     relayStore.open(relay.home).close();
     const id = auth.generateIdentity(label);
-    const res = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, id, {
+    const res = await claimOn(relay.url, id, {
       name: label,
       publicKey: id.publicKey,
       sig: auth.sign(id.privateKey, auth.claimMessage(label)),
       invite: row.token,
       inviteLabel: label,
       card: nodeCard.cardFrom(Object.assign({ name: label }, id)),
-    }));
-    wall = { admitted: res.ok, refusal: res.body, status: res.status };
+    });
+    wall ={ admitted: res.ok, refusal: res.body, status: res.status };
   }
 
   // ── THE APP SERVER'S OWN SEAT, MINTED BY THE OWNER ──────────────────

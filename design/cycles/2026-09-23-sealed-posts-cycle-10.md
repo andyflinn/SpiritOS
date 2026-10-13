@@ -1,5 +1,7 @@
 # Cycle 10 — a relay carries what it cannot read
 
+> 2026-10-13 (goal/G22.6): `GET /api/relay/key` and `POST /api/relay/claim`, named below, are closed. The signed key statement (with `payloadMax`) is the answer to a signed card ask on the relay's one door, and the sealed claim is a post on that door; `hub.sealedClaim` became `peerPost.claim`.
+
 **Opened 2026-09-23, from `989f39a`. Nothing built but the keypair. Sixteen requirements, after wsl-claude reviewed it.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,

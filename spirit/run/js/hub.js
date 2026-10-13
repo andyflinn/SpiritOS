@@ -4,10 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 const auth = require('./relayAuth');
-// The one sealing implementation (cycle 10, R4). Used here for the claim
-// route, which is a direct POST rather than a peer post and so was not
-// reached by cycle 10's R5 — see sealedClaim below.
-const seal = require('./seal');
+// seal.js was required here for the sealed claim; the claim is peerPost's
+// since goal/G22.6, and the hub seals nothing.
 // invites.js STOOD HERE, required and never used — it is the relay's
 // waiting room, on the relay's disc (cycle 3), and nothing on a node reads it.
 const ownerBadge = require('./ownerBadge');
@@ -131,188 +129,31 @@ const wire = require('./relayRequest');
 const assertRelayUrl = wire.assertRelayUrl;
 const relayRequest = wire.relayRequest;
 
-// The invite is forwarded, never minted here — a token this node made up
-// would not be in the relay's invites.json. Minting is cycle 2.
-// `name` is what this node wants to be CALLED. `inviteLabel` is the word
-// the relay owner wrote on the invite — spoken down a phone, matched at
-// the far end, and never stored (R1,
-// design/cycles/2026-09-15-labels-are-not-identities.md).
-//
-// The signature covers `name` and only `name`, because a signature here
-// binds this KEY to that public label. The invite label proves a
-// different thing — that this is the person the owner meant — and it
-// proves it by being held, the way the token is.
-//
-// SENT WHENEVER THERE IS A TOKEN, even when it matches `name`. It was
-// omitted in that case for a few hours, because the relay fell back —
-// and the relay does not fall back any more:
-//
-//   Andy: "i dislike a relay supporting stale nodes at this point the
-//   nodes should break rather than STILL having code on a relay that
-//   support old crap"
-//
-// So the two travel together or the claim is refused, which is also what
-// they do in the world: the owner reads a token and a word down the same
-// phone call.
-function signedClaim(rootDir, name, invite, inviteLabel) {
-  // The key is already there (relayAuth's first load, goal/G22.5); the
-  // claim only names it — the claimed name over an empty name or the
-  // machine-name default, keys never touched (relayAuth.nameIdentity).
-  const id = auth.nameIdentity(rootDir, name);
-  // AND THE OTHER HALF OF THE CARD.
-  //
-  //   Andy: "the node assigns the first name when redeeming an invite.
-  //   but on boot: the node should fill the description."
-  //
-  // server.js fills the description on every boot, so this finds it
-  // filled and writes nothing; it stays for a description emptied by hand.
-  try { nodeCard.ensureDescription(rootDir); }
-  catch (e) { /* a caption must never be the reason a claim fails */ }
-  const body = {
-    name: name,
-    publicKey: id.publicKey,
-    sig: auth.sign(id.privateKey, auth.claimMessage(name)),
-    // ── AND THE CARD, AT THE MOMENT OF ENROLMENT (cycle 10, R5) ─────
-    //
-    //   Andy: "so the relay is the keeper of cards, in the database, on
-    //   disc. got it."
-    //
-    // The relay seals its answers to this member with the key on it, and
-    // its broadcasts say "these two keys, this name" from it. Sent here
-    // because enrolment is the one moment a node and a relay are already
-    // talking and the node has just been given a name.
-    //
-    // NOT COVERED BY THE CLAIM SIGNATURE, and it does not need to be: a
-    // card covers itself, and the relay checks that the key inside it is
-    // the key that signed the claim. Adding it to `claimMessage` would
-    // change a signed format — a protocol decision — to buy nothing.
-    card: nodeCard.describe(rootDir),
-  };
-  if (invite) body.invite = invite;
-  const onInvite = String(inviteLabel == null ? '' : inviteLabel).trim();
-  if (onInvite) body.inviteLabel = onInvite;
-  return body;
-}
+// signedClaim AND sealedClaim STOOD HERE: the claim's body, sealed to the
+// cipher key this node fetched from the relay's public key route, for the
+// relay's public claim route. Both routes are closed (Andy's decision, goal/G22.6),
+// and the claim is a post on the relay's one door, built and sealed by
+// peerPost (peerPost.claim, which keeps sealedClaim's `known` rule: a
+// caller states whether the relay is already pinned or this is first
+// contact; omitting it is not a default).
 
-// ── AND THE CLAIM IS SEALED TO THE RELAY (cycle 10, R9) ──────────────
+// ── A RELAY'S KEY, AS THE PROBE AND THE STREAMS ASK IT (goal/G22.6) ──────
 //
-//   Andy, 2026-09-23, on being shown that sealing peer posts never
-//   reached this route: *"3. seal it. agreed."*
-//
-// THE TOKEN IS THE REASON. An invite token is a credential — a word
-// somebody reads down a telephone — and `/api/relay/claim` is a direct
-// POST rather than a peer post, so that cycle's R5 sealing went past it.
-// TLS ends at Caddy on the relay's host, which means today that token is
-// plaintext in that process and in anything it writes down. Sealed, the
-// terminator carries bytes it cannot read, and the headline of this requirement becomes
-// true rather than nearly true.
-//
-// ── WHAT STAYS OUTSIDE THE SEAL, AND WHY IT MUST ────────────────────
-//
-// `from` alone. The recipient has to know who sealed it before it can
-// open it — the sender is in the associated data — so putting the
-// claimer's own public key inside would be a lock whose key is inside
-// the box. It is public anyway: it is what they are claiming WITH.
-//
-// Everything else goes in: the name, the signature, the invite token,
-// the label the owner wrote down, and the card.
-//
-// ── THE KEY COMES FROM THE SIGNED DOOR, OR NOTHING IS SENT ──────────
-//
-// `GET /api/relay/key` publishes the relay's cipher key and signs it with
-// the identity key beside it (this requirement's first half). If that does
-// not verify, this refuses to compose — it does not fall back to a plain
-// claim, because a fallback is exactly what an attacker who can strip a
-// signature would ask for.
-//
-// A NODE WITH NO SEAT CANNOT ASK A PEER FOR THIS. It has no stream and
-// nothing to address a post to, which is why the key door is a granted
-// GET and always was (decision 0010).
-// ── `known` IS REQUIRED, AND IT SAYS WHETHER THIS RELAY IS ALREADY PINNED
-//
-// FOUND BY THE FORK DETECTOR, 2026-09-24: `GET /api/relay/key` was being
-// composed from three places, and two of them were this function and the
-// app server's `askRelay` — which PINS what it gets. So a caller checked
-// the relay's identity, and then this function FETCHED THE KEY AGAIN and
-// sealed the claim to whatever answered.
-//
-// THE CHECK BELOW PROVES AUTHENTICITY, NOT IDENTITY. `relayKeySigned`
-// says this cipher key is signed by the identity key beside it — an
-// attacker answering with their OWN validly-signed pair passes it
-// completely. Against a caller holding a pin, that is not a check at
-// all, and what got sealed to the stranger is an INVITE: a bearer token
-// we refused to put in `argv` an hour earlier for being readable.
-//
-// THE FIX REMOVES A REQUEST RATHER THAN ADDING A CHECK — Andy: *"fix to
-// avoid unnecessary calls on the wire"* — so the window closes by
-// construction. There is no second answer to substitute. A guard can be
-// got wrong; an absent request cannot.
-//
-//   'first-contact'                   fetch, verify, trust. A node's FIRST
-//                                     claim genuinely is this: there is
-//                                     nothing to compare against, and that
-//                                     fetch is how you learn the relay.
-//   { relayPublicKey, relaySealKey }  seal to what the caller already has.
-//                                     NO REQUEST.
-//   anything else, including omitted  throws.
-//
-// NOT OPTIONAL, and the reason is G14's: an optional guard whose absence
-// means "do the unsafe thing" IS absent-means-everything. With it, "every
-// caller that should have passed a key did" is vacuously true of every
-// caller that passed nothing. So each caller STATES WHICH CASE IT IS IN,
-// and a new one that names neither does not run.
-//
-// PIN THE IDENTITY, CACHE THE SEAL KEY. wsl-claude, correcting the first
-// shape of this: a card gives a node a ROTATION — a new seal key, signed
-// by the same identity — so a caller that pinned the seal key would
-// refuse its owner's own relay months later, on an unattended box, with
-// a failure indistinguishable from the attack the pin exists for. The
-// identity is the anchor; the seal key is derived and may be re-fetched,
-// because substituting it then requires forging a signature by the
-// pinned key.
-function sealedClaim(url, rootDir, name, invite, inviteLabel, known) {
-  let body = null;
-  // A refusal from signedClaim is this promise's refusal, never a throw
-  // out of the caller's request handler.
-  try { body = signedClaim(rootDir, name, invite, inviteLabel); }
-  catch (e) { return Promise.reject(e); }
-
-  const wrap = function (relayPublicKey, relaySealKey) {
-    const wrapped = seal.seal(relaySealKey, body.publicKey, relayPublicKey,
-      JSON.stringify(body));
-    if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
-    return { from: body.publicKey, sealed: wrapped };
-  };
-
-  if (known && typeof known === 'object' && known.relayPublicKey && known.relaySealKey) {
-    // Already pinned. Seal to what the caller proved, and ask nobody.
-    return Promise.resolve().then(function () {
-      return wrap(String(known.relayPublicKey), String(known.relaySealKey));
+// ownerBadge.probe and presenceNode.start ask each relay who it is with a
+// function `ask(url)` answering { status, text }, where `text` is the
+// relay's signed key statement. That statement is a card ask on the one
+// door now, through peerPost.relayKey, so this turns the router into that
+// function. A relay that does not answer rejects, which the probe reads as
+// a relay that is down.
+function relayKeyAsk(router) {
+  return function (url) {
+    if (!router || typeof router.relayKey !== 'function') {
+      return Promise.reject(new Error('no router to ask the relay with'));
+    }
+    return router.relayKey(url).then(function (said) {
+      return { status: 200, text: JSON.stringify(said) };
     });
-  }
-
-  if (known !== 'first-contact') {
-    return Promise.reject(new Error(
-      'sealedClaim needs to know whether this relay is already pinned: pass ' +
-      "'first-contact' for a relay never met, or { relayPublicKey, relaySealKey } " +
-      'for one already proved. Omitting it is not a default.'));
-  }
-
-  return Promise.resolve()
-    .then(function () { return relayRequest(url, 'GET', '/api/relay/key', null); })
-    .then(function (r) {
-      let said = null;
-      try { said = JSON.parse(r.text); } catch (e) { said = null; }
-      if (!said || !auth.relayKeySigned(said.relayPublicKey, said.relaySealKey,
-        said.relayLabel, said.keySig)) {
-        throw new Error('that relay does not publish a signed cipher key — it may be running older code');
-      }
-      // The key learned here is what a successful claim files the relay
-      // under (goal/G19.15). Not enumerable, so it never goes on the wire.
-      var out = wrap(said.relayPublicKey, said.relaySealKey);
-      Object.defineProperty(out, 'relayPublicKey', { value: String(said.relayPublicKey) });
-      return out;
-    });
+  };
 }
 
 // signedSend STOOD HERE — the bytes handleSend put on the wire. Its one
@@ -1072,16 +913,26 @@ function createHub(rootDir) {
     readJsonBody(req).then(function (body) {
       withClaimRelay(res, body && body.url, function (url) {
         var learnedKey = '';
+        if (!router || typeof router.claim !== 'function') {
+          fail(res, 503, 'this node has no router to claim with');
+          return;
+        }
         // FIRST CONTACT, STATED. This is the node's own claim: it has no
         // pin for this relay — the claim is how it gets one — so the
-        // fetch-and-trust path is correct here and says so rather than
-        // arriving by omission.
-        sealedClaim(url, rootDir,
-          body && body.name, body && body.invite, body && body.inviteLabel,
+        // ask-and-trust path is correct here and says so rather than
+        // arriving by omission. Through peerPost, on the relay's one door
+        // (goal/G22.6: "the hub asks peerPost for a relay's key and for a
+        // claim").
+        router.claim(url, body && body.name, body && body.invite, body && body.inviteLabel,
           'first-contact')
-          .then(function (sending) {
-            learnedKey = (sending && sending.relayPublicKey) || '';
-            return relayRequest(url, 'POST', '/api/relay/claim', sending);
+          .then(function (said) {
+            learnedKey = (said && said.relayPublicKey) || '';
+            // The relay's answer, in the shape the closed route gave the
+            // browser: the peer on success, { error, peer? } otherwise,
+            // under the claim's own status.
+            var payload = said.ok ? (said.peer || {})
+              : (said.peer ? { error: said.error, peer: said.peer } : { error: said.error });
+            return { status: said.status, text: JSON.stringify(payload) };
           })
           .then(function (r) {
             // AFTER THE ANSWER IS WRITTEN, never before: a claim that
@@ -1265,10 +1116,8 @@ function createHub(rootDir) {
       .filter(function (at, i, all) { return at && all.indexOf(at) === i; });
     var connected = router.relaysHeld();
     if (!connected.length) return { unreachable: true };
-    // A PARTNER THIS RELAY RECENTLY CALLED UNAVAILABLE GOES LAST (R42).
-    // Reordered, never dropped: the word is "as of", and a send after it goes
-    // stale is the relay's next try.
-    hints = require('./partnerAvailability').shared().order(connected[0], hints);
+    // The partner-availability reorder (R42) STOOD HERE; partnering is gone
+    // (goal/G22.6), and a relay no longer reads route hints at all.
     return { relayUrl: connected[0], hints: hints.length ? hints : undefined };
   }
 
@@ -2005,10 +1854,11 @@ function createHub(rootDir) {
   //   easier to determine."
   //
   // They can, and better than asked: not just peers on the ledger —
-  // ANYONE. `GET /api/relay/key` is public and unsigned and carries the
-  // relay's own key beside `ownerKey` and `ownerLabel` (it took that job
-  // from the roll, deleted 2026-09-18). So eligibility is a fetch and a
-  // comparison, with no new wire, no signature and no membership.
+  // ANYONE. The relay's card — the answer to a card ask on its one door,
+  // since goal/G22.6 closed `GET /api/relay/key` — carries the relay's own
+  // key beside `ownerKey` and `ownerLabel` (it took that job from the roll,
+  // deleted 2026-09-18). So eligibility is one ask and a comparison, with
+  // no membership.
   //
   // READ-ONLY, AND THAT IS THE DESIGN. This answers a question; it does
   // not promote anybody. The promotion is an owner verb posted to the
@@ -2472,50 +2322,13 @@ function createHub(rootDir) {
           });
         }).catch(function () { silent.push(url); });
       })).then(function () {
-        // -- A PARTNER'S KEY BECOMES A PARTNER'S URL ------------------
-        //
-        //   Andy: "it must accompany the found records with the partner ID
-        //   supplying that result record ... so the node can associate the
-        //   peer with an initial route."
-        //
-        // Asked ONLY when something actually came from a partner: an
-        // ordinary search of this node's own relays costs no extra round
-        // trip. `{partners:true}` is a verb any member may ask —
-        // handleCandidates asked it from tier one until that verb was
-        // deleted (2026-09-17), so this adds no door and is now its only
-        // reader.
-        var needsRoute = Object.keys(found).some(function (k) { return found[k].via; });
-        if (!needsRoute) return null;
-
-        return Promise.all(urls.map(function (url) {
-          var relayKey = relayKeys.pinned(rootDir, url);
-          if (!relayKey) return Promise.resolve(null);
-          return sendPacket(router, url, relayKey, systemPayload({ partners: true }))
-            .then(function (answer) {
-              var said = null;
-              try { said = JSON.parse((answer && answer.text) || ''); }
-              catch (e) { said = null; }
-              return ((said && said.body && said.body.partners) || []);
-            })
-            .catch(function () { return []; });
-        })).then(function (lists) {
-          var byKey = Object.create(null);
-          lists.forEach(function (list) {
-            (list || []).forEach(function (p) {
-              if (p && p.relayKey && p.url) byKey[p.relayKey] = p.url;
-            });
-          });
-          Object.keys(found).forEach(function (k) {
-            var row = found[k];
-            if (!row.via) return;
-            var at = byKey[row.via];
-            // A partner this node cannot name is a row it cannot confirm.
-            // Left with the answering relay's URL rather than a guess: the
-            // confirm then fails honestly, naming a relay, instead of
-            // succeeding against the wrong roll.
-            if (at) { row.relay = at; row.relayLabel = labels[at] || ''; }
-          });
-        });
+        // A PARTNER'S KEY BECAME A PARTNER'S URL HERE, by asking each relay
+        // `{partners: true}`. That verb went with partnering (Andy's
+        // decision, goal/G22.6), and a relay's search answers only its own
+        // members, so no row carries a `via` to resolve; the reply's `via`
+        // and `viaPartner` fields stay, null and false, as the verb's
+        // declared shape (peer/search.json) until a ruling changes it.
+        return null;
       }).then(function () {
         var list = Object.keys(found).map(function (k) { return found[k]; });
         // What memory adds, taken now — after every relay has answered or
@@ -2606,7 +2419,14 @@ function createHub(rootDir) {
   // rather than downloading each relay, which is the same question with
   // a bound on the answer.
 
-  function handlePartnerCheck(req, res, readJsonBody) {
+  // PARTNERING AS A PERMISSION IS GONE (Andy's decision, goal/G22.6): no
+  // relay keeps a partner roll any more, so what this answers promotes
+  // nothing. The verb stays until Andy rules on it — a node verb is not
+  // removed without his yes — and answers the same question it always did,
+  // who runs the relay at that url, now off the relay's card through
+  // peerPost (goal/G22.4's "the hub asks peerPost for a relay's key").
+  function handlePartnerCheck(req, res, readJsonBody, deps) {
+    var router = deps && deps.router;
     readJsonBody(req).then(function (body) {
       var peerKey = String((body && body.publicKey) || '').trim();
       var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
@@ -2627,30 +2447,19 @@ function createHub(rootDir) {
       // a whole-roll read on the refusal path so it could still name
       // the other owner.
       //
-      // BOTH OF THOSE WERE THE ROLL. `GET /api/relay/key` carries
-      // `ownerKey` and `ownerLabel` now — two fields that were already
-      // public on the row marked `owner`, asked for without asking for
-      // the membership they were buried in. One request, fixed cost, and
-      // this verb no longer touches the roll on any path.
-      //
-      // Narrowing would have been the wrong move and is worth saying so:
-      // a `?owner=1` parameter answers the same question by making the
-      // cheat smaller, and a smaller cheat is a defended one.
+      // BOTH OF THOSE WERE THE ROLL. The relay's card carries `ownerKey`
+      // and `ownerLabel` — asked for without asking for any membership.
+      // One request, fixed cost, and this verb touches no roll on any path.
       //
       // THE CHECK IS UNCHANGED. "The key marked owner over there is the
       // key of the peer here" — a referral has to be verifiable (Andy),
-      // and it still is, off a public page the relay serves about itself.
-      relayRequest(url, 'GET', '/api/relay/key', null)
-        .then(function (r) {
-          var said = null;
-          try { said = JSON.parse(r.text); }
-          catch (e) { said = null; }
-          if (r.status !== 200 || !said) {
-            // A relay too old to have the door, or one that is down. Both
-            // are "this cannot be checked", and neither is a promotion.
-            answer({ ok: false, error: 'that relay did not say who runs it (' + r.status + ')' });
-            return;
-          }
+      // and it still is, off the card the relay signs about itself.
+      if (!router || typeof router.relayKey !== 'function') {
+        answer({ ok: false, error: 'this node has no router to ask that relay with' });
+        return;
+      }
+      router.relayKey(url)
+        .then(function (said) {
 
           var ownerKey = String(said.ownerKey || '');
           if (!ownerKey) {
@@ -2669,14 +2478,15 @@ function createHub(rootDir) {
           answer({
             ok: true,
             url: url,
-            // Pinned at promotion, used at the hop.
             relayKey: said.relayPublicKey || '',
             relayLabel: said.relayLabel || '',
             ownerLabel: said.ownerLabel || '',
           });
         })
         .catch(function (err) {
-          answer({ ok: false, error: String((err && err.message) || err) });
+          // A relay too old to answer the card ask, or one that is down.
+          // Both are "this cannot be checked".
+          answer({ ok: false, error: 'that relay did not say who runs it: ' + String((err && err.message) || err) });
         });
     }).catch(function () {
       fail(res, 400, 'bad body');
@@ -2769,12 +2579,13 @@ function createHub(rootDir) {
   // painting three relays does not probe each of them four times.
   var PROBE_FRESH_MS = 3000;
   var probeCache = null;
-  function relaySummary() {
+  // THE KEY ASK GOES THROUGH peerPost (goal/G22.6: GET /api/relay/key is
+  // closed, and "the hub asks peerPost for a relay's key"). Making the
+  // relay list a search with no call to a relay at all is goal/G22.4's.
+  function relaySummary(router) {
     if (probeCache && Date.now() - probeCache.at < PROBE_FRESH_MS) return probeCache.promise;
     var me = auth.loadIdentity(rootDir);
-    var p = ownerBadge.probe(rootDir, function (url, method, pathname) {
-      return relayRequest(url, method, pathname, null);
-    }, me.publicKey);
+    var p = ownerBadge.probe(rootDir, relayKeyAsk(router), me.publicKey);
     probeCache = { at: Date.now(), promise: p };
     p.catch(function () { if (probeCache && probeCache.promise === p) probeCache = null; });
     return p;
@@ -2805,8 +2616,8 @@ function createHub(rootDir) {
   var RELAY_SEARCH_SCANNED = 1000;
   var RELAY_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 
-  function relaySearch(body) {
-    return relaySummary().then(function (summary) {
+  function relaySearch(body, deps) {
+    return relaySummary(deps && deps.router).then(function (summary) {
       var q = String((body && body.q) || '').trim();
       var text = /^\*+$/.test(q) ? '' : q;
       var bucket = createProbabilityBucket(RELAY_SEARCH_SCANNED);
@@ -2853,7 +2664,7 @@ function createHub(rootDir) {
   function relayGet(body, deps) {
     var key = String((body && body.key) || '');
     if (!key) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
-    return relaySummary().then(function (summary) {
+    return relaySummary(deps && deps.router).then(function (summary) {
       var row = summary.rows.filter(function (r) { return r.url === key; })[0];
       if (!row) return { ok: false, status: 404, error: 'no such relay' };
       var reports = (deps && deps.router && deps.router.relayStatus) ? deps.router.relayStatus() : {};
@@ -2883,9 +2694,7 @@ function createHub(rootDir) {
     // off the body above, because it is echoed back to the browser as
     // `name` below and Natter uses it as the label to display.
     var me = auth.loadIdentity(rootDir);
-    ownerBadge.probe(rootDir, function (url, method, pathname) {
-      return relayRequest(url, method, pathname, null);
-    }, me.publicKey)
+    ownerBadge.probe(rootDir, relayKeyAsk(deps && deps.router), me.publicKey)
       .then(function (summary) {
         // The roster sweep that rode this probe is gone (2026-09-19) — see
         // the note where reconcileMembers stood.
@@ -2961,16 +2770,12 @@ module.exports = {
   // primitive to probe which relays it holds a row on and must not grow
   // a second one that asserts less.
   relayRequest: relayRequest,
-  // THE SEALED CLAIM, exported for the same reason `relayRequest` and
-  // `frontDoor` are: the app server has to take a seat on its relay, and
-  // a second claim builder would be a second answer to a question this
-  // one already answers — including the seal, the signed-key check and
-  // the refusal of a relay that publishes no signed cipher key.
-  //
-  // Andy, 2026-09-24, on the app server needing a seat at all: "WE
-  // already have all those mechanisms proven during the relay-install."
-  // This is the one they were proven on.
-  sealedClaim: sealedClaim,
+  // THE SEALED CLAIM (sealedClaim) was exported here; it is peerPost.claim
+  // since goal/G22.6, on the relay's one door.
+  // A relay's key, asked through the node's router (peerPost.relayKey), in
+  // the { status, text } shape ownerBadge.probe and presenceNode.start ask
+  // with (goal/G22.6).
+  relayKeyAsk: relayKeyAsk,
   buildPeople: buildPeople,
   contactLabel: contactLabel,
   searchPeople: searchPeople,

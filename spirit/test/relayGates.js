@@ -31,10 +31,10 @@
 //                                         The finding it guarded is
 //                                         answered by deletion, which is
 //                                         the strongest form of a fix.
-//   "rotating the sender name does not    was send, is now claim alone —
-//    buy a fresh budget"                  `sendHits` went with `send`,
-//                                         and `claimHits` is the only
-//                                         caller-keyed bucket left.
+//   "rotating the sender name does not    was send, then claim alone, and
+//    buy a fresh budget"                  since goal/G22.6 the relay's
+//                                         address table at its one door:
+//                                         `claimHits` went with it.
 //
 // Recorded rather than quietly re-pointed: a regression guard that
 // changes what it guards without saying so is how a closed finding gets
@@ -217,62 +217,69 @@ test.subHeading('Keys mode: what a signature is actually required for');
   }
 }
 
-// ---- 3: rate limiting is per caller, not per claimed name ----
-test.subHeading('Rate limiting survives a rotating claimer name');
+// ---- 3: claims are held by the caller's ADDRESS, not by name or key ----
+//
+// The per-address claim limit (ten a minute) stood here. Andy's decision,
+// goal/G22.6: strangers are held by one table of requesting addresses at
+// the relay's one door, and it "replaces the per-address claim limit". So
+// the flood is driven through the door, as claims from keys this relay does
+// not hold, rotating both the name and the key, all from one address.
+test.subHeading('A claim flood from one address is held, whatever names and keys it rotates');
 {
-  // Every squatter holds an invite of its own, so the first refusal is the
-  // rate limit and not the invite lock.
+  const seal = require(path.join(relayNode, 'js', 'seal.js'));
+  const owner = auth.generateIdentity('owner');
   const squatters = [];
   for (let i = 0; i < ROTATION_CLAIMS; i++) {
     squatters.push(auth.generateIdentity('squatter' + i));
   }
-  resetState(auth.generateIdentity('owner').publicKey);
+  resetState(owner.publicKey);
   const relayInvites = require(path.join(relayNode, 'js', 'invites.js'));
   const tokens = squatters.map(function (s, i) {
     return relayInvites.add(relayNode, { label: 'squatter' + i, days: 1 }).token;
   });
   const claimRelay = createRelay();
+  // The owner holds a row, so the table has room for two addresses once the
+  // first squatter is in (as many entries as members).
+  claimRelay.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey, '', '', '');
 
-  let claimsAccepted = 0;
+  function claimOnDoor(i, address) {
+    const id = squatters[i];
+    const name = 'squatter' + i;
+    const text = JSON.stringify(seal.seal(claimRelay.relaySealKey(), id.publicKey, claimRelay.relayPublicKey(),
+      JSON.stringify({ v: 1, body: { claim: {
+        name: name, publicKey: id.publicKey, sig: auth.sign(id.privateKey, auth.claimMessage(name)),
+        invite: tokens[i], inviteLabel: name,
+      } } })));
+    return claimRelay.routePost(id.publicKey, '', text,
+      auth.sign(id.privateKey, auth.postMessage(id.publicKey, '', text)), undefined, address);
+  }
+
+  let claimsTaken = 0;
   let claimRefusal = null;
-  for (let i = 0; i < ROTATION_CLAIMS; i++) {
-    const r = claimRelay.claim(
-      'squatter' + i,
-      auth.sign(squatters[i].privateKey, auth.claimMessage('squatter' + i)),
-      squatters[i].publicKey,
-      '203.0.113.9',
-      tokens[i],
-      'squatter' + i
-    );
-    if (r.ok) claimsAccepted++;
+  for (let i = 0; i < ROTATION_CLAIMS - 1; i++) {
+    const r = claimOnDoor(i, '203.0.113.9');
+    if (r && r.ok) claimsTaken++;
     else if (claimRefusal === null) claimRefusal = r;
   }
-  if (claimsAccepted >= ROTATION_CLAIMS) {
-    test.fail('all ' + ROTATION_CLAIMS + ' name claims succeeded from one caller — ' +
+  if (claimsTaken >= ROTATION_CLAIMS - 1) {
+    test.fail('all ' + (ROTATION_CLAIMS - 1) + ' claims were taken from one address — ' +
       'a squatter can take the whole namespace');
-  } else if (claimRefusal && claimRefusal.status === 429) {
-    test.check('a rotating-name claim flood was rate-limited after ' + claimsAccepted + ' claims');
+  } else if (claimsTaken === 1 && claimRefusal && claimRefusal.status === 429) {
+    test.check('a rotating-name, rotating-key claim flood from one address is held after ' + claimsTaken +
+      ' claim: the address asked again inside its ban');
   } else {
-    test.fail('claim flood stopped after ' + claimsAccepted +
-      ' but not by the rate limit: ' + JSON.stringify(claimRefusal));
+    test.fail('the claim flood stopped after ' + claimsTaken +
+      ' but not by the address table: ' + JSON.stringify(claimRefusal));
   }
 
-  // AND THE BUCKET IS THE CALLER'S. Same relay, a different clientKey: the
-  // budget it gets is its own, which is what "keyed on the caller" means
-  // and what rotating a NAME must not achieve.
-  const nextFree = 'squatter' + (ROTATION_CLAIMS - 1);
-  const other = claimRelay.claim(
-    nextFree,
-    auth.sign(squatters[ROTATION_CLAIMS - 1].privateKey, auth.claimMessage(nextFree)),
-    squatters[ROTATION_CLAIMS - 1].publicKey,
-    '198.51.100.7',
-    tokens[ROTATION_CLAIMS - 1],
-    nextFree
-  );
-  if (!other || other.status !== 429) {
-    test.check('and a different caller is not spending the flooder budget');
+  // AND THE ENTRY IS THE ADDRESS'S. A different address is not spending the
+  // flooder's ban, which is what "keyed on the caller" means and what
+  // rotating a NAME or a KEY must not achieve.
+  const other = claimOnDoor(ROTATION_CLAIMS - 1, '198.51.100.7');
+  if (other && other.ok) {
+    test.check('and a different address is not held by the flooder\'s ban');
   } else {
-    test.fail('a fresh caller inherited the refusal: ' + JSON.stringify(other));
+    test.fail('a fresh address inherited the refusal: ' + JSON.stringify(other));
   }
 }
 
@@ -305,7 +312,8 @@ function get(port, rawPath) {
 function waitForBoot(port) {
   const startedAt = Date.now();
   return (function poll() {
-    return get(port, '/api/relay/key').then(function (r) {
+    // Booted when it answers a card ask on its one door (goal/G22.6).
+    return require('./relayDoor').keyStatus('http://127.0.0.1:' + port).then(function (r) {
       if (r.status === 200) return true;
       if (Date.now() - startedAt > BOOT_TIMEOUT_MS) throw new Error('relay did not boot on ' + port);
       return new Promise(function (r2) { setTimeout(r2, 150); }).then(poll);
@@ -330,7 +338,7 @@ freePort()
     return waitForBoot(port).then(function () {
       // Prove it is really up before asking what it announced, so this can
       // never pass by testing a relay that never booted.
-      return get(port, '/api/relay/key').then(function () {
+      return require('./relayDoor').keyStatus('http://127.0.0.1:' + port).then(function () {
         if (/UNOWNED/.test(output) && /install-units/.test(output) && !/this relay is OPEN/.test(output)) {
           test.check('the relay announced it is UNOWNED, and named install-units — not open mode');
         } else {

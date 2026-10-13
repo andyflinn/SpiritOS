@@ -45,6 +45,9 @@ const SAME_ON_ANY_BOX = [
   'perMemberRowBytes',
   'perMemberRowBytesUncarded',
   'cardBytes',
+  // The partner roll is gone (goal/G22.6) and measureCapacity no longer
+  // measures it; kept classified because the drops already published carry
+  // it until each box is measured again.
   'perPartnerRowBytes',
   'perShadowRowBytes',
   'perRouteRowBytes',

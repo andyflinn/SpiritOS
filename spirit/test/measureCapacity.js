@@ -165,7 +165,7 @@ async function waitUp(base, tries) {
   for (let n = 0; n < (tries || 60); n += 1) {
     await sleep(200);
     try {
-      const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
+      const r = await require('./relayDoor').keyStatus(base);
       if (r.status === 200) return true;
     } catch (e) { /* not yet */ }
   }
@@ -239,18 +239,8 @@ function discPerRow() {
   const afterCarded = fs.statSync(rfile).size;
   out.perMember = Math.round((afterCarded - beforeCarded) / M);
 
-  const P = 1000;
-  rstore.transaction(function () {
-    for (let i = 0; i < P; i += 1) {
-      rstore.partners.put({
-        relayKey: K + String(500000 + i).padStart(27, '0') + '=',
-        url: 'https://relay-' + i + '.example.com',
-        ownerKey: K + String(i).padStart(27, '0') + '=',
-        status: 'partnered', since: new Date().toISOString(), last: '',
-      });
-    }
-  });
-  out.perPartner = Math.round((fs.statSync(rfile).size - afterMembers) / P);
+  // A PARTNER ROW was measured here; the partner roll is gone (Andy's
+  // decision, goal/G22.6), so a relay holds members and invites only.
   rstore.close();
 
   const nh = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-node-'));
@@ -464,7 +454,6 @@ async function main() {
   const headroom = HUNDRED_MB - relayFixed;
   const streamsAt100 = headroom > 0 ? Math.floor(headroom / perStream) : 0;
   const membersOnGb = Math.floor(1024 * 1024 * 1024 / disc.perMember);
-  const partnersOnGb = Math.floor(1024 * 1024 * 1024 / disc.perPartner);
   // REACHABLE peers, not merely remembered ones — a row with no route
   // cannot answer the question the cache exists for.
   const peersOn10Mb = Math.floor(10 * 1024 * 1024 / disc.perReachablePeer);
@@ -525,7 +514,6 @@ async function main() {
   say('| disc | bytes per row |');
   say('|---|---|');
   say('| relay: a member | **' + disc.perMember + '** |');
-  say('| relay: a partner | **' + disc.perPartner + '** |');
   say('| node: a remembered peer, no route | **' + disc.perShadowRow + '** |');
   say('| node: one route for that peer | **' + disc.perRouteRow + '** |');
   say('| **node: a peer you can reach** | **' + disc.perReachablePeer + '** |');
@@ -538,8 +526,7 @@ async function main() {
   say('|---|---|');
   say('| relay, 100 MB RAM | **~' + streamsAt100 + ' members connected at once** (' +
     mb(headroom) + ' MB headroom / ' + Math.round(perStream / 1024) + ' KB) |');
-  say('| relay, 1 GB disc | **~' + (membersOnGb / 1000000).toFixed(1) + 'M member rows**, or ~' +
-    (partnersOnGb / 1000000).toFixed(1) + 'M partner rows |');
+  say('| relay, 1 GB disc | **~' + (membersOnGb / 1000000).toFixed(1) + 'M member rows** |');
   say('| node, 1 MB RAM | **not possible** — bare Node.js is ' + mb(bare) + ' MB |');
   say('| node, 10 MB disc | **~' + peersOn10Mb.toLocaleString('en-GB') + ' remembered peers** |');
   // 438 B is the measured cost of a REAL entry (695 of them on a working
@@ -592,7 +579,6 @@ async function main() {
       perMemberRowBytes: disc.perMember,
       perMemberRowBytesUncarded: disc.perMemberUncarded,
       cardBytes: disc.cardBytes,
-      perPartnerRowBytes: disc.perPartner,
       perShadowRowBytes: disc.perShadowRow,
       perRouteRowBytes: disc.perRouteRow,
       perReachablePeerBytes: disc.perReachablePeer,

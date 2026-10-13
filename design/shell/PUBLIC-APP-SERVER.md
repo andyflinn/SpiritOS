@@ -1,5 +1,7 @@
 # The public app server — and `join` as its first app
 
+> 2026-10-13 (goal/G22.6): `relay.html` (the relay brochure) and `POST /api/relay/claim`, named below, are gone with the relay's public door. A claim is a post on the relay's one door, through peerPost.
+
 **APPROVED 2026-09-24 by Andy, at the close of the sitting that produced
 it.** *"so we will close this session by approving the design, and
 updating the brain."* Signed by both agents: wsl-claude reported what he

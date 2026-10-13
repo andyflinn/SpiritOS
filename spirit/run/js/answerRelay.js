@@ -11,10 +11,12 @@
 const relayKeys = require('./relayKeys');
 const auth = require('./relayAuth');
 
-// opts: { rootDir, request, onKeyChanged }
+// opts: { rootDir, askKey, onKeyChanged }
 //
-// `request` is the same primitive peerPost uses, so this reaches a relay
-// exactly the way everything else does.
+// `askKey(url)` resolves the relay's signed key statement — peerPost's
+// relayKey, the card ask on the relay's one door (goal/G22.6: GET
+// /api/relay/key is closed, and a node reaches a relay only through
+// peerPost). A rejection is a relay that did not answer.
 function createAnswerer(opts) {
   opts = opts || {};
   var rootDir = opts.rootDir;
@@ -24,25 +26,14 @@ function createAnswerer(opts) {
   // is here so that when it does, nothing in this file has to change.
   var onKeyChanged = typeof opts.onKeyChanged === 'function' ? opts.onKeyChanged : null;
 
-  // TWO CONVENTIONS WEAR THE SAME SIGNATURE, and mixing them is a bug
-  // that looks like a refusal. `relayRequest` answers { status, text };
-  // everything below wants the text already parsed. Both are
-  // (url, method, path, body, headers), so nothing catches the swap.
-  //
-  // Converted once, here, so this file has one kind of request in it.
-  function asJson(url, method, pathname, body, headers) {
+  // Named rather than a bare falsy: an answer nobody can read and no
+  // answer at all are both "this did not work", and a caller that cannot
+  // tell them apart reports the reassuring one.
+  function askKey(url) {
     return Promise.resolve()
-      .then(function () { return opts.request(url, method, pathname, body, headers); })
-      .then(function (r) {
-        try { return JSON.parse(r.text); }
-        // Named rather than a bare falsy: an answer nobody can read and
-        // no answer at all are both "this did not work", and a caller
-        // that cannot tell them apart reports the reassuring one.
-        catch (e) { return { ok: false, error: 'unreachable' }; }
-      })
+      .then(function () { return opts.askKey(url); })
       .catch(function () { return { ok: false, error: 'unreachable' }; });
   }
-  var request = asJson;
 
   // relayUrl -> that relay's own public key, for this process. A relay's
   // key is made on its first --relay boot and does not change while it is
@@ -74,8 +65,9 @@ function createAnswerer(opts) {
   // used to become invisible, and a restart is now when it is caught.
   // ── THE KEY ITSELF, FROM THE ONE THING THAT ANSWERS IT ─────────────
   //
-  // `GET /api/relay/key` answers `{ relayPublicKey, relayLabel }` and
-  // nothing else.
+  // The relay's card — a card ask on its one door since goal/G22.6, which
+  // replaced `GET /api/relay/key` — answers its key statement and nothing
+  // about its members.
   //
   // THERE IS NO FALLBACK TO THE ROLL, and that is the decision rather
   // than an omission.
@@ -100,8 +92,8 @@ function createAnswerer(opts) {
   //
   // WHAT IT COSTS, said out loud: deploys are now relay-before-node. A
   // node updated first cannot pin that relay, so the relay drops out of
-  // search (listed `silent`), out of partner discovery, and off the front
-  // door's "this sender is a relay" list. That is visible rather than
+  // search (listed `silent`) and off the front door's "this sender is a
+  // relay" list. That is visible rather than
   // quiet, which is the right shape for a version skew. `liveRelay.js`
   // will say so first, being the one suite that talks to a real box.
   // ── AND IT IS SIGNED NOW (cycle 10, R9) ────────────────────────────
@@ -127,7 +119,7 @@ function createAnswerer(opts) {
   // is the one this catches.
   function fetchKey(url) {
     return Promise.resolve()
-      .then(function () { return request(url, 'GET', '/api/relay/key'); })
+      .then(function () { return askKey(url); })
       .then(function (answer) {
         var key = answer && answer.relayPublicKey;
         if (typeof key !== 'string' || !key) return '';

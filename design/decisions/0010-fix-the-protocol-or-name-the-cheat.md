@@ -117,6 +117,23 @@ quietly being avoided:
 
 ### The exceptions, granted
 
+> ### Superseded 2026-10-13 — the public door is closed (goal/G22.6)
+>
+> > **Andy (goal/G22.6 box):** *"The relay's public door, the one any curl can
+> > reach without key or signature, is killed in this item: /api/relay/key,
+> > /api/relay/claim, /api/version and the brochure all close. The relay keeps
+> > its one door (post) and its members' stream."*
+>
+> The key-learning exemption is answered on the door: a key the relay does
+> not hold may send a SIGNED card ask to the empty target (`to: ""`), the one
+> plaintext exception, and the relay answers it with its signed key
+> statement, on the post. A claim is a post sealed to that key. `version`'s
+> credential-free deploy check is a card ask too (`bash/card-ask.js`). So of
+> the table below only `GET /api/relay/stream` stands, and the rule is now:
+> **a relay answers its one door and its members' stream, and nothing
+> else.** The rows below, and the claim row in the register further down,
+> are the record of what was granted until then.
+
 **Granted by Andy, 2026-09-13.** Asked whether GET on a relay would be
 for static files only, the answer is: static files, **plus three things
 that must work before a post is possible.**
@@ -124,7 +141,7 @@ that must work before a post is possible.**
 | granted | why it can never be a post |
 |---|---|
 | the brochure — `/`, `/index.html`, `/relay.html`, `/favicon.svg`, and the key-addressed enrolment page | files |
-| `GET /api/relay/key` | it is where a node learns the relay's KEY. You cannot post to an address you are still asking for |
+| ~~GET /api/relay/key~~ — *closed 2026-10-13, goal/G22.6: the card ask on the door* | it is where a node learns the relay's KEY. You cannot post to an address you are still asking for |
 | `GET /api/relay/stream` | it is the wire itself. Posts are answered on this connection, so you cannot post to open the channel that carries the answer |
 | `GET /api/version` | deliberately credential-free: *"the question a deploy check asks must not need a private key, or the check cannot run from anywhere but the owner's own machine."* A post needs a row; needing nothing is the point |
 
@@ -168,7 +185,8 @@ the protocol runs on, `version` is before you have any relationship at
 all. A protocol cannot express its own preconditions. That is not a gap
 in this rule — it is where the rule bottoms out.
 
-So, stated whole:
+So, stated whole (until 2026-10-13; since goal/G22.6 the whole rule is
+**a relay answers its one door and its members' stream, and nothing else**):
 
 > **GET on a relay is for static files, and for the three things that
 > must work before a post is possible. Everything else must be a post.**
@@ -179,8 +197,9 @@ outstanding when this was written; **both have since gone.** `GET
 with the owner badge (R3), both on 2026-09-15.
 
 So the rule holds with **no outstanding exemptions.** Every GET a relay
-answers is a static file, the public census, the stream, or
-`/api/version`. Everything else is a post.
+answered was a static file, the public census, the stream, or
+`/api/version` — and since goal/G22.6 only the stream: the brochure, the key
+door and `/api/version` closed, and the key and the claim are posts.
 
 ## The narrowing, because a rule that fires on everything is ignored
 
@@ -253,11 +272,11 @@ holds one this list does not.
 | | |
 |---|---|
 | `POST /api/relay/post` · `postMessage` | a peer drops a packet on a peer |
-| `POST /api/relay/post` · `hintMessage` | the sender's route hints, signed beside the packet over its `sig` and dropped at the first relay — **added 2026-09-19, cycle 2, locked in by Andy** (design/relay/SURFACE.md §8; design/cycles/2026-09-19-route-hints-cycle-2.md). Same door, a second signed field |
+| `POST /api/relay/post` · `hintMessage` | **No longer read by a relay since 2026-10-13 (goal/G22.6): partnering is gone, and there is nobody to carry to.** Before that: the sender's route hints, signed beside the packet over its `sig` and dropped at the first relay — **added 2026-09-19, cycle 2, locked in by Andy** (design/relay/SURFACE.md §8; design/cycles/2026-09-19-route-hints-cycle-2.md). Same door, a second signed field |
 | `POST /api/relay/reply` · `receiptMessage` | the answer, by hash. **Also, since 2026-09-19 (cycle 2, Andy):** a relay may send the asker a `reply` for the hash signed with its OWN key — an error from the far side of a partnership passed down the chain (`relay.relayErrorToAsker`). Never the target's receipt: a node settles a reply signed by anyone but the target as a failure marked `relayed`. A new meaning for an existing word, not a new word |
 | `GET /api/relay/stream` · `streamMessage` | the wire itself |
 | `POST /api/relay/post` · `commandMessage` | **the owner's command to a puppet he owns — added 2026-09-26, puppets/G5.** Same door and no new one: it rides inside an ordinary post as `cmd` and `sig`, the shape `forwardToMine` already uses (`relay.js:2711-2728`) — a signed string carried beside its signature, verified by the receiver rather than trusted from the carrier. **The transport signature cannot serve and that is the whole reason this format exists.** `peerPost.js:756` signs every outgoing post with the node's own identity key and no caller can withhold it, so a puppet posting through its own node gets the owner's signature for free — and to a SIBLING puppet under that owner, the node key IS the owner key. The forger never signs anything; the router signs for it. Andy, 2026-09-26: *"the puppet is uable to sign any request with the owners signature. and that signature must exist before the puppet routes the request to loopback"* — and, on which half decides it, *"the second half counts"*. **Four things are in the signed bytes and each closes something:** the tag `command`, so a `post`-tagged transport signature fails as an inner one by signing different bytes rather than by being noticed; `to`, so a command signed for one puppet does not verify at a sibling; the envelope `id`, minted before signing, so the signature cannot be moved onto another packet; and the minute, recovered by trying ±1 exactly as `postMessage` and `receiptMessage` do. Refused as the existing `bad-signature` — absent and wrong share one code deliberately, since two would tell a caller which of the two it managed |
-| `GET /api/relay/key` · `relayKeyMessage` | **what the box is and what to seal to it — added 2026-09-23, cycle 10, R9.** The relay signs `publicKey`, `sealKey` and `label` as one statement with its identity key; a node that cannot verify it gets no key at all and the relay drops out visibly. A new signed format on a door that was already granted, like `hintMessage` — not a new door. **And it cannot be a packet, permanently**, for the same reason `claimMessage` cannot: a node with no row on that relay has no stream to it and nothing to address a post to, so this is the bootstrap that makes addressing possible. The three fields are signed TOGETHER because a signature over the cipher key alone could be lifted onto another relay's answer |
+| `POST /api/relay/post` (card ask) · `relayKeyMessage` | **Moved 2026-10-13 by goal/G22.6: the statement is the answer to a signed card ask on the one door (`to: ""`), answered on the post; GET /api/relay/key is closed, and the "cannot be a packet" below is answered by the door accepting a stranger's signed card ask.** Before that: **what the box is and what to seal to it — added 2026-09-23, cycle 10, R9.** The relay signs `publicKey`, `sealKey` and `label` as one statement with its identity key; a node that cannot verify it gets no key at all and the relay drops out visibly. A new signed format on a door that was already granted, like `hintMessage` — not a new door. **And it cannot be a packet, permanently**, for the same reason `claimMessage` cannot: a node with no row on that relay has no stream to it and nothing to address a post to, so this is the bootstrap that makes addressing possible. The three fields are signed TOGETHER because a signature over the cipher key alone could be lifted onto another relay's answer |
 
 ### What travels on the stream
 
@@ -274,18 +293,17 @@ A door is a way of speaking. So is a word said through it.
 | event | what it is |
 |---|---|
 | `presence` | one member arrived or left — broadcast |
-| `route` | a route this relay **proved** — it carried a packet to that key through that partner and a reply came back signed by it. Broadcast, and forgotten here: the members that care write it down (0013) |
-| `partner` | one of this relay's partners became unavailable, or came back — `{ relayKey, live, at }`, broadcast on the **change** only. *"Unavailable as of `at`"*, never *dead*: a node lets it go stale after fifteen minutes. **Added 2026-09-22, gap cycle R42, decided by Andy** — *"mechanism accepted, as just discussed."* |
+| `route` | a member of THIS relay, by key, label and this relay's key (a claim or rename, and the two ends of an answered exchange between members). Since goal/G22.6 no route through a partner is proven or announced; until then it was also a route this relay **proved** — it carried a packet to that key through that partner and a reply came back signed by it. Broadcast, and forgotten here: the members that care write it down (0013) |
+| ~~partner~~ — *deleted 2026-10-14 with partnering (goal/G22.6, Andy's decision)* | was: one of this relay's partners became unavailable, or came back, broadcast on the change only (added 2026-09-22, gap cycle R42) |
 | `request` | a packet being delivered to the peer it is addressed to |
 | `reply` | the answer to one, carried back on the asker's own stream |
 | `relay-status` | what this box looks like, to the owner only, on membership change and on a stream opening or closing — never on a timer (0006) |
 | `relay-event` | one routed thing happened. Opt-in (`monitor`), owner only, live only, never stored |
 | `owner-event` | what this relay did about who belongs on it. Always on, owner only, and **kept** — see 0009 and the R2 note |
 
-`presence` and `route` are the two broadcasts about a **peer**; `partner`
-(R42) is the third broadcast, and it is about a partner **relay** — its
-own event for that reason, since a node filters `presence` by its
-contacts. All three say something
+`presence` and `route` are the two broadcasts about a **peer**. (`partner`,
+R42, was a third, about a partner **relay**; it went with partnering,
+goal/G22.6.) Both say something
 about somebody other than the member hearing it — which is why none is
 correspondence and none reaches a node's traffic log. A route is only
 announced once it has been **proven**, because a false route cannot be
@@ -322,8 +340,7 @@ eighth stream event was.
 | `peer-renamed` | somebody changed what this relay calls them | `key`, `was`, `label`, `cause` |
 | `peer-removed` | a row is gone, and what went with it | `key`, `label`, `invitesRevoked` |
 | `relay-renamed` | the owner changed what the BOX calls itself — not a row on it | `was`, `label`, `cause` |
-| `partner-added` | a peer here was promoted to partner — they own the relay at `relayAt` | `key`, `label`, `relayAt`, `cause` |
-| `partner-removed` | that partnership was broken from this side | `key`, `label`, `relayAt`, `cause` |
+| ~~partner-added~~ · ~~partner-removed~~ — *deleted 2026-10-14 with the partner roll (goal/G22.6, Andy's decision)* | — | — |
 | ~~lever-set~~ — *deleted 2026-09-22 with the Governor (gap cycle, cycle 8); no lever can move, so none is reported moving* | — | — |
 
 **`invite` is a LABEL, never a token.** The word the owner wrote on the
@@ -356,7 +373,7 @@ it.
 
 | | |
 |---|---|
-| `POST /api/relay/claim` · `claimMessage` | **you cannot post to a relay you have no row on.** Permanently outside. |
+| `POST /api/relay/post` (claim) · `claimMessage` | **A packet since 2026-10-13 (goal/G22.6):** a claim is a post to the relay's key, sealed to its cipher key, from a key the relay need not hold, answered on the post; the claim keeps its inner `claimMessage` signature. POST /api/relay/claim is closed. It was held here as *"you cannot post to a relay you have no row on. Permanently outside."* — Andy's decision that the door answers a stranger's public services ended that. |
 | ~~POST /api/relay/device~~ | removed 2026-10-11 by goal/G16.2 with the device enrolment (Andy: *"device WILL be KILLED. that's a decision."*) |
 
 > ### The census exemption is too broad — corrected 2026-09-17
@@ -429,8 +446,9 @@ member of a relay.
 **It was filed above as a granted exception and that was wrong.** The
 warrant it held — *"it is where a node learns the relay's KEY"* — was true
 of key-learning and never of the census; the census merely happened to be
-where the key was kept. `GET /api/relay/key` holds that warrant now, so the
-row is gone from the granted table and the census stands here instead.
+where the key was kept. `GET /api/relay/key` held that warrant from then
+until goal/G22.6 moved it to the card ask on the one door, so the row is gone
+from the granted table and the census stands here instead.
 
 Three things make it a cheat rather than a feature:
 
@@ -457,7 +475,8 @@ carrying forward, because at the time each looked like a dependency:
 | `ownerBadge.probe` | **what this node itself had done** — it asked each relay to remember its own claims |
 
 What replaced it: `GET /api/relay/key` for who a box is and who runs it, 97
-bytes and flat; `relayKeys.seat` for the node's own record of where it holds
+bytes and flat (itself closed 2026-10-13 by goal/G22.6: the relay's card,
+answered to a signed card ask on the one door); `relayKeys.seat` for the node's own record of where it holds
 a seat, written when the claim is granted; `peer.search` for *"who
 matches"*, ranked and slot-bounded; and the stream for presence and routes,
 pushed as they happen.

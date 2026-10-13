@@ -73,38 +73,26 @@ async function run() {
     test.reportSuccessFailureCount();
     return;
   }
-  test.subHeading('It is there, and it is the code we think it is');
+  test.subHeading('It is there, and it answers on its one door');
 
-  const version = parsed(await get(RELAY + '/api/version'));
-  if (version && version.commit) {
-    test.check('it answers /api/version, running ' + version.commit +
-      (version.dirty ? ' (DIRTY)' : '') + ', relay=' + !!version.relay);
+  // GET /api/version AND GET /api/relay/key ARE CLOSED on a relay (Andy's
+  // decision, goal/G22.6): a relay answers its one door and its members'
+  // stream. Its version reaches its owner in relay-status; a stranger asks
+  // who it is with a signed card ask (relayDoor.js, bash/card-ask.js).
+  const door = require('./relayDoor');
+  const card = await door.relayKeyOf(RELAY);
+  if (card && card.relayPublicKey) {
+    test.check('it answers a card ask on its one door, as ' + (card.relayLabel || '(unlabelled)'));
   } else {
-    test.fail('no version: ' + RELAY);
+    test.fail('no answer to a card ask: ' + RELAY);
     test.reportSuccessFailureCount();
     return;
   }
-
-  // A relay running uncommitted code is a relay nobody can reason about
-  // — the stamp exists so "which code is this" has an answer.
-  //
-  // ASKED OF A REMOTE BOX ONLY. A lab relay is built out of the working
-  // tree by labMaster and is legitimately dirty whenever anything is
-  // being worked on, which is always. Failing on it would train somebody
-  // to ignore a red line that matters on spirit-3.
-  const remote = /^https:/i.test(RELAY);
-  if (!remote) {
-    test.check('(a lab relay is built from the working tree, so its stamp is not asked to be clean)');
-  } else if (version.dirty === false && version.untracked === 0) {
-    test.check('and it is running committed code with nothing untracked');
+  const version = await get(RELAY + '/api/version');
+  if (version.status === 404) {
+    test.check('and its public door is closed: /api/version is 404');
   } else {
-    test.fail('dirty=' + version.dirty + ' untracked=' + version.untracked);
-  }
-
-  if (version.relay === true) {
-    test.check('and it says it is a relay, which decides half its behaviour');
-  } else {
-    test.fail('relay flag: ' + version.relay);
+    test.fail('/api/version still answers ' + version.status + ' — the box runs code from before goal/G22.6');
   }
 
   test.subHeading('The roster survived the rename');
@@ -120,7 +108,7 @@ async function run() {
   // still the same box, which is what a rename must not change. Whether
   // the table survived is visible to its OWNER, on the owner's own
   // stream, and not over a route.
-  const itself = parsed(await get(RELAY + '/api/relay/key'));
+  const itself = await door.relayKeyOf(RELAY);
   if (itself && itself.relayPublicKey) {
     test.check('the relay answers as itself after the rename: ' +
       (itself.relayLabel || '(unlabelled)') + ', owner ' + (itself.ownerLabel || '(none)'));
@@ -172,8 +160,8 @@ async function run() {
   async function canOpen(where, id) {
     // The header names the relay it is for (goal/G16.12), so ask that relay
     // for its key first.
-    const door = parsed(await get(where + '/api/relay/key'));
-    const whereKey = (door && door.relayPublicKey) || '';
+    const whereCard = await door.relayKeyOf(where);
+    const whereKey = (whereCard && whereCard.relayPublicKey) || '';
     const r = await get(
       where + '/api/relay/stream?key=' + encodeURIComponent(subject.publicKey),
       { 'X-Spirit-Sig': auth.sign(id.privateKey, auth.streamMessage(subject.publicKey, whereKey)) }
@@ -207,9 +195,9 @@ async function run() {
     fs.mkdirSync(path.join(meeting, 'relay-state'), { recursive: true });
     auth.saveIdentity(meeting, auth.generateIdentity('pin-probe'));
 
-    const door = parsed(await get(RELAY + '/api/relay/key'));
-    const realKey = door && door.relayPublicKey;
-    if (!realKey) { test.fail('no relayPublicKey from the key door'); return; }
+    const realCard = await door.relayKeyOf(RELAY);
+    const realKey = realCard && realCard.relayPublicKey;
+    if (!realKey) { test.fail('no relayPublicKey from the card ask'); return; }
 
     // First contact: nothing on record, so it is accepted and written down.
     if (relayKeys.check(meeting, RELAY, realKey) === 'new') {
@@ -233,7 +221,12 @@ async function run() {
     const changes = [];
     const B = answerRelay.createAnswerer({
       rootDir: meeting,
-      request: require('../run/js/hub').relayRequest,
+      // The relay's card, as a node asks it (peerPost.relayKey, goal/G22.6).
+      askKey: function (url) {
+        return require('../run/js/peerPost').createPeerPost({
+          rootDir: meeting, request: require('../run/js/hub').relayRequest,
+        }).relayKey(url);
+      },
       onKeyChanged: function (url, had, got) { changes.push({ had: had, got: got }); },
     });
     const key = await B.relayKey(RELAY);

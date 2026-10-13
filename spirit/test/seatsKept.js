@@ -28,7 +28,6 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const http = require('http');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const relayKeys = require('../run/js/relayKeys');
@@ -79,7 +78,8 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     // The first stream pins through answerRelay, exactly as presenceNode's pinRelay does.
     const answerer = require('../run/js/answerRelay').createAnswerer({
       rootDir: home,
-      request: function () { return Promise.resolve({ status: 200, text: signedKeyAnswer(rid, 'one') }); },
+      // The relay's card, as peerPost.relayKey resolves it (goal/G22.6).
+      askKey: function () { return Promise.resolve(JSON.parse(signedKeyAnswer(rid, 'one'))); },
     });
     const key = await answerer.relayKey(U);
     const row = keyRow(home, U);
@@ -107,23 +107,18 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     auth.saveIdentity(home, me);
     const rid = auth.generateIdentity('relay-two');
     let claimStatus = 409;
-    const server = http.createServer(function (req, res) {
-      if (req.url.indexOf('/api/relay/key') === 0) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(signedKeyAnswer(rid, 'two'));
-        return;
-      }
-      let raw = '';
-      req.on('data', function (c) { raw += c; });
-      req.on('end', function () {
-        res.writeHead(claimStatus, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(claimStatus === 409
-          ? { error: 'key already claimed', peer: { publicKey: me.publicKey, publicLabel: 'jazz' } }
-          : { ok: true, peer: { publicKey: me.publicKey, publicLabel: 'jazz' } }));
-      });
-    });
-    await new Promise(function (r) { server.listen(0, '127.0.0.1', r); });
-    const U = 'http://127.0.0.1:' + server.address().port;
+    // THE CLAIM GOES THROUGH THE NODE'S ROUTER (peerPost.claim, on the
+    // relay's one door — goal/G22.6), so the relay is faked at that seam:
+    // the answer it gives, and the key it is filed under.
+    const router = {
+      claim: function () {
+        return Promise.resolve(claimStatus === 409
+          ? { ok: false, status: 409, error: 'key already claimed', peer: { publicKey: me.publicKey, publicLabel: 'jazz' }, relayPublicKey: rid.publicKey }
+          : { ok: true, status: 201, peer: { publicKey: me.publicKey, publicLabel: 'jazz' }, relayPublicKey: rid.publicKey });
+      },
+    };
+    const server = { close: function () {} };
+    const U = 'http://127.0.0.1:65009';
     const hub = require('../run/js/hub.js').createHub(home);
     function claim(name) {
       return new Promise(function (resolve) {
@@ -133,7 +128,7 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
           end: function (b) { res.body = String(b || ''); resolve(res); },
           setHeader: function () {},
         };
-        hub.handleClaim({}, res, function () { return Promise.resolve({ url: U, name: name }); }, {});
+        hub.handleClaim({}, res, function () { return Promise.resolve({ url: U, name: name }); }, { router: router });
       });
     }
     const first = await claim('jazz');
@@ -438,7 +433,12 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     const made = world.build(scenario.OWNER_ONLY);
     const box = made.box;
     const stranger = auth.generateIdentity('stranger');
-    const p = box.routePost(stranger.publicKey, made.owner.publicKey, 'x', 'sig');
+    // TO A KEY NOBODY HOLDS HERE. Since goal/G22.6 a relay carries posts to
+    // its own members from any sender (Andy: "a relay carries posts to its
+    // members from any relay"), so a stranger posting to the OWNER is read
+    // and its signature checked; only a packet for somebody this relay does
+    // not hold needs a known sender, and that one is refused by name.
+    const p = box.routePost(stranger.publicKey, auth.generateIdentity('nobody').publicKey, 'x', 'sig');
     const r = box.routeReply(stranger.publicKey, 'HASH', 'x', 'sig');
     const s = box.streamOpen(stranger.publicKey, 'sig', function () {});
     [['post', p], ['reply', r], ['stream', s]].forEach(function (pair) {

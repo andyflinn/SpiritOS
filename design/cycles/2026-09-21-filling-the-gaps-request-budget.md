@@ -1,5 +1,7 @@
 # Filling the gaps — what the request-budget design left unbuilt
 
+> 2026-10-13 (goal/G22.6): `GET /api/relay/key`, named below, is closed; a relay's key is the answer to a signed card ask on its one door. Partnering, which this plan budgets for, is gone as a permission.
+
 **Plan, 2026-09-21. Measured against `bfd5df0`.**
 
 ~~*Nothing here is built.*~~ — struck 2026-09-21. ~~Twelve of the twenty-six
@@ -1158,7 +1160,7 @@ the post, nothing dials). Falsified: the answer withheld from the post, the
 asker ignoring a body answer, every partner always live — each caught.
 Harness: 119 suites, 2705 green, 0 red.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — there are no partners to hold streams between; liveFanOut.js, partnerGate.js, partnerTunnel.js, routeHints.js and partnerWire.js were deleted with them (built and done 2026-09-21; memberBroadcast.js stands).
 
 ### R14 — open partnering, provisional rows, and a visible count
 
@@ -3096,7 +3098,7 @@ stale at fifteen minutes, *back* clears. Falsified four ways (no inbound
 revive, every failure announced, never stale, unavailable dropped) — each
 caught.
 
-**Status:** DONE
+**Status:** SUPERSEDED: goal/G22.6, Andy's decision that partnering goes — partnerAvailability.js (run/ and test/) was deleted with the partner roll (built and done 2026-09-21).
 
 ## The order, and why
 

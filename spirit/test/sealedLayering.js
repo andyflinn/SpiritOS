@@ -149,7 +149,10 @@ test.subHeading('A SIGNATURE OVER THE PLAINTEXT is refused — sealed first, sig
   }
 }
 
-test.subHeading("cycle 10's R7: exactly one place in the tree can turn sealing off");
+// The one bypass cycle 10's R7 allowed was the relay-to-relay partner
+// wrapper (relayServer.js's peerPost to its partners). It went with
+// partnering (Andy's decision, goal/G22.6), so now no place may.
+test.subHeading("cycle 10's R7, closed by goal/G22.6: no place in the tree turns sealing off");
 
 {
   // Counted, not argued. The agents seal because they post through the
@@ -177,12 +180,11 @@ test.subHeading("cycle 10's R7: exactly one place in the tree can turn sealing o
     });
   }(root));
 
-  if (found.length === 1 && /relayServer\.js/.test(found[0])) {
-    test.check('one bypass, in relayServer.js (' + found[0] + ') — the relay-to-relay partner ' +
-      'wrapper, which carries a query and never a person\'s words');
+  if (found.length === 0) {
+    test.check('no bypass — the partner wrapper, the one there was, went with partnering');
   } else {
     test.fail('sealing can be turned off in ' + found.length + ' place(s): ' + found.join(', ') +
-      '. Every one that is not the partner wrapper is an exemption somebody granted themselves.');
+      '. Every one is an exemption somebody granted themselves.');
   }
 
   // agents.js was read here too, for holding no sealing code of its own; the agents app is gone (goal/G3.2).

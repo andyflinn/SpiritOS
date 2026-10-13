@@ -1012,11 +1012,12 @@ function livePost(url, body) {
 // arrives inside the envelope the relay replied in, and the body is what
 // a caller wants — the same shape api.peerPost hands a page.
 async function postToRelayVia(nodeUrl, relayUrl, body) {
+  // The relay's key off a card ask on its one door (goal/G22.6 closed
+  // GET /api/relay/key).
   let key = '';
   try {
-    const res = await fetch(relayUrl + '/api/relay/key');
-    const parsed = await res.json();
-    key = (parsed && parsed.relayPublicKey) || '';
+    const card = await require('../relayDoor').relayKeyOf(relayUrl);
+    key = (card && card.relayPublicKey) || '';
   } catch (e) { key = ''; }
   if (!key) return { ok: false, status: 0, body: null, text: 'relay did not say what its key is' };
 
@@ -1144,9 +1145,9 @@ async function liveWorldReport(peerNode, peerName) {
   // So this reads each node's own record, which is also more honest about
   // what it is reporting — the lab shows what each node believes, and a
   // node that believes wrongly is exactly the thing worth seeing.
-  const up = await fetch(LIVE_RELAY + '/api/relay/key')
-    .then(function (r) { return r.ok; })
-    .catch(function () { return false; });
+  // Reachable when it answers a card ask on its one door (goal/G22.6 closed
+  // GET /api/relay/key).
+  const up = !!(await require('../relayDoor').relayKeyOf(LIVE_RELAY).catch(function () { return null; }));
 
   function seatedAt(home, url) {
     const book = readJson(path.join(home, 'relay-state', 'relayKeys.json'), {});
@@ -1276,10 +1277,9 @@ async function buildLiveWorld(body) {
   // see liveWorldReport above for why the roll is gone. If the node is
   // wrong, the claim below answers `409 key already claimed` and says so,
   // which is the relay's own answer rather than a list to search.
-  const reachable = await fetch(LIVE_RELAY + '/api/relay/key')
-    .then(function (r) { return r.ok; })
-    .catch(function () { return false; });
-  if (!reachable) return { status: 502, error: 'spirit-3 did not answer /api/relay/key' };
+  // A card ask on its one door (goal/G22.6 closed GET /api/relay/key).
+  const liveKey = await require('../relayDoor').relayKeyOf(LIVE_RELAY).catch(function () { return null; });
+  if (!liveKey) return { status: 502, error: 'spirit-3 did not answer a card ask' };
 
   const peerBook = readJson(
     path.join(peerNode.home, 'relay-state', 'relayKeys.json'), {});
@@ -1316,12 +1316,16 @@ async function buildLiveWorld(body) {
     if (!minted.ok || !token) {
       return { status: 502, error: 'spirit-3 refused the invite: ' + minted.text };
     }
-    const joined = await livePost(LIVE_RELAY + '/api/relay/claim', {
+    // A claim is a post on the relay's one door, sealed to the key the card
+    // ask learnt (goal/G22.6 closed POST /api/relay/claim).
+    const joined = await require('../relayDoor').claimOnDoor(LIVE_RELAY, peerId, {
       name: peerName,
-      publicKey: peerId.publicKey,
       sig: auth.sign(peerId.privateKey, auth.claimMessage(peerName)),
       invite: token,
-    });
+      inviteLabel: peerName,
+    }, liveKey);
+    joined.ok = joined.status >= 200 && joined.status < 300;
+    joined.body = joined.json;
     if (!joined.ok && !(joined.body && joined.body.error === 'name taken')) {
       return { status: 502, error: 'spirit-3 refused the claim: ' + joined.text };
     }

@@ -1,4 +1,6 @@
 > SUPERSEDED 2026-10-11 (goal/G16.2): the device enrolment was removed from the tree on Andy's decision "device WILL be KILLED. that's a decision."
+>
+> 2026-10-13 (goal/G22.6): a relay no longer publishes `/api/version`; the running commit reaches its owner in the relay-status report.
 
 # What a device is
 

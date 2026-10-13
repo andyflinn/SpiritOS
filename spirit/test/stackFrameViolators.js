@@ -105,11 +105,33 @@ const DOORS = [
   },
 ];
 
+// THE SOURCE THE PATHS WERE MEASURED AGAINST. The formatter reads a violator's own source line to say "by plain
+// fetch"; these paths were measured on 2026-10-13, and goal/G22.6 has since moved every one of these callers onto
+// peerPost — offboard.js:78 no longer fetches. So the formatter is handed a root holding the tree as it is, with
+// offboard.js as it stood when measured (its line 78, the plain fetch), rather than reading lines that moved.
+const MEASURED_ROOT = (function () {
+  const os = require('os');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-violators-'));
+  ['spirit/run/js/hub.js', 'spirit/run/js/server.js', 'spirit/run/js/ownerBadge.js',
+    'spirit/run/js/relayRequest.js', 'spirit/run/js/appClient.js'].forEach(function (rel) {
+    try {
+      fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+      fs.copyFileSync(path.join(REPO, rel), path.join(root, rel));
+    } catch (e) { /* a file the tree no longer has reads as empty, as the formatter's own fallback does */ }
+  });
+  const offboard = new Array(77).fill('');
+  offboard.push("  try { relayKey = await (await fetch(url.replace(/\\/+$/, '') + '/api/relay/key')).json(); } catch (e) { relayKey = null; }");
+  const at = path.join(root, 'spirit/run/process/js/desk/offboard.js');
+  fs.mkdirSync(path.dirname(at), { recursive: true });
+  fs.writeFileSync(at, offboard.join('\n'));
+  return root;
+}());
+
 DOORS.forEach(function (d) {
   test.subHeading(d.name);
   let got = [];
   if (typeof format === 'function') {
-    try { got = format(d.door, d.paths, { root: REPO }); } catch (e) { got = ['(threw: ' + ((e && e.message) || e) + ')']; }
+    try { got = format(d.door, d.paths, { root: MEASURED_ROOT }); } catch (e) { got = ['(threw: ' + ((e && e.message) || e) + ')']; }
   }
   got = Array.isArray(got) ? got.map(String) : [];
   d.want.forEach(function (line) {

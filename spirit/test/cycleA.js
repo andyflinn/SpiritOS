@@ -109,15 +109,13 @@ function nodeHome(id, urls, seats) {
 // seat (relayKeys, written at claim). So this serves the key door, and
 // keeps rejecting everything else — the loud-stub rule below is what made
 // this change announce itself instead of passing quietly.
+// SINCE goal/G22.6 the probe asks `request(url)` for the relay's card — a
+// card ask on its one door, through the node's peerPost (hub.relayKeyAsk) —
+// and nothing else; GET /api/relay/key is closed. This answers that one ask.
 function rollAnswerer(boxes) {
-  return function (url, method, pathname) {
+  return function (url) {
     var box = boxes[url];
     if (!box) return Promise.reject(new Error('connection refused'));
-    if (pathname.indexOf('/api/relay/key') !== 0) {
-      // Nothing else should be asked. Saying so loudly beats a 404 that
-      // reads as "that relay is not ours".
-      return Promise.reject(new Error('probe asked for ' + pathname));
-    }
     var own = box.ownerPublic();
     return Promise.resolve({
       status: 200,
@@ -366,18 +364,9 @@ function relayServer(box) {
       // gets `claimed: false` for a reason that has nothing to do with
       // what it is testing.
       //
-      // Same shape as the wire (server.js): the key door, four fields.
-      if (req.method === 'GET' && url.pathname === '/api/relay/key') {
-        var own = box.ownerPublic();
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({
-          relayPublicKey: box.relayPublicKey(),
-          relayLabel: box.relayLabel(),
-          ownerKey: own.ownerKey,
-          ownerLabel: own.ownerLabel,
-        }));
-        return;
-      }
+      // THE KEY DOOR STOOD HERE (GET /api/relay/key). It is closed on a
+      // relay since goal/G22.6; the node learns the card through its
+      // router (cardRouter below), so this fake serves no route at all.
       // /api/relay/invite STOOD HERE and is gone from the wire entirely
       // (decision 0010). A mint is a post now, and a post does not come
       // back in the HTTP response — the relay answers on the owner's
@@ -407,6 +396,23 @@ function fakeRes() {
     });
   };
   return out;
+}
+
+// THE RELAY'S CARD, as the node's router answers it (peerPost.relayKey,
+// goal/G22.6): the hub's probe asks this, never a route. Answered out of
+// the boxes behind each fake url.
+function cardRouter(boxes) {
+  return {
+    relayKey: function (url) {
+      const box = boxes[url];
+      if (!box) return Promise.reject(new Error('connection refused'));
+      const own = box.ownerPublic();
+      return Promise.resolve({
+        relayPublicKey: box.relayPublicKey(), relayLabel: box.relayLabel(),
+        ownerKey: own.ownerKey, ownerLabel: own.ownerLabel,
+      });
+    },
+  };
 }
 
 // THE ROUTER, faked at the seam hub.handleInvite actually uses now.
@@ -539,7 +545,7 @@ function runHubOnLoopback() {
     boxes[servers[0].url] = first.box;
     boxes[servers[1].url] = second.box;
     // Since goal/G19.14 the router answers what presence knows: peerPost holds the streams.
-    deps = { router: Object.assign(routerTo(boxes, owner), presenceFor(boxes)) };
+    deps = { router: Object.assign(routerTo(boxes, owner), presenceFor(boxes), cardRouter(boxes)) };
 
     return hubPost(hub, second.box.relayPublicKey(),
       { invite: { label: 'saint', days: 7, token: '' } }, deps);
@@ -614,7 +620,7 @@ function runHubOnLoopback() {
     // Handed the same shape server.js hands it, so a change to how the
     // body is read fails here rather than being swallowed.
     const res2 = fakeRes();
-    hub.handleStatus({}, res2, askedWith({ name: 'andy' }));
+    hub.handleStatus({}, res2, askedWith({ name: 'andy' }), deps);
     return res2.wait();
   }).then(function (res) {
     let data = {};
@@ -686,7 +692,9 @@ function boundNodeSeesItsRow() {
     // hand for the same reason labWorld does (2026-09-18).
     const hub = createHub(nodeHome(guest, [server.url], [server.url]));
     const res = fakeRes();
-    hub.handleStatus({}, res, askedWith({ name: 'bert' }));
+    const cards = {};
+    cards[server.url] = lab.box;
+    hub.handleStatus({}, res, askedWith({ name: 'bert' }), { router: cardRouter(cards) });
     return res.wait();
   }).then(function (res) {
     let body = null;
@@ -771,7 +779,9 @@ function aStrangerIsOnNothing() {
     server = s;
     const hub = createHub(nodeHome(nobody, [server.url]));
     const res = fakeRes();
-    hub.handleStatus({}, res, askedWith({ name: 'mallory' }));
+    const cards = {};
+    cards[server.url] = lab.box;
+    hub.handleStatus({}, res, askedWith({ name: 'mallory' }), { router: cardRouter(cards) });
     return res.wait();
   }).then(function (res) {
     let body = null;

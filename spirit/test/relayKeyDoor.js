@@ -4,6 +4,11 @@ const rollOf = require('./rollOf');
 // spirit/test/relayKeyDoor.js
 // WHO THIS RELAY IS, FROM THE SMALLEST THING THAT KNOWS.
 //
+// Since goal/G22.6 the smallest thing is the relay's card, the answer to a
+// signed card ask on its one door: GET /api/relay/key, which this suite was
+// written for, is closed. What it asserts — one fixed fact, pinned, re-asked
+// each boot, signed, no membership term — holds of the card unchanged.
+//
 //   Andy: "the first two are easily replaced with GET /api/relay/key or
 //   whatever."
 //
@@ -75,43 +80,28 @@ function nodeAgainst(box, opts) {
   if (!opts.home) auth.saveIdentity(home, auth.generateIdentity('node'));
 
   const asked = [];
+  // THE KEY IS A CARD ASK ON THE ONE DOOR since goal/G22.6 (GET
+  // /api/relay/key is closed); answerRelay asks through `askKey`, which a
+  // node wires to peerPost.relayKey. This fake answers it out of `box`.
   const answerer = answerRelay.createAnswerer({
     rootDir: home,
-    request: function (url, method, pathname) {
-      asked.push(pathname);
-      // AN OLD RELAY HAS NO SUCH DOOR. `oldRelay` makes this fake answer
-      // the way a box that has not been updated does — 404, which asJson
-      // turns into an unreadable answer — so the fallback is exercised
-      // rather than assumed.
-      if (pathname === '/api/relay/key') {
-        if (opts.oldRelay) return Promise.resolve({ status: 404, text: 'Not found' });
-        // SIGNED, since cycle 10's R9 — the same answer now carries the
-        // key every post to this box is sealed to, so an unsigned one is
-        // refused and yields no key at all. Built from the real box so
-        // this fake cannot drift from what a relay actually says.
-        return Promise.resolve({
-          status: 200,
-          text: JSON.stringify({
-            relayPublicKey: box.relayPublicKey(),
-            relaySealKey: box.relaySealKey(),
-            keySig: box.relayKeyStatement(),
-            relayLabel: box.relayLabel(),
-          }),
-        });
-      }
-      if (pathname === '/api/relay/who') {
-        return Promise.resolve({
-          status: 200,
-          text: JSON.stringify({
-            peers: rollOf(box),
-            relayPublicKey: box.relayPublicKey(),
-            relayLabel: box.relayLabel(),
-          }),
-        });
-      }
-      return Promise.resolve({ status: 404, text: 'Not found' });
+    askKey: function () {
+      asked.push('card');
+      // A RELAY THAT DOES NOT ANSWER THE CARD ASK (an old one, or a box
+      // that is not a relay): the ask rejects — so the fallback is
+      // exercised rather than assumed.
+      if (opts.oldRelay) return Promise.reject(new Error('that relay does not answer with a signed key'));
+      // SIGNED, since cycle 10's R9 — the same answer carries the key
+      // every post to this box is sealed to, so an unsigned one is refused
+      // and yields no key at all. Built from the real box so this fake
+      // cannot drift from what a relay actually says.
+      return Promise.resolve({
+        relayPublicKey: box.relayPublicKey(),
+        relaySealKey: box.relaySealKey(),
+        keySig: box.relayKeyStatement(),
+        relayLabel: box.relayLabel(),
+      });
     },
-    urls: function () { return ['https://relay.example']; },
   });
   return { home: home, answerer: answerer, asked: asked };
 }
@@ -133,8 +123,8 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
     test.fail('got ' + JSON.stringify(key));
   }
 
-  if (N.asked.length === 1 && N.asked[0] === '/api/relay/key') {
-    test.check('and it asked /api/relay/key — the roll was not read at all');
+  if (N.asked.length === 1 && N.asked[0] === 'card') {
+    test.check('and it asked one card ask — the roll was not read at all');
   } else {
     test.fail('asked ' + JSON.stringify(N.asked));
   }
@@ -170,7 +160,7 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
       test.fail('the pinned path broke: ' + JSON.stringify(k2));
     }
 
-    if (again.asked.length === 1 && again.asked[0] === '/api/relay/key') {
+    if (again.asked.length === 1 && again.asked[0] === 'card') {
       test.check('and re-checks it against the small door, never the roll');
     } else {
       test.fail('asked ' + JSON.stringify(again.asked));
@@ -197,12 +187,12 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
     const O = nodeAgainst(R.box, { oldRelay: true });
     return O.answerer.relayKey('https://relay.example').then(function (k3) {
       if (!k3) {
-        test.check('a relay with no /api/relay/key yields no key — the node does not go looking');
+        test.check('a relay that answers no card ask yields no key — the node does not go looking');
       } else {
         test.fail('it found a key anyway: ' + JSON.stringify(k3));
       }
 
-      if (O.asked.length === 1 && O.asked[0] === '/api/relay/key') {
+      if (O.asked.length === 1 && O.asked[0] === 'card') {
         test.check('and asked once, at the small door, and stopped');
       } else {
         test.fail('asked ' + JSON.stringify(O.asked));

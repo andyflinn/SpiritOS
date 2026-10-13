@@ -15,7 +15,8 @@
 //     node's own files leaning on the deleted GET /api/relay/who
 //   7 the repo notes: .gitignore holds no pasted console.log line; notASuite.js names only files the runner sees, and
 //     lists itself, so runAll does not take it for a suite; rollNarrow.js guards process/ and bash/ too
-//   8 bash/README.md says what the box runs (/root/SpiritOS, root is spirit); bash/status asks /api/relay/key
+//   8 bash/README.md says what the box runs (/root/SpiritOS, root is spirit); bash/status asks the relay's key
+//     (a card ask by bash/card-ask.js since goal/G22.6; it was GET /api/relay/key)
 
 const fs = require('fs');
 const os = require('os');
@@ -203,8 +204,10 @@ function bashNotes() {
   if (!/SPIRIT_RELAY_USER|unprivileged|service account|spirit` account|spirit account/i.test(readme)) test.check('and names no unprivileged spirit account');
   else test.fail(OWED + 'bash/README.md still describes a spirit service account');
   const status = read('bash/status');
-  if (/\/api\/relay\/key/.test(status) && !/\/api\/relay\/who/.test(status) && /relayPublicKey/.test(status)) test.check('bash/status asks /api/relay/key and looks for relayPublicKey');
-  else test.fail(OWED + 'bash/status still probes ' + (/\/api\/relay\/who/.test(status) ? '/api/relay/who' : 'something else'));
+  // SINCE goal/G22.6 the key is a card ask on the relay's one door: Andy, "bash/status, which checked a relay with
+  // curl, checks it with a small node script that sends the card ask instead". GET /api/relay/key is closed.
+  if (/card-ask\.js/.test(status) && !/\/api\/relay\/(who|key)/.test(status) && /relayPublicKey/.test(status)) test.check('bash/status sends the card ask (bash/card-ask.js) and looks for relayPublicKey');
+  else test.fail(OWED + 'bash/status still probes ' + (/\/api\/relay\/who/.test(status) ? '/api/relay/who' : /\/api\/relay\/key/.test(status) ? '/api/relay/key' : 'something else'));
 }
 
 // ANDY'S LATER RULINGS ON THE ITEM: "CLINE.md goes.", and of the other agents' files: "these. kell'em". RULES.md is

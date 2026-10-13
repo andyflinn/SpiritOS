@@ -24,7 +24,6 @@
 // length of somebody's patience.
 
 var DEFAULT_MAX = 256;
-var DEFAULT_PER_REQUESTER = 16;
 
 // ── HOW MANY REQUESTS ONE MEMBER MAY HAVE IN FLIGHT ──────────────────
 //
@@ -34,57 +33,39 @@ var DEFAULT_PER_REQUESTER = 16;
 //   be 1 <--> 1 no 16 concurrent inputs ... you will chane 1 thing in the
 //   relay: and that's 1 in 1 out."
 //
-// ONE, and it is the member class alone. The 16 above stood for every
-// class since the first router, though 0016 superseded it by name; it
-// stays the budget of the relay's own class and the partner class, which
-// post under the relay's key for everybody at once (the classes, below).
-// A node already sends one post at a time to a relay (postQueue.js), so a
-// member that keeps to that never meets this refusal: it is what holds a
-// node that does not.
+// ONE, for every requester. A node already sends one post at a time to a
+// relay (postQueue.js), so a member that keeps to that never meets this
+// refusal: it is what holds a node that does not. DEFAULT_PER_REQUESTER
+// is the same cap under the name callers passed numbers by.
 var DEFAULT_PER_MEMBER = 1;
 
-// ── HOW MANY REQUESTS MAY BE AIMED AT ONE MEMBER ─────────────────────
+// ── HOW MANY REQUESTS ONE SENDER MAY AIM AT ONE MEMBER ───────────────
 //
 //   Andy: "cap the requests for a specific target at one, respond with
 //   (not available), if this causes the calling node to keep the request
 //   queued, nothing is lost."
 //
-// The cap that needs no cooperation from anybody (0016). A per-requester
-// cap is spent by whoever is asking, so a Sybil farm defeats it by being
-// many requesters — but it cannot be many TARGETS, because the target is
-// the person being bothered and there is only one of them.
-//
-// DEFAULTS TO `max`, WHICH IS NO TIGHTER THAN THE TABLE ITSELF, and that
-// is deliberate rather than timid. 0016 sequences the ceiling of 1 LAST,
-// after a node can queue: a node that cannot queue meets a refusal with
-// nothing to do about it, so turning the number down before the
-// scheduler exists would break the product to prove a point it has
-// already conceded. The mechanism lands now; the number is one
-// deliberate commit later, and the suites set it to 1 to prove the
-// refusal works today.
+// COUNTED PER SENDER (Andy's decision, goal/G22.6, taking M5 of the review
+// of 2026-10-10): "the member's one slot in flight counted per sender ...
+// so no stranger can keep a member busy". The slot was the target's alone,
+// so one requester holding it — a stranger whose node never answers, five
+// seconds at a time — made that member busy for everybody, the owner
+// included. Now each sender has its own slot at each member: busy means
+// THIS sender already has a request in flight to THIS member.
 var DEFAULT_PER_TARGET = 1;
 
-// ── WHO THE CEILING COUNTS AGAINST ───────────────────────────────────
+// ── ONE CLASS ────────────────────────────────────────────────────────
 //
-//   Andy: "we always know that relay side request for relays must be
-//   subject to a separate budget."
-//
-// Decision 0016: member traffic and traffic forwarded in by a partner are
-// separate budgets. A member is one person, and a partner is another box
-// whose behaviour we do not control.
-//
-// WHY. The count is kept per requester KEY, and a partner forward opens
-// under the relay's own key (`mineKey()`), for everybody at once. Lumping
-// it with the member cap of 1 would refuse the relay's second concurrent
-// forward by its own cap.
-//
-// A third class, RELAY (this relay posting as itself), existed only for
-// the device offers and was removed with them by goal/G16.2.
+// Decision 0016 kept member traffic and traffic forwarded in by a partner
+// relay as separate budgets. Partnering as a permission is gone, and the
+// partner budget with it (Andy's decision, goal/G22.6): a stranger's post
+// is held by the relay's address table and, here, by the same caps as a
+// member's. A third class, RELAY, went with the device offers (goal/G16.2).
 //
 // The classes, and nothing else may be passed:
-var MEMBER = 'member';    // a member of this relay, posting for itself
-var PARTNER = 'partner';  // forwarded in from a partner relay
-var KINDS = [MEMBER, PARTNER];
+var MEMBER = 'member';    // anybody posting for itself
+var KINDS = [MEMBER];
+var DEFAULT_PER_REQUESTER = DEFAULT_PER_MEMBER;
 
 // A NUMBER STILL MEANS WHAT IT MEANT. `maxPerRequester: 2` sets every
 // class to 2, which is exactly the old behaviour, so nothing that passed
@@ -94,8 +75,7 @@ function capsFrom(given) {
   var flat = typeof given === 'number' ? given : null;
   KINDS.forEach(function (k) {
     var v = flat !== null ? flat
-      : (given && typeof given[k] === 'number' ? given[k]
-        : (k === MEMBER ? DEFAULT_PER_MEMBER : DEFAULT_PER_REQUESTER));
+      : (given && typeof given[k] === 'number' ? given[k] : DEFAULT_PER_MEMBER);
     caps[k] = v;
   });
   return caps;
@@ -108,9 +88,10 @@ function capsFrom(given) {
 // THIS SAID "the only timeout in the design". There are four, and they
 // are not in step: a node waits 8 s (`peerPost.js` DEFAULT_WAIT_MS), this
 // table holds 20 s, a relay's own post waits 15 s (`relay.js`
-// ROUTE_WAIT_MS), and a relay's hop to a partner waits 8 s again. The
-// inner hop outliving the outer waiter is what orphans a member's only
-// slot for twelve seconds once the ceiling is 1.
+// ROUTE_WAIT_MS), and a relay's hop to a partner waited 8 s again (that
+// hop went with partnering, goal/G22.6). The inner hop outliving the
+// outer waiter is what orphans a member's only slot for twelve seconds
+// once the ceiling is 1.
 //
 // AND THE NUMBER ITSELF IS SUPERSEDED. Andy, 2026-09-21: "the relay has
 // no business waiting for 15 seconds, if it doesn't have a reply or an
@@ -157,9 +138,9 @@ var DEFAULT_TTL_MS = 5000;
 // protection.
 //
 // Refusing only pays when it SAVES something, and the only thing it can
-// save is a trip that has not been made yet. So the floor lives at the
-// decision to FORWARD (relay.js, carryToPartner), and a delivery this box
-// can make itself is simply made.
+// save is a trip that has not been made yet. A relay makes no onward trip
+// since partnering went (goal/G22.6), so a delivery this box can make
+// itself is simply made.
 //
 // What survives here is the degenerate case: no time at all is not a
 // short deadline, it is an expired one.
@@ -177,7 +158,7 @@ function createRouter(opts) {
   // THE RELAY'S OWN KEY (goal/G16.2, S3 of the review of 2026-10-10). A route
   // whose target is this key is a question to the relay itself, and the
   // per-target slot is a person's ("there is only one of them"); the relay
-  // is not a person, and counting every member's and partner's question to
+  // is not a person, and counting every member's question to
   // it against ONE slot let one member searching lock the owner out. Andy,
   // 2026-10-10, ruling A: such a route is not counted against the per-target
   // ceiling at all; the requester caps of 0016 and the per-minute limit stay
@@ -214,24 +195,28 @@ function createRouter(opts) {
     }).length;
   }
 
-  // How many requests are aimed at this member right now, whoever asked.
-  function countForTarget(target) {
+  // How many requests are aimed at this member right now — by one sender
+  // when `requester` is named (the slot is per sender, goal/G22.6), by
+  // anybody when it is not.
+  function countForTarget(target, requester) {
     sweep();
     return Object.keys(pending).filter(function (h) {
-      return pending[h].target === target;
+      if (pending[h].target !== target) return false;
+      return !requester || pending[h].requester === requester;
     }).length;
   }
 
-  // WHEN THE TARGET'S OLDEST SLOT FREES, IN MILLISECONDS. A refusal that
-  // says only "busy" makes a scheduler guess, and every guess is either a
-  // wasted retry or a needless wait. This is not a guess: the entry
-  // expires at `at + ttlMs` whatever happens, so the worst case is exact
-  // and an early reply only makes it sooner.
-  function msUntilFreeFor(target) {
+  // WHEN THE SENDER'S SLOT AT THIS TARGET FREES, IN MILLISECONDS. A refusal
+  // that says only "busy" makes a scheduler guess, and every guess is
+  // either a wasted retry or a needless wait. This is not a guess: the
+  // entry expires at `at + ttlMs` whatever happens, so the worst case is
+  // exact and an early reply only makes it sooner.
+  function msUntilFreeFor(target, requester) {
     sweep();
     var oldest = null;
     Object.keys(pending).forEach(function (h) {
       if (pending[h].target !== target) return;
+      if (requester && pending[h].requester !== requester) return;
       if (oldest === null || pending[h].at < oldest.at) oldest = pending[h];
     });
     if (oldest === null) return 0;
@@ -245,7 +230,8 @@ function createRouter(opts) {
   // flight" on every retry of a request that never arrived.
   //
   // `carry` is what the caller must hold until the answer comes — for a
-  // forward, the partner's answer and the route back. It lives IN the
+  // stranger's post, the function that answers its held post (relay.js,
+  // goal/G22.6). It lives IN the
   // entry, so it expires with it: one table, one cap, one ttl, and nothing
   // beside it that the sweep cannot see. (Cycle 3: a side map in relay.js
   // outlived its entry for good when a member never answered.) The ttl is
@@ -309,10 +295,6 @@ function createRouter(opts) {
     }
     // And per requester, so one peer cannot spend the table on everyone
     // else's behalf — the same fairness B1 established for device slots.
-    //
-    // COUNTED WITHIN THE CLASS (0016). A partner's forwards do not
-    // spend a member's budget and a member's do not spend a partner's,
-    // because the two are not the same population.
     if (countFor(requester, cls) >= caps[cls]) {
       return { ok: false, status: 429, error: 'too many in flight', kind: cls };
     }
@@ -336,10 +318,13 @@ function createRouter(opts) {
     // too long. Ordered after the requester's own cap on purpose: when
     // both are over, the caller's own fault is the more useful thing to
     // hear first.
-    if (!(selfKey && target === selfKey) && countForTarget(target) >= perTarget) {
+    // PER SENDER (goal/G22.6, M5): only this requester's own requests to
+    // this target count, so one sender holding a member's slot does not
+    // make that member busy for anybody else.
+    if (!(selfKey && target === selfKey) && countForTarget(target, requester) >= perTarget) {
       return {
         ok: false, status: 503, error: 'target is busy',
-        busy: true, retryAfterMs: msUntilFreeFor(target),
+        busy: true, retryAfterMs: msUntilFreeFor(target, requester),
       };
     }
 
@@ -481,6 +466,5 @@ module.exports = {
   DEFAULT_TTL_MS: DEFAULT_TTL_MS,
   MIN_USEFUL_MS: MIN_USEFUL_MS,
   MEMBER: MEMBER,
-  PARTNER: PARTNER,
   KINDS: KINDS,
 };

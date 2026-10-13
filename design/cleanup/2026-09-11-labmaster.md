@@ -1,5 +1,7 @@
 # labMaster — a control plane for a little network on one laptop
 
+> 2026-10-13 (goal/G22.6): a relay no longer answers `GET /api/version` (a node still does); a relay is checked with a signed card ask on its one door.
+
 *2026-09-11. Verified against the tree at the commit this landed on.*
 
 labMaster runs fake SpiritOS nodes on your machine so there is something to look
