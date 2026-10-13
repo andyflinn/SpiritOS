@@ -1,5 +1,5 @@
 {
- "change": 53783,
+ "change": 53846,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G19.13"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -36,13 +34,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3826,9 +3822,12 @@
    "id": "goal/G19.13",
    "title": "Desk: a claim carries its commit; deskVerify waits for it",
    "goal": "goal/G19",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19"
    ],
@@ -3869,10 +3868,10 @@
    ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "waived": true,
    "rules": [
     {
@@ -4052,6 +4051,21 @@
      "by": "andy",
      "at": "2026-10-12T15:35:25.564Z",
      "text": "deskVerify: passed, at e32295a6 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:32:26.270Z",
+     "text": "?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:32:55.367Z",
+     "text": "My slip, the same as G19.7: at the claim the build and verify phases were refused because I had not taken them, so no Done came. Recorded now; deskVerify asked again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:34:02.218Z",
+     "text": "deskVerify: passed, at 90eec773 (pulled). 5 suites ran green."
     }
    ]
   },
