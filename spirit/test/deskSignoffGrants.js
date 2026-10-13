@@ -110,6 +110,8 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
   test.subHeading('4. Done waits on every grant');
   // sg/G1.2 gets his Go, a red, a build and a verify pass, so Done rests on nothing but the grant.
   await call('press', { id: 'sg/G1.2', what: 'go' }, ANDY);
+  // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets the red of sg/G1.1 (section 2) go first.
+  await call('item.release', { id: 'sg/G1.1' }, WSL);
   await call('phase.take', { id: 'sg/G1.2', phase: 'red' }, CW);
   await call('phase.done', { id: 'sg/G1.2', phase: 'red' }, CW);
   await call('phase.take', { id: 'sg/G1.2', phase: 'build' }, WSL);

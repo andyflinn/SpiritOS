@@ -203,6 +203,8 @@ function answerFor(buttons) {
 
   // HIS CHOICE: "only when it's blocked on me". A build somebody holds is not blocked on him, so the button goes.
   test.subHeading('4. a build somebody holds is not blocked on him, so no waive is offered');
+  // Since goal/G21.4 an agent holds one task at a time: claude-windows lets the build of w/G1.2 go first.
+  await call('item.release', { id: 'w/G1.2' }, CW);
   await call('phase.take', { id: 'w/G1.3', phase: 'red' }, CW);
   await call('phase.done', { id: 'w/G1.3', phase: 'red' }, CW);
   const f3before = await factsOf('w/G1.3');

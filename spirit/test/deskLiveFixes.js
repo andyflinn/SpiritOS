@@ -126,6 +126,8 @@ async function serverHalf() {
       { id: 'sr/G1.3', title: 'Plums', blocks: ['sr/G1'] },
     ] }) }, CW);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
+    // Since goal/G21.4 an agent holds one task at a time: claude-windows lets lf/G1.2 go before it takes sr/G1.3.
+    await call('item.release', { id: 'lf/G1.2' }, CW);
     await call('item.take', { id: 'sr/G1.3' }, CW);
     await call('chat.add', { id: 'sr/G1.3', text: 'a zebra came by' }, CW);
     await call('chat.add', { id: 'sr/G1.3', text: 'nothing else' }, CW);

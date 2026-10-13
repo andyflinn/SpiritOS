@@ -76,7 +76,11 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
   ] }) }, CW);
   // SINCE goal/G18.8 AN AGENT WRITES ONLY WHERE IT HOLDS THE ITEM OR THE TAKE OF HIS LINE: wsl-claude holds the items
   // it asks under; on cq/G1.3 claude-windows answers a line of his it has taken.
-  for (const id of ['cq/G1.1', 'cq/G1.2', 'cq/G1.3']) await call('item.take', { id: id }, WSL);
+  // Since goal/G21.4 an agent holds one task at a time: wsl-claude takes each item as it gets to it (hold), letting the
+  // one before go.
+  let holding = '';
+  const hold = async function (id) { if (holding) await call('item.release', { id: holding }, WSL); await call('item.take', { id: id }, WSL); holding = id; };
+  await hold('cq/G1.1');
 
   // SINCE goal/G21.2 A QUESTION MARK IN CHAT RAISES NOTHING. Andy, in G21.2's box: "A question mark in a chat line
   // never makes a red Q; only a deliberate Q check does." Sections 1-4 assert the conversion is gone; 5 and 6 stand.
@@ -98,6 +102,7 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
   else test.fail('the line reads ' + short(mine.length ? mine[0] : null));
 
   test.subHeading('3. a line that asks nothing passes as before');
+  await hold('cq/G1.2');
   await call('chat.add', { id: 'cq/G1.2', text: PLAIN }, WSL);
   const none = await qsOf('cq/G1.2');
   const plainLine = (await chatOf('cq/G1.2'))[0] || {};
@@ -115,6 +120,7 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
   else test.fail('the line ending in a question mark and blanks raised ' + short(trailing));
 
   test.subHeading('4. since goal/G21.2 two question lines by two agents raise nothing');
+  await hold('cq/G1.3');
   await call('chat.add', { id: 'cq/G1.3', text: 'wsl: first, does the owner row survive a restore?' }, WSL);
   await call('chat.add', { id: 'cq/G1.3', text: 'and the whoBook?' }, ANDY);
   await call('line.take', { id: 'cq/G1.3' }, CW);

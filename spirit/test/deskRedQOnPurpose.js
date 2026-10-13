@@ -193,6 +193,8 @@ async function theServer() {
     const nothing = await call('chat.add', { id: 'q/G1.6', text: 'Q3:clear' }, ANDY);
     if (nothing.ok === false && why(nothing)) test.check('a clear naming no open Q is refused, with a why: ' + short(why(nothing)));
     else test.fail(OWED + '"Q3:clear" on an item with no Qs answered ' + short(nothing));
+    // Since goal/G21.4 an agent holds one task at a time: wsl-claude lets q/G1.1 go before it takes q/G1.6.
+    await call('item.release', { id: 'q/G1.1' }, WSL);
     await call('item.take', { id: 'q/G1.6' }, WSL);
     await ask('q/G1.6', 'Can an agent clear it?', WSL);
     await call('chat.add', { id: 'q/G1.6', text: 'Q:clear' }, WSL);
@@ -209,6 +211,7 @@ async function theServer() {
     else test.fail(OWED + 'end-design held ' + short(held) + ', after the clear ' + short(freed));
 
     test.subHeading('7. existing open checks stay as they are');
+    await call('item.release', { id: 'q/G1.6' }, WSL);
     await call('item.take', { id: 'q/G1.7' }, WSL);
     await call('chat.add', { id: 'q/G1.7', text: 'wsl: an old question, before goal/G21.2?' }, WSL);
     await stop();

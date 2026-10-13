@@ -491,10 +491,58 @@ function mayWrite(s, w) {
 // WHO HOLDS IT, BY KEY: a take or hold recorded with a key is that key's; one recorded before keys, its label's.
 function holdsBox(it, w) { return it.boxTakenKey ? it.boxTakenKey === w.key : it.boxTakenBy === w.by; }
 function holdsTake(it, w) { return it.takenKey ? it.takenKey === w.key : it.takenBy === w.by; }
+// goal/G21.4: the item it is with, and the phase it holds, by key where the record carried one.
+function holdsWith(it, w) { return !!it.with && (it.withKey ? it.withKey === w.key : it.with === w.by); }
+function holdsPhase(it, w) { return !!it.phaseWith && (it.phaseWithKey ? it.phaseWithKey === w.key : it.phaseWith === w.by); }
+
+// ONE TASK AT A TIME (goal/G21.4). Andy, in the item's box: "An agent holds one task, one item and one phase, at a time;
+// taking a second is refused by the desk until the first is released, claimed or done. Seen: an agent holding two reds
+// blocked another agent from working." What the agent holds: every item it is with (item.take) or whose phase it holds
+// (phase.take) that is still on his List (listed: not done, not closed, its goal neither closed nor abandoned) and that
+// it has not claimed. So what frees it: item.release, phase.done, its own claim (claim-done, or the claim of a build),
+// his done or close, his exclusion of it, and verify.reject / verify.regress, which take with away themselves.
+// Decided by Andy, not by this file: do not let an agent hold a second task again.
+function heldBy(s, w) {
+  return Object.keys(s.items).filter(function (id) {
+    const m = s.items[id];
+    if (!m || m.goal || m.done || m.closed || m.leftOut || !listed(s, m) || m.claims[w.by]) return false;
+    return holdsWith(m, w) || holdsPhase(m, w);
+  });
+}
+// A goal's row is no task (this build's reading: the box speaks of items and phases): taking it is never refused here
+// and never counts as held, so an agent with an item still takes its goal's row to post in the goal's chat.
+function oneTask(s, w, id) {
+  if (s.items[String(id)] && s.items[String(id)].goal) return;
+  const other = heldBy(s, w).filter(function (x) { return x !== String(id); })[0];
+  if (!other) return;
+  const m = s.items[other];
+  const what = holdsPhase(m, w) ? 'the ' + (m.phase || 'phase') + ' phase of ' + other : other;
+  throw refusedWhy('one-task', w.by + ' holds ' + what + ': one task at a time; release it (item.release), claim it or finish its phase first');
+}
+// HIS EXCLUSION RELEASES WHAT THE AGENT HOLDS (goal/G21.4). Andy, in the item's box: "Excluding an agent releases what
+// it holds: its task and phase are free for another agent to take." In the walk, at his profile.set, so a replay agrees:
+// the item it is with, the phase it holds, the take of his line it has not answered yet, its box hold and its share of
+// an offered cap.
+function releaseKey(s, key) {
+  const mine = function (label, labelKey) { return !!label && (labelKey ? labelKey === key : s.agentKey[label] === key); };
+  Object.keys(s.items).forEach(function (id) {
+    const m = s.items[id];
+    if (mine(m.phaseWith, m.phaseWithKey)) { m.phaseWith = ''; m.phaseWithKey = ''; if (m.code && !m.done && !m.closed) m.status = 'running'; }
+    if (mine(m.with, m.withKey)) { m.with = ''; m.withKey = ''; }
+    if (mine(m.takenBy, m.takenKey)) {
+      for (let i = m.chat.length - 1; i >= 0; i--) { if (m.chat[i].by === 'andy') { if (m.chat[i].taken === m.takenBy) { m.chat[i].taken = ''; m.chat[i].takenKey = ''; } break; } }
+      m.takenBy = ''; m.takenKey = '';
+    }
+    if (mine(m.boxTakenBy, m.boxTakenKey)) { m.boxTakenBy = ''; m.boxTakenKey = ''; m.boxHoldUntil = 0; }
+    if (Array.isArray(m.capOffer)) m.capOffer = m.capOffer.filter(function (k) { return k !== key; });
+  });
+}
 // A chat line as it is answered: its writer's key and name beside its label; whom it was addressed to stays inside.
 function shownLine(s, l) {
   const o = Object.assign({}, l, { key: String(l.key || ''), name: nameOfKey(s, l.key) });
   delete o.to;
+  // goal/G21.4: the taker's key stays inside too; taken shows the taker's label as before.
+  delete o.takenKey;
   return o;
 }
 
@@ -528,6 +576,8 @@ function blank(id, title, goalId) {
     alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null), checkHigh: Object.create(null),
     // goal/G21.1: the keys beside the labels (the take, the box), the end of a box hold, and a cap offered to keys.
     takenKey: '', boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
+    // goal/G21.4: the keys beside with and phaseWith, so "one task per agent" and its release go by key.
+    withKey: '', phaseWithKey: '',
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false,
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
@@ -646,7 +696,7 @@ function apply(s, r, b, item, goalOf) {
           const known = labelOfKey(s, key);
           // An agent never heard from has no label yet: the take stands under its key, shown by its nick.
           const label = known || String(b.nick);
-          line.taken = label; it.takenBy = label; it.takenKey = key;
+          line.taken = label; line.takenKey = key; it.takenBy = label; it.takenKey = key;
           if (known) it.takers[known] = true;
           // HIS NICK REQUEST ABOUT THE BOX: the box is that agent's for one write, red at once, for one minute.
           if (b.hold === true) { it.boxTakenBy = label; it.boxTakenKey = key; it.boxHoldUntil = Date.parse(r.at) + BOX_HOLD_MS; it.capOffer = null; }
@@ -667,7 +717,15 @@ function apply(s, r, b, item, goalOf) {
     }
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
-    case 'item.take': it.with = r.by; it.takers[r.by] = true; return;
+    case 'item.take': it.with = r.by; it.withKey = String(r.key || ''); it.takers[r.by] = true; return;
+    // LETTING AN ITEM GO (goal/G21.4): the caller's with, and its phase if it holds one there; the handler refused a
+    // caller holding neither. A phase let go goes back to nobody's, as at phase.done, without moving on.
+    case 'item.release': {
+      const w = { by: r.by, key: String(r.key || '') };
+      if (holdsPhase(it, w)) { it.phaseWith = ''; it.phaseWithKey = ''; it.status = 'running'; }
+      if (holdsWith(it, w)) { it.with = ''; it.withKey = ''; }
+      return;
+    }
     // THE PHASES (goal/G5.7): the handler checked who may; the replay records it.
     // THE PHASE HOLDER IS ITS OWN (goal/G6.9): only phase.take holds a phase; a plain item.take sets "with" and nothing
     // the phase rules read. Andy, to G6 Q5: "add item to fix it." THE STATUS SAYS THE PHASE while it is held: Andy,
@@ -675,13 +733,14 @@ function apply(s, r, b, item, goalOf) {
     // do it, since it arbitrase phase-taking."
     case 'phase.take':
       it.with = r.by; it.phaseWith = r.by; it.status = String(b.phase); it.takers[r.by] = true; it.verified = false;
+      it.withKey = String(r.key || ''); it.phaseWithKey = String(r.key || '');
       // The key beside the label (goal/G5.9): a label he may rename, a key that stays.
       if (b.phase === 'red') { it.red = r.by; it.redKey = String(r.key || ''); it.phase = 'red'; }
       else if (b.phase === 'build') { it.builder = r.by; it.builderKey = String(r.key || ''); }
       else if (b.phase === 'verify') { it.verifier = r.by; it.verifierKey = String(r.key || ''); }
       return;
     case 'phase.done':
-      it.with = ''; it.phaseWith = '';
+      it.with = ''; it.phaseWith = ''; it.withKey = ''; it.phaseWithKey = '';
       // Nobody holds the next phase yet: the status goes back to what his Go made it.
       it.status = 'running';
       // deskVerify's word is about ONE verify (goal/G8.3), so every step that starts the work again takes it away and
@@ -730,6 +789,7 @@ function apply(s, r, b, item, goalOf) {
       it.phase = 'build';
       it.phaseWith = '';
       it.with = '';
+      it.phaseWithKey = ''; it.withKey = '';
       // goal/G8.12: the row says it was rejected, not merely that it runs again.
       it.status = 'deskVerify rejected it';
       return;
@@ -773,7 +833,7 @@ function apply(s, r, b, item, goalOf) {
       if ((!it.done && !it.closed) || it.leftOut) return;
       it.done = false; it.closed = false; it.alone = false;
       it.verified = false; it.checked = false; it.claims = Object.create(null);
-      if (it.code) { it.phase = 'build'; it.phaseWith = ''; it.with = ''; }
+      if (it.code) { it.phase = 'build'; it.phaseWith = ''; it.with = ''; it.phaseWithKey = ''; it.withKey = ''; }
       it.status = word;
       return;
     }
@@ -875,14 +935,18 @@ function apply(s, r, b, item, goalOf) {
     case 'signoff':
       delete s.agentsAt[r.by];
       delete s.agentWord[r.by];
-      Object.keys(s.items).forEach(function (id) { const m = s.items[id]; if (m.phaseWith === r.by) { m.phaseWith = ''; if (m.with === r.by) m.with = ''; } });
+      Object.keys(s.items).forEach(function (id) { const m = s.items[id]; if (m.phaseWith === r.by) { m.phaseWith = ''; m.phaseWithKey = ''; if (m.with === r.by) { m.with = ''; m.withKey = ''; } } });
       return;
     // AN AGENT'S SCOPE (goal/G4.23), by its key, as he set it last; the handler refused anything malformed.
     // AN AGENT'S PROFILE (goal/G4.23), his, as he set it last: its name and its nick.
     // (Agent scopes went with goal/G10.8, every agent being /: an old scope.set record falls to the default and changes
     // nothing.)
     // goal/G21.1 adds included and cap, on unless his record says off (records before it carry neither).
-    case 'profile.set': s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick), included: b.included !== false, cap: b.cap !== false }; return;
+    case 'profile.set':
+      s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick), included: b.included !== false, cap: b.cap !== false };
+      // goal/G21.4: his exclusion releases everything the agent holds (releaseKey).
+      if (b.included === false) releaseKey(s, String(b.agent));
+      return;
     // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
     // that, i then can solicit an answer from others." The taker's name goes on his latest line under the item,
     // and the item is the taker's to answer until it does; the handler refuses a take with no line or one already
@@ -890,7 +954,7 @@ function apply(s, r, b, item, goalOf) {
     case 'line.take': {
       for (let i = it.chat.length - 1; i >= 0; i--) {
         if (it.chat[i].by !== 'andy') continue;
-        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.takenBy = r.by; it.takenKey = String(r.key || ''); it.takers[r.by] = true; }
+        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.chat[i].takenKey = String(r.key || ''); it.takenBy = r.by; it.takenKey = String(r.key || ''); it.takers[r.by] = true; }
         return;
       }
       return;
@@ -2034,15 +2098,38 @@ appServer.serve({
       // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
       // By key since goal/G21.1, so an agent bound by his nick before the desk ever heard from it answers too.
       const mine = !!(it0 && it0.takenBy && holdsTake(it0, w));
-      if (it0 && it0.takenBy && !mine && w.by !== 'andy' && w.by !== 'desk') throw refused('taken');
       // AN AGENT ANSWERS ONLY WHAT IT HAS TAKEN (goal/G18.8). Andy, 2026-10-12: "no agent should answer without taking.
-      // too much chatter otherwise."; and, to its own work notes going under an item it holds: "yes." So an agent
-      // writes under an item while it holds the take of his latest line there, or while the item is its own: the one
-      // it is with, or the one whose red, build or verify it took (those stay after a phase is done, so a claim's
-      // file list still goes). Not a decision of this file's to loosen: a line taker that answered is no holder.
-      if (it0 && w.by !== 'andy' && w.by !== 'desk' && !mine &&
-          [it0.with, it0.red, it0.builder, it0.verifier].indexOf(w.by) === -1) {
-        throw refusedWhy('bad-request', 'take first: ' + w.by + ' holds neither the take of Andy\'s latest line under ' + a.id + ' (line.take) nor the item (item.take)');
+      // too much chatter otherwise."; and, to its own work notes going under an item it holds: "yes."
+      // THE CHAT FLOW (goal/G21.4). Andy, in the item's box: "Each of Andy's lines is taken by one agent and answered by
+      // that agent alone; no other agent chimes in once it is taken.", "An agent's answer is never takeable", and "An
+      // agent may post its own work notes (taking, built, claimed) on an item it holds; they are valued work logs and are
+      // not answers, so the chat flow does not stop them." The desk cannot read a line for what it means, so it goes by
+      // who writes, in this order:
+      //   - the taker of his latest line answers it (once: the answer frees the take);
+      //   - the agent the item is with now (item.take, phase.take) posts its work notes, a take of another's standing or
+      //     not: the box exempts work notes from the flow;
+      //   - an agent that took a phase of the item earlier (red, build, verify) posts its notes while his latest line is
+      //     not taken by another agent; once it is, a post of its would be a second answer, and is refused;
+      //   - anybody else takes his line first.
+      // Decided by Andy, not by this file: do not let a second agent answer a taken line.
+      if (it0 && w.by !== 'andy' && w.by !== 'desk' && !mine) {
+        const holder = holdsWith(it0, w) || holdsPhase(it0, w);
+        let his = null;
+        for (let i = it0.chat.length - 1; i >= 0; i--) { if (it0.chat[i].by === 'andy') { his = it0.chat[i]; break; } }
+        const takerOf = function (l) { return nameOfKey(st0, l.takenKey) || l.taken; };
+        if (!holder && it0.takenBy) {
+          throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' is taken by ' + (nameOfKey(st0, it0.takenKey) || it0.takenBy) + ', and only it answers; ' + w.by + ' may post here when it holds the item (item.take)');
+        }
+        const takenByOther = !!(his && his.taken && !(his.takenKey ? his.takenKey === w.key : his.taken === w.by));
+        const earlier = [[it0.red, it0.redKey], [it0.builder, it0.builderKey], [it0.verifier, it0.verifierKey]].some(function (p) {
+          return !!p[0] && (p[1] ? p[1] === w.key : p[0] === w.by);
+        });
+        if (!holder && earlier && takenByOther) {
+          throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' was taken and answered by ' + takerOf(his) + ': no agent answers another agent; a second answer comes only when Andy names the agent');
+        }
+        if (!holder && !earlier) {
+          throw refusedWhy('bad-request', 'take first: ' + w.by + ' holds neither the take of Andy\'s latest line under ' + a.id + ' (line.take) nor the item (item.take)');
+        }
       }
       // Measured as it is stored and answered: with its taken field (goal/G2.2), else the largest line that passes
       // here would not come back whole (oversize.js caught the ten bytes).
@@ -2116,6 +2203,8 @@ appServer.serve({
       return { change: write('phase.take', { id: a.id, phase: String(a.phase), by: w.by, key: w.key }, function (st, it) {
         const why = mayTake(st, it, String(a.phase), w.by);
         if (why) throw refused(why);
+        // ONE TASK AT A TIME (goal/G21.4, heldBy): no phase here while another item or phase is held.
+        oneTask(st, w, a.id);
       }).change };
     },
   },
@@ -2376,7 +2465,27 @@ appServer.serve({
     },
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
-  'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  // ONE TASK AT A TIME (goal/G21.4, heldBy): a second item is refused while one is held; the item it holds, taken
+  // again, is no second.
+  'item.take': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key }), function (st) { oneTask(st, w, a.id); }).change };
+    },
+  },
+  // LETTING AN ITEM GO (goal/G21.4). Andy, in the item's box: "taking a second is refused by the desk until the first is
+  // released, claimed or done." A plain item.take was let go by nothing until this verb: the caller's with on the item,
+  // and its phase there if it holds one, go back to nobody. A caller holding neither is refused with a why.
+  'item.release': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      return { change: write('item.release', { id: a.id, by: w.by, key: w.key }, function (st, it) {
+        if (!holdsWith(it, w) && !holdsPhase(it, w)) throw refusedWhy('not-offered', w.by + ' holds neither ' + a.id + ' nor a phase of it, so there is nothing to release');
+      }).change };
+    },
+  },
   // NO AGENT SCOPES SINCE goal/G10.8. Andy, 2026-10-12: "all agents in desk have "/" file scope", the per-agent
   // setting removed from desk and commitCheck ("b"). What fences an agent is the desk itself: Go, its item, the core
   // grants.
@@ -2504,13 +2613,16 @@ appServer.serve({
       if (it.takenBy && holdsTake(it, w)) return { change: st.change };
       // ONE TAKER UNTIL IT ANSWERS (claude-windows's review): a take on a newer line of his while the first stands
       // would hand the item to a second agent and have the first's answer refused. The item is the taker's.
-      if (it.takenBy) throw refused('taken');
+      if (it.takenBy) throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' is taken by ' + (nameOfKey(st, it.takenKey) || it.takenBy) + ', and it is theirs to answer');
       let his = null;
       for (let i = it.chat.length - 1; i >= 0; i--) { if (it.chat[i].by === 'andy') { his = it.chat[i]; break; } }
-      if (!his) throw refused('no-row');
+      // AN AGENT'S LINE IS NEVER TAKEN (goal/G21.4). Andy, in the item's box: "An agent's answer is never takeable: no
+      // agent answers another agent. A second answer comes only when Andy asks for it by naming the agent." A take is
+      // of his latest line alone, so each refusal says which case it met. Decided by Andy, not by this file.
+      if (!his) throw refusedWhy('no-row', it.chat.length ? 'there is no line of Andy\'s under ' + a.id + ': only his lines are taken, an agent\'s line never is' : 'there is no line of Andy\'s under ' + a.id + ' to take');
       // ONLY ITS ADDRESSEES TAKE AN ADDRESSED LINE (goal/G21.1): his nick line, or his cap to the agents with cap on.
       if (Array.isArray(his.to) && his.to.indexOf(w.key) === -1) throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' is addressed to another agent');
-      if (his.taken) throw refused('taken');
+      if (his.taken) throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' was taken and answered by ' + (nameOfKey(st, his.takenKey) || his.taken) + ': what follows it is an agent\'s answer, and an agent\'s answer is never taken; a second answer comes only when Andy names the agent');
       return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };
     },
   },
@@ -2597,6 +2709,8 @@ appServer.serve({
   'no-such-item': { status: 404, text: 'no such item' },
   // goal/G21.1: an agent Andy turned off in its pane (included) reads, and every write of it is refused.
   'not-included': { status: 403, text: 'that agent is not included at the desk' },
+  // goal/G21.4: an agent already holding an item or a phase takes no second until the first is released, claimed or done.
+  'one-task': { status: 409, text: 'that agent already holds another task' },
 } });
 
 // THE PRESS'S CHECKS, ONE COPY (goal/G19.13): what the press handler refuses, as a write() check, so the claim verb's

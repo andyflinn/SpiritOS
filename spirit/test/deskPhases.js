@@ -98,6 +98,9 @@ async function open(caller) {
   // under the decision item, which it takes, so no take lands on the code item whose phases are tested below.
   await call('item.take', { id: 'q/G1.2' }, UBI);
   await call('chat.add', { id: 'q/G1.2', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
+  // Since goal/G21.4 an agent holds one task at a time: claude-ubuntu lets the decision item go, so it may take a phase
+  // of the code item below.
+  await call('item.release', { id: 'q/G1.2' }, UBI);
 
   test.subHeading('1. only an item marked code has phases');
   const a0 = await facts('q/G1.1');
