@@ -1,5 +1,5 @@
 {
- "change": 56663,
+ "change": 56761,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -8,12 +8,14 @@
    "title": "Using the stack-frame tests as design-enforcement tool.",
    "goal": "",
    "status": "",
-   "with": "",
+   "with": "claude-windows",
    "buttons": [
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G22.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -41,24 +43,216 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
+   "design": false,
    "waiting": 1,
    "excluded": [],
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "Using the stack-frame tests as design-enforcement tool.\n\nWHAT EXISTS (paths under spirit/test/)\n- tools/wirePaths.js records, during the suites it drives, every call stack inside our own code that reaches a bottom, and ranks the paths. A stack sees where code arrives, not what it resembles, so it finds a second route to the same place even when no name or text is shared.\n- Its bottoms: wire (the network), fs-write, crypto, child-process, and two components, presenceNode and postQueue.\n- oneDoorStacks.js (goal/G19.14) is the enforcing suite: one test per bottom that names a door. It runs that row's suites and fails on any stack with a production frame (spirit/run/) and no frame in the door. Stacks with no production frame are a suite unit-testing the component and are not counted. A run that never reaches the component fails.\n- Two doors are enforced today: nobody but peerPost reaches presenceNode, and nobody but peerPost reaches postQueue.\n- oneDoorStacks.js is part of run all: runAll.js and deskVerify's full run both take every suite in spirit/test.\n\nHOW IT ENFORCES A DESIGN\n- A design rule of the form \"only this door may reach that component\" becomes one row: the door, the component, and the suites that drive it.\n- The wire, fs-write, crypto and child-process bottoms are measured but have no door yet; each ruling such as \"only X writes to disk\" costs one row.\n\nITS LIMIT\n- It sees only the paths the driven suites walk: a row is as good as its suites, and a path no suite exercises stays invisible.",
+   "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:35:08.617Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:35:54.844Z",
+     "text": "1. The test is oneDoorStacks.js in spirit/test (goal/G19.14). It asserts that nobody but peerPost reaches peerPost's components. The machinery it uses is wirePaths.js in spirit/test/tools, which records every stack that reaches a bottom (the wire) during the suites it drives.\n2. It is part of run all: runAll.js lists it, and so does deskVerify's full run, since both take every suite in spirit/test. It is not stand-alone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:35:59.544Z",
+     "text": "cw: take your knowledge and fill the box with it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:36:00.229Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:36:22.812Z",
+     "text": "It suits any rule of the form \"only this door may reach that component\": each rule is one row (door, component, suites that drive it), and today there are two, peerPost to presenceNode and to postQueue.\nThe bottoms for disk writes, crypto and child processes are already measured but have no door, so rulings like \"only X writes to disk\" would cost one row each.\nIts limit: it sees only the paths the driven suites walk, so a row is as good as its suites; an empty run already fails.\nI'd add a row each time you rule a door, starting with whichever door you care about most."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:36:55.973Z",
+     "text": "Box filled (v2): what exists, how it enforces a design, and its limit; your two questions are answered in it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:41:28.353Z",
+     "text": "how do we make an item here, that just says: \"let's make this test an official suite, and see what happens if we just run it once?\n\nthroughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:41:54.258Z",
+     "text": "The enforcing test, oneDoorStacks, is already official and in run all. What has never run as one is the recorder over the whole harness: wirePaths with --all, once per bottom (wire, fs-write, crypto, child-process).\nThat one run lists every path our code takes to the network, the disk, crypto and child processes, ranked: the doors you could rule, and the second routes around them.\nProposed item: \"Run wirePaths once over the full harness, every bottom\", whose box keeps the ranked paths as its finding. It builds nothing; you pick doors from it.\nSay \"add it\" and I add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:43:26.906Z",
+     "text": "i just want to run one suite, which is the stackFrame test, every row it has will be it's own \"test\" for deskVerifier."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:43:51.534Z",
+     "text": "That suite is oneDoorStacks, and it already works that way for its door rows: two rows, two tests, each recorded by deskVerify on its own.\nIf \"row\" means each call path the full run finds instead, every path becomes a test: green when it goes through its door or its bottom has no door, red when it goes around one. That run takes the whole harness, once per bottom.\nWhich do you mean: the door rows as today, or every path found?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:43:52.514Z",
+     "text": "it will be the topic of this goal"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:43:53.283Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:45:24.804Z",
+     "text": "is it possible to make an item for this, that allows us to cause re-runs of that test/Suite (just oneDoorStacks.js being a suite of its own?)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:45:44.273Z",
+     "text": "Yes, with what exists: an item whose file list names only oneDoorStacks.js. deskVerify runs an item's listed suites, so each verify.again on it reruns just that suite, and each of its rows comes back as its own test in the record.\nProposed item: \"oneDoorStacks rerun on demand\". Say \"add it\" and I add it with that one file."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:46:18.757Z",
+     "text": "add it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:47:02.739Z",
+     "text": "Added: goal/G22.1, \"oneDoorStacks rerun on demand\"; its file list is oneDoorStacks.js alone, and its box says what it is for.\nThe desk takes verify.again only on a code item that has a verify pass, so the first run comes from a claim: press go, code and waive, I record the phases and claim, and deskVerify runs the suite.\nFrom then on, every verify.again reruns it until you press done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G22.1",
+   "title": "oneDoorStacks rerun on demand",
+   "goal": "goal/G22",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G22"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/test/oneDoorStacks.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "oneDoorStacks rerun on demand.\n\nDECIDED (Andy, 2026-10-13)\n- This item's file list names only spirit/test/oneDoorStacks.js, so deskVerify reruns that one suite on every verify.again of this item, and each of its rows is recorded as its own test.\n- It builds nothing: the item exists to run the stack-frame suite on its own, as often as wanted, and read what it finds.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:50:44.295Z",
+     "text": "cw: i will switch off design mode, you'll take the red of this item, while i stop including levant, then you take the \"code\" and i keep rejecting the done..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:51:04.500Z",
+     "text": "Ready. The red is refused until the item has your Go as well; I take it the moment Go lands."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:51:10.964Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
