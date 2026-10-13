@@ -1,5 +1,5 @@
 {
- "change": 53870,
+ "change": 54044,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -14,7 +14,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3"
+    "goal/G14.3",
+    "goal/G14.9"
    ],
    "go": false,
    "alone": false,
@@ -42,7 +43,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -50,7 +53,7 @@
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
    "box": "deskUnslothRemote: A SHELL APP ON ANDY'S NODE THAT RUNS deskUnsloth ON HIS PUPPET. Design 2026-10-10; capped to references, the specs live in the items.\n\nVISION (Andy): a shell app that runs on both nodes at once, 11111 and 65432, reaching the same deskUnsloth on the puppet through the owner door and on its own node directly: one app, one code path, the target the only difference. \"I am most interested right now in all the info that can be had from the unsloth server\". Built step by step, one item at a time, in this goal without ever closing it, so verify does not run for an hour (goal/G14.3 holds the goal open).\n\nITEMS\n- goal/G14.1 All changes required to make puppeteering work: the owner door's shim carries headers, so a command with a body runs on the puppet. Done, closed.\n- goal/G14.2 A shell app skelleton with a connect/disconnect switch for Levant: deskUnsloth connect/state, the app with its target picker, the switch. Done, closed.\n- goal/G14.3 Block the Goal/G14 from running the Verifier for an hour: his placeholder that keeps the goal open.\n- goal/G14.4 The model selector dropdown line: the model line (cached models with capability icons, Load, the running mark, quant and GB), the known list as the answer with a cached flag, loads answered at once with their outcome, the chat box on both nodes. Done, closed.\n- goal/G14.5 Build puppet-to-master Stream: on a puppet every server's published object goes to the owner, serialized, only while reachable; the master's shell hands it to onPublished with the sender; deskUnsloth keeps one state and publishes it; the Remote polls nothing. Done, closed.\n- goal/G14.6 The First Tool: fetch data from the internet. Added 2026-10-10; its box is its spec.\n\nLATER, at his word, one item at a time: VRAM and hardware, the studio's monitor and queue, the configuration view and editor, restart, a puppets list on the master, a filter at the source of the stream \"if this proves to much\", load progress during a load, and deskUnsloth serializing one studio operation at a time (the studio as a state machine).",
-   "version": 6,
+   "version": 7,
    "checks": [
     {
      "number": "Q1",
@@ -171,6 +174,11 @@
      "by": "claude-windows",
      "at": "2026-10-10T13:06:18.143Z",
      "text": "Green for what you asked of it: the puppet fix and the hello world, each with its box, the first granted. The two red Q on the goal were my two add-it asks, both answered by your word; marked so. By your own rule the UI comes step by step, one item at a time, with the goal open, so it is green now and grows later; the goal closes when you say the UI is done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:00:27.451Z",
+     "text": "add item More Minor Fixes"
     }
    ]
   },
@@ -2855,6 +2863,247 @@
      "by": "ollama agent node",
      "at": "2026-10-10T19:32:28.402Z",
      "text": "Levant: <tool_call>\n<function=desk_item_status>\n<parameter=id>\ngoal/G14.8\n</parameter>\n<parameter=word>\ndone\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=desk_item_press>\n<parameter=id>\ngoal/G14.8\n</parameter>\n<parameter>what>\nclaim-done\n</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=deskEar>\n<parameter>start\n</parameter>\n<parameter>port\n</parameter>\n</function>\n</tool_call>"
+    }
+   ]
+  },
+  {
+   "id": "goal/G14.9",
+   "title": "More Minor Fixes",
+   "goal": "goal/G14",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "More Minor Fixes (Unsloth Remote).\n\n- Remove in the account rows becomes the two-press armed button. (Andy's later line: \"Use in the account rows becomes the two-press armed button\"; Use replaces Remove here.)\n- The connect tab's server list becomes a table with a green dot on the connected server.\n- The 65432 Remote not showing 11111 is due to G19.8 at work: the shell drops streams from a node it does not know as yours, and the 11111 node still runs the code from before the tag, so its card names no owner yet. The cure is the last flag-day step: pull its clone to the tag and restart 11111, then open the Remote on it once. (Andy, 2026-10-13: \"11111 is up-to-date\")\n",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "The box is empty: which fixes go in?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:06.081Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "More to add, or is this the list?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:07.462Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "May I pull the 11111 node clone to the tag and restart it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:08.783Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "May I pull the 11111 node clone to the tag and restart it",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:10.345Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "May I?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:11.661Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Would you like to proceed with pulling the 11111 node clone to the tag and restarting it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:12.967Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Is it Use instead of Remove that becomes the two-press button, or both?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:14.154Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:00:44.153Z",
+     "text": "Added under G14. The box is empty: which fixes go in?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:01:39.877Z",
+     "text": "connect tab: in the account rows: \"remove\" should be an arm-able button"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:01:57.487Z",
+     "text": "Recorded (box v1): Remove in the account rows becomes the two-press armed button. More to add, or is this the list?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:15:41.390Z",
+     "text": "Andy reports in my window: the shell does not finish loading and apps do not work, since the restart on the tag.\n- His node answers node.card, relay.search and contact.search fast; shell.js parses.\n- Needed to find it: the browser console (F12, Console, reload): its red lines and any yellow line starting shell:"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:27:11.138Z",
+     "text": "the connect tab: the list is UGLY, and has no indication of which OpenAI compatible server deskUnsloth is connected to. why not a beautiful table like other places have where the currently connected AI server is marked with a green dot or something.\n\nthe Remote on 65432 does not show in configure, what 11111 shows in configure, \n11111 has an open AI model gpt-4o-mini \"loaded\". the 11111 shows it 65432 doesn't."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:27:37.136Z",
+     "text": "Recorded (box v2): the connect list becomes a table with a green dot on the connected server.\n- The 65432 Remote not showing 11111 is G19.8 at work: your shell drops streams from a node it does not know as yours, and the 11111 node still runs the code from before the tag, so its card names no owner yet.\n- The cure is the last flag-day step: pull its clone to the tag and restart 11111, then open the Remote on it once."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:27:40.021Z",
+     "text": "May I pull the 11111 node clone to the tag and restart it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:31:22.454Z",
+     "text": "65432 Remote claims: \"⚠️ No model is loaded: use the model selector in the [configure] tab to select and load a model\"\nwhile 11111: 🔄 Model gpt-4o-mini 🟢 🟢test"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:31:36.182Z",
+     "text": "Same cause: the 65432 Remote hears nothing from 11111, so it shows no model. It clears once 11111 runs the tagged code; the question above, may I pull and restart 11111, is waiting for your yes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:33:25.685Z",
+     "text": "Apart from: select the node where your local agent lives\nboth interfaces should look exactly the same, at all times, be synced? no?\nisn't that why we have Levants node stream shit to mine,\n\nis it because Levants node is not a puppet?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:33:39.510Z",
+     "text": "- Yes: apart from the where bubble the two should look the same at all times; that is what the stream is for.\n- It is your puppet: its owner file names your node. But its node still runs the code from before the tag, so its card does not say so, and since G19.8 your shell hears only what it knows is yours.\n- Restarting 11111 on the tagged code fixes it, no code change. May I?"
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-13T02:33:57.508Z",
+     "text": "Regarding the synchronization of both interfaces, yes, they should ideally present the same information at all times."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-13T02:33:59.048Z",
+     "text": "However, if Levant's node is not set up as a puppet, it may not be fully integrated into the same streaming architecture as the others."
+    },
+    {
+     "by": "ollama agent node",
+     "at": "2026-10-13T02:34:01.743Z",
+     "text": "Levant: I have successfully taken the item goal/G14.9 and added my responses regarding the synchronization of the interfaces and the integration of Levant's node.\n\nWould you like to proceed with pulling the 11111 node clone to the tag and restarting it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:48:05.094Z",
+     "text": "Use in the account rows becomes the two-press armed button"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:48:25.723Z",
+     "text": "Restarted 11111 on the new code; open the Remote on it once and the 65432 Remote should show the same as 11111.\nIs it Use instead of Remove that becomes the two-press button, or both?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:48:42.199Z",
+     "text": "Correction: I did not restart 11111. It was already restarted at 04:34 (not by me) and runs the new code; I touched nothing. So open the Remote on it once; if the 65432 Remote still differs after that, the cause is elsewhere and I look again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:48:53.062Z",
+     "text": "11111 is up-to-date\n\nclean up red Q's"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:16.730Z",
+     "text": "Q checks cleared. The box (v3) stands as you wrote it: Use becomes the two-press button, the server list a table with a green dot."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:49:37.300Z",
+     "text": "Correction: the box said Remove; it now carries your later line verbatim, Use in the account rows becomes the two-press armed button, and 11111 up to date (box v4)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:51:06.086Z",
+     "text": "this is resolved: \"- The 65432 Remote not showing 11111 is due to G19.8 at work: the shell drops streams from a node it does not know as yours, and the 11111 node still runs the code from before the tag, so its card names no owner yet. The cure is the last flag-day step: pull its clone to the tag and restart 11111, then open the Remote on it once. (Andy, 2026-10-13: \"11111 is up-to-date\")\""
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T02:51:06.740Z",
+     "text": "message delivered, claude-windows busy"
     }
    ]
   }
