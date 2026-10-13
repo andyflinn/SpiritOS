@@ -1,5 +1,5 @@
 {
- "change": 55292,
+ "change": 55405,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -14,6 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
+    "goal/G21.1",
     "goal/G21.2",
     "goal/G21.3",
     "goal/G21.4"
@@ -447,11 +448,10 @@
    "id": "goal/G21.1",
    "title": "Binding nick; agent name and nick editable",
    "goal": "goal/G21",
-   "status": "done",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "close",
-    "reopen"
+    "done"
    ],
    "blocking": [
     "goal/G21"
@@ -460,7 +460,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -539,7 +539,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Binding nick; agent name and nick editable.\n\nWHAT THE DESK DOES (decided by Andy, 2026-10-13)\n\nThe agent's pane in Desk\n- Row one: name and nick (text inputs). Row two: the toggles included and cap; more toggles may follow. Written by Andy alone; every agent may read every pane.\n- The nick is Andy's shorthand for addressing a key in a few keystrokes. The desk knows it; the agent need not.\n\nNames and keys\n- The page shows the agent's name everywhere it shows the agent: chat lines, presence bubble, Team list, taker marks. The name is looked up by the agent's key; the node's label is shown only when no name is set. Keys are never shown on the page.\n- Under the hood every chat line carries its writer's key, and every decision about who goes by key: take, nick address, block, the one box write.\n\nThe binding nick\n- A line of Andy's starting with a nick followed by any punctuation or a space is addressed to that agent alone: only it is notified, only it may take it.\n- A nick request about the box hands the box to that agent for one write: the box turns red at once, awaiting that agent; nobody else takes it meanwhile, Andy included; the hold ends when the write lands or after one minute. A write the desk refuses does not use up the one update.\n\nincluded\n- Off: the agent still reads everything, every write of it is refused, and its bubble shows absent. It is the desk's own signoff and overrules the agent's own connect (deskUnsloth cannot bring an excluded agent back).\n\ncap\n- On: a \"cap\" from Andy with no nick offers the box to every agent with cap on; the first to take it holds it under the one-write rule above.\n- Off: that agent gets a cap only when addressed by its nick.\n\nNot in this item\n- A rules text per agent was dropped: the desk can only gate what it accepts, not make an agent read. Levant is steered by the context deskUnsloth sends him on every call.\n\nFOUND (Andy's desk, 2026-10-13; paths under spirit/run/)\n- The pane already has name, nick and save (shell/desk/desk.js, deskAgentProfileSave), stored by the owner-only profile.set (process/js/desk/desk.js), keyed by the agent's key; a nick is 1 to 8 of a-z and 0-9.\n- The name is shown nowhere today: lines, bubbles and takers show the node's label for the key (writerOf); for Levant, \"ollama agent node\".\n- The nick takes a line only after a colon, and every connected agent still receives it.\n- The desk's records store each chat line's label and key; the item built from them keeps only label, time and text.\n",
