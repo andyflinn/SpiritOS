@@ -1,5 +1,5 @@
 {
- "change": 53864,
+ "change": 53867,
  "line": 8510,
  "goal": "goal/G10",
  "items": [
@@ -7,10 +7,10 @@
    "id": "goal/G10",
    "title": "Upgrade the local AI support, \"deskUnsloth\"",
    "goal": "",
-   "status": "goal run passed",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -36,7 +36,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "live": [
     "claude-windows"
    ],
