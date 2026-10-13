@@ -1,5 +1,5 @@
 {
- "change": 53684,
+ "change": 53782,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -14,7 +14,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G19.7",
     "goal/G19.13"
    ],
    "go": false,
@@ -37,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -2187,9 +2186,12 @@
    "id": "goal/G19.7",
    "title": "deskUnsloth: timeouts, tool results in the room, working reset",
    "goal": "goal/G19",
-   "status": "deskVerify rejected it",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19"
    ],
@@ -2230,7 +2232,7 @@
    ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
@@ -2369,6 +2371,41 @@
      "by": "andy",
      "at": "2026-10-12T15:58:33.154Z",
      "text": "deskVerify: passed, at 67b2e2a6 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:24:56.051Z",
+     "text": "why is this still here?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:25:26.386Z",
+     "text": "My slip: after the first reject (empty file list) I re-claimed, deskVerify passed it, but the item phases stayed at build, so no Done came. Build and verify are recorded now and deskVerify is asked again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:26:16.062Z",
+     "text": "deskVerify: rejected, at 82dba1cb (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/deskUnslothRemoteTabs.js: FAILURE #1.1: OWED by goal/G10.7: the shipped configuration.json reads null"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:26:17.843Z",
+     "text": "verify rejected: spirit/test/deskUnslothRemoteTabs.js: FAILURE #1.1: OWED by goal/G10.7: the shipped configuration.json reads null"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:29:35.749Z",
+     "text": "commit 3d388cbdde30da9465a276d62c28bcd35bf66573: goal/G19.7: deskUnslothRemoteTabs no longer expects a shipped configuration.json (untracked since goal/G19.11)\n- spirit/test/deskUnslothRemoteTabs.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:29:42.804Z",
+     "text": "Fallout from my G19.11: untracking configuration.json deletes it from every tree that pulls, yours included, and deskUnslothRemoteTabs still expected it. Fixed at 3d388cbd: the check now holds with or without a local file; all 13 deskUnsloth suites green without it. Claimed again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:30:31.852Z",
+     "text": "deskVerify: passed, at 3d388cbd (pulled). 5 suites ran green."
     }
    ]
   },
