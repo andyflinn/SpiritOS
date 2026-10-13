@@ -29,6 +29,9 @@
 //      (Stacks), which loads its private UI from shell/desk/plugins/<name>/ and hands it the stream; the List's
 //      plugin-goal title is plain text again, and the label button, its pane and its Back to the List are gone. That
 //      UI's gate and endpoint inputs carry data-field and validate as typed, and its Make sends stackFrameChecks.make.
+//      Andy, 2026-10-13: "in Stack: the chat is missing, below the inputs, after what will be the list". So the Stacks
+//      pane reads the inputs, its items, then the chat of plugin/stackFrameChecks: its lines, a say box and Send that
+//      post chat.add to that goal, a published line drawn as it comes, and none of it in Team.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -305,7 +308,11 @@ function clickTab(el, tab) {
         { key: GOAL, label: JSON.stringify({ id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [GOAL + '.1'] }) },
         { key: 'ord/G2', label: JSON.stringify({ id: 'ord/G2', title: 'Ordinary goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [] }) },
       ], more: false },
-      'item.chat': function (a) { return a && a.id === GROUP ? { chat: [{ by: 'andy', at: new Date(Date.now() - 1000).toISOString(), text: 'a team line held before', taken: '' }], chatMore: false } : { chat: [], chatMore: false }; },
+      'item.chat': function (a) {
+        if (a && a.id === GROUP) return { chat: [{ by: 'andy', at: new Date(Date.now() - 1000).toISOString(), text: 'a team line held before', taken: '' }], chatMore: false };
+        if (a && a.id === GOAL) return { chat: [{ by: 'claude-windows', at: new Date(Date.now() - 1000).toISOString(), text: 'a stacks line held before', taken: '' }], chatMore: false };
+        return { chat: [], chatMore: false };
+      },
     });
     await sleep(50);
     const top = doc.getElementById('desk-top').innerHTML;
@@ -373,6 +380,54 @@ function clickTab(el, tab) {
       if (doc.asked.some(function (x) { return x[0] === 'items.search'; })) test.check('the Stacks UI subscribed to the stream itself and reads its items again when one of its goal is published');
       else test.fail(OWED + 'a publish naming the plugin\'s goal made the Stacks UI ask nothing');
     } else test.fail(OWED + 'the Stacks UI did not subscribe to the desk server\'s stream');
+
+    // THE CHAT OF ITS GOAL, BELOW THE LIST (goal/G22.3). Andy, 2026-10-13: "in Stack: the chat is missing, below the
+    // inputs, after what will be the list". Top to bottom: the inputs, the items, then the chat of plugin/stackFrameChecks,
+    // the desk face's own chat (as Team's) taking the goal: its lines, a say box and Send posting chat.add to that goal,
+    // drawn live from the stream.
+    const paneHtml = (pane && pane.innerHTML) || '';
+    // The chat may be drawn into a child of the pane: the pane's HTML with every child's drawn HTML put in its place.
+    const drawn = function (html, depth) {
+      return depth > 3 ? html : html.replace(/(<[a-z]+[^>]*\bid="([^"]+)"[^>]*>)/g, function (m, tag, id) {
+        const el = doc.all[id];
+        return el && el.innerHTML && html.indexOf(el.innerHTML) === -1 ? tag + drawn(el.innerHTML, depth + 1) : tag;
+      });
+    };
+    const whole = drawn(paneHtml, 0);
+    const atGate = whole.indexOf('id="sfc-gate"');
+    const atItems = whole.indexOf('id="sfc-items"');
+    const sayM = /<textarea[^>]*\bid="([^"]+)"/.exec(whole.slice(Math.max(0, atItems)));
+    const sendM = /<button[^>]*\bid="([^"]+)"[^>]*>Send<\/button>/.exec(whole.slice(Math.max(0, atItems)));
+    const atHeld = whole.indexOf('a stacks line held before');
+    if (atGate !== -1 && atItems > atGate && sayM && sendM && atHeld > atItems) test.check('the Stacks pane reads top to bottom: the inputs, its items, then its goal\'s chat with a say box, Send and its lines');
+    else test.fail(OWED + 'the Stacks pane in order: gate at ' + atGate + ', items at ' + atItems + ', a say box after them ' + !!sayM + ', a Send after them ' + !!sendM + ', the held line of ' + GOAL + ' at ' + atHeld);
+    if (doc.asked.some(function (x) { return x[0] === 'item.chat' && x[1] && x[1].id === GOAL; }) || atHeld !== -1) test.check('the chat read its goal\'s lines: item.chat on ' + GOAL);
+    else test.fail(OWED + 'nothing asked item.chat on ' + GOAL);
+    if (!/a stacks line held before/.test(doc.getElementById('desk-team').innerHTML)) test.check('Team does not show the Stacks goal\'s lines');
+    else test.fail(OWED + 'the Stacks goal\'s line reached #desk-team');
+    const chatBlocks = (whole.slice(Math.max(0, atItems)).match(/<div[^>]*class="(?:stat-tile|start-job-form)[^"]*"[^>]*>/g) || []);
+    if (chatBlocks.length && chatBlocks.every(function (t) { return /margin-top:1em/.test(t); }) && sendM && /margin-right:1em/.test((new RegExp('<button[^>]*id="' + sendM[1] + '"[^>]*>').exec(whole) || [''])[0])) {
+      test.check('each chat block carries its leading 1em, and Send its 1em after itself');
+    } else test.fail(OWED + 'the chat\'s blocks ' + short(chatBlocks) + ', Send ' + short(sendM && (new RegExp('<button[^>]*id="' + sendM[1] + '"[^>]*>').exec(whole) || [''])[0]));
+    if (sayM && sendM) {
+      doc.asked.length = 0;
+      doc.getElementById(sayM[1]).value = 'said under Stacks';
+      doc.getElementById(sendM[1]).fire('click', {});
+      await sleep(20);
+      const sent = doc.asked.filter(function (x) { return x[0] === 'chat.add'; });
+      if (sent.length === 1 && sent[0][1].id === GOAL && sent[0][1].text === 'said under Stacks') test.check('Send posts chat.add to ' + GOAL + ', once, with what was typed');
+      else test.fail(OWED + 'Send asked ' + short(sent));
+      if (doc.getElementById(sayM[1]).value === '') test.check('a kept line leaves the say box');
+      else test.fail(OWED + 'after a kept send the say box holds ' + short(doc.getElementById(sayM[1]).value));
+    } else test.fail(OWED + 'no say box and Send in the Stacks chat to post with');
+    const stacksLine = { by: 'claude-windows', at: new Date().toISOString(), text: 'a stacks line published while Stacks shows', taken: '' };
+    doc.published.forEach(function (fn) { try { fn({ change: 7002, verb: 'chat.add', item: { id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [] }, chat: stacksLine }); } catch (e) { /* not this subscriber's */ } });
+    await sleep(20);
+    const after = drawn(pane ? pane.innerHTML : '', 0);
+    if (/a stacks line published while Stacks shows/.test(after) && after.indexOf('a stacks line published while Stacks shows') < after.indexOf('a stacks line held before')) test.check('a published line of ' + GOAL + ' is drawn in the Stacks chat as it comes, newest first');
+    else test.fail(OWED + 'the published line of ' + GOAL + ' did not reach the Stacks chat: ' + short(after.slice(Math.max(0, after.indexOf('id="sfc-items"')))));
+    if (!/a stacks line published while Stacks shows/.test(doc.getElementById('desk-team').innerHTML)) test.check('Team does not draw it');
+    else test.fail(OWED + 'the Stacks goal\'s published line reached #desk-team');
     clickTab(doc.getElementById('desk-app-tabs'), 'app:stackFrameChecks');
     await sleep(20);
     if (doc.appended.filter(function (e) { return e && e.tagName === 'SCRIPT'; }).length === 1) test.check('opening Stacks again loads nothing again');

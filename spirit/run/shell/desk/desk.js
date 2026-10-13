@@ -593,8 +593,9 @@ function deskRowHtml(row) {
 // desk server takes from the plugin's .json): one search for the plugin goals at mount and after a gap, and any row the
 // List or the stream brings. A plugin's pane is made once, inside Apps, and its private UI is loaded the first time its
 // tab opens: one script, shell/desk/plugins/<name>/<name>.js, which registers window.spiritDeskPlugins[<name>] =
-// { open(container, ctx) }. ctx: goal (its goal's id), ask (this page's deskAsk) and onPublished (the desk server's
-// stream, which the UI subscribes to itself, as every shell element does). Switching tabs repaints nothing, so what is
+// { open(container, ctx) }. ctx: goal (its goal's id), ask (this page's deskAsk), onPublished (the desk server's
+// stream, which the UI subscribes to itself, as every shell element does) and chat(container), which mounts its goal's
+// chat there, Team's own (deskMountChat). Switching tabs repaints nothing, so what is
 // typed in a plugin's pane survives.
 var DESK_PLUGIN_UI = 'shell/desk/plugins/';
 var deskApps = [];          // { name, tab, goal, opened } per plugin found, in found order
@@ -646,7 +647,9 @@ function deskOpenPlugin(app) {
   var open = function () {
     var ui = held[name];
     if (!ui || typeof ui.open !== 'function') { el.textContent = 'The ' + name + ' plugin has no private UI at ' + DESK_PLUGIN_UI + name + '/.'; return; }
-    ui.open(el, { goal: app.goal, ask: deskAsk, onPublished: function (fn) { return deskApi.onPublished(fn); } });
+    // goal/G22.3: chat(container) mounts its goal's chat there (deskMountChat), the face's own, as Team's.
+    ui.open(el, { goal: app.goal, ask: deskAsk, onPublished: function (fn) { return deskApi.onPublished(fn); },
+      chat: function (container) { deskMountChat(container, app.goal); } });
   };
   if (held[name]) { open(); return; }
   el.textContent = 'Loading the ' + name + ' plugin…';
@@ -817,12 +820,16 @@ function deskAskGroup() {
   return deskAsk('item.chat', { id: DESK_GROUP }).then(function (r) { deskGroup = Array.isArray(r.chat) ? r.chat : []; });
 }
 function deskGroupChat() {
-  if (deskGroup === null) return '<div class="job-manifest-note">The group chat has not been read yet.</div>';
-  if (!deskGroup.length) return '<div class="job-manifest-note">Nothing said yet. What you write here is read by every agent.</div>';
+  return deskChatLogHtml(deskGroup, 'The group chat has not been read yet.', 'Nothing said yet. What you write here is read by every agent.');
+}
+// A GOAL'S CHAT LOG, newest first (goal/G22.3: Team's, taken out so a plugin's goal chat draws its lines the same way).
+function deskChatLogHtml(lines, unread, empty) {
+  if (lines === null) return '<div class="job-manifest-note">' + deskEsc(unread) + '</div>';
+  if (!lines.length) return '<div class="job-manifest-note">' + deskEsc(empty) + '</div>';
   // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
   // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
   // vertically be 1em space." His bubble black on white; everybody else's a filled bubble with the shell's radius.
-  return deskGroup.slice().reverse().map(function (l) {
+  return lines.slice().reverse().map(function (l) {
     var mine = l.by === 'andy';
     var look = mine
       ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
@@ -834,22 +841,74 @@ function deskGroupChat() {
 }
 // His line under All: one chat.add on the group chat's goal, and no packet to
 // anybody. The line is drawn when the server publishes it, like everybody's.
-function deskGroupSay() {
-  var box = document.getElementById('desk-team-say');
-  var err = document.getElementById('desk-team-error');
+function deskGroupSay() { deskChatSay(DESK_GROUP, 'desk-team-say', 'desk-team-error'); }
+// His line into a goal's chat, from the say box named (goal/G22.3: Team's send, taken out to take the goal).
+function deskChatSay(goal, boxId, errId) {
+  var box = document.getElementById(boxId);
+  var err = document.getElementById(errId);
   var said = box ? String(box.value || '').trim() : '';
-  if (!said || deskSending['desk-team-say']) return;
-  deskSending['desk-team-say'] = true;
+  if (!said || deskSending[boxId]) return;
+  deskSending[boxId] = true;
   if (err) err.textContent = 'Sending…';
-  deskAsk('chat.add', { id: DESK_GROUP, text: said }).then(function () {
-    deskSending['desk-team-say'] = false;
+  deskAsk('chat.add', { id: goal, text: said }).then(function () {
+    deskSending[boxId] = false;
     if (box) box.value = '';
     if (err) err.textContent = '';
   }, function (e) {
     // What he typed stays in the box: an unkept line is his to send again.
-    deskSending['desk-team-say'] = false;
+    deskSending[boxId] = false;
     if (err) err.textContent = 'Not kept: ' + ((e && e.message) || e);
   });
+}
+
+// ── A GOAL'S CHAT, MOUNTED IN A PLUGIN'S PANE (goal/G22.3) ───────────
+//
+//   Andy, 2026-10-13: "in Stack: the chat is missing, below the inputs, after what will be the list".
+//
+// Team's chat, for any goal: the say box and Send on top (newest first, input on top, as every chat in Desk), then the
+// log, read once with item.chat and drawn from what the server publishes, as Team's. It brings its own subscription to
+// the stream (the desk's UI rule: every shell element subscribes itself); a gap in the changes reads it again. Handed to
+// a plugin's private UI as ctx.chat(container): the plugin says where, the face draws and sends.
+function deskMountChat(el, goal) {
+  if (!el) return;
+  var id = 'desk-chat-' + String(goal).replace(/[^A-Za-z0-9_-]/g, '-');
+  var lines = null;
+  var last = 0;
+  // Every block a leading 1em; Send 1em after itself (the desk's UI rules). Chat text is under no field rule
+  // (fieldRules.js names none; the server measures a line against its chat room), so the box carries no data-field.
+  el.innerHTML =
+    '<div class="start-job-form card" style="margin-top:1em"><label class="field-label grow">Say' +
+      '<textarea id="' + id + '-say" rows="3" placeholder="to every agent, under ' + deskEsc(goal) + '"></textarea></label>' +
+      '<button type="button" id="' + id + '-send" style="margin-right:1em">Send</button></div>' +
+    '<div id="' + id + '-error" class="job-start-error"></div>' +
+    '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Chat of ' + deskEsc(goal) + ', newest first</div>' +
+      '<div id="' + id + '-log"></div></div>';
+  var draw = function () {
+    var log = document.getElementById(id + '-log');
+    if (log) log.innerHTML = deskChatLogHtml(lines, 'This chat has not been read yet.', 'Nothing said yet under ' + goal + '.');
+  };
+  var read = function () {
+    return deskAsk('item.chat', { id: goal }).then(function (r) { lines = Array.isArray(r.chat) ? r.chat : []; draw(); }, function () { /* shown as it stands */ });
+  };
+  var send = document.getElementById(id + '-send');
+  if (send) send.addEventListener('click', function () { deskChatSay(goal, id + '-say', id + '-error'); });
+  if (deskApi && typeof deskApi.onPublished === 'function') {
+    deskApi.onPublished(function (obj) {
+      if (!obj || typeof obj !== 'object') return;
+      var change = Number(obj.change) || 0;
+      if (change && last && change < last) return;
+      var gap = (last && change > last + 1) || obj.dropped;
+      if (change) last = change;
+      if (gap) { read(); return; }
+      var said = obj.item;
+      if (typeof said === 'string') { try { said = JSON.parse(said); } catch (e) { said = null; } }
+      if (obj.verb !== 'chat.add' || !said || said.id !== goal || !obj.chat || lines === null) return;
+      if (!lines.some(function (l) { return deskSameLine(l, obj.chat); })) lines.push(obj.chat);
+      draw();
+    });
+  }
+  draw();
+  read();
 }
 
 // Ending design mode is his decision, said in Team: an `answer` with the

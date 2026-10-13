@@ -9,7 +9,8 @@
 // Loaded once into the Desk page, the first time its tab opens (shell/desk/desk.js, deskOpenPlugin), into its own pane
 // that stays for the page's life; it registers itself on
 // window.spiritDeskPlugins.stackFrameChecks = { open(container, ctx) }. ctx.goal is its goal's id, ctx.ask the page's
-// call to the desk server, ctx.onPublished the desk server's stream. The server half is
+// call to the desk server, ctx.onPublished the desk server's stream, ctx.chat(container) the face's chat of its goal,
+// mounted below its items. The server half is
 // process/js/desk/plugins/js/stackFrameChecks/: its verb stackFrameChecks.make does the work and refuses what is wrong;
 // this page only spares the wire.
 //
@@ -112,7 +113,10 @@
           '<button type="button" id="sfc-make" style="margin-right:1em">Make the item</button>' +
         '</div>' +
         '<div id="sfc-note" class="job-start-error" style="margin-top:1em"></div>' +
-        '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Its items</div><div id="sfc-items"></div></div>';
+        '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Its items</div><div id="sfc-items"></div></div>' +
+        // ITS GOAL'S CHAT, BELOW THE LIST (goal/G22.3). Andy, 2026-10-13: "in Stack: the chat is missing, below the
+        // inputs, after what will be the list". The desk face draws it, Team's chat taking this goal (ctx.chat).
+        '<div id="sfc-chat"></div>';
       // One listener of each on the container, which is repainted at every open: wired once.
       if (!container.sfcWired) {
         container.sfcWired = true;
@@ -130,6 +134,7 @@
         subscribed = true;
         given.onPublished(function (obj) { if (ofMyGoal(obj)) readItems(); });
       }
+      if (typeof given.chat === 'function') given.chat(document.getElementById('sfc-chat'));
       check();
       readItems();
     },
