@@ -1,5 +1,5 @@
 {
- "change": 54048,
+ "change": 54092,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -14,8 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3",
-    "goal/G14.9"
+    "goal/G14.3"
    ],
    "go": false,
    "alone": false,
@@ -39,13 +38,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2868,9 +2865,12 @@
    "id": "goal/G14.9",
    "title": "More Minor Fixes",
    "goal": "goal/G14",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -2878,20 +2878,36 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskUnslothConnectTable.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothPairs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothRemoteTabs.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -2925,8 +2941,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "More Minor Fixes (Unsloth Remote).\n\n- Remove in the account rows becomes the two-press armed button. (Andy's later line: \"Use in the account rows becomes the two-press armed button\"; Use replaces Remove here.)\n- The connect tab's server list becomes a table with a green dot on the connected server.\n- The 65432 Remote not showing 11111 is due to G19.8 at work: the shell drops streams from a node it does not know as yours, and the 11111 node still runs the code from before the tag, so its card names no owner yet. The cure is the last flag-day step: pull its clone to the tag and restart 11111, then open the Remote on it once. (Andy, 2026-10-13: \"11111 is up-to-date\")\n",
-   "version": 4,
+   "box": "More Minor Fixes (Unsloth Remote).\n\n- Remove in the account rows becomes the two-press armed button.\n- Use in the account rows becomes the two-press armed button.\n- The connect tab's server list becomes a table with a green dot on the connected server.\n",
+   "version": 7,
    "checks": [
     {
      "number": "Q1",
@@ -3107,6 +3123,61 @@
      "by": "desk",
      "at": "2026-10-13T02:51:33.403Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T02:54:38.689Z",
+     "text": "go!"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T02:54:39.654Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:58:51.803Z",
+     "text": "Taking G14.9 now, red first: Use in the account rows armed, the server list as a table with a green dot on the connected server."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T02:59:12.048Z",
+     "text": "Resolved line dropped (box v5). Building now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T03:06:29.710Z",
+     "text": "commit 0eab8571793d1ce9e945c9605f69a6693d17173b: goal/G14.9: Remote connect tab: servers in a table with a green dot on the one in use; Use and Remove armed\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js\n- spirit/test/deskUnslothConnectTable.js\n- spirit/test/deskUnslothPairs.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T03:06:35.051Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T03:06:37.005Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T03:06:42.256Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T03:06:46.740Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T03:06:49.120Z",
+     "text": "Built at 0eab8571. Files: the Remote, deskUnslothConnectTable (new), deskUnslothPairs (presses twice now).\n- The server list is a table in the Jobs and Natter style; the server in use carries the green dot, only while it answers.\n- Use and Remove arm first and act on the second press; one arm at a time.\n- Reload the Remote to see it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T03:07:01.668Z",
+     "text": "deskVerify: passed, at 0eab8571 (pulled). 3 suites ran green."
     }
    ]
   }
