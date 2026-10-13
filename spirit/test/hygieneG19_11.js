@@ -212,8 +212,16 @@ function bashNotes() {
 function agentFiles() {
   test.subHeading('9. the other agents\' files are gone, RULES.md lives on in UI_DESIGN_STYLE.md');
   const GONE = ['CLINE.md', 'GROK.md', 'GPT-OSS.md', 'AGENT_ONBOARDING.md', 'RULES.md', '.cursor', '.github/agents'];
-  const left = GONE.filter(function (n) { return fs.existsSync(path.join(REPO, n)); });
-  if (!left.length) test.check('CLINE.md, GROK.md, GPT-OSS.md, AGENT_ONBOARDING.md, RULES.md, .cursor/ and .github/agents/ are gone');
+  // A FOLDER COUNTS AS GONE WHEN NO FILE IS LEFT IN IT. A pull deletes the tracked files and can leave the empty
+  // folders behind (it did on Andy's tree, .cursor/rules/, at 8b41dd27); an empty folder is nothing anyone reads.
+  function holdsAFile(p) {
+    let st = null;
+    try { st = fs.statSync(p); } catch (e) { return false; }
+    if (!st.isDirectory()) return true;
+    return fs.readdirSync(p).some(function (n) { return holdsAFile(path.join(p, n)); });
+  }
+  const left = GONE.filter(function (n) { return holdsAFile(path.join(REPO, n)); });
+  if (!left.length) test.check('CLINE.md, GROK.md, GPT-OSS.md, AGENT_ONBOARDING.md, RULES.md, .cursor/ and .github/agents/ are gone (no file left in them)');
   else test.fail(OWED + 'still there: ' + left.join(', '));
   if (fs.existsSync(path.join(REPO, 'agents', 'README.md'))) test.check('agents/ is kept: it is measurement data, not instructions');
   else test.fail('agents/ is gone, and publishData reads it');
