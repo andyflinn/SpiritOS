@@ -1,5 +1,5 @@
 {
- "change": 56761,
+ "change": 56819,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -14,7 +14,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G22.1"
+    "goal/G22.1",
+    "goal/G22.2"
    ],
    "go": false,
    "alone": false,
@@ -44,14 +45,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -157,12 +156,186 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T08:47:02.739Z",
      "text": "Added: goal/G22.1, \"oneDoorStacks rerun on demand\"; its file list is oneDoorStacks.js alone, and its box says what it is for.\nThe desk takes verify.again only on a code item that has a verify pass, so the first run comes from a claim: press go, code and waive, I record the phases and claim, and deskVerify runs the suite.\nFrom then on, every verify.again reruns it until you press done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:53:58.582Z",
+     "text": "now we create a new item for another stack-path we want to control, inside peerPost\n\nsuggestions?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:54:51.033Z",
+     "text": "Of peerPost's components, two are worth a row next:\n1. sseClient, the stream to a relay: only peerPost and presenceNode (itself a peerPost component) use it today, so the row locks in a state that is already clean. The cheapest.\n2. seal, the one sealing implementation: on the node side only peerPost uses it; hub, relay and relayServer use it on the relay side, so that row needs one door per side. The most valuable: a second sealing path is how associated data gets dropped.\nI'd take sseClient first; say which and I propose the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:57:08.994Z",
+     "text": "can you name one you know would fail?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:57:48.572Z",
+     "text": "Yes: \"nobody but peerPost talks to a relay\". The desk's offboard.js fetches the relay's key straight from the relay over plain fetch (process/js/desk/offboard.js line 78), so a wire row with peerPost as its door fails on it, as long as a driven suite runs offboard.\nA softer one: relayKeys, the relay table, is read outside peerPost by answerRelay, ownerBadge and server.js; that fails too, but reading a table may be allowed by design.\nI'd take the offboard one: it is a real second road to a relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:58:11.311Z",
+     "text": "make THAT one an item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:58:37.870Z",
+     "text": "Added: goal/G22.2, \"Nobody but peerPost talks to a relay\"; its box holds the rule and what will make it fail."
     }
    ]
   },
   {
    "id": "goal/G22.1",
    "title": "oneDoorStacks rerun on demand",
+   "goal": "goal/G22",
+   "status": "deskVerify passed",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
+   "blocking": [
+    "goal/G22"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 1,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/test/oneDoorStacks.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "oneDoorStacks rerun on demand.\n\nDECIDED (Andy, 2026-10-13)\n- This item's file list names only spirit/test/oneDoorStacks.js, so deskVerify reruns that one suite on every verify.again of this item, and each of its rows is recorded as its own test.\n- It builds nothing: the item exists to run the stack-frame suite on its own, as often as wanted, and read what it finds.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:50:44.295Z",
+     "text": "cw: i will switch off design mode, you'll take the red of this item, while i stop including levant, then you take the \"code\" and i keep rejecting the done..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:51:04.500Z",
+     "text": "Ready. The red is refused until the item has your Go as well; I take it the moment Go lands."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:51:10.964Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:51:23.102Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:51:25.222Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:51:28.686Z",
+     "text": "Red taken and done: the suite is oneDoorStacks.js as it stands, nothing written."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:51:37.577Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:51:42.214Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:51:45.145Z",
+     "text": "Build and verify recorded with nothing built; claiming, so deskVerify runs oneDoorStacks.js now.\nAfter its pass, verify.again reruns it any time until you press done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:52:51.605Z",
+     "text": "deskVerify: passed, at 13afe03d (pulled). 1 suite ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G22.2",
+   "title": "Nobody but peerPost talks to a relay",
    "goal": "goal/G22",
    "status": "running",
    "with": "",
@@ -178,13 +351,7 @@
    "boxTaken": "",
    "limbo": true,
    "subGoal": false,
-   "files": [
-    {
-     "path": "spirit/test/oneDoorStacks.js",
-     "by": "claude-windows",
-     "core": false
-    }
-   ],
+   "files": [],
    "green": true,
    "code": true,
    "phase": "red",
@@ -195,6 +362,10 @@
    "redCommit": "",
    "waived": false,
    "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
     {
      "key": "rule/6",
      "version": 25
@@ -230,26 +401,26 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "oneDoorStacks rerun on demand.\n\nDECIDED (Andy, 2026-10-13)\n- This item's file list names only spirit/test/oneDoorStacks.js, so deskVerify reruns that one suite on every verify.again of this item, and each of its rows is recorded as its own test.\n- It builds nothing: the item exists to run the stack-frame suite on its own, as often as wanted, and read what it finds.",
-   "version": 1,
+   "box": "Nobody but peerPost talks to a relay.\n\nDECIDED (Andy, 2026-10-13)\n- The purpose of this item is to add one row to the stack-frame test (oneDoorStacks.js, through tools/wirePaths.js): every request our production code sends to a relay must have peerPost on its stack. That is all it does.\n- Its red goes into another suite, stackFrameTestItems.js in spirit/test, which asserts that this row exists in the stack-frame test; it is red until the row is added and green after.\n- Whatever the new row then finds failing is not fixed in this item.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/)\n- process/js/desk/offboard.js, line 78: offboard fetches the relay's key straight from the relay with plain fetch, not through peerPost, so the new row is expected to fail on it.\n- The wire bottom also sees requests a process sends to its own node over loopback (kernel.js, relayLimits.js); those are not relay traffic, so the row counts only requests addressed to a relay.\n- A row sees only the paths its driven suites walk, so the row needs a suite that runs offboard.",
+   "version": 2,
    "checks": [],
    "chat": [
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-13T08:50:44.295Z",
-     "text": "cw: i will switch off design mode, you'll take the red of this item, while i stop including levant, then you take the \"code\" and i keep rejecting the done..."
+     "at": "2026-10-13T09:01:34.973Z",
+     "text": "the purpose of this item is: add that row to the stack frame test. that's all, the red for this is: add this change into another suite called stackFrameTestItems.\n\nsee where i'm going here?"
     },
     {
      "by": "claude-windows",
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-13T08:51:04.500Z",
-     "text": "Ready. The red is refused until the item has your Go as well; I take it the moment Go lands."
+     "at": "2026-10-13T09:02:01.830Z",
+     "text": "I see it: stackFrameTestItems is where each wanted door is declared, one test per item, red until that item adds its row. The stack-frame test then enforces the row, and what it catches becomes the next item.\nSo every design rule enters as a red you can count, and the counting is deskVerify's.\nBox rewritten to that; I take the red on your Go."
     },
     {
      "by": "desk",
      "key": "",
-     "at": "2026-10-13T08:51:10.964Z",
+     "at": "2026-10-13T09:02:33.007Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
