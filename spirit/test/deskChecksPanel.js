@@ -15,6 +15,8 @@
 // THE SHAPE ASSERTED (G9.16's box): an answered or granted check leaves the panel item.checks answers with and the
 // panel the desk measures (it stays in the record), so an item with many answered checks still takes check.set and
 // check.add; and a Q made from a chat line keeps one sentence, the one that ends in the question mark.
+// SINCE goal/G21.2 no chat line makes a Q, a Q is one sentence of at most 200 bytes, and one is open per agent per
+// item: section 1 fills the record one question at a time, and section 2 asserts the one sentence at check.add.
 
 const fs = require('fs');
 const os = require('os');
@@ -51,9 +53,12 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
 async function checks(id) { const r = await call('item.checks', { id: id }, ANDY); return (r.body && r.body.checks) || []; }
 
-// One Q's words, long enough that a dozen of them outweigh one answer: the room is a few thousand bytes.
-const LONG = 'A question that carries a whole long chat line with it, as every question made from a line did today, ';
-function words(n) { let s = ''; while (s.length < 600) s += LONG; return 'Q' + n + ': ' + s + 'is it not?'; }
+// One Q's words. Since goal/G21.2 a red Q is one sentence of at most 200 bytes, and one open per agent per item, so
+// the panel can no longer be filled with open questions: the record is filled instead, one question placed and
+// answered at a time, until the questions ever asked outweigh one answer.
+const LONG = 'A question that is one sentence and close to the two hundred bytes a red Q may hold, ';
+function words(n) { return 'Q' + n + ': ' + LONG + LONG.slice(0, 80) + ' is it not?'; }
+const WSL = { key: 'MCowBQYDK2VwAyEAdeskChecksPanelTestWSLAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 
 async function suite() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
@@ -63,22 +68,22 @@ async function suite() {
   else { test.fail('the world: the first check.add answered ' + first.status + ' ' + short(first.body)); return; }
 
   test.subHeading('1. answered checks leave the panel, so the item keeps taking checks');
-  // Fill the panel to just under the room with open questions, then answer them all.
+  // Since goal/G21.2: place and answer one question at a time until all of them ever asked outweigh one answer.
+  const firstQ = (await checks('cp/G1.1'))[0];
+  await call('check.set', { id: 'cp/G1.1', check: firstQ.number, state: 'answered' }, CW);
   let added = 1;
-  for (let n = 2; n <= 40; n++) {
-    const probe = Buffer.byteLength(JSON.stringify({ checks: (await checks('cp/G1.1')).concat([{ number: 'Q' + n, kind: 'Q', words: words(n), test: '', state: 'open', by: CW.label, at: new Date().toISOString() }]) }), 'utf8');
-    if (probe > ROOM - 200) break;
+  let weight = Buffer.byteLength(JSON.stringify({ checks: [firstQ] }), 'utf8');
+  for (let n = 2; n <= 80 && weight <= ROOM + 400; n++) {
     const r = await call('check.add', { id: 'cp/G1.1', kind: 'Q', words: words(n), test: '' }, CW);
     if (!took(r)) { test.fail('the world: check.add Q' + n + ' answered ' + r.status + ' ' + short(r.body)); return; }
+    const c = (await checks('cp/G1.1')).filter(function (x) { return x.state === 'open'; })[0];
+    weight += Buffer.byteLength(JSON.stringify(c), 'utf8') + 1;
+    const a = await call('check.set', { id: 'cp/G1.1', check: c.number, state: 'answered' }, CW);
+    if (!took(a)) { test.fail('the world: answering ' + c.number + ' answered ' + a.status + ' ' + short(a.body)); return; }
     added = n;
   }
-  const before = await checks('cp/G1.1');
-  if (before.length === added && added >= 4) test.check('the world: the panel holds ' + added + ' open questions, just under one answer');
-  else { test.fail('the world: expected ' + added + ' checks, got ' + before.length); return; }
-  for (const c of before) {
-    const r = await call('check.set', { id: 'cp/G1.1', check: c.number, state: 'answered' }, CW);
-    if (!took(r)) { test.fail('the world: answering ' + c.number + ' answered ' + r.status + ' ' + short(r.body)); return; }
-  }
+  if (weight > ROOM && added >= 4) test.check('the world: ' + added + ' questions asked and answered, together over one answer');
+  else { test.fail('the world: ' + added + ' questions weigh ' + weight + ' of ' + ROOM + ' bytes'); return; }
   const open = (await checks('cp/G1.1')).filter(function (c) { return c.state === 'open'; });
   if (!open.length) test.check('the world: every question is answered');
   else { test.fail('the world: ' + open.length + ' questions still open'); return; }
@@ -86,7 +91,8 @@ async function suite() {
   const more = await call('check.add', { id: 'cp/G1.1', kind: 'Q', words: words(added + 1), test: '' }, CW);
   if (took(more)) test.check('with every question answered, a new question is taken although all of them together outweigh one answer');
   else test.fail(OWED + 'with ' + added + ' answered questions stored, check.add is refused ' + short(more.body));
-  const again = await call('check.add', { id: 'cp/G1.1', kind: 'Q', words: words(added + 2), test: '' }, CW);
+  // Since goal/G21.2 one open red Q per agent per item: the second new one is another agent's.
+  const again = await call('check.add', { id: 'cp/G1.1', kind: 'Q', words: words(added + 2), test: '' }, WSL);
   if (took(again)) test.check('and a second new question too');
   else test.fail(OWED + 'the second new question is refused ' + short(again.body));
 
@@ -106,7 +112,9 @@ async function suite() {
     else test.fail(OWED + 'check.set on the item answered ' + set.status + ' ' + short(set.body));
   }
 
-  test.subHeading('2. a question made from a chat line keeps one sentence');
+  // SINCE goal/G21.2 NO CHAT LINE MAKES A Q, and the one sentence is asked of the Q itself: a check.add holding more
+  // than one sentence is refused (deskRedQOnPurpose.js holds the rest).
+  test.subHeading('2. since goal/G21.2 a chat line makes no Q, and a Q of more than one sentence is refused');
   await call('session.set', { json: JSON.stringify({ goal: { id: 'cp/G2', title: 'Lines' }, items: [{ id: 'cp/G2.1', title: 'Two', blocks: ['cp/G2'] }] }) }, CW);
   const line = 'cw: the first sentence states a fact. The second states another, at some length, so that the whole line is long. Is this the question?';
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
@@ -114,10 +122,11 @@ async function suite() {
   const chat = await call('chat.add', { id: 'cp/G2.1', text: line }, CW);
   if (!took(chat)) { test.fail('the world: chat.add answered ' + chat.status + ' ' + short(chat.body)); return; }
   const made = (await checks('cp/G2.1')).filter(function (c) { return c.kind === 'Q'; });
-  if (made.length === 1) test.check('the world: the line with a question mark became one Q');
-  else { test.fail('the world: the line became ' + made.length + ' Q checks'); return; }
-  if (made[0].words.trim() === 'Is this the question?') test.check('the Q holds the sentence that ends in the question mark, not the whole line');
-  else test.fail(OWED + 'the Q holds ' + JSON.stringify(made[0].words.slice(0, 80)) + (made[0].words.length > 80 ? '...' : ''));
+  if (made.length === 0) test.check('the line with a question mark made no Q');
+  else test.fail('the line became ' + made.length + ' Q checks');
+  const twoSentences = await call('check.add', { id: 'cp/G2.1', kind: 'Q', words: 'The first sentence states a fact. Is this the question?', test: '' }, CW);
+  if (!took(twoSentences) && twoSentences.body && twoSentences.body.extra && twoSentences.body.extra.why) test.check('a Q of two sentences is refused with a why');
+  else test.fail('a Q of two sentences answered ' + twoSentences.status + ' ' + short(twoSentences.body));
 }
 
 (async function () {

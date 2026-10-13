@@ -114,13 +114,26 @@ function tooLarge(bytes, max) {
 // The room item.chat fills, measured the way it fills it: so a line chat.add takes always comes back whole.
 const CHAT_ROOM = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ chatMore: false }), 'utf8');
 function chatLineBytes(index, line) { return oneAnswerBytes(String(index), JSON.stringify(line)); }
-// The sentence a line ends with, for the Q it raises (goal/G9.16): from the last sentence end before the final
-// question mark; a line that is one question is its own sentence.
-function questionOf(text) {
-  const m = /([^.!?\n]*\?)\s*$/.exec(String(text));
-  const one = m ? m[1].trim() : '';
-  return one || String(text).trim();
+// A RED Q IS ONE CONCISE SENTENCE (goal/G21.2). Andy, in the item's box: "A Q longer than one sentence, or over about
+// 200 bytes, is refused with a why." Mechanically: no line break, no sentence end (. ! ?) with more text after it, and
+// at most Q_MAX_BYTES counted in bytes (Andy's rule of 2026-10-10: every size check in bytes). Returns the why, or ''.
+const Q_MAX_BYTES = 200;
+function qWhy(words) {
+  const t = String(words).trim();
+  if (!t) return 'a red Q needs its question';
+  const bytes = Buffer.byteLength(t, 'utf8');
+  if (bytes > Q_MAX_BYTES) return 'a red Q is one concise sentence of at most ' + Q_MAX_BYTES + ' bytes; this one is ' + bytes;
+  if (/[\r\n]/.test(t) || /[.!?]+["')\]]*\s+\S/.test(t)) return 'a red Q is one sentence; this one holds more: put the rest in the chat';
+  return '';
 }
+// HIS CLEAR (goal/G21.2): "Q:clear deletes every red Q on the item; Q<n>:clear deletes only that one." His chat line
+// typed so, case and blanks ignored. Returns null for any other line, else { number: 'Q<n>' or '' for all }.
+function clearOf(text) {
+  const m = /^\s*q\s*(\d*)\s*:\s*clear\s*$/i.exec(String(text));
+  return m ? { number: m[1] ? 'Q' + Number(m[1]) : '' } : null;
+}
+// Who placed a Q, by key: the record's key, else (a record from before keys) the key its label wrote with.
+function placerOf(s, c) { return c.placedKey || (c.placedBy && s.agentKey[c.placedBy]) || ''; }
 // The room chat.search fills (goal/G3.11): half an answer. An agent's deskClient packs the desk's answer once more
 // as text, where every quote and backslash gains one byte, so at most the answer doubles; half the room is what
 // still arrives in one piece. Andy: "what's the problem with having to be brief?", "none of this joing shit."
@@ -132,7 +145,8 @@ const SEARCH_ROOM = Math.floor(ANSWER_ROOM / 2);
 // back, and the two open questions could not even be closed. The record keeps every check; the panel is the open and
 // the decided ones, never the answered.
 function shownChecks(it) {
-  return (it.checks || []).filter(function (c) { return c.state !== 'answered'; });
+  // A Q he cleared (goal/G21.2) leaves the panel as an answered one does.
+  return (it.checks || []).filter(function (c) { return c.state !== 'answered' && c.state !== 'cleared'; });
 }
 // Every panel an item answers with, each measured as one answer: its facts (item.get, and its label in a search),
 // its box (item.box) and its checks (item.checks). The largest, against the room.
@@ -604,9 +618,14 @@ function apply(s, r, b, item, goalOf) {
     case 'check.add': {
       const kind = String(b.kind);
       const number = nextCheckNumber(it, kind);
-      it.checks.push({ number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: String(b.asked || ''), at: String(b.asked ? r.at : '') });
+      const c = { number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: String(b.asked || ''), at: String(b.asked ? r.at : '') };
+      // WHO PLACED A RED Q (goal/G21.2), from the record, so a replay of records written before it knows too: "one
+      // open red Q per agent per item", and his clear notifies "the agent that placed it".
+      if (kind === 'Q') { c.placedBy = String(r.by); c.placedKey = String(r.key || ''); }
+      it.checks.push(c);
       // A QUESTION RAISED BY A CHAT LINE (goal/G2.21) marks that line with this number, so the chat shows which line
-      // the red question came from while the line's own text stays exactly as the agent wrote it.
+      // the red question came from while the line's own text stays exactly as the agent wrote it. Since goal/G21.2 no
+      // line raises one; this stays for the records written before, whose open checks stay as they are.
       if (typeof b.forLine === 'number' && it.chat[b.forLine]) it.chat[b.forLine].q = number;
       return;
     }
@@ -1414,8 +1433,9 @@ function nudge(keys) {
 function nudgeForWrite(s, verb, a) {
   if (a.by === 'andy') {
     if (verb === 'press' && a.what === 'seen') return;
-    // HIS ADDRESSED LINE NUDGES ITS ADDRESSEES ALONE (goal/G21.1): "only it is notified".
-    if (verb === 'chat.add' && Array.isArray(a.to)) { nudge(nudgeKeys(s).filter(function (k) { return a.to.indexOf(k) !== -1; })); return; }
+    // HIS ADDRESSED LINE NUDGES ITS ADDRESSEES ALONE (goal/G21.1): "only it is notified". So does his clear of a red Q,
+    // addressed to the agent that placed it (goal/G21.2).
+    if (Array.isArray(a.to)) { nudge(nudgeKeys(s).filter(function (k) { return a.to.indexOf(k) !== -1; })); return; }
     nudge(nudgeKeys(s));
   } else if (a.by !== 'desk' && verb === 'chat.add') {
     nudge(nudgeKeys(s).filter(function (k) { return k !== String(a.key || ''); }));
@@ -1677,9 +1697,9 @@ const recordsAfter = db.prepare('SELECT n, at, verb, by, key, body FROM records 
 const linesAfter = db.prepare('SELECT rowid AS rid, line FROM lines WHERE rowid > ? ORDER BY rowid');
 // ONLY THE ADDRESSED AGENT IS NOTIFIED (goal/G21.1): an agent reading changes (viewer, its key) is not handed his
 // line addressed to other keys; the cursor passes it all the same. He reads everything. The line is still in the
-// item's chat, for any agent that looks.
+// item's chat, for any agent that looks. His clear of a red Q (a check.set addressed to its placer, goal/G21.2) the same.
 function addressedAway(r, viewer) {
-  if (!viewer || r.verb !== 'chat.add' || r.by !== 'andy' || String(r.body).indexOf('"to":[') === -1) return false;
+  if (!viewer || (r.verb !== 'chat.add' && r.verb !== 'check.set') || r.by !== 'andy' || String(r.body).indexOf('"to":[') === -1) return false;
   try { const b = JSON.parse(r.body); return Array.isArray(b.to) && b.to.indexOf(viewer) === -1; } catch (e) { return false; }
 }
 function changesSince(n, line, viewer) {
@@ -1965,7 +1985,17 @@ appServer.serve({
       const w = writerOf(caller);
       // G (a grant) and Q (a question) are the waiting list (goal/G4.20 points 10-11), beside C and T.
       if (['C', 'T', 'G', 'Q'].indexOf(a.kind) === -1) throw new Error('a check is C, T, G or Q');
-      return { change: write('check.add', Object.assign({}, a, { by: w.by, key: w.key })).change };
+      // A RED Q IS PLACED ON PURPOSE (goal/G21.2). Andy, in the item's box: "A red Q is a concise question placed with
+      // deliberation, to block an item until it is resolved." One sentence within Q_MAX_BYTES (qWhy), and "One open
+      // red Q per agent per item: a second is refused until the first is answered or cleared." Decided by Andy.
+      if (a.kind === 'Q' && qWhy(a.words)) throw refusedWhy('bad-request', qWhy(a.words));
+      return { change: write('check.add', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
+        if (a.kind !== 'Q') return;
+        const mine = it.checks.filter(function (c) {
+          return c.kind === 'Q' && c.state === 'open' && (w.key ? placerOf(st, c) === w.key : c.placedBy === w.by);
+        })[0];
+        if (mine) throw refusedWhy('bad-request', 'one open red Q per agent per item: ' + mine.number + ' of yours is still open on ' + it.id + '; it must be answered or cleared first');
+      }).change };
     },
   },
   'check.set': {
@@ -2019,8 +2049,13 @@ appServer.serve({
       // goal/G21.1: and with the key and name it is answered with.
       const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '', key: w.key, name: nameOfKey(st0, w.key) });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
+      // HIS CLEAR OF RED QS (goal/G21.2, clearOf): which open Qs it names, refused with a why when it names none.
+      const clear = caller.owner === true && it0 ? clearOf(a.text) : null;
+      const cleared = clear ? it0.checks.filter(function (c) { return c.kind === 'Q' && c.state === 'open' && (!clear.number || c.number === clear.number); }) : [];
+      if (clear && !cleared.length) throw refusedWhy('bad-request', clear.number ? clear.number + ' is not an open red Q on ' + a.id : 'there is no open red Q on ' + a.id + ' to clear');
       // HIS LINE, ADDRESSED AT THE WRITE (goal/G21.1, addressOf): to whom, and whether it hands over the box or offers a cap.
-      const address = caller.owner === true && it0 ? addressOf(st0, a.text) : null;
+      // A clear is addressed to nobody: its line is his action, for everyone; each Q's clear goes to its placer below.
+      const address = caller.owner === true && it0 && !clear ? addressOf(st0, a.text) : null;
       const after = write('chat.add', Object.assign({}, a, address || {}, { by: w.by, key: w.key }));
       // A MESSAGE TO A BUSY AGENT IS ANSWERED (goal/G2.5). Andy: "the app sends an-auto reply after sending the
       // message the agents in-queue, saying 'message delivered, agents busy'", "after every message". His line
@@ -2034,20 +2069,18 @@ appServer.serve({
           write('chat.add', { id: a.id, text: 'message delivered, ' + taker + ' busy', by: 'desk', key: '' });
         }
       }
-      // A QUESTION NEVER HIDES IN CHAT (goal/G2.21). Andy, 2026-10-06: "i want mechanical support in deskServer to
-      // make agents add red-question to the design", after his own "i see no Q's and it really bugs me." when an
-      // agent's question sat in chat and lit nothing: his List lights from open checks alone (asksOf), so an agent's
-      // line that ENDS in a question mark raises one, with the line's own words and by that agent.
-      // HIS OWN LINES AND THE DESK'S ARE NEVER CONVERTED: a check is what waits on HIM, not on us.
-      // THE GROUP CHAT IS LEFT ALONE: it is closed, so the List never shows it, and a check there would be a red
-      // nothing opens. A question for him that belongs to no item still belongs in a post under one.
-      // ONE SENTENCE, NOT THE LINE (goal/G9.16): the question is the sentence that ends in the question mark; the
-      // line stays whole in the chat. A whole line per Q is what filled the retrofit item's panel on 2026-10-09.
-      const asker = after.items[String(a.id)];
-      if (asker && w.by !== 'andy' && w.by !== 'desk' && String(a.id) !== GROUP_CHAT && /\?[\s]*$/.test(String(a.text))) {
-        write('check.add', { id: a.id, kind: 'Q', words: questionOf(a.text), test: '', asked: w.by,
-          forLine: asker.chat.length - 1, by: w.by, key: w.key });
-      }
+      // Andy, in the item's box: "Andy clears them himself", and "When Andy clears a Q, the agent that placed it is
+      // notified; a clear is a form of reply, so the agent updates its position on that question." So each Q goes to
+      // cleared (it holds nothing any more and leaves the panel) by a record of his addressed to its placer's key: that
+      // agent alone is nudged and handed it in changes (addressedAway), as with his nick-addressed line. A Q the desk
+      // placed has no placer to tell. Decided by Andy, not by this file: an agent's own "Q:clear" clears nothing.
+      cleared.forEach(function (c) {
+        const placer = placerOf(st0, c);
+        write('check.set', { id: a.id, check: c.number, state: 'cleared', to: placer ? [placer] : [], by: w.by, key: w.key });
+      });
+      // A QUESTION MARK IN CHAT RAISES NOTHING (goal/G21.2), ending goal/G2.21's conversion of an agent's line that
+      // ended in one. Andy, in the item's box: "A question mark in a chat line never makes a red Q; only a deliberate Q
+      // check does." Decided by Andy: do not bring the conversion back. Open checks it raised before stay as they are.
       return { change: after.change };
     },
   },

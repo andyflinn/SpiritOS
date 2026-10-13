@@ -270,13 +270,15 @@ function ddWaitingHtml() {
   }).join('');
   return html ? '<div class="stat-tile wide">' + html + '</div>' : '';
 }
-// A question clicked goes into his input as a line of its own.
+// A question clicked goes into his input as a line of its own, followed by two newlines (goal/G21.2). Andy, in the
+// item's box: "A red Q clicked into Andy's chat box arrives followed by two newlines, so the question stands apart from
+// the answer he writes below it."
 function ddQuote(number) {
   var c = ddChecks.filter(function (x) { return x.number === number; })[0];
   var say = document.getElementById('dd-say');
   if (!c || !say) return;
   var had = String(say.value || '');
-  say.value = (had && !/\n$/.test(had) ? had + '\n' : had) + c.number + ': ' + c.words;
+  say.value = (had && !/\n$/.test(had) ? had + '\n' : had) + c.number + ': ' + c.words + '\n\n';
   if (typeof say.focus === 'function') say.focus();
 }
 

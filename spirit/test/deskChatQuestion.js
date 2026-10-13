@@ -1,5 +1,8 @@
 'use strict';
 
+// SINCE goal/G21.2 THIS SUITE ASSERTS THE CONVERSION IS GONE. Andy, in G21.2's box: "A question mark in a chat line
+// never makes a red Q; only a deliberate Q check does." What follows is goal/G2.21's history, kept for the why.
+//
 // goal/G2.21: a question never hides in chat. Red on today's tree; wsl-claude wrote it from G2.21's box and does
 // not build it.
 //   Andy, 2026-10-06, under goal/G2.18: "i want mechanical support in deskServer to make agents add red-question to
@@ -38,7 +41,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
 function parse(x) { if (typeof x !== 'string') return x; try { return JSON.parse(x); } catch (e) { return x; } }
 
-test.startTest('goal/G2.21: an agent\'s question in chat becomes a Q check on the item');
+test.startTest('goal/G2.21, since goal/G21.2: an agent\'s question in chat raises no Q check');
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatq-'));
 const state = path.join(scratch, 'state');
@@ -75,25 +78,24 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
   // it asks under; on cq/G1.3 claude-windows answers a line of his it has taken.
   for (const id of ['cq/G1.1', 'cq/G1.2', 'cq/G1.3']) await call('item.take', { id: id }, WSL);
 
-  test.subHeading('1. an agent\'s line ending in a question mark raises one open Q with those words');
+  // SINCE goal/G21.2 A QUESTION MARK IN CHAT RAISES NOTHING. Andy, in G21.2's box: "A question mark in a chat line
+  // never makes a red Q; only a deliberate Q check does." Sections 1-4 assert the conversion is gone; 5 and 6 stand.
+  test.subHeading('1. since goal/G21.2 an agent\'s line ending in a question mark raises no Q');
   const said = await call('chat.add', { id: 'cq/G1.1', text: QUESTION }, WSL);
   const qs = await qsOf('cq/G1.1');
   if (!took(said)) test.fail('chat.add answered ' + said.status + ' ' + short(said.body));
-  else if (qs.length === 1 && qs[0].state === 'open' && qs[0].words === QUESTION) test.check('one open Q check carries the line\'s own words');
-  else test.fail(OWED + 'the question line raised ' + short(qs));
-  if (qs.length === 1 && qs[0].by === 'wsl-claude') test.check('the Q is by the agent that asked, not by desk');
-  else test.fail(OWED + 'the Q reads by ' + short(qs.length ? qs[0].by : null));
-  // THE POINT OF THE ITEM: his List lights from open checks alone, so the question must count there.
-  if (await asksOf('cq/G1.1') > 0) test.check('the item now counts as waiting on him');
-  else test.fail(OWED + 'the item\'s asks reads ' + short(await asksOf('cq/G1.1')));
+  else if (qs.length === 0) test.check('the question line raises no Q check');
+  else test.fail('the question line raised ' + short(qs));
+  if (await asksOf('cq/G1.1') === 0) test.check('the item is not waiting on him for a chat line');
+  else test.fail('the item\'s asks reads ' + short(await asksOf('cq/G1.1')));
 
-  test.subHeading('2. the line itself stays in chat, as written, marked with its Q number');
+  test.subHeading('2. the line itself stays in chat, as written, with no Q number');
   const lines = await chatOf('cq/G1.1');
   const mine = lines.filter(function (l) { return l.by === 'wsl-claude'; });
   if (mine.length === 1 && mine[0].text === QUESTION) test.check('the line is still there with its text untouched');
-  else test.fail(OWED + 'the chat holds ' + short(lines));
-  if (mine.length === 1 && mine[0].q === (qs.length ? qs[0].number : 'Q1')) test.check('the line carries its Q number (' + short(mine[0].q) + ')');
-  else test.fail(OWED + 'the line carries no Q number: ' + short(mine.length ? mine[0] : null));
+  else test.fail('the chat holds ' + short(lines));
+  if (mine.length === 1 && mine[0].q === undefined) test.check('the line carries no Q number');
+  else test.fail('the line reads ' + short(mine.length ? mine[0] : null));
 
   test.subHeading('3. a line that asks nothing passes as before');
   await call('chat.add', { id: 'cq/G1.2', text: PLAIN }, WSL);
@@ -106,22 +108,20 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
   const stillNone = await qsOf('cq/G1.2');
   if (!stillNone.length) test.check('a question mark inside the line, not at its end, raises nothing');
   else test.fail(OWED + 'a mid-line question mark raised ' + short(stillNone));
-  // Trailing blanks are not the agent saying something else.
+  // Since goal/G21.2: a question mark followed by blanks raises nothing either.
   await call('chat.add', { id: 'cq/G1.2', text: 'wsl: and the second row, does it go too?   ' }, WSL);
   const trailing = await qsOf('cq/G1.2');
-  if (trailing.length === 1) test.check('a question mark followed by blanks still raises one');
-  else test.fail(OWED + 'the line ending in a question mark and blanks raised ' + short(trailing));
+  if (trailing.length === 0) test.check('a question mark followed by blanks raises nothing');
+  else test.fail('the line ending in a question mark and blanks raised ' + short(trailing));
 
-  test.subHeading('4. two questions raise two, each numbered, nothing merged');
+  test.subHeading('4. since goal/G21.2 two question lines by two agents raise nothing');
   await call('chat.add', { id: 'cq/G1.3', text: 'wsl: first, does the owner row survive a restore?' }, WSL);
   await call('chat.add', { id: 'cq/G1.3', text: 'and the whoBook?' }, ANDY);
   await call('line.take', { id: 'cq/G1.3' }, CW);
   await call('chat.add', { id: 'cq/G1.3', text: 'cw: second, and does the whoBook travel with it?' }, CW);
   const two = await qsOf('cq/G1.3');
-  const numbers = two.map(function (c) { return c.number; });
-  const authors = two.map(function (c) { return c.by; });
-  if (two.length === 2 && numbers.join(',') === 'Q1,Q2' && authors.indexOf('wsl-claude') !== -1 && authors.indexOf('claude-windows') !== -1) test.check('two question lines raise Q1 and Q2, each by its own agent');
-  else test.fail(OWED + 'two question lines raised ' + short(two.map(function (c) { return { n: c.number, by: c.by }; })));
+  if (two.length === 0) test.check('two question lines raise no Q');
+  else test.fail('two question lines raised ' + short(two.map(function (c) { return { n: c.number, by: c.by }; })));
 
   test.subHeading('5. his own line is never converted, and his answer closes the Q as ever');
   const his = await call('chat.add', { id: 'cq/G1.4', text: 'and what do you two make of this?' }, ANDY);
@@ -130,7 +130,11 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
   else test.fail(OWED + 'his question answered ' + his.status + ' and raised ' + short(hisQs));
   // Since goal/G9.16 an answered Q leaves the panel item.checks answers with (it stays in the record), so the item
   // answers no Q at all once it is answered; before that it was listed with state answered.
-  const closed = await call('check.set', { id: 'cq/G1.1', check: 'Q1', state: 'answered' }, WSL);
+  // Since goal/G21.2 the Q is placed on purpose, by check.add, as the only way there is.
+  await call('check.add', { id: 'cq/G1.1', kind: 'Q', words: 'Should the keys stay in the owner row?', test: '' }, WSL);
+  if (await asksOf('cq/G1.1') > 0) test.check('a deliberate Q makes the item wait on him');
+  else test.fail('after check.add the item\'s asks reads ' + short(await asksOf('cq/G1.1')));
+  const closed =await call('check.set', { id: 'cq/G1.1', check: 'Q1', state: 'answered' }, WSL);
   const after = await qsOf('cq/G1.1');
   if (took(closed) && after.length === 0 && await asksOf('cq/G1.1') === 0) test.check('answered through check.set as any Q, the Q leaves the panel and the item stops waiting');
   else test.fail(OWED + 'check.set answered ' + closed.status + ' ' + short(closed.body) + '; checks ' + short(after));

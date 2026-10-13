@@ -324,7 +324,8 @@ test.startTest('goal/G4.20: Desk for Andy');
   say.value = 'my answer';
   dw.click({ 'data-question': 'Q1' });
   await settled();
-  if (first === 'Q1: Which port?' && say.value === 'my answer\nQ1: Which port?') test.check('a click on Q1 appends "Q1: Which port?" to his input, on a line of its own');
+  // Since goal/G21.2 the question arrives followed by two newlines, so his answer stands apart below it.
+  if (first === 'Q1: Which port?\n\n' && say.value === 'my answer\nQ1: Which port?\n\n') test.check('a click on Q1 appends "Q1: Which port?" to his input, on a line of its own, then two newlines');
   else test.fail(OWED + 'after clicks on Q1 the input held ' + short(first) + ' then ' + short(say.value));
   dw.click({ 'data-grant': 'G1' });
   await settled();
