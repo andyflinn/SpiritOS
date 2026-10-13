@@ -1,5 +1,5 @@
 {
- "change": 56382,
+ "change": 56385,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -14,8 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G21.2",
-    "goal/G21.3"
+    "goal/G21.2"
    ],
    "go": false,
    "alone": false,
@@ -45,14 +44,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -1155,10 +1155,10 @@
    "id": "goal/G21.3",
    "title": "Verifier fixes",
    "goal": "goal/G21",
-   "status": "deskVerify passed",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G21"
@@ -1224,7 +1224,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Verifier fixes.\n\nDECIDED (Andy, 2026-10-13)\n- The Verifier tab stays once the page has loaded; only the first ask at load decides whether a verifier runs here. A later missed answer keeps the tab and shows \"not answering\".\n- Every press in the tab shows at once that it was sent, then what deskVerify answered.\n- A Stop is kept for the whole run, whenever it is pressed (a suite running, pulling, between suites, waiting for a commit), and deskVerify checks it before each suite; the tab shows \"stop asked\" until the run ends.\n- deskVerify answers at once even mid-run: the git work that blocks it now (pull, ancestry checks) no longer freezes it.\n- deskVerify keeps, beside each failing test's outcome, its failure text (capped), so the why is in the record and nobody has to rerun a suite to read it.\n- deskVerify answers one search verb, bucket-bounded with the partial flag, over two things: tests and suites (the official latest state of a single test, or of every test in a suite: outcome, commit, time, failure text; filtered by suite, test words, outcome, commit, item, since), and runs (each check it made, item or full run: commit, queued, started, ended, its outcome and the line it posted; filtered by item, commit, kind, since). The same verb runs on every node's deskVerify, so an agent asks Andy's (the official record) and its own; agents may call it, nothing is written through it.\n- Every node's deskVerify keeps its own test records in the same shape (as goal/G8.2 decided), so an agent node's idle report is filled; the desk node's records stay the canonical, authoritative record for the development. An agent's records are private to its own work and are not shared through git; they let an agent's results be compared with the official record, by querying every copy with the search verb, because the two will disagree. The raw records stay private; what the idle chores write into agents/<agent-name>/ (the measurements and the test-state report, a summary) is committed automatically, which is the purpose of the chores.\n- The idle hour comes back and its chores are done (goal/G8.4, never built until now): a node is idle after an hour with no desk write and no phase held by its agent; then its deskVerify runs publishData for its agent (measure, write agents/<agent-name>/, commit under the standing grant) and writes the test-state report from its own dataset, never by re-running suites. All code, no model. The tab's countdown counts to that hour and shows what the chores did.\n\nFOUND (Andy's node, 2026-10-13; paths under spirit/run/)\n- shell/desk/desk.js, deskAskVerifier: any failed \"now\" ask sets the verifier to none and redraws the tabs, so the tab disappears; every press and every opening of the tab asks again.\n- The Stop and Full run presses send and show nothing until the next answer.\n- process/js/deskVerify/deskVerify.js, stopRun: Stop is accepted only while a suite process runs; at any other moment it answers not stopped and is forgotten.\n- deskVerify pulls and checks ancestry with spawnSync, which blocks it while git works.\n- Measured idle: four now-asks answered in 11 to 56 ms.\n",
