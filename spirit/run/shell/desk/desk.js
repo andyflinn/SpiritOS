@@ -648,7 +648,9 @@ function deskOpenPlugin(app) {
     var ui = held[name];
     if (!ui || typeof ui.open !== 'function') { el.textContent = 'The ' + name + ' plugin has no private UI at ' + DESK_PLUGIN_UI + name + '/.'; return; }
     // goal/G22.3: chat(container) mounts its goal's chat there (deskMountChat), the face's own, as Team's.
-    ui.open(el, { goal: app.goal, ask: deskAsk, onPublished: function (fn) { return deskApi.onPublished(fn); },
+    // goal/G22.3: onPublished(fn, server) takes another server's stream too: the Stacks UI hears deskVerify, which runs
+    // its doors ("every run here should report to deskVerify.").
+    ui.open(el, { goal: app.goal, ask: deskAsk, onPublished: function (fn, server) { return server ? deskApi.onPublished(fn, server) : deskApi.onPublished(fn); },
       chat: function (container) { deskMountChat(container, app.goal); } });
   };
   if (held[name]) { open(); return; }
@@ -1214,7 +1216,53 @@ function deskVerifyAnswered(text) {
 // goal/G8.12: opening the tab reads what runs; the records list it used to fetch is gone with Andy's "only show the
 // latest status", so nothing here asks for rows any more.
 function deskVerifyRefresh() {
+  deskVerifyTail();
   return deskAskVerifier();
+}
+// ── THE CONSOLE (goal/G22.3) ──────────────────────────────────────────
+//
+//   Andy, 2026-10-13: "it be even better if the verify tab showed the detailed results in a console like fashion,
+//   cleared before every new run."
+//
+// DECIDED BY ANDY: the tab shows the current run's output as deskVerify keeps it, cleared when a new run starts. Every
+// object deskVerify publishes carries consoleRun and consoleTo; when the run is new the text here is cleared, and while
+// consoleTo is past what is held here the rest is asked with `console {from}`, one answer at a time, never on a clock.
+// Kept here to DESK_CONSOLE_MAX characters, the front dropped, as deskVerify drops its own.
+var DESK_CONSOLE_MAX = 262144;
+var deskVerifyCon = { run: '', text: '', to: 0, asking: false, want: 0 };
+function deskVerifyTail() {
+  if (deskVerifyCon.asking) return;
+  deskVerifyCon.asking = true;
+  var askedRun = deskVerifyCon.run;
+  var askedFrom = deskVerifyCon.to;
+  deskVerifyAsk('console', { from: askedFrom }).then(function (b) {
+    deskVerifyCon.asking = false;
+    if (!b || typeof b.text !== 'string') return;
+    // Cleared for a new run while this ask was out: the answer is of the old one, so ask again.
+    if (deskVerifyCon.run !== askedRun) { deskVerifyTail(); return; }
+    if (String(b.run) !== askedRun) {
+      // deskVerify holds another run than this page knew: cleared, and read from its start.
+      deskVerifyCon = { run: String(b.run), text: '', to: 0, asking: false, want: 0 };
+      if (askedFrom !== 0) { deskDrawVerifier(); deskVerifyTail(); return; }
+    }
+    deskVerifyCon.text += b.text;
+    if (deskVerifyCon.text.length > DESK_CONSOLE_MAX) deskVerifyCon.text = deskVerifyCon.text.slice(deskVerifyCon.text.length - DESK_CONSOLE_MAX);
+    deskVerifyCon.to = Number(b.to) || deskVerifyCon.to;
+    deskDrawVerifier();
+    if (b.more === true || deskVerifyCon.want > deskVerifyCon.to) deskVerifyTail();
+  }, function () { deskVerifyCon.asking = false; });
+}
+// What the published object says of the console: a new run clears it at once, and output past what is held is asked.
+function deskVerifyConsoleHeard(obj) {
+  if (typeof obj.consoleRun !== 'string' || !obj.consoleRun) return;
+  if (obj.consoleRun !== deskVerifyCon.run) { deskVerifyCon = { run: obj.consoleRun, text: '', to: 0, asking: deskVerifyCon.asking, want: 0 }; deskDrawVerifier(); }
+  deskVerifyCon.want = Number(obj.consoleTo) || 0;
+  if (deskVerifyCon.want > deskVerifyCon.to) deskVerifyTail();
+}
+function deskVerifyConsoleHtml() {
+  return '<div class="label" style="margin-top:1em">Console</div>' +
+    '<pre id="desk-verify-console" style="font-family:monospace;white-space:pre-wrap;max-height:24em;overflow:auto;margin-top:0.5em">' +
+    deskEsc(deskVerifyCon.text) + '</pre>';
 }
 // THE LIVE RUN (goal/G8.12), as deskVerify publishes it: the newest object only, never a log. Andy, 2026-10-09: "what
 // now is displayed as a log.. should be an updated status message underneath a progress bar", and the bar is suites
@@ -1272,7 +1320,7 @@ function deskVerifyBar() {
   var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
   var runPct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
   return deskVerifyBarHtml(runPct, 'run') +
-    '<div>' + (r.doing === 'full' ? 'Full run' : r.doing === 'goal' ? 'Goal ' + deskEsc(r.id) : 'Item ' + deskEsc(r.id)) +
+    '<div>' + (r.doing === 'full' ? 'Full run' : r.doing === 'goal' ? 'Goal ' + deskEsc(r.id) : r.doing === 'door' ? 'Door ' + deskEsc(r.id) : 'Item ' + deskEsc(r.id)) +
     (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
 }
 // IDLE, IT COUNTS DOWN (goal/G8.12). Andy: "after all is done, it should count down idle time, before it starts
@@ -1290,7 +1338,8 @@ function deskVerifyHtml() {
   if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
   var run = deskVerifier.running || { id: '', suite: '', since: '' };
   var queued = Array.isArray(deskVerifier.queued) ? deskVerifier.queued : [];
-  var item = (deskVerifyRun && deskVerifyRun.id) || run.id || deskVerifyLast;
+  // A door run (goal/G22.3) names a door of the Stacks plugin, which is no desk item, so it offers no re-verify.
+  var item = (deskVerifyRun && deskVerifyRun.doing !== 'door' && deskVerifyRun.id) || run.id || deskVerifyLast;
   var live = deskVerifyRun;
   // STOP ASKED UNTIL THE RUN ENDS (goal/G21.3): the newest published object says it, else the last now.
   var stopAsked = live ? live.stopAsked === true : deskVerifier.stopAsked === true;
@@ -1321,6 +1370,8 @@ function deskVerifyHtml() {
     // queue list below it's current ui elements." One line per waiting run, kind and id, as deskVerify's now says it.
     '<div class="label">Waiting</div>' +
     (queued.length ? queued.map(function (q) { return '<div>' + deskEsc(String((q && q.kind) || '')) + ' ' + deskEsc(String((q && q.id) || '')) + '</div>'; }).join('') : '<div class="job-manifest-note">Nothing waiting</div>') +
+    // THE CONSOLE, BELOW (goal/G22.3): the current run's output, cleared at each new run.
+    deskVerifyConsoleHtml() +
     '</div>';
   // THE RECORDS LIST IS GONE (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
   // latest status." It listed the dataset's newest rows, which read as a log beside a live run; the tab now shows the
@@ -1331,6 +1382,9 @@ function deskVerifyHtml() {
 function deskDrawVerifier() {
   var box = document.getElementById('desk-verifier');
   if (box) box.innerHTML = deskVerifyHtml();
+  // The console shows its newest line, as a console does (goal/G22.3).
+  var con = box ? document.getElementById('desk-verify-console') : null;
+  if (con) con.scrollTop = con.scrollHeight;
 }
 // THE COUNTDOWN MOVES ON ITS OWN (goal/G8.12). Andy: "the progress bar can show the countdown live". Nothing is asked
 // of anybody for this - the clock is local, which is the one thing a page may read without pulling; it repaints only
@@ -1358,9 +1412,10 @@ function deskVerifyEvent(obj) {
   // stopped has ended.
   deskVerifyMissed = false;
   if (obj.doing === 'idle' && obj.stopAsked !== true && deskVerifyNote.indexOf(DESK_STOP_NOTE) === 0) deskVerifyNote = '';
-  if (obj.id) deskVerifyLast = String(obj.id);
+  if (obj.id && obj.doing !== 'door') deskVerifyLast = String(obj.id);
   if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' }, queued: [] }; deskDrawTabs(); }
   deskDrawVerifier();
+  deskVerifyConsoleHeard(obj);
   // AND THE LIST'S STATUS BOX FOLLOWS IT (goal/G18.5): the row it runs for shows the progress, and is itself again
   // once the run is idle.
   if (deskTab === 'list') deskDraw();

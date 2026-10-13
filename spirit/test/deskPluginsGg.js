@@ -50,8 +50,8 @@
 //      {id} strikes it; an unknown id is refused by each. run {id} answers at once {started, runId}, a second run of the
 //      same door while one runs is refused, runState {id} reports running, then the verdict (green, around, of, paths)
 //      and the output's tail, stop {id} stops it; the last verdict per door is kept in the plugin's own folder under the
-//      desk's --state, survives a restart, and each change is published. Here the runner is a scratch script named by
-//      the suite-only value stackFrameRunner, so no suite runs the probe.
+//      desk's --state, survives a restart, and each change is published. (The run half of this point is superseded by
+//      deskVerify's runs, below.)
 //   i. THE UI: the main list is the door list, one row per door (gate, endpoint, paths, suites, its last verdict) with
 //      ONE button, Open, 1em after itself, that opens the door's dialog; the form adds a door with paths and suites
 //      (data-field on each, a wrong suite name said as typed). The dialog holds the door's values as inputs, Save
@@ -60,13 +60,25 @@
 //      crappy if arranged in a block, that itself act's like an inline element": each input, in the form and in the
 //      dialog, sits in its own inline-block framed block, its name and what goes in it in words above the input; a
 //      filled field's words read what its value means, updated as typed.
+//   h, i SINCE ANDY'S RULINGS OF 2026-10-13 in goal/G22.3's box: "every run here should report to deskVerify.", and of
+//      the Verifier tab's console: "it means this app here should launch the run through deskVerify." So run asks the
+//      node's deskVerify door.run {id} and answers at once {queued}; runState and each door's last verdict are read
+//      from deskVerify's door.state; the plugin spawns no runner, kills nothing, keeps no runs.json, and has no stop
+//      verb (deskVerify's Stop, in the Verifier tab, ends the run as any run); the dialog's Run says the run went to
+//      deskVerify and points to the Verifier tab's console, and the UI listens to deskVerify's stream. Here a fake
+//      deskVerify on the fake node answers door.run and door.state.
+//   j. THE PLUGIN COMMITS ITS OWN LIST. Andy, 2026-10-13: "the commit function has to be there. it belongs to committing
+//      reds." After make, update or remove writes stackFrameList.json, the plugin commits that one file in the repo it
+//      lives in, "plugin/stackFrameChecks: <what changed>", and pushes; with other changes staged it refuses to commit
+//      and says so; a push that fails is said in the reply and the commit stays local. Here the list lives in a scratch
+//      work tree with a scratch bare remote, so no suite commits to a real repo.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
 const kernel = require('../run/js/kernel.js');
@@ -146,6 +158,7 @@ function mountFace(answers) {
   const win = { spiritFieldRules: require('../run/js/fieldRules.js') };
   const asked = [];
   const published = [];
+  const servers = [];
   const container = fakeElement('c');
   let b = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))(
@@ -159,12 +172,12 @@ function mountFace(answers) {
       const a = answers[v];
       return Promise.resolve({ status: 200, body: (typeof a === 'function' ? a(ask[v]) : a) || { change: 1 } });
     },
-    onPublished: function (fn) { published.push(fn); return function () {}; }, onPacket: function () { return function () {}; },
+    onPublished: function (fn, server) { published.push(fn); servers.push(String(server || '')); return function () {}; }, onPacket: function () { return function () {}; },
     peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
     setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {}, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  doc.win = win; doc.asked = asked; doc.published = published; doc.container = container;
+  doc.win = win; doc.asked = asked; doc.published = published; doc.servers = servers; doc.container = container;
   return doc;
 }
 function clickTab(el, tab) {
@@ -172,15 +185,35 @@ function clickTab(el, tab) {
 }
 
 (async function () {
-  // What the desk publishes reaches this fake node as jobs.update {app: ...}: kept, so h. can see a run said live.
+  // What the desk publishes reaches this fake node as jobs.update {app: ...}: kept.
+  // A FAKE deskVerify ON IT (h., since goal/G22.3's "every run here should report to deskVerify"): door.run queues a
+  // run that is under way for 1.5 s and then holds its verdict; door.state reads it, as deskVerify keeps it.
   const reports = [];
+  const verifyAsks = [];
+  const fakeDoors = {};
+  const doorState = function (id) {
+    const d = fakeDoors[id];
+    if (!d) return { id: id, running: false, queued: false, ran: false, green: false, around: 0, of: 0, paths: [], pathsLeft: 0, why: '', startedAt: '', endedAt: '', commit: '', stopped: false };
+    const done = Date.now() - d.at >= 1500;
+    return { id: id, running: !done, queued: false, ran: done, green: false, around: done ? 2 : 0, of: done ? 5 : 0,
+      paths: done ? ['POST /x from spirit/run/js/a.js:1:f', 'POST /y from spirit/run/js/b.js:2:g'] : [], pathsLeft: 0, why: '',
+      startedAt: new Date(d.at).toISOString(), endedAt: done ? new Date(d.at + 1500).toISOString() : '', commit: 'abc12345', stopped: false };
+  };
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
       let b = ''; req.on('data', function (c) { b += c; });
       req.on('end', function () {
         reports.push(b);
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        const out = j && j.ask === 'api' ? { desk: {} } : { ok: true };
+        let out = j && j.ask === 'api' ? { desk: {} } : { ok: true };
+        if (j && j.ask && j.ask.deskVerify) {
+          const verb = Object.keys(j.ask.deskVerify)[0];
+          const a = j.ask.deskVerify[verb] || {};
+          verifyAsks.push([verb, a]);
+          if (verb === 'door.run') { if (!fakeDoors[a.id] || doorState(a.id).ran) fakeDoors[a.id] = { at: Date.now() }; out = { queued: true, already: false }; }
+          else if (verb === 'door.state') out = doorState(String(a.id));
+          else out = { ok: false, code: 'no-such-verb', error: 'no such verb' };
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
@@ -188,17 +221,29 @@ function clickTab(el, tab) {
   const root = path.join(scratch, 'desk');
   const state = path.join(root, 'state');
   const more = path.join(scratch, 'plugins', 'js');
-  // The plugin's list of doors, in scratch (g.): the tree's own stackFrameList.json is never written by a suite.
-  const listFile = path.join(scratch, 'stackFrameList.json');
-  // THE SCRATCH RUNNER (h.): what the plugin spawns in place of oneDoorStacks.js. It says the door it was handed, waits
-  // 1.5 s (so a second run and a stop meet a run under way), and writes the verdict file the plugin names, as
-  // oneDoorStacks.js does in its one-door mode.
-  const runnerFile = path.join(scratch, 'scratchRunner.js');
-  fs.writeFileSync(runnerFile, "'use strict';\nconst fs = require('fs');\n" +
-    "console.log('scratch runner on door ' + process.env.SPIRIT_STACKS_DOOR + ', list ' + process.env.SPIRIT_STACKS_LIST);\n" +
-    "setTimeout(function () {\n  console.log('scratch runner done');\n" +
-    "  fs.writeFileSync(process.env.SPIRIT_STACKS_VERDICT, JSON.stringify({ door: process.env.SPIRIT_STACKS_DOOR, green: false, around: 2, of: 5,\n" +
-    "    paths: ['POST /x from spirit/run/js/a.js:1:f', 'POST /y from spirit/run/js/b.js:2:g'], why: '' }));\n}, 1500);\n");
+  // THE PLUGIN'S LIST OF DOORS, in scratch (g.): the tree's own stackFrameList.json is never written by a suite. Since j.
+  // it lives in a scratch work tree with a scratch bare remote, since the plugin commits the list in the repo it lives in.
+  const gitIn = function (cwd, args) { return spawnSync('git', args, { cwd: cwd, encoding: 'utf8' }); };
+  const remote = path.join(scratch, 'remote.git');
+  const work = path.join(scratch, 'work');
+  fs.mkdirSync(work, { recursive: true });
+  gitIn(scratch, ['init', '-q', '--bare', remote]);
+  gitIn(work, ['init', '-q', '-b', 'master']);
+  gitIn(work, ['config', 'user.email', 'gg@example.invalid']);
+  gitIn(work, ['config', 'user.name', 'gg']);
+  gitIn(work, ['config', 'commit.gpgsign', 'false']);
+  fs.writeFileSync(path.join(work, 'README.md'), 'scratch work tree of deskPluginsGg.js\n');
+  gitIn(work, ['add', 'README.md']);
+  gitIn(work, ['commit', '-q', '--no-verify', '-m', 'start']);
+  gitIn(work, ['remote', 'add', 'origin', remote]);
+  gitIn(work, ['push', '-q', 'origin', 'master:master']);
+  const headOf = function () { return String(gitIn(work, ['rev-parse', 'HEAD']).stdout || '').trim(); };
+  const remoteHead = function () { return String(gitIn(work, ['--git-dir', remote, 'rev-parse', 'master']).stdout || '').trim(); };
+  const lastCommit = function () {
+    return { subject: String(gitIn(work, ['log', '-1', '--format=%s']).stdout || '').trim(),
+      files: String(gitIn(work, ['show', '--name-only', '--format=', 'HEAD']).stdout || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean) };
+  };
+  const listFile = path.join(work, 'stackFrameList.json');
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.mkdirSync(state, { recursive: true });
   plantFakePlugins(more);
@@ -207,7 +252,7 @@ function clickTab(el, tab) {
   const client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
   const start = function () {
-    return spawn(process.execPath, [DESK, JSON.stringify({ pluginsMore: more, stackFrameList: listFile, stackFrameRunner: runnerFile }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    return spawn(process.execPath, [DESK, JSON.stringify({ pluginsMore: more, stackFrameList: listFile }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
       env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
   };
   let tree = {};
@@ -306,7 +351,9 @@ function clickTab(el, tab) {
     const GATE = 'spirit/run/js/peerPost.js::post';
     const END = 'spirit/run/js/presenceNode.js';
     // Since h. make takes paths and suites as well (a request is exact: every key, every time).
+    const head0 = headOf();
     const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END, paths: [], suites: [] }, ANDY);
+    const headMade = headOf();
     const mf = made.id ? await factsOf(made.id) : null;
     const mb = made.id ? await call('item.box', { id: made.id }, ANDY) : {};
     if (mf && mf.goal === GOAL) test.check('the item ' + made.id + ' is in the plugin\'s goal');
@@ -350,11 +397,30 @@ function clickTab(el, tab) {
     if (Array.isArray(listAfter) && listAfter.length === 1) test.check('a refused make adds nothing to the list');
     else test.fail(OWED + 'after the refusals the list reads ' + short(listAfter));
 
+    test.subHeading('j. the plugin commits its own list, and pushes');
+    const c1 = lastCommit();
+    if (headOf() !== head0 && /^plugin\/stackFrameChecks: /.test(c1.subject) && JSON.stringify(c1.files) === '["stackFrameList.json"]') test.check('make committed the list alone: "' + c1.subject + '"');
+    else test.fail(OWED + 'after make the work tree\'s last commit is ' + short(c1) + (headOf() === head0 ? ' (HEAD did not move)' : ''));
+    if (remoteHead() === headOf()) test.check('and pushed it: the remote holds the same commit');
+    else test.fail(OWED + 'the remote holds ' + short(remoteHead()) + ', the work tree ' + short(headOf()));
+    if (/push/i.test(String(made.commit || '')) && !/fail|not/i.test(String(made.commit || ''))) test.check('make\'s reply says it: ' + made.commit);
+    else test.fail(OWED + 'make\'s reply carries no commit line: ' + short(made));
+    if (headOf() === headMade) test.check('the refused makes committed nothing');
+    else test.fail(OWED + 'a refused make moved HEAD');
+
     test.subHeading('h. the plugin runs the show: add, update, remove, run, runState, stop');
-    const RUNVERBS = ['stackFrameChecks.update', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.stop'];
+    const RUNVERBS = ['stackFrameChecks.update', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState'];
     const missing = RUNVERBS.filter(function (v) { return !tree[v]; });
     if (!missing.length) test.check('desk declares ' + RUNVERBS.join(', '));
     else test.fail(OWED + 'desk declares none of ' + short(missing));
+    // ERADICATED (goal/G22.3, "it means this app here should launch the run through deskVerify"): the plugin's own
+    // stop, its runner, its runs.json. deskVerify's Stop ends a door run as it ends any run.
+    if (!tree['stackFrameChecks.stop']) test.check('the plugin has no stop verb of its own any more: deskVerify\'s Stop ends the run');
+    else test.fail(OWED + 'desk still declares stackFrameChecks.stop');
+    const pluginSrc = fs.readFileSync(PLUGIN_JS, 'utf8');
+    const spawnLeft = ['SPIRIT_STACKS_DOOR', 'SPIRIT_STACKS_VERDICT', 'SPIRIT_STACKS_LIST', 'stackFrameRunner', 'runs.json', 'RUNNER'].filter(function (w) { return pluginSrc.indexOf(w) !== -1; });
+    if (!spawnLeft.length) test.check('the plugin no longer spawns the runner: its source names no runner, no SPIRIT_STACKS_ value and no runs.json');
+    else test.fail(OWED + 'the plugin\'s source still holds ' + short(spawnLeft));
     const idA = door && typeof door.id === 'string' && door.id ? door.id : '';
     if (idA) test.check('the made door carries a stable id in the list: ' + idA);
     else test.fail(OWED + 'the made door carries no id: ' + short(door));
@@ -394,51 +460,50 @@ function clickTab(el, tab) {
     if (why(upSuite) && /nopeSuite/.test(why(upSuite))) test.check('update with a suite that is not there is refused: ' + why(upSuite));
     else test.fail(OWED + 'update with a missing suite answered ' + short(upSuite));
 
-    // run: answers at once; a second run refused; runState; the verdict; the tail.
+    // run: asks deskVerify door.run and answers at once; runState and the verdict come from deskVerify's door.state.
     const t0 = Date.now();
     const run1 = await call('stackFrameChecks.run', { id: idA }, ANDY);
     const took = Date.now() - t0;
-    if (run1.started === true && typeof run1.runId === 'string' && run1.runId && took < 1200) test.check('run answers at once (' + took + ' ms): started, runId ' + run1.runId);
+    if (run1.queued === true && took < 1200) test.check('run answers at once (' + took + ' ms): queued with deskVerify');
     else test.fail(OWED + 'run answered ' + short(run1) + ' in ' + took + ' ms');
-    const run2 = await call('stackFrameChecks.run', { id: idA }, ANDY);
-    if (!run2.started && why(run2) && /running|under way/.test(why(run2))) test.check('a second run of the same door while one runs is refused: ' + why(run2));
-    else test.fail(OWED + 'a second run answered ' + short(run2));
+    if (verifyAsks.some(function (x) { return x[0] === 'door.run' && x[1] && x[1].id === idA; })) test.check('the run went to the node\'s deskVerify as door.run {id: ' + idA + '}');
+    else test.fail(OWED + 'deskVerify was asked ' + short(verifyAsks));
+    if (/deskVerify/.test(String(run1.said || '')) && /Verifier/.test(String(run1.said || ''))) test.check('its reply says the run went to deskVerify and points to the Verifier tab: ' + run1.said);
+    else test.fail(OWED + 'run\'s reply says nothing of deskVerify and its tab: ' + short(run1));
     const st1 = await call('stackFrameChecks.runState', { id: idA }, A);
-    if (st1.running === true && st1.startedAt && !st1.endedAt) test.check('runState reports it running since ' + st1.startedAt);
+    if (st1.running === true && st1.startedAt && !st1.endedAt) test.check('runState, read from deskVerify, reports it running since ' + st1.startedAt);
     else test.fail(OWED + 'runState while running answered ' + short(st1));
+    if (verifyAsks.some(function (x) { return x[0] === 'door.state' && x[1] && x[1].id === idA; })) test.check('runState asked deskVerify door.state');
+    else test.fail(OWED + 'runState asked deskVerify nothing: ' + short(verifyAsks));
+    const upRunning = await call('stackFrameChecks.update', Object.assign({ id: idA, gate: GATE, endpoint: END, paths: [], suites: ['deskServer.js'] }), ANDY);
+    if (why(upRunning) && /deskVerify|running|under way/.test(why(upRunning))) test.check('a door whose run is under way in deskVerify is not changed: ' + why(upRunning));
+    else test.fail(OWED + 'update during the run answered ' + short(upRunning));
     let st2 = {};
     for (let i = 0; i < 40; i++) { await sleep(250); st2 = await call('stackFrameChecks.runState', { id: idA }, A); if (st2.running === false && st2.endedAt) break; }
     const v = st2.verdict || {};
     if (st2.running === false && st2.endedAt && v.ran === true && v.green === false && v.around === 2 && v.of === 5 && Array.isArray(v.paths) && v.paths.length === 2) {
-      test.check('runState then reports the verdict: red, 2 path(s) around the gate of 5, each path given');
+      test.check('runState then reports deskVerify\'s verdict: red, 2 path(s) around the gate of 5, each path given');
     } else test.fail(OWED + 'runState after the run answered ' + short(st2));
-    if (/scratch runner on door /.test(String(st2.tail || '')) && String(st2.tail).indexOf('door ' + idA) !== -1 && String(st2.tail).indexOf(listFile) !== -1) {
-      test.check('its tail holds the runner\'s output: it was handed the door\'s id and the plugin\'s list');
-    } else test.fail(OWED + 'the run\'s tail reads ' + short(st2.tail));
-    if (reports.some(function (b) { return /"plugin":"stackFrameChecks"/.test(b) && b.indexOf(idA) !== -1; })) test.check('the run was published, so the UI updates live');
-    else test.fail(OWED + 'nothing was published naming the plugin and ' + idA);
+    if (Array.isArray(v.violators)) test.check('with the violator lines the plugin formats from deskVerify\'s paths');
+    else test.fail(OWED + 'the verdict carries no violator lines: ' + short(v));
     const kept = path.join(state, 'plugins', 'stackFrameChecks');
     let keptFiles = [];
     try { keptFiles = fs.readdirSync(kept); } catch (e) { keptFiles = []; }
-    if (keptFiles.some(function (f) { return /\.json$/.test(f) && fs.readFileSync(path.join(kept, f), 'utf8').indexOf(idA) !== -1; })) test.check('the last verdict is kept in the plugin\'s own folder under the desk\'s --state: ' + short(keptFiles));
-    else test.fail(OWED + 'no file under ' + kept + ' holds the run of ' + idA + ': ' + short(keptFiles));
+    if (!keptFiles.some(function (f) { return /^runs\.json$|^verdict-/.test(f); })) test.check('the plugin keeps no run of its own under the desk\'s --state: the run is deskVerify\'s');
+    else test.fail(OWED + 'the plugin still keeps runs: ' + short(keptFiles));
     const dA = ((await call('stackFrameChecks.doors', {}, A)).doors || []).filter(function (x) { return x.id === idA; })[0];
-    if (dA && dA.last && dA.last.ran === true && dA.last.around === 2 && dA.last.of === 5 && dA.last.green === false) test.check('the door list carries the last verdict');
+    if (dA && dA.last && dA.last.ran === true && dA.last.around === 2 && dA.last.of === 5 && dA.last.green === false) test.check('the door list carries deskVerify\'s last verdict');
     else test.fail(OWED + 'the door read back after its run: ' + short(dA));
 
-    // stop: the run under way stops; stop with nothing running is refused.
+    // The other door runs too, through deskVerify; an unknown door is refused before deskVerify is asked.
     const run3 = await call('stackFrameChecks.run', { id: idB }, ANDY);
-    await sleep(200);
-    const stop = await call('stackFrameChecks.stop', { id: idB }, ANDY);
     let st3 = {};
-    for (let i = 0; i < 20; i++) { await sleep(150); st3 = await call('stackFrameChecks.runState', { id: idB }, A); if (st3.running === false) break; }
-    if (run3.started && stop.stopped === true && st3.running === false && st3.stopped === true && st3.endedAt) test.check('stop ends the run under way, and runState says it was stopped');
-    else test.fail(OWED + 'run ' + short(run3) + ', stop ' + short(stop) + ', then runState ' + short(st3));
-    const stopIdle = await call('stackFrameChecks.stop', { id: idB }, ANDY);
-    if (!stopIdle.stopped && why(stopIdle)) test.check('stop with nothing running is refused: ' + why(stopIdle));
-    else test.fail(OWED + 'stop with nothing running answered ' + short(stopIdle));
+    for (let i = 0; i < 40; i++) { await sleep(250); st3 = await call('stackFrameChecks.runState', { id: idB }, A); if (st3.running === false && st3.endedAt) break; }
+    if (run3.queued === true && st3.verdict && st3.verdict.ran === true) test.check('door ' + idB + ' ran through deskVerify too');
+    else test.fail(OWED + 'run of ' + idB + ' answered ' + short(run3) + ', then runState ' + short(st3));
+    const asksBefore = verifyAsks.length;
     const runUnknown = await call('stackFrameChecks.run', { id: 'noSuchDoor' }, ANDY);
-    if (!runUnknown.started && why(runUnknown)) test.check('run of an unknown door is refused: ' + why(runUnknown));
+    if (!runUnknown.queued && why(runUnknown) && !verifyAsks.slice(asksBefore).some(function (x) { return x[0] === 'door.run'; })) test.check('run of an unknown door is refused, and deskVerify is not asked: ' + why(runUnknown));
     else test.fail(OWED + 'run of an unknown door answered ' + short(runUnknown));
 
     // update lands and clears the door's last verdict; the other door keeps its own.
@@ -450,9 +515,34 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'update answered ' + short(upOk) + ', the door reads ' + short(dB2));
     if (dB2 && dB2.last && dB2.last.ran === false && dA2 && dA2.last && dA2.last.ran === true) test.check('an updated door\'s last verdict is cleared; the other door keeps its own');
     else test.fail(OWED + 'after the update the last runs read ' + short([dB2 && dB2.last, dA2 && dA2.last]));
+    const cUp = lastCommit();
+    if (/^plugin\/stackFrameChecks: /.test(cUp.subject) && /update|chang/i.test(cUp.subject) && JSON.stringify(cUp.files) === '["stackFrameList.json"]' && remoteHead() === headOf()) test.check('j. update committed the list alone and pushed it: "' + cUp.subject + '"');
+    else test.fail(OWED + 'after update the last commit is ' + short(cUp) + ', remote ' + (remoteHead() === headOf() ? 'level' : 'behind'));
 
-    // remove: strikes the door; an unknown one refused.
+    // j. OTHER STAGED CHANGES: the plugin refuses to commit, and says so; what was staged stays staged.
+    fs.writeFileSync(path.join(work, 'README.md'), 'somebody else\'s staged change\n');
+    gitIn(work, ['add', 'README.md']);
+    const headStaged = headOf();
+    const upStaged = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { suites: ['deskServer.js'] }), ANDY);
+    const stagedNow = String(gitIn(work, ['diff', '--cached', '--name-only']).stdout || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!why(upStaged) && headOf() === headStaged && /staged/i.test(String(upStaged.commit || '')) && /not committed/i.test(String(upStaged.commit || ''))) test.check('with other changes staged the update lands but nothing is committed, and the reply says why: ' + upStaged.commit);
+    else test.fail(OWED + 'update with README.md staged answered ' + short(upStaged) + (headOf() === headStaged ? '' : '; HEAD moved'));
+    if (stagedNow.indexOf('README.md') !== -1 && stagedNow.indexOf('stackFrameList.json') === -1) test.check('README.md stays staged, and the list was not added');
+    else test.fail(OWED + 'staged after the refusal: ' + short(stagedNow));
+    gitIn(work, ['reset', '-q', '--', 'README.md']);
+    gitIn(work, ['checkout', '--', 'README.md']);
+
+    // remove: strikes the door; an unknown one refused. j. With its remote gone the push fails: said, the commit kept.
+    const gone = path.join(scratch, 'remote.gone');
+    fs.renameSync(remote, gone);
+    const headRm = headOf();
     const rm = await call('stackFrameChecks.remove', { id: idB }, ANDY);
+    fs.renameSync(gone, remote);
+    const cRm = lastCommit();
+    if (headOf() !== headRm && /^plugin\/stackFrameChecks: /.test(cRm.subject) && /remov/i.test(cRm.subject) && JSON.stringify(cRm.files) === '["stackFrameList.json"]') test.check('j. remove committed the list alone, locally: "' + cRm.subject + '"');
+    else test.fail(OWED + 'after remove the last commit is ' + short(cRm) + (headOf() === headRm ? ' (HEAD did not move)' : ''));
+    if (/push/i.test(String(rm.commit || '')) && /fail|not/i.test(String(rm.commit || '')) && remoteHead() !== headOf()) test.check('a push that fails is said in the reply, and the commit stays local: ' + rm.commit);
+    else test.fail(OWED + 'remove with the remote gone answered ' + short(rm) + '; remote ' + (remoteHead() === headOf() ? 'level' : 'behind'));
     let listRm = null;
     try { listRm = JSON.parse(fs.readFileSync(listFile, 'utf8')); } catch (e) { listRm = null; }
     if (!why(rm) && Array.isArray(listRm) && !listRm.some(function (x) { return x.id === idB; }) && listRm.some(function (x) { return x.id === idA; })) test.check('remove strikes the door ' + idB + ' from the list, the other stays');
@@ -554,6 +644,9 @@ function clickTab(el, tab) {
     const pane = doc.all['desk-app-stackFrameChecks'];
     if (pane && /id="sfc-gate"/.test(pane.innerHTML) && /id="sfc-make"/.test(pane.innerHTML)) test.check('its private UI is opened in its own pane, #desk-app-stackFrameChecks');
     else test.fail(OWED + 'no #desk-app-stackFrameChecks holding the plugin\'s UI: ' + short(pane && pane.innerHTML));
+    // goal/G22.3: the run is deskVerify's, so the Stacks UI listens to deskVerify's stream too, through the face's ctx.
+    if (doc.servers.slice(subsBefore).indexOf('deskVerify') !== -1) test.check('the Stacks UI subscribes to deskVerify\'s stream through the face, so a door\'s run shows as it ends');
+    else test.fail(OWED + 'the Stacks UI subscribed to ' + short(doc.servers.slice(subsBefore)) + ', not deskVerify');
     if (doc.published.length > subsBefore) {
       doc.asked.length = 0;
       doc.published.slice(subsBefore).forEach(function (fn) { fn({ change: 7001, verb: 'stackFrameChecks.make', rows: [{ id: GOAL + '.2', goal: GOAL, title: 'x' }] }); });
@@ -641,11 +734,10 @@ function clickTab(el, tab) {
     ui.open(box, { goal: GOAL, ask: function (verb, a) {
       asked.push([verb, a]);
       if (verb === 'stackFrameChecks.doors') return Promise.resolve({ doors: DOORS });
-      if (verb === 'stackFrameChecks.run') return Promise.resolve({ started: true, runId: 'r1' });
+      if (verb === 'stackFrameChecks.run') return Promise.resolve({ queued: true, said: 'queued with deskVerify; its output is in the Verifier tab\'s console' });
       if (verb === 'stackFrameChecks.runState') return Promise.resolve(runState);
-      if (verb === 'stackFrameChecks.stop') return Promise.resolve({ stopped: true });
       return Promise.resolve({ id: GOAL + '.2', change: 9, items: [], more: false });
-    }, onPublished: function (fn) { uiPublished.push(fn); return function () {}; } });
+    }, onPublished: function (fn, server) { uiPublished.push({ fn: fn, server: String(server || '') }); return function () {}; } });
     await sleep(20);
     const html = box.innerHTML;
     const inputs = html.match(/<input[^>]*>/g) || [];
@@ -778,9 +870,11 @@ function clickTab(el, tab) {
     if (dSays('gate') === 'one function, createPeerPost, in spirit/run/js/peerPost.js') test.check('the dialog\'s gate block reads what its value means, as typed: ' + dSays('gate'));
     else test.fail(OWED + 'the dialog\'s gate spirit/run/js/peerPost.js::createPeerPost reads ' + short(dSays('gate')));
     typedAs('sfc-d-gate', 'gate', DOORS[1].gate);
-    const dButtons = ['sfc-d-run', 'sfc-d-stop', 'sfc-d-save', 'sfc-d-remove', 'sfc-d-close'].map(function (id) { return (new RegExp('<button[^>]*id="' + id + '"[^>]*>').exec(dHtml) || [''])[0]; });
-    if (dButtons.every(function (b) { return b && /margin-right:1em/.test(b); }) && /margin-top:1em/.test((/<div[^>]*id="sfc-dialog-body"[^>]*>/.exec(dHtml) || /<div[^>]*>/.exec(dHtml) || [''])[0])) test.check('the dialog has Run, Stop, Save, Remove and Close, each 1em after itself, in a block with its leading 1em');
+    const dButtons = ['sfc-d-run', 'sfc-d-save', 'sfc-d-remove', 'sfc-d-close'].map(function (id) { return (new RegExp('<button[^>]*id="' + id + '"[^>]*>').exec(dHtml) || [''])[0]; });
+    if (dButtons.every(function (b) { return b && /margin-right:1em/.test(b); }) && /margin-top:1em/.test((/<div[^>]*id="sfc-dialog-body"[^>]*>/.exec(dHtml) || /<div[^>]*>/.exec(dHtml) || [''])[0])) test.check('the dialog has Run, Save, Remove and Close, each 1em after itself, in a block with its leading 1em');
     else test.fail(OWED + 'the dialog\'s buttons: ' + short(dButtons));
+    if (!/id="sfc-d-stop"/.test(dHtml)) test.check('and no Stop of its own: the run is deskVerify\'s, stopped from the Verifier tab');
+    else test.fail(OWED + 'the dialog still has its own Stop');
     if (asked.some(function (x) { return x[0] === 'stackFrameChecks.runState' && x[1].id === 'd2'; })) test.check('opening it reads the door\'s runState');
     else test.fail(OWED + 'Open asked ' + short(asked));
 
@@ -797,23 +891,26 @@ function clickTab(el, tab) {
     if (up && up[1].id === 'd2' && up[1].gate === 'spirit/run/js/peerPost.js::onRequest' && up[1].endpoint === 'node:http+https+fetch' && JSON.stringify(up[1].paths) === '["/api/relay/"]' && JSON.stringify(up[1].suites) === '["agentOnboard.js","serverSurface.js"]') test.check('Save sends update {id, gate, endpoint, paths, suites}');
     else test.fail(OWED + 'Save asked ' + short(asked));
 
-    // Run: running and elapsed, then the verdict and each path on its own line; Stop.
+    // Run: sent to deskVerify, said so with the way to its console; running and elapsed, then the verdict and each path.
     asked.length = 0;
     click('sfc-d-run');
     await sleep(30);
     if (asked.some(function (x) { return x[0] === 'stackFrameChecks.run' && x[1].id === 'd2'; })) test.check('Run sends run {id}');
     else test.fail(OWED + 'Run asked ' + short(asked));
+    const runNote = doc.getElementById('sfc-d-note').textContent;
+    if (/deskVerify/.test(runNote) && /Verifier/.test(runNote) && /console/.test(runNote)) test.check('the dialog says the run went to deskVerify and points to the Verifier tab\'s console: ' + runNote);
+    else test.fail(OWED + 'after Run the dialog\'s note reads ' + short(runNote));
     const runEl = doc.getElementById('sfc-d-state');
     if (/running/.test(runEl.innerHTML) && /\d+ s/.test(runEl.innerHTML)) test.check('the dialog shows the run under way and its elapsed time: ' + short(runEl.innerHTML));
     else test.fail(OWED + 'while running the dialog shows ' + short(runEl.innerHTML));
-    asked.length = 0;
-    click('sfc-d-stop');
-    await sleep(20);
-    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.stop' && x[1].id === 'd2'; })) test.check('Stop sends stop {id}');
-    else test.fail(OWED + 'Stop asked ' + short(asked));
-    runState = { id: 'd2', running: false, startedAt: new Date(Date.now() - 9000).toISOString(), endedAt: new Date().toISOString(), stopped: false, tail: 'the last lines',
+    runState = { id: 'd2', running: false, startedAt: new Date(Date.now() - 9000).toISOString(), endedAt: new Date().toISOString(), stopped: false,
       verdict: { ran: true, green: false, around: 2, of: 7, paths: ['POST /api/relay/post from spirit/run/js/hub.js:5:post', 'GET /api/relay/key from spirit/run/js/offboard.js:9:main'], why: '' } };
-    uiPublished.forEach(function (fn) { fn({ plugin: 'stackFrameChecks', data: { id: 'd2', running: false } }); });
+    // The end is heard on deskVerify's stream: its run goes idle.
+    const fromVerify = uiPublished.filter(function (s) { return s.server === 'deskVerify'; });
+    if (fromVerify.length) test.check('the UI subscribed to deskVerify\'s stream itself');
+    else test.fail(OWED + 'the UI subscribed only to ' + short(uiPublished.map(function (s) { return s.server; })));
+    asked.length = 0;
+    fromVerify.forEach(function (s) { s.fn({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle, nothing running', since: new Date().toISOString(), stopAsked: false }); });
     await sleep(30);
     const vHtml = runEl.innerHTML;
     const pathLines = vHtml.match(/<div class="sfc-path"[^>]*>[^<]*<\/div>/g) || [];

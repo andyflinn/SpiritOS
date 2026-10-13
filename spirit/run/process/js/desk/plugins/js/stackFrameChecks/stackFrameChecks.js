@@ -20,14 +20,32 @@
 // toolset. add/remove rows (add with validation) and you will give me a run button/link for each one of them, or even
 // better, a run-dialog", "with a way to modify a row as well.", and "put that in the dialog if you want." So the list
 // is maintained here, every door under a stable id: make adds (paths and suites with it), update changes a door in
-// place under the same rules and clears its last verdict (it no longer describes the door), remove strikes it. run
-// starts one door's check at once and never blocks the desk; runState reads it; stop ends it, killing only the child
-// this plugin spawned. One run at a time per door. The last verdict per door is kept in this plugin's own folder under
-// the desk's --state (desk.stateDir: never in git), and every change is published for the UI.
+// place under the same rules and clears its last verdict (it no longer describes the door), remove strikes it.
+//
+// ── EVERY RUN IS deskVerify's (goal/G22.3) ──────────────────────────
+//
+// DECIDED BY ANDY, 2026-10-13, in goal/G22.3's box, not this file's to take back: "every run here should report to
+// deskVerify.", and of the Verifier tab's console: "If it's solved there, every run even the ones from Stack, already
+// would have output. it means this app here should launch the run through deskVerify." So run asks this node's
+// deskVerify door.run {id} and answers at once; deskVerify queues it with its other checks, one at a time, keeps its
+// row, its records and its verdict, shows its output in its console, and its Stop ends it. runState and each door's
+// last verdict are read from deskVerify's door.state. This plugin spawns no runner, kills nothing and keeps no runs:
+// what it keeps under the desk's --state (desk.stateDir: never in git) is only when each door last changed, so a
+// verdict older than its door's change reads as cleared.
+//
+// ── IT COMMITS ITS OWN LIST (goal/G22.3) ────────────────────────────
+//
+// DECIDED BY ANDY, 2026-10-13: "the commit function has to be there. it belongs to committing reds." After make, update
+// or remove writes the list, the plugin commits that one file in the repo it lives in, "plugin/stackFrameChecks: <what
+// changed>", and pushes it with pushOrigin, as deskVerify's idle chores publish under their standing grant
+// (publishData: add the one file, commit --only that file, pushOrigin). With other changes staged in that repo it does
+// not commit, and says so; a push that fails is said in the reply and the commit stays local. Git is spawned and
+// awaited, never spawnSync, so the desk answers while it runs; the only children this file spawns are git and
+// pushOrigin, and the only one it ever kills is a pushOrigin of its own past PUSH_MS.
 //
 // What the desk hands it (process/js/desk/desk.js, MOUNTING THE PLUGINS): its goal's key, the desk's writes (as the
-// desk, or as the caller), the field rules, the id minting, its state folder and publish. What it gives back: refuses,
-// handles and its verbs.
+// desk, or as the caller), the field rules, the id minting, its state folder, publish, and verify (one verb of this
+// node's deskVerify). What it gives back: refuses, handles and its verbs.
 
 const fs = require('fs');
 const path = require('path');
@@ -55,11 +73,13 @@ const ITEMS_TEST = 'spirit/test/stackFrameTestItems.js';
 //   item      the desk item that asked for it
 //
 // THE LIST'S HOME IS ONE CONSTANT HERE, LIST_HOME, and one in spirit/test/tools/wirePaths.js, LIST: moving the list is
-// those two lines. A run hands the list it used to the runner as SPIRIT_STACKS_LIST, so the two never disagree in a run.
+// those two lines. deskVerify runs the stack-frame suite of the checkout it measures, which reads the list of that
+// checkout: on his node the desk and deskVerify run from the same clone, so the list run is this list.
 //
-// A SUITE NAMES A SCRATCH LIST in the suite-only value stackFrameList, and a scratch runner in stackFrameRunner (as it
-// names pluginsMore), read from the desk's own first argument, the manifest's values as the node hands them: a suite
-// never writes the tree's list, and never runs the probe through this plugin.
+// A SUITE NAMES A SCRATCH LIST in the suite-only value stackFrameList (as it names pluginsMore), read from the desk's own
+// first argument, the manifest's values as the node hands them: a suite never writes the tree's list. The list is
+// committed in the repo it lives in, so a suite puts its scratch list in a scratch work tree and nothing it does is
+// committed to a real repo.
 const RUN = path.resolve(__dirname, '..', '..', '..', '..', '..', '..');
 const REPO = path.resolve(RUN, '..', '..');
 const SUITES_DIR = path.join(REPO, 'spirit', 'test');
@@ -68,9 +88,8 @@ const VALUES = (function () {
   try { return JSON.parse(process.argv[2] || '{}') || {}; } catch (e) { return {}; }
 }());
 const LIST = VALUES.stackFrameList ? path.resolve(String(VALUES.stackFrameList)) : LIST_HOME;
-// THE RUNNER: oneDoorStacks.js in its one-door mode (SPIRIT_STACKS_DOOR names the door, SPIRIT_STACKS_VERDICT the file
-// its verdict is written to), or a suite's scratch runner.
-const RUNNER = VALUES.stackFrameRunner ? path.resolve(String(VALUES.stackFrameRunner)) : path.join(REPO, RERUN_TEST);
+const PUSH_ORIGIN = path.join(RUN, 'process', 'js', 'pushOrigin', 'pushOrigin.js');
+const PUSH_MS = 3 * 60 * 1000;
 const FILE_RE = /^spirit\/run\/((?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.js)$/;
 const GATE_RE = /^(spirit\/run\/(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.js)::([A-Za-z_$][A-Za-z0-9_$]*)$/;
 const SUITE_RE = /^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/;
@@ -79,15 +98,13 @@ const NODE_KINDS = ['http', 'https', 'fetch'];
 const FORM_MAX = 256;
 const PATHS_MAX = 16;
 const SUITES_MAX = 32;
-// What one answer may carry (appClient.ANSWER_MAX is 8377 bytes): a run's tail, its violator lines and its raw paths
-// around the gate, each cut to fit by BYTES (Andy's rule, 2026-10-10: every size check in bytes); what is left out is
-// counted in violatorsLeft and pathsLeft, and the whole list stays in the runs file. Since the violator lines
+// What one answer may carry (appClient.ANSWER_MAX is 8377 bytes): its violator lines and its raw paths around the gate,
+// each cut to fit by BYTES (Andy's rule, 2026-10-10: every size check in bytes); what is left out is counted in
+// violatorsLeft and pathsLeft, the paths deskVerify kept but did not send among them. Since the violator lines
 // (goal/G22.3) the raw paths give them 2000 of their 5000.
-const TAIL_BYTES = 1500;
 const PATH_BYTES = 300;
 const PATHS_BYTES = 3000;
 const VIOLATORS_BYTES = 2000;
-const KEPT_PATHS = 500;
 // THE RUN AS ANDY READS IT (goal/G22.3): one line per violator, "hub.js:300 sealedClaim (from handleClaim) ---> GET
 // /api/relay/key, bypassing createPeerPost". Andy, 2026-10-13: "much better, gimme that when i press run:". The rule
 // is violators.js's header.
@@ -193,6 +210,69 @@ function doorOf(desk, a, list, except) {
   return out;
 }
 
+// ── THE COMMIT OF THE LIST (goal/G22.3, Andy: "the commit function has to be there.") ──────────────────────────
+// Git spawned and awaited in the list's own folder, so the desk keeps answering; its answer { status, out }.
+function gitIn(dir, args) {
+  return new Promise(function (resolve) {
+    let kid = null;
+    const out = [];
+    try { kid = spawn('git', args, { cwd: dir, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { resolve({ status: 1, out: String((e && e.message) || e) }); return; }
+    kid.stdout.on('data', function (d) { out.push(String(d)); });
+    kid.stderr.on('data', function (d) { out.push(String(d)); });
+    kid.on('error', function (e) { resolve({ status: 1, out: String((e && e.message) || e) }); });
+    kid.on('close', function (code) { resolve({ status: code, out: out.join('') }); });
+  });
+}
+function firstLine(s) { return String(s || '').trim().split('\n')[0].trim().slice(0, 300); }
+// pushOrigin as its own process (it is runnable so, and its git is spawnSync, which would freeze the desk if it were
+// required here): it rebases onto origin's newest and pushes, retrying a race. Killed past PUSH_MS, the only kill here.
+function pushRepo(repo) {
+  return new Promise(function (resolve) {
+    let kid = null;
+    const out = [];
+    try { kid = spawn(process.execPath, [PUSH_ORIGIN, JSON.stringify({ repo: repo })], { cwd: repo, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); } catch (e) { resolve({ ok: false, reason: String((e && e.message) || e) }); return; }
+    const timer = setTimeout(function () { try { kid.kill(); } catch (e) { /* gone */ } }, PUSH_MS);
+    kid.stdout.on('data', function (d) { out.push(String(d)); });
+    kid.stderr.on('data', function (d) { out.push(String(d)); });
+    kid.on('error', function (e) { clearTimeout(timer); resolve({ ok: false, reason: String((e && e.message) || e) }); });
+    kid.on('close', function (code) {
+      clearTimeout(timer);
+      resolve(code === 0 ? { ok: true } : { ok: false, reason: firstLine(out.join('').replace(/^pushOrigin:\s*/, '')) || 'pushOrigin exited ' + code });
+    });
+  });
+}
+// The list file alone, committed and pushed; the answer is one line for the reply, saying what happened.
+async function commitList(what) {
+  const dir = path.dirname(LIST);
+  const name = path.basename(LIST);
+  const prefix = await gitIn(dir, ['rev-parse', '--show-prefix']);
+  if (prefix.status !== 0) return 'not committed: the list is in no git repo (' + firstLine(prefix.out) + ')';
+  const full = String(prefix.out).trim() + name;
+  const staged = String((await gitIn(dir, ['diff', '--cached', '--name-only'])).out).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  const others = staged.filter(function (f) { return f !== full; });
+  if (others.length) return 'not committed: other changes are staged in the repo (' + others.slice(0, 3).join(', ') + (others.length > 3 ? ' and ' + (others.length - 3) + ' more' : '') + '), and the list is committed only alone';
+  const added = await gitIn(dir, ['add', '--', name]);
+  if (added.status !== 0) return 'not committed: git add refused it: ' + firstLine(added.out);
+  if ((await gitIn(dir, ['diff', '--cached', '--quiet', '--', name])).status === 0) return 'nothing to commit: the list is as the repo holds it';
+  const made = await gitIn(dir, ['commit', '-q', '--only', '-m', 'plugin/stackFrameChecks: ' + what, '--', name]);
+  if (made.status !== 0) {
+    // Taken off the index again, so a refused commit leaves nothing staged behind it.
+    await gitIn(dir, ['reset', '-q', '--', name]);
+    return 'not committed: the commit was refused: ' + firstLine(made.out);
+  }
+  const hash = firstLine((await gitIn(dir, ['rev-parse', '--short', 'HEAD'])).out);
+  const top = firstLine((await gitIn(dir, ['rev-parse', '--show-toplevel'])).out);
+  const pushed = await pushRepo(top);
+  return pushed.ok ? 'committed ' + hash + ' and pushed it' : 'committed ' + hash + ' locally; the push failed, so it is not pushed: ' + pushed.reason;
+}
+// One commit at a time: two quick changes never share git's index.
+let committing = Promise.resolve();
+function commitOne(what) {
+  const next = committing.then(function () { return commitList(what); }, function () { return commitList(what); });
+  committing = next.catch(function () { /* said in its reply */ });
+  return next.catch(function (e) { return 'not committed: ' + ((e && e.message) || e); });
+}
+
 module.exports = function (desk) {
   const goal = desk.goal;
   // THE RERUN ITEM, under a fixed id: the first item of its goal, made on the first mount, found by its id after.
@@ -207,36 +287,30 @@ module.exports = function (desk) {
       '- Its file list is ' + RERUN_TEST + ' alone.' });
   }
 
-  // ── THE RUNS, AND THE LAST VERDICT PER DOOR (goal/G22.3) ──────────
+  // ── WHEN EACH DOOR LAST CHANGED (goal/G22.3) ──────────────────────
   //
-  // Kept in runs.json in the plugin's own folder under the desk's --state, { <door id>: { runId, startedAt, endedAt,
-  // stopped, exit, verdict, tail } }, written whole at each start and end. A run the desk did not see end (it stopped
-  // or was killed while one ran) reads as ended with that said, never as running. live holds the children this process
-  // spawned, by door: stop kills that child and nothing else.
+  // The run and its verdict are deskVerify's; what the plugin keeps, in changed.json in its own folder under the desk's
+  // --state, is when each door was made, changed or struck. A verdict deskVerify started before that describes another
+  // door (Andy's "with a way to modify a row as well": a changed door's last verdict is cleared), and an id struck and
+  // minted again names a new door.
   const STATE_DIR = String(desk.stateDir || '');
-  const RUNS = STATE_DIR ? path.join(STATE_DIR, 'runs.json') : '';
-  const live = Object.create(null);
-  let runs = Object.create(null);
-  try { runs = Object.assign(Object.create(null), JSON.parse(fs.readFileSync(RUNS, 'utf8'))); } catch (e) { runs = Object.create(null); }
-  Object.keys(runs).forEach(function (id) {
-    const r = runs[id];
-    if (r && !r.endedAt) { r.endedAt = new Date().toISOString(); r.verdict = { ran: false, green: false, around: 0, of: 0, paths: [], why: 'the desk stopped while it ran' }; }
-  });
-  function saveRuns() {
-    if (!RUNS) return;
+  const CHANGED = STATE_DIR ? path.join(STATE_DIR, 'changed.json') : '';
+  let changed = Object.create(null);
+  try { changed = Object.assign(Object.create(null), JSON.parse(fs.readFileSync(CHANGED, 'utf8'))); } catch (e) { changed = Object.create(null); }
+  function markChanged(id) {
+    changed[id] = new Date().toISOString();
+    if (!CHANGED) return;
     try {
       fs.mkdirSync(STATE_DIR, { recursive: true });
-      const tmp = RUNS + '.' + process.pid + '.tmp';
-      fs.writeFileSync(tmp, JSON.stringify(runs, null, 2) + '\n');
-      fs.renameSync(tmp, RUNS);
-    } catch (e) { console.error('stackFrameChecks: the runs could not be kept: ' + ((e && e.message) || e)); }
+      const tmp = CHANGED + '.' + process.pid + '.tmp';
+      fs.writeFileSync(tmp, JSON.stringify(changed, null, 2) + '\n');
+      fs.renameSync(tmp, CHANGED);
+    } catch (e) { console.error('stackFrameChecks: when the door changed could not be kept: ' + ((e && e.message) || e)); }
   }
-  // Said on the desk's stream (desk.publish wraps it as { plugin, data }); the UI reads the doors and the run again.
+  // Said on the desk's stream (desk.publish wraps it as { plugin, data }); the UI reads the doors again.
   function say(what, id) {
-    if (typeof desk.publish === 'function') desk.publish({ what: what, id: String(id || ''), running: !!live[id] });
+    if (typeof desk.publish === 'function') desk.publish({ what: what, id: String(id || '') });
   }
-  // A child this process spawned, killed when the desk exits, so no run outlives the desk that started it.
-  process.on('exit', function () { Object.keys(live).forEach(function (id) { try { live[id].child.kill(); } catch (e) { /* gone */ } }); });
 
   function noVerdict(why) { return { ran: false, green: false, around: 0, of: 0, paths: [], why: why }; }
   // As many of a list as fit total bytes, each cut to one bytes.
@@ -264,25 +338,42 @@ module.exports = function (desk) {
     const paths = fit(all, PATH_BYTES, PATHS_BYTES);
     return { ran: !!v.ran, green: !!v.green, around: Number(v.around) || 0, of: Number(v.of) || 0,
       violators: said, violatorsLeft: lines.length - said.length, paths: paths,
-      pathsLeft: all.length - paths.length, why: String(v.why || '') };
+      pathsLeft: all.length - paths.length + (Number(v.pathsLeft) || 0), why: String(v.why || '') };
+  }
+  // A door's newest run as deskVerify keeps it (door.state), a verdict older than the door's last change read as none.
+  // deskVerify not answering is said in the verdict's why, never as a run.
+  function stateOf(id) {
+    const ask = typeof desk.verify === 'function' ? desk.verify('door.state', { id: id }) : Promise.reject(new Error('this desk hands its plugins no deskVerify'));
+    return ask.then(function (k) {
+      const s = { running: k.running === true, queued: k.queued === true, ran: k.ran === true, green: k.green === true,
+        around: Number(k.around) || 0, of: Number(k.of) || 0, paths: Array.isArray(k.paths) ? k.paths.map(String) : [],
+        pathsLeft: Number(k.pathsLeft) || 0, why: String(k.why || ''), startedAt: String(k.startedAt || ''),
+        endedAt: String(k.endedAt || ''), stopped: k.stopped === true, commit: String(k.commit || '') };
+      if (!s.running && !s.queued && changed[id] && s.startedAt && s.startedAt < changed[id]) {
+        return Object.assign(s, noVerdict('the door changed after its last run'), { startedAt: '', endedAt: '', stopped: false, commit: '', pathsLeft: 0 });
+      }
+      return s;
+    }, function (e) {
+      return Object.assign({ running: false, queued: false, startedAt: '', endedAt: '', stopped: false, commit: '', pathsLeft: 0 },
+        noVerdict('deskVerify does not answer: ' + ((e && e.message) || e)));
+    });
   }
   function lastOf(id) {
-    const r = runs[id];
-    const v = r && r.verdict ? r.verdict : null;
-    return { running: !!live[id], ran: !!(v && v.ran), green: !!(v && v.green), around: v ? Number(v.around) || 0 : 0,
-      of: v ? Number(v.of) || 0 : 0, startedAt: r ? String(r.startedAt || '') : '', endedAt: r ? String(r.endedAt || '') : '',
-      stopped: !!(r && r.stopped) };
-  }
-  function tailOf(buf) {
-    return buf.length > TAIL_BYTES ? buf.subarray(buf.length - TAIL_BYTES).toString('utf8') : buf.toString('utf8');
+    return stateOf(id).then(function (s) {
+      return { running: s.running, queued: s.queued, ran: s.ran, green: s.green, around: s.around, of: s.of,
+        startedAt: s.startedAt, endedAt: s.endedAt, stopped: s.stopped };
+    });
   }
   function doorById(list, id, what) {
     const d = list.filter(function (x) { return x.id === id; })[0];
     if (!d) throw desk.refused('bad-request', 'the list has no door ' + JSON.stringify(id) + (what ? ' to ' + what : ''));
     return d;
   }
+  // Refused while deskVerify runs the door or has it waiting: the run would describe a door that is not in the list.
   function notRunning(id, what) {
-    if (live[id]) throw desk.refused('bad-request', 'a run of door ' + id + ' is under way since ' + live[id].startedAt + ': stop it or let it end before you ' + what + ' it');
+    return stateOf(id).then(function (s) {
+      if (s.running || s.queued) throw desk.refused('bad-request', 'a run of door ' + id + ' is ' + (s.running ? 'under way' : 'waiting') + ' in deskVerify: stop it from the Verifier tab or let it end before you ' + what + ' it');
+    });
   }
 
   function refuses(verb, a, ids) {
@@ -342,119 +433,80 @@ module.exports = function (desk) {
       '- Gate: ' + gate + ', one function. Endpoint: ' + on + (door.paths ? ', Node\'s own requests on those paths.' : ', the whole module: every function it exports, and what an exported factory returns.') + '\n' +
       '- The door is ' + doorId + ' in the plugin\'s list, stackFrameList.json, ' + (door.suites.length ? 'driven by ' + door.suites.join(', ') : 'with no suites yet: ' + RERUN_TEST + ' fails it as an empty run until an agent measures the suites that drive it and writes them in') + '.\n' +
       '- ' + ITEMS_TEST + ' reads the list: its test for this item asserts the door is there, gated by one file::function.\n' +
-      '- ' + RERUN_TEST + ' holds its verdict, and ' + rerun + ' reruns it; the Stacks tab runs it alone.\n' +
+      '- ' + RERUN_TEST + ' holds its verdict, and ' + rerun + ' reruns it; the Stacks tab runs it alone, through deskVerify.\n' +
       '- Made by the stackFrameChecks plugin from its dialog (goal/G22.3).' });
     // A goal/G22.2 item is a code item: its red is the entry in the test file, its build the row.
     const last = desk.write('press', { id: id, what: 'code' });
+    // A minted id names a new door: a verdict deskVerify kept under it before describes another (an id struck and
+    // minted again).
+    markChanged(doorId);
     say('list', doorId);
-    return { id: id, change: last.change };
+    return commitOne('door ' + doorId + ' added, ' + gate + ' -> ' + on + ', for ' + id).then(function (said) {
+      return { id: id, change: last.change, commit: said };
+    });
   }
 
   // A DOOR CHANGED IN PLACE, under the add's rules; its id and its item stay. Its last verdict is cleared: it no longer
-  // describes the door (Andy's "with a way to modify a row as well", 2026-10-13). Refused while it runs.
+  // describes the door (Andy's "with a way to modify a row as well", 2026-10-13). Refused while deskVerify runs it.
   function update(a) {
     const id = String(a.id || '');
-    const list = doorsWithIds();
-    const d = doorById(list, id, 'change');
-    notRunning(id, 'change');
-    const door = doorOf(desk, a, list, id);
-    d.gate = door.gate;
-    d.endpoint = door.endpoint;
-    d.suites = door.suites;
-    if (door.paths) d.paths = door.paths; else delete d.paths;
-    writeDoors(list);
-    delete runs[id];
-    saveRuns();
-    say('list', id);
-    return { id: id };
+    const first = doorsWithIds();
+    doorById(first, id, 'change');
+    doorOf(desk, a, first, id);
+    return notRunning(id, 'change').then(function () {
+      // Read again after the wait, so a write in between is not lost, and checked again against it.
+      const list = doorsWithIds();
+      const d = doorById(list, id, 'change');
+      const door = doorOf(desk, a, list, id);
+      d.gate = door.gate;
+      d.endpoint = door.endpoint;
+      d.suites = door.suites;
+      if (door.paths) d.paths = door.paths; else delete d.paths;
+      writeDoors(list);
+      markChanged(id);
+      say('list', id);
+      return commitOne('door ' + id + ' changed, ' + door.gate + ' -> ' + door.endpoint + (door.paths ? ' on ' + door.paths.join(', ') : '') +
+        (door.suites.length ? ', driven by ' + door.suites.join(', ') : ', no suites')).then(function (said) { return { id: id, commit: said }; });
+    });
   }
 
-  // A DOOR STRUCK FROM THE LIST, with its last verdict. Its item stays: it is the desk's record of the work asked.
+  // A DOOR STRUCK FROM THE LIST. Its item stays: it is the desk's record of the work asked.
   function remove(a) {
     const id = String(a.id || '');
-    const list = doorsWithIds();
-    doorById(list, id, 'remove');
-    notRunning(id, 'remove');
-    writeDoors(list.filter(function (x) { return x.id !== id; }));
-    delete runs[id];
-    saveRuns();
-    say('list', id);
-    return { id: id };
+    doorById(doorsWithIds(), id, 'remove');
+    return notRunning(id, 'remove').then(function () {
+      const list = doorsWithIds();
+      const d = doorById(list, id, 'remove');
+      writeDoors(list.filter(function (x) { return x.id !== id; }));
+      markChanged(id);
+      say('list', id);
+      return commitOne('door ' + id + ' removed, ' + d.gate + ' -> ' + d.endpoint).then(function (said) { return { id: id, commit: said }; });
+    });
   }
 
-  // ONE DOOR'S CHECK, STARTED AT ONCE: the runner is spawned and the answer goes back before it does anything. Its
-  // output is kept to a tail; its verdict is the file it writes, read when it ends.
+  // ONE DOOR'S CHECK, HANDED TO deskVerify (goal/G22.3, Andy: "every run here should report to deskVerify."): door.run,
+  // answered at once; deskVerify queues it, runs it, records it and shows its output in its console, and its Stop ends
+  // it. A door already waiting or running there is not queued twice.
   function run(a) {
     const id = String(a.id || '');
-    const list = doorsWithIds();
-    doorById(list, id, 'run');
-    notRunning(id, 'start a second run of');
-    if (!STATE_DIR) throw desk.refused('bad-request', 'the desk handed this plugin no state folder to keep its runs in');
-    if (!fs.existsSync(RUNNER)) throw desk.refused('bad-request', 'the runner ' + path.relative(REPO, RUNNER).replace(/\\/g, '/') + ' is not there: the stack-frame suites are not in this tree');
-    fs.mkdirSync(STATE_DIR, { recursive: true });
-    const startedAt = new Date().toISOString();
-    const runId = id + '-' + Date.now().toString(36);
-    const verdictFile = path.join(STATE_DIR, 'verdict-' + runId + '.json');
-    const child = spawn(process.execPath, [RUNNER], {
-      cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true,
-      env: Object.assign({}, process.env, { SPIRIT_STACKS_DOOR: id, SPIRIT_STACKS_VERDICT: verdictFile, SPIRIT_STACKS_LIST: LIST }),
-    });
-    const held = { child: child, runId: runId, startedAt: startedAt, out: Buffer.alloc(0), stopped: false };
-    live[id] = held;
-    runs[id] = { runId: runId, startedAt: startedAt, endedAt: '', stopped: false, exit: null, verdict: null, tail: '' };
-    const keep = function (chunk) {
-      held.out = Buffer.concat([held.out, chunk]);
-      if (held.out.length > TAIL_BYTES * 2) held.out = held.out.subarray(held.out.length - TAIL_BYTES);
-    };
-    child.stdout.on('data', keep);
-    child.stderr.on('data', keep);
-    let ended = false;
-    const end = function (code, why) {
-      if (ended) return;
-      ended = true;
-      if (live[id] === held) delete live[id];
-      let v = null;
-      try { v = JSON.parse(fs.readFileSync(verdictFile, 'utf8')); } catch (e) { v = null; }
-      try { fs.unlinkSync(verdictFile); } catch (e) { /* none written */ }
-      const verdict = held.stopped ? noVerdict('stopped before its verdict') :
-        v && typeof v === 'object' ? { ran: true, green: !!v.green, around: Number(v.around) || 0, of: Number(v.of) || 0,
-          paths: (Array.isArray(v.paths) ? v.paths : []).slice(0, KEPT_PATHS).map(String), why: String(v.why || '') } :
-          noVerdict(why || 'the runner exited ' + code + ' with no verdict');
-      // A door struck or changed while it ran keeps no verdict: it would describe a door that is not in the list.
-      if (runs[id] && runs[id].runId === runId) {
-        runs[id] = { runId: runId, startedAt: startedAt, endedAt: new Date().toISOString(), stopped: held.stopped,
-          exit: code === null || code === undefined ? null : Number(code), verdict: verdict, tail: tailOf(held.out) };
-        saveRuns();
-      }
+    doorById(doorsWithIds(), id, 'run');
+    if (typeof desk.verify !== 'function') throw desk.refused('bad-request', 'this desk hands its plugins no deskVerify to run the door');
+    return desk.verify('door.run', { id: id }).then(function (r) {
       say('run', id);
-    };
-    child.on('error', function (e) { end(null, 'the runner did not start: ' + ((e && e.message) || e)); });
-    child.on('close', function (code) { end(code, ''); });
-    saveRuns();
-    say('run', id);
-    return { started: true, runId: runId };
+      return { queued: true, already: r.already === true,
+        said: 'Door ' + id + ' went to deskVerify' + (r.already === true ? ', which had it waiting or running already' : ', queued behind any check it runs') +
+          '; its output is in the Verifier tab\'s console, and Stop there ends it.' };
+    });
   }
 
-  // A RUN UNDER WAY, STOPPED: the child this plugin spawned is killed, and only it.
-  function stop(a) {
-    const id = String(a.id || '');
-    doorById(doorsWithIds(), id, 'stop');
-    const held = live[id];
-    if (!held) throw desk.refused('bad-request', 'no run of door ' + id + ' is under way to stop');
-    held.stopped = true;
-    try { held.child.kill(); } catch (e) { /* gone already: close says so */ }
-    return { stopped: true };
-  }
-
+  // Its newest run, from deskVerify: running or waiting, then the verdict with its violator lines.
   function runState(a) {
     const id = String(a.id || '');
     const door = doorById(doorsWithIds(), id, 'read');
-    const r = runs[id];
-    const held = live[id];
-    return { id: id, running: !!held, startedAt: r ? String(r.startedAt || '') : '', endedAt: held ? '' : r ? String(r.endedAt || '') : '',
-      stopped: !!(r && r.stopped), runId: r ? String(r.runId || '') : '',
-      tail: held ? tailOf(held.out) : r ? String(r.tail || '') : '',
-      verdict: verdictOut(held ? noVerdict('running') : r && r.verdict, door) };
+    return stateOf(id).then(function (s) {
+      return { id: id, running: s.running, queued: s.queued, startedAt: s.startedAt, endedAt: s.running || s.queued ? '' : s.endedAt,
+        stopped: s.stopped, commit: s.commit, verdict: verdictOut(s.running || s.queued ? noVerdict(s.running ? 'running in deskVerify' : 'waiting in deskVerify') : s, door) };
+    });
   }
 
   const DOOR = { id: '', gate: '', endpoint: '', paths: [''], suites: [''] };
@@ -463,21 +515,25 @@ module.exports = function (desk) {
     refuses: refuses,
     handles: handles,
     verbs: {
-      'stackFrameChecks.make': { request: { gate: '', endpoint: '', paths: [''], suites: [''] }, reply: { id: '', change: 0 }, handler: make },
-      'stackFrameChecks.update': { request: DOOR, reply: { id: '' }, handler: update },
-      'stackFrameChecks.remove': { request: { id: '' }, reply: { id: '' }, handler: remove },
-      'stackFrameChecks.run': { request: { id: '' }, reply: { started: true, runId: '' }, handler: run },
-      'stackFrameChecks.stop': { request: { id: '' }, reply: { stopped: true }, handler: stop },
-      'stackFrameChecks.runState': { request: { id: '' }, reply: { id: '', running: true, startedAt: '', endedAt: '', stopped: true, runId: '', tail: '', verdict: VERDICT }, handler: runState },
-      // THE LIST READ BACK, for its UI: every door as the list holds it (paths on a node: endpoint), with its last run.
+      // commit: one line, what became of the list's commit and push (goal/G22.3).
+      'stackFrameChecks.make': { request: { gate: '', endpoint: '', paths: [''], suites: [''] }, reply: { id: '', change: 0, commit: '' }, handler: make },
+      'stackFrameChecks.update': { request: DOOR, reply: { id: '', commit: '' }, handler: update },
+      'stackFrameChecks.remove': { request: { id: '' }, reply: { id: '', commit: '' }, handler: remove },
+      'stackFrameChecks.run': { request: { id: '' }, reply: { queued: true, already: false, said: '' }, handler: run },
+      'stackFrameChecks.runState': { request: { id: '' }, reply: { id: '', running: true, queued: true, startedAt: '', endedAt: '', stopped: true, commit: '', verdict: VERDICT }, handler: runState },
+      // THE LIST READ BACK, for its UI: every door as the list holds it (paths on a node: endpoint), with its last run
+      // as deskVerify keeps it.
       'stackFrameChecks.doors': { request: {}, reply: { doors: [{ id: '', gate: '', endpoint: '', suites: [''], item: '',
-        last: { running: true, ran: true, green: true, around: 0, of: 0, startedAt: '', endedAt: '', stopped: true } }] }, handler: function () {
-        return { doors: doorsWithIds().map(function (d) {
-          const out = { id: String(d.id), gate: String(d.gate || ''), endpoint: String(d.endpoint || ''),
-            suites: Array.isArray(d.suites) ? d.suites.map(String) : [], item: String(d.item || ''), last: lastOf(d.id) };
-          if (Array.isArray(d.paths)) out.paths = d.paths.map(String);
-          return out;
-        }) };
+        last: { running: true, queued: true, ran: true, green: true, around: 0, of: 0, startedAt: '', endedAt: '', stopped: true } }] }, handler: function () {
+        const list = doorsWithIds();
+        return Promise.all(list.map(function (d) { return lastOf(String(d.id)); })).then(function (lasts) {
+          return { doors: list.map(function (d, i) {
+            const out = { id: String(d.id), gate: String(d.gate || ''), endpoint: String(d.endpoint || ''),
+              suites: Array.isArray(d.suites) ? d.suites.map(String) : [], item: String(d.item || ''), last: lasts[i] };
+            if (Array.isArray(d.paths)) out.paths = d.paths.map(String);
+            return out;
+          }) };
+        });
       } },
     },
   };

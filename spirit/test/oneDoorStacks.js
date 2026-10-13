@@ -146,10 +146,11 @@ test.subHeading('a frame carries what it is written inside');
 // ── ONE DOOR ALONE, FOR THE PLUGIN'S RUN (goal/G22.3) ───────────────
 //
 // Andy, 2026-10-13, in goal/G22.3's box: "you will give me a run button/link for each one of them, or even better, a
-// run-dialog". The stackFrameChecks plugin spawns this file with SPIRIT_STACKS_DOOR, the id of one door of its list
-// (and SPIRIT_STACKS_LIST, the list it holds, which wirePaths reads): only that door is judged. Its verdict is written
-// as JSON to SPIRIT_STACKS_VERDICT, { door, green, around, of, paths, why }, every path around the gate in it, uncut:
-// the plugin keeps it as the door's last verdict. Without SPIRIT_STACKS_DOOR the whole list is judged, as always.
+// run-dialog". Since Andy's "every run here should report to deskVerify." (2026-10-13), deskVerify runs this file for
+// the plugin (its door.run) with SPIRIT_STACKS_DOOR, the id of one door of the list (SPIRIT_STACKS_LIST, when set, names
+// another list for wirePaths to read): only that door is judged. Its verdict is written as JSON to
+// SPIRIT_STACKS_VERDICT, { door, green, around, of, paths, why }, every path around the gate in it, uncut: deskVerify
+// keeps it as the door's last verdict. Without SPIRIT_STACKS_DOOR the whole list is judged, as always.
 const ONE = String(process.env.SPIRIT_STACKS_DOOR || '');
 const VERDICT_FILE = String(process.env.SPIRIT_STACKS_VERDICT || '');
 function verdict(door, green, around, of, paths, why) {

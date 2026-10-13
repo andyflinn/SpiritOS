@@ -238,12 +238,85 @@ function leavesTests(rel) {
   const norm = path.posix.normalize(String(rel || '').replace(/\\/g, '/'));
   return norm.indexOf('spirit/test/') !== 0 || norm.split('/').indexOf('..') !== -1;
 }
-function runSuite(file, port, onTests) {
+// ── THE CONSOLE OF THE CURRENT RUN (goal/G22.3) ──────────────────────────
+//
+//   Andy, 2026-10-13, in goal/G22.3's box: "it be even better if the verify tab showed the detailed results in a
+//   console like fashion, cleared before every new run. If it's solved there, every run even the ones from Stack,
+//   already would have output."
+//
+// DECIDED BY ANDY, not this file's to narrow: every run this server makes keeps its output here, and only the CURRENT
+// run's. What each suite prints, stdout and stderr, goes in as it arrives, in order, under a line naming the suite; a
+// new run (each job drainQueue starts) clears it first. It is capped in BYTES ("bytes copied, bytes counted",
+// 2026-10-10): past CONSOLE_MAX the front is dropped, and offsets stay absolute, so a reader tailing it never reads a
+// byte twice. The `console {from}` verb answers one answer's room from an offset; every object `say` publishes carries
+// consoleRun and consoleTo, re-said at most every CONSOLE_SAY_MS while output arrives, so the tab tails it live and
+// never pulls on a clock.
+const CONSOLE_MAX = 256 * 1024;
+const CONSOLE_SAY_MS = 300;
+let consoleRun = '';
+let consoleChunks = [];
+let consoleStart = 0;
+let consoleEnd = 0;
+let consoleEnded = true;
+let consoleTimer = null;
+function consoleSay() {
+  if (consoleTimer) return;
+  consoleTimer = setTimeout(function () { consoleTimer = null; if (lastSaid) say(Object.assign({}, lastSaid)); }, CONSOLE_SAY_MS);
+}
+function consoleClear(run) {
+  consoleRun = String(run || '');
+  consoleChunks = [];
+  consoleStart = 0;
+  consoleEnd = 0;
+  consoleEnded = false;
+  consoleSay();
+}
+function consoleAdd(d) {
+  const b = Buffer.isBuffer(d) ? d : Buffer.from(String(d), 'utf8');
+  if (!b.length) return;
+  consoleChunks.push(b);
+  consoleEnd += b.length;
+  let held = consoleEnd - consoleStart;
+  while (held > CONSOLE_MAX && consoleChunks.length) {
+    const first = consoleChunks[0];
+    const over = held - CONSOLE_MAX;
+    if (first.length <= over) { consoleChunks.shift(); consoleStart += first.length; held -= first.length; }
+    else { consoleChunks[0] = first.subarray(over); consoleStart += over; held -= over; }
+  }
+  consoleSay();
+}
+function consoleDone() { consoleEnded = true; consoleSay(); }
+// From an offset, as much as one answer holds, never starting or ending inside a character; an offset already
+// dropped reads from the first byte still held, and `start` says where that is.
+function consoleRead(from) {
+  const all = Buffer.concat(consoleChunks);
+  const at = Math.min(Math.max(Number(from) || 0, consoleStart), consoleEnd);
+  let i = at - consoleStart;
+  while (i < all.length && (all[i] & 0xC0) === 0x80) i++;
+  const answer = function (j) {
+    return { run: consoleRun, start: consoleStart, from: consoleStart + i, to: consoleStart + j, more: consoleStart + j < consoleEnd,
+      ended: consoleEnded, text: all.subarray(i, j).toString('utf8') };
+  };
+  let room = 6000;
+  for (;;) {
+    let j = Math.min(all.length, i + room);
+    if (j < all.length) while (j > i && (all[j] & 0xC0) === 0x80) j--;
+    const out = answer(j);
+    // Escaped control characters grow in JSON: what goes back must fit one answer.
+    if (j === i || Buffer.byteLength(JSON.stringify(out), 'utf8') <= appClient.ANSWER_MAX - 512) return out;
+    room = Math.floor(room / 2);
+  }
+}
+
+function runSuite(file, port, onTests, env) {
   return new Promise(function (resolve) {
     const out = [];
     let timedOut = false;
     let tests = 0;
-    const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
+    // THE CONSOLE (goal/G22.3): each suite under a line naming it, then everything it prints.
+    consoleAdd('\n=== ' + path.relative(REPO, file).split(path.sep).join('/') + ' ===\n');
+    const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32',
+      env: env ? Object.assign({}, process.env, env) : process.env });
     runningKid = kid;
     // EACH ASSERTION AS IT IS PRINTED (goal/G8.12), so the tab's bar moves while a suite runs rather than once it
     // ends. The printed lines are what every reader of a suite uses (runAll, the claim check), not the exit code.
@@ -259,8 +332,8 @@ function runSuite(file, port, onTests) {
       if (runningKid === kid) runningKid = null;
       resolve({ code: code, said: out.join(''), timedOut: timedOut, stopped: stopped });
     };
-    kid.stdout.on('data', function (d) { out.push(String(d)); count(d); });
-    kid.stderr.on('data', function (d) { out.push(String(d)); });
+    kid.stdout.on('data', function (d) { out.push(String(d)); consoleAdd(d); count(d); });
+    kid.stderr.on('data', function (d) { out.push(String(d)); consoleAdd(d); });
     kid.on('exit', over);
     kid.on('error', function () { over(1); });
   });
@@ -292,6 +365,8 @@ function say(o) {
     expected: Number(o.expected) || 0, line: String(o.line || ''), since: String(o.since || ''),
     stopAsked: stopped === true,
     idleMs: IDLE_MS, holding: idleState.holding.slice(), chores: String(idleState.chores || ''),
+    // THE CONSOLE'S RUN AND HOW FAR IT HAS COME (goal/G22.3), so the tab tails it with `console`.
+    consoleRun: consoleRun, consoleTo: consoleEnd, consoleEnded: consoleEnded,
   };
   lastSaid = one;
   appServer.publish(one);
@@ -691,6 +766,80 @@ async function redCheck(id, commit) {
   }
 }
 
+// ── ONE DOOR OF THE STACKS PLUGIN, RUN HERE (goal/G22.3) ─────────────────
+//
+//   Andy, 2026-10-13, in goal/G22.3's box: "every run here should report to deskVerify.", and of this server's console:
+//   "it means this app here should launch the run through deskVerify."
+//
+// DECIDED BY ANDY, not this file's to hand back: the stackFrameChecks plugin no longer spawns its runner; it asks
+// door.run {id}, and the run is a job of this server's queue like any other: one check at a time, Stop ends it, its
+// row in runs (kind door, the door's id, its outcome and its line), its records posted by the suite as every suite
+// posts them, its output in the console. The suite is the stack-frame suite in its one-door mode: SPIRIT_STACKS_DOOR
+// names the door, SPIRIT_STACKS_VERDICT the file its verdict is written to, and it reads the list of doors of the tree
+// it runs in (the plugin's list, on his node the same checkout). The verdict is kept under this server's --state,
+// doors/<id>.json, the newest per door, and read back with door.state {id}, which is what the plugin shows. No pull:
+// the door is measured on the tree as it stands, which is the tree the plugin just committed its list in. Nothing is
+// said to the desk: a door is not a desk item, and the row is the record.
+const DOOR_SUITE = 'spirit/test/oneDoorStacks.js';
+const DOORS_DIR = path.join(STATE || path.dirname(DB_PATH), 'doors');
+const DOOR_ID = /^[A-Za-z0-9_-]{1,32}$/;
+const DOOR_PATHS_KEPT = 500;
+function doorIdOf(id) {
+  const s = String(id || '');
+  if (!DOOR_ID.test(s)) throw refusedWhy('a door is named by the plugin\'s own id (d<n>): letters, digits, _ and -, at most 32; not ' + JSON.stringify(s.slice(0, 40)));
+  return s;
+}
+function doorKept(id) {
+  try { const v = JSON.parse(fs.readFileSync(path.join(DOORS_DIR, id + '.json'), 'utf8')); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
+}
+async function doorRun(id) {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  const startedAt = new Date().toISOString();
+  running = { id: '', suite: DOOR_SUITE, since: startedAt };
+  const told = function (tests) {
+    say({ doing: 'door', id: id, suite: DOOR_SUITE, index: 1, of: 1, tests: tests, expected: 0,
+      line: 'door run: ' + id + ', ' + tests + ' tests', since: startedAt });
+  };
+  let kept = null;
+  try {
+    told(0);
+    fs.mkdirSync(DOORS_DIR, { recursive: true });
+    const file = path.join(REPO, DOOR_SUITE);
+    const tmp = path.join(DOORS_DIR, id + '.run.json');
+    try { fs.unlinkSync(tmp); } catch (e) { /* none left */ }
+    let run = null;
+    let v = null;
+    if (stopped) run = { stopped: true };
+    else if (!fs.existsSync(file)) run = { missing: true };
+    else {
+      run = await runSuite(file, port, told, { SPIRIT_STACKS_DOOR: id, SPIRIT_STACKS_VERDICT: tmp });
+      try { v = JSON.parse(fs.readFileSync(tmp, 'utf8')); } catch (e) { v = null; }
+      try { fs.unlinkSync(tmp); } catch (e) { /* none written */ }
+    }
+    const t = await tree();
+    const none = function (why) { return { ran: false, green: false, around: 0, of: 0, paths: [], why: why }; };
+    const verdict = run.stopped ? none('stopped by hand from the verifier tab, so nothing was measured')
+      : run.missing ? none(DOOR_SUITE + ' is missing from this checkout')
+        : run.timedOut ? none('stopped at the time limit of ' + SUITE_MS + 'ms, so nothing was measured')
+          : v && typeof v === 'object' ? { ran: true, green: v.green === true, around: Number(v.around) || 0, of: Number(v.of) || 0,
+            paths: (Array.isArray(v.paths) ? v.paths : []).slice(0, DOOR_PATHS_KEPT).map(String), why: String(v.why || '') }
+            : none('the suite exited ' + run.code + ' with no verdict');
+    kept = Object.assign({ door: id }, verdict, { startedAt: startedAt, endedAt: new Date().toISOString(), stopped: !!run.stopped,
+      commit: t.short || t.commit || '' });
+    const out = path.join(DOORS_DIR, id + '.json');
+    fs.writeFileSync(out + '.tmp', JSON.stringify(kept));
+    fs.renameSync(out + '.tmp', out);
+    const text = 'door ' + id + ': ' + (kept.ran ? (kept.green ? 'green, ' + kept.of + ' production call(s), every one through the gate'
+      : 'red, ' + kept.around + ' path(s) around the gate, of ' + kept.of + ' production call(s)') : 'no verdict, ' + kept.why) +
+      ' (at ' + (kept.commit || 'an unknown commit') + ')';
+    noteLine(text);
+    return { door: true, stopped: !!run.stopped, outcome: run.stopped ? 'stopped by hand' : kept.ran ? (kept.green ? 'green' : 'red') : 'no verdict' };
+  } finally {
+    running = { id: '', suite: '', since: '' };
+    sayIdle();
+  }
+}
+
 async function drainQueue() {
   // NOT WHILE THE IDLE CHORES RUN (goal/G21.3): publishData runs the harness, and two runs on one host fight over the
   // lab ports (goal/G8.9). The chores drain the queue themselves when they end.
@@ -719,12 +868,16 @@ async function drainQueue() {
           if (!(await holds(job.commit))) { runningJob = null; await startWaiting(job, pulled); continue; }
         }
         if (job.row) runStarted.run(new Date().toISOString(), job.row);
+        // A NEW RUN CLEARS THE CONSOLE (goal/G22.3, Andy: "cleared before every new run"); its row names it.
+        consoleClear(job.row ? String(job.row) : String(Date.now()));
         let r = null;
         if (job.kind === 'goal') r = await goalRun(job.id);
         else if (job.kind === 'full') r = await fullRun(job.id);
         else if (job.kind === 'red') r = await redCheck(job.id, job.commit);
+        else if (job.kind === 'door') r = await doorRun(job.id);
         else r = await claimCheck(job.id);
         if (r && r.stopped) outcome = 'stopped by hand';
+        else if (r && r.door) outcome = String(r.outcome);
         else if (r && r.red) outcome = r.confirmed ? 'red confirmed' : 'red not confirmed';
         else if (r && r.unchecked) outcome = 'not checked';
         else if (r && typeof r.rejected === 'boolean') outcome = r.rejected ? 'rejected' : 'passed';
@@ -735,6 +888,8 @@ async function drainQueue() {
         // THE STOP ENDS WITH ITS RUN (goal/G21.3): kept from the press to here, and never carried into the next run.
         runningJob = null;
         stopped = false;
+        // The console keeps this run's output, ended, until the next run clears it (goal/G22.3).
+        consoleDone();
       }
       // Reached only by a run that ran (a wait or a stop while pulling continued above, its row already said). The
       // commit it measured at is kept for a run that named none, so a search over runs answers it.
@@ -1326,6 +1481,51 @@ appServer.serve({
       drainQueue();
       return { queued: true };
     },
+  },
+  // ONE DOOR OF THE STACKS PLUGIN (goal/G22.3, Andy: "every run here should report to deskVerify."): queued behind
+  // whatever runs now, answered at once. A door already waiting or running is not queued twice (already: true).
+  'door.run': {
+    request: { id: '' }, reply: { queued: true, already: false },
+    handler: function (a) {
+      const id = doorIdOf(a.id);
+      const job = { kind: 'door', id: id };
+      const already = queuedAlready(job) || !!(runningJob && runningJob.kind === 'door' && runningJob.id === id);
+      if (!already) enqueue(job);
+      drainQueue();
+      return { queued: true, already: already };
+    },
+  },
+  // ITS NEWEST VERDICT, as kept under doors/<id>.json, with whether it runs or waits now. The paths come as many as fit
+  // one answer, the rest counted in pathsLeft; the kept file holds up to DOOR_PATHS_KEPT.
+  'door.state': {
+    request: { id: '' },
+    reply: { id: '', running: false, queued: false, ran: false, green: false, around: 0, of: 0, paths: [''], pathsLeft: 0, why: '',
+      startedAt: '', endedAt: '', stopped: false, commit: '' },
+    handler: function (a) {
+      const id = doorIdOf(a.id);
+      const k = doorKept(id) || {};
+      const all = Array.isArray(k.paths) ? k.paths.map(String) : [];
+      const paths = [];
+      let used = 0;
+      for (const p of all) {
+        const b = Buffer.byteLength(JSON.stringify(p), 'utf8') + 1;
+        if (used + b > 5000) break;
+        paths.push(p);
+        used += b;
+      }
+      return { id: id, running: !!(runningJob && runningJob.kind === 'door' && runningJob.id === id),
+        queued: watchQueue.some(function (q) { return q.kind === 'door' && q.id === id; }),
+        ran: k.ran === true, green: k.green === true, around: Number(k.around) || 0, of: Number(k.of) || 0, paths: paths,
+        pathsLeft: all.length - paths.length, why: String(k.why || ''), startedAt: String(k.startedAt || ''),
+        endedAt: String(k.endedAt || ''), stopped: k.stopped === true, commit: String(k.commit || '') };
+    },
+  },
+  // THE CONSOLE OF THE CURRENT RUN (goal/G22.3): its output from `from`, one answer's room at a time. `to` is where the
+  // next read starts, `more` whether output past it is held, `start` the first byte still held (the cap drops the
+  // front), `ended` whether the run is over; `run` changes when a new run clears it.
+  console: {
+    request: { from: 0 }, reply: { run: '', start: 0, from: 0, to: 0, more: false, ended: true, text: '' },
+    handler: function (a) { return consoleRead(a.from); },
   },
   // ONE RECORD, AS IT HAPPENS (his words above). The answer says whether it was kept: a repeat of the same outcome is
   // not, and that is the whole of the de-duplication - the history is the flips. His clone and an agent's both keep

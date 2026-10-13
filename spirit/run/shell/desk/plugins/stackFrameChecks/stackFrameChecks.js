@@ -12,8 +12,13 @@
 // button/link for each one of them, or even better, a run-dialog", "with a way to modify a row as well." and "put that
 // in the dialog if you want." So, top to bottom: the add form (gate, endpoint, paths, suites); THE DOOR LIST, the
 // main list, one row per door with its last verdict and one button, Open; the door's dialog, which holds the door's
-// values to edit and Save, Remove, and Run with Stop, its running time, then its verdict, one line per violator of the
-// gate, and the raw paths folded below them; then the goal's items (the work the doors cause); then the goal's chat.
+// values to edit and Save, Remove, and Run, its running time, then its verdict, one line per violator of the gate, and
+// the raw paths folded below them; then the goal's items (the work the doors cause); then the goal's chat.
+//
+// EVERY RUN IS deskVerify's, DECIDED BY ANDY (goal/G22.3's box, 2026-10-13): "every run here should report to
+// deskVerify.", and "it means this app here should launch the run through deskVerify." So Run hands the door to
+// deskVerify and says so, pointing to the Verifier tab's console, where its output shows and its Stop ends it; this page
+// has no Stop and no output of its own. It listens to deskVerify's stream, so a door's run shows as it starts and ends.
 //
 // Loaded once into the Desk page, the first time its tab opens (shell/desk/desk.js, deskOpenPlugin), into its own pane
 // that stays for the page's life; it registers itself on
@@ -38,6 +43,7 @@
   var runInfo = null;   // its last runState
   var ticker = null;    // the elapsed-time tick while its run is under way
   var ticks = 0;
+  var verifyKey = '';   // what deskVerify last said it runs, doing|id
   var FILE_RE = /^spirit\/run\/(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.js$/;
   var GATE_RE = /^spirit\/run\/(?:[A-Za-z0-9_-][A-Za-z0-9_.-]*\/)*[A-Za-z0-9_-][A-Za-z0-9_.-]*\.js::[A-Za-z_$][A-Za-z0-9_$]*$/;
   var SUITE_RE = /^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/;
@@ -160,7 +166,8 @@
   // A door's last run, in a word or two for its row.
   function lastHtml(l) {
     if (!l) return '<span class="job-manifest-note">never run</span>';
-    if (l.running) return '<span class="job-manifest-note">running since ' + esc(when(l.startedAt)) + '</span>';
+    if (l.running) return '<span class="job-manifest-note">running in deskVerify since ' + esc(when(l.startedAt)) + '</span>';
+    if (l.queued) return '<span class="job-manifest-note">waiting in deskVerify</span>';
     if (!l.ran) return '<span class="job-manifest-note">' + (l.stopped ? 'stopped ' + esc(when(l.endedAt)) : l.endedAt ? 'no verdict, ' + esc(when(l.endedAt)) : 'never run') + '</span>';
     return l.green ? '<span class="job-manifest-note">green: ' + l.of + ' call(s) through the gate, ' + esc(when(l.endedAt)) + '</span>'
       : '<span class="job-start-error">red: ' + l.around + ' path(s) around the gate, of ' + l.of + ', ' + esc(when(l.endedAt)) + '</span>';
@@ -191,8 +198,12 @@
     if (!r) { el.innerHTML = '<div class="job-manifest-note">Reading its last run.</div>'; return; }
     if (r.running) {
       var secs = Math.max(0, Math.round((Date.now() - Date.parse(r.startedAt)) / 1000)) || 0;
-      el.innerHTML = '<div class="label">Its run</div><div>running, ' + secs + ' s, since ' + esc(when(r.startedAt)) + '</div>' +
-        (r.tail ? '<pre class="job-manifest-note" style="margin-top:1em">' + esc(r.tail) + '</pre>' : '');
+      el.innerHTML = '<div class="label">Its run</div><div>running in deskVerify, ' + secs + ' s, since ' + esc(when(r.startedAt)) + '</div>' +
+        '<div class="job-manifest-note">Its output is in the Verifier tab\'s console.</div>';
+      return;
+    }
+    if (r.queued) {
+      el.innerHTML = '<div class="label">Its run</div><div>waiting in deskVerify, behind the check it runs now</div>';
       return;
     }
     var v = r.verdict || {};
@@ -210,14 +221,13 @@
     var paths = raw.map(function (p) { return '<div class="sfc-path" style="margin-top:0.25em">' + esc(p) + '</div>'; }).join('');
     var left = Number(v.pathsLeft) > 0 ? '<div class="job-manifest-note">and ' + v.pathsLeft + ' more, kept with the run</div>' : '';
     var folded = raw.length ? '<details style="margin-top:1em"><summary class="job-manifest-note">raw paths (' + (raw.length + (Number(v.pathsLeft) || 0)) + ')</summary>' + paths + left + '</details>' : '';
-    el.innerHTML = '<div class="label">Its run</div>' + head + (v.ran && v.why ? '<div class="job-manifest-note">' + esc(v.why) + '</div>' : '') + said + saidLeft + folded +
-      (r.tail ? '<pre class="job-manifest-note" style="margin-top:1em">' + esc(r.tail) + '</pre>' : '');
+    el.innerHTML = '<div class="label">Its run</div>' + head + (v.ran && v.why ? '<div class="job-manifest-note">' + esc(v.why) + '</div>' : '') + said + saidLeft + folded;
   }
-  // While its run is under way the elapsed time ticks each second, and every fifth tick asks again in case a published
-  // end was missed; the stream is what normally says it ended.
+  // While its run is under way or waiting the elapsed time ticks each second, and every fifth tick asks again in case a
+  // published end was missed; deskVerify's stream is what normally says it ended.
   function tick() {
     stopTicking();
-    if (!runInfo || !runInfo.running || !openId) return;
+    if (!runInfo || !(runInfo.running || runInfo.queued) || !openId) return;
     ticker = setTimeout(function () {
       ticker = null;
       ticks++;
@@ -249,8 +259,8 @@
           '<button type="button" id="sfc-d-remove" style="margin-right:1em">Remove</button></div></div>' +
         '<div class="start-job-form card" style="margin-top:1em">' +
           '<button type="button" id="sfc-d-run" style="margin-right:1em">Run</button>' +
-          '<button type="button" id="sfc-d-stop" style="margin-right:1em">Stop</button>' +
-          '<button type="button" id="sfc-d-close" style="margin-right:1em">Close</button></div>' +
+          '<button type="button" id="sfc-d-close" style="margin-right:1em">Close</button>' +
+          '<div class="job-manifest-note" style="margin-top:1em">Run hands the door to deskVerify: its output is in the Verifier tab\'s console, and Stop there ends it.</div></div>' +
         '<div id="sfc-d-note" class="job-start-error" style="margin-top:1em"></div>' +
         '<div id="sfc-d-state" style="margin-top:1em"></div>' +
       '</div>';
@@ -293,18 +303,11 @@
   }
   function run() {
     var id = openId;
-    say('sfc-d-note', 'Starting.');
-    Promise.resolve(ctx.ask('stackFrameChecks.run', { id: id })).then(function () {
-      say('sfc-d-note', '');
+    say('sfc-d-note', 'Sent to deskVerify; waiting for its answer.');
+    Promise.resolve(ctx.ask('stackFrameChecks.run', { id: id })).then(function (r) {
+      say('sfc-d-note', (r && r.said) || ('Door ' + id + ' went to deskVerify; its output is in the Verifier tab\'s console, and Stop there ends it.'));
       readRunState();
-    }, function (e) { say('sfc-d-note', 'Not started: ' + errText(e)); });
-  }
-  function stop() {
-    var id = openId;
-    Promise.resolve(ctx.ask('stackFrameChecks.stop', { id: id })).then(function () {
-      say('sfc-d-note', 'Stopped.');
-      readRunState();
-    }, function (e) { say('sfc-d-note', 'Not stopped: ' + errText(e)); });
+    }, function (e) { say('sfc-d-note', 'Not sent to deskVerify: ' + errText(e)); });
   }
 
   function ofMyGoal(obj) {
@@ -372,7 +375,6 @@
           else if (t.id === 'sfc-d-save') save();
           else if (t.id === 'sfc-d-remove') remove();
           else if (t.id === 'sfc-d-run') run();
-          else if (t.id === 'sfc-d-stop') stop();
           else if (t.id === 'sfc-d-close') closeDialog();
         });
       }
@@ -390,6 +392,16 @@
           }
           if (ofMyGoal(obj)) { readItems(); readDoors(); }
         });
+        // AND deskVerify's (goal/G22.3): its runs are the doors' runs. Read again when what it runs changes, not on
+        // each object it says while output arrives.
+        given.onPublished(function (obj) {
+          if (!obj || typeof obj !== 'object' || typeof obj.doing !== 'string') return;
+          var key = obj.doing + '|' + String(obj.id || '');
+          if (key === verifyKey) return;
+          verifyKey = key;
+          readDoors();
+          if (openId) readRunState();
+        }, 'deskVerify');
       }
       if (typeof given.chat === 'function') given.chat(document.getElementById('sfc-chat'));
       check('sfc-');
