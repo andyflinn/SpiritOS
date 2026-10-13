@@ -490,7 +490,27 @@ function mayWrite(s, w) {
 }
 // WHO HOLDS IT, BY KEY: a take or hold recorded with a key is that key's; one recorded before keys, its label's.
 function holdsBox(it, w) { return it.boxTakenKey ? it.boxTakenKey === w.key : it.boxTakenBy === w.by; }
-function holdsTake(it, w) { return it.takenKey ? it.takenKey === w.key : it.takenBy === w.by; }
+// TAKES ARE PER LINE (goal/G21.6). Andy's decision, in the item's box: line.take takes the newest of his lines under the
+// item that is addressed to the taking agent or to nobody and not yet taken, and taking it lets the agent answer it once,
+// even when he has written to someone else below it. So each of his lines carries its own take (taken, takenKey) and
+// whether its taker has answered it (answered); several agents hold open takes on different lines of one item at once.
+// A take is OPEN from the take until its agent's next post under the item. There is no take of the item as a whole.
+function tookLine(l, w) { return !!l.taken && (l.takenKey ? l.takenKey === w.key : l.taken === w.by); }
+function openTakes(it) { return it.chat.filter(function (l) { return l.by === 'andy' && l.taken && !l.answered; }); }
+function holdsTake(it, w) { return openTakes(it).some(function (l) { return tookLine(l, w); }); }
+// THE LINE A TAKE LANDS ON (goal/G21.6): the newest of his lines not taken and addressed to the agent or to nobody. A
+// line carrying a to list is addressed to exactly those keys (his nick line, his cap to the agents with cap on), even
+// an empty one; only a line with no to list is addressed to nobody (goal/G21.1). The handler and the replay both call
+// this, so a replayed take lands where it landed.
+function takeableLine(it, key) {
+  for (let i = it.chat.length - 1; i >= 0; i--) {
+    const l = it.chat[i];
+    if (l.by !== 'andy' || l.taken) continue;
+    if (Array.isArray(l.to) && l.to.indexOf(key) === -1) continue;
+    return l;
+  }
+  return null;
+}
 // goal/G21.4: the item it is with, and the phase it holds, by key where the record carried one.
 function holdsWith(it, w) { return !!it.with && (it.withKey ? it.withKey === w.key : it.with === w.by); }
 function holdsPhase(it, w) { return !!it.phaseWith && (it.phaseWithKey ? it.phaseWithKey === w.key : it.phaseWith === w.by); }
@@ -529,10 +549,8 @@ function releaseKey(s, key) {
     const m = s.items[id];
     if (mine(m.phaseWith, m.phaseWithKey)) { m.phaseWith = ''; m.phaseWithKey = ''; if (m.code && !m.done && !m.closed) m.status = 'running'; }
     if (mine(m.with, m.withKey)) { m.with = ''; m.withKey = ''; }
-    if (mine(m.takenBy, m.takenKey)) {
-      for (let i = m.chat.length - 1; i >= 0; i--) { if (m.chat[i].by === 'andy') { if (m.chat[i].taken === m.takenBy) { m.chat[i].taken = ''; m.chat[i].takenKey = ''; } break; } }
-      m.takenBy = ''; m.takenKey = '';
-    }
+    // goal/G21.6: its open takes alone go back to untaken; another agent's take on the same item stands.
+    openTakes(m).forEach(function (l) { if (mine(l.taken, l.takenKey)) { l.taken = ''; l.takenKey = ''; } });
     if (mine(m.boxTakenBy, m.boxTakenKey)) { m.boxTakenBy = ''; m.boxTakenKey = ''; m.boxHoldUntil = 0; }
     if (Array.isArray(m.capOffer)) m.capOffer = m.capOffer.filter(function (k) { return k !== key; });
   });
@@ -543,6 +561,8 @@ function shownLine(s, l) {
   delete o.to;
   // goal/G21.4: the taker's key stays inside too; taken shows the taker's label as before.
   delete o.takenKey;
+  // goal/G21.6: whether its take is answered is the desk's own bookkeeping, as the taker's key is.
+  delete o.answered;
   return o;
 }
 
@@ -573,9 +593,10 @@ function addressOf(s, text) {
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
-    alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null), checkHigh: Object.create(null),
-    // goal/G21.1: the keys beside the labels (the take, the box), the end of a box hold, and a cap offered to keys.
-    takenKey: '', boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
+    alert: false, boxTakenBy: '', takers: Object.create(null), checkHigh: Object.create(null),
+    // goal/G21.1: the key beside the box's label, the end of a box hold, and a cap offered to keys. The take of his
+    // lines lives on each line since goal/G21.6 (openTakes).
+    boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
     // goal/G21.4: the keys beside with and phaseWith, so "one task per agent" and its release go by key.
     withKey: '', phaseWithKey: '',
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false,
@@ -696,7 +717,8 @@ function apply(s, r, b, item, goalOf) {
           const known = labelOfKey(s, key);
           // An agent never heard from has no label yet: the take stands under its key, shown by its nick.
           const label = known || String(b.nick);
-          line.taken = label; line.takenKey = key; it.takenBy = label; it.takenKey = key;
+          // goal/G21.6: an open take of this line by its addressee; other agents' takes under the item stand.
+          line.taken = label; line.takenKey = key;
           if (known) it.takers[known] = true;
           // HIS NICK REQUEST ABOUT THE BOX: the box is that agent's for one write, red at once, for one minute.
           if (b.hold === true) { it.boxTakenBy = label; it.boxTakenKey = key; it.boxHoldUntil = Date.parse(r.at) + BOX_HOLD_MS; it.capOffer = null; }
@@ -709,10 +731,14 @@ function apply(s, r, b, item, goalOf) {
         const m = /^\s*([a-z0-9]{1,8})\s*:/i.exec(String(b.text));
         const key = m && Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === m[1].toLowerCase(); })[0];
         const label = key && Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === key; })[0];
-        if (label) { line.taken = label; it.takenBy = label; it.takenKey = ''; it.takers[label] = true; }
+        if (label) { line.taken = label; it.takers[label] = true; }
       }
-      // THE TAKER'S ANSWER FREES THE ITEM (goal/G2.2 note 2): after it, any agent may write again. By key (goal/G21.1).
-      if (it.takenBy && r.by !== 'andy' && holdsTake(it, { by: r.by, key: String(r.key || '') })) { it.takenBy = ''; it.takenKey = ''; }
+      // THE TAKER'S ANSWER CLOSES ITS TAKE (goal/G2.2 note 2, goal/G21.4): it answers once. By key (goal/G21.1). Since
+      // goal/G21.6 a take is per line: an agent's post closes its own open takes under the item, never another agent's.
+      if (r.by !== 'andy') {
+        const writer = { by: r.by, key: String(r.key || '') };
+        openTakes(it).forEach(function (l) { if (tookLine(l, writer)) l.answered = true; });
+      }
       return;
     }
     case 'item.rename': it.title = String(b.title); return;
@@ -948,15 +974,13 @@ function apply(s, r, b, item, goalOf) {
       if (b.included === false) releaseKey(s, String(b.agent));
       return;
     // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
-    // that, i then can solicit an answer from others." The taker's name goes on his latest line under the item,
-    // and the item is the taker's to answer until it does; the handler refuses a take with no line or one already
-    // taken, so what reaches here always lands.
+    // that, i then can solicit an answer from others." Since goal/G21.6 the taker's name goes on the newest of his
+    // lines that is not taken and is addressed to it or to nobody (takeableLine, the handler's own rule, by the
+    // record's key), and that line is the taker's to answer once. The handler refused a take with no such line, so
+    // what reaches here lands; a record written before goal/G21.6 took his latest line, which is that same line.
     case 'line.take': {
-      for (let i = it.chat.length - 1; i >= 0; i--) {
-        if (it.chat[i].by !== 'andy') continue;
-        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.chat[i].takenKey = String(r.key || ''); it.takenBy = r.by; it.takenKey = String(r.key || ''); it.takers[r.by] = true; }
-        return;
-      }
+      const l = takeableLine(it, String(r.key || ''));
+      if (l) { l.taken = r.by; l.takenKey = String(r.key || ''); it.takers[r.by] = true; }
       return;
     }
     default: return;
@@ -1331,8 +1355,9 @@ function facts(s, it) {
     // goal/G5.8: the rules in force at his Go, each { key, version }.
     rules: Array.isArray(it.rules) ? it.rules : [] };
   // ITS AGENTS BY NAME (goal/G21.1): every label these facts show, mapped to its name where its key has one.
-  f.names = namesFor(s, [it.with, it.boxTakenBy, it.takenBy, it.red, it.builder, it.verifier, it.phaseWith]
-    .concat(Object.keys(it.takers), f.files.map(function (e) { return e.by; }), it.goal ? Object.keys(s.agentKey) : []));
+  // goal/G21.6: every agent with an open take of one of his lines.
+  f.names = namesFor(s, [it.with, it.boxTakenBy, it.red, it.builder, it.verifier, it.phaseWith]
+    .concat(openTakes(it).map(function (l) { return l.taken; }), Object.keys(it.takers), f.files.map(function (e) { return e.by; }), it.goal ? Object.keys(s.agentKey) : []));
   f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
@@ -2097,7 +2122,8 @@ appServer.serve({
       mayWrite(st0, w);
       // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
       // By key since goal/G21.1, so an agent bound by his nick before the desk ever heard from it answers too.
-      const mine = !!(it0 && it0.takenBy && holdsTake(it0, w));
+      // Since goal/G21.6 a take is per line: mine is an open take of one of his lines under the item by this agent.
+      const mine = !!(it0 && holdsTake(it0, w));
       // AN AGENT ANSWERS ONLY WHAT IT HAS TAKEN (goal/G18.8). Andy, 2026-10-12: "no agent should answer without taking.
       // too much chatter otherwise."; and, to its own work notes going under an item it holds: "yes."
       // THE CHAT FLOW (goal/G21.4). Andy, in the item's box: "Each of Andy's lines is taken by one agent and answered by
@@ -2105,7 +2131,8 @@ appServer.serve({
       // agent may post its own work notes (taking, built, claimed) on an item it holds; they are valued work logs and are
       // not answers, so the chat flow does not stop them." The desk cannot read a line for what it means, so it goes by
       // who writes, in this order:
-      //   - the taker of his latest line answers it (once: the answer frees the take);
+      //   - the taker of a line of his answers it (once: the answer closes the take; goal/G21.6, any line it took, not
+      //     only his latest, several agents each answering their own);
       //   - the agent the item is with now (item.take, phase.take) posts its work notes, a take of another's standing or
       //     not: the box exempts work notes from the flow;
       //   - an agent that took a phase of the item earlier (red, build, verify) posts its notes while his latest line is
@@ -2117,10 +2144,12 @@ appServer.serve({
         let his = null;
         for (let i = it0.chat.length - 1; i >= 0; i--) { if (it0.chat[i].by === 'andy') { his = it0.chat[i]; break; } }
         const takerOf = function (l) { return nameOfKey(st0, l.takenKey) || l.taken; };
-        if (!holder && it0.takenBy) {
-          throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' is taken by ' + (nameOfKey(st0, it0.takenKey) || it0.takenBy) + ', and only it answers; ' + w.by + ' may post here when it holds the item (item.take)');
+        // goal/G21.6: another agent's open take of a line of his, whichever line.
+        const other = openTakes(it0)[0];
+        if (!holder && other) {
+          throw refusedWhy('taken', 'Andy\'s line under ' + a.id + ' is taken by ' + takerOf(other) + ', and only it answers; ' + w.by + ' may post here when it takes a line of his addressed to it or to nobody (line.take), or holds the item (item.take)');
         }
-        const takenByOther = !!(his && his.taken && !(his.takenKey ? his.takenKey === w.key : his.taken === w.by));
+        const takenByOther = !!(his && his.taken && !tookLine(his, w));
         const earlier = [[it0.red, it0.redKey], [it0.builder, it0.builderKey], [it0.verifier, it0.verifierKey]].some(function (p) {
           return !!p[0] && (p[1] ? p[1] === w.key : p[0] === w.by);
         });
@@ -2598,8 +2627,9 @@ appServer.serve({
       return { change: write('box.release', { id: a.id, by: w.by, key: w.key }).change };
     },
   },
-  // TAKING HIS LINE (goal/G2.2 note 2): an agent takes Andy's latest line under an item and is the only one to
-  // answer until it does. First wins; a second take is refused taken; an item with no line of his refuses no-row.
+  // TAKING HIS LINE (goal/G2.2 note 2, goal/G21.6): an agent takes the newest line of Andy's under an item that is not
+  // taken and is addressed to it or to nobody, and is the only one to answer that line, once. First wins; with no such
+  // line the take is refused taken; an item with no line of his refuses no-row.
   'line.take': {
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
@@ -2609,20 +2639,24 @@ appServer.serve({
       const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
       mayWrite(st, w);
-      // HIS LINE BOUND TO THIS AGENT ALREADY (goal/G21.1): its nick took it; the take stands, nothing to write.
-      if (it.takenBy && holdsTake(it, w)) return { change: st.change };
-      // ONE TAKER UNTIL IT ANSWERS (claude-windows's review): a take on a newer line of his while the first stands
-      // would hand the item to a second agent and have the first's answer refused. The item is the taker's.
-      if (it.takenBy) throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' is taken by ' + (nameOfKey(st, it.takenKey) || it.takenBy) + ', and it is theirs to answer');
+      // AN OPEN TAKE STANDS (goal/G21.1, goal/G21.6): a line its nick bound to it, or one it took and has not answered
+      // yet. Nothing to write; its next post answers that take.
+      if (holdsTake(it, w)) return { change: st.change };
       let his = null;
       for (let i = it.chat.length - 1; i >= 0; i--) { if (it.chat[i].by === 'andy') { his = it.chat[i]; break; } }
       // AN AGENT'S LINE IS NEVER TAKEN (goal/G21.4). Andy, in the item's box: "An agent's answer is never takeable: no
-      // agent answers another agent. A second answer comes only when Andy asks for it by naming the agent." A take is
-      // of his latest line alone, so each refusal says which case it met. Decided by Andy, not by this file.
+      // agent answers another agent. A second answer comes only when Andy asks for it by naming the agent." Decided by
+      // Andy, not by this file.
       if (!his) throw refusedWhy('no-row', it.chat.length ? 'there is no line of Andy\'s under ' + a.id + ': only his lines are taken, an agent\'s line never is' : 'there is no line of Andy\'s under ' + a.id + ' to take');
-      // ONLY ITS ADDRESSEES TAKE AN ADDRESSED LINE (goal/G21.1): his nick line, or his cap to the agents with cap on.
-      if (Array.isArray(his.to) && his.to.indexOf(w.key) === -1) throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' is addressed to another agent');
-      if (his.taken) throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' was taken and answered by ' + (nameOfKey(st, his.takenKey) || his.taken) + ': what follows it is an agent\'s answer, and an agent\'s answer is never taken; a second answer comes only when Andy names the agent');
+      // THE NEWEST LINE OF HIS THAT IS THE AGENT'S TO TAKE (goal/G21.6, takeableLine). Andy's decision, in the item's
+      // box: not only his latest line; one addressed to another agent stays never takeable (goal/G21.1), and one taken
+      // already is its taker's, answered or not. With none left, the refusal says so and what his latest line is.
+      if (!takeableLine(it, w.key)) {
+        const none = 'no line of Andy\'s under ' + a.id + ' is left for ' + w.by + ' to take: every one is taken or addressed to another agent. ';
+        if (Array.isArray(his.to) && his.to.indexOf(w.key) === -1) throw refusedWhy('taken', none + 'Andy\'s latest line under ' + a.id + ' is addressed to another agent');
+        if (!his.answered) throw refusedWhy('taken', none + 'Andy\'s latest line under ' + a.id + ' is taken by ' + (nameOfKey(st, his.takenKey) || his.taken) + ', and it is theirs to answer');
+        throw refusedWhy('taken', none + 'Andy\'s latest line under ' + a.id + ' was taken and answered by ' + (nameOfKey(st, his.takenKey) || his.taken) + ': what follows it is an agent\'s answer, and an agent\'s answer is never taken; a second answer comes only when Andy names the agent');
+      }
       return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };
     },
   },
