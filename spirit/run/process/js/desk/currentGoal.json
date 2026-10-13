@@ -1,5 +1,5 @@
 {
- "change": 56429,
+ "change": 56436,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "ollama agent node",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -1968,22 +1967,19 @@
    "id": "goal/G21.6",
    "title": "Only the agents a line names may take it",
    "goal": "goal/G21",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G21"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -1995,7 +1991,40 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -2011,6 +2040,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T08:12:02.902Z",
      "text": "Added on your yes: goal/G21.6, its box holds the rule and what I found.\nG21.4 was closed, so it is its own item. Ready to build on your Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:12:42.942Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
