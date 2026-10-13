@@ -25,6 +25,7 @@
 //      Since goal/G14.8 the process names desk and fs and no longer net ("net_fetch will be removed for Levant."),
 //      so the loop is exercised with fs.load against the fake node, the object (2.) still with net: the loop is
 //      generic, and which namespaces ride is the process's list.
+//   4. SINCE goal/G21.5: a tool call the model writes as text is never posted and never run; the model is asked again.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -306,6 +307,35 @@ async function suite() {
   if (a2.done === true && /three pages of examples/.test(a2.text) && studio.chats.length === 5 && script.length === 1 && last && !('tools' in last) && lastUser && lastUser.role === 'user' && /budget/.test(String(lastUser.content)) && fetchesRun.join('') === '123') {
     test.check('three tool rounds at most: three fetches run, the fourth call for a tool is not run, the model is asked once more without tools and told the budget is spent, and its words are the answer');
   } else test.fail(OWED + 'rounds: ' + studio.chats.length + ' calls, script left ' + script.length + ', fetches ' + fetchesRun.join('') + ', last call tools ' + (last && 'tools' in last) + ', last message ' + short(lastUser) + ', answer ' + short(a2));
+
+  // ── 4. A TOOL CALL WRITTEN AS TEXT NEVER REACHES CHAT (goal/G21.5) ──────
+  // Andy's box: deskUnsloth never posts a call the model spelled as text; it asks the model again. It is no adapter
+  // for formats: the spelled call is never parsed or run. The preamble says tools are called only as real calls.
+  const OWED5 = 'OWED by goal/G21.5: ';
+  test.subHeading('4. a tool call written as text is never posted, and never run');
+  const SPELLED = '<tool_call>\n<function=fs_load>\n<parameter=path>\nshell/spelled.test\n</parameter>\n</function>\n</tool_call>';
+  function spelledLoads() { return nodeAsks.filter(function (a) { return a.verb === 'fs.load' && /spelled\.test/.test(String(a.path)); }).length; }
+  script = [{ text: SPELLED }, { text: 'The file holds the example page.' }];
+  studio.chats.length = 0;
+  const s3 = await ask('chat.send', { lines: [{ role: 'system', text: 'you are Levant' }, { role: 'user', text: 'what is in shell/spelled.test' }] });
+  let a3 = {};
+  for (let i = 0; i < 80; i++) { a3 = await ask('chat.answer', { id: s3.id }); if (a3.done) break; await sleep(100); }
+  const sys = studio.chats[0] && Array.isArray(studio.chats[0].messages) ? studio.chats[0].messages.filter(function (m) { return m.role === 'system'; })[0] : null;
+  if (sys && /real tool call/i.test(String(sys.content)) && /as text/i.test(String(sys.content))) test.check('the preamble says tools are called only as real tool calls, never written as text');
+  else test.fail(OWED5 + 'the system message said ' + short(sys && sys.content).replace(/\n/g, ' '));
+  const again = studio.chats[1];
+  const againLast = again && Array.isArray(again.messages) ? again.messages[again.messages.length - 1] : null;
+  if (a3.done === true && a3.text === 'The file holds the example page.' && studio.chats.length === 2 && againLast && againLast.role === 'user' && /as text/i.test(String(againLast.content))) test.check('a spelled call is not the answer: the model is asked again, told its call was written as text, and its next words are the answer');
+  else test.fail(OWED5 + studio.chats.length + ' studio calls, the second ending ' + short(againLast) + ', answer ' + short(a3));
+  if (!spelledLoads()) test.check('the spelled call was never run: no fs.load reached the node');
+  else test.fail(OWED5 + 'the spelled call reached the node ' + spelledLoads() + ' time(s)');
+  script = [{ text: SPELLED }, { text: 'still ' + SPELLED }, { text: 'never reached' }];
+  studio.chats.length = 0;
+  const s4 = await ask('chat.send', { lines: [{ role: 'user', text: 'what is in shell/spelled.test' }] });
+  let a4 = {};
+  for (let i = 0; i < 80; i++) { a4 = await ask('chat.answer', { id: s4.id }); if (a4.done) break; await sleep(100); }
+  if (a4.done === true && typeof a4.text === 'string' && a4.text && !/<tool_call|<function=|<parameter=/.test(a4.text) && studio.chats.length === 2 && !spelledLoads()) test.check('spelled twice, the answer is a plain line saying so, with no tags in it, and the model is asked again only once');
+  else test.fail(OWED5 + studio.chats.length + ' studio calls, answer ' + short(a4) + ', loads ' + spelledLoads());
 }
 
 suite().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(async function () {

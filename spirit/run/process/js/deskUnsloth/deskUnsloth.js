@@ -438,7 +438,9 @@ function describeAll() {
 }
 // WHAT deskUnsloth DOES FOR THE MODEL, said in every call beside the rules: its final text is posted under the item
 // it was addressed in, so a chat.add tool is for another item or an extra line, never its answer again.
-const TOOLS_NOTE = 'Your tools are the verbs described to you, named namespace_verb. Your final answer to the line you were addressed in is posted under that item for you; use desk_chat_add only for another item or an extra line, never to repeat your answer.';
+// AND HOW A TOOL IS CALLED (goal/G21.5): only as a real tool call. A call written out as text in the answer is not
+// run and not posted; see SPELLED below.
+const TOOLS_NOTE = 'Your tools are the verbs described to you, named namespace_verb. Call a tool only as a real tool call; never write a call out as text in your answer, it is not run. Your final answer to the line you were addressed in is posted under that item for you; use desk_chat_add only for another item or an extra line, never to repeat your answer.';
 
 function argumentsOf(call) {
   try { const a = JSON.parse(String((call && call.function && call.function.arguments) || '{}')); return a && typeof a === 'object' ? a : {}; } catch (e) { return {}; }
@@ -485,6 +487,13 @@ function lastWords(messages) {
 // rounds are spent and the model still asks for a tool, it is asked once more WITHOUT tools and told the budget is
 // spent, so it answers with what it has read; only if that too says nothing does the placeholder stand.
 const BUDGET_SPENT = '(the tool budget of this answer is spent: answer now with what you have read)';
+// A TOOL CALL WRITTEN AS TEXT (goal/G21.5, Andy's box): seen live 2026-10-13, Levant ending its answer with a
+// desk_chat_add call spelled in tags, which went into chat while nothing it claimed was done. Such text is never
+// posted: the model is asked again once, told so, and if it spells a call again the answer is SPELLED_ANSWER.
+// deskUnsloth is no adapter for formats (his ruling): the tags are only recognized, never parsed or run.
+const SPELLED_CALL = /<\/?tool_call>|<function=|<parameter=/;
+const SPELLED_AGAIN = '(your answer wrote a tool call out as text; it was not run and will not be posted. Make it as a real tool call, or answer in plain words)';
+const SPELLED_ANSWER = '(the model wrote a tool call as text instead of calling it, twice; nothing was run and its text is not posted)';
 
 // THE ANSWER'S LENGTH, AS THE SERVER NAMES IT (goal/G18.7). OpenAI refuses max_tokens (found live, 2026-10-12:
 // "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens'"); the studio
@@ -551,6 +560,14 @@ function askModelRound(messages, list, round, flight, onTool) {
     if (!content) {
       if (calls.length) return '(the model kept asking for tools after ' + TOOL_ROUNDS + ' rounds and said nothing)';
       throw new Error('the model answered nothing');
+    }
+    if (SPELLED_CALL.test(content)) {
+      if (flight.spelled) { note(flight.from, 'reply', 'a tool call written as text again: not posted'); return SPELLED_ANSWER; }
+      flight.spelled = true;
+      note(flight.from, 'reply', 'a tool call written as text: not run, not posted; asked again');
+      messages.push({ role: 'assistant', content: content });
+      messages.push({ role: 'user', content: SPELLED_AGAIN });
+      return askModelRound(messages, list, round + 1, flight, onTool);
     }
     return content;
   });
