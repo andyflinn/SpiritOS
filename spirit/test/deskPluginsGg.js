@@ -41,6 +41,22 @@
 //      stackFrameChecks.doors reads the list back. Here the list is a scratch file, named by the suite-only value
 //      stackFrameList, so the tree's own list is never written by a suite. The UI's inputs carry data-field="gate"
 //      and data-field="endpoint", say a wrong form as typed with Make off, and the UI shows the doors.
+//   h. THE PLUGIN RUNS THE SHOW (goal/G22.3). Andy, 2026-10-13, in the item's box: "I want this plugin to RUN the show,
+//      so you give me the complete toolset. add/remove rows (add with validation) and you will give me a run
+//      button/link for each one of them, or even better, a run-dialog", "with a way to modify a row as well." and "put
+//      that in the dialog if you want." So on the server: make takes {gate, endpoint, paths, suites}, a node: endpoint
+//      with its paths, each suite a file of spirit/test that is there; every door carries a stable id; update {id, gate,
+//      endpoint, paths, suites} changes a door in place under the same validation and clears its last verdict; remove
+//      {id} strikes it; an unknown id is refused by each. run {id} answers at once {started, runId}, a second run of the
+//      same door while one runs is refused, runState {id} reports running, then the verdict (green, around, of, paths)
+//      and the output's tail, stop {id} stops it; the last verdict per door is kept in the plugin's own folder under the
+//      desk's --state, survives a restart, and each change is published. Here the runner is a scratch script named by
+//      the suite-only value stackFrameRunner, so no suite runs the probe.
+//   i. THE UI: the main list is the door list, one row per door (gate, endpoint, paths, suites, its last verdict) with
+//      ONE button, Open, 1em after itself, that opens the door's dialog; the form adds a door with paths and suites
+//      (data-field on each, a wrong suite name said as typed). The dialog holds the door's values as inputs, Save
+//      (update), Remove, Run and Stop: Run shows running, then the verdict and each path around the gate on its own
+//      line. The goal's items below the doors, the chat below them.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -153,10 +169,13 @@ function clickTab(el, tab) {
 }
 
 (async function () {
+  // What the desk publishes reaches this fake node as jobs.update {app: ...}: kept, so h. can see a run said live.
+  const reports = [];
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
       let b = ''; req.on('data', function (c) { b += c; });
       req.on('end', function () {
+        reports.push(b);
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         const out = j && j.ask === 'api' ? { desk: {} } : { ok: true };
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
@@ -168,6 +187,15 @@ function clickTab(el, tab) {
   const more = path.join(scratch, 'plugins', 'js');
   // The plugin's list of doors, in scratch (g.): the tree's own stackFrameList.json is never written by a suite.
   const listFile = path.join(scratch, 'stackFrameList.json');
+  // THE SCRATCH RUNNER (h.): what the plugin spawns in place of oneDoorStacks.js. It says the door it was handed, waits
+  // 1.5 s (so a second run and a stop meet a run under way), and writes the verdict file the plugin names, as
+  // oneDoorStacks.js does in its one-door mode.
+  const runnerFile = path.join(scratch, 'scratchRunner.js');
+  fs.writeFileSync(runnerFile, "'use strict';\nconst fs = require('fs');\n" +
+    "console.log('scratch runner on door ' + process.env.SPIRIT_STACKS_DOOR + ', list ' + process.env.SPIRIT_STACKS_LIST);\n" +
+    "setTimeout(function () {\n  console.log('scratch runner done');\n" +
+    "  fs.writeFileSync(process.env.SPIRIT_STACKS_VERDICT, JSON.stringify({ door: process.env.SPIRIT_STACKS_DOOR, green: false, around: 2, of: 5,\n" +
+    "    paths: ['POST /x from spirit/run/js/a.js:1:f', 'POST /y from spirit/run/js/b.js:2:g'], why: '' }));\n}, 1500);\n");
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.mkdirSync(state, { recursive: true });
   plantFakePlugins(more);
@@ -176,7 +204,7 @@ function clickTab(el, tab) {
   const client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
   const start = function () {
-    return spawn(process.execPath, [DESK, JSON.stringify({ pluginsMore: more, stackFrameList: listFile }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    return spawn(process.execPath, [DESK, JSON.stringify({ pluginsMore: more, stackFrameList: listFile, stackFrameRunner: runnerFile }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
       env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
   };
   let tree = {};
@@ -274,7 +302,8 @@ function clickTab(el, tab) {
     test.subHeading('e. the dialog\'s verb makes a goal/G22.2-type item');
     const GATE = 'spirit/run/js/peerPost.js::post';
     const END = 'spirit/run/js/presenceNode.js';
-    const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END }, ANDY);
+    // Since h. make takes paths and suites as well (a request is exact: every key, every time).
+    const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END, paths: [], suites: [] }, ANDY);
     const mf = made.id ? await factsOf(made.id) : null;
     const mb = made.id ? await call('item.box', { id: made.id }, ANDY) : {};
     if (mf && mf.goal === GOAL) test.check('the item ' + made.id + ' is in the plugin\'s goal');
@@ -309,7 +338,7 @@ function clickTab(el, tab) {
       ['the same gate and endpoint again', { gate: GATE, endpoint: END }],
     ];
     for (const t of bad) {
-      const r = await call('stackFrameChecks.make', t[1], ANDY);
+      const r = await call('stackFrameChecks.make', Object.assign({ paths: [], suites: [] }, t[1]), ANDY);
       if (!r.id && why(r) && (!t[2] || t[2].test(why(r)))) test.check(t[0] + ' is refused: ' + why(r));
       else test.fail(OWED + t[0] + ' answered ' + short(r));
     }
@@ -318,6 +347,117 @@ function clickTab(el, tab) {
     if (Array.isArray(listAfter) && listAfter.length === 1) test.check('a refused make adds nothing to the list');
     else test.fail(OWED + 'after the refusals the list reads ' + short(listAfter));
 
+    test.subHeading('h. the plugin runs the show: add, update, remove, run, runState, stop');
+    const RUNVERBS = ['stackFrameChecks.update', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.stop'];
+    const missing = RUNVERBS.filter(function (v) { return !tree[v]; });
+    if (!missing.length) test.check('desk declares ' + RUNVERBS.join(', '));
+    else test.fail(OWED + 'desk declares none of ' + short(missing));
+    const idA = door && typeof door.id === 'string' && door.id ? door.id : '';
+    if (idA) test.check('the made door carries a stable id in the list: ' + idA);
+    else test.fail(OWED + 'the made door carries no id: ' + short(door));
+    // A node: endpoint with its paths, and suites of spirit/test that are there.
+    const RELAY = { gate: 'spirit/run/js/peerPost.js::onRequest', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'], suites: ['deskServer.js'] };
+    const badAdds = [
+      ['a suite that is not in spirit/test', Object.assign({}, RELAY, { suites: ['noSuchSuiteHere.js'] }), /noSuchSuiteHere/],
+      ['a suite outside spirit/test', Object.assign({}, RELAY, { suites: ['../run/js/hub.js'] }), /suite/],
+      ['a node: endpoint without its paths', Object.assign({}, RELAY, { paths: [] }), /paths/],
+      ['a path that is no request path', Object.assign({}, RELAY, { paths: ['api relay'] }), /path/],
+      ['a node: endpoint of an unknown kind', Object.assign({}, RELAY, { endpoint: 'node:ftp' }), /ftp/],
+      ['paths on a module endpoint', { gate: GATE, endpoint: 'spirit/run/js/postQueue.js', paths: ['/api/relay/'], suites: [] }, /paths/],
+    ];
+    for (const t of badAdds) {
+      const r = await call('stackFrameChecks.make', t[1], ANDY);
+      if (!r.id && why(r) && t[2].test(why(r))) test.check(t[0] + ' is refused: ' + why(r));
+      else test.fail(OWED + t[0] + ' answered ' + short(r));
+    }
+    const madeB = await call('stackFrameChecks.make', RELAY, ANDY);
+    const doorsB = await call('stackFrameChecks.doors', {}, A);
+    const dB = (doorsB.doors || []).filter(function (x) { return x.endpoint === RELAY.endpoint; })[0];
+    const idB = dB && dB.id ? dB.id : '';
+    if (madeB.id && dB && idB && idB !== idA && JSON.stringify(dB.paths) === JSON.stringify(RELAY.paths) && JSON.stringify(dB.suites) === JSON.stringify(RELAY.suites)) {
+      test.check('a node: endpoint with its paths and a suite that is there is added, under its own id ' + idB + ', its item ' + madeB.id);
+    } else test.fail(OWED + 'the relay door made ' + short(madeB) + ', read back ' + short(dB));
+    if ((doorsB.doors || []).every(function (x) { return x.last && typeof x.last.ran === 'boolean' && typeof x.last.running === 'boolean'; })) test.check('every door read back carries its last run: ' + short(dB && dB.last));
+    else test.fail(OWED + 'the doors read back carry no last run: ' + short(doorsB));
+
+    // update: the same validation as add; an unknown id refused.
+    const upUnknown = await call('stackFrameChecks.update', Object.assign({ id: 'noSuchDoor' }, RELAY), ANDY);
+    if (why(upUnknown) && /noSuchDoor/.test(why(upUnknown))) test.check('update of an unknown door is refused: ' + why(upUnknown));
+    else test.fail(OWED + 'update of an unknown door answered ' + short(upUnknown));
+    const upBad = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { gate: 'spirit/run/js/peerPost.js' }), ANDY);
+    if (why(upBad) && /cheating/.test(why(upBad))) test.check('update under the add rules: a whole module as the gate is refused: ' + why(upBad));
+    else test.fail(OWED + 'update with a whole module as the gate answered ' + short(upBad));
+    const upSuite = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { suites: ['nopeSuite.js'] }), ANDY);
+    if (why(upSuite) && /nopeSuite/.test(why(upSuite))) test.check('update with a suite that is not there is refused: ' + why(upSuite));
+    else test.fail(OWED + 'update with a missing suite answered ' + short(upSuite));
+
+    // run: answers at once; a second run refused; runState; the verdict; the tail.
+    const t0 = Date.now();
+    const run1 = await call('stackFrameChecks.run', { id: idA }, ANDY);
+    const took = Date.now() - t0;
+    if (run1.started === true && typeof run1.runId === 'string' && run1.runId && took < 1200) test.check('run answers at once (' + took + ' ms): started, runId ' + run1.runId);
+    else test.fail(OWED + 'run answered ' + short(run1) + ' in ' + took + ' ms');
+    const run2 = await call('stackFrameChecks.run', { id: idA }, ANDY);
+    if (!run2.started && why(run2) && /running|under way/.test(why(run2))) test.check('a second run of the same door while one runs is refused: ' + why(run2));
+    else test.fail(OWED + 'a second run answered ' + short(run2));
+    const st1 = await call('stackFrameChecks.runState', { id: idA }, A);
+    if (st1.running === true && st1.startedAt && !st1.endedAt) test.check('runState reports it running since ' + st1.startedAt);
+    else test.fail(OWED + 'runState while running answered ' + short(st1));
+    let st2 = {};
+    for (let i = 0; i < 40; i++) { await sleep(250); st2 = await call('stackFrameChecks.runState', { id: idA }, A); if (st2.running === false && st2.endedAt) break; }
+    const v = st2.verdict || {};
+    if (st2.running === false && st2.endedAt && v.ran === true && v.green === false && v.around === 2 && v.of === 5 && Array.isArray(v.paths) && v.paths.length === 2) {
+      test.check('runState then reports the verdict: red, 2 path(s) around the gate of 5, each path given');
+    } else test.fail(OWED + 'runState after the run answered ' + short(st2));
+    if (/scratch runner on door /.test(String(st2.tail || '')) && String(st2.tail).indexOf('door ' + idA) !== -1 && String(st2.tail).indexOf(listFile) !== -1) {
+      test.check('its tail holds the runner\'s output: it was handed the door\'s id and the plugin\'s list');
+    } else test.fail(OWED + 'the run\'s tail reads ' + short(st2.tail));
+    if (reports.some(function (b) { return /"plugin":"stackFrameChecks"/.test(b) && b.indexOf(idA) !== -1; })) test.check('the run was published, so the UI updates live');
+    else test.fail(OWED + 'nothing was published naming the plugin and ' + idA);
+    const kept = path.join(state, 'plugins', 'stackFrameChecks');
+    let keptFiles = [];
+    try { keptFiles = fs.readdirSync(kept); } catch (e) { keptFiles = []; }
+    if (keptFiles.some(function (f) { return /\.json$/.test(f) && fs.readFileSync(path.join(kept, f), 'utf8').indexOf(idA) !== -1; })) test.check('the last verdict is kept in the plugin\'s own folder under the desk\'s --state: ' + short(keptFiles));
+    else test.fail(OWED + 'no file under ' + kept + ' holds the run of ' + idA + ': ' + short(keptFiles));
+    const dA = ((await call('stackFrameChecks.doors', {}, A)).doors || []).filter(function (x) { return x.id === idA; })[0];
+    if (dA && dA.last && dA.last.ran === true && dA.last.around === 2 && dA.last.of === 5 && dA.last.green === false) test.check('the door list carries the last verdict');
+    else test.fail(OWED + 'the door read back after its run: ' + short(dA));
+
+    // stop: the run under way stops; stop with nothing running is refused.
+    const run3 = await call('stackFrameChecks.run', { id: idB }, ANDY);
+    await sleep(200);
+    const stop = await call('stackFrameChecks.stop', { id: idB }, ANDY);
+    let st3 = {};
+    for (let i = 0; i < 20; i++) { await sleep(150); st3 = await call('stackFrameChecks.runState', { id: idB }, A); if (st3.running === false) break; }
+    if (run3.started && stop.stopped === true && st3.running === false && st3.stopped === true && st3.endedAt) test.check('stop ends the run under way, and runState says it was stopped');
+    else test.fail(OWED + 'run ' + short(run3) + ', stop ' + short(stop) + ', then runState ' + short(st3));
+    const stopIdle = await call('stackFrameChecks.stop', { id: idB }, ANDY);
+    if (!stopIdle.stopped && why(stopIdle)) test.check('stop with nothing running is refused: ' + why(stopIdle));
+    else test.fail(OWED + 'stop with nothing running answered ' + short(stopIdle));
+    const runUnknown = await call('stackFrameChecks.run', { id: 'noSuchDoor' }, ANDY);
+    if (!runUnknown.started && why(runUnknown)) test.check('run of an unknown door is refused: ' + why(runUnknown));
+    else test.fail(OWED + 'run of an unknown door answered ' + short(runUnknown));
+
+    // update lands and clears the door's last verdict; the other door keeps its own.
+    const upOk = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY, { suites: ['deskServer.js', 'oneDoorStacks.js'] }), ANDY);
+    const after2 = (await call('stackFrameChecks.doors', {}, A)).doors || [];
+    const dB2 = after2.filter(function (x) { return x.id === idB; })[0];
+    const dA2 = after2.filter(function (x) { return x.id === idA; })[0];
+    if (!why(upOk) && dB2 && JSON.stringify(dB2.suites) === '["deskServer.js","oneDoorStacks.js"]' && dB2.item === madeB.id) test.check('update changes the door in place, under its id and its item');
+    else test.fail(OWED + 'update answered ' + short(upOk) + ', the door reads ' + short(dB2));
+    if (dB2 && dB2.last && dB2.last.ran === false && dA2 && dA2.last && dA2.last.ran === true) test.check('an updated door\'s last verdict is cleared; the other door keeps its own');
+    else test.fail(OWED + 'after the update the last runs read ' + short([dB2 && dB2.last, dA2 && dA2.last]));
+
+    // remove: strikes the door; an unknown one refused.
+    const rm = await call('stackFrameChecks.remove', { id: idB }, ANDY);
+    let listRm = null;
+    try { listRm = JSON.parse(fs.readFileSync(listFile, 'utf8')); } catch (e) { listRm = null; }
+    if (!why(rm) && Array.isArray(listRm) && !listRm.some(function (x) { return x.id === idB; }) && listRm.some(function (x) { return x.id === idA; })) test.check('remove strikes the door ' + idB + ' from the list, the other stays');
+    else test.fail(OWED + 'remove answered ' + short(rm) + ', the list reads ' + short(listRm));
+    const rm2 = await call('stackFrameChecks.remove', { id: idB }, ANDY);
+    if (why(rm2) && rm2.ok === false) test.check('removing a door that is not there is refused: ' + why(rm2));
+    else test.fail(OWED + 'a second remove answered ' + short(rm2));
+
     test.subHeading('b. a restart replays the same plugin goal');
     try { kid.kill(); } catch (e) { /* gone */ }
     await sleep(800);
@@ -325,10 +465,13 @@ function clickTab(el, tab) {
     if (!await waitUp()) { test.fail('the world: the desk did not start again'); return; }
     const goals2 = (await rows({ goalsOnly: true })).filter(function (r) { return r.plugin === 'stackFrameChecks'; });
     const after = (await members(GOAL)).map(function (r) { return r.id; });
-    const expected = JSON.parse(before).concat(made.id ? [made.id] : []).sort();
+    const expected = JSON.parse(before).concat(made.id ? [made.id] : []).concat(madeB.id ? [madeB.id] : []).sort();
     if (goals2.length === 1 && goals2[0].id === GOAL && JSON.stringify(after.slice().sort()) === JSON.stringify(expected)) {
       test.check('after the restart: the one goal ' + GOAL + ' and the same items, nothing minted again');
     } else test.fail(OWED + 'after the restart the goals ' + short(goals2.map(function (x) { return x.id; })) + ', the items ' + short(after) + ' against ' + short(expected));
+    const stR = await call('stackFrameChecks.runState', { id: idA }, A);
+    if (stR.running === false && stR.verdict && stR.verdict.ran === true && stR.verdict.around === 2) test.check('h. the last verdict of ' + idA + ' survives the restart');
+    else test.fail(OWED + 'after the restart runState of ' + idA + ' answered ' + short(stR));
   } finally {
     try { kid.kill(); } catch (e) { /* gone */ }
     node.close();
@@ -484,13 +627,22 @@ function clickTab(el, tab) {
     if (!ui || typeof ui.open !== 'function') throw new Error('the UI registers no window.spiritDeskPlugins.stackFrameChecks.open');
     const asked = [];
     const box = fakeElement('box');
-    const DOORS = [{ gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: 'spirit/run/js/presenceNode.js', suites: ['serverSurface.js'], item: 'goal/G19.14' },
-      { gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'], suites: [], item: 'goal/G22.2' }];
+    const NEVER = { running: false, ran: false, green: false, around: 0, of: 0, startedAt: '', endedAt: '', stopped: false };
+    const DOORS = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: 'spirit/run/js/presenceNode.js', suites: ['serverSurface.js'], item: 'goal/G19.14',
+      last: { running: false, ran: true, green: true, around: 0, of: 12, startedAt: '2026-10-13T10:00:00.000Z', endedAt: '2026-10-13T10:01:00.000Z', stopped: false } },
+    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'], suites: [], item: 'goal/G22.2', last: NEVER }];
+    // runState answers what the test sets: running first, then the verdict.
+    let runState = { id: 'd2', running: true, startedAt: new Date(Date.now() - 3000).toISOString(), endedAt: '', stopped: false, tail: '',
+      verdict: { ran: false, green: false, around: 0, of: 0, paths: [], why: '' } };
+    const uiPublished = [];
     ui.open(box, { goal: GOAL, ask: function (verb, a) {
       asked.push([verb, a]);
       if (verb === 'stackFrameChecks.doors') return Promise.resolve({ doors: DOORS });
+      if (verb === 'stackFrameChecks.run') return Promise.resolve({ started: true, runId: 'r1' });
+      if (verb === 'stackFrameChecks.runState') return Promise.resolve(runState);
+      if (verb === 'stackFrameChecks.stop') return Promise.resolve({ stopped: true });
       return Promise.resolve({ id: GOAL + '.2', change: 9, items: [], more: false });
-    }, onPublished: function () { return function () {}; } });
+    }, onPublished: function (fn) { uiPublished.push(fn); return function () {}; } });
     await sleep(20);
     const html = box.innerHTML;
     const inputs = html.match(/<input[^>]*>/g) || [];
@@ -525,6 +677,114 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'Make asked ' + short(asked));
     if (asked.filter(function (x) { return x[0] === 'stackFrameChecks.doors'; }).length >= 2) test.check('a made door reads the list of doors again');
     else test.fail(OWED + 'after Make the doors were not read again');
+
+    test.subHeading('i. the door list, the add form, the door\'s dialog');
+    const click = function (id, attrs) { box.fire('click', { target: { id: id || '', getAttribute: function (n) { return (attrs || {})[n] || null; } } }); };
+    const typedAs = function (id, field, v) {
+      doc.getElementById(id).value = v;
+      box.fire('input', { target: { id: id, getAttribute: function (n) { return n === 'data-field' ? field : null; } } });
+      return doc.getElementById(id + '-left').textContent;
+    };
+    const html2 = box.innerHTML;
+    const atDoors = html2.indexOf('id="sfc-doors"');
+    const atItems2 = html2.indexOf('id="sfc-items"');
+    if (atDoors !== -1 && atItems2 > atDoors) test.check('the door list comes before the goal\'s items');
+    else test.fail(OWED + 'the doors at ' + atDoors + ', the items at ' + atItems2);
+    const rowsHtml = doorsEl.innerHTML;
+    const opens = rowsHtml.match(/<button[^>]*data-open="[^"]+"[^>]*>/g) || [];
+    if (opens.length === 2 && opens.every(function (b) { return /margin-right:1em/.test(b); }) && /data-open="d1"/.test(opens[0]) && /data-open="d2"/.test(opens[1])) test.check('each door row has one Open button, 1em after itself');
+    else test.fail(OWED + 'the rows\' Open buttons: ' + short(opens));
+    if ((rowsHtml.match(/<button/g) || []).length === 2) test.check('and no other button in the rows: the dialog holds the rest');
+    else test.fail(OWED + 'the rows hold ' + (rowsHtml.match(/<button/g) || []).length + ' buttons');
+    if (/green/.test(rowsHtml) && /12/.test(rowsHtml) && /never run/.test(rowsHtml) && /serverSurface\.js/.test(rowsHtml)) test.check('each row shows its suites and its last verdict (green, 12 calls; never run)');
+    else test.fail(OWED + 'the rows show no last verdict: ' + short(rowsHtml));
+
+    // The add form: paths and suites, each with its data-field, said as typed.
+    const inputs2 = (box.innerHTML.match(/<input[^>]*>/g) || []);
+    const pathsIn = inputs2.filter(function (i) { return /id="sfc-paths"/.test(i); })[0] || '';
+    const suitesIn = inputs2.filter(function (i) { return /id="sfc-suites"/.test(i); })[0] || '';
+    if (/data-field="paths"/.test(pathsIn) && /data-field="suites"/.test(suitesIn)) test.check('the add form has a paths and a suites input, data-field="paths" and data-field="suites"');
+    else test.fail(OWED + 'the add form\'s inputs: ' + short(inputs2));
+    typedAs('sfc-gate', 'gate', 'spirit/run/js/peerPost.js::post');
+    typedAs('sfc-endpoint', 'endpoint', 'spirit/run/js/postQueue.js');
+    let left2 = typedAs('sfc-suites', 'suites', 'serverSurface.js, ../hub.js');
+    if (/\.\.\/hub\.js/.test(left2) && doc.getElementById('sfc-make').disabled === true) test.check('a suite that is no file name of spirit/test is said as typed (' + left2 + ') and Add is off');
+    else test.fail(OWED + 'typed a bad suite: the note reads ' + short(left2) + ', Add disabled ' + doc.getElementById('sfc-make').disabled);
+    typedAs('sfc-suites', 'suites', 'serverSurface.js, everyVerb.js');
+    left2 = typedAs('sfc-endpoint', 'endpoint', 'node:http+https');
+    if (doc.getElementById('sfc-make').disabled === true) test.check('a node: endpoint with no paths keeps Add off');
+    else test.fail(OWED + 'a node: endpoint without paths left Add on');
+    typedAs('sfc-paths', 'paths', '/api/relay/');
+    if (doc.getElementById('sfc-make').disabled === false) test.check('with its paths Add is on');
+    else test.fail(OWED + 'node: endpoint with paths: Add is still off, ' + short(doc.getElementById('sfc-paths-left').textContent));
+    asked.length = 0;
+    click('sfc-make');
+    await sleep(20);
+    const add = asked.filter(function (x) { return x[0] === 'stackFrameChecks.make'; })[0];
+    if (add && add[1].endpoint === 'node:http+https' && JSON.stringify(add[1].paths) === '["/api/relay/"]' && JSON.stringify(add[1].suites) === '["serverSurface.js","everyVerb.js"]') test.check('Add sends make with the paths and the suites as lists');
+    else test.fail(OWED + 'Add asked ' + short(asked));
+
+    // The door's dialog: Open on a row.
+    asked.length = 0;
+    click('', { 'data-open': 'd2' });
+    await sleep(20);
+    const dlg = doc.getElementById('sfc-dialog');
+    const dHtml = dlg.innerHTML;
+    const dInputs = dHtml.match(/<input[^>]*>/g) || [];
+    const val = function (id) { return doc.getElementById(id).value; };
+    if (dlg.hidden === false && /data-field="gate"/.test(dInputs.join('')) && /data-field="suites"/.test(dInputs.join('')) && val('sfc-d-gate') === DOORS[1].gate && val('sfc-d-endpoint') === DOORS[1].endpoint && val('sfc-d-paths') === '/api/relay/') {
+      test.check('Open shows the door\'s dialog with its values in inputs carrying data-field');
+    } else test.fail(OWED + 'the dialog after Open: hidden ' + dlg.hidden + ', ' + short(dHtml) + ', gate ' + short(val('sfc-d-gate')));
+    const dButtons = ['sfc-d-run', 'sfc-d-stop', 'sfc-d-save', 'sfc-d-remove', 'sfc-d-close'].map(function (id) { return (new RegExp('<button[^>]*id="' + id + '"[^>]*>').exec(dHtml) || [''])[0]; });
+    if (dButtons.every(function (b) { return b && /margin-right:1em/.test(b); }) && /margin-top:1em/.test((/<div[^>]*id="sfc-dialog-body"[^>]*>/.exec(dHtml) || /<div[^>]*>/.exec(dHtml) || [''])[0])) test.check('the dialog has Run, Stop, Save, Remove and Close, each 1em after itself, in a block with its leading 1em');
+    else test.fail(OWED + 'the dialog\'s buttons: ' + short(dButtons));
+    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.runState' && x[1].id === 'd2'; })) test.check('opening it reads the door\'s runState');
+    else test.fail(OWED + 'Open asked ' + short(asked));
+
+    // Edit in the dialog, said as typed, saved through update.
+    let dl = typedAs('sfc-d-gate', 'gate', 'spirit/run/js/peerPost.js');
+    if (/cheating/.test(dl) && doc.getElementById('sfc-d-save').disabled === true) test.check('the dialog\'s gate is checked as typed (' + dl + ') and Save is off');
+    else test.fail(OWED + 'typed a whole module in the dialog: ' + short(dl) + ', Save disabled ' + doc.getElementById('sfc-d-save').disabled);
+    typedAs('sfc-d-gate', 'gate', 'spirit/run/js/peerPost.js::onRequest');
+    typedAs('sfc-d-suites', 'suites', 'agentOnboard.js,serverSurface.js');
+    asked.length = 0;
+    click('sfc-d-save');
+    await sleep(20);
+    const up = asked.filter(function (x) { return x[0] === 'stackFrameChecks.update'; })[0];
+    if (up && up[1].id === 'd2' && up[1].gate === 'spirit/run/js/peerPost.js::onRequest' && up[1].endpoint === 'node:http+https+fetch' && JSON.stringify(up[1].paths) === '["/api/relay/"]' && JSON.stringify(up[1].suites) === '["agentOnboard.js","serverSurface.js"]') test.check('Save sends update {id, gate, endpoint, paths, suites}');
+    else test.fail(OWED + 'Save asked ' + short(asked));
+
+    // Run: running and elapsed, then the verdict and each path on its own line; Stop.
+    asked.length = 0;
+    click('sfc-d-run');
+    await sleep(30);
+    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.run' && x[1].id === 'd2'; })) test.check('Run sends run {id}');
+    else test.fail(OWED + 'Run asked ' + short(asked));
+    const runEl = doc.getElementById('sfc-d-state');
+    if (/running/.test(runEl.innerHTML) && /\d+ s/.test(runEl.innerHTML)) test.check('the dialog shows the run under way and its elapsed time: ' + short(runEl.innerHTML));
+    else test.fail(OWED + 'while running the dialog shows ' + short(runEl.innerHTML));
+    asked.length = 0;
+    click('sfc-d-stop');
+    await sleep(20);
+    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.stop' && x[1].id === 'd2'; })) test.check('Stop sends stop {id}');
+    else test.fail(OWED + 'Stop asked ' + short(asked));
+    runState = { id: 'd2', running: false, startedAt: new Date(Date.now() - 9000).toISOString(), endedAt: new Date().toISOString(), stopped: false, tail: 'the last lines',
+      verdict: { ran: true, green: false, around: 2, of: 7, paths: ['POST /api/relay/post from spirit/run/js/hub.js:5:post', 'GET /api/relay/key from spirit/run/js/offboard.js:9:main'], why: '' } };
+    uiPublished.forEach(function (fn) { fn({ plugin: 'stackFrameChecks', data: { id: 'd2', running: false } }); });
+    await sleep(30);
+    const vHtml = runEl.innerHTML;
+    const pathLines = vHtml.match(/<div class="sfc-path"[^>]*>[^<]*<\/div>/g) || [];
+    if (/2 path\(s\) around the gate, of 7/.test(vHtml) && pathLines.length === 2 && /hub\.js:5:post/.test(pathLines[0]) && /offboard\.js:9:main/.test(pathLines[1])) test.check('a published end shows the verdict and each path around the gate on its own line');
+    else test.fail(OWED + 'after the run the dialog shows ' + short(vHtml));
+    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.doors'; })) test.check('and the door list is read again, so its row shows the new verdict');
+    else test.fail(OWED + 'a published run did not read the doors again');
+
+    // Remove, from the dialog.
+    asked.length = 0;
+    click('sfc-d-remove');
+    await sleep(20);
+    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.remove' && x[1].id === 'd2'; })) test.check('Remove sends remove {id}');
+    else test.fail(OWED + 'Remove asked ' + short(asked));
   } catch (e) { test.fail(OWED + 'the private UI: ' + (e && e.message)); }
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await sleep(300);

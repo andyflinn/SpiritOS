@@ -207,7 +207,12 @@ const BOTTOMS = {
 //
 // Each door becomes a row of BOTTOMS under doorKey(), so the probe in a child process, given the same key, rebuilds the
 // same row from the same file.
-const LIST = path.join(REPO, 'spirit', 'run', 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks', 'stackFrameList.json');
+//
+// THE LIST'S HOME IS THIS ONE CONSTANT, LIST_HOME, and one in the plugin (stackFrameChecks.js, LIST_HOME): moving the
+// list is those two lines. A run started by the plugin's Run (goal/G22.3) names the list it used in SPIRIT_STACKS_LIST,
+// so the runner and every probed child read that same list, a suite's scratch list included.
+const LIST_HOME = path.join(REPO, 'spirit', 'run', 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks', 'stackFrameList.json');
+const LIST = process.env.SPIRIT_STACKS_LIST ? path.resolve(process.env.SPIRIT_STACKS_LIST) : LIST_HOME;
 const NODE_KINDS = {
   http: { mod: 'http', fn: 'request' },
   https: { mod: 'https', fn: 'request' },
@@ -888,7 +893,7 @@ function measure(bottom, targets, all) {
   return { out: String(r.stdout || ''), status: r.status, counts: counts };
 }
 
-module.exports = { BOTTOMS: BOTTOMS, measure: measure, LIST: LIST, doors: doors, doorKey: doorKey, frameName: frameName, gateMatches: gateMatches, functionRanges: functionRanges, enclosingAt: enclosingAt };
+module.exports = { BOTTOMS: BOTTOMS, measure: measure, LIST: LIST, LIST_HOME: LIST_HOME, doors: doors, doorKey: doorKey, frameName: frameName, gateMatches: gateMatches, functionRanges: functionRanges, enclosingAt: enclosingAt };
 
 if (require.main === module) {
   // ── ONE SUITE, NOT THE HARNESS — AND THAT IS ANDY'S SIMPLIFICATION ──

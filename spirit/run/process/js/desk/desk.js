@@ -1900,10 +1900,16 @@ function idsOfCall(verb, a) {
 // What a plugin is handed: its name and goal, and the desk's own writes and rules. write is the desk's write as the desk
 // itself (as the limbo line is written); writeAs writes as the caller the door forwarded. A check given to either runs
 // against the state as it stands, and may set fields of the body it was given before the record is kept (minted).
+// SINCE goal/G22.3's "RUN the show" (Andy, 2026-10-13): stateDir, the plugin's own folder under the desk's --state
+// (plugins/<name>/, never in git, as desk.db is not: D5 above), and publish(data), which says data on the desk's stream
+// as { plugin: <name>, data }: no change, no item, no rows, so the face's List never paints it, and only the plugin's
+// own UI, which subscribes itself, reads it.
 function pluginDesk(name, manifest) {
   const goal = pluginGoalKey(name);
   return {
     name: name, goal: goal, manifest: manifest,
+    stateDir: path.join(STATE, 'plugins', name),
+    publish: function (data) { return appServer.publish({ plugin: name, data: data }); },
     state: walkState,
     inGoal: function (id) { return inGoalOf(goal, id); },
     write: function (verb, body, check) { body.by = 'desk'; body.key = ''; return write(verb, body, check); },

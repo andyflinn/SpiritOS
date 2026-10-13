@@ -143,9 +143,32 @@ test.subHeading('a frame carries what it is written inside');
   }
 })();
 
+// ── ONE DOOR ALONE, FOR THE PLUGIN'S RUN (goal/G22.3) ───────────────
+//
+// Andy, 2026-10-13, in goal/G22.3's box: "you will give me a run button/link for each one of them, or even better, a
+// run-dialog". The stackFrameChecks plugin spawns this file with SPIRIT_STACKS_DOOR, the id of one door of its list
+// (and SPIRIT_STACKS_LIST, the list it holds, which wirePaths reads): only that door is judged. Its verdict is written
+// as JSON to SPIRIT_STACKS_VERDICT, { door, green, around, of, paths, why }, every path around the gate in it, uncut:
+// the plugin keeps it as the door's last verdict. Without SPIRIT_STACKS_DOOR the whole list is judged, as always.
+const ONE = String(process.env.SPIRIT_STACKS_DOOR || '');
+const VERDICT_FILE = String(process.env.SPIRIT_STACKS_VERDICT || '');
+function verdict(door, green, around, of, paths, why) {
+  if (!ONE || !VERDICT_FILE) return;
+  try {
+    require('fs').writeFileSync(VERDICT_FILE, JSON.stringify({ door: door, green: green, around: around, of: of, paths: paths, why: why }));
+  } catch (e) { test.comment('the verdict could not be written to ' + VERDICT_FILE + ': ' + ((e && e.message) || e)); }
+}
+
 let doors = [];
 try { doors = wirePaths.doors(); } catch (e) { test.fail('OWED by goal/G22.3: the list of doors does not read: ' + ((e && e.message) || e)); }
 if (!doors.length) test.fail('OWED by goal/G22.3: the list of doors is empty');
+if (ONE) {
+  doors = doors.filter(function (d) { return d && d.id === ONE; });
+  if (!doors.length) {
+    test.fail('the list ' + wirePaths.LIST + ' has no door ' + ONE);
+    verdict(ONE, false, 0, 0, [], 'the list has no door ' + ONE);
+  }
+}
 
 doors.forEach(function (d) {
   const name = wirePaths.doorKey(d);
@@ -154,8 +177,8 @@ doors.forEach(function (d) {
   const title = 'nobody but ' + short(d.gate) + ' reaches ' + reached + ' (' + (d.item || 'no item') + ')';
   const suites = Array.isArray(d.suites) ? d.suites : [];
   test.subHeading(d.gate + ' -> ' + reached + ' (driven by ' + (suites.join(', ') || 'no suite yet') + ')');
-  if (!row) { test.fail(title, 'the door has no row in tools/wirePaths.js BOTTOMS'); return; }
-  if (!suites.length) { test.fail(title, 'no suites drive it yet: an empty run, measured by nobody'); return; }
+  if (!row) { test.fail(title, 'the door has no row in tools/wirePaths.js BOTTOMS'); verdict(d.id, false, 0, 0, [], 'the door has no row in BOTTOMS'); return; }
+  if (!suites.length) { test.fail(title, 'no suites drive it yet: an empty run, measured by nobody'); verdict(d.id, false, 0, 0, [], 'no suites drive it yet: an empty run'); return; }
 
   const run = wirePaths.measure(name, suites, false);
   if (run.status) test.comment('a driven suite exited ' + run.status + ': the run may have reached less than it should');
@@ -176,12 +199,15 @@ doors.forEach(function (d) {
 
   if (!production) {
     test.fail(title, 'no production stack reached it — the driven suites exercised nothing');
+    verdict(d.id, false, 0, 0, [], 'no production stack reached it: the driven suites exercised nothing');
   } else if (around.size) {
     const list = Array.from(around.keys());
     test.fail(title, around.size + ' path(s) around the gate, of ' + production + ' production call(s): ' +
       list.slice(0, 8).join('; ') + (list.length > 8 ? '; and ' + (list.length - 8) + ' more' : ''));
+    verdict(d.id, false, around.size, production, list, run.status ? 'a driven suite exited ' + run.status : '');
   } else {
     test.check(title, production + ' production call(s), every one through ' + d.gate);
+    verdict(d.id, true, 0, production, [], run.status ? 'a driven suite exited ' + run.status : '');
   }
 });
 
