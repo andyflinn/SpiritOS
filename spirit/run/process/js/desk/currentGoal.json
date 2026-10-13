@@ -1,5 +1,5 @@
 {
- "change": 56243,
+ "change": 56378,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -16,8 +16,7 @@
    "blocked": [
     "goal/G21.2",
     "goal/G21.3",
-    "goal/G21.4",
-    "goal/G21.5"
+    "goal/G21.4"
    ],
    "go": false,
    "alone": false,
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -1156,7 +1155,7 @@
    "title": "Verifier fixes",
    "goal": "goal/G21",
    "status": "deskVerify passed",
-   "with": "claude-windows",
+   "with": "",
    "buttons": [
     "done"
    ],
@@ -1803,6 +1802,18 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-13T07:58:33.282Z",
      "text": "Levant: Yes, Andy — I've taken **goal/G21** (I just put the red on it). Before I propose, one scope question, because \"add it\" could mean two different fixes:\n\n1. **deskUnsloth's node only** — its `deskUnsloth` wrapper detects tool-call-shaped trailing text and either runs the call or re-asks the model, never posting the tags.\n2. **deskUnsloth's deskClient only** — the server-side reader the same way.\n\nAlso: do we want the check to require the *real* tool-call shape (matching the G19 model test), or to be more forgiving of a model that renders tags as prose? That decides whether the fix is narrow and safe, or broad and risks a model faking a call.\n\nRead the box version before I write — I'll confirm vN."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:03:23.015Z",
+     "text": "levant, that ship has sailed. this item is done."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-13T08:07:30.990Z",
+     "text": "Levant: goal/G21.4 is closed by Andy's press — \"that ship has sailed. this item is done.\" That's his decision, and Go/Done are his alone. I've already taken it and it's green on a2c370c0; there's nothing left for me to record or claim on it, so I won't post again."
     }
    ]
   },
@@ -1810,9 +1821,12 @@
    "id": "goal/G21.5",
    "title": "Tool calls written as text never reach chat",
    "goal": "goal/G21",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G21"
    ],
@@ -1820,20 +1834,26 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskUnslothTools.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -1895,6 +1915,42 @@
      "key": "",
      "at": "2026-10-13T08:01:57.840Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:03:31.375Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:06:26.274Z",
+     "text": "commit d81be0f142af29df3ff1e50a45938d9dabaa50a6: goal/G21.5: a tool call the model writes as text is never posted or run; the model is asked again; the preamble says tools are called only as real calls\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/test/deskUnslothTools.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:06:38.898Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:06:42.965Z",
+     "text": "Built and pushed: d81be0f1.\nFiles: deskUnsloth.js; test deskUnslothTools (section 4 new, 19 green).\nAn answer carrying tool-call tags is never posted and never run; the model is asked once more, told its call was written as text.\nIf it spells a call again, the answer is one plain line saying so, with no tags.\nThe tools note in the preamble now says tools are called only as real calls, never written out as text.\nAll 14 deskUnsloth suites and the two tree-wide rules are green on my clone.\nLevant's node runs it once deskUnsloth there restarts on this commit."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:06:44.885Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:06:56.939Z",
+     "text": "deskVerify: passed, at d81be0f1 (pulled). 1 suite ran green."
     }
    ]
   }
