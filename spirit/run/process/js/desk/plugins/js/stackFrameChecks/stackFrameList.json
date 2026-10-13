@@ -24,11 +24,12 @@
     "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "node:http+https+fetch",
     "paths": [
-      "/api/relay/"
+      "/api/"
     ],
     "suites": [
       "agentOnboard.js",
-      "serverSurface.js"
+      "serverSurface.js",
+      "everyVerb.js"
     ],
     "item": "goal/G22.2"
   },
