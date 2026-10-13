@@ -114,7 +114,12 @@ const EXEMPT = { 'js/buildStamp.js': ':!spirit/test' };
 // so it names their folder, and with the folder deleted it runs nothing and says so, which is no dependency of the
 // product on the harness. Andy, 2026-10-12, on this very flag: "the core hard-codes MANY folders for many reasons.
 // irrelevant." Named file by file, as the one above is.
-const EXEMPT_WHOLE = { 'process/js/deskVerify/deskVerify.js': true, 'process/js/deskVerify/deskVerify.json': true };
+// Since goal/G22.3 THE stackFrameChecks DESK PLUGIN TOO, on the same ground: Andy's box has it make items whose file
+// lists name the stack-frame suites (the rerun item's oneDoorStacks.js, each new item's stackFrameTestItems.js), which
+// is what deskVerify runs for them. It names the paths as data on a desk item and loads nothing from the folder; with
+// the folder deleted the desk and the plugin run, and those items' verifies say so.
+const EXEMPT_WHOLE = { 'process/js/deskVerify/deskVerify.js': true, 'process/js/deskVerify/deskVerify.json': true,
+  'process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js': true };
 
 const files = walk(RUN_DIR, []);
 

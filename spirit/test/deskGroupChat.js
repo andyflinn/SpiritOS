@@ -88,8 +88,16 @@ async function server() {
   await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, CW);
   const current = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
   const open = labels(await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
-  if (Array.isArray(record.records) && record.records.length === 0 && current.indexOf('t/G1') !== -1 && current.indexOf(CHAT) === -1 && open.indexOf(CHAT) === -1) {
-    test.check('the fresh desk\'s record is empty; an ordinary goal is the current one, and desk/G0.0 is not among the open goals');
+  // Since goal/G22.3: a fresh desk mounts its plugins, and each plugin's first mount writes its private goal (and the
+  // stackFrameChecks plugin its rerun item) as records by desk under plugin/<name>. Those are the only records a fresh
+  // desk holds; desk/G0.0 is still made by none.
+  const ownRecords = (record.records || []).filter(function (r) {
+    let b = {};
+    try { b = JSON.parse(r.body); } catch (e) { b = {}; }
+    return !(r.by === 'desk' && /^plugin\//.test(String(b.minted || b.id || '')));
+  });
+  if (Array.isArray(record.records) && ownRecords.length === 0 && current.indexOf('t/G1') !== -1 && current.indexOf(CHAT) === -1 && open.indexOf(CHAT) === -1) {
+    test.check('the fresh desk\'s record holds its plugins\' first-mount records alone; an ordinary goal is the current one, and desk/G0.0 is not among the open goals');
   } else test.fail(OWED + 'the fresh record held ' + JSON.stringify(record.records).slice(0, 160) + '; the current goal lists ' + JSON.stringify(current) + ', the open goals ' + JSON.stringify(open));
 
   test.subHeading('3. its chat takes and gives back everybody\'s lines, in one order');

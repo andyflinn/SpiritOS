@@ -428,6 +428,23 @@ const LIVE_MS = 10 * 60 * 1000;
 // and writes are records, replayed onto it at every walk.
 const GROUP_CHAT = 'desk/G0.0';
 
+// ── THE MOUNTED PLUGINS, AND THE GOALS THEY GOVERN (goal/G22.3) ──────
+//
+//   Andy, 2026-10-13, in the item's box: "A gg plugin is a goal-governance plugin: for its type of goal it is the first
+//   to handle every desk event, and the mechanical controls it implements live there, not in desk.js.", "desk scans its
+//   plugin folder and mounts every plugin it finds", and "On its first mount the plugin gets its own private goal with a
+//   fixed key, and from then on that goal and the plugin live hand in hand".
+//
+// Filled by mountPlugins() before the desk serves, in mount order: { name, goal, refuses, handles, verbs }. The goal's
+// key is fixed: plugin/<name>. A goal of a plugin is a pluggable goal/G0 (his words: "a special goal that is always open
+// while actually closed"): the desk holds it like any goal, and its plugin decides what may happen to it.
+const PLUGINS = [];
+const PLUGIN_GOAL = Object.create(null);
+function pluginGoalKey(name) { return 'plugin/' + name; }
+// Whether an id is a plugin's goal or one of its items, by the id alone: an item's id is minted <goal>.<n> (nextItemId),
+// and a plugin refuses a session over its goal, so nothing else lands under that prefix. No walk of the records.
+function inGoalOf(goal, id) { const s = String(id || ''); return s === goal || s.indexOf(goal + '.') === 0; }
+
 function walkState() {
   // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
   // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
@@ -1100,7 +1117,18 @@ function emptiedByPress(a) {
 //          have a go-all button for fixing rounds")
 //   Reopen alone once closed (goal/G4.20 point 2: Reopen takes back Done as well as Close); the group chat's
 //          anchor none, as it refuses bring-back (goal/G3.10)
+// A PLUGIN'S GOAL OFFERS NO BUTTON ITS PLUGIN REFUSES (goal/G22.3): the List, the dialog and the press read this one
+// list, so a refused press is never drawn. Delete is the verb item.delete, every other button a press.
 function buttons(s, it) {
+  const out = buttonsOf(s, it);
+  if (!PLUGINS.length) return out;
+  return out.filter(function (what) {
+    const verb = what === 'delete' ? 'item.delete' : 'press';
+    const a = what === 'delete' ? { id: it.id } : { id: it.id, what: what };
+    return !PLUGINS.some(function (p) { return !!pluginRefusal(p, verb, a); });
+  });
+}
+function buttonsOf(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
   if (it.closed) return it.id === GROUP_CHAT ? [] : ['reopen'];
   if (it.done) return ['close', 'reopen'];
@@ -1368,6 +1396,9 @@ function facts(s, it) {
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();
+    // THE PLUGIN THAT GOVERNS IT (goal/G22.3), by name, on a plugin's private goal alone: the List draws its label as
+    // the button that opens that plugin's private UI ("in the list of goals it shows a button in the label column").
+    if (PLUGIN_GOAL[it.id]) f.plugin = PLUGIN_GOAL[it.id];
     f.design = g.design;
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
       return o && listed(s, o) && (buttons(s, o).length > 0 || asksOf(s, o) > 0);
@@ -1685,7 +1716,8 @@ function changedRows(before, after, goalId) {
 // A goal is open while it is on the List. With none open, start-design (no id) makes goal/G<n>, n the next free.
 function newGoal(w) {
   const st = walkState();
-  const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && listed(st, g) && !g.closed; });
+  // A plugin's goal is always open (goal/G22.3) and is no goal of his work: it never holds a new goal back.
+  const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && !PLUGIN_GOAL[gid] && listed(st, g) && !g.closed; });
   if (open) throw refusedWhy('bad-request', 'a goal is open already; close it before a new one starts');
   const used = Object.keys(st.goals).map(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); return m ? Number(m[1]) : 0; });
   const id = 'goal/G' + (Math.max.apply(null, [0].concat(used)) + 1);
@@ -1821,7 +1853,119 @@ function changesSince(n, line, viewer) {
   return out;
 }
 
-appServer.serve({
+// ── MOUNTING THE PLUGINS (goal/G22.3) ────────────────────────────────
+//
+//   Andy, 2026-10-13, in the item's box: "Mount every plugin in desk's plugin folder, organized with the same pattern as
+//   shell apps and processes.", and "each plugin's server half at spirit/run/process/js/desk/plugins/js/<name>/<name>.js
+//   with its .json beside it".
+//
+// A plugin is the folder plugins/js/<name>/ holding <name>.js and <name>.json, as a process is process/js/<name>/: no
+// .json, no plugin. Mounted in name order, once, before the desk serves. A suite names a further folder in the
+// suite-only value pluginsMore (as it injects boxHoldMs), mounted after the desk's own.
+//
+// THE CONTRACT. <name>.js exports function (desk) -> { refuses, handles, verbs }, every part optional:
+//   refuses(verb, args, ids)        the plugin's word on a call, '' to let it pass, else why it is refused. Asked
+//                                   first, before the desk's own handler, for EVERY verb, and asked again for every
+//                                   button drawn (buttons()), so it must be quick and pure: ids are the item and goal
+//                                   ids the call names (idsOfCall).
+//   handles(verb, args, caller)     after no refusal: a reply to take the call itself, undefined to let the desk go on.
+//   verbs                           its own verbs, each named <name>.<verb>, served by the desk beside its own.
+// desk (pluginDesk) hands it its goal's key and the desk's own writes, never the database.
+// On its first mount the desk gives it its private goal, plugin/<name>, by one goal.add record written as desk; the
+// replay keeps it, so a later start finds it and mints nothing.
+const PLUGIN_DIRS = [path.join(__dirname, 'plugins', 'js')].concat(values.pluginsMore ? [path.resolve(String(values.pluginsMore))] : []);
+function pluginRefusal(p, verb, a, ids) {
+  if (typeof p.refuses !== 'function') return '';
+  return String(p.refuses(verb, a || {}, ids || idsOfCall(verb, a)) || '');
+}
+// The item and goal ids a call names: id, goal and blocks, and a session's goal and items.
+function idsOfCall(verb, a) {
+  const out = [];
+  if (!a || typeof a !== 'object') return out;
+  ['id', 'goal', 'blocks'].forEach(function (k) { if (typeof a[k] === 'string' && a[k]) out.push(a[k]); });
+  if (verb === 'session.set') {
+    try {
+      const sess = JSON.parse(String(a.json));
+      if (sess && sess.goal && sess.goal.id) out.push(String(sess.goal.id));
+      (sess && Array.isArray(sess.items) ? sess.items : []).forEach(function (x) { if (x && x.id) out.push(String(x.id)); });
+    } catch (e) { /* the handler refuses it */ }
+  }
+  return out;
+}
+// What a plugin is handed: its name and goal, and the desk's own writes and rules. write is the desk's write as the desk
+// itself (as the limbo line is written); writeAs writes as the caller the door forwarded. A check given to either runs
+// against the state as it stands, and may set fields of the body it was given before the record is kept (minted).
+function pluginDesk(name, manifest) {
+  const goal = pluginGoalKey(name);
+  return {
+    name: name, goal: goal, manifest: manifest,
+    state: walkState,
+    inGoal: function (id) { return inGoalOf(goal, id); },
+    write: function (verb, body, check) { body.by = 'desk'; body.key = ''; return write(verb, body, check); },
+    writeAs: function (verb, body, caller, check) { const w = writerOf(caller); body.by = w.by; body.key = w.key; return write(verb, body, check); },
+    writerOf: writerOf,
+    refused: refusedWhy,
+    fieldRules: require('../../../js/fieldRules.js'),
+    fieldWhy: fieldWhy,
+    nextItemId: nextItemId,
+  };
+}
+function mountPlugins() {
+  const seen = Object.create(null);
+  PLUGIN_DIRS.forEach(function (dir) {
+    let names = [];
+    try { names = fs.readdirSync(dir).sort(); } catch (e) { return; }
+    names.forEach(function (name) {
+      const js = path.join(dir, name, name + '.js');
+      const json = path.join(dir, name, name + '.json');
+      if (seen[name] || !/^[A-Za-z][A-Za-z0-9_-]{0,47}$/.test(name) || !fs.existsSync(js) || !fs.existsSync(json)) return;
+      let manifest = null;
+      try { manifest = JSON.parse(fs.readFileSync(json, 'utf8')); } catch (e) { console.error('desk: plugin ' + name + ': its .json does not parse; not mounted'); return; }
+      seen[name] = true;
+      const goal = pluginGoalKey(name);
+      try {
+        // ITS PRIVATE GOAL, ON ITS FIRST MOUNT: the fixed key, the title its manifest gives.
+        if (!walkState().goals[goal]) write('goal.add', { title: String((manifest && (manifest.goal || manifest.label)) || name), minted: goal, by: 'desk', key: '' });
+        PLUGIN_GOAL[goal] = name;
+        const made = require(js)(pluginDesk(name, manifest)) || {};
+        const verbs = made.verbs && typeof made.verbs === 'object' ? made.verbs : {};
+        Object.keys(verbs).forEach(function (v) { if (v.indexOf(name + '.') !== 0) throw new Error('its verb ' + v + ' is not named ' + name + '.<verb>'); });
+        PLUGINS.push({ name: name, goal: goal, refuses: made.refuses, handles: made.handles, verbs: verbs });
+      } catch (e) {
+        console.error('desk: plugin ' + name + ' was not mounted: ' + ((e && e.message) || e));
+      }
+    });
+  });
+}
+// EVERY VERB SEEN FIRST BY THE PLUGINS (goal/G22.3), in mount order: a refusal names the plugin and its goal, and is
+// the desk's not-offered with its why, as every refused press is; a plugin that takes the call answers it. Then the
+// desk's own handler. The plugins' verbs join the table; one that would shadow a desk verb stops the start.
+function withPlugins(verbs) {
+  const all = {};
+  Object.keys(verbs).forEach(function (verb) {
+    const v = verbs[verb];
+    all[verb] = Object.assign({}, v, { handler: function (a, caller) {
+      const ids = idsOfCall(verb, a);
+      for (const p of PLUGINS) {
+        const no = pluginRefusal(p, verb, a, ids);
+        if (no) throw refusedWhy('not-offered', 'the ' + p.name + ' plugin governs ' + p.goal + ': ' + no);
+        const took = typeof p.handles === 'function' ? p.handles(verb, a, caller) : undefined;
+        if (took !== undefined) return took;
+      }
+      return caller === undefined ? v.handler(a) : v.handler(a, caller);
+    } });
+  });
+  PLUGINS.forEach(function (p) {
+    Object.keys(p.verbs).forEach(function (v) {
+      if (all[v]) throw new Error('desk: plugin ' + p.name + ' declares ' + v + ', which the desk has already');
+      all[v] = p.verbs[v];
+    });
+  });
+  return all;
+}
+mountPlugins();
+
+appServer.serve(withPlugins({
   'log.add': {
     request: { json: '' }, reply: { added: true },
     handler: function (a) {
@@ -2721,6 +2865,9 @@ appServer.serve({
   'state.set': { request: { json: '' }, reply: { saved: true }, handler: function (a) { return saveDoc('state', a.json); } },
   'seen.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('seen') }; } },
   'seen.set': { request: { json: '' }, reply: { saved: true }, handler: function (a) { return saveDoc('seen', a.json); } },
+// goal/G22.3: the table closes here, and withPlugins hands every verb of it to the plugins first.
+}),
+
 // The bundle a peer user needs (apiAuth/G1.10, DEPENDENCIES): the agents'
 // protocol spans most of this table — searches, reads, writes, presses,
 // changes — so the minimum is the app itself, one app-level grant-shape.
@@ -2733,7 +2880,7 @@ appServer.serve({
 // raise them; appServer puts "desk: " in front of each text, so the origin
 // of a refusal is plain and no other app can wear this name. The codes
 // themselves are unchanged, so nothing on the wire moved.
-}, { dependencies: ['desk'], codes: {
+{ dependencies: ['desk'], codes: {
   // A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that
   // item before the taker's. Andy: "an item can 'take' my message and be the only one to answer after that".
   'taken': { status: 409, text: 'taken by another agent' },

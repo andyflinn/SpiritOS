@@ -567,13 +567,50 @@ function deskRowHtml(row) {
     // where i need to navigate to."
     '<td>' + (row.alert ? DESK_ALERT : '') + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
     '<td>' + (goal ? '' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
-    '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
+    '<td title="' + deskEsc(row.title) + '">' + deskLabelHtml(row) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
     '<td>' + deskEsc(row.with ? deskNameOf(row.with, row) : '') + '</td>' +
     '<td>' + presses + '</td>' +
     '<td>' + deskLinks(row.blocking) + '</td>' +
     '<td>' + deskLinks(row.blocked) + '</td>' +
     '<td style="width:16em">' + deskStatusCell(row) + '</td>' +
   '</tr>';
+}
+// ── A PLUGIN'S GOAL OPENS ITS PLUGIN (goal/G22.3) ──────────────────
+//
+//   Andy, 2026-10-13, in the item's box: "in the list of goals it shows a button in the label column that opens the
+//   plugin's private UI", and "its private UI at spirit/run/shell/desk/plugins/<name>/".
+//
+// The desk server names the plugin on its goal's row (plugin); the label is then a button, and the rest of the row
+// opens the goal's Details as every row does. The private UI is one script, shell/desk/plugins/<name>/<name>.js, loaded
+// once into this page; it registers window.spiritDeskPlugins[<name>] = { open(container, ctx) } and is opened in the
+// List's place, in the plugin pane. ctx: goal (its goal's id), ask (this page's deskAsk) and onPublished (the desk
+// server's stream, which the UI subscribes to itself).
+var DESK_PLUGIN_UI = 'shell/desk/plugins/';
+function deskLabelHtml(row) {
+  if (!row.plugin) return deskEsc(row.title);
+  return '<button type="button" data-plugin="' + deskEsc(row.plugin) + '" data-id="' + deskEsc(row.id) + '">' + deskEsc(row.title) + '</button>';
+}
+var deskShowTab = null;
+function deskOpenPlugin(name, goal) {
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(name))) return;
+  if (deskShowTab) deskShowTab('plugin:' + name);
+  var el = document.getElementById('desk-plugin');
+  var label = document.getElementById('desk-plugin-label');
+  if (label) label.textContent = name + ', the plugin governing ' + goal;
+  var win = typeof window !== 'undefined' ? window : {};
+  var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
+  var open = function () {
+    var ui = held[name];
+    if (!ui || typeof ui.open !== 'function') { el.textContent = 'The ' + name + ' plugin has no private UI at ' + DESK_PLUGIN_UI + name + '/.'; return; }
+    ui.open(el, { goal: goal, ask: deskAsk, onPublished: function (fn) { return deskApi.onPublished(fn); } });
+  };
+  if (held[name]) { open(); return; }
+  el.textContent = 'Loading the ' + name + ' plugin…';
+  var script = document.createElement('script');
+  script.src = '/' + DESK_PLUGIN_UI + name + '/' + name + '.js';
+  script.onload = open;
+  script.onerror = function () { el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; };
+  document.body.appendChild(script);
 }
 // THE STATUS BOX SHOWS THE VERIFIER'S RUN (goal/G18.5). Andy, 2026-10-12: "when a search is run agains the goal or an
 // item, it takes the status box in the list using let's say 16em width, and shows progress there as well. the result
@@ -1328,10 +1365,16 @@ spirit.shell.activateApp({
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
           '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
+        // A PLUGIN'S PRIVATE UI (goal/G22.3), opened from its goal's label in the List; Back returns to the List.
+        '<div data-pane="plugin" hidden>' +
+          '<div class="start-job-form card"><button type="button" id="desk-plugin-back" style="margin-right:1em">Back to the List</button>' +
+            '<span class="job-manifest-note" id="desk-plugin-label"></span></div>' +
+          '<div id="desk-plugin" style="margin-top:1em"></div>' +
+        '</div>' +
       '</div>';
     deskHeader(api);
     function show(tab) {
-      var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab;
+      var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab.indexOf('plugin:') === 0 ? 'plugin' : tab;
       Array.prototype.forEach.call(container.querySelectorAll('[data-pane]'), function (p) {
         p.hidden = p.getAttribute('data-pane') !== pane;
       });
@@ -1361,9 +1404,19 @@ spirit.shell.activateApp({
       else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
     });
     show('list');
+    // goal/G22.3: a plugin's label opens its pane, and its Back goes to the List.
+    deskShowTab = show;
+    document.getElementById('desk-plugin-back').addEventListener('click', function () { show('list'); });
     // ONE LISTENER ON THE LIST, which is repainted: a press, a link, a row.
     document.getElementById('desk-top').addEventListener('click', function (e) {
       var t = e && e.target;
+      // goal/G22.3: a plugin goal's label is a button that opens the plugin's private UI, not the goal's Details.
+      var plugin = t && t.closest && t.closest('[data-plugin]');
+      if (plugin) {
+        if (e.stopPropagation) e.stopPropagation();
+        deskOpenPlugin(plugin.getAttribute('data-plugin'), plugin.getAttribute('data-id'));
+        return;
+      }
       var press = t && t.closest && t.closest('[data-press]');
       if (press) {
         if (e.stopPropagation) e.stopPropagation();
