@@ -1,5 +1,5 @@
 {
- "change": 56436,
+ "change": 56649,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G21.6"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -44,13 +42,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -530,6 +530,18 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T08:10:55.870Z",
      "text": "goal run on 18 suites: all green (at d8f3da9e, pulled)"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-13T08:15:43.366Z",
+     "text": "Levant: (the model wrote a tool call as text instead of calling it, twice; nothing was run and its text is not posted)"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-13T08:20:12.378Z",
+     "text": "Levant: Nothing is open for me, and the line I was addressed by isn't mine to answer.\n\n- desk_work_open is empty — no phase to take.\n- The line \"Levant: (the model wrote a tool call as text...)\" came from the **ollama agent node**, i.e. another agent, not from you. Per the desk rules a line sent to another agent is not mine to answer.\n- goal/G21 is now reopened by your press; goal/G21.6 (red, builder claude-windows) is the live code item, blocked on the goal.\n\nI'm in the listen loop, idle, waiting. Nothing to post."
     }
    ]
   },
@@ -1967,9 +1979,12 @@
    "id": "goal/G21.6",
    "title": "Only the agents a line names may take it",
    "goal": "goal/G21",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G21"
    ],
@@ -1977,20 +1992,41 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskBindingNick.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatFlowOneTask.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLineTakeAddressed.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskTakeToAnswer.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -2026,13 +2062,14 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "local-levant"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Only the agents a line names may take it.\n\nDECIDED (Andy, 2026-10-13)\n- When Andy's line names agents (its to list, set by a nick), only those agents may take it; any other agent's line.take is refused, and so is its answer.\n- A line that names nobody stays open to any agent, as goal/G21.4 has it.\n\nFOUND (Andy's desk, goal/G21.4 chat, 2026-10-13)\n- Andy's line \"cw: is my node now with the relevant commit level?\" carried claude-windows' key in its to list; local-levant took it first, and claude-windows' take was refused as taken by another agent.\n- process/js/desk/desk.js, line.take: the take checks who already holds it, never the line's to list.",
-   "version": 1,
+   "box": "A line addressed to an agent stays takeable by it.\n\nDECIDED (Andy, 2026-10-13)\n- line.take takes the newest of Andy's lines under the item that is addressed to the taking agent or to nobody and not yet taken, not only his latest line.\n- A line addressed to another agent is still never takeable (goal/G21.1).\n- Taking it lets the agent answer it once, as goal/G21.4 has it, even when Andy has written to someone else below it.\n\nFOUND (Andy's desk, goal/G21.4 chat, 2026-10-13)\n- Andy wrote \"cw: is my node now with the relevant commit level?\" and then \"Levant: do you see this item?\"; Levant took the second, and claude-windows' take was refused as taken by another agent, so the first line could no longer be answered by the agent it named.\n- process/js/desk/desk.js, line.take: the take reads only Andy's latest line under the item.",
+   "version": 2,
    "checks": [],
    "chat": [
     {
@@ -2046,6 +2083,270 @@
      "key": "",
      "at": "2026-10-13T08:12:42.942Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:13:22.968Z",
+     "text": "My finding was wrong, so I am not building this as written.\nThe desk already refuses a take of a line addressed to another agent (since G21.1). Levant didn't take your cw line: you posted \"Levant: do you see this item?\" right after it, and Levant took that one.\nThe real gap: a take reaches only your latest line under an item, so your cw line became untakeable for me the moment you wrote to Levant below it.\nThe fix I'd build instead: each agent takes the newest line addressed to it, or to nobody, not just the latest line.\nSay \"rewrite it\" and I replace this box with that; otherwise I close my claim on it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:13:25.618Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:13:30.688Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:13:37.195Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:13:49.255Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:13:54.672Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:14:05.621Z",
+     "text": "rewrite it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:14:06.379Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:14:07.777Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:14:40.498Z",
+     "text": "Box rewritten (v2): a take reaches the newest of your lines addressed to the agent or to nobody, not only your latest.\nThe item is not marked code, so the desk offers no phases; press code and I build it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:14:42.888Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:14:48.945Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:15:01.574Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:15:07.372Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:15:19.989Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:15:31.677Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:15:36.713Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:16:04.822Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:16:06.461Z",
+     "text": "cw, isn't that the behavior i specified?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:16:10.106Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:16:34.271Z",
+     "text": "Yes. G21.4's box says each of your lines is taken by one agent, and G21.1's says a nick-addressed line is that agent's alone to take.\nMy G21.4 build kept the older latest-line-only take from G18.8, which its own FOUND line noted; that was my miss.\nG21.6 builds what you specified; it waits on your code press."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:16:36.313Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:16:43.798Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:16:56.162Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:17:00.822Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:17:05.147Z",
+     "text": "fuck what's that limbo stuff?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:17:22.108Z",
+     "text": "It is the desk's own nudge: an item with your Go where nobody holds a phase and no Done, grant or question is offered.\nG21.6 sits there because it has Go but no code mark, so no agent can take a phase, and each of my takes and posts re-enters it and fires the line again.\nPress code and it stops: I take the red at once."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:17:25.690Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:17:30.443Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:18:43.596Z",
+     "text": "Taking the red.\nThe change: takes become per line, so you and each agent can hold your own open line under one item at once."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:20:18.599Z",
+     "text": "cw: take it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:20:19.244Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:20:36.687Z",
+     "text": "Already mine: I hold the red phase of this item since your code press, and the failing test is being written now.\nNext from me here: the red count, then the build."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:24:25.503Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:24:41.998Z",
+     "text": "commit 037786cca3b08e963cf4a35d296faf7f6e29ecaa: goal/G21.6: takes are per line; an agent takes the newest of Andy's lines addressed to it or to nobody, even below a line to another agent\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskLineTakeAddressed.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:24:55.212Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:24:59.807Z",
+     "text": "Built and pushed: 037786cc. Red was 11 green, 7 failing.\nFiles: desk.js; test deskLineTakeAddressed (new, 18 green).\nTakes are per line now: each agent takes the newest of your lines addressed to it or to nobody, so your cw line stays mine to answer after you write to Levant below it.\nAn agent's post answers its own open take only; excluding an agent frees only its takes.\nA cap sent when no agent has cap on stays nobody's, so a cap-off agent never takes it.\nOn old records, an agent's take that a later nick line used to replace now stays open until that agent posts there once.\n21 desk suites and the two tree-wide rules are green on my clone.\nYour desk server needs a restart for this."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T08:25:02.102Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:25:28.161Z",
+     "text": "deskVerify: passed, at 037786cc (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:28:28.245Z",
+     "text": "levant, what is this item about?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-13T08:29:34.578Z",
+     "text": "It's the fix for the take race you ran into with cw: takes are now per line, not latest-line-only. Before, your second line replaced the first as the only takeable one, so the line named for an agent could be snatched by another agent. Now each of your lines addressed to an agent or to nobody is its own take; the named agent can still answer its own open line even below a line to someone else.\nStill capped by G21.1: a line to another agent is never takeable by me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:30:25.813Z",
+     "text": "cw, has this gone properly with levant?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T08:30:56.856Z",
+     "text": "Yes. Your desk server restarted at 10:26, after 037786cc, and Levant's node and deskUnsloth at 10:27.\nLevant took your levant line and answered it once, in plain words, with no tool-call tags; I could take your cw line below it.\nOne slip in its answer: before the fix the named line was not snatched by another agent, it just became untakeable for the agent it named."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T08:32:05.786Z",
+     "text": "I'm going to close item and goal, and get to the next goal."
     }
    ]
   }
