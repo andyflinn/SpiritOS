@@ -1,5 +1,5 @@
 {
- "change": 54044,
+ "change": 54047,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -14,7 +14,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3",
     "goal/G14.9"
    ],
    "go": false,
@@ -635,10 +634,11 @@
    "id": "goal/G14.3",
    "title": "Block the Goal/G14 from running the Verifier for an hour.",
    "goal": "goal/G14",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "claude-windows",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G14"
@@ -2882,12 +2882,12 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -3104,6 +3104,11 @@
      "by": "desk",
      "at": "2026-10-13T02:51:06.740Z",
      "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T02:51:33.403Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
