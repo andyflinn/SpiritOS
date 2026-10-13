@@ -253,10 +253,11 @@ function deskLoadSeen(raw) {
   deskSaveSeen();
 }
 
-// A tab button: the one showing is marked.
-function deskTabButton(attrs, on, label) {
+// A tab button: the one showing is marked. spaced: 1em after itself, for a row that is no flex row with its own gap
+// (the inner tabs under Apps, goal/G22.3).
+function deskTabButton(attrs, on, label, spaced) {
   return '<button type="button" ' + attrs + ' aria-selected="' + (on ? 'true' : 'false') + '" style="font-weight:' +
-    (on ? 'bold' : 'normal') + ';text-decoration:' + (on ? 'underline' : 'none') + '">' +
+    (on ? 'bold' : 'normal') + ';text-decoration:' + (on ? 'underline' : 'none') + (spaced ? ';margin-right:1em' : '') + '">' +
     deskEsc(label) + '</button>';
 }
 
@@ -397,15 +398,18 @@ function deskAgentProfileSave() {
   }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 
-// Drawn whole, as markup: List | Team | Musings, then the bubbles.
+// Drawn whole, as markup: List | Apps | Rules | Musings, then the bubbles. SINCE goal/G22.3 Team is Apps' first inner
+// tab (Andy, 2026-10-13: "Team (today's Team tab, moved into Apps as its first special goal)"); Apps stands where Team
+// stood and shows as on while any of its inner tabs does. The inner row is drawn with it.
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
   if (!strip) return;
   var waiting = deskWaitingOnAndy();
   var design = deskDesignOn();
+  deskDrawAppTabs();
   strip.innerHTML =
     deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
-    deskTabButton('data-tab="team"', deskTab === 'team', 'Team') +
+    deskTabButton('data-tab="apps"', deskIsAppTab(deskTab), 'Apps') +
     deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
     deskTabButton('data-tab="musings"', deskTab === 'musings', 'Musings') +
     // RIGHT AFTER MUSINGS, AND ONLY WHERE ONE RUNS (goal/G8.11): his words were "right after [musings]", and the tab
@@ -464,7 +468,7 @@ function deskLabels(r) {
 }
 function deskSearchItems() {
   return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
-    .then(function (r) { deskItems = deskLabels(r); deskDraw(); }, deskWriteError('read its list'));
+    .then(function (r) { deskItems = deskLabels(r); deskNotePlugins(deskItems); deskDraw(); }, deskWriteError('read its list'));
 }
 // A published change: {change, verb, item: <facts>, listed}. A new session
 // asks again, since it adds and drops whole rows; so does a change to an item
@@ -506,6 +510,8 @@ function deskOnPublished(obj) {
     rows = [Object.assign({}, it, { listed: obj.listed !== false })];
   }
   var unknown = false;
+  // goal/G22.3: a plugin goal's row seen first on the stream gives it its tab under Apps.
+  deskNotePlugins(rows);
   rows.forEach(function (row) {
     if (!row || !row.id) return;
     var at = -1;
@@ -567,7 +573,7 @@ function deskRowHtml(row) {
     // where i need to navigate to."
     '<td>' + (row.alert ? DESK_ALERT : '') + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
     '<td>' + (goal ? '' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
-    '<td title="' + deskEsc(row.title) + '">' + deskLabelHtml(row) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
+    '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
     '<td>' + deskEsc(row.with ? deskNameOf(row.with, row) : '') + '</td>' +
     '<td>' + presses + '</td>' +
     '<td>' + deskLinks(row.blocking) + '</td>' +
@@ -575,41 +581,79 @@ function deskRowHtml(row) {
     '<td style="width:16em">' + deskStatusCell(row) + '</td>' +
   '</tr>';
 }
-// ── A PLUGIN'S GOAL OPENS ITS PLUGIN (goal/G22.3) ──────────────────
+// ── APPS: THE SPECIAL GOALS, EACH ITS INNER TAB (goal/G22.3) ─────────
 //
-//   Andy, 2026-10-13, in the item's box: "in the list of goals it shows a button in the label column that opens the
-//   plugin's private UI", and "its private UI at spirit/run/shell/desk/plugins/<name>/".
+//   Andy, 2026-10-13, in the item's box: a main desk tab Apps, whose inner tabs are the special goals: Team (the Team
+//   tab, moved into Apps as its first special goal) and Stacks (the stackFrameChecks plugin's private UI), more later.
+//   Apps replaces the label button in the List: a plugin goal's title there is plain text. Each plugin's private UI is
+//   its inner tab under Apps, and every plugin the desk mounts gets one.
 //
-// The desk server names the plugin on its goal's row (plugin); the label is then a button, and the rest of the row
-// opens the goal's Details as every row does. The private UI is one script, shell/desk/plugins/<name>/<name>.js, loaded
-// once into this page; it registers window.spiritDeskPlugins[<name>] = { open(container, ctx) } and is opened in the
-// List's place, in the plugin pane. ctx: goal (its goal's id), ask (this page's deskAsk) and onPublished (the desk
-// server's stream, which the UI subscribes to itself).
+// Team keeps its tab id, 'team', so everything that opens Team or asks whether it shows still works; a plugin's inner
+// tab is 'app:<name>'. Both put Apps on. The plugins are found on their goals' rows (plugin, and pluginTab, the name the
+// desk server takes from the plugin's .json): one search for the plugin goals at mount and after a gap, and any row the
+// List or the stream brings. A plugin's pane is made once, inside Apps, and its private UI is loaded the first time its
+// tab opens: one script, shell/desk/plugins/<name>/<name>.js, which registers window.spiritDeskPlugins[<name>] =
+// { open(container, ctx) }. ctx: goal (its goal's id), ask (this page's deskAsk) and onPublished (the desk server's
+// stream, which the UI subscribes to itself, as every shell element does). Switching tabs repaints nothing, so what is
+// typed in a plugin's pane survives.
 var DESK_PLUGIN_UI = 'shell/desk/plugins/';
-function deskLabelHtml(row) {
-  if (!row.plugin) return deskEsc(row.title);
-  return '<button type="button" data-plugin="' + deskEsc(row.plugin) + '" data-id="' + deskEsc(row.id) + '">' + deskEsc(row.title) + '</button>';
+var deskApps = [];          // { name, tab, goal, opened } per plugin found, in found order
+var deskAppTab = 'team';    // the inner tab Apps opens on: the last one shown
+function deskIsAppTab(tab) { return tab === 'team' || String(tab).indexOf('app:') === 0; }
+// The inner tab row: Team first, then a tab per plugin; each button 1em after itself (the desk's UI rule).
+function deskDrawAppTabs() {
+  var strip = document.getElementById('desk-app-tabs');
+  if (!strip) return;
+  strip.innerHTML = deskTabButton('data-tab="team"', deskTab === 'team', 'Team', true) + deskApps.map(function (a) {
+    return deskTabButton('data-tab="app:' + deskEsc(a.name) + '"', deskTab === 'app:' + a.name, a.tab, true);
+  }).join('');
 }
-var deskShowTab = null;
-function deskOpenPlugin(name, goal) {
-  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(name))) return;
-  if (deskShowTab) deskShowTab('plugin:' + name);
-  var el = document.getElementById('desk-plugin');
-  var label = document.getElementById('desk-plugin-label');
-  if (label) label.textContent = name + ', the plugin governing ' + goal;
+// Plugins named on rows: a new one gets its pane and its tab; one already held keeps them.
+function deskNotePlugins(rows) {
+  var added = false;
+  (rows || []).forEach(function (r) {
+    if (!r || !r.plugin || !/^[A-Za-z][A-Za-z0-9_-]*$/.test(String(r.plugin))) return;
+    if (deskApps.some(function (a) { return a.name === r.plugin; })) return;
+    var app = { name: String(r.plugin), tab: String(r.pluginTab || r.plugin), goal: String(r.id), opened: false };
+    deskApps.push(app);
+    var panes = document.getElementById('desk-app-panes');
+    if (panes && typeof document.createElement === 'function') {
+      var el = document.createElement('div');
+      el.id = 'desk-app-' + app.name;
+      el.setAttribute('data-app', 'app:' + app.name);
+      el.hidden = deskTab !== 'app:' + app.name;
+      if (typeof panes.appendChild === 'function') panes.appendChild(el);
+    }
+    added = true;
+  });
+  if (added) deskDrawAppTabs();
+}
+// The plugin goals, by one search the List does not make: the List may be showing only the current goal.
+function deskFindPlugins() {
+  return deskAsk('items.search', { text: 'plugin/', currentGoalOnly: false, goalsOnly: true, includeClosed: true }).then(function (r) {
+    deskNotePlugins(deskLabels(r));
+  }, function () { /* the tabs stay as they are */ });
+}
+// The first time a plugin's tab opens, its private UI is loaded and opened in its pane; later it is only shown.
+function deskOpenPlugin(app) {
+  if (!app || app.opened) return;
+  var el = document.getElementById('desk-app-' + app.name);
+  if (!el) return;
+  app.opened = true;
   var win = typeof window !== 'undefined' ? window : {};
   var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
+  var name = app.name;
   var open = function () {
     var ui = held[name];
     if (!ui || typeof ui.open !== 'function') { el.textContent = 'The ' + name + ' plugin has no private UI at ' + DESK_PLUGIN_UI + name + '/.'; return; }
-    ui.open(el, { goal: goal, ask: deskAsk, onPublished: function (fn) { return deskApi.onPublished(fn); } });
+    ui.open(el, { goal: app.goal, ask: deskAsk, onPublished: function (fn) { return deskApi.onPublished(fn); } });
   };
   if (held[name]) { open(); return; }
   el.textContent = 'Loading the ' + name + ' plugin…';
   var script = document.createElement('script');
   script.src = '/' + DESK_PLUGIN_UI + name + '/' + name + '.js';
   script.onload = open;
-  script.onerror = function () { el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; };
+  script.onerror = function () { app.opened = false; el.textContent = 'The ' + name + ' plugin\'s private UI could not be loaded from ' + DESK_PLUGIN_UI + name + '/.'; };
   document.body.appendChild(script);
 }
 // THE STATUS BOX SHOWS THE VERIFIER'S RUN (goal/G18.5). Andy, 2026-10-12: "when a search is run agains the goal or an
@@ -1330,14 +1374,21 @@ spirit.shell.activateApp({
           '<button type="button" id="desk-include-closed"></button>' +
           '</div>' +
           '<div id="desk-top"></div></div>' +
-        '<div data-pane="team" hidden>' +
-          '<div id="desk-session"></div>' +
-          '<div class="start-job-form card"><label class="field-label grow">Say' +
-            // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12): only Send sends.
-            '<textarea id="desk-team-say" rows="3" placeholder="to every agent; design talk that belongs to no row"></textarea></label>' +
-          '<button type="button" id="desk-team-send">Send</button></div>' +
-          '<div id="desk-team-error" class="job-start-error"></div>' +
-          '<div class="stat-tile wide"><div class="label" id="desk-team-label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
+        // APPS (goal/G22.3): its inner tab row, then one inner pane per special goal. Team's pane is the Team tab's, moved
+        // whole; a plugin's pane is made inside #desk-app-panes when its goal is found (deskNotePlugins).
+        '<div data-pane="apps" hidden>' +
+          '<div id="desk-app-tabs" style="margin-top:1em"></div>' +
+          '<div id="desk-app-panes" style="margin-top:1em">' +
+            '<div data-app="team">' +
+              '<div id="desk-session"></div>' +
+              '<div class="start-job-form card"><label class="field-label grow">Say' +
+                // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12): only Send sends.
+                '<textarea id="desk-team-say" rows="3" placeholder="to every agent; design talk that belongs to no row"></textarea></label>' +
+              '<button type="button" id="desk-team-send">Send</button></div>' +
+              '<div id="desk-team-error" class="job-start-error"></div>' +
+              '<div class="stat-tile wide"><div class="label" id="desk-team-label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
+            '</div>' +
+          '</div>' +
         '</div>' +
         // THE RULES TAB (goal/G6.5): the new bubble, the search bubble, the list. #desk-rules takes every click and input.
         '<div data-pane="rules" hidden><div id="desk-rules">' +
@@ -1365,20 +1416,29 @@ spirit.shell.activateApp({
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
           '<div class="stat-tile wide"><div class="label">Profile</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
-        // A PLUGIN'S PRIVATE UI (goal/G22.3), opened from its goal's label in the List; Back returns to the List.
-        '<div data-pane="plugin" hidden>' +
-          '<div class="start-job-form card"><button type="button" id="desk-plugin-back" style="margin-right:1em">Back to the List</button>' +
-            '<span class="job-manifest-note" id="desk-plugin-label"></span></div>' +
-          '<div id="desk-plugin" style="margin-top:1em"></div>' +
-        '</div>' +
+        // THE PLUGIN PANE AND ITS BACK TO THE LIST STOOD HERE (goal/G22.3, opened from the label button in the List) and
+        // went with Andy's Apps ruling, 2026-10-13: "Apps replaces the label button". A plugin's UI is its tab under Apps.
       '</div>';
     deskHeader(api);
     function show(tab) {
-      var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab.indexOf('plugin:') === 0 ? 'plugin' : tab;
+      // Apps opens on the inner tab last shown, Team the first time.
+      if (tab === 'apps') tab = deskAppTab;
+      var pane = tab.indexOf('agent:') === 0 ? 'agent' : deskIsAppTab(tab) ? 'apps' : tab;
       Array.prototype.forEach.call(container.querySelectorAll('[data-pane]'), function (p) {
         p.hidden = p.getAttribute('data-pane') !== pane;
       });
       if (pane === 'agent') deskAgentOpen(tab.slice('agent:'.length));
+      // goal/G22.3: inside Apps one inner pane shows; a plugin's UI is loaded the first time its tab opens.
+      if (pane === 'apps') {
+        // LAZY, AS EVERY PANEL (Andy: "lazy load the panels when thy open"): the plugin goals are searched for when Apps
+        // opens, not at mount, so the List's one ask on open stays one (desk/G2.6).
+        if (!deskIsAppTab(deskTab)) deskFindPlugins();
+        deskAppTab = tab;
+        Array.prototype.forEach.call(container.querySelectorAll('[data-app]'), function (p) {
+          p.hidden = p.getAttribute('data-app') !== tab;
+        });
+        if (tab !== 'team') deskOpenPlugin(deskApps.filter(function (a) { return 'app:' + a.name === tab; })[0]);
+      }
       // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
@@ -1403,20 +1463,15 @@ spirit.shell.activateApp({
       else if (el.id === 'desk-start-design') deskArmOrFire(el.id, deskStartDesign);
       else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
     });
+    // THE INNER TABS UNDER APPS (goal/G22.3): one listener on their row, which is redrawn.
+    document.getElementById('desk-app-tabs').addEventListener('click', function (e) {
+      var el = clicked(e, 'data-tab');
+      if (el && el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
+    });
     show('list');
-    // goal/G22.3: a plugin's label opens its pane, and its Back goes to the List.
-    deskShowTab = show;
-    document.getElementById('desk-plugin-back').addEventListener('click', function () { show('list'); });
     // ONE LISTENER ON THE LIST, which is repainted: a press, a link, a row.
     document.getElementById('desk-top').addEventListener('click', function (e) {
       var t = e && e.target;
-      // goal/G22.3: a plugin goal's label is a button that opens the plugin's private UI, not the goal's Details.
-      var plugin = t && t.closest && t.closest('[data-plugin]');
-      if (plugin) {
-        if (e.stopPropagation) e.stopPropagation();
-        deskOpenPlugin(plugin.getAttribute('data-plugin'), plugin.getAttribute('data-id'));
-        return;
-      }
       var press = t && t.closest && t.closest('[data-press]');
       if (press) {
         if (e.stopPropagation) e.stopPropagation();
@@ -1543,7 +1598,8 @@ spirit.shell.activateApp({
     // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
     // published or said while the stream was down was never heard, so the
     // List and the chats are asked for again. Lines already held are not taken twice.
-    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskSearchItems(); deskLoad(); });
+    // goal/G22.3: the plugin goals again too, if Apps is showing; otherwise its next opening asks.
+    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskSearchItems(); deskLoad(); if (deskIsAppTab(deskTab)) deskFindPlugins(); });
     deskDraw();
     deskSearchItems();
     deskLoad();

@@ -440,6 +440,10 @@ const GROUP_CHAT = 'desk/G0.0';
 // while actually closed"): the desk holds it like any goal, and its plugin decides what may happen to it.
 const PLUGINS = [];
 const PLUGIN_GOAL = Object.create(null);
+// ITS TAB UNDER APPS (goal/G22.3). Andy, 2026-10-13, in the item's box: a main desk tab Apps whose inner tabs are the
+// special goals, each plugin's private UI its inner tab. Named by the tab field of its .json, short (Stacks), else its
+// label, else its name; keyed by its goal, as PLUGIN_GOAL is.
+const PLUGIN_TAB = Object.create(null);
 function pluginGoalKey(name) { return 'plugin/' + name; }
 // Whether an id is a plugin's goal or one of its items, by the id alone: an item's id is minted <goal>.<n> (nextItemId),
 // and a plugin refuses a session over its goal, so nothing else lands under that prefix. No walk of the records.
@@ -1396,9 +1400,10 @@ function facts(s, it) {
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();
-    // THE PLUGIN THAT GOVERNS IT (goal/G22.3), by name, on a plugin's private goal alone: the List draws its label as
-    // the button that opens that plugin's private UI ("in the list of goals it shows a button in the label column").
-    if (PLUGIN_GOAL[it.id]) f.plugin = PLUGIN_GOAL[it.id];
+    // THE PLUGIN THAT GOVERNS IT (goal/G22.3), by name, on a plugin's private goal alone, and the name of its inner tab
+    // under Apps (pluginTab): the face gives each plugin it finds that tab. Since Andy's Apps ruling (2026-10-13) the
+    // List draws the goal's title as plain text; "Apps replaces the label button".
+    if (PLUGIN_GOAL[it.id]) { f.plugin = PLUGIN_GOAL[it.id]; f.pluginTab = PLUGIN_TAB[it.id] || f.plugin; }
     f.design = g.design;
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
       return o && listed(s, o) && (buttons(s, o).length > 0 || asksOf(s, o) > 0);
@@ -1927,6 +1932,7 @@ function mountPlugins() {
         // ITS PRIVATE GOAL, ON ITS FIRST MOUNT: the fixed key, the title its manifest gives.
         if (!walkState().goals[goal]) write('goal.add', { title: String((manifest && (manifest.goal || manifest.label)) || name), minted: goal, by: 'desk', key: '' });
         PLUGIN_GOAL[goal] = name;
+        PLUGIN_TAB[goal] = String((manifest && (manifest.tab || manifest.label)) || name).slice(0, 32);
         const made = require(js)(pluginDesk(name, manifest)) || {};
         const verbs = made.verbs && typeof made.verbs === 'object' ? made.verbs : {};
         Object.keys(verbs).forEach(function (v) { if (v.indexOf(name + '.') !== 0) throw new Error('its verb ' + v + ' is not named ' + name + '.<verb>'); });

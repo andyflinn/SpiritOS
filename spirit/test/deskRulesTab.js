@@ -100,8 +100,9 @@ test.startTest('goal/G6.5: the Rules tab: new rule, search with seven toggles, t
   test.subHeading('1. a Rules tab between Team and Musings');
   const tabs = d.doc.getElementById('desk-tabs').innerHTML;
   const at = function (t) { return tabs.indexOf('data-tab="' + t + '"'); };
-  if (at('rules') !== -1 && at('team') < at('rules') && at('rules') < at('musings')) test.check('#desk-tabs holds data-tab="rules" between team and musings');
-  else test.fail(OWED + 'tab positions: team ' + at('team') + ', rules ' + at('rules') + ', musings ' + at('musings'));
+  // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13), and Apps stands where Team stood.
+  if (at('rules') !== -1 && at('apps') !== -1 && at('apps') < at('rules') && at('rules') < at('musings')) test.check('#desk-tabs holds data-tab="rules" between apps and musings');
+  else test.fail(OWED + 'tab positions: apps ' + at('apps') + ', rules ' + at('rules') + ', musings ' + at('musings'));
   const tabsEl = d.doc.getElementById('desk-tabs');
   tabsEl.fire('click', { target: target({ 'data-tab': 'rules' }), currentTarget: tabsEl });
   await settled();

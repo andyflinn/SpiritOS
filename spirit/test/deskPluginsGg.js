@@ -22,9 +22,13 @@
 //   e. the dialog's verb stackFrameChecks.make {gate, endpoint} makes a goal/G22.2-type item in the plugin's goal: its
 //      title, its box stating the rule, its file list [spirit/test/stackFrameTestItems.js]; empty, bad or repeated
 //      input is refused with a why.
-//   f. the face: shell/desk/desk.js draws the label of a plugin's goal as a button naming the plugin, which opens its
-//      private UI from shell/desk/plugins/<name>/; that UI's gate and endpoint inputs carry data-field and validate as
-//      typed, and its Make sends stackFrameChecks.make.
+//   f. the face: SINCE goal/G22.3's second ruling (Andy, 2026-10-13, in the item's box: a main tab Apps whose inner tabs
+//      are the special goals, Team first and Stacks, the stackFrameChecks plugin's private UI; Apps replaces the label
+//      button), a top-level Apps tab and no top-level Team tab; inside Apps a Team inner tab holding what the Team tab
+//      held, still drawn live from the stream, and one inner tab per mounted plugin, named by the tab field of its .json
+//      (Stacks), which loads its private UI from shell/desk/plugins/<name>/ and hands it the stream; the List's
+//      plugin-goal title is plain text again, and the label button, its pane and its Back to the List are gone. That
+//      UI's gate and endpoint inputs carry data-field and validate as typed, and its Make sends stackFrameChecks.make.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -81,29 +85,59 @@ function fakeElement(id) {
   Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
   return el;
 }
+// Since goal/G22.3's Apps ruling the fake document keeps what the face makes and appends (a plugin's pane, its script)
+// and an element made with an id is found by it, as in a browser.
 function fakeDocument() {
   const byId = {};
-  return { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, all: byId,
-    createElement: function (tag) { return fakeElement(tag); }, body: fakeElement('body') };
+  const made = [];
+  const appended = [];
+  const body = fakeElement('body');
+  const append = function (el) { appended.push(el); if (el && el.id) byId[el.id] = el; };
+  body.appendChild = append;
+  const byIdOrNew = function (id) {
+    if (byId[id]) return byId[id];
+    const el = byId[id] = fakeElement(id);
+    el.appendChild = append;
+    return el;
+  };
+  return { getElementById: byIdOrNew, all: byId, made: made, appended: appended,
+    createElement: function (tag) {
+      const el = fakeElement('');
+      el.tagName = String(tag).toUpperCase();
+      el.appendChild = append;
+      made.push(el);
+      return el;
+    }, body: body };
 }
+// The face mounted with a window it shares with a plugin's UI, every desk ask kept, every stream subscriber kept.
 function mountFace(answers) {
   const doc = fakeDocument();
+  const win = { spiritFieldRules: require('../run/js/fieldRules.js') };
+  const asked = [];
+  const published = [];
+  const container = fakeElement('c');
   let b = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(FACE, 'utf8'))(
-    { shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, {});
-  b.mount(fakeElement('c'), {
+    { shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, win);
+  b.mount(container, {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
       const ask = body && body.ask && body.ask.desk;
       const v = ask && Object.keys(ask)[0];
-      return Promise.resolve({ status: 200, body: answers[v] || { change: 1 } });
+      if (v) asked.push([v, ask[v]]);
+      const a = answers[v];
+      return Promise.resolve({ status: 200, body: (typeof a === 'function' ? a(ask[v]) : a) || { change: 1 } });
     },
-    onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
+    onPublished: function (fn) { published.push(fn); return function () {}; }, onPacket: function () { return function () {}; },
     peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
     setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {}, armUntilElsewhere: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
+  doc.win = win; doc.asked = asked; doc.published = published; doc.container = container;
   return doc;
+}
+function clickTab(el, tab) {
+  el.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-tab' ? tab : null; }, closest: function () { return null; }, parentNode: null }, currentTarget: el });
 }
 
 (async function () {
@@ -168,6 +202,11 @@ function mountFace(answers) {
     const goals1 = (await rows({ goalsOnly: true })).filter(function (r) { return r.plugin === 'stackFrameChecks'; });
     if (goals1.length === 1 && goals1[0].id === GOAL) test.check('one goal belongs to stackFrameChecks, keyed ' + GOAL);
     else test.fail(OWED + 'the goals marked for stackFrameChecks: ' + short(goals1.map(function (g) { return g.id; })));
+    // Since goal/G22.3's Apps ruling: the goal's row names the plugin's inner tab under Apps, from the tab field of its .json.
+    let manifestTab = '';
+    try { manifestTab = String(JSON.parse(fs.readFileSync(PLUGIN_JSON, 'utf8')).tab || ''); } catch (e) { /* said below */ }
+    if (manifestTab === 'Stacks' && goals1.length === 1 && goals1[0].pluginTab === 'Stacks') test.check('its .json names its tab under Apps, "Stacks", and its goal\'s row carries it as pluginTab');
+    else test.fail(OWED + 'the .json\'s tab reads ' + short(manifestTab) + ', the goal row\'s pluginTab ' + short(goals1[0] && goals1[0].pluginTab));
     const fake1 = await factsOf(FAKE_GOAL);
     if (fake1 && fake1.plugin === 'ggEcho') test.check('the scratch plugin has its own private goal too, ' + FAKE_GOAL);
     else test.fail(OWED + FAKE_GOAL + ' reads ' + short(fake1));
@@ -258,22 +297,94 @@ function mountFace(answers) {
   }
 
   test.subHeading('f. the face');
+  // SINCE goal/G22.3's APPS RULING (Andy, 2026-10-13): the label button these lines asserted is gone; Apps replaces it.
   try {
-    const doc = mountFace({ 'items.search': { items: [
-      { key: GOAL, label: JSON.stringify({ id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', status: '', with: '', buttons: [], blocking: [], blocked: [GOAL + '.1'] }) },
-      { key: 'ord/G2', label: JSON.stringify({ id: 'ord/G2', title: 'Ordinary goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [] }) },
-    ], more: false } });
+    const GROUP = 'desk/G0.0';
+    const doc = mountFace({
+      'items.search': { items: [
+        { key: GOAL, label: JSON.stringify({ id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [GOAL + '.1'] }) },
+        { key: 'ord/G2', label: JSON.stringify({ id: 'ord/G2', title: 'Ordinary goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [] }) },
+      ], more: false },
+      'item.chat': function (a) { return a && a.id === GROUP ? { chat: [{ by: 'andy', at: new Date(Date.now() - 1000).toISOString(), text: 'a team line held before', taken: '' }], chatMore: false } : { chat: [], chatMore: false }; },
+    });
     await sleep(50);
     const top = doc.getElementById('desk-top').innerHTML;
-    const btn = /<button[^>]*data-plugin="stackFrameChecks"[^>]*>[^<]*Stack-frame checks/.exec(top);
-    if (btn) test.check('the List draws the plugin goal\'s label as a button naming its plugin');
-    else test.fail(OWED + 'the List row of ' + GOAL + ' reads ' + short((/<tr data-row="plugin\/stackFrameChecks"[\s\S]*?<\/tr>/.exec(top) || [''])[0]));
-    if (!/<button[^>]*data-plugin[^>]*>[^<]*Ordinary goal/.test(top)) test.check('an ordinary goal\'s label stays plain text');
-    else test.fail('an ordinary goal\'s label was drawn as a plugin button');
+    const tabs = doc.getElementById('desk-tabs').innerHTML;
+    const shell = doc.container.innerHTML;
     const src = fs.readFileSync(FACE, 'utf8');
-    if (/shell\/desk\/plugins\//.test(src) && /data-plugin/.test(src)) test.check('the button opens the plugin\'s private UI from shell/desk/plugins/<name>/');
-    else test.fail(OWED + 'shell/desk/desk.js names no shell/desk/plugins/ UI to open');
-  } catch (e) { test.fail(OWED + 'the face could not be mounted: ' + (e && e.message)); }
+
+    if (/data-tab="apps"/.test(tabs) && />Apps</.test(tabs)) test.check('the tab row holds a top-level Apps tab');
+    else test.fail(OWED + 'the tab row holds no Apps tab: ' + short(tabs));
+    if (!/data-tab="team"/.test(tabs)) test.check('no top-level Team tab remains in the tab row');
+    else test.fail(OWED + 'the tab row still holds a top-level Team tab');
+
+    const apps = (/<div data-pane="apps"[\s\S]*$/.exec(shell) || [''])[0];
+    if (apps && !/data-pane="team"/.test(shell)) test.check('the shell has an Apps pane and no Team pane of its own');
+    else test.fail(OWED + 'the shell\'s panes: apps ' + !!apps + ', a team pane ' + /data-pane="team"/.test(shell));
+    const teamApp = /<div data-app="team"[\s\S]*?id="desk-session"[\s\S]*?id="desk-team-say"[\s\S]*?id="desk-team-send"[\s\S]*?id="desk-team"/.test(apps);
+    if (teamApp) test.check('inside Apps, a Team inner pane holds what the Team tab held: the goal bubble, Say, Send and the group chat');
+    else test.fail(OWED + 'the Apps pane holds no Team inner pane with #desk-session, #desk-team-say, #desk-team-send and #desk-team');
+    if (/margin-top:1em/.test((/<div id="desk-app-tabs"[^>]*>/.exec(apps) || [''])[0])) test.check('the inner tab row is a block with its leading 1em');
+    else test.fail(OWED + 'no #desk-app-tabs block with margin-top:1em in the Apps pane');
+
+    const pluginSearches = function () { return doc.asked.filter(function (x) { return x[0] === 'items.search' && x[1] && x[1].text === 'plugin/' && x[1].goalsOnly === true; }).length; };
+    const before0 = pluginSearches();
+    clickTab(doc.getElementById('desk-tabs'), 'apps');
+    await sleep(20);
+    if (before0 === 0 && pluginSearches() === 1) test.check('the plugin goals are searched for when Apps opens, not at mount: the List\'s one ask on open stays one');
+    else test.fail(OWED + 'plugin searches before Apps opened ' + before0 + ', after ' + pluginSearches());
+    const tabs2 = doc.getElementById('desk-tabs').innerHTML;
+    const inner = doc.getElementById('desk-app-tabs').innerHTML;
+    if (/data-tab="apps"[^>]*aria-selected="true"/.test(tabs2) && /data-tab="team"[^>]*aria-selected="true"[^>]*>Team</.test(inner)) test.check('Apps opens on its first inner tab, Team, both marked as showing');
+    else test.fail(OWED + 'after Apps: the tab row ' + short(tabs2) + '; the inner row ' + short(inner));
+    const stacks = /<button[^>]*data-tab="app:stackFrameChecks"[^>]*>Stacks<\/button>/.exec(inner);
+    if (stacks) test.check('the mounted plugin has its inner tab, named Stacks from its .json');
+    else test.fail(OWED + 'the inner row has no Stacks tab for stackFrameChecks: ' + short(inner));
+    const innerButtons = inner.match(/<button[^>]*>/g) || [];
+    if (innerButtons.length >= 2 && innerButtons.every(function (t) { return /margin-right:1em/.test(t); })) test.check('each inner tab button carries its 1em after itself');
+    else test.fail(OWED + 'the inner tab buttons: ' + short(innerButtons));
+
+    // Team inside Apps is still drawn live from the stream.
+    const line = { by: 'claude-windows', at: new Date().toISOString(), text: 'a team line published while Apps shows Team', taken: '' };
+    doc.published.forEach(function (fn) { try { fn({ change: 7000, verb: 'chat.add', item: { id: GROUP, title: '', goal: '', status: 'closed', with: '', buttons: [], blocking: [], blocked: [] }, listed: false, chat: line }); } catch (e) { /* not this subscriber's */ } });
+    await sleep(20);
+    if (/a team line published while Apps shows Team/.test(doc.getElementById('desk-team').innerHTML)) test.check('a published group-chat line is drawn in Team inside Apps as it comes');
+    else test.fail(OWED + 'the published line did not reach #desk-team inside Apps: ' + short(doc.getElementById('desk-team').innerHTML));
+
+    // Stacks loads the plugin's private UI from shell/desk/plugins/<name>/, into its own pane, and hands it the stream.
+    clickTab(doc.getElementById('desk-app-tabs'), 'app:stackFrameChecks');
+    await sleep(20);
+    const script = doc.appended.filter(function (e) { return e && e.tagName === 'SCRIPT'; })[0];
+    if (script && script.src === '/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js') test.check('the Stacks tab loads ' + script.src);
+    else test.fail(OWED + 'the Stacks tab appended no script from shell/desk/plugins/stackFrameChecks/: ' + short(doc.appended.map(function (e) { return e && (e.src || e.id || e.tagName); })));
+    const subsBefore = doc.published.length;
+    if (script && typeof script.onload === 'function') {
+      new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, doc.win);
+      script.onload();
+      await sleep(20);
+    }
+    const pane = doc.all['desk-app-stackFrameChecks'];
+    if (pane && /id="sfc-gate"/.test(pane.innerHTML) && /id="sfc-make"/.test(pane.innerHTML)) test.check('its private UI is opened in its own pane, #desk-app-stackFrameChecks');
+    else test.fail(OWED + 'no #desk-app-stackFrameChecks holding the plugin\'s UI: ' + short(pane && pane.innerHTML));
+    if (doc.published.length > subsBefore) {
+      doc.asked.length = 0;
+      doc.published.slice(subsBefore).forEach(function (fn) { fn({ change: 7001, verb: 'stackFrameChecks.make', rows: [{ id: GOAL + '.2', goal: GOAL, title: 'x' }] }); });
+      await sleep(20);
+      if (doc.asked.some(function (x) { return x[0] === 'items.search'; })) test.check('the Stacks UI subscribed to the stream itself and reads its items again when one of its goal is published');
+      else test.fail(OWED + 'a publish naming the plugin\'s goal made the Stacks UI ask nothing');
+    } else test.fail(OWED + 'the Stacks UI did not subscribe to the desk server\'s stream');
+    clickTab(doc.getElementById('desk-app-tabs'), 'app:stackFrameChecks');
+    await sleep(20);
+    if (doc.appended.filter(function (e) { return e && e.tagName === 'SCRIPT'; }).length === 1) test.check('opening Stacks again loads nothing again');
+    else test.fail(OWED + 'the plugin\'s script was appended more than once');
+
+    // The List's plugin-goal title is plain text again, and the label button's mechanism is gone.
+    if (!/data-plugin/.test(top) && /<td title="Stack-frame checks">Stack-frame checks <span/.test(top)) test.check('the List draws the plugin goal\'s title as plain text');
+    else test.fail(OWED + 'the List row of ' + GOAL + ' reads ' + short((/<tr data-row="plugin\/stackFrameChecks"[\s\S]*?<\/tr>/.exec(top) || [''])[0]));
+    const gone = ['data-plugin', 'desk-plugin-back', 'Back to the List', 'data-pane="plugin"', 'deskLabelHtml', 'deskShowTab'].filter(function (w) { return src.indexOf(w) !== -1; });
+    if (!gone.length) test.check('the label button, its pane and its Back to the List are gone from shell/desk/desk.js');
+    else test.fail(OWED + 'shell/desk/desk.js still holds ' + short(gone));
+  } catch (e) { test.fail(OWED + 'the face could not be mounted: ' + (e && e.stack || e)); }
   try {
     if (!fs.existsSync(PLUGIN_UI)) throw new Error('no ' + path.relative(RUN, PLUGIN_UI));
     const doc = fakeDocument();

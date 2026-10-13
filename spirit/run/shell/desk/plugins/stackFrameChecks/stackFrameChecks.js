@@ -1,11 +1,13 @@
 // spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js
-// THE STACK-FRAME CHECKS PLUGIN'S PRIVATE UI (goal/G22.3): its companion dialog, opened in Desk from its goal's label.
+// THE STACK-FRAME CHECKS PLUGIN'S PRIVATE UI (goal/G22.3): its companion dialog, Desk's Stacks tab under Apps.
 //
 //   Andy, 2026-10-13, in the item's box: "It has a companion dialog where the gate and endpoint functions are entered.",
-//   "its dialog takes a gate and an endpoint and makes the goal/G22.2-type item", and "In the main list, a button
-//   replacing the label of each plugin's private goal, which opens the plugin's private UI."
+//   and "its dialog takes a gate and an endpoint and makes the goal/G22.2-type item". Since his Apps ruling the same
+//   day, each plugin's private UI is its inner tab under Apps (this one Stacks, the tab field of its .json), and the
+//   label button in the List is gone.
 //
-// Loaded once into the Desk page (shell/desk/desk.js, deskOpenPlugin), it registers itself on
+// Loaded once into the Desk page, the first time its tab opens (shell/desk/desk.js, deskOpenPlugin), into its own pane
+// that stays for the page's life; it registers itself on
 // window.spiritDeskPlugins.stackFrameChecks = { open(container, ctx) }. ctx.goal is its goal's id, ctx.ask the page's
 // call to the desk server, ctx.onPublished the desk server's stream. The server half is
 // process/js/desk/plugins/js/stackFrameChecks/: its verb stackFrameChecks.make does the work and refuses what is wrong;

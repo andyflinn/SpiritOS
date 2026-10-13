@@ -1,5 +1,6 @@
 {
   "label": "Stack-frame checks",
+  "tab": "Stacks",
   "description": "The first gg plugin (goal/G22.3): it governs its private goal of stack-frame items. Its goal and its rerun item, whose file list is the stack-frame suite oneDoorStacks.js alone, always stay open; its dialog takes a gate and an endpoint and makes a goal/G22.2-type item from them.",
   "kind": "deskPlugin",
   "goal": "Stack-frame checks"

@@ -116,10 +116,11 @@ test.startTest('goal/G3.12: the front page — agent bubbles beside the tabs, Te
   const p = page();
   await settled();
   const t0 = p.tabs();
-  const threeTabs = /data-tab="list"/.test(t0) && /data-tab="team"/.test(t0) && /data-tab="musings"/.test(t0);
+  // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13), so the row holds Apps where Team stood.
+  const threeTabs = /data-tab="list"/.test(t0) && /data-tab="apps"/.test(t0) && /data-tab="musings"/.test(t0);
   const cw = bubble(t0, 'claude-windows');
   const wsl = bubble(t0, 'wsl-claude');
-  if (threeTabs && cw && wsl) test.check('List, Team, Musings, then a bubble for each live agent, drawn on the List tab');
+  if (threeTabs && cw && wsl) test.check('List, Apps, Musings, then a bubble for each live agent, drawn on the List tab');
   else test.fail(OWED + 'the tab row: ' + JSON.stringify(t0.slice(0, 400)));
   if (wsl && /data-working="1"/.test(wsl) && cw && !/data-working="1"/.test(cw)) test.check('the working agent\'s bubble carries data-working="1", the other\'s does not');
   else test.fail(OWED + 'working marks: wsl ' + JSON.stringify(wsl) + ', cw ' + JSON.stringify(cw));
