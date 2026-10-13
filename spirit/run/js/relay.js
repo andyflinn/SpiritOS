@@ -873,49 +873,11 @@ function createRelay(rootDir, deps) {
   // ring is what made labels addressable, and that is the half of the
   // old transport that is not worth rebuilding.
 
-  // -- THE ROLL, OPTIONALLY NARROWED TO KEYS SOMEBODY NAMED ---------
-  //
-  //   Andy: "the most fetched because it bootstrapped concepts quickly,
-  //   but is not scalable."
-  //
-  // Nine callers read this and six of them want one row. `peer.acquire` is
-  // the sharpest: it pulls the whole roll -- 151 bytes a member, so
-  // ~147 KB at a thousand -- to answer yes or no about ONE key.
-  //
-  // SAME DOOR, NARROWER ANSWER. Not a new route, so nothing is added to
-  // 0010's register: a parameter that filters an existing response is not
-  // a new way of speaking. And `key` on a query is explicitly allowed
-  // there -- "it is the identity being asked for, not the permission to be
-  // it" -- which is the distinction that keeps signatures off query
-  // strings while letting this through.
-  //
-  // KEYS REQUIRED (cycle 3). Absent keys this used to answer the whole
-  // roll, which is the member list 0012 (widened) forbids serving to
-  // anybody — and, since the roll moved to disc, a whole-table read. Asked
-  // without keys it now answers nothing. A count is store.members.count().
-  function who(keys) {
-    var wanted = (Array.isArray(keys) ? keys : []).map(function (k) {
-      return String(k == null ? '' : k).trim();
-    }).filter(Boolean);
-    return store.members.byKeys(wanted).map(function (p) {
-      return {
-        // `name` STOOD BESIDE THIS, carrying the identical value. Two
-        // spellings of one fact on a public route, so every reader had
-        // to know which to trust and none could be told apart. Gone
-        // 2026-09-15 — a roll row says a peer's label once.
-        publicLabel: labelOf(p),
-        publicKey: p.publicKey || null,
-        // WHEN THIS KEY ENROLLED, published here all along with nothing
-        // reading it. It is the human-usable way to tell two johns
-        // apart — "the john who joined in March" rather than six
-        // characters of key — and it must never be rewritten, or the
-        // ledger stops being one.
-        claimedAt: p.claimedAt,
-      };
-    }).sort(function (a, b) {
-      return String(a.publicLabel).localeCompare(String(b.publicLabel));
-    });
-  }
+  // who(keys) STOOD HERE: the roll, narrowed to the keys somebody named,
+  // left behind when its public route went on 2026-09-18. Nothing in the
+  // product called it after that, only two suites, so it was deleted
+  // (goal/G19.11). A suite that wants the roll reads it off the disc
+  // (test/rollOf.js); store.members.byKeys is what it read.
 
   // THIS RELAY'S OWN KEY, not the owner's. The keypair is made once, on
   // the first --relay boot (server.js), and lives in this process's own
@@ -1059,11 +1021,11 @@ function createRelay(rootDir, deps) {
   // asserts.
   //
   // THE RECIPROCITY CHECK IS NOT HERE, and that is deliberate. The proof
-  // is a public roll: anybody may read `/api/relay/who` and see which
-  // key is marked owner (0010 — it is the bootstrap). So the owner's NODE
-  // fetches it and this stores the conclusion, and a relay still never
-  // makes an outbound request. A node reporting a public page is not
-  // laundering privilege; it saw nothing this box could not have seen.
+  // is public: anybody may GET `/api/relay/key` on the other relay and
+  // read which key owns it (`ownerKey`). So the owner's NODE fetches it
+  // and this stores the conclusion, and a relay still never makes an
+  // outbound request. A node reporting a public page is not laundering
+  // privilege; it saw nothing this box could not have seen.
   function setPartner(who, key, url, relayKey, hash) {
     var peerKey = String(key == null ? '' : key).trim();
     if (!peerKey) return { ok: false, status: 400, error: 'peer key required' };
@@ -1168,7 +1130,7 @@ function createRelay(rootDir, deps) {
   }
 
   // Everything this relay partners with, for the owner's own report. Not
-  // in `who()`: a partnership is a public statement of association
+  // on any public route: a partnership is a public statement of association
   // between two relays, and there is no reason yet for a stranger to read
   // one. Owner-only until somebody needs otherwise.
   // ── A PARTNER RELAY, RECOGNISED BY THE KEY IT SIGNS WITH ───────────
@@ -1466,9 +1428,10 @@ function createRelay(rootDir, deps) {
   //
   // They were ONE argument until 2026-09-15, because `match` demanded the
   // claim's name equal the invite's label. That made the owner's word the
-  // peer's permanent name — and since `who()` publishes it unsigned, it
-  // published whatever the owner used to identify the invitee. An invite
-  // labelled with a phone number put that number in a public roll.
+  // peer's permanent name — and since the public roll of the day published
+  // it unsigned, it published whatever the owner used to identify the
+  // invitee. An invite labelled with a phone number put that number in a
+  // public roll.
   //
   // THE LABEL STILL PROVES. It is not merely a caption: an invite is
   // KEYLESS, so the token is the entire credential, and a SPOKEN token is
@@ -1745,7 +1708,7 @@ function createRelay(rootDir, deps) {
     var peer = {
       // ONE LABEL. `name` stood here carrying the same string, and went
       // on 2026-09-15 — see loadRoutingTable for the migration and
-      // `who()` for what a roll row says now.
+      // relayStore.js for what a member row holds now.
       publicLabel: n,
       publicKey: publicKey,
       // THE ENROLMENT LEDGER'S ONE DATE. Written once, never rewritten:
@@ -1761,8 +1724,8 @@ function createRelay(rootDir, deps) {
       //   Andy: "so the relay is the keeper of cards, in the database,
       //   on disc. got it."
       //
-      // It is what the relay seals its answers to this member with, and
-      // what `whoBook` broadcasts say about them. VERIFIED HERE, against
+      // It is what the relay seals its answers to this member with
+      // (memberSealKey). VERIFIED HERE, against
       // the key that just signed the claim: a card is self-signed, so one
       // belonging to anybody else verifies as that person and fails this
       // check. Nothing else about the claim needs to change — the claim
@@ -2362,7 +2325,7 @@ function createRelay(rootDir, deps) {
   //   forbid non-owner peers to obtain it as a destination?"
   //
   // It did, and there was no protocol reason. The key is published
-  // unsigned in /api/relay/who — a node needs it to pin this box and to
+  // unsigned at /api/relay/key — a node needs it to pin this box and to
   // post THROUGH it — so the old refusal hid nothing. What it was really
   // doing was gating four owner verbs that check nothing themselves, all
   // in one undifferentiated `is this the owner`.
@@ -3093,8 +3056,8 @@ function createRelay(rootDir, deps) {
     // entered. A member needs the address to go and look, and the key to
     // know what it is looking at.
     //
-    // NOT ON THE PUBLIC ROLL, deliberately. A member learns the reach
-    // they were given by joining; a stranger reading /api/relay/who
+    // NOT ON ANY PUBLIC ROUTE, deliberately. A member learns the reach
+    // they were given by joining; a stranger reading /api/relay/key
     // learns nothing about who this box talks to. Publishing the mesh is
     // a different decision and nobody has taken it.
     // ── SEARCH, BECAUSE A LIST DOES NOT SCALE ──────────────────────────
@@ -3486,12 +3449,12 @@ function createRelay(rootDir, deps) {
     // about their own box, the same class as naming it.
     //
     // The reciprocity — that this peer really owns the relay at that url
-    // — was checked against a PUBLIC roll by the owner's node before
-    // this post was signed. It is not re-checked here because a relay
-    // makes no outbound request, and because nothing about the check
-    // needs privilege: `/api/relay/who` is readable by anyone, which is
-    // what makes the node's report trustworthy rather than merely
-    // trusted.
+    // — was checked against that relay's PUBLIC key door by the owner's
+    // node before this post was signed. It is not re-checked here because
+    // a relay makes no outbound request, and because nothing about the
+    // check needs privilege: `/api/relay/key` (its `ownerKey`) is readable
+    // by anyone, which is what makes the node's report trustworthy rather
+    // than merely trusted.
     if (body && body.partner && owner) {
       out = setPartner(
         who,
@@ -4246,16 +4209,10 @@ function createRelay(rootDir, deps) {
     return { ok: true, status: 200, delivered: !!landed };
   }
 
-  // THE ROSTER WITH STATES, and never the list of the connected. If this
-  // sent only who is here, a key a node did not hear about would be
-  // ambiguous between a member who is away and somebody this relay has
-  // never heard of — and the first is red while the second is white
-  // (PRESENCE.md §4). Both halves are already here: who() is the roster,
-  // the registry is the subset.
-  //
-  // Nothing secret: /api/relay/who hands the same labels and keys to
-  // anyone who asks. What is new is liveness, which is disclosure and is
-  // intended.
+  // THE ROSTER WITH STATES stood here: the whole roll pushed to every
+  // member on stream open, deleted 2026-09-19 as a served member list
+  // (0012 widened; test/boundedByTime.js). Presence travels as `route`
+  // events, one member at a time.
   // THE RELAY'S OWN CONDITION, TO ITS OWNER AND TO NOBODY ELSE.
   //
   // The delivery rule lives here rather than in relayStatus.js because
@@ -4794,7 +4751,6 @@ function createRelay(rootDir, deps) {
   return {
     claim: claim,
     forgetPeer: forgetPeer,
-    who: who,
     // Where this relay keeps its data. In-process only, for the suites that
     // inspect the roll on disc (test/rollOf.js) — nothing on the wire reads
     // it, and there is no whole-roll read on the relay itself (cycle 3).

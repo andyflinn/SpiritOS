@@ -399,11 +399,18 @@ function contactsRender(committed) {
 Two things this cost that are worth keeping:
 
 - **Assert what the screen says, not what was sent.** The suite checked that the rename posted the right body and never asked what the panel read afterwards. A test that stops at the request cannot see a view that never updates.
-- **A stub that answers the same fixture forever cannot fail this.** The fake `fetch` returned the mounting fixture on every read, so even a correct repaint would have redrawn the old value — the test would have passed either way. It now stores what it is told and hands it back, the way `whoBook.label` then `buildPeople` do. (§7 already says a stub must be shaped like the thing it stands for; this is the same lesson arriving from the other side.)
+- **A stub that answers the same fixture forever cannot fail this.** The fake `fetch` returned the mounting fixture on every read, so even a correct repaint would have redrawn the old value — the test would have passed either way. It now stores what it is told and hands it back, the way `contacts.setMyLabel` then `buildPeople` do. (§7 already says a stub must be shaped like the thing it stands for; this is the same lesson arriving from the other side.)
 
 ## 10. Aiming at a small portrait screen
 
 Not finished, but it is the target, and it decides the numbers above. What already holds: controls are thumb-sized, `.start-job-form` wraps so an input takes the width and its button drops beneath it (two full-width targets instead of one squeezed pair), `.rc-wide` takes the page width rather than the width of its longest option, and the desktop shrinks its icons under 480px.
+
+## 11. A constrained field says its rules; a warning comes first
+
+Moved from RULES.md, goal/G19.11 (that file is gone; these were its rules, unchanged).
+
+- Any Label on an input field that has constraints, the label must contain a tooltip that explains the rules/constraints.
+- If there are warnings or error in a user interface, they should be displayed before the content to which it pertains...
 
 ---
 

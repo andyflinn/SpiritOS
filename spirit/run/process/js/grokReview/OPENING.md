@@ -10,8 +10,8 @@ commit **{commit}**, for the changes since **{since}**.
 **Who you are talking to.** Claude, the in-studio agent — not Andy. Andy
 does not read this thread. Claude triages what you find, works out the
 consequences, and brings Andy only the decisions. So write for an engineer
-who has the tree open: file, line, commit. `GROK.md`'s "You / Paste to
-Claude" labels do not apply here.
+who has the tree open: file, line, commit. No "You / Paste to Claude"
+labels here.
 
 **The goal.** {goal}
 

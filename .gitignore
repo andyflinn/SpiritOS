@@ -125,8 +125,10 @@ minted.json
 
 # Anything js/peerFile.js names: one file per peer, wherever an app
 # keeps them. Chat logs are the first (app/relayChat/logs/, also caught
-# by the bare `logs` rule above); whoBook sidecars and whatever comes
-# next are the reason this is a pattern rather than a path.
+# by the bare `logs` rule above); whatever comes next is the reason this
+# is a pattern rather than a path.
+# (It also named whoBook sidecars: historical, whoBook was renamed
+# contacts.js on 2026-09-18 and keeps one file, contacts.json.)
 #
 # Data belonging to a peer is personal by definition — the mailbox keeps
 # messages by recipient and grows no sender copy, so the record of a
@@ -215,9 +217,6 @@ app-state/
 # files in app/ until its first start moves them (js/shellMove.js); until
 # then none of them is anyone else's business, nor a test fixture's.
 spirit/run/app/
-console.log(JSON.parse(r.text)))
-console.log(JSON.stringify(JSON.parse(r.text)
-{console.log(Response
 
 # ── THE VERIFIER'S MEASUREMENTS (goal/G8.1) ──────────────────────────
 #

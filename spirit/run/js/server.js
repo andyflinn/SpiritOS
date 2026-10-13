@@ -2062,7 +2062,7 @@ contactBook.syncMarks(ROOT_DIR);
   // happened to land in the same group. `relay.claim` obviously reaches
   // out. `relay.status` is less obvious and matters more: it LOOKS like
   // a read of local configuration, and it is not. ownerBadge.probe
-  // fetches /api/relay/who from every configured relay, so an offline
+  // fetches /api/relay/key from every configured relay, so an offline
   // box answers 502 and a caller that assumed otherwise draws an empty
   // relay list and calls it the truth. That is exactly the confusion the
   // wire flag exists to make impossible to arrive at by accident.

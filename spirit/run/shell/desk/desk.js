@@ -1106,8 +1106,8 @@ function deskVerifyHtml() {
     '</div>';
   // THE RECORDS LIST IS GONE (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
   // latest status." It listed the dataset's newest rows, which read as a log beside a live run; the tab now shows the
-  // run and nothing else. records.search stays a verb of deskVerify's - the dataset is still readable - but the tab
-  // does not draw it, so nothing here asks for it either.
+  // run and nothing else. records.search was a verb of deskVerify's until goal/G19.11, when it went for want of any
+  // caller but a suite; the dataset is read on his clone's disc (verify.db), never through the tab.
   return out;
 }
 function deskDrawVerifier() {

@@ -29,27 +29,6 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
-const appClient = require('../../../js/appClient.js');
-const searchBucket = require('../../../js/searchBucket.js');
-
-// ONE ANSWER, ONE PACKET (slim/G1.2), as the desk measures it: a search answers what fits in one answer and says
-// `more`. A row too large to travel alone is skipped rather than stalling the read with nothing in it.
-const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
-function walked(rows, pairOf) {
-  const bucket = searchBucket.createSearch({
-    query: '**', maxBytes: ANSWER_ROOM,
-    getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-    extractKeyAndLabelFromRow: function (pair) { return pair; },
-  });
-  let skipped = false;
-  for (const row of rows) {
-    const pair = pairOf(row);
-    if (Buffer.byteLength(JSON.stringify({ items: [pair], more: false }), 'utf8') > ANSWER_ROOM) { skipped = true; continue; }
-    if (!bucket.offer(pair)) break;
-  }
-  const r = bucket.getResult();
-  return { items: r.items, more: r.more || skipped };
-}
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -57,12 +36,6 @@ const STATE = at !== -1 ? argv[at + 1] : '';
 // THE MANIFEST'S VALUES, as the node hands them (jobs.js: one JSON object, name -> value, as the first argument).
 let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
-// WHOSE NODE THIS IS: the --node {name, publicKey} every node already hands the servers it starts (jobs.js), never a
-// value of deskVerify's own. On an agent's node the name is that agent's.
-const NODE_NAME = (function () {
-  const i = argv.indexOf('--node');
-  try { return i !== -1 ? String((JSON.parse(argv[i + 1]) || {}).name || '') : ''; } catch (e) { return ''; }
-}());
 // verify.db beside this file unless `db` names another: a suite hands it a temp path, so the measurements of a real
 // run are never touched by a test.
 const DB_PATH = values.db ? path.resolve(String(values.db)) : path.join(__dirname, 'verify.db');
@@ -79,8 +52,6 @@ db.exec('CREATE TABLE IF NOT EXISTS results (rowid INTEGER PRIMARY KEY AUTOINCRE
   'CREATE INDEX IF NOT EXISTS results_dirty ON results (dirty);' +
   'CREATE INDEX IF NOT EXISTS results_test ON results (suite, title);');
 const newest = db.prepare('SELECT outcome FROM results WHERE suite = ? AND title = ? ORDER BY rowid DESC LIMIT 1');
-// EVERY ROW, NEWEST FIRST (goal/G8.11), for the verifier tab's records.search: the rowid is the order they were kept.
-const newestRows = db.prepare('SELECT rowid, suite, title, outcome, "commit", dirty, at FROM results ORDER BY rowid DESC');
 const addRow = db.prepare('INSERT INTO results (suite, title, outcome, "commit", dirty, at) VALUES (?, ?, ?, ?, ?, ?)');
 // EVERY RUN IS VERIFIER HISTORY (goal/G19.3). Andy, 2026-10-12: "and we make sure it doesn't stop working until the
 // queue is worked off.", then "so the runs must be stored verifier history, in verifier.db" (this file, verify.db). A
@@ -222,7 +193,7 @@ function runSuite(file, port, onTests) {
     const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
     runningKid = kid;
     // EACH ASSERTION AS IT IS PRINTED (goal/G8.12), so the tab's bar moves while a suite runs rather than once it
-    // ends. The printed lines are what every reader of a suite uses (runAll, claim.check), not the exit code.
+    // ends. The printed lines are what every reader of a suite uses (runAll, the claim check), not the exit code.
     const count = function (text) {
       const n = String(text).split('\n').filter(function (l) { return /SUCCESS #|FAILURE #/.test(l); }).length;
       if (!n || typeof onTests !== 'function') return;
@@ -277,65 +248,10 @@ function stopRun() {
   return { stopped: true };
 }
 
-// THE SHORT LOOP'S SUITES (goal/G8.6). Andy, 2026-10-06: "the short loop is: all the suites of the current goal,
-// between 'Go' pressed and 'Done' pressed", and "which suites belong to a goal: all the suites associated with items in
-// the goal", known "the way a coding agent knows which suite it writes the code against" - which is the item's own file
-// list (goal/G8.8). So: one items.search of the current goal through its own node, the items with his Go and not done,
-// and the test files on their lists, each once, sorted. Nothing is configured: the goal is whichever the desk says.
-function suites() {
-  const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  if (!port) return Promise.resolve([]);
-  const ask = { desk: { 'items.search': { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false } } };
-  return spirit.core.ask('jobs.api', { ask: ask }, 'http://127.0.0.1:' + port).then(function (r) {
-    const body = r && r.status === 200 ? r.body : null;
-    const items = (body && Array.isArray(body.items) ? body.items : []).map(function (i) {
-      try { return JSON.parse(i.label); } catch (e) { return null; }
-    }).filter(Boolean);
-    const out = Object.create(null);
-    items.forEach(function (it) {
-      // Between his Go and his Done, and never the goal row itself: a goal has no suites of its own.
-      if (it.goal === '' || it.go !== true || it.status === 'done' || it.status === 'closed') return;
-      (Array.isArray(it.files) ? it.files : []).forEach(function (f) {
-        const p = String((f && f.path) || '');
-        if (/^spirit\/test\/.+\.js$/.test(p)) out[p] = true;
-      });
-    });
-    return Object.keys(out).sort();
-  }, function () { return []; });
-}
-
-// ONE PASS (goal/G8.6): each suite run from this checkout with the port of its own node, so every assertion comes back
-// as a record (goal/G8.1). One at a time, never in parallel: two runs on one host fight over the fixed ports that
-// goal/G8.9 moved to a base, and a verifier that collides with itself measures nothing. The answer says what ran.
-function loopOnce() {
-  const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  // THE SHORT LOOP PUBLISHES TOO (goal/G8.12): the tab shows a full pass the same way it shows one item, as doing
-  // 'full', or his bar would stay empty through the longest run there is. Only what THIS server runs can be shown; a
-  // harness started in a terminal is not its run and publishes nothing.
-  return suites().then(async function (list) {
-    const ran = [];
-    running = { id: '', suite: '', since: new Date().toISOString() };
-    for (const rel of list) {
-      const file = path.join(REPO, rel);
-      if (!fs.existsSync(file)) continue;
-      const index = list.indexOf(rel) + 1;
-      const expected = expectedOf(rel);
-      running = { id: '', suite: rel, since: new Date().toISOString() };
-      const told = function (tests) {
-        say({ doing: 'full', id: '', suite: rel, index: index, of: list.length, tests: tests, expected: expected,
-          line: 'full run: ' + path.basename(rel) + ', suite ' + index + ' of ' + list.length +
-            (expected ? ', ' + tests + ' of about ' + expected + ' tests' : ', ' + tests + ' tests'),
-          since: running.since });
-      };
-      told(0);
-      await runSuite(file, port, told);
-      ran.push(rel);
-    }
-    running = { id: '', suite: '', since: '' };
-    sayIdle();
-    return { ran: ran };
-  });
-}
+// THE VERBS ONLY SUITES CALLED WENT UNDER goal/G19.11: mode, suites, loop.once, idle, chore.once, goal.check,
+// records.search and claim.check. The work they named runs from the watcher and the queue (claimCheck, goalRun, fullRun,
+// redCheck below); mode() and claimCheck() stay as functions. The short loop (goal/G8.6), the idle chores (goal/G8.4) and
+// the tolerated-reds grant (goal/G8.7) had nothing but those verbs to start them, so they went with them.
 
 // ONE ITEM'S SUITES, from the item itself: its file list (goal/G8.8), the test files among them.
 function suitesOf(id) {
@@ -939,84 +855,12 @@ async function fullRun(goalId) {
   return r;
 }
 
-// IDLE TIME (goal/G8.4). Andy, 2026-10-06: "when it's agent or it's desk have been idle for more than an hour". The box
-// adds what the hour alone misses: a node whose agent holds a phase is busy however long the silence. So idle is an
-// hour since the newest write the desk holds AND no open item taken by this node's agent (--node's name).
-// The newest write is read with the desk's own `changes`, from a cursor kept here, so after the first read only what is
-// new is asked for. The first read walks every record once, page by page; that is its cost, stated, not hidden.
-const IDLE_MS = 60 * 60 * 1000;
-let cursor = { n: 0, at: '' };
+// ONE VERB OF THE DESK, through this server's own node.
 function desk(verb, args) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   const one = {}; one[verb] = args;
   return spirit.core.ask('jobs.api', { ask: { desk: one } }, 'http://127.0.0.1:' + port)
     .then(function (r) { return r && r.status === 200 && r.body ? r.body : {}; }, function () { return {}; });
-}
-async function newestWrite() {
-  for (let i = 0; i < 10000; i++) {
-    const page = await desk('changes', { n: cursor.n, line: 0 });
-    const recs = Array.isArray(page.records) ? page.records : [];
-    // Records come in the order they were written, so the last one is the newest; a page with nothing new keeps it.
-    if (recs.length) cursor.at = String(recs[recs.length - 1].at || cursor.at);
-    if (Number(page.n) > cursor.n) cursor.n = Number(page.n);
-    if (!page.more || !recs.length) break;
-  }
-  return cursor.at;
-}
-async function idle() {
-  const since = await newestWrite();
-  const found = await desk('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false });
-  const items = (Array.isArray(found.items) ? found.items : []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
-  const holding = NODE_NAME ? items.filter(function (it) { return it.with === NODE_NAME; }).map(function (it) { return String(it.id); }) : [];
-  const quiet = !!since && Date.now() - Date.parse(since) >= IDLE_MS;
-  return { idle: quiet && !holding.length, since: since, holding: holding };
-}
-// A PASS OF THE CHORES. Busy, it does nothing. Idle, it still runs no suite: the box's limit, the report comes from
-// the dataset and never from a run. What the chores are - which paths one may write, what the report holds - is his to
-// rule first (the red question on goal/G8.4), so until then a pass names nothing done.
-async function choreOnce() {
-  const state = await idle();
-  if (!state.idle) return { did: [] };
-  return { did: [] };
-}
-
-// TOLERATED REDS, ALL AT ONCE (goal/G8.7). Andy, 2026-10-06: "for now, tolerated reds have to be granted as a whole,
-// in order to pop the Done button for the goal, so the final full suite lists the reds outside the goals scope in a
-// red-question for the goal, that blocks the Done button for the goal."
-// So: the newest outcome of every test in the dataset; a red whose suite is on no item's file list of the current goal
-// is OUTSIDE; and if there are any, ONE grant on the goal row names them. A goal's Done already waits on every open
-// grant (goal/G8.5), so nothing else is needed to hold it. A closed item is still the goal's, so its suites are inside.
-// It asks once: while its own grant stands open, it asks for none. It presses nothing and grants nothing - granting is
-// his alone, and "deskVerify will NOT press done or closed on my behalf".
-const newestEach = db.prepare('SELECT suite, title, outcome FROM results WHERE rowid IN (SELECT MAX(rowid) FROM results GROUP BY suite, title)');
-function goalCheck() {
-  const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  if (!port) return Promise.resolve({ goal: '', outside: [], asked: false });
-  const at = function (ask) { return spirit.core.ask('jobs.api', { ask: ask }, 'http://127.0.0.1:' + port); };
-  return at({ desk: { 'items.search': { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: true } } }).then(async function (r) {
-    const items = ((r && r.body && Array.isArray(r.body.items)) ? r.body.items : []).map(function (i) {
-      try { return JSON.parse(i.label); } catch (e) { return null; }
-    }).filter(Boolean);
-    const goal = (items.filter(function (i) { return i.goal === ''; })[0] || {}).id || '';
-    const inside = Object.create(null);
-    items.forEach(function (it) {
-      (Array.isArray(it.files) ? it.files : []).forEach(function (f) {
-        const p = String((f && f.path) || '');
-        if (/^spirit\/test\/.+\.js$/.test(p)) inside[path.basename(p)] = true;
-      });
-    });
-    const reds = Object.create(null);
-    newestEach.all().forEach(function (row) { if (row.outcome === 'red' && !inside[row.suite]) reds[row.suite] = true; });
-    const outside = Object.keys(reds).sort();
-    if (!goal || !outside.length) return { goal: goal, outside: outside, asked: false };
-    // Already asked and not yet granted: his list stands, and asking again would be a second button for one decision.
-    const open = await at({ desk: { 'item.checks': { id: goal } } }).then(function (c) {
-      return ((c && c.body && c.body.checks) || []).some(function (x) { return x.kind === 'G' && x.state === 'open' && String(x.words).indexOf('tolerated reds:') === 0; });
-    }, function () { return false; });
-    if (open) return { goal: goal, outside: outside, asked: false };
-    await at({ desk: { 'check.add': { id: goal, kind: 'G', words: 'tolerated reds: ' + outside.join(', '), test: '' } } });
-    return { goal: goal, outside: outside, asked: true };
-  }, function () { return { goal: '', outside: [], asked: false }; });
 }
 
 // A ROW IS WRITTEN for a test's first record or a change of outcome, and nothing else.
@@ -1028,58 +872,20 @@ function keep(suite, title, outcome) {
   return { written: true };
 }
 
+// ITS VERBS: what the desk face and the suites post to, and nothing else (goal/G19.11 removed the eight only suites
+// called; see the note where suites() stood).
 appServer.serve({
-  mode: {
-    request: {}, reply: { mode: '', apps: [''] },
-    handler: function () { return mode(); },
-  },
-  // THE SHORT LOOP (goal/G8.6): what it would run, and one pass of it.
-  suites: {
-    request: {}, reply: { suites: [''] },
-    handler: function () { return suites().then(function (list) { return { suites: list }; }); },
-  },
-  'loop.once': {
-    request: {}, reply: { ran: [''] },
-    handler: function () { return loopOnce(); },
-  },
-  // IDLE TIME (goal/G8.4): whether this node is idle, and one pass of the chores.
-  idle: {
-    request: {}, reply: { idle: true, since: '', holding: [''] },
-    handler: function () { return idle(); },
-  },
-  'chore.once': {
-    request: {}, reply: { did: [''] },
-    handler: function () { return choreOnce(); },
-  },
-  // THE ONE THING IT MAY DO ON HIS NODE (goal/G8.3): run one item's suites and ask the desk to take a verify back.
-  // TOLERATED REDS (goal/G8.7): the reds outside the current goal, and one grant on the goal naming them.
-  'goal.check': {
-    request: {}, reply: { goal: '', outside: [''], asked: false },
-    handler: function () { return goalCheck(); },
-  },
-  // THE VERIFIER TAB'S THREE VERBS (goal/G8.11), deskVerify's own; Andy, 2026-10-09, on an app's verbs: they need no
+  // THE VERIFIER TAB'S VERBS (goal/G8.11), deskVerify's own; Andy, 2026-10-09, on an app's verbs: they need no
   // grant of his until he rules the app intrinsic. Desk draws its tab from `now` and shows nothing where no deskVerify
   // answers.
   //   now            what runs, for which item, since when, and what waits
-  //   records.search the dataset's rows, newest first, one bucket, as every search in this tree answers
   //   stop           his intervention: the run ends and its claim is rejected saying so, never passed
+  // (records.search stood between them; the tab stopped asking it in goal/G8.12, and it went in goal/G19.11.)
   now: {
     // THE QUEUE AS {kind, id} (goal/G19.3): declared as [''] it was refused whenever work waited, and the tab vanished.
     request: {}, reply: { running: { id: '', suite: '', since: '' }, queued: [{ kind: '', id: '' }] },
     handler: function () {
       return { running: { id: running.id, suite: running.suite, since: running.since }, queued: watchQueue.map(function (q) { return { kind: q.kind, id: q.id }; }) };
-    },
-  },
-  'records.search': {
-    request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      const text = String(a.text || '');
-      const rows = newestRows.all().filter(function (r) {
-        return !text || String(r.suite).indexOf(text) !== -1 || String(r.title).indexOf(text) !== -1;
-      });
-      return walked(rows, function (r) {
-        return { key: String(r.rowid), label: JSON.stringify({ suite: r.suite, title: r.title, outcome: r.outcome, commit: r.commit, dirty: r.dirty, at: r.at }) };
-      });
     },
   },
   stop: {
@@ -1096,10 +902,6 @@ appServer.serve({
       drainQueue();
       return { queued: true };
     },
-  },
-  'claim.check': {
-    request: { id: '' }, reply: { rejected: false, reds: [''] },
-    handler: function (a) { return claimCheck(String(a.id || '')); },
   },
   // ONE RECORD, AS IT HAPPENS (his words above). The answer says whether it was kept: a repeat of the same outcome is
   // not, and that is the whole of the de-duplication - the history is the flips. Only his clone keeps anything: on an

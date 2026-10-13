@@ -20,6 +20,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const world = require('./world');
+const rollOf = require('./rollOf');
 const { createRelay } = require('../run/js/relay');
 
 // A scenario, in the vocabulary the visual builder reads. The suite then
@@ -30,13 +31,14 @@ const SCENARIO = {
   peers: ['bert', 'john'],
 };
 
-// WHO IS STILL ON THE ROLL, asked about the keys this suite knows. A relay
-// no longer answers the whole roll to anybody (cycle 3, 0012 widened), so
-// the question is put by key — which is also the only way it is asked on
-// the wire.
+// WHO IS STILL ON THE ROLL, of the keys this suite knows. A relay no longer
+// answers the roll to anybody (cycle 3, 0012 widened), and since goal/G19.11
+// it has no who() either, so the suite reads the roll off the relay's disc
+// (rollOf.js) and keeps the keys it knows.
 let KNOWN = [];
 function labels(box) {
-  return box.who(KNOWN).map(function (p) { return p.publicLabel || p.name; }).sort().join(',');
+  return rollOf(box).filter(function (p) { return KNOWN.indexOf(p.publicKey) !== -1; })
+    .map(function (p) { return p.publicLabel; }).sort().join(',');
 }
 
 // Asking a relay to forget somebody. The only way to ask, since decision

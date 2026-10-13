@@ -59,9 +59,23 @@ const RUN = path.join(__dirname, '..', 'run');
 // copyTrackedSpirit reads an index that lists deleted files, plantRun.js
 // copies a listing that can go stale mid-copy, and now this. Anything
 // that walks and then reads has to tolerate the walk being out of date.
-function codeOf(file) {
+//
+// THE GUARD WAS PARTIAL UNTIL goal/G19.11, three ways, each a place a
+// relapse could stand unseen:
+//   - `//.*` stripped from the first `//` on a line, so a url written out
+//     whole ('https://' + ... + '/api/relay/who' in one string) was read as
+//     a comment and never matched. A `//` right after a colon is a url now.
+//   - process/ was skipped as "spawned scripts that never speak to a relay";
+//     it holds the node's servers since slim/G1.4, and they may.
+//   - bash/ was never read, and bash/status asked /api/relay/who for two
+//     cycles after the route went. Its scripts are read now, `#` comments
+//     stripped the same way.
+function stripJs(text) { return String(text).replace(/(^|[^:])\/\/.*$/gm, '$1'); }
+function codeOf(file, root) {
   try {
-    return fs.readFileSync(path.join(RUN, file), 'utf8').replace(/\/\/.*/g, '');
+    const text = fs.readFileSync(path.join(root || RUN, file), 'utf8');
+    if (/\.(js|html)$/.test(file)) return stripJs(text);
+    return text.replace(/(^|\s)#.*$/gm, '$1');
   } catch (e) {
     if (e && e.code === 'ENOENT') return '';
     throw e;
@@ -72,14 +86,28 @@ function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      // node_modules is nobody's code here, and process/ holds spawned
-      // scripts that never speak to a relay.
-      if (entry.name === 'node_modules' || entry.name === 'process') return;
+      // node_modules is nobody's code here; relay-state/ is a node's state,
+      // not code; brains/ is Andy's own repo (.gitignore says why).
+      if (entry.name === 'node_modules' || entry.name === 'relay-state' || entry.name === 'brains') return;
       walk(full, out);
       return;
     }
     if (/\.(js|html)$/.test(entry.name)) out.push(path.relative(RUN, full));
   });
+  return out;
+}
+
+// THE HOST SCRIPTS: every file in bash/ that is not a document.
+const BASH = path.join(__dirname, '..', '..', 'bash');
+function bashScripts() {
+  const out = [];
+  (function into(dir) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (entry) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { into(full); return; }
+      if (!/\.md$/.test(entry.name)) out.push(path.relative(BASH, full));
+    });
+  })(BASH);
   return out;
 }
 
@@ -94,10 +122,26 @@ const offenders = walk(RUN, []).filter(function (rel) {
 });
 
 if (offenders.length === 0) {
-  test.check('no code under run/ names /api/relay/who — ' +
+  test.check('no code under run/ names /api/relay/who, process/ included — ' +
     walk(RUN, []).length + ' files checked');
 } else {
   test.fail('still reaching for the roll: ' + offenders.join(', '));
+}
+
+const scripts = bashScripts();
+const bashOffenders = scripts.filter(function (rel) { return /api\/relay\/who/.test(codeOf(rel, BASH)); });
+if (scripts.length && bashOffenders.length === 0) {
+  test.check('and no host script in bash/ asks for it — ' + scripts.length + ' files checked');
+} else {
+  test.fail(scripts.length ? 'a host script still asks for the roll: ' + bashOffenders.join(', ') : 'bash/ holds no scripts to check');
+}
+
+// THE STRIPPER ITSELF: a url written out whole is code, not a comment.
+const probe = stripJs("x('https://box/api/relay/who'); // a tombstone naming /api/relay/key");
+if (/api\/relay\/who/.test(probe) && !/tombstone/.test(probe)) {
+  test.check('a url written whole is read as code, and a comment after it is still stripped');
+} else {
+  test.fail('the comment stripper eats a url after its `//`');
 }
 
 // ── 2. AND THE DOOR ITSELF IS SHUT ───────────────────────────────────
@@ -111,16 +155,19 @@ test.subHeading('And the relay does not serve it');
 // cycle 0 (node and relay as separate startup modules); a roll door
 // would have to be in one of the two.
 const server = codeOf(path.join('js', 'server.js')) + '\n' + codeOf(path.join('js', 'relayServer.js'));
+// AND EVERY OTHER FILE UNDER js/ (goal/G19.11): a route is a string any
+// module could match on, so the two startup modules were half the guard.
+const allJs = walk(path.join(RUN, 'js'), []).map(function (rel) { return codeOf(rel); }).join('\n');
 
-if (!/['"]\/api\/relay\/who['"]/.test(server)) {
-  test.check('neither server.js nor relayServer.js has a route for it, or an entry in the public-path list');
+if (!/['"]\/api\/relay\/who['"]/.test(server) && !/['"]\/api\/relay\/who['"]/.test(allJs)) {
+  test.check('no file under js/ has a route for it, or an entry in the public-path list');
 } else {
   test.fail('the route is still served');
 }
 
 // THE HANDLER AND ITS HELPER WENT TOO. A dead function is the next
 // person's starting point.
-if (!/handleRelayWho|expandKeys/.test(server)) {
+if (!/handleRelayWho|expandKeys/.test(allJs)) {
   test.check('handleRelayWho and expandKeys are gone with it');
 } else {
   test.fail('the handler or its key-expander is still there');

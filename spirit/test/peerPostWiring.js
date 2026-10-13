@@ -51,7 +51,7 @@ const RUN_JS = path.join(__dirname, '..', 'run', 'js');
 // are the three a running system actually uses.
 const DECLARED = {
   // THE NODE. Everything, because a personal node does everything: it
-  // answers verbs, admits strangers, keeps a whoBook and a traffic log,
+  // answers verbs, admits strangers, keeps a contacts book and a traffic log,
   // and hands arrivals to whatever is watching above the node boundary.
   //
   // AND THIS LIST WAS WRONG ON ITS FIRST RUN, which is the best argument

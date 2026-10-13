@@ -196,7 +196,6 @@ async function faceHalf() {
   const at = new Date().toISOString();
   fake.verifier = {
     now: function () { return { running: { id: '', suite: 'spirit/test/zzFullRunning.js', since: at }, queued: [] }; },
-    'records.search': function () { return { items: [], more: false }; },
     stop: function () { return { stopped: true }; },
     'full.run': function () { return { queued: true }; },
   };

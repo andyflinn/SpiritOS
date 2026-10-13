@@ -15,6 +15,8 @@
 //   the way a failed verify reads today, so the agent who built it picks it up.
 //   deskVerify: claim.check {id} -> {rejected, reds}: runs the item's suites (its G8.8 file list) as loop.once does; any
 //   red assertion, and it calls verify.reject naming the reds; all green, and it calls nothing. It never presses.
+//   (Since goal/G19.11 claim.check and loop.once are no verbs: section 2 starts the check with verify.again on the
+//   desk's record, which the watcher reads, as goal/G8.10 built it.)
 // NOT ASSERTED: what starts claim.check (the desk's nudge on a verify pass, goal/G8.5's path), and whether a goal
 // closure re-runs what is stored (G8.3's one point still to argue).
 
@@ -148,7 +150,9 @@ async function deskOnNode() {
 }
 
 async function verifyHalf() {
-  test.subHeading('2. deskVerify: claim.check runs the item\'s suites and rejects on a red, pressing nothing');
+  // Since goal/G19.11 claim.check is no verb of deskVerify's: the check is started as on his node, by a word on the
+  // desk's record (verify.again) that the watcher reads, and its verdict is read off what it asks the desk.
+  test.subHeading('2. deskVerify: the claim check runs the item\'s suites and rejects on a red, pressing nothing');
   fs.writeFileSync(PROBE_PATH, [
     "'use strict';",
     "const test = require('./testSupport.js');",
@@ -159,6 +163,8 @@ async function verifyHalf() {
   ].join('\n'));
   const asks = [];
   const records = [];
+  const changes = [];
+  const again = function () { changes.push({ n: changes.length + 1, at: new Date().toISOString(), verb: 'verify.again', by: 'claude-windows', key: '', body: JSON.stringify({ id: 'rj/G1.1' }) }); };
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
       let b = '';
@@ -167,7 +173,11 @@ async function verifyHalf() {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
         let out = {};
         if (j && j.ask === 'api') out = { desk: {} };
-        else if (j && j.ask && j.ask.desk) {
+        else if (j && j.ask && j.ask.desk && Object.keys(j.ask.desk)[0] === 'changes') {
+          const from = Number(j.ask.desk.changes.n) || 0;
+          const rest = changes.filter(function (r) { return r.n > from; });
+          out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
+        } else if (j && j.ask && j.ask.desk) {
           const verb = Object.keys(j.ask.desk)[0];
           asks.push({ verb: verb, args: j.ask.desk[verb] });
           if (verb === 'item.get') out = { item: JSON.stringify({ id: 'rj/G1.1', goal: 'rj/G1', go: true, status: 'running', files: [{ path: 'spirit/test/' + PROBE, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
@@ -180,23 +190,28 @@ async function verifyHalf() {
   const run = path.join(scratch, 'verify');
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
-  const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db') }, run);
+  const v = server(VERIFY, 'verify', { db: path.join(run, 'verify.db'), watchMs: 300, pull: '' }, run);
+  const verdicts = function () { return asks.filter(function (a) { return a.verb === 'verify.reject' || a.verb === 'verify.pass'; }).length; };
+  const checked = async function (before) { for (let i = 0; i < 150 && verdicts() === before; i++) await sleep(200); return verdicts() > before; };
   try {
     if (!await v.up()) { test.fail('deskVerify did not start'); return; }
-    const r1 = await v.call('claim.check', { id: 'rj/G1.1' }, ANDY);
+    await sleep(800);
+    again();
+    const r1 = await checked(0);
     const rejects = asks.filter(function (a) { return a.verb === 'verify.reject'; });
-    if (took(r1) && r1.body.rejected === true && rejects.length === 1 && rejects[0].args.id === 'rj/G1.1' && /it is still red/.test(rejects[0].args.why)) {
-      test.check('a red suite: it answers rejected and asks the desk verify.reject, naming the red');
-    } else test.fail(OWED + 'claim.check answered ' + r1.status + ' ' + short(r1.body) + '; the desk was asked ' + short(asks));
+    if (r1 && rejects.length === 1 && rejects[0].args.id === 'rj/G1.1' && /it is still red/.test(rejects[0].args.why)) {
+      test.check('a red suite: it asks the desk verify.reject, naming the red');
+    } else test.fail(OWED + 'the check ' + (r1 ? 'ended' : 'never ended') + '; the desk was asked ' + short(asks));
     const passOnRed = asks.filter(function (a) { return a.verb === 'verify.pass'; }).length;
     // The probe turns green the way a fix lands: its file changes. deskVerify started before this line, so a variable
     // set here would never reach the suites it runs.
     fs.writeFileSync(PROBE_PATH, fs.readFileSync(PROBE_PATH, 'utf8').replace("process.env.PROBE_GREEN === '1'", 'true'));
     const before = asks.filter(function (a) { return a.verb === 'verify.reject'; }).length;
-    const r2 = await v.call('claim.check', { id: 'rj/G1.1' }, ANDY);
+    again();
+    const r2 = await checked(verdicts());
     const after = asks.filter(function (a) { return a.verb === 'verify.reject'; }).length;
-    if (took(r2) && r2.body.rejected === false && after === before) test.check('all green: it answers not rejected and asks for no rejection');
-    else test.fail(OWED + 'with the probe green, claim.check answered ' + short(r2.body) + ' and asked verify.reject ' + (after - before) + ' time(s)');
+    if (r2 && after === before) test.check('all green: it asks for no rejection');
+    else test.fail(OWED + 'with the probe green, the check ' + (r2 ? 'ended' : 'never ended') + ' and asked verify.reject ' + (after - before) + ' time(s)');
     // GROWN IN THE VERIFY (claude-windows), Andy's newer word: "only deskVerify brings the button". So on all green it
     // gives the desk its own word, verify.pass, once - without it, the desk on his node would never offer Done.
     const passes = asks.filter(function (a) { return a.verb === 'verify.pass'; });

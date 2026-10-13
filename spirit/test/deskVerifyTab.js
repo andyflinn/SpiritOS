@@ -13,7 +13,8 @@
 // THE SHAPE ASSERTED, the red writer's reading, posted under goal/G8.11 for him to overrule:
 //   deskVerify gains three verbs of its own (no grant of his: an app's own verbs, until he rules it intrinsic):
 //     now {}                 -> {running: {id, suite, since}, queued: [{kind, id}]}   running.id empty when idle
-//     records.search {text}  -> {items: [{key, label}], more}  its dataset rows, newest first, text matched on the
+//     records.search {text}  (removed in goal/G19.11: only this suite called it)
+//                            -> {items: [{key, label}], more}  its dataset rows, newest first, text matched on the
 //                               suite or title; a search with an empty query, bucket-bounded, never a list
 //     stop {}                -> {stopped}  ends the suite running now; the claim it belonged to is rejected, its why
 //                               saying it was stopped - never passed
@@ -50,9 +51,12 @@ test.startTest('goal/G8.11: the verifier tab in Desk');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifytab-'));
 
 async function serverHalf() {
-  test.subHeading('1. deskVerify: now, records.search and stop');
+  // Since goal/G19.11 records.search and claim.check are not deskVerify's verbs: the check is started by a word on the
+  // desk's record (verify.again), which the watcher reads, and the rows are asked of nobody.
+  test.subHeading('1. deskVerify: now and stop');
   fs.writeFileSync(path.join(__dirname, SLOW), "'use strict';\nconst test = require('./testSupport.js');\ntest.startTest('tab slow probe');\nsetTimeout(function () { test.check('slow'); test.reportSuccessFailureCount(); process.exit(0); }, 8000);\n");
   const asks = [];
+  const records = [];
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
       let b = '';
@@ -64,7 +68,10 @@ async function serverHalf() {
         else if (j && j.ask && j.ask.desk) {
           const verb = Object.keys(j.ask.desk)[0];
           const a = j.ask.desk[verb] || {};
-          if (verb === 'changes') out = { records: [], lines: [], n: Number(a.n) || 0, line: 0, more: false };
+          if (verb === 'changes') {
+            const rest = records.filter(function (r) { return r.n > (Number(a.n) || 0); });
+            out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : Number(a.n) || 0, line: 0, more: false };
+          }
           else {
             asks.push({ verb: verb, args: a });
             if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
@@ -83,7 +90,7 @@ async function serverHalf() {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'deskVerify', 'win32', 'process') : path.join(root, 'door.sock');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('deskVerify', pipe);
-  const kid = spawn(process.execPath, [VERIFY, JSON.stringify({ db: path.join(root, 'verify.db'), watchMs: 60000, suiteMs: 60000 }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const kid = spawn(process.execPath, [VERIFY, JSON.stringify({ db: path.join(root, 'verify.db'), watchMs: 300, suiteMs: 60000, pull: '' }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   const call = function (verb, a) { const q = {}; q[verb] = a || {}; return client.ask({ deskVerify: q }, ANDY).then(function (r) { return r || {}; }, function () { return {}; }); };
   try {
     let up = false;
@@ -94,15 +101,18 @@ async function serverHalf() {
     if (took(idleNow) && idleNow.body.running && idleNow.body.running.id === '' && Array.isArray(idleNow.body.queued)) test.check('now, idle: nothing running, an empty queue');
     else test.fail(OWED + 'now answered ' + idleNow.status + ' ' + short(idleNow.body));
 
-    const check = call('claim.check', { id: 'tb/G1.2' });
-    await sleep(2000);
+    await sleep(800);
+    records.push({ n: records.length + 1, at: new Date().toISOString(), verb: 'verify.again', by: 'wsl-claude', key: '', body: JSON.stringify({ id: 'tb/G1.2' }) });
+    const ended = function () { return asks.some(function (x) { return (x.verb === 'verify.reject' || x.verb === 'verify.pass') && x.args.id === 'tb/G1.2'; }); };
+    await sleep(2500);
     const busy = await call('now');
     const r = busy.body && busy.body.running;
     if (took(busy) && r && r.id === 'tb/G1.2' && /zzTabSlow\.js/.test(String(r.suite)) && r.since) test.check('now, while a check runs: the item, its suite and since when');
     else test.fail(OWED + 'now during a run answered ' + busy.status + ' ' + short(busy.body));
 
     const stop = await call('stop');
-    const done = await Promise.race([check, sleep(5000).then(function () { return null; })]);
+    let done = false;
+    for (let i = 0; i < 25 && !done; i++) { await sleep(200); done = ended(); }
     if (took(stop) && stop.body.stopped === true && done) test.check('stop ends the run at once');
     else test.fail(OWED + 'stop answered ' + stop.status + ' ' + short(stop.body) + (done ? '' : '; the check was still running 5 s later'));
     const rj = asks.filter(function (x) { return x.verb === 'verify.reject' && x.args.id === 'tb/G1.2'; });
@@ -112,21 +122,6 @@ async function serverHalf() {
     const after = await call('now');
     if (took(after) && after.body.running && after.body.running.id === '') test.check('and now reads idle again');
     else test.fail(OWED + 'now after stop answered ' + short(after.body));
-
-    await call('record', { suite: 'zzOld.js', title: 'first', outcome: 'green' });
-    await sleep(20);
-    await call('record', { suite: 'zzMid.js', title: 'second', outcome: 'red' });
-    await sleep(20);
-    await call('record', { suite: 'zzNew.js', title: 'third', outcome: 'green' });
-    const all = await call('records.search', { text: '' });
-    const rows = (all.body && Array.isArray(all.body.items) ? all.body.items : []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
-    const names = rows.map(function (x) { return x.suite; }).filter(function (s) { return /^zz(Old|Mid|New)\.js$/.test(s); });
-    if (took(all) && JSON.stringify(names) === JSON.stringify(['zzNew.js', 'zzMid.js', 'zzOld.js']) && rows.every(function (x) { return x.title && x.outcome && x.at; }) && typeof all.body.more === 'boolean') test.check('records.search with an empty query: the rows newest first, each with suite, title, outcome and time');
-    else test.fail(OWED + 'records.search answered ' + all.status + ' ' + short(all.body));
-    const one = await call('records.search', { text: 'zzMid' });
-    const oneRows = (one.body && one.body.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
-    if (took(one) && oneRows.length === 1 && oneRows[0].suite === 'zzMid.js' && oneRows[0].outcome === 'red') test.check('records.search with a query narrows to the matching rows');
-    else test.fail(OWED + 'records.search zzMid answered ' + short(one.body));
   } finally {
     await new Promise(function (res) { kid.once('exit', res); kid.kill(); setTimeout(res, 3000); });
     node.close();
@@ -204,7 +199,8 @@ async function faceHalf() {
   else test.fail(OWED + '#desk-verifier reads ' + short(b));
   // THE RECORDS LIST WENT (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
   // latest status." This section asserted the list until that word; it now asserts its absence, so a session that
-  // brings the log back goes red. The rows are still readable through deskVerify's records.search, asserted above.
+  // brings the log back goes red. (records.search, which still served the rows, went in goal/G19.11; the fake verifier
+  // above still offers a row so a tab that asked for one would draw it.)
   if (!/zzRecorded\.js/.test(b) && !/a record title/.test(b)) test.check('and no records list: the tab shows the run alone, never a log');
   else test.fail(OWED + 'the tab still draws the records list: ' + short(b));
   if (/id="desk-verify-stop"/.test(b) && /data-reverify="tb\/G1\.2"/.test(b)) test.check('with a Stop button and a re-verify for the running item');

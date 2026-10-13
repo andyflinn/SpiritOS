@@ -77,16 +77,21 @@ else
 fi
 
 echo
-say "relay who (https://$DOMAIN)"
+# THE RELAY'S KEY, NOT ITS ROLL (goal/G19.11). This asked for the roll, whose
+# route went on 2026-09-18, so a healthy relay read as down. A healthy relay
+# answers GET /api/relay/key with 200 and its relayPublicKey.
+say "relay key (https://$DOMAIN)"
 if have curl; then
-  if curl -fsS --max-time 8 "https://$DOMAIN/api/relay/who" ; then
-    echo
-    ok "https who answered"
+  KEY_JSON=$(curl -fsS --max-time 8 "https://$DOMAIN/api/relay/key" 2>/dev/null || true)
+  if contains "$KEY_JSON" '"relayPublicKey"'; then
+    echo "$KEY_JSON"
+    ok "https key answered"
   else
-    warn "https who failed (tls not up, or DNS, or node down)"
+    warn "https key failed (tls not up, or DNS, or node down)"
   fi
-  if curl -fsS --max-time 5 "http://127.0.0.1:$NODE_PORT/api/relay/who" >/dev/null; then
-    ok "local node :$NODE_PORT who answered"
+  LOCAL_JSON=$(curl -fsS --max-time 5 "http://127.0.0.1:$NODE_PORT/api/relay/key" 2>/dev/null || true)
+  if contains "$LOCAL_JSON" '"relayPublicKey"'; then
+    ok "local node :$NODE_PORT key answered"
   else
     warn "local node :$NODE_PORT not answering"
   fi

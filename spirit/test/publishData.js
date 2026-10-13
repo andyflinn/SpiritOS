@@ -141,7 +141,7 @@ function pointAt(home, url, key) { require('../run/js/relayKeys.js').list(home, 
   const deskAsk = function (v, a) { const q = {}; q[v] = a; return deskPipe.ask({ desk: q }, ANDY).then(function (r) { return r || {}; }, function () { return {}; }); };
   await waitFor(function () { return deskAsk('state.get', {}).then(function (r) { return r.status === 200; }); });
   await deskAsk('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Publish' }, items: [{ id: 'p/G1.1', title: 'Work', blocks: ['p/G1'] }] }) });
-  // THE AGENT'S NODE RUNS FROM ITS OWN CLONE (AGENT_ONBOARDING.md, step 1), so publishData finds the node's traffic
+  // THE AGENT'S NODE RUNS FROM ITS OWN CLONE (the onboarding's step 1; that file went in goal/G19.11), so publishData finds the node's traffic
   // log at <clone>/spirit/run/relay-state/node.db, the one place it can read it: no verb reads that log.
   const clone = path.join(scratch, 'clone');
   const agentHome = path.join(clone, 'spirit', 'run');

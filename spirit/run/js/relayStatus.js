@@ -12,7 +12,7 @@
 //
 // The relay console it replaces answered eight typed words and not one
 // of them changed anything — it was a read-only view, and six of the
-// eight returned data /api/relay/who already hands to anyone
+// eight returned data the public roll of the day handed to anyone
 // unauthenticated. Its whole owner-gate existed to protect one word:
 // `invites`.
 //

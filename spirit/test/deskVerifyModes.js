@@ -21,7 +21,8 @@
 // spirit.core.node.const.SPIRIT_PORT from relay-state/environment.json), so nothing is configured and nothing passed.
 //
 // THE SHAPE ASSERTED, names mine for the builder to argue:
-//   mode {} -> {mode, apps}: what it read, and the app names it read it from.
+//   mode {} -> {mode, apps}: what it read, and the app names it read it from. (A verb until goal/G19.11; now only
+//   the function inside deskVerify, judged by what `record` keeps.)
 //   record: in 'desk' mode it keeps rows as goal/G8.1 built it; in 'agent' and 'none' modes it answers the outcome it
 //   was told and stores NOTHING - his "no commit for deskVerify on an agents node" - so an agent's copy can still
 //   answer "is my work done" without a record existing anywhere but his clone.
@@ -109,19 +110,8 @@ async function start(name, apps) {
   // A NODE THAT IS NEITHER (his word: out of scope, so it keeps nothing and says so).
   const bare = await start('bareside', ['fileServer']);
   try {
-    test.subHeading('1. it reads its mode from the node it runs on');
-    const d = await deskNode.ask('mode');
-    if (d.status === 200 && d.body && d.body.mode === 'desk') test.check('a node with a desk and no deskClient reads desk');
-    else test.fail(OWED + 'mode on the desk node answered ' + short(d.body));
-    const a = await agentNode.ask('mode');
-    if (a.body && a.body.mode === 'agent') test.check('a node running a deskClient reads agent, though it runs a desk as well');
-    else test.fail(OWED + 'mode on an agent node answered ' + short(a.body));
-    const n = await bare.ask('mode');
-    if (n.body && n.body.mode === 'none') test.check('a node with neither reads none');
-    else test.fail(OWED + 'mode on a bare node answered ' + short(n.body));
-    if (a.body && Array.isArray(a.body.apps) && a.body.apps.indexOf('deskClient') !== -1) test.check('it says which apps it read the mode from');
-    else test.fail(OWED + 'apps read ' + short(a.body && a.body.apps));
-
+    // SECTION 1 ASKED THE mode VERB, which only this suite called; it went in goal/G19.11. The mode is still read from
+    // the node (mode() in deskVerify.js), and what it decides is asserted below: whether a record is kept.
     test.subHeading('2. his clone keeps the record');
     const kept = await deskNode.ask('record', { suite: 'mini.js', title: 'it holds', outcome: 'green' });
     if (kept.body && kept.body.written === true && deskNode.rows().length === 1) test.check('a record on the desk node is written, as goal/G8.1 has it');

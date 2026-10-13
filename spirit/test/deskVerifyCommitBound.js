@@ -169,7 +169,6 @@ async function faceHalf() {
   fake.items = [{ id: 'vb/G1', title: 'Bound', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   fake.verifier = {
     now: function () { return { running: { id: '', suite: '', since: '' }, queued: [], last: 'vb/G1.2' }; },
-    'records.search': function () { return { items: [], more: false }; },
     stop: function () { return { stopped: true }; },
   };
   const WHY = 'vb/G1.2 is closed: a settled item is not verified again';

@@ -105,6 +105,9 @@ function hashVerb(id) {
         try { d = JSON.parse(a.data); } catch (e) { d = null; }
         const start = d && Number(d.start), length = d && Number(d.length);
         if (!d || !Number.isInteger(start) || !Number.isInteger(length) || start < 0 || length < 1) throw refused('bad-request', 'chunk data is {start, length}');
+        // CAPPED BEFORE ANYTHING IS ALLOCATED (goal/G19.11): the length is the asker's, and Buffer.alloc took it
+        // as it came. No receiver asks more than CHUNK, the most whose base64 fits one answer.
+        if (length > CHUNK) throw refused('bad-request', 'a chunk is at most ' + CHUNK + ' bytes; ' + length + ' were asked');
         const blob = path.join(STORE, id, BLOB);
         if (!fs.existsSync(blob)) throw refused('no-such-file');
         const buf = Buffer.alloc(length);

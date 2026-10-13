@@ -161,7 +161,6 @@ async function faceHalf() {
   fake.items = [{ id: 'qk/G1', title: 'Queue', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   fake.verifier = {
     now: function () { return { running: { id: 'qk/G1.1', suite: 'spirit/test/zzRunning.js', since: new Date().toISOString() }, queued: [{ kind: 'item', id: 'qk/G1.2' }, { kind: 'goal', id: 'qk/G1' }] }; },
-    'records.search': function () { return { items: [], more: false }; },
     stop: function () { return { stopped: true }; },
   };
   const byId = {};

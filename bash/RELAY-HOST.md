@@ -104,8 +104,8 @@ Prints:
 - systemd enabled / active
 - listeners on 65430 / 80 / 443
 - warning if **65420** is bound
-- `GET https://spirit.andyflinn.com/api/relay/who`
-- `GET http://127.0.0.1:65430/api/relay/who`
+- `GET https://spirit.andyflinn.com/api/relay/key` (200 with `relayPublicKey`)
+- `GET http://127.0.0.1:65430/api/relay/key`
 
 Does not change anything. First command after SSH.
 
@@ -351,10 +351,10 @@ Good:
 - `spirit-relay` enabled + active
 - Node on `:65430`, Caddy on `:80` and `:443`
 - 65420 quiet
-- HTTPS `who` returns JSON
-- local `:65430` `who` returns JSON
+- HTTPS `key` returns JSON with `relayPublicKey`
+- local `:65430` `key` returns JSON with `relayPublicKey`
 
-`curl -I https://spirit.andyflinn.com/api/relay/who` may print **404**
+`curl -I https://spirit.andyflinn.com/api/relay/key` may print **404**
 because the mailbox has no HEAD handler. Use GET (`./bash/status` does).
 
 ---

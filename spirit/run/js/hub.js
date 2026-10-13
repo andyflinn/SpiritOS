@@ -558,50 +558,11 @@ var peerSearch = require('./peerSearch');
 // The one key cut is the kernel's (apiAuth/G1.11); hub.js had the original.
 const keyTail = require('./kernel.js').keyTail;
 
-// Every peer on the mailbox whose PUBLIC LABEL is the handle a human
-// heard. Not a search: an exact caption, case-insensitively, because a
-// handle is a word somebody said out loud and a substring match would
-// hand back strangers who merely contain it.
-//
-// Two johns are two candidates, and stay two. Nothing here picks one:
-// picking is the human's job, done against a key tail on a phone call,
-// which is what makes this an acquisition rather than a guess.
-// ── NO CALLER IN run/ SINCE peer.find WENT (2026-09-17) ──────────────
-//
-// `findHandle` was its only one. chatPeople.js still asserts it in six
-// places, which is the shape sseClient.js warns about — "a module
-// widening its surface for a test's convenience", and "a dead export is
-// the same promise made to nobody."
-//
-// Left standing on purpose, not by omission: it is the only place the
-// two-johns rule is written down as code, and whether ranked search has
-// genuinely absorbed that — exact-label matching, key tails, and the
-// contactBook cross-reference that says "already a contact" — is a question
-// for whoever moves the last roll reader, not something to settle by
-// deleting the tested version first.
-function handleMatches(rootDir, peers, handle) {
-  var want = String(handle || '').trim().toLowerCase();
-  if (!want) return [];
-  var id = auth.loadIdentity(rootDir);
-  var myKey = (id && id.publicKey) || '';
-
-  return (Array.isArray(peers) ? peers : [])
-    .filter(function (p) { return p && p.publicKey && p.publicKey !== myKey; })
-    .filter(function (p) {
-      return String(p.publicLabel || '').trim().toLowerCase() === want;
-    })
-    .map(function (p) {
-      var row = contactBook.byPublicKey(rootDir, p.publicKey);
-      return {
-        publicKey: p.publicKey,
-        publicLabel: p.publicLabel || '',
-        tail: keyTail(p.publicKey),
-        // What this node already thinks of them, so the UI can say
-        // "already a contact" instead of offering the same person twice.
-        acquiredVia: row ? contactBook.acquiredVia(row) : null,
-      };
-    });
-}
+// handleMatches STOOD HERE: every roll row whose public label was a handle
+// somebody heard, exactly. Its one caller, peer.find, went on 2026-09-17,
+// and the suite that still asserted it went too, so it was deleted under
+// goal/G19.11. Ranked search (peer.search) answers the same question: an
+// exact label scores 1.0 and comes first, and two johns stay two results.
 
 // acquireFromInbox STOOD HERE — somebody wrote to this node, the relay's
 // copy of the line carried their key, and that is how a stranger became
@@ -617,10 +578,11 @@ function handleMatches(rootDir, peers, handle) {
 // ONE DIFFERENCE, NAMED RATHER THAN QUIETLY DROPPED: this captured the
 // sender's `publicLabel` off `m.from`, because the relay stored a line
 // with a label on it. Nothing stores a line any more, so `remember`
-// acquires with an empty label and the roll
-// (`/api/hub/who` → contactBook) is what fills the caption in. A contact
-// acquired by being written to is briefly unlabelled where it used to be
-// named on arrival.
+// acquires with an empty label, and the caption comes from what this node
+// learns of that key later: peer.acquire, a search result, or the name a
+// person types (the roll that once filled it in is gone). A contact
+// acquired by being written to is unlabelled until then, where it used to
+// be named on arrival.
 
 // What this node does with mail from somebody it has not added.
 //
@@ -851,10 +813,10 @@ function frontDoor(rootDir, from) {
 //
 // NOT THE LABEL, and that one really is gone. acquireFromInbox read
 // `publicLabel` off the relay's stored copy of the line; nothing stores a
-// line now, and a post carries keys and no captions. The roll fills the
-// caption in afterwards (`/api/hub/who` → contactBook), so a contact acquired
-// by being written to is briefly unlabelled where it used to be named on
-// arrival. That is the cost of the relay not reading the payload, which
+// line now, and a post carries keys and no captions. The caption comes
+// later, from peer.acquire, a search result or the name a person types, so
+// a contact acquired by being written to is unlabelled until then, where
+// it used to be named on arrival. That is the cost of the relay not reading the payload, which
 // is the point rather than a regression.
 function remember(rootDir, from, verdict, relayUrl) {
   var key = String(from == null ? '' : from).trim();
@@ -1015,22 +977,12 @@ function createHub(rootDir) {
     }
   }
 
-  function withRelay(res, fn) {
-    var url = loadRelayUrl(rootDir);
-    if (!url) {
-      fail(res, 503, 'no relay url in the relay list of this node');
-      return;
-    }
-    try { assertRelayUrl(url); }
-    catch (e) {
-      fail(res, 503, String(e.message || e));
-      return;
-    }
-    return guarded(res, url, fn);
-  }
+  // withRelay STOOD HERE: the first row of the relay list, whatever the
+  // caller meant. handleWho was its last caller; both went under
+  // goal/G19.11.
 
-  // The mailbox a mint is aimed at. Same scheme check withRelay does, so
-  // a plain-http row in Natter is refused here rather than at the socket.
+  // The mailbox a mint is aimed at. The scheme is checked (assertRelayUrl),
+  // so a plain-http row in Natter is refused here rather than at the socket.
   function withChosenRelay(res, wanted, fn) {
     var chosen = ownerBadge.chooseUrl(ownerBadge.configuredUrls(rootDir), wanted);
     if (!chosen.ok) {
@@ -1044,7 +996,7 @@ function createHub(rootDir) {
     }
     // RETURNED, so a caller can await the whole of it — every other
     // caller ignores the value, as they did when there was none. And
-    // guarded for the same reason withRelay is: see there.
+    // guarded: see `guarded` above.
     return guarded(res, chosen.url, fn);
   }
 
@@ -1580,62 +1532,19 @@ function createHub(rootDir) {
   //
   // The browser addresses a relay by KEY through handlePost now. A new
   // relay verb needs no function here at all.
-  // GET /api/hub/who — the mailbox's peers, captioned by this node.
-  // Unsigned, like the relay route it forwards: `who` is public on the
-  // mailbox (isRelayPublicPath, server.js), and the captions it comes
-  // back with never leave this machine.
-  function handleWho(req, res) {
-    withRelay(res, function (url) {
-      // ── THE ADDRESS BOOK IS LOCAL, AND ALWAYS WAS (2026-09-18) ──────
-      //
-      //   Andy: "there is absolutely no reason for unbound entities to
-      //   conduct surveys of our network." — and on the packet ceiling
-      //   blocking the roll's demotion: "that's the point, so bound
-      //   entities now MUST use alternate interfaces: easy!"
-      //
-      // This fetched the whole roll of the relay to answer a question
-      // about THIS NODE'S OWN BOOK. Every field below is on disk:
-      //
-      //   relay             relays.json
-      //   relayPublicKey    the pin (relayKeys), written at stream open
-      //   selfPublicKey     this node's identity
-      //   people            contactBook.addressBook — buildPeople reads it
-      //
-      // WHAT THE ROLL WAS DOING HERE, and neither is worth a request:
-      //
-      //   1. A fresher `publicLabel` fallback. The caption a person
-      //      actually sees comes from contactBook.labelForKey, locally, and
-      //      prefers the name they typed. A relay's idea of somebody's
-      //      label reaches this node through peer.acquire, search results
-      //      and arriving packets — all of which carry it for the one
-      //      person concerned.
-      //
-      //   2. `contactBook.handshake` on EVERY member of the relay, which
-      //      recorded each of them here as a `roll`-rank row. That is
-      //      not a side effect worth keeping: it is this node building a
-      //      copy of the membership, on every refresh of its own contact
-      //      list, for people it has never spoken to. The rank was
-      //      already outside ACQUIRED_LISTENING — "having noticed a
-      //      stranger exists is not an introduction" — so nothing was
-      //      gained by the rows except bytes.
-      //
-      // A survey by a bound entity is still a survey.
-      var self = auth.loadIdentity(rootDir);
-      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({
-        relay: url,
-        // Null before this node has ever opened a stream to that relay.
-        // The app already treats null as "no log for this row" rather
-        // than inventing a name for it, which is the same handling it
-        // needed when a relay had not yet grown a key of its own.
-        relayPublicKey: relayKeys.pinned(rootDir, url) || null,
-        selfPublicKey: (self && self.publicKey) || null,
-        selfTail: self && self.publicKey ? keyTail(self.publicKey) : null,
-        // No roll rows: the book was never built out of the wire.
-        people: buildPeople(rootDir),
-      }));
-    });
-  }
+  // handleWho STOOD HERE (goal/G19.11): the node's own book, its pinned
+  // relay key and its own key, answered for the first relay of the list.
+  // No route served it once contact.search and contact.get took its job.
+  // THE ADDRESS BOOK IS LOCAL, AND ALWAYS WAS (2026-09-18), and that stands:
+  //
+  //   Andy: "there is absolutely no reason for unbound entities to
+  //   conduct surveys of our network." — and on the packet ceiling
+  //   blocking the roll's demotion: "that's the point, so bound
+  //   entities now MUST use alternate interfaces: easy!"
+  //
+  // A node never builds its book out of a relay's membership; a caption
+  // comes from contactBook.labelForKey, locally, preferring the name the
+  // person typed. A survey by a bound entity is still a survey.
 
   // ── contact.search / contact.get: THE BOOK, SEARCHED (puppets/G2) ──
   //
@@ -1692,8 +1601,7 @@ function createHub(rootDir) {
   // and typing part of it is the other question. One box answers both."
   // It also crossed relays and partnerships, which this never could.
   //
-  // `handleMatches` above is what this called and is NOT deleted with
-  // it — see the note there.
+  // `handleMatches`, which this called, outlived it until goal/G19.11.
 
   // POST /api/hub/contact — a human confirmed one of those candidates.
   //
@@ -2101,10 +2009,10 @@ function createHub(rootDir) {
   //   easier to determine."
   //
   // They can, and better than asked: not just peers on the ledger —
-  // ANYONE. `/api/relay/who` is public and unsigned (0010 calls it "what
-  // a node reads before it has anything") and every row carries
-  // `publicKey` and `owner`. So eligibility is a fetch and a comparison,
-  // with no new wire, no signature and no membership.
+  // ANYONE. `GET /api/relay/key` is public and unsigned and carries the
+  // relay's own key beside `ownerKey` and `ownerLabel` (it took that job
+  // from the roll, deleted 2026-09-18). So eligibility is a fetch and a
+  // comparison, with no new wire, no signature and no membership.
   //
   // READ-ONLY, AND THAT IS THE DESIGN. This answers a question; it does
   // not promote anybody. The promotion is an owner verb posted to the
@@ -2113,11 +2021,11 @@ function createHub(rootDir) {
   //
   // WHY THE NODE DOES THE FETCHING: a relay makes no outbound request of
   // any kind and this does not change that. Nothing is being laundered —
-  // the roll is public, so a node reporting it hands over nothing the
+  // the key door is public, so a node reporting it hands over nothing the
   // relay could not have read itself.
   //
   // TWO KEYS, TWO JOBS, and conflating them is the likeliest bug in this
-  // design: you verify OWNERSHIP against the row marked owner, and you
+  // design: you verify OWNERSHIP against `ownerKey`, and you
   // capture the RELAY's own key to pin for a later forward hop. On
   // spirit-3 those are …fXD+0c= and …bCAsCR4=.
   // ── WHO IS OVER THERE ────────────────────────────────────────────────
@@ -2156,8 +2064,8 @@ function createHub(rootDir) {
   //   must present peers that are not yet in the contacts list from our
   //   bound relay or other relays."
   //
-  // Contacts sees ONE relay today: `peer.list` is `withRelay`, which is
-  // `urls[0]`. So "people you could add" meant "people on the first row of
+  // Contacts saw ONE relay when this was written: `peer.list` was
+  // `withRelay`, which was `urls[0]`. So "people you could add" meant "people on the first row of
   // relays.json", and everybody on the second relay — let alone on a
   // partner — was invisible in the place a person actually goes looking.
   //
@@ -3017,7 +2925,6 @@ function createHub(rootDir) {
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,
     handleSearch: handleSearch,
-    handleWho: handleWho,
     contactSearch: contactSearch,
     contactGet: contactGet,
     handleContact: handleContact,
@@ -3071,5 +2978,4 @@ module.exports = {
   // that grew by accretion does. Spotted while deleting the six ring
   // exports that surrounded it (R8).
   unknownPolicy: unknownPolicy,
-  handleMatches: handleMatches,
 };

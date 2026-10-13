@@ -134,18 +134,9 @@ function measure(n) {
     relayLabel: R.box.relayLabel(),
   }).length;
 
-  // THE ALTERNATIVE, MEASURED BESIDE IT. Same door, `?key=` supplied: the
-  // answer is the row asked for and nothing else, so it must not grow at
-  // all. This is the number that has to stay flat as callers migrate off
-  // the whole-roll form.
-  const one = R.people.length
-    ? JSON.stringify({
-      peers: R.box.who([R.people[0].publicKey]),
-      relayPublicKey: R.box.relayPublicKey(),
-      relayLabel: R.box.relayLabel(),
-    }).length
-    : 0;
-
+  // THE NARROWED ROLL (`?key=`, the relay's who(keys)) WAS MEASURED HERE.
+  // Its route went on 2026-09-18 and who() itself in goal/G19.11, with no
+  // caller left, so there is no narrowed answer to measure.
 
   // Everybody holds a stream, then one more arrives: how many writes does
   // that one arrival cause?
@@ -173,7 +164,7 @@ function measure(n) {
   const announceAfter = count('route');
 
   return {
-    roll: roll, narrowed: one,
+    roll: roll,
     presence: presenceAfter - presenceBefore,
     memberAnnounce: announceAfter - announceBefore,
     other: (after - before) - (presenceAfter - presenceBefore) - (announceAfter - announceBefore),
@@ -222,30 +213,11 @@ test.check('so at 1000 members: roll ' + Math.round(slope.roll * 1000 / 1024) +
   ' KB per fetch, presence ' + Math.round(slope.presence * 1000) +
   ' events per change');
 
-// ── THE ALTERNATIVE, AND WHY THE RATCHET CAN EVER MOVE ────────────
+// ── THE NARROWED FORM STOOD HERE (`?key=`), measured flat ─────────
 //
-// A number in the allowance can only fall if there is something for a
-// caller to move TO. `?key=` is that something: the same door, answering
-// about the keys somebody named.
-//
-// It must be FLAT — not smaller, flat. A narrowed answer that still grew
-// with membership would be the same defect wearing a parameter.
-
-test.subHeading('And the narrowed form does not grow at all');
-
-const narrowSlope = Math.round((((large.narrowed - small.narrowed) / span)) * 100) / 100;
-
-if (narrowSlope === 0) {
-  test.check('`?key=` answers ' + small.narrowed + ' bytes at ' + SMALL +
-    ' members and ' + large.narrowed + ' at ' + LARGE + ' — 0 per member');
-} else {
-  test.fail('the narrowed roll grows too: ' + narrowSlope + ' bytes per member');
-}
-
-// WHAT ONE CALLER SAVED BY MOVING. peer.acquire asked the whole roll to
-// answer yes or no about one key; it asks about the key now.
-test.check('so peer.acquire went from ' + Math.round(slope.roll * 1000 / 1024) +
-  ' KB to ' + large.narrowed + ' bytes at 1000 members');
+// It was what callers moved TO while the roll lost them. Every caller has
+// moved and the narrowed form went with them (goal/G19.11), so there is
+// nothing left to hold flat.
 
 // ── 2. THE RATCHET ──────────────────────────────────────────
 //

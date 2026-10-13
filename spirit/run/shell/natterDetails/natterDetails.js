@@ -280,9 +280,9 @@ function ndLoad() {
       //   Andy: "i can fetch the roll of all relays I'm connected to,
       //   and find potential partners that are not partners yet."
       //
-      // `relay.status` answers for EVERY configured relay, roster and
-      // all — ownerBadge.probe walks the list — and this kept one row and
-      // dropped the rest. Which is why finding a partner meant opening
+      // `relay.status` answers for EVERY configured relay (it carried each
+      // roster too, until the roll went) — ownerBadge.probe walks the list —
+      // and this kept one row and dropped the rest. Which is why finding a partner meant opening
       // who.json: the page already held the answer and discarded it one
       // line after receiving it.
       //
@@ -494,8 +494,8 @@ function ndReportHtml() {
   var report = ndBadge.report;
   // `peers` is a COUNT here, where the old owner-only report carried the
   // roster itself. The pushed report counts on the relay — see
-  // relayStatus.report — because a monitor wants a number and a roster is
-  // already public at /api/relay/who.
+  // relayStatus.report — because a monitor wants a number, and no route
+  // serves a roster at all since the roll was deleted (2026-09-18).
   //
   // MESSAGES IS GONE, and not merely missing: R8 deleted the ring, so
   // there is no count to show. A relay stores nothing on anyone's behalf,

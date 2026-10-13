@@ -18,7 +18,7 @@ You hold the **in-studio** position (`AGENT.md`, Split of labour): you work **in
 
 1. **Findings first**, on the code that just landed or the diff Andy points at, triaged as the rules say.
 2. **Apply fixes only after Andy answers.** A short pasted verdict is the leash for the sitting. Do not expand the sitting. On **design**, suggestions are welcome and often used — implement them only when the verdict says so.
-3. **Comment the code where behaviour is fixed by a decision that is not yours** (ONE-OPERATOR, keys-mode stays open until invites, chat-to-relay roll is owner-only, pending-owner, whoBook never uploads). Point at `AGENT.md` or the decision file. Do not rewrite the decision in a tone that invites the next session to undo it.
+3. **Comment the code where behaviour is fixed by a decision that is not yours** (ONE-OPERATOR, keys-mode stays open until invites, chat-to-relay roll is owner-only, pending-owner, the contacts book never uploads — whoBook until 2026-09-18). Point at `AGENT.md` or the decision file. Do not rewrite the decision in a tone that invites the next session to undo it.
 4. **Run the harness. Paste the last lines. Green means stop.** Stage by name; never `git add -A`.
 
 ## Delivering a design sitting
@@ -126,5 +126,5 @@ here.
 - Re-propose `User=spirit` or `/opt`
 - Run labMaster against spirit-3
 - Treat 0003’s “later names need the owner” as a bug in current keys-mode
-- Reach into the bones to finish a UI tweak. Layout, copy, marks and CSS stay in the app and off the wire — that is in-file work. The moment a tweak needs `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, relay identity or a new persist shape, **stop and call a team review (Andy + the reviewer)**. Do not patch `relay.js` so a dropdown works.
+- Reach into the bones to finish a UI tweak. Layout, copy, marks and CSS stay in the app and off the wire — that is in-file work. The moment a tweak needs `relay.js` gates, invite consume, the contacts book schema (whoBook until 2026-09-18), a hub URL switch, relay identity or a new persist shape, **stop and call a team review (Andy + the reviewer)**. Do not patch `relay.js` so a dropdown works.
   (Cycle 3 opened one new persist shape by Andy's decision: `relay-state/relay.db`, owned by `relayStore.js`. That opening belonged to that cycle; the rule stands for the next one.)

@@ -381,7 +381,6 @@ async function faceHalf() {
   fake.items = [{ id: 'tf/G1.1', title: 'An item', goal: 'tf/G1', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   fake.verifier = {
     now: function () { return { running: { id: '', suite: '', since: '' }, queued: [] }; },
-    'records.search': function () { return { items: [], more: false }; },
     stop: function () { return { stopped: true }; },
     'full.run': function () { return { queued: true }; },
   };

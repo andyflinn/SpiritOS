@@ -52,7 +52,7 @@ Format: **term** — aliases — meaning.
 
 **Hub** — hub.js — Personal-node code that signs and forwards claim, post and invite to a relay over HTTPS (or loopback HTTP for a lab relay). It forwarded `send` and `inbox` until R8 (2026-09-15).
 
-**whoBook** — private who, perception book — `relay-state/who.json` on a **personal** node. publicKey, publicLabel, myLabel, relays[]. Never uploaded.
+**Contacts book** — contacts.js, perception book — `relay-state/contacts.json` on a **personal** node (whoBook / `who.json` until 2026-09-18). publicKey, publicLabel, myLabel, relays[], acquiredVia. Never uploaded.
 
 **fileServer** — process/js/fileServer — The node's intrinsic server for files (fileTransfer goal/G1): at most 32, one folder each, named by the file's **id**, `verb-` and its sha256 in base64url. push, pull, fetch, status and delete are the owner's alone; a peer granted a file's id may ask its verb for **info** and **chunks**, nothing else.
 
@@ -74,7 +74,7 @@ Format: **term** — aliases — meaning.
 
 **Public label** — claim name, caption on the wire today — The string peers see in a relay's roll (`andy`, `john`). May collide after peer-by-key. **Stored once per membership, set once for all of them:** the ledger holds one label per key per relay and two relays may legally disagree, but a person has one name, so **Info** keeps it and posts it to every relay this key holds a seat on. A relay that was down or that refuses (a live invite holding the name) stays out of step, and Info's table is where that shows. *Natter Details used to set it one relay at a time; that panel is gone — Andy: "i have no idea which 'relay' contains which 'label' of mine."*
 
-**My label** — private caption, perception — What *you* call that key in whoBook (`lovelyJohn`). Never on the wire.
+**My label** — private caption, perception — What *you* call that key in your contacts book (`lovelyJohn`). Never on the wire.
 
 **Peer-by-key** — peers keyed by public key — Identity on a relay is the key. Same public label can exist twice (two johns).
 
@@ -386,7 +386,7 @@ does not negotiate with you.**
 | owner badge | owner (the key on the relay) |
 | mailbox | a relay (the word is retired — see **Public relay**) |
 | VPS | work box |
-| GROQ | GROK.md |
+| GROQ | Grok (its file, GROK.md, is gone since goal/G19.11) |
 | app | the puppet (the screen on the public box) |
 | the site | the puppet — it is a screen, not the app |
 | the app server | the puppet's server, which runs no app |

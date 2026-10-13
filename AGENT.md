@@ -2,9 +2,9 @@
 
 Read this before you touch the tree.
 
-**This file answers "what is true here": the system, what is settled about it, and what is off limits. It goes stale when the code or the box changes, so a line that is wrong gets corrected in place, never quietly.** Product rules live here; the UI ones are in `RULES.md` and `UI_DESIGN_STYLE.md`.
+**This file answers "what is true here": the system, what is settled about it, and what is off limits. It goes stale when the code or the box changes, so a line that is wrong gets corrected in place, never quietly.** Product rules live here; the UI ones are in `UI_DESIGN_STYLE.md`.
 
-**Where a rule belongs — ask what makes it stale.** Code or the box changes → here. The method changes → `ANDYS_RULES_FOR_AGENTS.md` (how we work). Andy's usage changes → `DICTIONARY.md` (how Andy says it). That agent's role changes → `CLAUDE.md` / `GROK.md` (how *that* agent delivers, and nothing else). **Precedence:** words from `DICTIONARY.md`, product facts from here, method from Andy's rules; a per-agent file overrides none of them. A rule that moves leaves one line saying where it went.
+**Where a rule belongs — ask what makes it stale.** Code or the box changes → here. The method changes → `ANDYS_RULES_FOR_AGENTS.md` (how we work). Andy's usage changes → `DICTIONARY.md` (how Andy says it). That agent's role changes → `CLAUDE.md` (how *that* agent delivers, and nothing else). **Precedence:** words from `DICTIONARY.md`, product facts from here, method from Andy's rules; a per-agent file overrides none of them. A rule that moves leaves one line saying where it went.
 
 Public face: [andyflinn.com](https://andyflinn.com). Andy Flinn is the one operator.
 
@@ -43,7 +43,7 @@ That is *request by post, reply by stream*. The stream is the **inbound half of 
 
 Raising a number, or adding a line to the roll, is Andy granting an exception out loud. It is never a commit that happens to pass.
 
-A relay is a client of the same interface. `createPeerPost` already takes `traffic` injected so a relay can omit it, and touches `whoBook` only on the inbound unknown-sender path — it was built to be constructed on a relay.
+A relay is a client of the same interface. `createPeerPost` already takes `traffic` injected so a relay can omit it, and asks the contacts book (`contacts.js`, whoBook until 2026-09-18) one question only, whether a key may be counted, which a relay passing no stats never reaches — it was built to be constructed on a relay.
 
 ## Host
 
@@ -57,7 +57,7 @@ A relay is a client of the same interface. `createPeerPost` already takes `traff
 
 ## Identity, invites, gates
 
-- Identity = keypair on the personal node. Perception = whoBook, never uploaded.
+- Identity = keypair on the personal node. Perception = the contacts book (`relay-state/contacts.json`; whoBook until 2026-09-18), never uploaded.
 - Live Kamatera (spirit-3) is **keys-mode**, owner **`Andy Flinn`** in `allow.json` (read on the box 2026-09-19; this line said `andy`), cut over 2026-09-07 (`CUTOVER.md`), on `relay.db` since release `v-2026-09-19-17-00`. The harness cannot see the VPS, so this line is the only record.
 - **A relay's owner is written at install, never claimed** (goal/G16.8, Andy: "the invite path to ownership MUST be gone. it is a security gap, from the time of install until the time of first claim."): `bash/install-units` takes `OWNER_KEY` and writes `relay-state/owner.json`. A relay with no owner refuses every claim over the wire; there is no owner invite and no `install.js`. The owner key in `owner.json` claims its own row without an invite, also when the roll lost it. Every other claim needs a live invite the owner minted. **If `owner.json` is lost while `relay.db` holds members, the relay refuses to start (exit 78); recovery is SSH, restoring `owner.json` by hand — never the wire** (Andy).
 - Reserved name `relay` cannot be claimed. Chat-to-relay roll is owner-only (asserted in `firstOwner.js`, not `relayGates.js`).
@@ -80,7 +80,7 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 - First paint must not depend on a failed fs-watcher leaving an empty shell. Decide eager manifest read vs snapshot before that move.
 - Natter is the reference *shape* (folder + manifest + `api.fs`). It still uses `spiritOwnerBadge` for the last-relay rule.
 - **A UI tweak that stays in the app and off the wire is in-file work.** Layout, copy, marks, CSS, what a filter shows, what a row says — patch the app, run the neighbours, hand it to Andy to look at.
-- **A tweak that needs bones surgery is not a tweak.** `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, relay identity, a new persist shape — stop and call a team review (Andy + Grok) before writing any of it. The tell is that the UI change cannot be made without changing what crosses the wire or what is stored. **Do not patch `relay.js` so a dropdown works.**
+- **A tweak that needs bones surgery is not a tweak.** `relay.js` gates, invite consume, the contacts book schema (whoBook until 2026-09-18), a hub URL switch, relay identity, a new persist shape — stop and call a team review (Andy + Grok) before writing any of it. The tell is that the UI change cannot be made without changing what crosses the wire or what is stored. **Do not patch `relay.js` so a dropdown works.**
 
 ## What you do not do unless asked
 

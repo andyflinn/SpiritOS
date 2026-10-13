@@ -11,10 +11,13 @@
 // A suite is a file that REPORTS: it calls startTest(. Anything else beside them is a module somebody put there, and
 // running it proves nothing. A name belongs on this list only with the reason it is not a suite.
 module.exports = [
+  // THIS LIST ITSELF (goal/G19.11): its header names the call that marks a suite, so the rule took it for one.
+  'notASuite.js',
   'testSupport.js', 'scenario.js', 'world.js', 'runAll.js',
   // The child testSupport runs to post its last records before a suite exits (goal/G8.1): a helper, not a suite.
   'verifyPost.js',
-  'labWorld.js', 'labPopulate.js', 'labMaster.js', 'setupRelayFakes.js',
+  // labMaster.js stood here; it lives in labMaster/, a folder the runner does not read (goal/G19.11).
+  'labWorld.js', 'labPopulate.js', 'setupRelayFakes.js',
   'relayProbe.js', 'startTestAndy.js', 'startTestBert.js', 'startTestRelay.js',
   // A helper, not a suite: reads a relay's roll off its disc for the suites
   // that inspect it (cycle 3).
@@ -116,4 +119,4 @@ module.exports = [
   // somebody will actually ask it. Required by suites; reports nothing of
   // its own.
   'playPopulate.js',
-];;
+];

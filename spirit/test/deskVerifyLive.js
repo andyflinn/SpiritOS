@@ -131,11 +131,16 @@ async function watcherHalf() {
 async function publishHalf() {
   test.subHeading('2. deskVerify publishes its run as it goes');
   const node = await fakeNode({ files: { 'lv/G1.1': [SLOW, FAST] } });
-  const v = startVerify('publish', node, { watchMs: 60000, suiteMs: 60000 });
+  // Since goal/G19.11 there is no claim.check verb: the check is started the way it is started on his node, by a word
+  // on the desk's record (verify.again) that the watcher reads. No pull: the suite's own probes make the tree dirty.
+  const v = startVerify('publish', node, { watchMs: 300, suiteMs: 60000, pull: '' });
   try {
     if (!await v.up()) { test.fail('the world: deskVerify did not start'); return; }
     for (const t of ['a', 'b', 'c']) await v.call('record', { suite: SLOW, title: t, outcome: 'green' });
-    await v.call('claim.check', { id: 'lv/G1.1' });
+    await sleep(800);
+    node.rec('verify.again', { id: 'lv/G1.1' });
+    const ended = function () { return node.asks.some(function (x) { return (x.verb === 'verify.pass' || x.verb === 'verify.reject') && x.args.id === 'lv/G1.1'; }); };
+    for (let i = 0; i < 150 && !ended(); i++) await sleep(200);
     await sleep(500);
     const p = node.published.filter(function (o) { return o && typeof o === 'object' && o.doing; });
     const first = p.filter(function (o) { return o.doing === 'item' && o.id === 'lv/G1.1' && /zzLiveA\.js/.test(String(o.suite)); });

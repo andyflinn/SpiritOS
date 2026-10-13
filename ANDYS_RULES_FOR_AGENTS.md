@@ -72,7 +72,7 @@ A project governed this way carries four kinds of file. Names in brackets are th
 | **these rules** [`ANDYS_RULES_FOR_AGENTS.md`] | how we work | Andy. An agent proposes and is expected to name flaws in them | the method changes |
 | **the dictionary** [`DICTIONARY.md`] | what Andy means by a word | Andy owns the meanings; an agent records usage it has observed and never redefines a term | Andy's usage changes |
 | **the project file** [`AGENT.md`] | what is true in this system, what is settled, what is off limits | the in-studio agent, against the tree, with every correction marked in place; Andy rules on a dispute | the code or the box changes |
-| **a per-agent file**, one per agent [`CLAUDE.md`, `GROK.md`] | how THAT agent delivers, and nothing else | that agent and Andy together | that agent's role changes |
+| **a per-agent file**, one per agent [`CLAUDE.md`] | how THAT agent delivers, and nothing else | that agent and Andy together | that agent's role changes |
 
 **Precedence:** words from the dictionary, facts from the project file, method from these rules. A per-agent file overrides none of them, and a rule that contradicts a layer above it is a mistake in the lower file.
 

@@ -13,7 +13,7 @@ Not spirit-3. Not pretty UI.
 
 ## What this pack is
 
-- `spirit/run/js/whoBook.js` — private who list on a personal node
+- `spirit/run/js/contacts.js` — private contacts book on a personal node (`whoBook.js` until 2026-09-18)
 - `spirit/test/identityPerception.js` — two johns as two keys; captions stay local
 - labMaster recipe below — sticks, not a new framework
 
@@ -45,7 +45,7 @@ Point each avatar `relay-state/relays.json` (goal/G16.3) at `http://127.0.0.1:65
 
 `node install-public-relay.js annie` against the **lab relay home**, not Kamatera.
 
-Claim annie first from her shell, then the others as distinct **claim strings** (`john-a`, `john-b`) until peers are keyed by public key. In each avatar’s `who.json`, both public labels can be `john`; annie sets `lovelyJohn` / `john-work`.
+Claim annie first from her shell, then the others as distinct **claim strings** (`john-a`, `john-b`) until peers are keyed by public key. In each avatar’s `contacts.json` (`who.json` until 2026-09-18), both public labels can be `john`; annie sets `lovelyJohn` / `john-work`.
 
 ## Not yet
 
