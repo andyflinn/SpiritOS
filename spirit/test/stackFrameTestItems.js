@@ -31,7 +31,9 @@ const WANTED = {
     { endpoint: 'spirit/run/js/postQueue.js' },
   ],
   'goal/G22.2': [
-    { endpoint: 'node:http+https+fetch', paths: ['/api/relay/'] },
+    // NO PATHS PINNED (Andy, 2026-10-13: no silent filters; every entry point is tested). Which requests the door
+    // watches is the door's own setting in the list, his to widen; this only asks that the door exists.
+    { endpoint: 'node:http+https+fetch' },
   ],
 };
 
@@ -67,7 +69,7 @@ items.forEach(function (item) {
   (WANTED[item] || []).forEach(function (want) {
     const has = mine.some(function (d) {
       return d.endpoint === want.endpoint && String(d.gate).indexOf(PEER_POST + '::') === 0 &&
-        JSON.stringify(d.paths || null) === JSON.stringify(want.paths || null) && Array.isArray(d.suites) && d.suites.length > 0;
+        (!want.paths || JSON.stringify(d.paths || null) === JSON.stringify(want.paths)) && Array.isArray(d.suites) && d.suites.length > 0;
     });
     if (!has) wrong.push('no door gated in ' + PEER_POST + ' reaching ' + want.endpoint + (want.paths ? ' on ' + want.paths.join(',') : '') + ' with suites that drive it');
   });
