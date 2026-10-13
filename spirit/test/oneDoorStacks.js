@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/test/oneDoorStacks.js
-// NOBODY BUT THE DOOR HAS A PATH TO ITS COMPONENTS (goal/G19.14).
+// NOBODY BUT THE GATE HAS A PATH TO ITS ENDPOINT (goal/G19.14, THE DOORS FROM THE PLUGIN'S LIST SINCE goal/G22.3).
 //
 //   Andy: "whe just want that a stack-frame test asserst nobody but
 //   peerPost has a path to it." — "the permitted door is peerPost (bottom
@@ -9,60 +9,90 @@
 //   simply generate a set of test id's by matching allowed door (peerPost)
 //   to endpoint (http, presenceNode etc)".
 //
-// One test per row of tools/wirePaths.js's BOTTOMS that names a `door`:
-// the probe runs that row's suites, each of which boots a real node, and
-// every stack that reached the endpoint is read. A stack with a
-// production frame (spirit/run/...) and no frame in the door is a path
-// around it, and fails the test. A row with a door and no `file` (the
-// relay row, goal/G22.2) is judged the same way over the wire it watches.
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: the doors are the stackFrameChecks plugin's
+// list, spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json, and this test reads it to know which
+// checks to run. THE GATE IS NARROW: one file::function, matched against a frame in that file whose function is that
+// one (tools/wirePaths.js, gateMatches). A whole module named as the gate is cheating. THE ENDPOINT IS WIDE: every
+// function a module exports and what an exported factory returns, or Node's own http, https and fetch filtered to paths.
 //
-// A STACK WITH NO PRODUCTION FRAME IS NOT COUNTED: a suite calling the
-// component itself to unit-test it. Andy ruled tests are not subject to
-// production rules.
+// One test per door: the probe runs that door's suites, and every stack that reached the endpoint is read. A stack with
+// a production frame (spirit/run/...) and no frame matching the gate is a path around it, and fails the test.
 //
-// AN EMPTY RUN FAILS. A probe pointed at suites that never reached the
-// endpoint reports nothing, and nothing would read as a clean door.
+// A STACK WITH NO PRODUCTION FRAME IS NOT COUNTED: a suite calling the component itself to unit-test it. Andy ruled
+// tests are not subject to production rules.
+//
+// AN EMPTY RUN FAILS. A probe pointed at suites that never reached the endpoint reports nothing, and nothing would read
+// as a clean door; a door the plugin has just added has no suites yet, and is red that way until an agent measures it.
+// A DOOR THAT FAILS SHOWS WORK, and is left red: Andy wants doors that fail to show it, fixed in an item of their own.
 
 const test = require('./testSupport.js');
 const wirePaths = require('./tools/wirePaths.js');
 
 function short(file) { return String(file).replace(/^spirit\/run\/js\//, '').replace(/\.js$/, ''); }
 
-test.startTest('One door, by stack: nobody but the door reaches its components');
+test.startTest('One door, by stack: nobody but the gate reaches its endpoint');
 
-Object.keys(wirePaths.BOTTOMS).forEach(function (name) {
+// ── THE FRAME CARRIES ITS FUNCTION, AND THE GATE MATCHES ON IT ──────
+// Fed the shapes V8 prints, so a probe that dropped the name again, or a gate that matched the whole file, is red here
+// before any door is judged.
+test.subHeading('the frame and the gate');
+(function () {
+  const F = 'spirit/run/js/peerPost.js';
+  const cases = [
+    ['Object.post', F + ':802:post'], ['peerPost.post', F + ':802:post'], ['async post', F + ':802:post'],
+    ['Object.holdStreams [as hold]', F + ':802:holdStreams'], ['new Thing', F + ':802:Thing'],
+    ['Object.<anonymous>', F + ':802'], ['', F + ':802'],
+  ];
+  const got = typeof wirePaths.frameName === 'function' ? cases.map(function (c) { return wirePaths.frameName(F, '802', c[0]); }) : [];
+  const bad = cases.filter(function (c, i) { return got[i] !== c[1]; });
+  if (got.length && !bad.length) test.check('a frame is file:line:function, the function the last segment of V8\'s name, an anonymous one file:line');
+  else test.fail('OWED by goal/G22.3: frameName gives ' + JSON.stringify(got) + ' against ' + JSON.stringify(cases.map(function (c) { return c[1]; })));
+  const gm = wirePaths.gateMatches;
+  const ok = typeof gm === 'function' && gm(F + ':802:post', F + '::post') && !gm(F + ':900:sendAttempt', F + '::post') &&
+    !gm(F + ':802', F + '::post') && !gm('spirit/run/js/hub.js:5:post', F + '::post') && !gm(F + ':802:post', F);
+  if (ok) test.check('a gate file::function matches a frame in that file with that function, and nothing else; a gate with no function matches nothing');
+  else test.fail('OWED by goal/G22.3: gateMatches is ' + typeof gm + ' or matches wrongly');
+})();
+
+let doors = [];
+try { doors = wirePaths.doors(); } catch (e) { test.fail('OWED by goal/G22.3: the list of doors does not read: ' + ((e && e.message) || e)); }
+if (!doors.length) test.fail('OWED by goal/G22.3: the list of doors is empty');
+
+doors.forEach(function (d) {
+  const name = wirePaths.doorKey(d);
   const row = wirePaths.BOTTOMS[name];
-  if (!row.door) return;
-  // A row with no `file` watches a bottom of node's (the wire, for the
-  // relay row of goal/G22.2): named by what it reaches, a relay when the
-  // row counts only relay traffic.
-  const reached = row.file ? short(row.file) : (row.relayOnly ? 'a relay' : name);
-  const title = row.file
-    ? 'nobody but ' + short(row.door) + ' has a path to ' + reached
-    : 'nobody but ' + short(row.door) + ' talks to ' + reached;
-  test.subHeading(short(row.door) + ' -> ' + reached + ' (driven by ' + row.suites.join(', ') + ')');
+  const reached = /^node:/.test(d.endpoint) ? d.endpoint + ' on ' + (d.paths || []).join(', ') : short(d.endpoint);
+  const title = 'nobody but ' + short(d.gate) + ' reaches ' + reached + ' (' + (d.item || 'no item') + ')';
+  const suites = Array.isArray(d.suites) ? d.suites : [];
+  test.subHeading(d.gate + ' -> ' + reached + ' (driven by ' + (suites.join(', ') || 'no suite yet') + ')');
+  if (!row) { test.fail(title, 'the door has no row in tools/wirePaths.js BOTTOMS'); return; }
+  if (!suites.length) { test.fail(title, 'no suites drive it yet: an empty run, measured by nobody'); return; }
 
-  const run = wirePaths.measure(name, row.suites, false);
+  const run = wirePaths.measure(name, suites, false);
   if (run.status) test.comment('a driven suite exited ' + run.status + ': the run may have reached less than it should');
 
   let production = 0;
-  const around = [];
+  const around = new Map();
   run.counts.forEach(function (n, key) {
     const tab = key.indexOf('\t');
     const where = key.slice(0, tab);
     const frames = key.slice(tab + 1).split(' < ');
-    if (!frames.some(function (f) { return f.indexOf('spirit/run/') === 0; })) return;
+    const ours = frames.filter(function (f) { return f.indexOf('spirit/run/') === 0; });
+    if (!ours.length) return;
     production += n;
-    const through = frames.some(function (f) { return f.indexOf(row.door + ':') === 0; });
-    if (!through) around.push(where + ' from ' + frames.filter(function (f) { return f.indexOf('spirit/run/') === 0; }).join(' < '));
+    if (frames.some(function (f) { return wirePaths.gateMatches(f, d.gate); })) return;
+    const k = where + ' from ' + ours.join(' < ');
+    around.set(k, (around.get(k) || 0) + n);
   });
 
   if (!production) {
     test.fail(title, 'no production stack reached it — the driven suites exercised nothing');
-  } else if (around.length) {
-    test.fail(title, around.length + ' path(s) around the door: ' + around.join('; '));
+  } else if (around.size) {
+    const list = Array.from(around.keys());
+    test.fail(title, around.size + ' path(s) around the gate, of ' + production + ' production call(s): ' +
+      list.slice(0, 8).join('; ') + (list.length > 8 ? '; and ' + (list.length - 8) + ' more' : ''));
   } else {
-    test.check(title, production + ' production call(s), every one through ' + row.door);
+    test.check(title, production + ' production call(s), every one through ' + d.gate);
   }
 });
 

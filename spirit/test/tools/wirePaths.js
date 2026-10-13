@@ -178,67 +178,84 @@ const BOTTOMS = {
     ],
     suites: [],
   },
-  // ── A COMPONENT OF OURS, AND THE ONE DOOR IT SITS BEHIND (goal/G19.14) ──
-  //
-  //   Andy: "the permitted door is peerPost (bottom frame) and the endpoints
-  //   are the components of peerPost."
-  //
-  // `file` names a module of ours instead of `mod`, patched as it loads.
-  // `instance: true` watches what the factory returns as well, so a path
-  // to the instance counts like a path to the factory. `door` is the file
-  // every production stack reaching it must pass through; the probe only
-  // records, and oneDoorStacks.js holds the verdict.
-  //
-  // `suites` drive the endpoint THROUGH A REAL NODE: each spawns
-  // js/server.js, whose process inherits the probe.
-  presenceNode: {
-    file: 'spirit/run/js/presenceNode.js',
-    watch: [{ fn: 'createPresence', instance: true }],
-    door: 'spirit/run/js/peerPost.js',
-    suites: ['serverSurface.js', 'everyVerb.js'],
-  },
-  postQueue: {
-    file: 'spirit/run/js/postQueue.js',
-    watch: [{ fn: 'createQueue', instance: true }],
-    door: 'spirit/run/js/peerPost.js',
-    suites: ['serverSurface.js', 'everyVerb.js'],
-  },
-  // ── NOBODY BUT peerPost TALKS TO A RELAY (goal/G22.2) ────────────────
-  //
-  // The wire again, judged as a door: every request production code sends
-  // TO A RELAY must have peerPost on its stack. oneDoorStacks.js holds the
-  // verdict, as for the two rows above.
-  //
-  // `relayOnly` counts a request only when it is addressed to a relay. Not
-  // by host: a lab relay listens on 127.0.0.1 exactly like a process's own
-  // node, so "not loopback" would miss every relay a suite starts. BY PATH:
-  // every route a relay answers for a member sits under /api/relay/ (key,
-  // stream, claim, post, reply; relayServer.js's public table), and a node
-  // answers none of them (server.js: "A node no longer answers any relay
-  // route"), so a process asking its own node (/api/spirit, /api/events)
-  // is never counted. /api/version is answered by both and asks nothing of
-  // a relay's members, so it is left out.
-  //
-  // `global: 'fetch'` because global fetch goes through undici and never
-  // through http.request: without it a fetch to a relay is invisible here.
-  //
-  // `suites`, MEASURED: agentOnboard.js runs onboard.js and offboard.js
-  // against a lab relay and a real node, and reached all five relay routes
-  // (key, stream, claim, post, reply) from eleven production scopes, the
-  // fetch in offboard.js among them. serverSurface.js adds one scope no
-  // other reached (hub.js asking a relay for its key at enrol). everyVerb.js
-  // reached nothing the two did not, so it is not here.
-  relay: {
-    watch: [
-      { mod: 'http', fn: 'request' },
-      { mod: 'https', fn: 'request' },
-      { global: 'fetch' },
-    ],
-    door: 'spirit/run/js/peerPost.js',
-    relayOnly: true,
-    suites: ['agentOnboard.js', 'serverSurface.js'],
-  },
 };
+
+// ── THE DOORS ARE THE PLUGIN'S LIST, NOT ROWS WRITTEN HERE (goal/G22.3) ──
+//
+// DECIDED BY ANDY, 2026-10-13 (goal/G22.3's box), not this file's to loosen: "The plugin keeps the doors in
+// spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json, which the stack-frame test reads to know
+// which checks to run." The three doors once written here as rows (presenceNode and postQueue, goal/G19.14; the relay,
+// goal/G22.2) moved into it, their gates narrowed.
+//
+// ONE DOOR, ONE ENTRY: { gate, endpoint, paths?, suites, item }.
+//
+//   gate      NARROW: "spirit/run/<file>.js::<function>", one function. Andy: a whole module named as the gate is
+//             cheating, so an entry without its ::function matches no frame and its door fails.
+//   endpoint  WIDE: "spirit/run/<file>.js", the whole module, every function it exports and every function on what an
+//             exported function returns (a factory's instance), so no side door is missed. Or, for what lies outside
+//             our code, Node's own bottom: "node:" and its kinds joined by "+", of http (http.request), https
+//             (https.request) and fetch (the global): "node:http+https+fetch".
+//   paths     a node: endpoint only, and needed there: a request counts only when its path starts with one of them
+//             (the relay's, ["/api/relay/"]; the why is at relayBound below).
+//   suites    what drives it, MEASURED by an agent; empty until then, and an empty run is its red.
+//   item      the desk item that asked for it.
+//
+// THE SUITES OF THE THREE DOORS MOVED IN, as measured when they were rows: presenceNode and postQueue are driven
+// through a real node by serverSurface.js and everyVerb.js; the relay by agentOnboard.js (onboard.js and offboard.js
+// against a lab relay and a real node, all five relay routes, the fetch in offboard.js among them) and serverSurface.js
+// (hub.js asking a relay for its key at enrol); everyVerb.js reached nothing on a relay the two did not.
+//
+// Each door becomes a row of BOTTOMS under doorKey(), so the probe in a child process, given the same key, rebuilds the
+// same row from the same file.
+const LIST = path.join(REPO, 'spirit', 'run', 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks', 'stackFrameList.json');
+const NODE_KINDS = {
+  http: { mod: 'http', fn: 'request' },
+  https: { mod: 'https', fn: 'request' },
+  fetch: { global: 'fetch' },
+};
+
+function doors() {
+  const list = JSON.parse(fs.readFileSync(LIST, 'utf8'));
+  if (!Array.isArray(list)) throw new Error(path.relative(REPO, LIST) + ' is not an array of doors');
+  return list;
+}
+function doorKey(d) {
+  return 'door ' + String(d.gate) + ' -> ' + String(d.endpoint) + (Array.isArray(d.paths) && d.paths.length ? ' ' + d.paths.join(',') : '');
+}
+function rowOf(d) {
+  const row = { door: d, gate: String(d.gate), suites: Array.isArray(d.suites) ? d.suites : [] };
+  const end = String(d.endpoint);
+  if (/^node:/.test(end)) {
+    row.watch = end.slice(5).split('+').map(function (k) { return NODE_KINDS[k]; }).filter(Boolean);
+    row.paths = Array.isArray(d.paths) ? d.paths.map(String) : [];
+  } else {
+    row.file = end;
+    row.wide = true;
+  }
+  return row;
+}
+// A list that does not read leaves BOTTOMS without doors; oneDoorStacks.js and stackFrameTestItems.js say so in red.
+try { doors().forEach(function (d) { if (d && d.gate && d.endpoint) BOTTOMS[doorKey(d)] = rowOf(d); }); } catch (e) { /* said by the suites */ }
+
+// ── A FRAME CARRIES ITS FUNCTION, SO A GATE CAN NAME ONE (goal/G22.3) ──
+//
+// A frame is "file:line:function", or "file:line" when V8 names no function. THE FUNCTION IS THE LAST SEGMENT OF THE
+// NAME V8 PRINTS, before any "[as alias]": "Object.post", "peerPost.post" and "async post" are all "post"; "new Thing"
+// is "Thing"; "Object.holdStreams [as hold]" is "holdStreams", the function's own name as its file defines it, not the
+// property it was reached through. "<anonymous>" is no name.
+function frameName(file, line, v8name) {
+  let n = String(v8name || '').replace(/\s*\[as [^\]]*\]\s*$/, '').replace(/^(async|new)\s+/, '').trim();
+  n = n.split('.').pop();
+  if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(n)) n = '';
+  return file + ':' + line + (n ? ':' + n : '');
+}
+// A GATE MATCHES a frame in its file whose function is its function. A gate without "::function" matches nothing.
+function gateMatches(frame, gate) {
+  const g = /^(.+)::([A-Za-z_$][A-Za-z0-9_$]*)$/.exec(String(gate));
+  if (!g) return false;
+  const f = /^(.+):(\d+):([A-Za-z_$][A-Za-z0-9_$]*)$/.exec(String(frame));
+  return !!f && f[1] === g[1] && f[3] === g[2];
+}
 
 // ── OUR OWN CODE, AND NOTHING ELSE ──────────────────────────────────
 //
@@ -295,12 +312,20 @@ function callStack() {
   const lines = String(holder.stack || '').split('\n').slice(1);
   Error.stackTraceLimit = was;
   const out = [];
+  // THE FUNCTION'S NAME IS KEPT (goal/G22.3): "at <name> (<file>:<line>:<col>)", or "at <file>:<line>:<col>" with no
+  // name; frameName() says which part of the name is kept.
   lines.forEach(function (line) {
-    const m = /\(([^()]+):(\d+):\d+\)\s*$/.exec(line) ||
-      /\bat\s+([^()\s]+):(\d+):\d+\s*$/.exec(line);
-    const name = m && ours(m[1]);
+    let m = /^\s*at\s+(.*?)\s+\(([^()]+):(\d+):\d+\)\s*$/.exec(line);
+    let fn = '';
+    let file = '';
+    let at = '';
+    if (m) { fn = m[1]; file = m[2]; at = m[3]; } else {
+      m = /\bat\s+([^()\s]+):(\d+):\d+\s*$/.exec(line);
+      if (m) { file = m[1]; at = m[2]; }
+    }
+    const name = file && ours(file);
     if (!name) return;
-    out.push(name + ':' + m[2]);
+    out.push(frameName(name, at, fn));
   });
   return out;
 }
@@ -429,9 +454,12 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
         // requiring its own dependencies, before it has exported anything.
         if (m && m.loaded === true && m.exports) {
           done.add(file);
-          row.watch.forEach(function (w) {
-            if (w.instance) patchFactory(m.exports, w.fn);
-            else patch(m.exports, w.fn, function () { return w.fn; });
+          // THE ENDPOINT IS WIDE (Andy, goal/G22.3): every function the module exports, each watched as a factory
+          // too, so whatever an exported function returns has its functions watched as well. Own enumerable keys
+          // only: a class instance's prototype methods are not reached, and no module of ours that is a door's
+          // endpoint today returns one.
+          Object.keys(m.exports).forEach(function (k) {
+            if (typeof m.exports[k] === 'function') patchFactory(m.exports, k);
           });
         }
       }
@@ -458,13 +486,26 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
   // `probe(require('fs'), 'writeFileSync')` works identically and
   // `probe(seal.seal)` does not exist as a shape at all.
   const row = BOTTOMS[process.env.SPIRIT_WIRE_BOTTOM] || BOTTOMS.wire;
-  // ADDRESSED TO A RELAY, read off the request path (goal/G22.2; the why is
-  // at the `relay` row). An endpoint the probe could not read is counted:
-  // a request nobody can place must not pass as one that went elsewhere.
-  const relayBound = function (where) {
-    return where === '(unreadable)' || / \/api\/relay\//.test(where);
+  // ── ADDRESSED TO THE DOOR'S PATHS, read off the request path (goal/G22.2, the paths from the list since goal/G22.3) ──
+  //
+  // The relay's door counts a request only when it is addressed to a relay. Not by host: a lab relay listens on
+  // 127.0.0.1 exactly like a process's own node, so "not loopback" would miss every relay a suite starts. BY PATH:
+  // every route a relay answers for a member sits under /api/relay/ (key, stream, claim, post, reply; relayServer.js's
+  // public table), and a node answers none of them (server.js: "A node no longer answers any relay route"), so a
+  // process asking its own node (/api/spirit, /api/events) is never counted. /api/version is answered by both and asks
+  // nothing of a relay's members, so it is left out.
+  //
+  // fetch is watched beside http and https because global fetch goes through undici and never through http.request:
+  // without it a fetch to a relay is invisible here.
+  //
+  // An endpoint the probe could not read is counted: a request nobody can place must not pass as one that went
+  // elsewhere.
+  const onPaths = function (where) {
+    if (where === '(unreadable)') return true;
+    const p = String(where).slice(String(where).indexOf(' ') + 1);
+    return row.paths.some(function (want) { return p.indexOf(want) === 0; });
   };
-  const keep = row.relayOnly ? relayBound : null;
+  const keep = Array.isArray(row.paths) ? onPaths : null;
   if (row.file) watchFile(row);
   else {
     (row.watch || []).forEach(function (b) {
@@ -507,7 +548,8 @@ function measure(bottom, targets, all) {
   const { spawnSync } = require('child_process');
   const os = require('os');
 
-  const log = path.join(os.tmpdir(), 'spirit-wire-' + process.pid + '-' + bottom + '.tsv');
+  // A door's key carries a path, "::" and "->" (doorKey), none of them a file name's: reduced to a plain word.
+  const log = path.join(os.tmpdir(), 'spirit-wire-' + process.pid + '-' + String(bottom).replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 80) + '.tsv');
   try { fs.unlinkSync(log); } catch (e) { /* not there yet */ }
 
   const runner = path.join(REPO, 'spirit', 'test', 'runAll.js');
@@ -556,7 +598,7 @@ function measure(bottom, targets, all) {
   return { out: String(r.stdout || ''), status: r.status, counts: counts };
 }
 
-module.exports = { BOTTOMS: BOTTOMS, measure: measure };
+module.exports = { BOTTOMS: BOTTOMS, measure: measure, LIST: LIST, doors: doors, doorKey: doorKey, frameName: frameName, gateMatches: gateMatches };
 
 if (require.main === module) {
   // ── ONE SUITE, NOT THE HARNESS — AND THAT IS ANDY'S SIMPLIFICATION ──
@@ -585,7 +627,7 @@ if (require.main === module) {
   if (!BOTTOMS[bottom]) {
     console.error('Unknown bottom ' + JSON.stringify(bottom) + '. Declared: ' +
       Object.keys(BOTTOMS).join(', ') + '.');
-    console.error('A bottom that is not listed is not watched — add it to BOTTOMS, one line.');
+    console.error('A bottom that is not listed is not watched — add it to BOTTOMS, one line; a door goes into the stackFrameChecks plugin\'s stackFrameList.json.');
     process.exit(1);
   }
 

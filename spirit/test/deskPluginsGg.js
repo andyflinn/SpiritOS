@@ -32,6 +32,15 @@
 //      Andy, 2026-10-13: "in Stack: the chat is missing, below the inputs, after what will be the list". So the Stacks
 //      pane reads the inputs, its items, then the chat of plugin/stackFrameChecks: its lines, a say box and Send that
 //      post chat.add to that goal, a published line drawn as it comes, and none of it in Team.
+//   g. THE LIST OF DOORS (goal/G22.3, Andy's decision 2026-10-13 in the item's box): the plugin keeps the doors in
+//      stackFrameList.json beside it, which the stack-frame test reads. The gate is narrow, one file::function, and a
+//      whole module named as the gate is cheating; the endpoint is wide, a whole module. So stackFrameChecks.make
+//      {gate: spirit/run/<file>.js::<function>, endpoint: spirit/run/<file>.js} refuses a gate without its function
+//      (saying it is cheating), an endpoint naming a function, a file that is not there and a function its file does
+//      not hold, and adds the door to the list with no suites (an empty run is its red) and the item that asked;
+//      stackFrameChecks.doors reads the list back. Here the list is a scratch file, named by the suite-only value
+//      stackFrameList, so the tree's own list is never written by a suite. The UI's inputs carry data-field="gate"
+//      and data-field="endpoint", say a wrong form as typed with Make off, and the UI shows the doors.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -157,6 +166,8 @@ function clickTab(el, tab) {
   const root = path.join(scratch, 'desk');
   const state = path.join(root, 'state');
   const more = path.join(scratch, 'plugins', 'js');
+  // The plugin's list of doors, in scratch (g.): the tree's own stackFrameList.json is never written by a suite.
+  const listFile = path.join(scratch, 'stackFrameList.json');
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.mkdirSync(state, { recursive: true });
   plantFakePlugins(more);
@@ -165,7 +176,7 @@ function clickTab(el, tab) {
   const client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
   const start = function () {
-    return spawn(process.execPath, [DESK, JSON.stringify({ pluginsMore: more }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    return spawn(process.execPath, [DESK, JSON.stringify({ pluginsMore: more, stackFrameList: listFile }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
       env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
   };
   let tree = {};
@@ -193,6 +204,8 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'no stackFrameChecks.js and .json under process/js/desk/plugins/js/stackFrameChecks/');
     if (tree['stackFrameChecks.make']) test.check('the real plugin is mounted: desk answers stackFrameChecks.make');
     else test.fail(OWED + 'desk declares no stackFrameChecks.make');
+    if (tree['stackFrameChecks.doors']) test.check('and stackFrameChecks.doors, the list of doors read back');
+    else test.fail(OWED + 'desk declares no stackFrameChecks.doors');
     if (tree['ggEcho.ping']) test.check('a scratch plugin in a further folder is mounted too: desk answers ggEcho.ping');
     else test.fail(OWED + 'desk declares no ggEcho.ping from the scratch plugin folder');
     if (!tree['ggNoManifest.ping']) test.check('a folder without its .json is no plugin and is not mounted');
@@ -259,29 +272,51 @@ function clickTab(el, tab) {
     else test.fail('the ordinary presses answered ' + short([oDone, oClose, oAbandon]));
 
     test.subHeading('e. the dialog\'s verb makes a goal/G22.2-type item');
-    const made = await call('stackFrameChecks.make', { gate: 'peerPost', endpoint: 'presenceNode' }, ANDY);
+    const GATE = 'spirit/run/js/peerPost.js::post';
+    const END = 'spirit/run/js/presenceNode.js';
+    const made = await call('stackFrameChecks.make', { gate: GATE, endpoint: END }, ANDY);
     const mf = made.id ? await factsOf(made.id) : null;
     const mb = made.id ? await call('item.box', { id: made.id }, ANDY) : {};
     if (mf && mf.goal === GOAL) test.check('the item ' + made.id + ' is in the plugin\'s goal');
     else test.fail(OWED + 'stackFrameChecks.make answered ' + short(made) + '; its facts ' + short(mf));
-    if (mf && mf.title === 'Nobody but peerPost reaches presenceNode') test.check('its title: ' + mf.title);
+    if (mf && mf.title === 'Nobody but peerPost::post reaches presenceNode') test.check('its title, by the short names: ' + mf.title);
     else test.fail(OWED + 'its title reads ' + short(mf && mf.title));
-    if (/every production stack reaching presenceNode passes through peerPost/.test(String(mb.box || ''))) test.check('its box states the rule');
+    if (String(mb.box || '').indexOf('every production stack reaching ' + END + ' passes through ' + GATE) !== -1) test.check('its box states the rule');
     else test.fail(OWED + 'its box reads ' + short(mb.box));
     if (mf && JSON.stringify(pathsOf(mf)) === JSON.stringify(['spirit/test/stackFrameTestItems.js'])) test.check('its file list is [spirit/test/stackFrameTestItems.js]');
     else test.fail(OWED + 'its file list reads ' + short(mf && pathsOf(mf)));
+
+    test.subHeading('g. the list of doors');
+    let listed = null;
+    try { listed = JSON.parse(fs.readFileSync(listFile, 'utf8')); } catch (e) { listed = null; }
+    const door = Array.isArray(listed) ? listed.filter(function (x) { return x && x.gate === GATE && x.endpoint === END; })[0] : null;
+    if (door && Array.isArray(door.suites) && door.suites.length === 0 && door.item === made.id) test.check('the door is added to the list, its suites empty (an empty run is its red), its item ' + door.item);
+    else test.fail(OWED + 'the scratch list reads ' + short(listed));
+    const back = await call('stackFrameChecks.doors', {}, A);
+    if (Array.isArray(back.doors) && back.doors.some(function (x) { return x.gate === GATE && x.endpoint === END && x.item === made.id; })) test.check('stackFrameChecks.doors reads it back');
+    else test.fail(OWED + 'stackFrameChecks.doors answered ' + short(back));
     const bad = [
-      ['an empty gate', { gate: '', endpoint: 'presenceNode' }],
-      ['an empty endpoint', { gate: 'peerPost', endpoint: '  ' }],
-      ['a gate with a control character', { gate: 'peer\u0007Post', endpoint: 'presenceNode' }],
-      ['an endpoint over the label limit', { gate: 'peerPost', endpoint: 'x'.repeat(65) }],
-      ['the same gate and endpoint again', { gate: 'peerPost', endpoint: 'presenceNode' }],
+      ['an empty gate', { gate: '', endpoint: END }],
+      ['an empty endpoint', { gate: GATE, endpoint: '  ' }],
+      ['a gate with a control character', { gate: 'spirit/run/js/peer\u0007Post.js::post', endpoint: END }],
+      ['a whole module as the gate', { gate: 'spirit/run/js/peerPost.js', endpoint: 'spirit/run/js/postQueue.js' }, /cheating/],
+      ['an endpoint naming a function', { gate: GATE, endpoint: 'spirit/run/js/postQueue.js::createQueue' }, /whole module/],
+      ['a gate outside spirit/run', { gate: 'js/peerPost.js::post', endpoint: END }],
+      ['a gate file that is not there', { gate: 'spirit/run/js/noSuchDoor.js::post', endpoint: END }, /not there|no such/],
+      ['a gate function its file does not hold', { gate: 'spirit/run/js/peerPost.js::noSuchFunctionHere', endpoint: END }, /noSuchFunctionHere/],
+      ['an endpoint file that is not there', { gate: GATE, endpoint: 'spirit/run/js/noSuchEndpoint.js' }, /not there|no such/],
+      ['the gate in the endpoint\'s own file', { gate: 'spirit/run/js/postQueue.js::createQueue', endpoint: 'spirit/run/js/postQueue.js' }],
+      ['the same gate and endpoint again', { gate: GATE, endpoint: END }],
     ];
     for (const t of bad) {
       const r = await call('stackFrameChecks.make', t[1], ANDY);
-      if (!r.id && why(r)) test.check(t[0] + ' is refused: ' + why(r));
+      if (!r.id && why(r) && (!t[2] || t[2].test(why(r)))) test.check(t[0] + ' is refused: ' + why(r));
       else test.fail(OWED + t[0] + ' answered ' + short(r));
     }
+    let listAfter = null;
+    try { listAfter = JSON.parse(fs.readFileSync(listFile, 'utf8')); } catch (e) { listAfter = null; }
+    if (Array.isArray(listAfter) && listAfter.length === 1) test.check('a refused make adds nothing to the list');
+    else test.fail(OWED + 'after the refusals the list reads ' + short(listAfter));
 
     test.subHeading('b. a restart replays the same plugin goal');
     try { kid.kill(); } catch (e) { /* gone */ }
@@ -449,28 +484,47 @@ function clickTab(el, tab) {
     if (!ui || typeof ui.open !== 'function') throw new Error('the UI registers no window.spiritDeskPlugins.stackFrameChecks.open');
     const asked = [];
     const box = fakeElement('box');
-    ui.open(box, { goal: GOAL, ask: function (verb, a) { asked.push([verb, a]); return Promise.resolve({ id: GOAL + '.2', change: 9, items: [], more: false }); },
-      onPublished: function () { return function () {}; } });
+    const DOORS = [{ gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: 'spirit/run/js/presenceNode.js', suites: ['serverSurface.js'], item: 'goal/G19.14' },
+      { gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: 'node:http+https+fetch', paths: ['/api/relay/'], suites: [], item: 'goal/G22.2' }];
+    ui.open(box, { goal: GOAL, ask: function (verb, a) {
+      asked.push([verb, a]);
+      if (verb === 'stackFrameChecks.doors') return Promise.resolve({ doors: DOORS });
+      return Promise.resolve({ id: GOAL + '.2', change: 9, items: [], more: false });
+    }, onPublished: function () { return function () {}; } });
+    await sleep(20);
     const html = box.innerHTML;
     const inputs = html.match(/<input[^>]*>/g) || [];
     const gateIn = inputs.filter(function (i) { return /id="sfc-gate"/.test(i); })[0] || '';
     const endIn = inputs.filter(function (i) { return /id="sfc-endpoint"/.test(i); })[0] || '';
-    if (/data-field="label"/.test(gateIn) && /data-field="label"/.test(endIn)) test.check('the private UI\'s gate and endpoint inputs carry data-field="label"');
+    if (/data-field="gate"/.test(gateIn) && /data-field="endpoint"/.test(endIn)) test.check('the private UI\'s inputs carry data-field="gate" and data-field="endpoint"');
     else test.fail(OWED + 'the UI\'s inputs read ' + short(inputs));
-    // Typed past the label rule: the bytes are said and Make is refused.
-    doc.getElementById('sfc-gate').value = 'x'.repeat(70);
-    box.fire('input', { target: { id: 'sfc-gate', getAttribute: function (n) { return n === 'data-field' ? 'label' : null; } } });
-    const left = doc.getElementById('sfc-gate-left').textContent;
-    if (/bytes/.test(left) && doc.getElementById('sfc-make').disabled === true) test.check('a gate over the rule is said as typed (' + left + ') and Make is off');
-    else test.fail(OWED + 'typed 70 bytes: the note reads ' + short(left) + ', Make disabled ' + doc.getElementById('sfc-make').disabled);
-    doc.getElementById('sfc-gate').value = 'peerPost';
-    doc.getElementById('sfc-endpoint').value = 'postQueue';
-    box.fire('input', { target: { id: 'sfc-gate', getAttribute: function (n) { return n === 'data-field' ? 'label' : null; } } });
+    const doorsEl = doc.getElementById('sfc-doors');
+    if (/peerPost\.js::holdStreams/.test(doorsEl.innerHTML) && /node:http\+https\+fetch/.test(doorsEl.innerHTML) && /\/api\/relay\//.test(doorsEl.innerHTML) && /goal\/G22\.2/.test(doorsEl.innerHTML)) {
+      test.check('the UI shows the list of doors, read with stackFrameChecks.doors: each gate, endpoint, paths and item');
+    } else test.fail(OWED + 'the doors drawn: ' + short(doorsEl.innerHTML));
+    const typed = function (id, v) {
+      doc.getElementById(id).value = v;
+      box.fire('input', { target: { id: id, getAttribute: function (n) { return n === 'data-field' ? id.replace('sfc-', '') : null; } } });
+      return doc.getElementById(id + '-left').textContent;
+    };
+    // A whole module typed as the gate: said as typed, and Make is off.
+    let left = typed('sfc-gate', 'spirit/run/js/peerPost.js');
+    if (/cheating/.test(left) && doc.getElementById('sfc-make').disabled === true) test.check('a whole module typed as the gate is said as typed (' + left + ') and Make is off');
+    else test.fail(OWED + 'typed a whole module as the gate: the note reads ' + short(left) + ', Make disabled ' + doc.getElementById('sfc-make').disabled);
+    typed('sfc-gate', 'spirit/run/js/peerPost.js::post');
+    left = typed('sfc-endpoint', 'spirit/run/js/postQueue.js::createQueue');
+    if (/whole module/.test(left) && doc.getElementById('sfc-make').disabled === true) test.check('an endpoint naming a function is said as typed (' + left + ') and Make is off');
+    else test.fail(OWED + 'typed a function as the endpoint: the note reads ' + short(left) + ', Make disabled ' + doc.getElementById('sfc-make').disabled);
+    left = typed('sfc-endpoint', 'spirit/run/js/postQueue.js');
+    if (doc.getElementById('sfc-make').disabled === false) test.check('both forms right: Make is on (' + left + ')');
+    else test.fail(OWED + 'both forms right, and Make is still off: ' + short(left));
     box.fire('click', { target: { id: 'sfc-make', getAttribute: function () { return null; } } });
     await sleep(20);
     const sent = asked.filter(function (x) { return x[0] === 'stackFrameChecks.make'; })[0];
-    if (sent && sent[1].gate === 'peerPost' && sent[1].endpoint === 'postQueue') test.check('Make sends stackFrameChecks.make with the gate and the endpoint');
+    if (sent && sent[1].gate === 'spirit/run/js/peerPost.js::post' && sent[1].endpoint === 'spirit/run/js/postQueue.js') test.check('Make sends stackFrameChecks.make with the gate and the endpoint');
     else test.fail(OWED + 'Make asked ' + short(asked));
+    if (asked.filter(function (x) { return x[0] === 'stackFrameChecks.doors'; }).length >= 2) test.check('a made door reads the list of doors again');
+    else test.fail(OWED + 'after Make the doors were not read again');
   } catch (e) { test.fail(OWED + 'the private UI: ' + (e && e.message)); }
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await sleep(300);

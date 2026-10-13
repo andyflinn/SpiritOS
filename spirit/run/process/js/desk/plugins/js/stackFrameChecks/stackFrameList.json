@@ -1,0 +1,21 @@
+[
+  {
+    "gate": "spirit/run/js/peerPost.js::holdStreams",
+    "endpoint": "spirit/run/js/presenceNode.js",
+    "suites": ["serverSurface.js", "everyVerb.js"],
+    "item": "goal/G19.14"
+  },
+  {
+    "gate": "spirit/run/js/peerPost.js::pump",
+    "endpoint": "spirit/run/js/postQueue.js",
+    "suites": ["serverSurface.js", "everyVerb.js"],
+    "item": "goal/G19.14"
+  },
+  {
+    "gate": "spirit/run/js/peerPost.js::onRequest",
+    "endpoint": "node:http+https+fetch",
+    "paths": ["/api/relay/"],
+    "suites": ["agentOnboard.js", "serverSurface.js"],
+    "item": "goal/G22.2"
+  }
+]
