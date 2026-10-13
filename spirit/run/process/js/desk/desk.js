@@ -54,6 +54,9 @@ const GOAL_REPO = values.goalRepo ? path.resolve(String(values.goalRepo)) : (fun
     if (path.dirname(d) === d) return '';
   }
 }());
+// THE ONE MINUTE OF A BOX HOLD (goal/G21.1). Andy, in the item's box: "the hold ends when the write lands or after one
+// minute." The manifest value boxHoldMs is the clock a suite injects (deskBindingNick.js); left out, one minute.
+const BOX_HOLD_MS = Number(values.boxHoldMs) > 0 ? Number(values.boxHoldMs) : 60000;
 if (!STATE) {
   console.error('desk: no --state; the node that starts this names its state folder');
   process.exit(2);
@@ -374,7 +377,7 @@ const newestRules = db.prepare('SELECT n, key, at, by, type, label, status, text
 const ruleRows = db.prepare('SELECT n, key, at, by, type, label, status, text FROM rules WHERE key = ? ORDER BY n DESC');
 const getDraft = db.prepare('SELECT text FROM rule_drafts WHERE key = ?');
 const putDraft = db.prepare('INSERT INTO rule_drafts (key, at, text) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET at = excluded.at, text = excluded.text');
-const ruleChatRows = db.prepare("SELECT at, by, body FROM records WHERE verb = 'rule.chat' ORDER BY n");
+const ruleChatRows = db.prepare("SELECT at, by, key, body FROM records WHERE verb = 'rule.chat' ORDER BY n");
 
 // EVERY RULE CHANGE IS PUSHED, BOTH WAYS (goal/G5.8). Andy: "then lets have deskServer push active rules upon every
 // rule-change.", and to a repo file, an ear line, or both: "both". The active rules, grouped by type, are written to
@@ -428,13 +431,89 @@ function walkState() {
     if (r.by !== 'andy' && r.by !== 'desk') { s.agentsAt[r.by] = r.at; if (r.key) s.agentKey[r.by] = String(r.key); }
     apply(s, r, b, item, goalOf);
   }
+  // A BOX HOLD RUNS OUT (goal/G21.1): a hold his nick request or a cap take started is over after its minute, written
+  // or not, so the box is anybody's again.
+  const now = Date.now();
+  Object.keys(s.items).forEach(function (id) {
+    const it = s.items[id];
+    if (it.boxHoldUntil && now >= it.boxHoldUntil) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; }
+  });
   return s;
+}
+
+// ── NAMES AND KEYS (goal/G21.1) ──────────────────────────────────────
+//
+//   Andy, in the item's box: "The page shows the agent's name everywhere it shows the agent ... The name is looked up
+//   by the agent's key; the node's label is shown only when no name is set. Keys are never shown on the page.", and
+//   "every decision about who goes by key: take, nick address, block, the one box write."
+// The profile is his, by key (profile.set); a profile never set reads included and cap on.
+function profileOf(s, key) {
+  const p = key ? s.profiles[String(key)] : null;
+  return { name: p ? p.name : '', nick: p ? p.nick : '', included: !p || p.included !== false, cap: !p || p.cap !== false };
+}
+function nameOfKey(s, key) { return profileOf(s, key).name; }
+// The label an agent writes with, by its key ('' for a key never heard from).
+function labelOfKey(s, key) {
+  return Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === String(key); }).pop() || '';
+}
+// Every label given, mapped to its name where its key has one: the page shows the name and falls back to the label.
+function namesFor(s, labels) {
+  const out = {};
+  labels.forEach(function (l) {
+    if (!l || out[l]) return;
+    const name = nameOfKey(s, s.agentKey[l]);
+    if (name) out[l] = name;
+  });
+  return out;
+}
+// NOT INCLUDED (goal/G21.1). Andy: "Off: the agent still reads everything, every write of it is refused, and its bubble
+// shows absent. It is the desk's own signoff and overrules the agent's own connect (deskUnsloth cannot bring an
+// excluded agent back)." So the refusal is here, by key, at every write, whatever the agent's node does.
+function excludedKey(s, key) { return !!key && !profileOf(s, key).included; }
+function mayWrite(s, w) {
+  if (w.by === 'andy' || w.by === 'desk' || !excludedKey(s, w.key)) return;
+  throw refusedWhy('not-included', w.by + ' is not included at the desk: Andy turned it off in its pane, so it reads but writes nothing');
+}
+// WHO HOLDS IT, BY KEY: a take or hold recorded with a key is that key's; one recorded before keys, its label's.
+function holdsBox(it, w) { return it.boxTakenKey ? it.boxTakenKey === w.key : it.boxTakenBy === w.by; }
+function holdsTake(it, w) { return it.takenKey ? it.takenKey === w.key : it.takenBy === w.by; }
+// A chat line as it is answered: its writer's key and name beside its label; whom it was addressed to stays inside.
+function shownLine(s, l) {
+  const o = Object.assign({}, l, { key: String(l.key || ''), name: nameOfKey(s, l.key) });
+  delete o.to;
+  return o;
+}
+
+// THE BINDING NICK (goal/G21.1). Andy, in the item's box: "A line of Andy's starting with a nick followed by any
+// punctuation or a space is addressed to that agent alone: only it is notified, only it may take it.", "A nick request
+// about the box hands the box to that agent for one write", and of cap: "On: a \"cap\" from Andy with no nick offers the
+// box to every agent with cap on" / "Off: that agent gets a cap only when addressed by its nick."
+// Decided at the write and kept in the record (to, nick, hold, cap), so a replay never decides again from profiles that
+// changed since. A NICK REQUEST ABOUT THE BOX is his nick-addressed line holding the word box or cap: the plainest
+// mechanical reading of "about the box" (this build's choice; the box names no wording). His "<nick>:" of goal/G4.23 is
+// one case of the rule. Returns null for a line addressed to nobody.
+function addressOf(s, text) {
+  const t = String(text);
+  const m = /^\s*([a-z0-9]{1,8})(?=[\s\p{P}\p{S}])/iu.exec(t);
+  if (m) {
+    const nick = m[1].toLowerCase();
+    const key = Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === nick; })[0];
+    if (key) return { to: [key], nick: nick, hold: /\b(?:box|cap)\b/i.test(t) };
+  }
+  if (/^\s*cap\s*[.!]*\s*$/i.test(t)) {
+    const known = Object.keys(s.agentKey).map(function (l) { return s.agentKey[l]; }).concat(Object.keys(s.profiles));
+    const to = known.filter(function (k, i) { return k && known.indexOf(k) === i && profileOf(s, k).cap && profileOf(s, k).included; });
+    return { to: to, cap: true };
+  }
+  return null;
 }
 
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
     alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null), checkHigh: Object.create(null),
+    // goal/G21.1: the keys beside the labels (the take, the box), the end of a box hold, and a cap offered to keys.
+    takenKey: '', boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false,
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
@@ -517,8 +596,10 @@ function apply(s, r, b, item, goalOf) {
       it.boxHistory.push({ version: it.version + 1, by: r.by, at: r.at, text: String(b.text) });
       it.box = String(b.text);
       it.version += 1;
-      // THE TAKER'S WRITE FREES THE BOX (goal/G4.20 point 9).
-      if (it.boxTakenBy && r.by === it.boxTakenBy) it.boxTakenBy = '';
+      // THE TAKER'S WRITE FREES THE BOX (goal/G4.20 point 9), by key since goal/G21.1: that is the one write of a hold.
+      if (it.boxTakenBy && holdsBox(it, { by: r.by, key: String(r.key || '') })) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; }
+      // A written box ends a cap still offered (goal/G21.1): the cap was for this text.
+      it.capOffer = null;
       return;
     case 'check.add': {
       const kind = String(b.kind);
@@ -534,20 +615,37 @@ function apply(s, r, b, item, goalOf) {
       if (c) { c.state = String(b.state); c.by = r.by; c.at = r.at; }
       return;
     }
-    case 'chat.add':
-      it.chat.push({ by: r.by, at: r.at, text: String(b.text), taken: '' });
-      // HIS "<nick>:" LINE IS THAT AGENT'S (goal/G4.23). Andy: "the nicks as trigger for them to take a question | job".
-      // A line of his starting with an agent's nick (case ignored) is taken for that agent, as its own line.take would
-      // take it, under the label it writes with; a nick nobody holds, or an agent never heard from, takes nothing.
-      if (r.by === 'andy') {
+    case 'chat.add': {
+      // EVERY LINE CARRIES ITS WRITER'S KEY (goal/G21.1); the label stays for showing where no name is set.
+      const line = { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') };
+      it.chat.push(line);
+      if (r.by === 'andy' && Array.isArray(b.to)) {
+        // THE BINDING NICK (goal/G21.1): addressed at the write (addressOf), replayed from the record.
+        line.to = b.to.map(String);
+        if (b.nick && line.to[0]) {
+          const key = line.to[0];
+          const known = labelOfKey(s, key);
+          // An agent never heard from has no label yet: the take stands under its key, shown by its nick.
+          const label = known || String(b.nick);
+          line.taken = label; it.takenBy = label; it.takenKey = key;
+          if (known) it.takers[known] = true;
+          // HIS NICK REQUEST ABOUT THE BOX: the box is that agent's for one write, red at once, for one minute.
+          if (b.hold === true) { it.boxTakenBy = label; it.boxTakenKey = key; it.boxHoldUntil = Date.parse(r.at) + BOX_HOLD_MS; it.capOffer = null; }
+        } else if (b.cap === true) {
+          it.capOffer = line.to.slice();
+        }
+      } else if (r.by === 'andy') {
+        // HIS "<nick>:" LINE AS IT WAS READ BEFORE goal/G21.1 (goal/G4.23), for the records written then, which carry no
+        // address: the agent with that nick takes it under the label it writes with.
         const m = /^\s*([a-z0-9]{1,8})\s*:/i.exec(String(b.text));
         const key = m && Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === m[1].toLowerCase(); })[0];
         const label = key && Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === key; })[0];
-        if (label) { it.chat[it.chat.length - 1].taken = label; it.takenBy = label; it.takers[label] = true; }
+        if (label) { line.taken = label; it.takenBy = label; it.takenKey = ''; it.takers[label] = true; }
       }
-      // THE TAKER'S ANSWER FREES THE ITEM (goal/G2.2 note 2): after it, any agent may write again.
-      if (it.takenBy && r.by === it.takenBy) it.takenBy = '';
+      // THE TAKER'S ANSWER FREES THE ITEM (goal/G2.2 note 2): after it, any agent may write again. By key (goal/G21.1).
+      if (it.takenBy && r.by !== 'andy' && holdsTake(it, { by: r.by, key: String(r.key || '') })) { it.takenBy = ''; it.takenKey = ''; }
       return;
+    }
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
     case 'item.take': it.with = r.by; it.takers[r.by] = true; return;
@@ -662,9 +760,14 @@ function apply(s, r, b, item, goalOf) {
     }
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
-    case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
+    // goal/G21.1: a take of an offered cap (hold) is a hold under the one-write rule, its minute from the take.
+    case 'box.take':
+      it.boxTakenBy = r.by; it.boxTakenKey = String(r.key || ''); it.takers[r.by] = true;
+      it.boxHoldUntil = b.hold === true ? Date.parse(r.at) + BOX_HOLD_MS : 0;
+      if (b.hold === true) it.capOffer = null;
+      return;
     // goal/G9.3: the holder lets the box go without writing it; the refusals are at the verb, so a replay only clears.
-    case 'box.release': if (it.boxTakenBy === r.by) it.boxTakenBy = ''; return;
+    case 'box.release': if (holdsBox(it, { by: r.by, key: String(r.key || '') })) { it.boxTakenBy = ''; it.boxTakenKey = ''; it.boxHoldUntil = 0; } return;
     // THE DESK OWNS THE IDS (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.", and
     // on who uses the verbs: "why should the agents need to, they can use the same api's the user needs to create
     // them." The id is minted at the write and kept in the record as `minted`, so a walk of the records never mints
@@ -759,7 +862,8 @@ function apply(s, r, b, item, goalOf) {
     // AN AGENT'S PROFILE (goal/G4.23), his, as he set it last: its name and its nick.
     // (Agent scopes went with goal/G10.8, every agent being /: an old scope.set record falls to the default and changes
     // nothing.)
-    case 'profile.set': s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick) }; return;
+    // goal/G21.1 adds included and cap, on unless his record says off (records before it carry neither).
+    case 'profile.set': s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick), included: b.included !== false, cap: b.cap !== false }; return;
     // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
     // that, i then can solicit an answer from others." The taker's name goes on his latest line under the item,
     // and the item is the taker's to answer until it does; the handler refuses a take with no line or one already
@@ -767,7 +871,7 @@ function apply(s, r, b, item, goalOf) {
     case 'line.take': {
       for (let i = it.chat.length - 1; i >= 0; i--) {
         if (it.chat[i].by !== 'andy') continue;
-        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.takenBy = r.by; it.takers[r.by] = true; }
+        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.takenBy = r.by; it.takenKey = String(r.key || ''); it.takers[r.by] = true; }
         return;
       }
       return;
@@ -1143,6 +1247,9 @@ function facts(s, it) {
     waived: it.waived === true,
     // goal/G5.8: the rules in force at his Go, each { key, version }.
     rules: Array.isArray(it.rules) ? it.rules : [] };
+  // ITS AGENTS BY NAME (goal/G21.1): every label these facts show, mapped to its name where its key has one.
+  f.names = namesFor(s, [it.with, it.boxTakenBy, it.takenBy, it.red, it.builder, it.verifier, it.phaseWith]
+    .concat(Object.keys(it.takers), f.files.map(function (e) { return e.by; }), it.goal ? Object.keys(s.agentKey) : []));
   f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
@@ -1157,7 +1264,9 @@ function facts(s, it) {
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
       return o && listed(s, o) && (buttons(s, o).length > 0 || asksOf(s, o) > 0);
     }).length;
-    f.live = liveAgents(s);
+    // AN AGENT NOT INCLUDED IS ABSENT (goal/G21.1), whatever it last wrote: out of live, named in excluded.
+    f.excluded = Object.keys(s.agentKey).filter(function (l) { return excludedKey(s, s.agentKey[l]); }).sort();
+    f.live = liveAgents(s).filter(function (l) { return f.excluded.indexOf(l) === -1; });
     // WHO IS WORKING (goal/G2.3): the live agents whose last word is working. A stale working clears with
     // liveness, since an ear killed by its limit or a node restart says nothing (Andy: "while an agent is
     // working, i should leave it alone.").
@@ -1305,6 +1414,8 @@ function nudge(keys) {
 function nudgeForWrite(s, verb, a) {
   if (a.by === 'andy') {
     if (verb === 'press' && a.what === 'seen') return;
+    // HIS ADDRESSED LINE NUDGES ITS ADDRESSEES ALONE (goal/G21.1): "only it is notified".
+    if (verb === 'chat.add' && Array.isArray(a.to)) { nudge(nudgeKeys(s).filter(function (k) { return a.to.indexOf(k) !== -1; })); return; }
     nudge(nudgeKeys(s));
   } else if (a.by !== 'desk' && verb === 'chat.add') {
     nudge(nudgeKeys(s).filter(function (k) { return k !== String(a.key || ''); }));
@@ -1317,6 +1428,8 @@ function write(verb, a, check) {
   const s = walkState();
   const it = a.id !== undefined ? s.items[String(a.id)] : null;
   if (a.id !== undefined && verb !== 'session.set' && !it) throw refused('no-such-item');
+  // goal/G21.1: an agent he has not included writes nothing, whichever verb carries it.
+  mayWrite(s, { by: String(a.by || ''), key: String(a.key || '') });
   if (check) check(s, it);
   const body = Object.assign({}, a);
   delete body.by;
@@ -1378,7 +1491,7 @@ function write(verb, a, check) {
   // on a publish naming its rule (goal/G2.18).
   if (verb === 'rule.chat') out.rule = String(a.rule);
   if (now && verb === 'box.write') { out.box = now.box; out.version = now.version; }
-  if (now && verb === 'chat.add') out.chat = now.chat[now.chat.length - 1];
+  if (now && verb === 'chat.add') out.chat = shownLine(after, now.chat[now.chat.length - 1]);
   // THE CHECKS TRAVEL WHENEVER THEY CHANGED (goal/G18.5), not only on check.add and check.set: item.files.add raises
   // the core grant itself, and an open dialog that never heard of it showed no red button until it was reopened. Andy,
   // 2026-10-12: "the red grant Buttons don't show up automatically in deskDetail, i'd like that as well".
@@ -1418,7 +1531,7 @@ function writeGoalFile(s, verb, a, change) {
   const g = s.goals[s.current];
   const items = [s.current].concat(g.members).map(function (id) { return s.items[id]; }).filter(Boolean).map(function (it) {
     return Object.assign(facts(s, it), { box: it.box, version: it.version, checks: it.checks,
-      chat: it.chat.map(function (l) { return { by: l.by, at: l.at, text: l.text }; }) });
+      chat: it.chat.map(function (l) { return { by: l.by, key: String(l.key || ''), at: l.at, text: l.text }; }) });
   });
   // NO writtenAt (goal/G19.6; the box: "goalShare's shared file without writtenAt, so an unchanged goal is not
   // committed again"): a clock in the file made every share new bytes, so goalShare's "same" never held. Nothing read
@@ -1562,10 +1675,18 @@ function saveDoc(name, json) {
 // the item's panels instead.
 const recordsAfter = db.prepare('SELECT n, at, verb, by, key, body FROM records WHERE n > ? ORDER BY n');
 const linesAfter = db.prepare('SELECT rowid AS rid, line FROM lines WHERE rowid > ? ORDER BY rowid');
-function changesSince(n, line) {
+// ONLY THE ADDRESSED AGENT IS NOTIFIED (goal/G21.1): an agent reading changes (viewer, its key) is not handed his
+// line addressed to other keys; the cursor passes it all the same. He reads everything. The line is still in the
+// item's chat, for any agent that looks.
+function addressedAway(r, viewer) {
+  if (!viewer || r.verb !== 'chat.add' || r.by !== 'andy' || String(r.body).indexOf('"to":[') === -1) return false;
+  try { const b = JSON.parse(r.body); return Array.isArray(b.to) && b.to.indexOf(viewer) === -1; } catch (e) { return false; }
+}
+function changesSince(n, line, viewer) {
   const out = { records: [], lines: [], n: n, line: line, more: false };
   const size = function () { return Buffer.byteLength(JSON.stringify(out), 'utf8'); };
   for (const r of recordsAfter.iterate(n)) {
+    if (addressedAway(r, viewer)) { out.n = r.n; continue; }
     const rec = { n: r.n, at: r.at, verb: r.verb, by: r.by, key: r.key, body: r.body };
     out.records.push(rec);
     out.n = r.n;
@@ -1634,7 +1755,10 @@ appServer.serve({
   'changes': {
     // A line is the object Desk stored, whatever keys it has, plus its rowid as line: so lines is an open list.
     request: { n: 0, line: 0 }, reply: { records: [{ n: 0, at: '', verb: '', by: '', key: '', body: '' }], lines: [], n: 0, line: 0, more: false },
-    handler: function (a) { return changesSince(Number(a.n) || 0, Number(a.line) || 0); },
+    handler: function (a, caller) {
+      const viewer = caller && caller.owner !== true && typeof caller.key === 'string' ? caller.key : '';
+      return changesSince(Number(a.n) || 0, Number(a.line) || 0, viewer);
+    },
   },
   // One party's queue, newest first, through the same bucket.
   'pending.get': {
@@ -1691,15 +1815,18 @@ appServer.serve({
   // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
   // stuff?" Its newest lines, through the same bucket, in a whole answer of its own; oldest first.
   'item.chat': {
-    request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '', taken: '' }], chatMore: false },
+    // goal/G21.1: each line carries its writer's key and name beside its label (by).
+    request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '', taken: '', key: '', name: '' }], chatMore: false },
     handler: function (a) {
-      let it = walkState().items[String(a.id)];
+      const st = walkState();
+      let it = st.items[String(a.id)];
       // A rule's chat (goal/G5.5) is read the same way, from its records.
       if (!it && /^rule\/\d+$/.test(String(a.id)) && newestRule.get(String(a.id))) {
-        const lines = ruleChatRows.all().map(function (r) { const b = JSON.parse(r.body); return b.rule === String(a.id) ? { by: r.by, at: r.at, text: String(b.text), taken: '' } : null; }).filter(Boolean);
+        const lines = ruleChatRows.all().map(function (r) { const b = JSON.parse(r.body); return b.rule === String(a.id) ? { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') } : null; }).filter(Boolean);
         it = { chat: lines };
       }
       if (!it) throw refused('no-such-item');
+      it = { chat: it.chat.map(function (l) { return shownLine(st, l); }) };
       const room = CHAT_ROOM;
       const bucket = searchBucket.createSearch({
         query: '**', maxBytes: room,
@@ -1728,7 +1855,8 @@ appServer.serve({
   'chat.search': {
     request: { id: '', text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
-      const it = walkState().items[String(a.id)];
+      const st = walkState();
+      const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
       // SINCE goal/G18.5 THE TEXT RANKS THE LINES (probabilityStringMatch), the filters still filter; newest first
       // among equals.
@@ -1739,7 +1867,8 @@ appServer.serve({
         if (a.by && l.by !== a.by) continue;
         if (a.since && !(String(l.at) >= a.since)) continue;
         if (a.before && !(String(l.at) < a.before)) continue;
-        walk.push({ probability: lineProbability(text, l), pair: { key: String(i), label: JSON.stringify({ by: l.by, at: l.at, text: l.text }) } });
+        // goal/G21.1: the writer's key and name ride with its label.
+        walk.push({ probability: lineProbability(text, l), pair: { key: String(i), label: JSON.stringify({ by: l.by, key: String(l.key || ''), name: nameOfKey(st, l.key), at: l.at, text: l.text }) } });
       }
       return ranked(walk, SEARCH_ROOM);
     },
@@ -1823,7 +1952,8 @@ appServer.serve({
         // Andy, 2026-10-07, asked whether his own take refuses an agent until he leaves the box: "yes. so it shoule be
         // among agents as well, the box is taken, and released after edit. it also helps agents stay out of each others
         // way." So his write is refused over another's take as an agent's is; he was the exception until then.
-        if (it.boxTakenBy && w.by !== it.boxTakenBy) throw refused('taken');
+        // By key since goal/G21.1: a hold his nick request started is that agent's one write, his own included.
+        if (it.boxTakenBy && !holdsBox(it, w)) throw refused('taken');
         if (a.version !== it.version) throw refused('box-moved');
       });
       return { change: s.change, version: s.items[a.id].version };
@@ -1868,23 +1998,30 @@ appServer.serve({
       }
       // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
       // A line that could not come back whole in one answer is refused here, as log.add refuses one; the sender slices it.
-      const it0 = walkState().items[String(a.id)];
+      const st0 = walkState();
+      const it0 = st0.items[String(a.id)];
+      mayWrite(st0, w);
       // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
-      if (it0 && it0.takenBy && w.by !== it0.takenBy && w.by !== 'andy' && w.by !== 'desk') throw refused('taken');
+      // By key since goal/G21.1, so an agent bound by his nick before the desk ever heard from it answers too.
+      const mine = !!(it0 && it0.takenBy && holdsTake(it0, w));
+      if (it0 && it0.takenBy && !mine && w.by !== 'andy' && w.by !== 'desk') throw refused('taken');
       // AN AGENT ANSWERS ONLY WHAT IT HAS TAKEN (goal/G18.8). Andy, 2026-10-12: "no agent should answer without taking.
       // too much chatter otherwise."; and, to its own work notes going under an item it holds: "yes." So an agent
       // writes under an item while it holds the take of his latest line there, or while the item is its own: the one
       // it is with, or the one whose red, build or verify it took (those stay after a phase is done, so a claim's
       // file list still goes). Not a decision of this file's to loosen: a line taker that answered is no holder.
-      if (it0 && w.by !== 'andy' && w.by !== 'desk' && it0.takenBy !== w.by &&
+      if (it0 && w.by !== 'andy' && w.by !== 'desk' && !mine &&
           [it0.with, it0.red, it0.builder, it0.verifier].indexOf(w.by) === -1) {
         throw refusedWhy('bad-request', 'take first: ' + w.by + ' holds neither the take of Andy\'s latest line under ' + a.id + ' (line.take) nor the item (item.take)');
       }
       // Measured as it is stored and answered: with its taken field (goal/G2.2), else the largest line that passes
       // here would not come back whole (oversize.js caught the ten bytes).
-      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '' });
+      // goal/G21.1: and with the key and name it is answered with.
+      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '', key: w.key, name: nameOfKey(st0, w.key) });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
-      const after = write('chat.add', Object.assign({}, a, { by: w.by, key: w.key }));
+      // HIS LINE, ADDRESSED AT THE WRITE (goal/G21.1, addressOf): to whom, and whether it hands over the box or offers a cap.
+      const address = caller.owner === true && it0 ? addressOf(st0, a.text) : null;
+      const after = write('chat.add', Object.assign({}, a, address || {}, { by: w.by, key: w.key }));
       // A MESSAGE TO A BUSY AGENT IS ANSWERED (goal/G2.5). Andy: "the app sends an-auto reply after sending the
       // message the agents in-queue, saying 'message delivered, agents busy'", "after every message". His line
       // under an item an agent holds (item.take) while that agent's last word is working (goal/G2.3) gets the
@@ -2021,6 +2158,7 @@ appServer.serve({
     request: { type: '', label: '', text: '' }, reply: { key: '' },
     handler: function (a, caller) {
       const w = writerOf(caller);
+      mayWrite(walkState(), w);
       const fr = require('../../../js/fieldRules.js');
       if (RULE_TYPES.indexOf(a.type) === -1) throw refusedWhy('bad-request', 'a rule type is one of ' + RULE_TYPES.join(', '));
       if (fieldWhy('label', a.label)) throw refusedWhy('bad-request', fieldWhy('label', a.label));
@@ -2213,24 +2351,38 @@ appServer.serve({
   // ubi>", "build them now.", "the profiles are for me, in desk. a dataset that deskServer stores for me and let's you
   // see." profile.set is his alone; profile.get answers any agent's ('' the caller). A name passes the label rule
   // (fieldRules); a nick is 1-8 of a-z0-9, one agent's alone. Desk verbs, not node verbs.
+  // THE PANE'S TWO TOGGLES (goal/G21.1). Andy, in the item's box: "Row two: the toggles included and cap ... Written by
+  // Andy alone; every agent may read every pane." So profile.set takes included and cap, each optional (left out, it
+  // keeps what the profile held, on for a profile never set), and profile.get answers them. A name or nick left empty
+  // is no name or no nick (the label shows; nothing is addressed), so he can set a toggle before he names the agent.
   'profile.set': {
-    request: { agent: '', name: '', nick: '' }, reply: { change: 0 },
+    request: { agent: '', name: '', nick: '', included: true, cap: true }, reply: { change: 0 },
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      const known = ['agent', 'name', 'nick', 'included', 'cap'];
+      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) &&
+        typeof x.agent === 'string' && typeof x.name === 'string' && typeof x.nick === 'string' &&
+        (x.included === undefined || typeof x.included === 'boolean') && (x.cap === undefined || typeof x.cap === 'boolean');
+    },
     handler: function (a, caller) {
       ownerOnly(caller);
       const w = writerOf(caller);
       if (!a.agent) throw refusedWhy('bad-request', 'a profile names its agent by key');
-      if (fieldWhy('name', a.name)) throw refusedWhy('bad-request', fieldWhy('name', a.name));
-      if (!/^[a-z0-9]{1,8}$/.test(a.nick)) throw refusedWhy('bad-request', 'a nick is 1 to 8 of a-z and 0-9');
-      const held = walkState().profiles;
-      if (Object.keys(held).some(function (k) { return k !== a.agent && held[k].nick === a.nick; })) throw refused('taken');
-      return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, by: w.by, key: w.key }).change };
+      if (a.name !== '' && fieldWhy('name', a.name)) throw refusedWhy('bad-request', fieldWhy('name', a.name));
+      if (a.nick !== '' && !/^[a-z0-9]{1,8}$/.test(a.nick)) throw refusedWhy('bad-request', 'a nick is 1 to 8 of a-z and 0-9');
+      const st = walkState();
+      const held = st.profiles;
+      if (a.nick !== '' && Object.keys(held).some(function (k) { return k !== a.agent && held[k].nick === a.nick; })) throw refused('taken');
+      const was = profileOf(st, a.agent);
+      const included = typeof a.included === 'boolean' ? a.included : was.included;
+      const cap = typeof a.cap === 'boolean' ? a.cap : was.cap;
+      return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, included: included, cap: cap, by: w.by, key: w.key }).change };
     },
   },
   'profile.get': {
-    request: { agent: '' }, reply: { name: '', nick: '' },
+    request: { agent: '' }, reply: { name: '', nick: '', included: true, cap: true },
     handler: function (a, caller) {
-      const p = walkState().profiles[a.agent || writerOf(caller).key];
-      return { name: p ? p.name : '', nick: p ? p.nick : '' };
+      return profileOf(walkState(), a.agent || writerOf(caller).key);
     },
   },
   // TAKING THE BOX (goal/G4.20 point 9): an agent takes the box before a change it will write (cap, split, an
@@ -2244,10 +2396,25 @@ appServer.serve({
       // HE TAKES IT TOO (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
       // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for
       // agents." Until then box.take refused him by name.
-      const it = walkState().items[String(a.id)];
+      const st = walkState();
+      const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      if (it.boxTakenBy && it.boxTakenBy !== w.by) throw refused('taken');
-      return { change: write('box.take', { id: a.id, by: w.by, key: w.key }).change };
+      mayWrite(st, w);
+      // A HOLD IS ONE AGENT'S (goal/G21.1): "nobody else takes it meanwhile, Andy included". By key.
+      if (it.boxTakenBy && !holdsBox(it, w)) {
+        if (it.boxHoldUntil) throw refusedWhy('taken', 'the box of ' + a.id + ' is held for ' + (nameOfKey(st, it.boxTakenKey) || it.boxTakenBy) + ' for one write, or until its minute is over');
+        throw refused('taken');
+      }
+      // Its holder taking it again changes nothing: the hold and its minute stand.
+      if (it.boxTakenBy && it.boxHoldUntil) return { change: st.change };
+      // HIS CAP OFFERED (goal/G21.1): "the first to take it holds it under the one-write rule"; an agent with cap off
+      // "gets a cap only when addressed by its nick". He is no agent: his own take is a plain take.
+      const body = { id: a.id, by: w.by, key: w.key };
+      if (it.capOffer && !it.boxTakenBy && w.by !== 'andy') {
+        if (it.capOffer.indexOf(w.key) === -1) throw refusedWhy('taken', 'the cap on ' + a.id + ' is offered to the agents with cap on; ' + w.by + ' has cap off (or was not included) and gets a cap only by its nick');
+        body.hold = true;
+      }
+      return { change: write('box.take', body).change };
     },
   },
   // THE FILES AN AGENT TOUCHED (goal/G8.8). Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent
@@ -2280,10 +2447,12 @@ appServer.serve({
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      const it = walkState().items[String(a.id)];
+      const st = walkState();
+      const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      if (!it.boxTakenBy) return { change: walkState().change };
-      if (it.boxTakenBy !== w.by) throw refused('taken');
+      mayWrite(st, w);
+      if (!it.boxTakenBy) return { change: st.change };
+      if (!holdsBox(it, w)) throw refused('taken');
       return { change: write('box.release', { id: a.id, by: w.by, key: w.key }).change };
     },
   },
@@ -2294,14 +2463,20 @@ appServer.serve({
     handler: function (a, caller) {
       const w = writerOf(caller);
       if (w.by === 'andy') throw refusedWhy('bad-request', 'a line is taken by an agent, not by Andy');
-      const it = walkState().items[String(a.id)];
+      const st = walkState();
+      const it = st.items[String(a.id)];
       if (!it) throw refused('no-such-item');
+      mayWrite(st, w);
+      // HIS LINE BOUND TO THIS AGENT ALREADY (goal/G21.1): its nick took it; the take stands, nothing to write.
+      if (it.takenBy && holdsTake(it, w)) return { change: st.change };
       // ONE TAKER UNTIL IT ANSWERS (claude-windows's review): a take on a newer line of his while the first stands
       // would hand the item to a second agent and have the first's answer refused. The item is the taker's.
       if (it.takenBy) throw refused('taken');
       let his = null;
       for (let i = it.chat.length - 1; i >= 0; i--) { if (it.chat[i].by === 'andy') { his = it.chat[i]; break; } }
       if (!his) throw refused('no-row');
+      // ONLY ITS ADDRESSEES TAKE AN ADDRESSED LINE (goal/G21.1): his nick line, or his cap to the agents with cap on.
+      if (Array.isArray(his.to) && his.to.indexOf(w.key) === -1) throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' is addressed to another agent');
       if (his.taken) throw refused('taken');
       return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };
     },
@@ -2387,6 +2562,8 @@ appServer.serve({
   'box-moved': { status: 409, text: 'the box has changed since that version' },
   'not-offered': { status: 409, text: 'that press is not offered for this item now' },
   'no-such-item': { status: 404, text: 'no such item' },
+  // goal/G21.1: an agent Andy turned off in its pane (included) reads, and every write of it is refused.
+  'not-included': { status: 403, text: 'that agent is not included at the desk' },
 } });
 
 // THE PRESS'S CHECKS, ONE COPY (goal/G19.13): what the press handler refuses, as a write() check, so the claim verb's

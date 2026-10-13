@@ -227,7 +227,7 @@ var ddBoxLoaded = false;  // true once item.box has answered for the open item (
 function ddBoxHtml() {
   // A TAKEN BOX IS RED (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
   // is red. cap also." Red until the taker writes it; the taker's name is on it.
-  var taker = ddFacts && ddFacts.boxTaken ? String(ddFacts.boxTaken) : '';
+  var taker = ddFacts && ddFacts.boxTaken ? ddName(String(ddFacts.boxTaken)) : '';
   var taken = taker ? ' data-taken="' + ddEsc(taker) + '" title="' + ddEsc(taker) + ' is changing this box"' : '';
   // ALWAYS AN INPUT (goal/G9.15). Andy, 2026-10-09: "a goal or item box is always visible and ready to edit by user or
   // agents." An empty box is the same textarea, so the first text of a goal or item he just made can be his; only
@@ -301,7 +301,7 @@ function ddFilesHtml() {
   return '<div class="stat-tile wide"><div class="label">Files touched</div>' + files.map(function (e) {
     var core = e && e.core === true;
     return '<div data-file="' + ddEsc(e.path) + '"' + (core ? ' data-core="1" title="a core file: it needs your grant"' : '') + '>' +
-      (core ? '🔒 ' : '') + ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.by || '') + ')</span></div>';
+      (core ? '🔒 ' : '') + ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.by ? ddName(e.by) : '') + ')</span></div>';
   }).join('') + '</div>';
 }
 
@@ -334,8 +334,16 @@ function ddBubble(l) {
   var look = his
     ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
     : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
-  return '<div' + look + '><b>' + ddEsc(his ? 'you' : l.by) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
+  // goal/G21.1: the writer's name, looked up by the desk from the line's key; its label where none is set.
+  return '<div' + look + '><b>' + ddEsc(his ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
     ddLineHtml(l.text) + '</div>';
+}
+// AN AGENT BY ITS NAME (goal/G21.1). Andy: "The page shows the agent's name everywhere it shows the agent ... the node's
+// label is shown only when no name is set. Keys are never shown on the page." The item's facts carry names, label to
+// name, looked up by key at the desk; the label where none is set.
+function ddName(label) {
+  var names = ddFacts && ddFacts.names ? ddFacts.names : {};
+  return names[label] || label;
 }
 function ddChatHtml() {
   // While the search holds text, the lines in the order the desk ranked them.

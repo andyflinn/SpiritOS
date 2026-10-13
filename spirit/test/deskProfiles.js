@@ -76,8 +76,10 @@ test.startTest('goal/G4.23: the agent profile — name and nick — and "<nick>:
 
     test.subHeading('2. the rules on name and nick');
     const badNick = await call('profile.set', { agent: CW.key, name: 'claude-windows', nick: 'Not A Nick' }, ANDY);
-    const badName = await call('profile.set', { agent: CW.key, name: '', nick: 'cw' }, ANDY);
-    if (codeOf(badNick) === 'bad-request' && codeOf(badName) === 'bad-request') test.check('a nick that is not 1-8 of a-z0-9, and an empty name, are refused bad-request');
+    // Since goal/G21.1 an empty name is no name (the label shows, "the node's label is shown only when no name is set"),
+    // so the name refused here is one the label rule refuses: longer than 64 bytes.
+    const badName = await call('profile.set', { agent: CW.key, name: 'n'.repeat(65), nick: 'cw' }, ANDY);
+    if (codeOf(badNick) === 'bad-request' && codeOf(badName) === 'bad-request') test.check('a nick that is not 1-8 of a-z0-9, and a name the label rule refuses, are refused bad-request');
     else test.fail(OWED + 'bad nick answered ' + short(badNick.body) + ', empty name ' + short(badName.body));
     const dup = await call('profile.set', { agent: CW.key, name: 'claude-windows', nick: 'wsl' }, ANDY);
     const okCw = await call('profile.set', { agent: CW.key, name: 'claude-windows', nick: 'cw' }, ANDY);

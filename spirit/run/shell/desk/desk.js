@@ -273,17 +273,33 @@ function deskBubblesHtml() {
   var known = live.concat(Object.keys((g && g.agents) || {}).filter(function (a) { return live.indexOf(a) === -1; })).sort();
   if (!known.length) return '';
   var working = deskWorkingAgents();
+  // NOT INCLUDED IS ABSENT (goal/G21.1). Andy: "Off: the agent still reads everything, every write of it is refused, and
+  // its bubble shows absent." The server names them in excluded and keeps them out of live.
+  var excluded = g && Array.isArray(g.excluded) ? g.excluded : [];
   // EACH BUBBLE IS A TAB (goal/G4.23). Andy: "the red-bordered agent bubbles become tab-headers again, with their own
   // pane for scope-configuration." data-tab="agent:<name>" opens that agent's pane (its profile since goal/G10.8); the bubble keeps its state.
+  // ITS NAME ON IT (goal/G21.1): the label stays the bubble's handle in the markup, the name is what he reads.
   return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + known.map(function (n) {
+    var absent = excluded.indexOf(n) !== -1;
     var away = live.indexOf(n) === -1;
     var busy = !away && working.indexOf(n) !== -1;
     var on = deskTab === 'agent:' + n;
     return '<span data-bubble="' + deskEsc(n) + '" data-tab="agent:' + deskEsc(n) + '"' +
-      (away ? ' data-away="1" title="away: not heard from in 10 minutes; open its profile"' : busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its profile"') +
+      (absent ? ' data-absent="1" title="absent: not included at the desk; open its profile"'
+        : away ? ' data-away="1" title="away: not heard from in 10 minutes; open its profile"' : busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its profile"') +
       ' style="display:inline-block;cursor:pointer;padding:2px 10px;margin-left:6px;border-radius:12px;font-weight:' + (on ? 'bold' : 'normal') +
-      ';border:2px ' + (away ? 'dashed #888;opacity:0.6' : 'solid ' + (busy ? '#d00' : '#555')) + '">' + deskEsc(n) + '</span>';
+      ';border:2px ' + (absent ? 'dotted #888;opacity:0.4' : away ? 'dashed #888;opacity:0.6' : 'solid ' + (busy ? '#d00' : '#555')) + '">' + deskEsc(deskNameOf(n)) + '</span>';
   }).join('');
+}
+
+// AN AGENT BY ITS NAME (goal/G21.1). Andy: "The page shows the agent's name everywhere it shows the agent ... The name
+// is looked up by the agent's key; the node's label is shown only when no name is set. Keys are never shown on the
+// page." The desk looks the name up by key and hands it beside the label (a row's names, a chat line's name); the page
+// shows it, and the label where none is set.
+function deskNameOf(label, row) {
+  var g = deskGoalRow();
+  var own = row && row.names ? row.names[label] : '';
+  return own || (g && g.names && g.names[label]) || label;
 }
 
 // ── AN AGENT'S PANE: ITS PROFILE (goal/G4.23) ────────────────────────
@@ -301,7 +317,7 @@ function deskAgentDraw() {
   var el = document.getElementById('desk-agent');
   if (!el) return;
   var label = document.getElementById('desk-agent-label');
-  if (label) label.textContent = deskAgentName + ': every agent may commit anywhere in the repo; core files still need your grant';
+  if (label) label.textContent = deskNameOf(deskAgentName) + ': every agent may commit anywhere in the repo; core files still need your grant';
   el.innerHTML = (deskAgentKey() ? '' : '<div class="job-start-error">No key known for ' + deskEsc(deskAgentName) + '.</div>') +
     (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
 }
@@ -313,33 +329,50 @@ function deskAgentOpen(name) {
   var slot = document.getElementById('desk-agent-picker');
   if (slot) {
     slot.innerHTML = '';
-    // ONE LINE WITH ROOM BETWEEN ITS PARTS (Andy: "misses horizontal spacing between items").
-    slot.style.display = 'flex';
-    slot.style.alignItems = 'center';
-    slot.style.flexWrap = 'wrap';
-    slot.style.gap = '12px';
+    // TWO ROWS (goal/G21.1). Andy, in the item's box: "Row one: name and nick (text inputs). Row two: the toggles
+    // included and cap; more toggles may follow. Written by Andy alone; every agent may read every pane."
+    // Each row one line with room between its parts (Andy: "misses horizontal spacing between items").
+    slot.style.display = 'block';
+    var row = function (n) {
+      var r = document.createElement('div');
+      r.setAttribute('data-profile-row', String(n));
+      r.style.display = 'flex';
+      r.style.alignItems = 'center';
+      r.style.flexWrap = 'wrap';
+      r.style.gap = '12px';
+      slot.appendChild(r);
+      return r;
+    };
+    var one = row(1);
+    var two = row(2);
     // NAME AND NICK, KEPT BY THE DESK FOR ANDY (Andy: "so two more fields for repo-root-agents: / name <agent-name> /
     // nick: <wc | wsl | ubi>", and "the profiles are for me, in desk"). profile.set is owner-only on the server; the
-    // nick is what makes a line of his starting "<nick>:" that agent's to take.
-    var field = function (which, width) {
+    // nick addresses a line of his to that agent alone (goal/G21.1: the nick and any punctuation or a space).
+    var field = function (where, which, type, width) {
       var label = document.createElement('label');
       label.className = 'job-manifest-note';
       label.textContent = which + ' ';
       var input = document.createElement('input');
-      input.setAttribute('type', 'text');
+      input.setAttribute('type', type);
       input.setAttribute('data-profile', which);
-      input.style.width = width;
+      if (width) input.style.width = width;
       label.appendChild(input);
-      slot.appendChild(label);
+      where.appendChild(label);
       return input;
     };
-    deskAgentProfile = { name: field('name', '12em'), nick: field('nick', '5em') };
+    deskAgentProfile = { name: field(one, 'name', 'text', '12em'), nick: field(one, 'nick', 'text', '5em') };
     var save = document.createElement('button');
     save.setAttribute('type', 'button');
     save.setAttribute('data-profile-save', '1');
     save.textContent = 'save';
     save.addEventListener('click', deskAgentProfileSave);
-    slot.appendChild(save);
+    one.appendChild(save);
+    // A TOGGLE IS WRITTEN AS IT IS TURNED: included (off, the desk refuses every write of it) and cap (on, his bare
+    // "cap" is offered to it).
+    deskAgentProfile.included = field(two, 'included', 'checkbox', '');
+    deskAgentProfile.cap = field(two, 'cap', 'checkbox', '');
+    deskAgentProfile.included.addEventListener('change', deskAgentProfileSave);
+    deskAgentProfile.cap.addEventListener('change', deskAgentProfileSave);
   }
   return deskAgentProfileLoad();
 }
@@ -349,12 +382,15 @@ function deskAgentProfileLoad() {
   return deskAsk('profile.get', { agent: key }).then(function (r) {
     deskAgentProfile.name.value = (r && r.name) || '';
     deskAgentProfile.nick.value = (r && r.nick) || '';
+    deskAgentProfile.included.checked = !(r && r.included === false);
+    deskAgentProfile.cap.checked = !(r && r.cap === false);
   }, function (e) { deskAgentNote = 'Profile not read: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 function deskAgentProfileSave() {
   var key = deskAgentKey();
   if (!key || !deskAgentProfile) return;
-  deskAsk('profile.set', { agent: key, name: deskAgentProfile.name.value, nick: deskAgentProfile.nick.value }).then(function () {
+  deskAsk('profile.set', { agent: key, name: deskAgentProfile.name.value, nick: deskAgentProfile.nick.value,
+    included: deskAgentProfile.included.checked === true, cap: deskAgentProfile.cap.checked === true }).then(function () {
     deskAgentNote = '';
     deskAgentDraw();
     return deskAgentProfileLoad();
@@ -532,7 +568,7 @@ function deskRowHtml(row) {
     '<td>' + (row.alert ? DESK_ALERT : '') + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
     '<td>' + (goal ? '' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
     '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
-    '<td>' + deskEsc(row.with || '') + '</td>' +
+    '<td>' + deskEsc(row.with ? deskNameOf(row.with, row) : '') + '</td>' +
     '<td>' + presses + '</td>' +
     '<td>' + deskLinks(row.blocking) + '</td>' +
     '<td>' + deskLinks(row.blocked) + '</td>' +
@@ -710,7 +746,8 @@ function deskGroupChat() {
     var look = mine
       ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
       : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
-    return '<div' + look + '><b>' + deskEsc(mine ? 'you' : l.by) + '</b> <span class="job-manifest-note">' +
+    // goal/G21.1: the writer's name, which the desk looked up by the line's key; its label where none is set.
+    return '<div' + look + '><b>' + deskEsc(mine ? 'you' : (l.name || l.by)) + '</b> <span class="job-manifest-note">' +
       deskTime(l.at) + '</span> ' + deskLineHtml({ text: l.text }) + '</div>';
   }).join('');
 }

@@ -152,8 +152,9 @@ async function main() {
   const all = await search({});
   if (all.status === 200 && texts(all) === 'beta four | beta three | alpha two | alpha one' && all.more === false) test.check('with no filter: the four lines of the group chat, newest first, and not the other item\'s line');
   else test.fail(OWED + 'with no filter chat.search answered ' + all.status + ' ' + JSON.stringify(all.body).slice(0, 240));
-  const shaped = all.lines.length === 4 && all.lines.every(function (l, i) { const h = held[3 - i]; return Object.keys(l).sort().join(',') === 'at,by,text' && l.by === h.by && l.at === h.at && l.text === h.text; });
-  if (shaped && new Set(all.keys).size === 4) test.check('each label is the line as the chat holds it, {by, at, text}, and the four keys differ');
+  // Since goal/G21.1 each line also carries its writer's key and name ({by, key, name, at, text}).
+  const shaped = all.lines.length === 4 && all.lines.every(function (l, i) { const h = held[3 - i]; return Object.keys(l).sort().join(',') === 'at,by,key,name,text' && l.by === h.by && l.at === h.at && l.text === h.text; });
+  if (shaped && new Set(all.keys).size === 4) test.check('each label is the line as the chat holds it, {by, key, name, at, text}, and the four keys differ');
   else test.fail(OWED + 'the labels read ' + JSON.stringify(all.lines).slice(0, 240) + ' with keys ' + JSON.stringify(all.keys));
 
   const other = await search({ id: 't/G1.1' });

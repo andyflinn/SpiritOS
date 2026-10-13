@@ -12,7 +12,7 @@
 //
 //   1  the agent's desk grant is revoked (none held is no failure)
 //   2  the agent is forgotten from his contact book
-//   The profile stays: profile.set refuses an empty name and no verb deletes one. (A third step cleared the agent's
+//   The profile stays: no verb deletes one (since goal/G21.1 profile.set accepts an empty name, which only clears it). (A third step cleared the agent's
 //   scope until goal/G10.8 removed agent scopes, every agent being /.)
 // Exits: 0 done; 1 a step failed (the reason printed); 2 usage.
 
