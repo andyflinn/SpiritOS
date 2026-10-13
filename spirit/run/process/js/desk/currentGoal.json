@@ -1,5 +1,5 @@
 {
- "change": 53454,
+ "change": 53683,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -15,8 +15,7 @@
    "blocking": [],
    "blocked": [
     "goal/G19.7",
-    "goal/G19.13",
-    "goal/G19.17"
+    "goal/G19.13"
    ],
    "go": false,
    "alone": false,
@@ -38,11 +37,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5365,9 +5366,12 @@
    "id": "goal/G19.17",
    "title": "Relay search: the new matcher, every listed relay found",
    "goal": "goal/G19",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19"
    ],
@@ -5375,18 +5379,44 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterIntrinsic.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayListIsNodeState.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relaySearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relaySearchMatcher.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -5426,7 +5456,17 @@
    "full": false,
    "box": "Relay search: the new matcher, every listed relay found.\n\nFOUND (2026-10-12/13; paths under spirit/run/)\n- The node's relay list search (relay.search, js/hub.js) matches its own way; the new search, probabilityStringObjectMatch (js/probabilityStringObjectMatch.js, goal/G18.3), is used only by the desk (process/js/desk/desk.js).\n- relay.search leaves out a relay whose label is its url, and a claim lists a relay with its url as the label, so a relay just claimed is missing from Natter's relay list although relay.get finds it (found building goal/G19.15).\n\nDECIDED (Andy, 2026-10-12/13, on goal/G19)\n- \"we should have put in the new search thinggie for relay's\"\n- Asked to add this item: \"add it.\"\n\nSHAPE: relay.search ranks the node's relay rows with probabilityStringObjectMatch, as the desk ranks its items, and returns every listed relay, whatever its label; it stays a bucket-bounded search with its partial flag.\n",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/hub.js, spirit/run/js/ownerBadge.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-13T01:22:08.809Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -5437,6 +5477,51 @@
      "by": "desk",
      "at": "2026-10-13T01:15:33.265Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:15:49.683Z",
+     "text": "Taking G19.17, red first. G1 asks hub and ownerBadge, where the relay list is built and searched."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:21:10.261Z",
+     "text": "Built in my clone: relaySearchMatcher 7 red before, 12 green after; the relay and Natter suites green. Only hub.js changed.\n- Every listed relay now comes back, ranked by the new matcher; a relay named by its address is no longer dropped.\n- One limit of the shared matcher: a single mistyped word that matches nothing scores zero, so it falls back to list order (still listed, just not ranked).\nCommitting once G1 is granted."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:22:36.026Z",
+     "text": "commit e0baaad5e8cbc734174ebe6329a3032dc8cdb152: goal/G19.17: relay search ranks every listed relay with probabilityStringObjectMatch\n- spirit/run/js/hub.js\n- spirit/test/relaySearchMatcher.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:22:40.239Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:22:42.034Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:22:45.699Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:22:49.834Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:22:52.573Z",
+     "text": "Built at e0baaad5. Files: hub.js (G1), relaySearchMatcher (new)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:23:50.849Z",
+     "text": "deskVerify: passed, at e0baaad5 (pulled). 5 suites ran green."
     }
    ]
   }
