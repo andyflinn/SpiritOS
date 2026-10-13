@@ -117,10 +117,14 @@ function stop() {
 
 async function serverHalf() {
   test.subHeading('1. contextLimit is gone, and connection.json is ignored');
-  let shipped = null;
-  try { shipped = JSON.parse(fs.readFileSync(path.join(CODE, 'configuration.json'), 'utf8')); } catch (e) { shipped = null; }
-  if (shipped && !('contextLimit' in shipped)) test.check('the shipped configuration.json has no contextLimit');
-  else test.fail(OWED + 'the shipped configuration.json reads ' + short(shipped));
+  // Since goal/G19.11 no configuration.json is shipped (it is gitignored and untracked; deskUnsloth starts on its
+  // defaults without one, goal/G19.12). So nothing shipped can carry contextLimit, and a local one must not either.
+  const confPath = path.join(CODE, 'configuration.json');
+  let local = null;
+  const present = fs.existsSync(confPath);
+  if (present) { try { local = JSON.parse(fs.readFileSync(confPath, 'utf8')); } catch (e) { local = null; } }
+  if (!present || (local && !('contextLimit' in local))) test.check('no configuration.json carries contextLimit (none is shipped since goal/G19.11)');
+  else test.fail(OWED + 'the local configuration.json reads ' + short(local));
   if (!/CONFIGURATION\.contextLimit|contextLimit"|'contextLimit'/.test(fs.readFileSync(AGENT, 'utf8'))) test.check('deskUnsloth.js reads no contextLimit: the context is the studio\'s');
   else test.fail(OWED + 'deskUnsloth.js still reads contextLimit');
   const ignored = ['spirit/run/process/js/deskUnsloth/connection.json', 'spirit/run/relay-state/process/deskUnsloth/connection.json'].filter(function (p) {
