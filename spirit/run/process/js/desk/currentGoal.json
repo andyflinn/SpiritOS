@@ -1,5 +1,5 @@
 {
- "change": 57404,
+ "change": 57408,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G22.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -284,17 +282,18 @@
    "id": "goal/G22.1",
    "title": "oneDoorStacks rerun on demand",
    "goal": "goal/G22",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G22"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -349,7 +348,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "oneDoorStacks rerun on demand.\n\nDECIDED (Andy, 2026-10-13)\n- This item's file list names only spirit/test/oneDoorStacks.js, so deskVerify reruns that one suite on every verify.again of this item, and each of its rows is recorded as its own test.\n- It builds nothing: the item exists to run the stack-frame suite on its own, as often as wanted, and read what it finds.",
