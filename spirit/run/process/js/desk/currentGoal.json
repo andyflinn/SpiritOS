@@ -1,5 +1,5 @@
 {
- "change": 57738,
+ "change": 57826,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -1217,7 +1217,8 @@
     "goal/G22"
    ],
    "blocked": [
-    "goal/G22.5"
+    "goal/G22.5",
+    "goal/G22.6"
    ],
    "go": false,
    "alone": false,
@@ -1243,9 +1244,21 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The hub and offboard reach relays only through peerPost.\n\nDECIDED (Andy, 2026-10-13)\n- The relay violators the stack-frame doors find are fixed in goal/G22, so its goal run goes green honestly.\n- Every request our production code sends to a relay goes through peerPost (the gate peerPost.js::createPeerPost); the stack-frame test is the judge, through deskVerify.\n- peerPost owns every contact with a relay, its relaying and its public verbs (key, claim) alike, and uses relayRequest only inside itself; the hub never touches a relay or relayRequest, it asks peerPost. Relay listing is a search over the relays peerPost already knows, with no call to a relay.\n- Offboard asks its node, never a relay.\n- One door holds it: nothing reaches a relay or relayRequest except through peerPost.js::createPeerPost.\n- The one legal exception: a post to the node's own self before it knows any relay. It is written into the door by name and reported in every run.\n\nFOUND (the relay door's run, 2026-10-13; paths under spirit/run/)\n- js/hub.js:300 sealedClaim, from handleClaim: fetches the relay's key itself.\n- js/hub.js:1084 handleClaim: posts the claim to the relay itself.\n- js/hub.js:2784 relaySummary, from relayGet and from relaySearch, via ownerBadge's probe: asks each relay for its key itself.\n- js/hub.js:2651 handlePartnerCheck: fetches the relay's key itself.\n- js/hub.js:1019 withClaimRelay and js/hub.js:1774 handleContact: check a relay's address with the relay library directly.\n- process/js/desk/offboard.js:78 main: fetches the relay's key with a plain fetch, around even the relay library.\n- peerPost today offers post, onRequest, onReply and its stream functions; none of these fetch a relay's key or send a claim, so peerPost needs those calls of its own.",
-   "version": 3,
-   "checks": [],
+   "box": "The hub and offboard reach relays only through peerPost.\n\nDECIDED (Andy, 2026-10-13)\n- The relay violators the stack-frame doors find are fixed in goal/G22, so its goal run goes green honestly.\n- Every request our production code sends to a relay goes through peerPost (the gate peerPost.js::createPeerPost); the stack-frame test is the judge, through deskVerify.\n- peerPost owns every contact with a relay, its relaying and its public verbs (key, claim) alike, and uses relayRequest only inside itself; the hub never touches a relay or relayRequest, it asks peerPost. Relay listing is a search over the relays peerPost already knows, with no call to a relay.\n- Offboard asks its node, never a relay.\n- One door holds it: nothing reaches a relay or relayRequest except through peerPost.js::createPeerPost.\n- No exception: since goal/G22.5 the node has its key from boot, so even a post to the node itself before it knows a relay goes through peerPost.\n\nFOUND (the relay door's run, 2026-10-13; paths under spirit/run/)\n- js/hub.js:300 sealedClaim, from handleClaim: fetches the relay's key itself.\n- js/hub.js:1084 handleClaim: posts the claim to the relay itself.\n- js/hub.js:2784 relaySummary, from relayGet and from relaySearch, via ownerBadge's probe: asks each relay for its key itself.\n- js/hub.js:2651 handlePartnerCheck: fetches the relay's key itself.\n- js/hub.js:1019 withClaimRelay and js/hub.js:1774 handleContact: check a relay's address with the relay library directly.\n- process/js/desk/offboard.js:78 main: fetches the relay's key with a plain fetch, around even the relay library.\n- peerPost today offers post, onRequest, onReply and its stream functions; none of these fetch a relay's key or send a claim, so peerPost needs those calls of its own.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Make the relay accept key and claim requests from unknown signers on its one door as its own item, before G22.4?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T20:47:25.926Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -1390,6 +1403,66 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T19:17:57.332Z",
      "text": "Opened goal/G22.5, \"EnsureIdentity\": the first call makes the one permanent identity, the machine name is the default name, and it goes before anything else. Ready on your Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:41:10.292Z",
+     "text": "how is this situation changed based on the changes done in 22.5?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:41:34.874Z",
+     "text": "The seven violators themselves are unchanged: they are about which road reaches a relay, not about the key.\nTwo things did change:\n1. The exception you named (a post to the node itself before it knows a relay) existed because a fresh node had nothing to sign with. Now it has its key from boot, so that post can go through peerPost like any other; I'd drop the exception unless a measured run still shows it.\n2. The claim no longer makes a key, it only names the node. So moving the claim into peerPost is clean: peerPost always holds the identity, and the hub's claim no longer has a \"no identity yet\" case to carry along."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:43:06.293Z",
+     "text": "exception dropped.\n\nnow i want, again, every hub-grope past peerPost explained."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:43:43.850Z",
+     "text": "Exception dropped, recorded. Every place the hub goes past peerPost, what it does, and where it goes after the fix:\n1. Claiming a name (handleClaim, hub.js 1068, with sealedClaim at 300). The hub asks the relay for its key (GET /api/relay/key), seals the claim to that key, then sends the claim itself (POST /api/relay/claim). Two calls, both its own. After: peerPost.claim(url, name, invite) does both; the hub only hands over the request and reads the answer.\n2. Checking the claim relay's address (withClaimRelay, hub.js 1015). Before claiming, the hub checks the address is https (or loopback http) with the relay library. Nothing is sent. After: the check moves to its own small module; it is not a road to a relay.\n3. Adding a contact (handleContact, hub.js 1771). Same address check on the contact's relay, nothing sent. After: same small module.\n4. Checking a partner (handlePartnerCheck, hub.js 2620). To tell who runs a relay, the hub asks the relay for its key and reads its ownerKey. After: peerPost.relayKey(url) answers it, the same call the claim uses.\n5. Listing relays (relaySummary, hub.js 2783, for relay.get and relay.search, through ownerBadge's probe). For the list, the hub asks every relay live for its key and status. After: no call at all; the list is a search over the relays peerPost already holds streams to, with their keys and state.\nOffboard, outside the hub: it fetches the key by plain fetch; after, it asks its node with relay.get."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:46:19.636Z",
+     "text": "if the hub can't do that through peerPost, getRelayKey etc... then there is something wrong with the relay.\n\nthe relay accepts \"public\" requests through and extra door? but it cannot allow \"unknown\" keys in answer Self to have the same leeway?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:46:46.810Z",
+     "text": "That is the root, yes. The relay's real door (post and reply) refuses any signer it does not know, so a stranger cannot even ask \"who are you\" or \"let me in\" there; the public routes (key, claim) are the side door that was cut for exactly those two questions.\nThe fix you describe: the relay's one door accepts a signed packet from an unknown key, but only for those two things, its key and a claim, answered like any reply and counted against the stranger's rate. Then the hub asks through peerPost like everything else, and the public routes close.\nIt changes the wire, so it is a flag day for every relay and node, and it is relay work, not hub work. Make it its own item ahead of G22.4, and G22.4 then only moves the hub onto it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:46:58.243Z",
+     "text": "that fix belongs in relay."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:47:29.387Z",
+     "text": "Agreed, the relay owns it. Proposed item: \"Relay's one door takes key and claim from strangers\", blocking G22.4. Say add it and I add it here in G22; if you want it under a relay goal instead, name it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:48:02.741Z",
+     "text": "new item: correcting the relays response to unkown ID's wanting \"public\" services."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:48:29.325Z",
+     "text": "Added: goal/G22.6, \"Relay answers unknown IDs asking for public services\", blocking G22.4; its box holds the fix and the flag day it means. Ready on your Go and code."
     }
    ]
   },
@@ -1418,6 +1491,11 @@
      "path": "bash/face-install",
      "by": "claude-windows",
      "core": false
+    },
+    {
+     "path": "spirit/run/js/contacts.js",
+     "by": "claude-windows",
+     "core": true
     },
     {
      "path": "spirit/run/js/hub.js",
@@ -1495,12 +1573,7 @@
      "core": true
     },
     {
-     "path": "spirit/test/backupServer.js",
-     "by": "claude-windows",
-     "core": false
-    },
-    {
-     "path": "spirit/test/faceNoIdentity.js",
+     "path": "spirit/test/contactCard.js",
      "by": "claude-windows",
      "core": false
     },
@@ -1535,7 +1608,12 @@
      "core": false
     },
     {
-     "path": "spirit/test/sealKeys.js",
+     "path": "spirit/test/ownerPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relaySearch.js",
      "by": "claude-windows",
      "core": false
     },
@@ -1545,7 +1623,7 @@
      "core": false
     }
    ],
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "",
    "red": "claude-windows",
@@ -1591,11 +1669,11 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 2,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "EnsureIdentity: one real identity from the first call.\n\nDECIDED (Andy, 2026-10-13)\n- The first call to ensureIdentity ensures a real, permanent identity exists; every later call returns that same identity and never makes another.\n- When no name is given, ensureIdentity takes the machine's name as the default.\n- This is fixed before anything else in goal/G22.\n- The node calls ensureIdentity during boot, first, before the hub is made, so the hub never has a chance or a need to make one; the claim finds the identity already there.\n- Law: no node-boot is done until the node has a key and a default name.\n- relayAuth makes the key on its own first load, for the spirit/run it sits in (every copy of the code has its own); no other component ever makes or checks for one.\n- Every piece of documentation (comments, AGENT.md, design files, suite headers) that suggests the node may not know its own key before it listens on its local port (usually 65432) is updated, so the idea is gone for good.\n- It never comes back: a suite boots a fresh node and claims, and fails unless the key exists before the port opens and the claim keeps it; another reads every comment and document in the tree for the phrases this idea was written in, and fails if one reappears.\n- relayAuth.js ensures the identity exists, before the node listens on its port, and no longer exports ensureIdentity, so every caller is fixed before this item closes: server.js and relayServer.js drop their boot calls, hub.js's claim uses one narrow call that only sets the name, jobs.js and the test suites stop making identities. Beyond those callers, files change only their comments.\n- Each no-key-yet branch is marked with the comment: DEPRECATED: the node's ID exists before first node-listen.\n- The error texts on those branches mislead a reader too: each becomes \"DEPRECATED error: \" followed by its old text.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- server.js calls ensureIdentity with an empty name at every boot (since 2026-09-24, to grow a seal key on older nodes); on a fresh node that makes a key with no name.\n- relayAuth.js loadIdentity treats an identity with no name as none (since 2026-09-13).\n- So the first claim (hub.js signedClaim, ensureIdentity with the claimed name) finds \"no identity\" and makes a new key over the boot key. Measured in a scratch folder: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.\n",
-   "version": 11,
+   "box": "EnsureIdentity: one real identity from the first call.\n\nDECIDED (Andy, 2026-10-13)\n- The first call to ensureIdentity ensures a real, permanent identity exists; every later call returns that same identity and never makes another.\n- When no name is given, ensureIdentity takes the machine's name as the default.\n- This is fixed before anything else in goal/G22.\n- The node calls ensureIdentity during boot, first, before the hub is made, so the hub never has a chance or a need to make one; the claim finds the identity already there.\n- Law: no node-boot is done until the node has a key and a default name.\n- relayAuth makes the key on its own first load, for the spirit/run it sits in (every copy of the code has its own); no other component ever makes or checks for one.\n- Every piece of documentation (comments, AGENT.md, design files, suite headers) that suggests the node may not know its own key before it listens on its local port (usually 65432) is updated, so the idea is gone for good.\n- It never comes back: a suite boots a fresh node and claims, and fails unless the key exists before the port opens and the claim keeps it; another reads every comment and document in the tree for the phrases this idea was written in, and fails if one reappears.\n- relayAuth.js ensures the identity exists, before the node listens on its port, and no longer exports ensureIdentity, so every caller is fixed: server.js and relayServer.js drop their boot calls, hub.js's claim uses one narrow call that only sets the name, and the test suites stop making identities.\n- Every dead code branch that handles a node without an identity is removed, with its error texts and codes; the identity exists from relayAuth's first load, so none of them can run.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- server.js calls ensureIdentity with an empty name at every boot (since 2026-09-24, to grow a seal key on older nodes); on a fresh node that makes a key with no name.\n- relayAuth.js loadIdentity treats an identity with no name as none (since 2026-09-13).\n- So the first claim (hub.js signedClaim, ensureIdentity with the claimed name) finds \"no identity\" and makes a new key over the boot key. Measured in a scratch folder: boot key ...W3SSLiKaqYE=, after the claim ...Os4xtEVX27A=.\n",
+   "version": 12,
    "checks": [
     {
      "number": "G1",
@@ -1631,11 +1709,20 @@
      "kind": "Q",
      "words": "Reopen G22.5 to remove the dead no-identity branches, or add a new item for it?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T20:19:20.534Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/contacts.js, spirit/run/js/hub.js, spirit/run/js/jobs.js, spirit/run/js/node/card.json, spirit/run/js/nodeCard.js, spirit/run/js/ownerPost.js, spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/puppetMode.js, spirit/run/js/relayAuth.js, spirit/run/js/relayServer.js, spirit/run/js/server.js, spirit/run/js/spiritErrors.js, spirit/run/shell/info/info.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-13T20:38:18.753Z"
     }
    ],
    "chat": [
@@ -1986,6 +2073,128 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T20:18:52.794Z",
      "text": "Understood: the branches go, not just their comments. That reverses \"their code stays\", which is yours to change, and it is the cleaner end: with the identity made at load, every \"no identity\" branch is unreachable.\nThe sweep has them: hub (node.card 409, signedClaim's throw, sign-with), nodeCard (describe, read, ensureDescription, setName, setDescription, rotate), ownerPost, peerPost, presenceNode's bail, spiritErrors' node-no-key / node-no-identity / no-identity codes, puppetMode's nameless case, info's fallback, onboard and offboard, face-install.\nG22.5 already shows done, and the desk refuses commits under a done item; so it needs reopening, or a new item for this."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:19:52.021Z",
+     "text": "Reopened, and on it: every dead no-identity branch goes, with its error texts and codes (box v12). A test first asserts no DEPRECATED marker or text is left and the codes are gone; a branch that still guards something real, like an unreadable identity file, stays with a plain comment saying what it guards."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:38:00.297Z",
+     "text": "The dead branches are gone, not committed yet: G3 is your G2 plus contacts.js, whose owner mark had a null guard on the node's own key.\nRemoved: every no-identity branch in hub, nodeCard, ownerPost, peerPost, presenceNode, puppetMode, jobs (its raw identity read is now loadIdentity), server and contacts, the three error codes in spiritErrors, and face-install's warning. No DEPRECATED marker or text is left anywhere; the guard checks that.\nKept, because they guard something real: onboard and offboard still stop if node.card is refused, info still says so if node.card does not answer, and loadIdentity still answers null for a torn identity file.\nThe cost: a hand-mangled identity.json now fails where it is used instead of with a polite refusal.\nRed was 5 failing; now noKeylessNode 6 green, identityAtBoot 11, and about 100 suites around it green. Grant G3 and I commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:38:46.207Z",
+     "text": "commit d403629be71716c6ce5481e0c8658727b73700be: goal/G22.5: the dead no-identity branches are removed with their error texts and codes; the node's identity exists from relayAuth's first load\n- bash/face-install\n- spirit/run/js/contacts.js\n- spirit/run/js/hub.js\n- spirit/run/js/jobs.js\n- spirit/run/js/nodeCard.js\n- spirit/run/js/ownerPost.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/presenceNode.js\n- spirit/run/js/puppetMode.js\n- spirit/run/js/server.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/process/js/desk/offboard.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/run/shell/info/info.js\n- spirit/test/contactCard.js\n- spirit/test/fileIntrinsic.js\n- spirit/test/includeLists.js\n- spirit/test/moduleIds.js\n- spirit/test/noKeylessNode.js\n- spirit/test/nodeInfo.js\n- spirit/test/ownerFile.js\n- spirit/test/ownerPost.js\n- spirit/test/processPipe.js\n- spirit/test/puppetCommands.js\n- spirit/test/puppetDoor.js\n- spirit/test/relaySearch.js\n- spirit/test/relaySearchMatcher.js\n- spirit/test/serverKinds.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:38:56.182Z",
+     "text": "Pushed: d403629b, under G3. The dead no-identity branches, their texts and codes are gone; verify.again sent. Your node takes it at its next restart."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:39:43.790Z",
+     "text": "deskVerify: passed, at d403629b (pulled). 10 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G22.6",
+   "title": "Relay answers unknown IDs asking for public services",
+   "goal": "goal/G22",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G22.4"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Relay answers unknown IDs asking for public services.\n\nDECIDED (Andy, 2026-10-13)\n- The fix belongs in the relay: it corrects how a relay answers an unknown ID that wants its public services.\n- The relay's one door accepts a signed request from a key it does not know, for its public services only (its key, a claim), answers it like any reply, and counts it against that stranger's rate; so a node reaches a relay only through peerPost, and the public side routes close.\n- This blocks goal/G22.4: once it lands, the hub asks peerPost for a relay's key and for a claim.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- relay.js: the peer door (post, reply) refuses any signer it does not know; a stranger gets \"no such peer\".\n- relayServer.js lines 485 to 501: the public routes, GET /api/relay/key, GET /api/relay/stream, POST /api/relay/claim, GET /api/version, beside post and reply.\n- It changes the wire, so it is a flag day for every relay and node together.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:49:02.866Z",
+     "text": "all green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:49:25.256Z",
+     "text": "Green: box current (v1), nothing open; it waits on your Go and code. (G22.5 also green: deskVerify passed at d403629b.)"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T20:49:47.788Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
