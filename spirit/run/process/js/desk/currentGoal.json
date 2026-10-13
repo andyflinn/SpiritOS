@@ -1,5 +1,5 @@
 {
- "change": 57408,
+ "change": 57411,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -7,7 +7,7 @@
    "id": "goal/G22",
    "title": "Using the stack-frame tests as design-enforcement tool.",
    "goal": "",
-   "status": "",
+   "status": "goal run started",
    "with": "claude-windows",
    "buttons": [
     "close"
@@ -42,14 +42,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -282,10 +280,9 @@
    "id": "goal/G22.1",
    "title": "oneDoorStacks rerun on demand",
    "goal": "goal/G22",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
