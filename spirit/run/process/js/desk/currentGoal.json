@@ -1,5 +1,5 @@
 {
- "change": 56951,
+ "change": 57394,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -15,8 +15,7 @@
    "blocking": [],
    "blocked": [
     "goal/G22.1",
-    "goal/G22.2",
-    "goal/G22.3"
+    "goal/G22.2"
    ],
    "go": false,
    "alone": false,
@@ -46,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -624,9 +623,12 @@
    "id": "goal/G22.3",
    "title": "gg plugin: goal governance by a mounted plugin",
    "goal": "goal/G22",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G22"
    ],
@@ -634,20 +636,76 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskFrontPage.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskGroupChat.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLayout.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPluginsGg.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRulesTab.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyDoorRun.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyTab.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/runStandsAlone.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/stackFrameTestItems.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/stackFrameViolators.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/12",
@@ -702,10 +760,10 @@
     "claude-windows": "claude-windows"
    },
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "gg plugin: goal governance by a mounted plugin.\n\nDECIDED (Andy, 2026-10-13)\n- A gg plugin is a goal-governance plugin: for its type of goal it is the first to handle every desk event, and the mechanical controls it implements live there, not in desk.js.\n- No goal-type choice at create-goal: desk scans its plugin folder and mounts every plugin it finds; the first plugin governs stack-frame goals.\n- The stack-frame plugin sets the parameters (gate frame and target frame) and generates the equivalent of a goal/G22.2 item from them.\n- It governs its goal: the goal always stays open, and its rerun item (as goal/G22.1) always stays open, whether a Done button is ever seen or not.\n- It has a companion dialog where the gate and endpoint functions are entered.\n- It is a pluggable version of goal/G0: a special goal that is always open while actually closed.\n- On its first mount the plugin gets its own private goal with a fixed key, and from then on that goal and the plugin live hand in hand; the goal has its chat, box and everything else for free, and in the list of goals it shows a button in the label column that opens the plugin's private UI.\n\nTHIS RENDITION (Andy, 2026-10-13) does only:\n- Mount every plugin in desk's plugin folder, organized with the same pattern as shell apps and processes.\n- The stackFrameChecks plugin, governing in full in this item: its goal and its rerun item always stay open, and its dialog takes a gate and an endpoint and makes the goal/G22.2-type item.\n- In the main list, a button replacing the label of each plugin's private goal, which opens the plugin's private UI.\n- When this item is done, a goal \"Maintain this plugin\" follows.\n- The plugin folder: each plugin's server half at spirit/run/process/js/desk/plugins/js/<name>/<name>.js with its .json beside it, its private UI at spirit/run/shell/desk/plugins/<name>/.\n",
-   "version": 5,
+   "box": "gg plugin: goal governance by a mounted plugin.\n\nDECIDED (Andy, 2026-10-13)\n- A gg plugin is a goal-governance plugin: for its type of goal it is the first to handle every desk event, and the mechanical controls it implements live there, not in desk.js.\n- No goal-type choice at create-goal: desk scans its plugin folder and mounts every plugin it finds; the first plugin governs stack-frame goals.\n- The stack-frame plugin sets the parameters (gate frame and target frame) and generates the equivalent of a goal/G22.2 item from them.\n- It governs its goal: the goal always stays open, and its rerun item (as goal/G22.1) always stays open, whether a Done button is ever seen or not.\n- It has a companion dialog where the gate and endpoint functions are entered.\n- It is a pluggable version of goal/G0: a special goal that is always open while actually closed.\n- On its first mount the plugin gets its own private goal with a fixed key, and from then on that goal and the plugin live hand in hand; the goal has its chat, box and everything else for free; its private UI is its tab under Apps.\n\nTHIS RENDITION (Andy, 2026-10-13) does only:\n- Mount every plugin in desk's plugin folder, organized with the same pattern as shell apps and processes.\n- The stackFrameChecks plugin, governing in full in this item: its goal and its rerun item always stay open, and its dialog takes a gate and an endpoint and makes the goal/G22.2-type item.\n- A main desk tab, Apps, whose inner tabs are the special goals: Team (today's Team tab, moved into Apps as its first special goal) and Stacks (the stackFrameChecks plugin's private UI), more later. Apps replaces the label button in the List.\n- When this item is done, a goal \"Maintain this plugin\" follows.\n- The plugin folder: each plugin's server half at spirit/run/process/js/desk/plugins/js/<name>/<name>.js with its .json beside it, its private UI at spirit/run/shell/desk/plugins/<name>/.\n\nTHE DOOR LIST (Andy, 2026-10-13, in plugin/stackFrameChecks; built in this item)\n- The plugin keeps the doors in spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json, which the stack-frame test reads to know which checks to run.\n- The gate is narrow: one file::function; a whole module named as the gate is cheating. The endpoint is wide: a whole module, every function it exports; for what lies outside our code, such as a relay, Node's own (http, https, fetch), filtered to the relay's paths.\n- The stack-frame test, the plugin and its UI are changed to that effect, and the three doors written so far move into the list with their gates narrowed.\n- A callback runs on a fresh stack, so the probe uses async_hooks: when a callback is placed it keeps the placer's stack and joins it under the callback's, so the walk reaches the named function that set it up. Test-only; probed runs get slower.\n- The probe constructs a complete stack frame for anything that reaches an endpoint: the live stack, the stacks of whoever placed each callback (async_hooks), and for every frame the functions it is written inside (its enclosing functions in the source), so a gate such as peerPost.js::createPeerPost holds for every function created inside it.\n- The plugin runs the show: its UI gives the complete toolset, rows added (with validation) and removed, and a run dialog for each door that runs its check and shows the verdict and the paths around the gate.\n- Rows can also be modified in place, with the same validation as adding.\n- A run shows its violators one line each: file:line function (from its caller) ---> what it reaches at the endpoint, bypassing the gate; one line per distinct violator, with how many calls.\n- No silent filters: every entry point is tested, loopback included; an exception to a door is written into it by name and reported in every run, never dropped unseen.\n- Each input of the Stacks UI is a block that sits inline: a frame holding the field's name and a one-line explanation, with the input below them.\n- goal/G22 is done once the plugin is looped in with the verifier.\n- Out of scope here: musings and rules moving into desk apps.\n- Every run in Stacks reports to deskVerify: the plugin launches a door's run through deskVerify, and each row shows deskVerify's verdict.\n- The plugin commits its own list after each change; that belongs with committing reds.\n- The Verify tab shows the detailed results of the current run like a console, cleared before every new run, so every run, the ones from Stacks included, has its output there.\n",
+   "version": 15,
    "checks": [],
    "chat": [
     {
@@ -761,6 +819,324 @@
      "key": "",
      "at": "2026-10-13T10:04:41.923Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:05:44.061Z",
+     "text": "Taking the red: a suite for plugin mounting, the private goal with its fixed key, governance first, the rerun item, the dialog making a 22.2-type item, and the label button. Then the build."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T10:30:43.509Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T10:30:45.468Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:31:01.585Z",
+     "text": "commit 5525d73b7959ed0c8b832f79b0642ee2a2552ed1: goal/G22.3: desk mounts its plugins; stackFrameChecks governs its private goal, keeps its rerun item open, and makes stack-frame items from a gate and an endpoint\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.json\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/deskGroupChat.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskServer.js\n- spirit/test/runStandsAlone.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T10:31:13.958Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T10:31:19.679Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:31:23.708Z",
+     "text": "Built and pushed: 5525d73b. Red was 3 green, 30 failing; now 35 green.\nFiles: desk.js; plugins/js/stackFrameChecks/stackFrameChecks.js and .json; shell/desk/desk.js; shell/desk/plugins/stackFrameChecks/stackFrameChecks.js; tests deskPluginsGg (new), deskServer, deskGroupChat, runStandsAlone.\nDesk scans its plugin folder at start; each plugin sees every desk call first and may refuse it or answer it, and refused buttons are not drawn.\nstackFrameChecks gets goal plugin/stackFrameChecks on first mount, kept across restarts, with its rerun item plugin/stackFrameChecks.1 listing oneDoorStacks.js; Done, Close and abandon on them are refused, and verify.again on the rerun item always runs.\nIts dialog verb stackFrameChecks.make takes a gate and an endpoint and makes the \"Nobody but gate reaches endpoint\" item, listing stackFrameTestItems.js.\nIn the List the plugin goal's title is a button that opens its private UI in its own pane.\nrunStandsAlone exempts the plugin file by name, as deskVerify is, since it names the suites as item data.\nThe plugin goal starts in design mode like any new goal, so you end design before its items take Go. Your desk server needs a restart to mount it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T10:31:48.551Z",
+     "text": "deskVerify: passed, at 5525d73b (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T10:44:11.872Z",
+     "text": "thing is: it doesn't seem to show up in any list.\n\nCan we make a new tab on the main desk, called \"Apps\", and in it are tabs for team, stacks (and more later) those bein out \"Special Goals\"?\n\nmake sense? i want those this to be places like that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:44:35.114Z",
+     "text": "It can't show yet: the plugin landed at 5525d73b after your line, and your desk server only mounts plugins when it starts, so it needs a restart.\nApps makes sense: one main tab, Apps, whose inner tabs are the special goals, team and stacks now, more later; each plugin's private UI becomes its tab there.\nTwo things to pin: does the Apps tab replace the label button in the List, and does today's Team tab move into Apps as its first special goal?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T10:46:02.440Z",
+     "text": "does the Apps tab replace the label button in the List?\n\nYes.\n\ndoes today's Team tab move into Apps as its first special goal?\n\nYes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T10:46:41.793Z",
+     "text": "Recorded in the box (v6): Apps is a main tab with Team and Stacks as its special-goal tabs, and it replaces the label button.\nBuilding it in this item now; the claim will follow the new commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:00:53.206Z",
+     "text": "commit d0befbe29c307dadb3cc698c20864a1f42628087: goal/G22.3: Apps tab with Team and Stacks as special-goal tabs; it replaces the plugin label button in the List\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.json\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/deskFrontPage.js\n- spirit/test/deskLayout.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskRulesTab.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:01:05.093Z",
+     "text": "Apps pushed: d0befbe2. Red was 33 green, 15 failing; now 49 green.\nFiles: shell/desk/desk.js, desk.js (the tab name on the plugin goal's row), stackFrameChecks.json (tab \"Stacks\"), the plugin UI header; tests deskPluginsGg, deskFrontPage, deskLayout, deskRulesTab.\nThe top row is List, Apps, Rules, Musings; Apps holds Team (the old Team pane, moved whole) and Stacks, each plugin's tab named by its json and loaded the first time it opens.\nThe List's plugin goal title is plain text again; the button, its pane and Back are gone, and the suite asserts it.\nTeam and Stacks still update live inside Apps. Restart your desk server to see it; verify.again sent."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:01:30.167Z",
+     "text": "deskVerify: passed, at d0befbe2 (pulled). 7 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:03:45.015Z",
+     "text": "in Stack: the chat is missing, below the inputs, after what will be the list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:04:14.299Z",
+     "text": "Right, it has none yet. Adding it in this item: below the inputs and the list, the chat of the plugin goal, drawn and sent the way Team does the group chat."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:07:28.261Z",
+     "text": "commit f8809ed79da78110a1c0ec68fe7ed1c919f7c45f: goal/G22.3: the Stacks tab shows its goal's chat below the inputs and the list, reusing Team's chat drawing and sending\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/deskPluginsGg.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:07:29.166Z",
+     "text": "Stacks chat pushed: f8809ed7. Red was 51 green, 5 failing; now 57 green.\nFiles: shell/desk/desk.js, the plugin UI, test deskPluginsGg.\nTop to bottom: inputs, the goal's items, then the chat of plugin/stackFrameChecks with its say box and Send, live from the stream.\nTeam's chat drawing and sending now take a goal id, and Stacks uses the same code. verify.again sent; restart your desk server to see it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:07:55.869Z",
+     "text": "deskVerify: passed, at f8809ed7 (pulled). 7 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:47:52.545Z",
+     "text": "commit 3bcb21fcf0dd217e9ba6f4d1f646507d48fb2a91: goal/G22.3: the doors live in stackFrameList.json; gate is one file::function, endpoint a whole module or Node's own; frames keep function names; the three doors narrowed by measurement (they fail by \n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.json\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskServer.js\n- spirit/test/oneDoorStacks.js\n- spirit/test/stackFrameTestItems.js\n- spirit/test/tools/wirePaths.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:48:04.861Z",
+     "text": "Door list pushed: 3bcb21fc. Files: stackFrameList.json (new), the plugin and its json, its UI, wirePaths, oneDoorStacks, stackFrameTestItems; tests deskPluginsGg, deskServer.\nFrames now carry function names, so a gate is matched as file::function; an endpoint module is watched on every export.\nThe three doors are in the list and all three fail by design: presenceNode gated at holdStreams (3 paths around it), postQueue at pump (1 path: createPeerPost making the queue), relay at onRequest (10 paths).\nTwo gates were ties I broke by judgement, holdStreams and onRequest; the measured stacks are in the claim. Change them in the list if another function is the real door.\nThe plugin's make takes gate file::function and endpoint file, writes the door into the list with no suites (an empty run fails, which is its red), and the Stacks UI shows the list. verify.again sent."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:48:31.808Z",
+     "text": "deskVerify: passed, at 3bcb21fc (pulled). 8 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:54:33.330Z",
+     "text": "Hmmm, un-named functions usually are called be a named function, correct? so, in the stackframe search away from the endpoint to find a named culprit.\n\nno?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:55:01.110Z",
+     "text": "It already searches that way: the gate counts if it is any frame on the stack, not only the nearest.\nThe two at peerPost 657 and 1716 are different: they are .then callbacks, and a callback runs later on a fresh stack, so the named function that set it up is no longer on it; there is no further frame to walk to.\nThe plainest fix is to give those two callbacks names in peerPost, so the frame itself names the door; that is a production change, so it belongs to a fix item, not this one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:56:14.495Z",
+     "text": "but we know who places callbacks into that backcaller?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:56:35.677Z",
+     "text": "Yes, Node can tell: its async_hooks report each callback being placed, with an id that links it to the one who placed it. The probe can keep the placer's stack at that moment and join it under the callback's stack, so the walk goes on to the named function that set it up.\nIt stays test-only, no production change. The cost: in probed runs every promise keeps a stack, so those runs get slower.\nDo it in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:57:19.856Z",
+     "text": "claude-windows 13:56 Yes, Node can tell: its async_hooks report each callback being placed, with an id that links it to the one who placed it. The probe can keep the placer's stack at that moment and join it under the callback's stack, so the walk goes on to the named function that set it up.\n\ni like that. do it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T11:57:51.650Z",
+     "text": "Doing it in this item (box v8): the probe keeps the placer's stack for each callback and joins it under the callback's, test-only. I will report the slowdown measured and which named function the two relay posts turn out to pass."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T11:58:47.379Z",
+     "text": "speed it not my worry, I already have a plan to speed this thing up considerably."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T12:14:19.474Z",
+     "text": "commit d1c6ff3dab098bc2d1eb5888fee8215bac05e18d: goal/G22.3: the probe joins each callback's stack to its placer's (async_hooks, test-only), so a gate is found past a fresh callback stack\n- spirit/test/oneDoorStacks.js\n- spirit/test/tools/wirePaths.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T12:14:28.762Z",
+     "text": "Placer stacks pushed: d1c6ff3d. Files: wirePaths, oneDoorStacks (a new check that a call from an anonymous .then shows the named function that placed it: red before, green now).\nThe two relay posts now show their placers: the reply at 1716 was placed by onRequest, so it passes the relay gate; the post at 657 was placed by sendAttempt, called by pump, so it still fails the onRequest gate.\nSo the relay door has two real doors in peerPost, onRequest for replies and pump/sendAttempt for posts; one gate cannot hold both.\nThe relay door now counts 21 paths around the gate of 31 calls, since longer stacks split into more distinct paths. presenceNode and postQueue are unchanged.\nOn the relay suites the run took no longer; only a tight loop of awaits is much slower. verify.again sent."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T12:14:57.681Z",
+     "text": "deskVerify: passed, at d1c6ff3d (pulled). 8 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T12:16:41.325Z",
+     "text": "the relay door has two real doors in peerPost:\n\nbetween the peerPost frame and the endpoint in relay?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T12:17:11.943Z",
+     "text": "No, above it. Between peerPost and the endpoint there is no peerPost function at all: both paths call request, which is hub's relayRequest handed into peerPost by server.js (line 1327), and that reaches Node's http.request.\nPost: sendAttempt (placed by pump) then request, then the wire. Reply: onRequest then request, then the wire.\nSo the two doors are two peerPost functions standing on either side, both above the shared request. One gate holds both only if peerPost had one function of its own wrapping request that every relay call went through, or if a door may name two gate functions."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T12:44:11.430Z",
+     "text": "commit c37eea86467397acc27696bbd6270aea67e069f1: goal/G22.3: the probe builds a complete frame: live stack, placer stacks, and the functions each frame is written inside, so a gate holds for every function created inside it\n- spirit/test/oneDoorStacks.js\n- spirit/test/tools/wirePaths.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T12:44:31.879Z",
+     "text": "deskVerify: not checked, at d1c6ff3d (dirty, not pulled): the tree lacks the item's commit c37eea86. Nothing was measured, so this is not a pass."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T12:44:50.341Z",
+     "text": "That is the plugin's own write: making item .2 put its door into stackFrameList.json in your tree, so the tree is dirty and deskVerify will not pull.\nTwo ways: I commit that one file from your tree and push, then deskVerify pulls; or the plugin keeps its list outside git (in relay-state) and the stack-frame test reads it from there, so making a door never dirties the tree again.\nI'd do the first now and the second as the plugin's next change. Say which."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T13:06:50.177Z",
+     "text": "commit c24195b321b6acfc19b0c76c6e0dd419b38b3204: goal/G22.3: the Stacks tab runs the show: the door list with add, a dialog per door to edit, remove, run and stop, verdicts kept outside git\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.json\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameList.json\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskServer.js\n- spirit/test/oneDoorStacks.js\n- spirit/test/tools/wirePaths.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T13:07:47.631Z",
+     "text": "deskVerify: passed, at c24195b3 (pulled). 8 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T13:31:52.769Z",
+     "text": "commit 00234987b2076c402d7f9ff10830051d283fb9d5: goal/G22.3: a door's run shows its violators one line each: where, from where, what it reaches, which gate it bypasses\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/violators.js\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/stackFrameViolators.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T13:32:14.050Z",
+     "text": "deskVerify: not checked, at c24195b3 (dirty, not pulled): the tree lacks the item's commit 00234987. Nothing was measured, so this is not a pass."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T13:33:45.663Z",
+     "text": "deskVerify: passed, at 04363e62 (pulled). 9 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T13:41:44.040Z",
+     "text": "commit dda96daccb884d6c2177aa372b0244c75f5129f5: goal/G22.3: one violator line per caller, so the lines count the paths\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/violators.js\n- spirit/test/stackFrameViolators.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T13:42:25.941Z",
+     "text": "deskVerify: passed, at dda96dac (pulled). 9 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T14:47:05.703Z",
+     "text": "commit 535d51ef158519bc7b407a9fcf3a8a0a3454b12b: goal/G22.3: each Stacks input is a framed inline block with its name and what its value means in words\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/deskPluginsGg.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T14:47:44.458Z",
+     "text": "deskVerify: rejected, at 535d51ef (dirty, not pulled); nothing taken back: the tree was dirty, not pulled. Red: spirit/test/stackFrameTestItems.js: FAILURE #1.1: goal/G22.2: its door(s) are in the list, each gated by one file::function — no door gated in spirit/run/js/peerPost.js reaching node:http+https+fetch on /api/relay/ with suites that drive it"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T14:47:45.810Z",
+     "text": "verify rejected: spirit/test/stackFrameTestItems.js: FAILURE #1.1: goal/G22.2: its door(s) are in the list, each gated by one file::function — no door gated in spirit/run/js/peerPost.js reaching node:http+https+fetch on /api/relay/ with suites that drive it"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T14:48:31.392Z",
+     "text": "commit 9e80ee469a87786db3646032e3015c25f868590b: goal/G22.3: stackFrameTestItems asks only that the relay door exists, not which paths it watches (no silent filters)\n- spirit/test/stackFrameTestItems.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T14:48:49.133Z",
+     "text": "Rejected because your tree held your /api/ edit to d3 uncommitted, and stackFrameTestItems still pinned the relay door to /api/relay/.\nFixed: the test now asks only that the relay door exists, not which paths it watches (9e80ee46), and your edit is committed as you made it (c7f633b0). Claiming again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T14:49:23.792Z",
+     "text": "deskVerify: passed, at c7f633b0 (pulled). 9 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T15:25:36.686Z",
+     "text": "commit 16c324db3d4368f17764decdd80a4a0d9743738e: goal/G22.3: Stacks runs go through deskVerify (door.run, door.state), the Verify tab shows the current run as a console, and the plugin commits and pushes its own list\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.json\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/deskVerify.json\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskServer.js\n- spirit/test/deskVerifyDoorRun.js\n- spirit/test/oneDoorStacks.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T15:27:30.301Z",
+     "text": "deskVerify: passed, at 16c324db (pulled). 11 suites ran green."
     }
    ]
   }
