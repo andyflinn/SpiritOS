@@ -26,7 +26,7 @@
 //   bypassing     the gate's function; a node: endpoint reached with no frame of the request library below the
 //                 violator also bypassed the library ("and relayRequest"), and is "by plain fetch" when the violator's
 //                 own source line calls fetch(.
-// Paths with the same violator and the same rest are one line; their froms and vias are joined ("from A and B").
+// Paths with the same violator, the same caller and the same rest are one line; each caller is its own line.
 // Lines keep the order their first path came in. A path that does not read as one is kept as it came.
 
 const fs = require('fs');
@@ -96,7 +96,9 @@ function violators(door, paths, options) {
     const reached = node ? where + (fetched ? ' by plain fetch' : '') : base(endpoint) + ' ' + where;
     const head = base(vf.file) + ':' + vf.line + ' ' + (vf.fn || '(top level)');
     const rest = ' ---> ' + reached + ', bypassing ' + gateFn + (direct ? ' and ' + LIBRARY_NAME : '');
-    const key = head + rest;
+    // ONE LINE PER CALLER (Andy, 2026-10-13: "list them separately"): the same violator reached from two callers is
+    // two lines, so the count of lines is the count of paths.
+    const key = head + '\n' + from + rest;
     if (!byKey[key]) { byKey[key] = { head: head, rest: rest, froms: [], vias: [] }; order.push(key); }
     addOnce(byKey[key].froms, from);
     vias.forEach(function (x) { addOnce(byKey[key].vias, x); });

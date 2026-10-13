@@ -60,7 +60,8 @@ const DOORS = [
     want: [
       'hub.js:300 sealedClaim (from handleClaim) ---> GET /api/relay/key, bypassing createPeerPost',
       'hub.js:1084 handleClaim ---> POST /api/relay/claim, bypassing createPeerPost',
-      'hub.js:2784 relaySummary (from relayGet and relaySearch, via ownerBadge probe) ---> GET /api/relay/key, bypassing createPeerPost',
+      'hub.js:2784 relaySummary (from relayGet, via ownerBadge probe) ---> GET /api/relay/key, bypassing createPeerPost',
+      'hub.js:2784 relaySummary (from relaySearch, via ownerBadge probe) ---> GET /api/relay/key, bypassing createPeerPost',
       'offboard.js:78 main ---> GET /api/relay/key by plain fetch, bypassing createPeerPost and relayRequest',
       'hub.js:2651 handlePartnerCheck ---> GET /api/relay/key, bypassing createPeerPost',
     ],
@@ -96,7 +97,8 @@ const DOORS = [
       // Andy wrote "appClient.js:126 knock" bare; knock is called by ask in its own file, as sealedClaim by handleClaim,
       // so the same rule says it.
       'appClient.js:126 knock (from ask) ---> relayRequest.js pipeRequest, bypassing createPeerPost',
-      'hub.js:2784 relaySummary (from relayGet and relaySearch, via ownerBadge probe) ---> relayRequest.js relayRequest, bypassing createPeerPost',
+      'hub.js:2784 relaySummary (from relayGet, via ownerBadge probe) ---> relayRequest.js relayRequest, bypassing createPeerPost',
+      'hub.js:2784 relaySummary (from relaySearch, via ownerBadge probe) ---> relayRequest.js relayRequest, bypassing createPeerPost',
       'hub.js:1774 handleContact ---> relayRequest.js assertRelayUrl, bypassing createPeerPost',
       'hub.js:2651 handlePartnerCheck ---> relayRequest.js relayRequest, bypassing createPeerPost',
     ],
