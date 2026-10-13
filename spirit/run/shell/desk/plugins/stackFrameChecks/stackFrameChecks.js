@@ -12,8 +12,8 @@
 // button/link for each one of them, or even better, a run-dialog", "with a way to modify a row as well." and "put that
 // in the dialog if you want." So, top to bottom: the add form (gate, endpoint, paths, suites); THE DOOR LIST, the
 // main list, one row per door with its last verdict and one button, Open; the door's dialog, which holds the door's
-// values to edit and Save, Remove, and Run with Stop, its running time, then its verdict and every path around the gate
-// on its own line; then the goal's items (the work the doors cause); then the goal's chat.
+// values to edit and Save, Remove, and Run with Stop, its running time, then its verdict, one line per violator of the
+// gate, and the raw paths folded below them; then the goal's items (the work the doors cause); then the goal's chat.
 //
 // Loaded once into the Desk page, the first time its tab opens (shell/desk/desk.js, deskOpenPlugin), into its own pane
 // that stays for the page's life; it registers itself on
@@ -184,9 +184,16 @@
     else if (!v.ran) head = '<div class="job-start-error">' + (r.stopped ? 'stopped' : 'no verdict') + (v.why ? ': ' + esc(v.why) : '') + ', ' + esc(when(r.endedAt)) + '</div>';
     else if (v.green) head = '<div class="job-manifest-note">green: ' + v.of + ' production call(s), every one through the gate, ' + esc(when(r.endedAt)) + '</div>';
     else head = '<div class="job-start-error">red: ' + v.around + ' path(s) around the gate, of ' + v.of + ' production call(s), ' + esc(when(r.endedAt)) + '</div>';
-    var paths = (Array.isArray(v.paths) ? v.paths : []).map(function (p) { return '<div class="sfc-path" style="margin-top:0.25em">' + esc(p) + '</div>'; }).join('');
+    // ONE LINE PER VIOLATOR (goal/G22.3). Andy, 2026-10-13: "much better, gimme that when i press run:", lines such as
+    // "hub.js:300 sealedClaim (from handleClaim) ---> GET /api/relay/key, bypassing createPeerPost", made by the server
+    // half (violators.js). The raw paths stay one click away, folded under their own details.
+    var said = (Array.isArray(v.violators) ? v.violators : []).map(function (p) { return '<div class="sfc-violator" style="margin-top:0.25em">' + esc(p) + '</div>'; }).join('');
+    var saidLeft = Number(v.violatorsLeft) > 0 ? '<div class="job-manifest-note">and ' + v.violatorsLeft + ' more violator(s)</div>' : '';
+    var raw = Array.isArray(v.paths) ? v.paths : [];
+    var paths = raw.map(function (p) { return '<div class="sfc-path" style="margin-top:0.25em">' + esc(p) + '</div>'; }).join('');
     var left = Number(v.pathsLeft) > 0 ? '<div class="job-manifest-note">and ' + v.pathsLeft + ' more, kept with the run</div>' : '';
-    el.innerHTML = '<div class="label">Its run</div>' + head + (v.ran && v.why ? '<div class="job-manifest-note">' + esc(v.why) + '</div>' : '') + paths + left +
+    var folded = raw.length ? '<details style="margin-top:1em"><summary class="job-manifest-note">raw paths (' + (raw.length + (Number(v.pathsLeft) || 0)) + ')</summary>' + paths + left + '</details>' : '';
+    el.innerHTML = '<div class="label">Its run</div>' + head + (v.ran && v.why ? '<div class="job-manifest-note">' + esc(v.why) + '</div>' : '') + said + saidLeft + folded +
       (r.tail ? '<pre class="job-manifest-note" style="margin-top:1em">' + esc(r.tail) + '</pre>' : '');
   }
   // While its run is under way the elapsed time ticks each second, and every fifth tick asks again in case a published

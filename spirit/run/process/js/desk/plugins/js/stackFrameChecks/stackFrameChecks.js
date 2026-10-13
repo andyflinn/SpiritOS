@@ -79,13 +79,19 @@ const NODE_KINDS = ['http', 'https', 'fetch'];
 const FORM_MAX = 256;
 const PATHS_MAX = 16;
 const SUITES_MAX = 32;
-// What one answer may carry (appClient.ANSWER_MAX is 8377 bytes): a run's tail, and its paths around the gate, cut
-// to fit by BYTES (Andy's rule, 2026-10-10: every size check in bytes); what is left out is counted in pathsLeft, and the
-// whole list stays in the runs file.
+// What one answer may carry (appClient.ANSWER_MAX is 8377 bytes): a run's tail, its violator lines and its raw paths
+// around the gate, each cut to fit by BYTES (Andy's rule, 2026-10-10: every size check in bytes); what is left out is
+// counted in violatorsLeft and pathsLeft, and the whole list stays in the runs file. Since the violator lines
+// (goal/G22.3) the raw paths give them 2000 of their 5000.
 const TAIL_BYTES = 1500;
 const PATH_BYTES = 300;
-const PATHS_BYTES = 5000;
+const PATHS_BYTES = 3000;
+const VIOLATORS_BYTES = 2000;
 const KEPT_PATHS = 500;
+// THE RUN AS ANDY READS IT (goal/G22.3): one line per violator, "hub.js:300 sealedClaim (from handleClaim) ---> GET
+// /api/relay/key, bypassing createPeerPost". Andy, 2026-10-13: "much better, gimme that when i press run:". The rule
+// is violators.js's header.
+const { violators } = require('./violators.js');
 
 function readDoors() {
   let list = [];
@@ -233,21 +239,31 @@ module.exports = function (desk) {
   process.on('exit', function () { Object.keys(live).forEach(function (id) { try { live[id].child.kill(); } catch (e) { /* gone */ } }); });
 
   function noVerdict(why) { return { ran: false, green: false, around: 0, of: 0, paths: [], why: why }; }
-  // The verdict as one answer carries it: each path cut to PATH_BYTES, as many as fit PATHS_BYTES, the rest counted.
-  function verdictOut(v) {
-    v = v || noVerdict('never run');
-    const all = Array.isArray(v.paths) ? v.paths.map(String) : [];
-    const paths = [];
+  // As many of a list as fit total bytes, each cut to one bytes.
+  function fit(all, one, total) {
+    const out = [];
     let used = 0;
     for (const p of all) {
       let q = p;
-      while (Buffer.byteLength(q, 'utf8') > PATH_BYTES) q = q.slice(0, q.length - 8);
+      while (Buffer.byteLength(q, 'utf8') > one) q = q.slice(0, q.length - 8);
       const b = Buffer.byteLength(q, 'utf8');
-      if (used + b > PATHS_BYTES) break;
-      paths.push(q);
+      if (used + b > total) break;
+      out.push(q);
       used += b;
     }
-    return { ran: !!v.ran, green: !!v.green, around: Number(v.around) || 0, of: Number(v.of) || 0, paths: paths,
+    return out;
+  }
+  // The verdict as one answer carries it: its violator lines (goal/G22.3), formatted from every kept path with the door
+  // as it is now, then the raw paths, each list cut to fit and the rest counted.
+  function verdictOut(v, door) {
+    v = v || noVerdict('never run');
+    const all = Array.isArray(v.paths) ? v.paths.map(String) : [];
+    let lines = [];
+    try { lines = door && all.length ? violators(door, all, { root: REPO }) : []; } catch (e) { lines = []; }
+    const said = fit(lines, PATH_BYTES, VIOLATORS_BYTES);
+    const paths = fit(all, PATH_BYTES, PATHS_BYTES);
+    return { ran: !!v.ran, green: !!v.green, around: Number(v.around) || 0, of: Number(v.of) || 0,
+      violators: said, violatorsLeft: lines.length - said.length, paths: paths,
       pathsLeft: all.length - paths.length, why: String(v.why || '') };
   }
   function lastOf(id) {
@@ -432,17 +448,17 @@ module.exports = function (desk) {
 
   function runState(a) {
     const id = String(a.id || '');
-    doorById(doorsWithIds(), id, 'read');
+    const door = doorById(doorsWithIds(), id, 'read');
     const r = runs[id];
     const held = live[id];
     return { id: id, running: !!held, startedAt: r ? String(r.startedAt || '') : '', endedAt: held ? '' : r ? String(r.endedAt || '') : '',
       stopped: !!(r && r.stopped), runId: r ? String(r.runId || '') : '',
       tail: held ? tailOf(held.out) : r ? String(r.tail || '') : '',
-      verdict: verdictOut(held ? noVerdict('running') : r && r.verdict) };
+      verdict: verdictOut(held ? noVerdict('running') : r && r.verdict, door) };
   }
 
   const DOOR = { id: '', gate: '', endpoint: '', paths: [''], suites: [''] };
-  const VERDICT = { ran: true, green: true, around: 0, of: 0, paths: [''], pathsLeft: 0, why: '' };
+  const VERDICT = { ran: true, green: true, around: 0, of: 0, violators: [''], violatorsLeft: 0, paths: [''], pathsLeft: 0, why: '' };
   return {
     refuses: refuses,
     handles: handles,
