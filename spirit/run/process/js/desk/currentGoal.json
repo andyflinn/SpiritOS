@@ -1,5 +1,5 @@
 {
- "change": 57394,
+ "change": 57401,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -14,8 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G22.1",
-    "goal/G22.2"
+    "goal/G22.1"
    ],
    "go": false,
    "alone": false,
@@ -45,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -421,10 +420,11 @@
    "id": "goal/G22.2",
    "title": "Nobody but peerPost talks to a relay",
    "goal": "goal/G22",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G22"
@@ -490,7 +490,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Nobody but peerPost talks to a relay.\n\nDECIDED (Andy, 2026-10-13)\n- The purpose of this item is to add one row to the stack-frame test (oneDoorStacks.js, through tools/wirePaths.js): every request our production code sends to a relay must have peerPost on its stack. That is all it does.\n- Its red goes into another suite, stackFrameTestItems.js in spirit/test, which asserts that this row exists in the stack-frame test; it is red until the row is added and green after.\n- The row is committed failing on purpose: oneDoorStacks and goal/G22.1 are meant to fail, so that a pattern can be developed that guides the fixes for this kind of failure. The fixes come in later items, not in this one.\n\nFOUND (b29bf3ac, 2026-10-13; paths under spirit/run/)\n- Relay traffic is told apart by path: every request under /api/relay/, which a relay answers and a node never does, so a process asking its own node is not counted even when a lab relay also listens on loopback.\n- The probe also watches global fetch, which never passes through http.request.\n- The row is driven by agentOnboard.js (the only suite that runs offboard) and serverSurface.js.\n- The row finds 7 paths to a relay without peerPost: process/js/desk/offboard.js line 78 (fetch of the relay key); and through js/relayRequest.js, from js/hub.js (key at 300 and 2651, claim at 1084), js/ownerBadge.js 369 (directly and via hub 2784), and js/answerRelay.js 35 (key).",
@@ -623,10 +623,9 @@
    "id": "goal/G22.3",
    "title": "gg plugin: goal governance by a mounted plugin",
    "goal": "goal/G22",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
