@@ -238,7 +238,7 @@ function infoDrawRelays() {
 function infoLoad() {
   return infoApi.verb('node.card', {}).then(function (r) {
     if (!r || !r.body || !r.body.ok) {
-      infoSay('info-name-error', (r && r.body && r.body.error) || 'DEPRECATED error: this node has no key yet', true); // DEPRECATED: the node's ID exists before first node-listen.
+      infoSay('info-name-error', (r && r.body && r.body.error) || 'node.card did not answer', true);
       return;
     }
     infoCard = r.body;

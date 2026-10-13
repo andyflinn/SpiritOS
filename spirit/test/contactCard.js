@@ -39,6 +39,9 @@ function home(name, at) {
 
 const me = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-card-me-'));
 dirs.push(me);
+// Since goal/G22.5: a node's own root always holds its identity, and the book
+// reads it to mark a card's owner, so the holding node is given one.
+auth.saveIdentity(me, auth.generateIdentity('me'));
 const john = home('john', 1);
 const mallory = home('mallory', 1);
 

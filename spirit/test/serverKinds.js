@@ -76,6 +76,8 @@ function home(nodePort, userPort) {
       args: [{ name: 'port', type: 'number', label: 'Port', default: s[2] }],
     }));
   });
+  // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
+  require('../run/js/relayAuth.js').saveIdentity(root, require('../run/js/relayAuth.js').generateIdentity('serverkinds'));
   return root;
 }
 

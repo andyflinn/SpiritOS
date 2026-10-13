@@ -447,8 +447,7 @@ function setCard(rootDir, publicKey, cardText, via) {
   // list", "with your damned ownerBadge", "so the relays owner code and the puppets owner code should be the same."
   // Written only here, from the newest verified card: a refresh or a relabel never clears it (upsert carries it),
   // and only a newer card naming another owner, or none, sets it false.
-  const me = auth.loadIdentity(rootDir);
-  rows[i].owned = ownerBadge.ownedBy(fields.owner, me && me.publicKey);
+  rows[i].owned = ownerBadge.ownedBy(fields.owner, auth.loadIdentity(rootDir).publicKey);
   // The first sighting is the one that is worth anything, so it is not
   // overwritten by a later, weaker source: a contact first met by invite
   // does not become roll-sighted because a roll mentioned them again.

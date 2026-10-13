@@ -65,8 +65,9 @@ async function main() {
 
   // 3. THE SEAT.
   const card = await ask('node.card', {});
-  const me = ok(card) ? String(card.body.publicKey || '') : '';
-  if (!me) end(1, 'DEPRECATED error: offboard: the node has no key: ' + card.text); // DEPRECATED: the node's ID exists before first node-listen.
+  // A refused verb, not a missing key: the node's key exists from its first start (goal/G22.5).
+  if (!ok(card)) end(1, 'offboard: node.card was refused: ' + card.text);
+  const me = String(card.body.publicKey);
   let url = given;
   if (!url) {
     const relays = await ask('relay.search', { q: '' });

@@ -201,14 +201,11 @@ else
   warn "could not accept the owner as a contact yet: $OUT"
   echo "    (normal before the first join, or while your node is off; run this script again)"
 fi
-FACE_KEY=$(node -e 'try{process.stdout.write(require(process.argv[1]).publicKey||"")}catch(e){}' "$STATE/identity.json" 2>/dev/null)
-if [ -n "$FACE_KEY" ]; then
-  say "ON YOUR OWN NODE, accept this key as a contact (the face node):"
-  echo "      $FACE_KEY"
-else
-  # DEPRECATED: the node's ID exists before first node-listen.
-  warn "DEPRECATED error: the face node has no key yet: it gets one when it first joins the relay"
-fi
+# The face node made its key on its first start, above (relayAuth's first
+# load, goal/G22.5), so the key is there to hand over.
+FACE_KEY=$(node -e 'process.stdout.write(require(process.argv[1]).publicKey)' "$STATE/identity.json")
+say "ON YOUR OWN NODE, accept this key as a contact (the face node):"
+echo "      $FACE_KEY"
 
 say "caddy site for $FACE_DOMAIN"
 ( SPIRIT_FACE_DOMAIN="$FACE_DOMAIN" SPIRIT_FACE_PORT="$FACE_PORT" "$FACE_DIR/bash/face-tls" ) || {

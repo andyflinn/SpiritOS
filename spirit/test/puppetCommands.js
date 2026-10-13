@@ -49,6 +49,8 @@ function answerJson(res, status, body) {
 function world() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-puppet-commands-'));
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  // Since goal/G22.5: a node's root always holds its identity, and puppetIn reads it.
+  auth.saveIdentity(root, self);
   fs.writeFileSync(path.join(root, 'relay-state', 'owner.json'), JSON.stringify({ owner: owner.publicKey }));
   const sent = [];
   const seen = [];

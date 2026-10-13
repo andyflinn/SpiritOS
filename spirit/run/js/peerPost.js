@@ -398,7 +398,7 @@ function createPeerPost(opts) {
     // is why it is structural and cheap.
     if (answer && answer.ok && typeof answer.text === 'string' && seal.isSealed(answer.text)) {
       var mine = me();
-      var got = mine && seal.open(mine.sealPrivateKey, slot.toKey, mine.publicKey, answer.text);
+      var got = seal.open(mine.sealPrivateKey, slot.toKey, mine.publicKey, answer.text);
       answer.sealed = true;
       answer.text = got ? got.text : '';
       if (got) answer.sentAt = got.at;
@@ -801,9 +801,6 @@ function createPeerPost(opts) {
   // them. Absent for a recipient on a relay this node holds.
   function post(relayUrl, toKey, text, hints, how) {
     var id = me();
-    if (!id || !id.privateKey) { // DEPRECATED: the node's ID exists before first node-listen.
-      return Promise.resolve({ ok: false, status: 500, error: 'DEPRECATED error: this node has no identity' });
-    }
     if (!toKey) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
     if (typeof text !== 'string' || !text) {
       return Promise.resolve({ ok: false, status: 400, error: 'text required' });
@@ -1222,7 +1219,7 @@ function createPeerPost(opts) {
 
   function onRequest(relayUrl, body) {
     var id = me();
-    if (!id || !id.privateKey || !body || !body.from || !body.sig) return null;
+    if (!body || !body.from || !body.sig) return null;
 
     // The message that VERIFIED, so the minute never had to travel.
     var verified = auth.postSignatureFor(

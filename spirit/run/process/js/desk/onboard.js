@@ -91,8 +91,9 @@ async function main() {
     }
   }
   const card = await ask('node.card', {});
-  const me = ok(card) ? String(card.body.publicKey || '') : '';
-  if (!me) end(1, 'DEPRECATED error: onboard: the node has no key even after its claim: ' + card.text); // DEPRECATED: the node's ID exists before first node-listen.
+  // A refused verb, not a missing key: the node's key exists from its first start (goal/G22.5).
+  if (!ok(card)) end(1, 'onboard: node.card was refused: ' + card.text);
+  const me = String(card.body.publicKey);
 
   // 2. THE DESK NODE: the one node found under the desk label. Asked a few times while nobody answers, because the
   // stream to a relay just claimed on may still be opening; the search answers who is online.

@@ -49,6 +49,9 @@ function plantNode() {
   fs.writeFileSync(path.join(srv, 'keeper.json'), JSON.stringify({ label: 'keeper', kind: 'server', operated: 'node', args: [] }));
   fs.writeFileSync(path.join(srv, 'keeper.js'), 'setInterval(function () {}, 1000);\n');
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
+  // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
+  const auth = require('../run/js/relayAuth.js');
+  auth.saveIdentity(run, auth.generateIdentity('moduleids'));
   // Listed: this suite is about ids, not about the list (slim/G1.3 T6).
   includeList.add(run, 'process/js/counter');
   includeList.add(run, 'process/js/keeper');

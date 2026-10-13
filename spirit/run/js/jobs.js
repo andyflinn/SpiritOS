@@ -459,9 +459,9 @@ module.exports = function installJobs(spirit, port) {
     // to know whose node it runs on gets --node {name, publicKey, ownerKey}.
     // It never opens identity.json, which holds the private keys; nothing
     // private is ever in a server's arguments.
-    // Read here, not through loadIdentity. The node's identity exists, named
-    // by the machine name at the least, before the node listens (goal/G22.5),
-    // so --node is always there to hand over.
+    // The node's identity exists, named by the machine name at the least,
+    // from relayAuth's first load (goal/G22.5), so --node is always handed
+    // over.
     //
     // THE OWNER'S PUBLIC KEY RIDES ALONG (goal/G19.10). Andy, 2026-10-12:
     // "The appServer have a definite need/use for all 3: the node/puppets
@@ -474,14 +474,12 @@ module.exports = function installJobs(spirit, port) {
     // puts the three on spirit.core.node.const.
     // Read once, at the start: a server learns a changed owner when the node
     // starts it again.
-    let me = null;
-    try { me = JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8')); } catch (e) { me = null; } // DEPRECATED: the node's ID exists before first node-listen.
+    const me = require('./relayAuth').loadIdentity(rootDir);
     const owner = require('./relayAuth').loadOwner(rootDir, function () {});
-    // DEPRECATED: the node's ID exists before first node-listen.
-    const nodeArg = me && me.publicKey ? ['--node', JSON.stringify({
+    const nodeArg = ['--node', JSON.stringify({
       name: String(me.name || ''), publicKey: String(me.publicKey),
       ownerKey: owner && owner !== String(me.publicKey) ? owner : '',
-    })] : [];
+    })];
     const started = [];
     names.forEach(function (name) {
       const script = path.join(base, name, name + '.js');

@@ -578,9 +578,6 @@ function createPresence(opts) {
   // to receive.
   function start(probe) {
     identity = auth.loadIdentity(rootDir);
-    if (!identity || !identity.publicKey || !identity.privateKey) { // DEPRECATED: the node's ID exists before first node-listen.
-      return Promise.resolve([]);
-    }
     if (!job && jobs) {
       job = jobs.createJob('permanent', 'relay-presence', { presence: {} });
     }

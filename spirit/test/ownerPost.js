@@ -39,6 +39,8 @@ const other = auth.generateIdentity('other-puppet');
 function puppetNode(id) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerpost-'));
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  // Since goal/G22.5: a node's root always holds its identity, and puppetIn reads it.
+  auth.saveIdentity(root, id);
   fs.writeFileSync(path.join(root, 'relay-state', 'owner.json'),
     JSON.stringify({ owner: owner.publicKey }));
   const ran = [];

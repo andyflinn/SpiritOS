@@ -1476,8 +1476,7 @@ contactBook.syncMarks(ROOT_DIR);
       encode: wire.encode,
       auth: require('./relayAuth'),
       selfKey: function () {
-        const me = require('./relayAuth').loadIdentity(ROOT_DIR);
-        return (me && me.publicKey) || '';
+        return require('./relayAuth').loadIdentity(ROOT_DIR).publicKey;
       },
       log: function (line) { console.log(line); },
     }));
@@ -1883,9 +1882,8 @@ contactBook.syncMarks(ROOT_DIR);
         // confirm it came from my node..."), so a server tracks his
         // records by key like anybody's.
         const me = require('./relayAuth').loadIdentity(ROOT_DIR);
-        const own = { owner: true };
-        if (me && me.publicKey) own.key = me.publicKey;
-        if (me && me.name) own.label = String(me.name);
+        const own = { owner: true, key: me.publicKey };
+        if (me.name) own.label = String(me.name);
         return require('./apiDoor').answer(appClient, body && body.ask, own);
       }).then(function (a) {
         rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });

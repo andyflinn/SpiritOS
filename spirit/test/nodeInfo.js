@@ -728,15 +728,9 @@ function theFirstDescription() {
   }
   fs.rmSync(late, { recursive: true, force: true });
 
-  // A DIRECTORY WITH NO identity.json IN IT must not be a crash: the guard
-  // stays (DEPRECATED on a node, whose ID exists before first node-listen).
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-nokey-'));
-  if (nodeCard.ensureDescription(empty) === '') {
-    test.check('and a directory with no identity in it is left alone rather than thrown at');
-  } else {
-    test.fail('wrote into a directory with no identity');
-  }
-  fs.rmSync(empty, { recursive: true, force: true });
+  // Since goal/G22.5: the check that a directory with no identity.json in it
+  // is left alone is gone with the branch it tested. A node's own root
+  // always holds its identity, so nodeCard no longer handles one without.
 }
 
 // ── 7. A NODE WITH NO RELAY LIST AT ALL ──────────────────────────────

@@ -112,6 +112,9 @@ test.subHeading('a node is a puppet when owner.json names a key');
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-node-'));
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  // Since goal/G22.5: a node's own root always holds its identity, and
+  // puppetIn reads it to tell itself from its owner.
+  auth.saveIdentity(root, auth.generateIdentity('node'));
   const puppet = puppetMode.puppetIn(root, function () {});
   const key = auth.generateIdentity('owner').publicKey;
   fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), JSON.stringify({ owner: key, carries: [] }));

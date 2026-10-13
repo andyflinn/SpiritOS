@@ -307,17 +307,9 @@ define('relay-no-identity', {
   status: 503, presence: NONE, retry: 'no', fault: 'relay',
   texts: ['this relay has no identity'],
 });
-define('node-no-key', {
-  status: 409, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['DEPRECATED error: this node has no key yet'], // DEPRECATED: the node's ID exists before first node-listen.
-});
 define('relay-no-key', {
   status: 409, presence: NONE, retry: 'no', fault: 'relay',
   texts: ['this relay has no key yet'],
-});
-define('node-no-identity', {
-  status: 500, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['DEPRECATED error: this node has no identity'], // DEPRECATED: the node's ID exists before first node-listen.
 });
 define('request-failed', {
   status: 500, presence: NONE, retry: 'after', fault: 'node',
@@ -474,16 +466,6 @@ define('not-a-command', {
   note: 'The arrival is not an owner command: not a packet envelope at all, ' +
     'or addressed to an app, or carrying no verb. A chat line from the owner ' +
     'lands here rather than being dispatched.',
-});
-
-// A NODE THAT CANNOT SIGN CANNOT COMMAND, and the fault is this box rather
-// than the caller: the owner asked for something reasonable and the identity
-// it would be signed with could not be read.
-define('no-identity', {
-  status: 500, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['DEPRECATED error: no identity to sign with'], // DEPRECATED: the node's ID exists before first node-listen.
-  note: 'An owner command must be signed with this node identity key before ' +
-    'it goes out, and the key could not be loaded. Not something the caller did.',
 });
 // RETRY 'after' SINCE THE RE-ASK (cycle-10/R13): a peer that rotated refuses
 // with this, and the sender now asks for its new card and posts again

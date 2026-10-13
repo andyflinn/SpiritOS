@@ -134,6 +134,9 @@ const ROWS = [
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaysearch-'));
     fs.mkdirSync(path.join(root, 'shell', 'natter'), { recursive: true });
     fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+    // Since goal/G22.5: a node's root always holds its identity, and the relay probe is asked with its key.
+    const auth = require('../run/js/relayAuth.js');
+    auth.saveIdentity(root, auth.generateIdentity('relaysearch'));
     // Since goal/G19.15 the node's relay list is node.db's relays table, keyed by relay key.
     require('../run/js/relayKeys.js').list(root, 'http://127.0.0.1:9', 'probe', 'RELAYKEY-probe');
     const hub = require('../run/js/hub.js').createHub(root);

@@ -40,6 +40,8 @@ fs.mkdirSync(dir, { recursive: true });
 fs.writeFileSync(path.join(dir, 'pinger.json'), JSON.stringify({ name: 'pinger', kind: 'server', operated: 'node', args: [] }));
 fs.writeFileSync(path.join(dir, 'pinger.js'), 'require(' + JSON.stringify(HELPER) + ').serve(' +
   "{ ping: { request: { say: '' }, reply: { pong: '' }, handler: function (a) { return { pong: 'pong ' + a.say }; } } });\n");
+// Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
+require('../run/js/relayAuth.js').saveIdentity(root, require('../run/js/relayAuth.js').generateIdentity('procpipe'));
 
 function waitFor(fn, ms) {
   const until = Date.now() + (ms || 6000);

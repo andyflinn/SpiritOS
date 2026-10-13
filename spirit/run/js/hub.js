@@ -159,16 +159,13 @@ function signedClaim(rootDir, name, invite, inviteLabel) {
   // claim only names it — the claimed name over an empty name or the
   // machine-name default, keys never touched (relayAuth.nameIdentity).
   const id = auth.nameIdentity(rootDir, name);
-  // DEPRECATED: the node's ID exists before first node-listen.
-  if (!id) throw new Error('DEPRECATED error: this node has no identity');
   // AND THE OTHER HALF OF THE CARD.
   //
   //   Andy: "the node assigns the first name when redeeming an invite.
   //   but on boot: the node should fill the description."
   //
-  // server.js fills the description on every boot, and the node's key
-  // exists before that boot listens (goal/G22.5), so this finds it filled
-  // and writes nothing. DEPRECATED: the node's ID exists before first node-listen.
+  // server.js fills the description on every boot, so this finds it
+  // filled and writes nothing; it stays for a description emptied by hand.
   try { nodeCard.ensureDescription(rootDir); }
   catch (e) { /* a caption must never be the reason a claim fails */ }
   const body = {
@@ -331,7 +328,7 @@ function markMine(rootDir, text) {
   catch (e) { return text; }
   if (!parsed || typeof parsed !== 'object') return text;
   var peer = parsed.peer || parsed;
-  parsed.mine = !!(id && id.publicKey && peer && peer.publicKey === id.publicKey);
+  parsed.mine = !!(peer && peer.publicKey === id.publicKey);
   return JSON.stringify(parsed);
 }
 
@@ -448,8 +445,7 @@ function searchPeople(people, q) {
 
 function buildPeople(rootDir) {
 
-  var id = auth.loadIdentity(rootDir);
-  var myKey = (id && id.publicKey) || '';
+  var myKey = auth.loadIdentity(rootDir).publicKey;
 
   // The address book, not just the people this node listens to: somebody
   // held is waiting to be accepted and somebody blocked has to stay
@@ -710,8 +706,7 @@ function unknownPolicy(rootDir) {
 function listenSet(rootDir) {
   var allowed = Object.create(null);
   contactBook.contacts(rootDir).forEach(function (row) { allowed[row.publicKey] = true; });
-  var id = auth.loadIdentity(rootDir);
-  if (id && id.publicKey) allowed[id.publicKey] = true;
+  allowed[auth.loadIdentity(rootDir).publicKey] = true;
   return allowed;
 }
 
@@ -1571,7 +1566,7 @@ function createHub(rootDir) {
     return { ok: true, status: 200, items: r.items, more: r.more,
       // One fact beside the pairs, never a row: what to tell somebody
       // adding you (the page's "your key ends …").
-      selfTail: self && self.publicKey ? keyTail(self.publicKey) : null };
+      selfTail: keyTail(self.publicKey) };
   }
 
   function contactGet(body) {
@@ -1647,8 +1642,7 @@ function createHub(rootDir) {
     readJsonBody(req).then(function (body) {
       var publicKey = String((body && body.publicKey) || '').trim();
       if (!publicKey) { fail(res, 400, 'publicKey required'); return; }
-      var id = auth.loadIdentity(rootDir);
-      if (id && id.publicKey === publicKey) {
+      if (auth.loadIdentity(rootDir).publicKey === publicKey) {
         fail(res, 400, 'that key is this node');
         return;
       }
@@ -1818,8 +1812,7 @@ function createHub(rootDir) {
         //
         // What it still refuses is acquiring THIS NODE, a local check that
         // needs nobody.
-        var id = auth.loadIdentity(rootDir);
-        if (id && id.publicKey === publicKey) {
+        if (auth.loadIdentity(rootDir).publicKey === publicKey) {
           fail(res, 400, 'that key is this node');
           return;
         }
@@ -1940,8 +1933,7 @@ function createHub(rootDir) {
   // claim. Called by server.js on every owner event.
   function adoptClaim(ev) {
     if (!ev || ev.kind !== 'claim' || !ev.key || ev.owner) return null;
-    var me = auth.loadIdentity(rootDir);
-    if (me && me.publicKey === String(ev.key)) return null;
+    if (auth.loadIdentity(rootDir).publicKey === String(ev.key)) return null;
     try {
       // Not added when there is no room (0021) — the claim still happened,
       // and the memory still has them as a stranger.
@@ -1964,7 +1956,6 @@ function createHub(rootDir) {
   // both sides of a question should not also be holding an HTTP response.
   function handleNodeCard(req, res) {
     var card = nodeCard.read(rootDir);
-    if (!card) { fail(res, 409, 'DEPRECATED error: this node has no key yet'); return; } // DEPRECATED: the node's ID exists before first node-listen.
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(Object.assign({ ok: true }, card)));
   }
@@ -2215,9 +2206,6 @@ function createHub(rootDir) {
     const id = packet.randomId();
     const cmd = JSON.stringify({ verb: named, body: body || {} });
     const me = auth.loadIdentity(rootDir);
-    if (!me || !me.privateKey) { // DEPRECATED: the node's ID exists before first node-listen.
-      return Promise.resolve({ ok: false, status: 500, error: 'DEPRECATED error: no identity to sign with' });
-    }
     const sig = auth.sign(me.privateKey, auth.commandMessage(me.publicKey, toKey, id, cmd));
     const made = packet.encode('', { cmd: cmd, sig: sig }, { id: id });
     // A REFUSAL IS A VALUE, NOT A THROW, and the sentence is the
@@ -2347,8 +2335,7 @@ function createHub(rootDir) {
       // Andy: "if the userbox is offline, search can revert to memory".
       var configured = ownerBadge.configuredUrls(rootDir);
       var urls = router ? configured : [];
-      var me = auth.loadIdentity(rootDir);
-      var myKey = (me && me.publicKey) || '';
+      var myKey = auth.loadIdentity(rootDir).publicKey;
       var found = Object.create(null);
       var truncated = false;
       // ── A RELAY THAT CANNOT SEARCH IS NOT A RELAY WITH NOBODY ON IT ──
@@ -2787,7 +2774,7 @@ function createHub(rootDir) {
     var me = auth.loadIdentity(rootDir);
     var p = ownerBadge.probe(rootDir, function (url, method, pathname) {
       return relayRequest(url, method, pathname, null);
-    }, me && me.publicKey);
+    }, me.publicKey);
     probeCache = { at: Date.now(), promise: p };
     p.catch(function () { if (probeCache && probeCache.promise === p) probeCache = null; });
     return p;
@@ -2898,7 +2885,7 @@ function createHub(rootDir) {
     var me = auth.loadIdentity(rootDir);
     ownerBadge.probe(rootDir, function (url, method, pathname) {
       return relayRequest(url, method, pathname, null);
-    }, me && me.publicKey)
+    }, me.publicKey)
       .then(function (summary) {
         // The roster sweep that rode this probe is gone (2026-09-19) — see
         // the note where reconcileMembers stood.

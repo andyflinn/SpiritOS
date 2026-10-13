@@ -17,9 +17,6 @@
 // a comment wraps across two lines is still found.
 //
 // WHAT IS EXCUSED:
-//   - a line carrying the marker, or the line just below one: the branches
-//     the ruling keeps as code carry "// DEPRECATED: the node's ID exists
-//     before first node-listen." beside them;
 //   - a dated record (a review, a cycle) that says the old thing with a
 //     "Since goal/G22.5" line within the six lines after it: history is not
 //     rewritten, it is answered;
@@ -107,7 +104,6 @@ function scan(rel) {
     while (at !== -1) {
       const first = lineAt(at), last = lineAt(at + p.length - 1);
       let excused = false;
-      for (let i = Math.max(0, first - 1); i <= last; i++) if (lines[i].indexOf(MARKER) !== -1) excused = true;
       for (let i = last; i <= Math.min(lines.length - 1, last + 6); i++) if (lines[i].indexOf(ANSWERED) !== -1) excused = true;
       if (!excused) hits.push(rel + ':' + (first + 1) + ' "' + p + '"');
       at = text.indexOf(p, at + 1);
@@ -125,20 +121,50 @@ else test.fail('too few files read to mean anything', list.length + ' files');
 const hits = [];
 list.forEach(function (rel) { hits.push.apply(hits, scan(rel)); });
 if (!hits.length) {
-  test.check('no line carries a phrase of the keyless-node idea, unless it is marked DEPRECATED or answered by a dated line');
+  test.check('no line carries a phrase of the keyless-node idea, unless it is answered by a dated line');
 } else {
   test.fail(hits.length + ' lines still say a node may lack its key before it listens', hits.slice(0, 40).join('; ') + (hits.length > 40 ? '; …' : ''));
   hits.forEach(function (h) { test.comment(h); });
 }
 
-// AND THE MARKER IS THE RULING'S WORDS, not a paraphrase that drifts.
-const marked = [];
-list.forEach(function (rel) {
+// THE MARKED BRANCHES ARE GONE (Andy, 2026-10-13, goal/G22.5 box): "We still
+// need to eliminate all the dead code-branches, that handle 'node has no
+// identity yet'." The marker "DEPRECATED: the node's ID exists before first
+// node-listen." named them for removal; since goal/G22.5 they are removed, so
+// no file in spirit/run, bash or the desk tools carries the marker (or a
+// paraphrase of it) or a "DEPRECATED error:" text, whatever its extension,
+// and the catalogue holds none of their codes. The desk's currentGoal.json
+// snapshot quotes the goal's chat and is excused as above.
+function codeFiles() {
+  return execSync('git ls-files --cached --others --exclude-standard -- spirit/run bash',
+    { cwd: REPO, encoding: 'utf8' }).split('\n').filter(Boolean).map(function (f) {
+    return f.split('\\').join('/');
+  }).filter(function (f) {
+    if (f.indexOf('spirit/run/brains/') === 0) return false;
+    if (f === 'spirit/run/process/js/desk/currentGoal.json') return false;
+    if (f.indexOf('/node_modules/') !== -1) return false;
+    if (/\.(db|png|jpg|jpeg|gif|ico|webp|woff2?|ttf|gguf|bin|zip|gz)$/i.test(f)) return false;
+    return fs.existsSync(path.join(REPO, f));
+  });
+}
+const branches = [];
+const seen = {};
+codeFiles().concat(list).forEach(function (rel) {
+  if (seen[rel]) return;
+  seen[rel] = true;
   fs.readFileSync(path.join(REPO, rel), 'utf8').split(/\r?\n/).forEach(function (line, i) {
-    if (/DEPRECATED: the node/.test(line) && line.indexOf(MARKER) === -1) marked.push(rel + ':' + (i + 1));
+    if (line.indexOf(MARKER) !== -1 || /DEPRECATED: the node/.test(line) || line.indexOf('DEPRECATED error:') !== -1) branches.push(rel + ':' + (i + 1));
   });
 });
-if (!marked.length) test.check('every DEPRECATED marker carries the ruling verbatim');
-else test.fail('a DEPRECATED marker is not verbatim', marked.join(', '));
+if (!branches.length) test.check('no DEPRECATED no-identity branch and no "DEPRECATED error:" text is left in spirit/run, bash or the desk tools');
+else {
+  test.fail(branches.length + ' lines still carry a no-identity branch', branches.slice(0, 40).join(', '));
+}
+
+const errors = require('../run/js/spiritErrors.js');
+['node-no-key', 'node-no-identity', 'no-identity'].forEach(function (code) {
+  if (!errors.byCode(code)) test.check('spiritErrors defines no ' + code);
+  else test.fail('spiritErrors still defines ' + code, JSON.stringify(errors.byCode(code).texts));
+});
 
 test.reportSuccessFailureCount();

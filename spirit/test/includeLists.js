@@ -89,6 +89,9 @@ function plantNode(label, servers) {
       'require("fs").writeFileSync(' + JSON.stringify(path.join(marks, label + '-' + name)) + ', "ran");\nsetInterval(function () {}, 1000);\n');
   });
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
+  // Since goal/G22.5: a node's root always holds its identity, and the servers it starts are handed it (--node).
+  const auth = require('../run/js/relayAuth.js');
+  auth.saveIdentity(run, auth.generateIdentity(label));
   return run;
 }
 // An app under the node's shell/, intrinsic or not.

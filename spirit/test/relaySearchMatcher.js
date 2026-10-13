@@ -40,6 +40,9 @@ const roots = [];
 function freshRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaysearchmatcher-'));
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  // Since goal/G22.5: a node's root always holds its identity, and the relay probe is asked with its key.
+  const auth = require('../run/js/relayAuth.js');
+  auth.saveIdentity(root, auth.generateIdentity('relaysearchmatcher'));
   roots.push(root);
   return root;
 }
