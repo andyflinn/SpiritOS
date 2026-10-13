@@ -1,5 +1,5 @@
 {
- "change": 56649,
+ "change": 56656,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -7,10 +7,10 @@
    "id": "goal/G21",
    "title": "More Mechanical constraint imposed in Desk.",
    "goal": "",
-   "status": "goal run passed",
+   "status": "closed",
    "with": "ollama agent node",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -42,7 +42,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 0,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -1979,10 +1979,9 @@
    "id": "goal/G21.6",
    "title": "Only the agents a line names may take it",
    "goal": "goal/G21",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
