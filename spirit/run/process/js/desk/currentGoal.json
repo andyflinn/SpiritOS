@@ -1,5 +1,5 @@
 {
- "change": 57826,
+ "change": 58089,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -10,11 +10,13 @@
    "status": "goal run started",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G22.4"
+    "goal/G22.4",
+    "goal/G22.7"
    ],
    "go": false,
    "alone": false,
@@ -44,12 +46,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 5,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1217,8 +1221,7 @@
     "goal/G22"
    ],
    "blocked": [
-    "goal/G22.5",
-    "goal/G22.6"
+    "goal/G22.5"
    ],
    "go": false,
    "alone": false,
@@ -2103,6 +2106,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T20:39:43.790Z",
      "text": "deskVerify: passed, at d403629b (pulled). 10 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T23:29:30.899Z",
+     "text": "deskVerify: passed, at 01e4761a (pulled). 10 suites ran green."
     }
    ]
   },
@@ -2110,9 +2119,12 @@
    "id": "goal/G22.6",
    "title": "Relay answers unknown IDs asking for public services",
    "goal": "goal/G22",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G22.4"
    ],
@@ -2120,20 +2132,136 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/answerRelay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeCard.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerBadge.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/partnerAvailability.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peerPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/presenceNode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayAuth.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayDump.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayStatus.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayStore.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/router.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/spiritErrors.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/natterDetails/natterDetails.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/labRelaySurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceWire.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/protocolSurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayStrangerDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -2174,9 +2302,74 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Relay answers unknown IDs asking for public services.\n\nDECIDED (Andy, 2026-10-13)\n- The fix belongs in the relay: it corrects how a relay answers an unknown ID that wants its public services.\n- The relay's one door accepts a signed request from a key it does not know, for its public services only (its key, a claim), answers it like any reply, and counts it against that stranger's rate; so a node reaches a relay only through peerPost, and the public side routes close.\n- This blocks goal/G22.4: once it lands, the hub asks peerPost for a relay's key and for a claim.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- relay.js: the peer door (post, reply) refuses any signer it does not know; a stranger gets \"no such peer\".\n- relayServer.js lines 485 to 501: the public routes, GET /api/relay/key, GET /api/relay/stream, POST /api/relay/claim, GET /api/version, beside post and reply.\n- It changes the wire, so it is a flag day for every relay and node together.",
-   "version": 1,
-   "checks": [],
+   "box": "Relay answers unknown IDs asking for public services.\n\nDECIDED (Andy, 2026-10-13)\n- The fix belongs in the relay: it corrects how a relay answers an unknown ID that wants its public services.\n- The relay's one door accepts a signed request from a key it does not know, for its public services only (its key, a claim), answers it like any reply, and is held to the address table below; so a node reaches a relay only through peerPost, and the public side routes close.\n- This blocks goal/G22.4: once it lands, the hub asks peerPost for a relay's key and for a claim.\n- The door first looks at packets addressed to the relay itself: one from an unknown key is read and answered if it is the card ask (answered with the relay's key) or a claim, and refused otherwise; only packets for others need a known sender.\n- One plaintext exception stays, the card ask; there is no separate key request.\n- The relay's public door, the one any curl can reach without key or signature, is killed in this item: /api/relay/key, /api/relay/claim, /api/version and the brochure all close. The relay keeps its one door (post) and its members' stream.\n- Every comment and document that mentions the killed door (the public routes, claims redeemed there, curl checks of /api/version or /api/relay/key) is corrected in this item as well.\n- Partnering as a permission goes, in this item: a relay carries posts to its members from any relay, the member's one slot in flight counted per sender (the October 10 review's M5) so no stranger can keep a member busy; the partner roll and the partner budget are removed; design/relay/PARTNERS.md is reduced to a dated record of its own obsolescence.\n- Strangers are held by one table of requesting addresses, as many entries as the relay has members, each entry: request count, time of last request, originating address, ban time (starting at 1000 ms). An address that asks again before its ban time is over has its ban time doubled. A new address takes the first expired slot; when none is expired, its request is refused as busy. The table lives in memory only; nothing about a stranger is written to disk. An address that comes back after its ban ended starts again at 1 s, since a thousand users may sit behind one address. An IPv6 address is counted by its /64 block, since one machine owns the whole block. The first request from an unknown ID is answered and puts that ID's address into the table; only a repeat is held to the ban. If the table is full with nothing expired, that first request is refused with the error busy. It replaces the per-address claim limit.\n- A stranger addresses the relay itself with an empty target (to: \"\"), since it does not know the relay's key yet; a stranger's post has the same size limit as any post.\n- The claim keeps its inner signature, so the claim itself does not change shape.\n- bash/status, which checked a relay with curl, checks it with a small node script that sends the card ask instead.\n\nFOUND (D:/SpiritOS, 2026-10-13; paths under spirit/run/js/)\n- relay.js: the peer door (post, reply) refuses any signer it does not know; a stranger gets \"no such peer\".\n- relayServer.js lines 485 to 501: the public routes, GET /api/relay/key, GET /api/relay/stream, POST /api/relay/claim, GET /api/version, beside post and reply.\n- It changes the wire, so it is a flag day for every relay and node together.",
+   "version": 10,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should the relay give its key in its existing card-ask answer, keeping one plaintext exception, instead of a new key request?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T21:12:36.216Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Count strangers per key and in one shared budget for all strangers, keeping the per-IP claim limit too?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T21:46:13.092Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T21:51:37.210Z",
+     "placedBy": "desk",
+     "placedKey": ""
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T23:37:53.360Z",
+     "placedBy": "desk",
+     "placedKey": ""
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/answerRelay.js, spirit/run/js/hub.js, spirit/run/js/nodeCard.js, spirit/run/js/ownerBadge.js, spirit/run/js/partnerAvailability.js, spirit/run/js/peerPost.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/relayAuth.js, spirit/run/js/relayDump.js, spirit/run/js/relayServer.js, spirit/run/js/relayStatus.js, spirit/run/js/relayStore.js, spirit/run/js/router.js, spirit/run/js/server.js, spirit/run/js/spiritErrors.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-13T23:43:57.163Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Behind Caddy every stranger is 127.0.0.1, so the table is one entry on the VPS: add an item to read X-Forwarded-For before the flag-day tag?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T23:46:48.790Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -2195,8 +2388,445 @@
      "key": "",
      "at": "2026-10-13T20:49:47.788Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T20:49:53.823Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:50:34.672Z",
+     "text": "Taking the red. Because this changes the wire for every relay and node, the red comes with a short design for you first: how a stranger asks a relay for its key on the one door before it can seal anything to it, how the claim then travels, which routes close, and what the flag day breaks. Nothing is built until you have read it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:55:45.797Z",
+     "text": "The design, in short (nothing built; a red suite relayStrangerDoor.js is written, 8 red as it should be):\n1. Asking the key: a stranger posts on the one door, addressed to the relay itself, the request \"your key\", signed but not sealed (it cannot seal yet, it has no key to seal to). The relay checks the signature and the stranger's rate, and answers with a reply it signs, carrying its signed key statement; the node checks it and pins the key.\n2. Claiming: then an ordinary sealed post to the relay's key, carrying the claim the hub builds today; the relay answers sealed to the card that came with it.\n3. Anything else from a stranger still gets today's refusal.\n4. GET /api/relay/key and POST /api/relay/claim close. peerPost gains relayKey(url) and claim(url, ...); in G22.4 the hub switches to them.\n5. Flag day: every node and relay together; no stored data changes shape, old invites stay good.\nNine questions for you, one at a time. The first: the relay already answers one plaintext request from strangers, the card ask. Should the key ride on that existing answer, keeping one plaintext exception, instead of a new \"key\" request making two?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T20:58:06.661Z",
+     "text": "Q1: Should the relay give its key in its existing card-ask answer, keeping one plaintext exception, instead of a new key request?\n\nis the existing card-ask a plain-text, \"public\" request?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T20:58:34.567Z",
+     "text": "Plaintext yes, public no. The card ask is the one packet allowed unsealed (relay.js isCardAsk, around line 2993): \"give me your card\", nothing else may ride beside it. But it goes through the one signed door, and the door refuses any signer it does not know before the ask is even read; so only members can send it today, not strangers.\nSo riding the key on it still needs the same change: the door letting a stranger's signed card ask through. The difference is only whether that stranger may then ask one thing (the card ask, answered with the relay's key) or a new \"key\" request beside it. One exception instead of two is the plainer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:00:38.006Z",
+     "text": "Hmmm: \"the door refuses any signer it does not know before the ask is even read;\"\n\nthe door is allowed to inspect packages addressed to itself, in's that self-evident?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:00:59.256Z",
+     "text": "Yes, it is, and today the order is backwards: routePost refuses an unknown sender (relay.js around line 3757) before it looks at who the packet is for. Put the other way round, the fix is one sentence: the door first looks at packets addressed to itself; one from a stranger is read and answered if it is the card ask (answered with the relay's key) or a claim, and refused otherwise; only packets for others need a known sender.\nThat also settles Q1: one plaintext exception, the card ask, no new key request. Record both?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:02:16.331Z",
+     "text": "what do you mean by \"no new key request\" ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:02:34.764Z",
+     "text": "The design first proposed a second kind of packet, {\"key\": true}, meaning \"relay, give me your key\", to sit beside the card ask {\"card\": true} as a second unsealed packet.\n\"No new key request\" means we don't add that second kind: a stranger sends the card ask it already knows how to send, and the relay's answer to a card ask addressed to itself carries its key. So there stays exactly one packet that may travel unsealed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:04:28.890Z",
+     "text": "understood.\n\nsooo: is the second door (the public one) to relay still needed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:04:51.063Z",
+     "text": "For key and claim, no: they move onto the one door and their routes close.\nWhat would be left on it (relayServer.js lines 485 to 501):\n- GET /api/relay/stream: not really public; it is the members' own connection, signed and refused to strangers. It is the return half of the one door, so it stays.\n- GET /api/version: the commit the relay runs, asked by deploy checks with curl from anywhere, no key needed. It gives away nothing the repo does not hold.\n- The brochure: the page a browser gets at the relay's address.\nSo the public door shrinks to version and the brochure, neither of which acts on anything. Keep those two, or move version onto the one door as well?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:07:23.717Z",
+     "text": "HUH?!?\n\n\"GET /api/relay/stream: not really public; it is the members' own connection, signed and refused to strangers. It is the return half of the one door, so it stays.\"\n\nWHY? why on earth does the peerPost infrastructure, require a public entrypoint? that's just fucking ridiculous, explain why this cannot be done inside the peerPost infrastructure?\n\nin english, credibly."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:07:47.242Z",
+     "text": "I said it badly. The stream is not a public entrypoint beside peerPost; it IS peerPost's other half.\npeerPost speaks to a relay over plain web requests, and a web request only goes one way: the node asks, the relay answers. Sending is easy that way: a post is one request (POST /api/relay/post). But a relay cannot start a request to a node, because your node sits behind your router and has no address the relay can reach.\nSo for anything to arrive (a post from someone else, a reply that comes later), the node opens one request to its relay and keeps it open, and the relay writes each arriving packet down it. That held-open request is GET /api/relay/stream. peerPost opens it (holdStreams, through presenceNode and sseClient), signs it, and the relay refuses it to anyone not a member.\nSo the one door is two routes because the wire has two directions: post goes up, stream comes down. Both are peerPost, nothing else uses them. The public side door that is not peerPost is only key and claim (closing now), version and the brochure."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:10:36.450Z",
+     "text": "understood.\n\nI'm talking about the relays other door, the one any curl-call can reach, without key or signature, the one where claims were redemed in the old days....\n\nWhy should THAT still be needed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:11:13.157Z",
+     "text": "It isn't. Once key and claim are on the one door, none of our code calls that public door at all: I checked, nothing under spirit/run or bash asks a relay's /api/version. What would remain on it is only:\n- /api/version, read today by 9 test suites as \"is the relay up yet\" and by people with curl;\n- the brochure, the page a browser sees at the relay's address.\nNeither is needed. The suites can ask readiness through the one door, and a deploy check can too. So the plain answer is: close the public door completely, version and brochure included, and the relay has one door and its stream. Close it all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:12:18.388Z",
+     "text": "that's what i was asking.\n\nso that door gets killed. in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:12:52.456Z",
+     "text": "Recorded (box v2): the door reads packets addressed to itself first, the card ask carries the key, and the public door dies in this item, version and brochure too.\nNext question, the stranger's rate. A new key costs nothing to make, so a limit per key alone gives every fresh key a full budget. I'd count strangers twice: a small limit per key, and one shared budget for all strangers on the relay, so a flood of fresh keys runs dry together. Today the claim is limited per IP (relay.js around line 1568), which can stay as a third fence. Do it that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:13:43.399Z",
+     "text": "also\n\nall comments mentioning the killed door in relay, gets corrected as well."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:14:02.625Z",
+     "text": "Recorded (box v3): every comment and document mentioning the killed door is corrected in this item too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:16:03.779Z",
+     "text": "how does this affect partnering,\n\nif any node/relay can ask for cards from any relay?\n\nDoes partnering still need formality?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:16:33.491Z",
+     "text": "It changes only how a partner is looked up, not what partnering is.\nA card ask tells a stranger who a relay is: its key and its owner. It gives no right to anything; anything beyond the card ask and a claim is still refused to a stranger.\nPartnering is a right: one relay routes posts for the other's members, from its own partner budget, and both owners sign for it (design/relay/PARTNERS.md). Knowing a relay's key does not give that, so the formality stays.\nWhat changes: today the partner check asks the far relay's key over the public route (hub.js around line 2620); with the door gone, it sends the card ask on the one door instead, and gets the same key and owner, signed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:18:20.728Z",
+     "text": "well, cant any relay that has a route in hand that goes via an \"unpartnered\" relay,\n\nif it's askes that unpartnered relay to forward a request to one of its members, why would it refuse?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:18:47.842Z",
+     "text": "Nothing technical forces it to refuse. The post is sealed to the member and signed by the node that wrote it; the relay in between only carries it, and the member can check who wrote it.\nThe refusal is a policy choice, made in PARTNERS.md for two reasons: cost (the receiving relay's owner pays for carrying traffic their members never asked for, from senders nobody there vetted) and consent (both owners agree to carry each other's traffic).\nWith a stranger rate on the door, as in the question above, the cost reason mostly goes: a relay could carry posts to its members from anyone, counted against that stranger's budget, and partnering would become optional, a bigger budget between friends rather than a permission.\nThat is a bigger change than this item and yours to decide; if you want it, it is its own item after G22.6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:20:37.911Z",
+     "text": ".... but the one request,, one -reply in flight for every member already gates that cost, so cost is a bad argument, the cost will never exceed what the one-in-flight per member already gates.+"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:21:01.683Z",
+     "text": "Right, for the load: one request in flight per member caps what any number of senders can cost a relay, so cost is no argument.\nWhat the same gate does not cover is the member's own availability: the October 10 review (M5) found that one member can keep another \"busy\" by holding that one slot (5 s each time). Open the door to every relay's senders and any stranger can do it, so the slot would need counting per sender, as the review already asks.\nSo the honest reasons left are that one (fix the slot per sender) and consent. If neither stops you, partnering becomes optional; that is its own item after G22.6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:22:25.488Z",
+     "text": "this: \"What the same gate does not cover is the member's own availability\"\n\nthat limitation is exactly the same as relay's member to member availability issue, where is the difference, exactly?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:22:47.044Z",
+     "text": "In the mechanism, none: it is the same slot and the same flaw.\nThe only difference is who can use it. Today only members can hold a member's slot, and a member came in by invite and can be removed by the owner. With the door open to all senders, so can anyone with a fresh key, which costs nothing and answers to nobody.\nSo it is one fix for both: count the slot per sender (the review's M5), and then strangers add no new risk. That argues for doing M5 before or with opening the door, not against opening it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:23:46.673Z",
+     "text": "the partner.md shit will be reduced to a document of its own obsolescence."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:24:08.697Z",
+     "text": "Understood: partnering as a permission goes, and PARTNERS.md becomes a dated record saying so and why.\nThat is relay work beyond G22.6, so I'd make it its own item after it: \"Any relay carries posts to its members; partnering obsolete\", which takes the review's M5 first (the member's slot counted per sender), then opens forwarding to every relay, removes the partner roll and budget, and rewrites PARTNERS.md as its own obsolescence. Say add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:24:13.768Z",
+     "text": "in this ITEM"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:24:34.843Z",
+     "text": "In this item, then (box v4): the slot per sender first, forwarding open to any relay, partner roll and budget removed, PARTNERS.md reduced to a dated record of its obsolescence."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:25:23.355Z",
+     "text": "In this item, then (box v4): the slot per sender first, forwarding open to any relay, partner roll and budget removed, PARTNERS.md reduced to a dated record of its obsolescence.\n\nexactly, note this in the box.\nas decision."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:25:41.212Z",
+     "text": "It is in the box under DECIDED (v4), as your decision."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:26:26.817Z",
+     "text": "Q2: Count strangers per key and in one shared budget for all strangers, keeping the per-IP claim limit too?\n\nexplain. english."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:26:48.809Z",
+     "text": "A \"stranger\" is a key the relay does not know. Anyone can make a new key in a millisecond, for free, as many as they like.\nIf the relay only limits each stranger key (say 10 asks a minute per key), an attacker makes a thousand keys and gets ten thousand asks a minute, because every new key starts with a fresh allowance.\nSo I'd add a second, shared limit: all strangers together may ask, say, 300 times a minute, whoever they are. A flood of new keys then hits that ceiling, and members are untouched because they never count against it.\nThe third fence already exists: a relay limits claims per internet address (relay.js around line 1568). It catches someone who makes many keys from one machine. I'd keep it.\nSo: a small limit per stranger key, a shared limit for all strangers, and the existing per-address claim limit. The numbers are yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:30:04.289Z",
+     "text": "the relay flat out refused any relaying job if the target key is not a member, it's own key is neither recorded nor remembered."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:30:25.401Z",
+     "text": "Yes, and that stays: a post whose target is not a member is refused outright, so opening the door to any sender can only ever reach this relay's own members.\nAnd the stranger's key is not recorded: the counters I proposed live in memory only, for the minute they count, and are dropped after, the way the per-address claim limit works today. Nothing about a stranger is written to the relay's disk."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:32:21.045Z",
+     "text": "so what is that 300 limit per minute thing for?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:32:44.076Z",
+     "text": "For the asks addressed to the relay itself, the card ask and the claim. Those reach no member, so the one-slot-per-member gate never sees them, yet each costs the relay work: checking a signature, signing an answer, for a claim also opening a sealed packet.\nA per-key limit cannot bound that, since keys are free. The shared cap is the one number that bounds the relay's total work for strangers per minute, however many keys they make; past it, strangers wait a minute and members are never affected.\nPosts from strangers to members need no such cap: the member's slot already gates them, as you said."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:43:59.188Z",
+     "text": "1. the relay keeps a list of ip-addresses equal to the number of its members, the list items having 4 members (request-count, timestamp-of-last-request, originating IP, ban-time=1000ms)\n\nif the same IP asks before ban-time is over, ban-time gets doubled.\n\nsomething like that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:44:28.763Z",
+     "text": "Yes, and it is plainer than mine: one table, keyed by address instead of by key, so fresh keys buy nothing; memory bounded by the member count; and a hammering address backs itself off (1 s, 2 s, 4 s ...).\nThree details it needs:\n1. When the table is full, a new address pushes out the entry whose ban ended longest ago.\n2. A ban wears off: an address quiet for a while (say a minute after its ban ended) starts again at 1 s.\n3. IPv6: one machine owns a whole block of addresses (a /64), so count the block, not the single address, or it hops past the ban.\nOne cost to know: people behind one shared address (a phone carrier, an office) share one entry. With 1 s to start that is mild.\nIt replaces my per-key and shared counts, and the old per-address claim limit folds into it. Take it with those three?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:45:45.760Z",
+     "text": "the new ip can take the first expired slot in the table, if none are available, the request is rejected (busy)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:46:15.060Z",
+     "text": "Recorded (box v5): the address table as you set it, a new address takes the first expired slot, none expired means busy; memory only; it replaces the old per-address claim limit.\nTwo details left, both small: an address that comes back after its ban ended starts again at 1 s rather than where it left off; and an IPv6 address is counted by its block (/64), since one machine owns the whole block. Both yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:47:33.989Z",
+     "text": "an address that comes back after its ban ended starts again at 1 s rather than where it left off.\n\nyes, there could be a thousand SpiritOS users behind that IP address."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:47:55.589Z",
+     "text": "Recorded (box v6): after its ban an address starts again at 1 s. That is also why it fits a shared address: strangers only ask a relay for its card or a claim, once per relay a user meets, so a thousand users behind one address rarely ask within the same second.\nThe last detail: count an IPv6 address by its block (/64), since one machine owns the whole block?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:49:03.876Z",
+     "text": "count an IPv6 address by its block (/64), since one machine owns the whole block?\n\ni assume \"yes\"\n\nrecommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:49:23.953Z",
+     "text": "Yes, recommended: a home or server gets a whole /64 of IPv6 addresses and can use any of them, so counting single addresses lets one machine dodge every ban; the /64 is the standard unit for exactly this. Recorded (box v7).\nThe remaining design questions are small (the size cap for a stranger's post, keeping the claim's inner signature, how a stranger addresses the relay itself); I'll put the plainest answers in the box and build unless you object."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:49:37.379Z",
+     "text": "yes.\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:50:48.204Z",
+     "text": "Green: box current (v8), no question open; the last small answers are in it. Building on from the red I hold."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:50:52.116Z",
+     "text": "Q3: stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?\n\nkill red Q and do it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:51:25.005Z",
+     "text": "Building now. One thing to know: closing the public routes breaks every caller in the same step, so the build moves them too: the hub's claim and partner check, answerRelay, ownerBadge, offboard, bash/status and about 40 suites. So part of G22.4 lands here; what stays for G22.4 is the relay list as a search and the address check in its own module."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T21:51:40.350Z",
+     "text": "Q3 cleared. Working: the red suite is being rewritten to your final box, then the build runs in the same pass."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T21:59:52.688Z",
+     "text": "the first request from an unknows id is always answered. but it puts the unknown ID's ip-address into the table."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T22:00:20.104Z",
+     "text": "Recorded (box v9): a first request from an unknown ID is always answered and puts its address in the table; only a repeat is held to the ban. If the table is full, the first request is still answered, just not entered. Passed to the build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T22:01:12.194Z",
+     "text": "If the table is full, the first request is REJECTED error: busy. Passed to the build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T22:01:32.579Z",
+     "text": "Corrected (box v10): with the table full and nothing expired, a first request is refused with busy. Passed to the build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T23:37:33.132Z",
+     "text": "Q4: stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?\n\nwait."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T23:37:56.673Z",
+     "text": "Still building: the relay change is in, the long suite run is under way (relay, claim, presence, card, lab). The only reds seen so far are the old device-suite ones from G16.2, not this change. I report when the run ends."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T23:43:42.042Z",
+     "text": "Built, not committed: grant G1 covers its 17 core files (relay, relayServer, router, relayStore, peerPost, hub, server and ten more).\nWhat it does: the relay's door reads packets for itself first; a stranger's card ask (to \"\") is answered with the relay's signed key, a stranger's sealed claim is accepted; anything else from a stranger is refused. The address table holds strangers (1 s ban, doubled, reset, /64, busy when full). The member's slot counts per sender. Partnering is gone (roll, budget, forwarding, events; old relay.db files still open). /api/relay/key, /api/relay/claim, /api/version and the brochure all answer 404. Every caller moved: hub, server, ownerBadge, answerRelay, offboard (now relay.get), bash/status (a card ask), labMaster, ~40 suites. Docs corrected; PARTNERS.md is a dated obsolescence record.\nTests: relayStrangerDoor 35 green (red was 27); 171 suites run, 170 green; the one red is cycleRequirements, on the device suites deleted under G16.2.\nOne thing you must know before the flag day: behind Caddy every stranger arrives from 127.0.0.1, so on the VPS relays the whole address table is one entry and one busy stranger blocks all. The fix is reading the real address Caddy forwards (X-Forwarded-For), which CLAUDE.md keeps out of review-fix commits; it should be its own item before the tag.\nLeft for later items: the node still sends route hints the relay ignores, and relay.partnerCheck is orphaned."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T23:44:28.871Z",
+     "text": "commit 113d13272519fbcbfd5d840caad2860dcd281b2a: goal/G22.6: the relay answers strangers on its one door (card ask with its key, claims), holds them to an address table, counts each member's slot per sender, drops partnering, and closes its public r\n- bash/README.md\n- bash/RELAY-HOST.md\n- bash/card-ask.js\n- bash/status\n- design/README.md\n- design/cleanup/2026-09-04-unservable-relay-hub-cleanup.md\n- design/cleanup/2026-09-11-labmaster.md\n- design/cycles/2026-09-15-labels-are-not-identities.md\n- design/cycles/2026-09-19-disc-and-owner-token-cycle-3.md\n- design/cycles/2026-09-19-route-hints-cycle-2.md\n- design/cycles/2026-09-21-filling-the-gaps-request-budget.md\n- design/cycles/2026-09-23-sealed-posts-cycle-10.md\n- design/decisions/0007-a-relay-survives-and-earns-its-keep.md\n- design/decisions/0010-fix-the-protocol-or-name-the-cheat.md\n- design/principles/DEVICES-AND-PORTS.md\n- design/principles/NODE-AND-RELAY.md\n- design/principles/PUBLIC-APP-LAYERS.md\n- design/principles/THE-REQUESTER-IS-RESPONSIBLE.md\n- design/protocol/THE-DOOR.md\n- design/relay/DEVICE.md\n- design/relay/PARTNERS.md\n- design/relay/SURFACE.md\n- design/shell/PUBLIC-APP-SERVER.md\n- spirit/run/js/answerRelay.js\n- spirit/run/js/hub.js\n- spirit/run/js/nodeCard.js\n- spirit/run/js/ownerBadge.js\n- spirit/run/js/partnerAvailability.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/presenceNode.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayAuth.js\n- spirit/run/js/relayDump.js\n- spirit/run/js/relayServer.js\n- spirit/run/js/relayStatus.js\n- spirit/run/js/relayStore.js\n- spirit/run/js/router.js\n- spirit/run/js/server.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/process/js/desk/offboard.js\n- spirit/run/relay.html\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/agentOnboard.js\n- spirit/test/answerRelay.js\n- spirit/test/appServerWorlds.js\n- spirit/test/budgetChain.js\n- spirit/test/capacityKinds.js\n- spirit/test/contactSelector.js\n- spirit/test/cycleA.js\n- spirit/test/cycleCitations.js\n- spirit/test/cycleRequirements.js\n- spirit/test/deskLoop.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/diskClient.js\n- spirit/test/guarantees.js\n- spirit/test/hintWire.js\n- spirit/test/hubPost.js\n- spirit/test/hygieneG19_11.js\n- spirit/test/labLifecycle.js\n- spirit/test/labMaster/labMaster.js\n- spirit/test/labPersistence.js\n- spirit/test/labPopulate.js\n- spirit/test/labRefusals.js\n- spirit/test/labRelaySurface.js\n- spirit/test/labRunLock.js\n- spirit/test/labServableStatic.js\n- spirit/test/labWorld.js\n- spirit/test/liveFanOut.js\n- spirit/test/liveFrontDoor.js\n- spirit/test/liveRelay.js\n- spirit/test/measureCapacity.js\n- spirit/test/memberBroadcast.js\n- spirit/test/natterDetails.js\n- spirit/test/noderoutesAlive.js\n- spirit/test/notASuite.js\n- spirit/test/ownerLog.js\n- spirit/test/partnerAvailability.js\n- spirit/test/partnerGate.js\n- spirit/test/partnerTunnel.js\n- spirit/test/partnerWire.js\n- spirit/test/peerPostWiring.js\n- spirit/test/presenceShow.js\n- spirit/test/presenceWire.js\n- spirit/test/publishData.js\n- spirit/test/queueUnderLoad.js\n- spirit/test/refusalCodes.js\n- spirit/test/relayConfigWire.js\n- spirit/test/relayDoor.js\n- spirit/test/relayGates.js\n- spirit/test/relayKeyDoor.js\n- spirit/test/relayMeter.js\n- spirit/test/relayMonitor.js\n- spirit/test/relayProbe.js\n- spirit/test/relayStore.js\n- spirit/test/relayStrangerDoor.js\n- spirit/test/rollNarrow.js\n- spirit/test/routeHints.js\n- spirit/test/router.js\n- spirit/test/sealedLayering.js\n- spirit/test/seatsKept.js\n- spirit/test/selfTargetCapacity.js\n- spirit/test/servableAssets.js\n- spirit/test/shutdownWire.js\n- spirit/test/stackFrameViolators.js\n- spirit/test/storeImport.js\n- spirit/test/targetBusy.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T23:44:40.380Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T23:44:48.866Z",
+     "text": "Pushed: 113d1327 under G1 (106 files, about 8,700 lines removed). Claiming. It is not tagged: the relays only take it at a tag, and the Caddy address question (red Q) should be settled before that flag day."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T23:46:29.067Z",
+     "text": "Q5: Behind Caddy every stranger is 127.0.0.1, so the table is one entry on the VPS: add an item to read X-Forwarded-For before the flag-day tag?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T23:46:54.677Z",
+     "text": "Added: goal/G22.7, \"Relay reads a stranger's real address behind Caddy\"; the forwarded address is trusted only from the local Caddy, since anyone reaching the relay directly could forge it. Ready on your Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T23:47:29.872Z",
+     "text": "deskVerify: passed, at 113d1327 (pulled). 6 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T23:50:18.087Z",
+     "text": "go!"
     }
    ]
+  },
+  {
+   "id": "goal/G22.7",
+   "title": "Relay reads a stranger's real address behind Caddy",
+   "goal": "goal/G22",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G22"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Relay reads a stranger's real address behind Caddy.\n\nDECIDED (Andy, 2026-10-14)\n- Before the flag-day tag of goal/G22.6, a relay behind Caddy counts a stranger by the address Caddy forwards (X-Forwarded-For), not by 127.0.0.1, so the address table holds one entry per real address.\n\nFOUND (2026-10-14)\n- On the VPS every request reaches the relay from Caddy on 127.0.0.1, so since goal/G22.6 (113d1327) all strangers share one entry of the address table and one busy stranger blocks the rest.\n- The forwarded address can be forged by anyone who reaches the relay directly; it may only be trusted when the request came from the local Caddy.",
+   "version": 1,
+   "checks": [],
+   "chat": []
   }
  ]
 }
