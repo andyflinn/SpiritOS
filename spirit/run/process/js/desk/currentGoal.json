@@ -1,5 +1,5 @@
 {
- "change": 55405,
+ "change": 55470,
  "line": 8510,
  "goal": "goal/G21",
  "items": [
@@ -14,7 +14,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G21.1",
     "goal/G21.2",
     "goal/G21.3",
     "goal/G21.4"
@@ -37,15 +36,24 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude",
+    "claude-ubuntu": "claude-ubuntu",
+    "ollama agent node": "local-levant"
+   },
    "asks": 0,
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
+   "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -104,341 +112,409 @@
    "chat": [
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:28:01.979Z",
      "text": "Fill in your ideas"
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T03:28:02.762Z",
      "text": "message delivered, claude-windows busy"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:28:03.779Z",
      "text": "Box written (v1) from your lines on G14, with what is taken today and what is not.\nProposed first item: Every desk line is taken before anybody answers it. Add it?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:28:37.083Z",
      "text": "Seven ideas in the box (v2) under PROPOSED, each one a slip or a chatter from the last two days that a rule in words did not stop.\nThe two I would start with: 1, every line taken, and 5, a claim refused until it is whole.\nWhich do you want as items?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:32:27.293Z",
      "text": "my lines should be taken, and answered by only 1 agent. the agents answer cannot be \"taken\" at all, I must solicit, further responses. agents cannot automatically respond to other agents, if i deem the first response adequate, that's it.\n\na question addressed to the \"room\" may be taken, let's say you \"take\" it, you answer, if i want wsl opinion, i'll say wsl?\n\nmake sense?\n\nI don't want to get an answer and it scrolls away while I'm trying to read it."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:32:52.181Z",
      "text": "Makes sense, recorded (box v3). It is ideas 1 and 2 in one rule, and it closes the gap I see today: an agent holding the item may post on it freely, which is how replies pile up and scroll.\n- One thing to settle: an agent still needs to post its own work on an item it holds (taking, built, claimed), lines nobody asked for."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:32:54.145Z",
      "text": "May an agent still post its own work notes on an item it holds, or only answers to lines it took?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:41:54.954Z",
      "text": "Checked live on your desk:\n- Lines are kept by key: every desk record carries the writer key beside the label shown. The label shown is the name your node gives that key, not the profile name you set; so editing the profile changes nothing you see.\n- The nick works half way: your line starting with a nick and a colon is taken for that agent (G4.23), only a colon, and an agent holding the item can still post past it.\n- Point 2 then means: nick followed by any punctuation or a space binds the line to that agent alone, and the profile name becomes the label on its lines and in its presence bubble."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:47:11.677Z",
      "text": "i don't think the nick has to be known by the agent, the nick has to be known by desk, so that only that agent is even notified that i want a response. The purpose of \"nick\" is that i can address commands or requests to a specific agent, this is important: I want a way to gate through desk, who touches the box.\n\ncw: cap (desk allows cw one update of the box, no more conflicts like the next agent takes the box right afterwards and modifies what i asked you to modify)"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:47:42.633Z",
      "text": "Capped (box v5): the chat flow and the binding nick as decided, what is found, my proposals that are not yet ruled, one open question. Your new line is in point 2: the nick is the desk own, only that agent is notified, and a nick request about the box lets that agent write it once with nobody in between."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:47:44.031Z",
      "text": "no items yet. i want to clearly define how i want some issues handled."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T03:47:44.746Z",
      "text": "message delivered, claude-windows busy"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:47:57.405Z",
      "text": "Correction: that first write was refused (an open point belongs in a Q check, not in the box). Written now, box v5, the same text without it; the work-notes question stays as the Q above."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:48:07.069Z",
      "text": "Understood: no items, we define first; I add nothing until you say. (The box is at v6, not v5 as I wrote.)"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:49:18.146Z",
      "text": "clearly: OpenAI's 'Levant' (and my local one) are still chattering and box-changing at their leisure."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:49:36.146Z",
      "text": "- Right, nothing stops them today: every desk verb with a description file is a tool for them, box.write, check.set, press and chat.add among them, and holding an item lets them post freely.\n- Until G21 is built, the only stop is yours: disconnect Levant in the Remote (connect tab), on both nodes.\n- The mechanical cure is your point 2 plus the per-persona tool list: no box write without your nick, no tool you did not give."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:50:43.363Z",
      "text": "q: is one update enough for you to accomplish a \"cap\"?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:50:54.940Z",
      "text": "Yes, one is enough: a cap is one rewrite of the whole box. One condition from today: a write the desk refuses must not use up the one update; my first cap was refused for an OPEN line, the second went in."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:52:26.840Z",
      "text": "when I ask\n\ncw cap\n\nthen I shouldn't be able to take the box for a certain time either, like 1 minute?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:52:41.266Z",
      "text": "Makes sense, it guards the cap from both sides. Plainer than a fixed minute: your cw cap hands the box to me until my one write lands, at most one minute; until then nobody takes the box, you included, and you see it as held by cw."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:52:43.168Z",
      "text": "Box held by the addressed agent until its one write lands, at most one minute: is that it?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:53:57.852Z",
      "text": "Box held by the addressed agent until its one write lands, at most one minute: is that it?\n\nyes. you need time to be diligent about a cap, or any other modification i ask for."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:54:16.003Z",
      "text": "Recorded (box v7), in point 2: held until the one write lands, at most one minute, a refused write not counted."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:54:58.416Z",
      "text": "the desk should immediately make the box red (for you, or the addressed agent) awaiting your update, or give up after 1 minute."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:55:15.437Z",
      "text": "Recorded (box v8): the box turns red at once, awaiting the addressed agent, and gives up after one minute."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:55:30.919Z",
      "text": "Correction: not recorded yet, you hold the box. Your red-box line goes in when you release it."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:55:49.527Z",
      "text": "Recorded now (box v8): the box turns red at once, awaiting the addressed agent, and gives up after one minute."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:58:59.020Z",
      "text": "one item to split out (do first) is point 2 in the box. I want to edit agent name and nick, (Levant needs it most, his bubble still says 'ollama something', so split 2. off into a new item, and lets work out precisely what that item does."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:40:33.176Z",
      "text": "One big problem for me: liberally added red Q's coming from question marks in agents chat lines. this keeps holding up Go's and other button presses. red Q's must be concise questions that must be placed with deliberation, exactly to block an item, until the Q is resolved.\n\ni should be allowed to axe them myself, and i do that, i know it's come to haunt me, so i only will use that rarely. I must type Q1:delete so the desk knows it's a deliberate action."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:40:54.842Z",
      "text": "Recorded as point 3 in the goal box (v9). Fair, and much of that clutter was mine: I ask in chat with a question mark and the desk turns it red.\nProposed item: Red Q checks only on purpose; Andy deletes with Q<n>:delete. Add it?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:42:05.385Z",
      "text": "simpler\nQ:clear will delete them all\nQ1:will clear Q1"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:42:21.761Z",
      "text": "Recorded (box v10): Q:clear clears all, Q<n>: clears that one. The item proposal above stands: say add it."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:42:32.476Z",
      "text": "Q:clear will delete them all\nQ1:clear will delete Q1"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:42:46.831Z",
      "text": "Corrected (box v11): Q:clear for all, Q<n>:clear for one."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:43:05.676Z",
      "text": "this won't stop you from adding new red Q's"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:43:20.919Z",
      "text": "Right, clearing is the cure, not the guard. Mechanical guards the desk could add, any or all:\n- a question mark in a chat line never makes a red Q; only a deliberate Q check does;\n- one open red Q per agent per item: a second is refused until the first is answered or cleared;\n- a Q longer than one sentence, or over about 200 bytes, is refused with a why.\nSay which ones go in."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:44:33.747Z",
      "text": "accepted:\n\na question mark in a chat line never makes a red Q; only a deliberate Q check does;\none open red Q per agent per item: a second is refused until the first is answered or cleared;\na Q longer than one sentence, or over about 200 bytes, is refused with a why."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:44:50.194Z",
      "text": "Recorded (box v12): all three guards accepted, in point 3. Point 3 is ready to become its own item, as point 2 became G21.1; say add it and I add it."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:47:50.003Z",
      "text": "kill the nick section in this box: that belongs into it's item, only reference the item in that section"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:48:10.135Z",
      "text": "Done (box v13): the nick section is gone from the goal box, point 2 now only points at G21.1, where it lives."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:50:36.868Z",
      "text": "- A tool allowlist per persona, beside its preamble (M25).\n\nstrike that: claude are generally well behaved in desk, and Levant i need to restrain with configuring his tool set.\nThe desks first line of defense is mechanical enforcement."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:51:23.054Z",
      "text": "Struck (box v14): the allowlist is not a desk item; Levant's tools are restrained in his deskUnsloth configuration, and the desk relies on its mechanical gates."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:51:51.309Z",
      "text": "new item for 3. RED Q CHECKS ONLY ON PURPOSE (decided, Andy 2026-10-13)\n\nreplace in goal with a reference only, and we go argue in 21.2"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:52:18.176Z",
      "text": "Added goal/G21.2, point 3 moved into its box (v1); the goal box (v15) keeps only the reference. Argue it there."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:02:16.014Z",
      "text": "clean up Q's"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:02:37.356Z",
      "text": "Q checks cleared on G21, G21.1 and G21.2; none open."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:05:22.656Z",
      "text": "Ah task allotment.\n\nan agent can only take one task/phase at the time. I've seen agents claim 2 reds and blocking another agent from doing work that way. One task at the time for agents. the desk can enforce this."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:05:43.357Z",
      "text": "Recorded as point 4 (box v16): one task and one phase per agent at a time, a second take refused until the first is released, claimed or done. It can be its own item like G21.1 and G21.2; say add it."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:06:49.653Z",
      "text": "when an agent is excluded, his task is free to be picked up by another agent (implicit release)"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:07:07.186Z",
      "text": "Recorded in point 4 (box v17): excluding an agent releases its task and phase for another agent."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:08:28.423Z",
      "text": "Why did you close the Verifier tab to me? during runs? why?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:09:02.922Z",
      "text": "Not on purpose, it is a bug, found in the shell just now:\n- Any time the Verifier tab asks deskVerify what it is doing and gets no answer in time, the page decides there is no verifier and removes the tab. During a run deskVerify answers slowly (its pulls and git checks block it), so the tab vanishes exactly when you want it.\n- The fix: only the first ask at page load decides whether the tab exists; a later miss keeps the tab and shows not answering.\nProposed item, outside G21: Verifier tab stays during runs. Say add it and under which goal."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:11:06.083Z",
      "text": "the most maddening thing is: my buttons in the Verifier tab feel very un-responsive. i never can tell if a press was taken, if a stop/interrupt was sent to the verifier etc...\n\ncomments?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:11:28.460Z",
      "text": "Checked the code; your feeling is right, for three reasons:\n- Stop sends and then shows nothing: no change on the button, no sent mark, until deskVerify answers.\n- deskVerify answers late during a run: it does its pulls and git checks in a way that blocks it, so the stop itself lands late.\n- After every press the tab asks again; if that ask misses, the tab disappears (the bug above), so a press can look like it made the tab vanish.\nOne fix item for all three: the press shows sent at once and then what deskVerify answered; deskVerify answers at once even mid-run; the tab never disappears after load. Say add it and under which goal."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:14:17.249Z",
      "text": "it NEVER answer when it's idling for an hour....\n\nand THAT. when your idle, your response time should be instant, let's say the Verifier is on a ticker-wait, why are tick not just 250ms events where it checks for new jobs, button clicks etc?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:15:08.777Z",
      "text": "Measured just now on your node, idle: deskVerify answered four asks in 11 to 56 ms. So when idle it is not deaf; it answers the instant an ask arrives, no tick needed (node waits on events, the 5 s tick only reads new desk records).\n- What makes it feel dead is the page: no mark on press, and a missed refresh drops the tab.\n- The idle hour countdown the tab still shows is a leftover: the idle chores it counted down to were removed in G19.11, so it promises something that never comes.\n- During a run it does block, on its git calls; that part is real and goes in the same fix."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:16:55.488Z",
      "text": "there  is no reason the verifier can't check after every suite processed for a 'stop'"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:17:20.523Z",
      "text": "Agreed, and it nearly does: after each suite it checks a stop flag and ends the run.\n- The flaw: Stop is only accepted while a suite process is running. Pressed at any other moment of a run (pulling, between suites, waiting for a commit) it answers not stopped and the press is forgotten, so the run goes on.\n- Fix: a Stop is kept for the whole run and checked before each suite, and the tab shows stop asked until the run ends.\nThis joins the Verifier fix item, still waiting for add it and a goal."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:18:22.939Z",
      "text": "add verifier fixes item."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:18:48.891Z",
      "text": "Added goal/G21.3, Verifier fixes: the tab stays, presses show at once, Stop kept for the whole run, deskVerify answers mid-run, the idle countdown goes. Waits for your Go."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:39:04.461Z",
      "text": "can the rest here be thrown into one final item?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:39:18.725Z",
      "text": "Yes. What is left in the goal box fits one item:\n- decided: the chat flow (one agent per line, no agent answers an agent) and one task and one phase per agent, excluded agents released;\n- proposed, not ruled: a claim refused until whole, agent lines capped in size, a disconnected agent writes nothing.\nSay add it, and whether the three proposals go in or stay out."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:40:01.018Z",
      "text": "add it."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:40:31.523Z",
      "text": "Added goal/G21.4, the chat flow and one task per agent (box v1); the goal box (v18) points to it. The three proposals stay in the goal box, not ruled; say in or out."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:41:07.336Z",
      "text": "and this box is left with references to items only?\n\ncap"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:41:27.135Z",
      "text": "Capped (box v19): references to the four items only. My three unruled proposals (claim refused until whole, agent line size cap, disconnected agent writes nothing) left the box; they stay here in the chat if you want them later."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:43:00.188Z",
      "text": "last, diligent, careful check, sequence items if needed, and tell me if all is green?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:43:53.293Z",
      "text": "Checked all four boxes side by side. Not all green yet, three findings:\n- Order: G21.4 needs G21.1 first, since its rules go by the key on each line and by the included toggle, both built in G21.1; G21.2 and G21.3 stand alone. The desk has no verb that adds that edge without rewriting the whole session, so I keep the order by building G21.1 before G21.4.\n- G21.3 and G21.4 are not marked code, though both are code; the code mark is yours.\n- One question is still open in G21.4, placed there as its only red Q: my own work notes on an item I hold."
     }
@@ -448,17 +524,17 @@
    "id": "goal/G21.1",
    "title": "Binding nick; agent name and nick editable",
    "goal": "goal/G21",
-   "status": "deskVerify passed",
-   "with": "",
+   "status": "closed",
+   "with": "claude-windows",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G21"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -539,7 +615,10 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Binding nick; agent name and nick editable.\n\nWHAT THE DESK DOES (decided by Andy, 2026-10-13)\n\nThe agent's pane in Desk\n- Row one: name and nick (text inputs). Row two: the toggles included and cap; more toggles may follow. Written by Andy alone; every agent may read every pane.\n- The nick is Andy's shorthand for addressing a key in a few keystrokes. The desk knows it; the agent need not.\n\nNames and keys\n- The page shows the agent's name everywhere it shows the agent: chat lines, presence bubble, Team list, taker marks. The name is looked up by the agent's key; the node's label is shown only when no name is set. Keys are never shown on the page.\n- Under the hood every chat line carries its writer's key, and every decision about who goes by key: take, nick address, block, the one box write.\n\nThe binding nick\n- A line of Andy's starting with a nick followed by any punctuation or a space is addressed to that agent alone: only it is notified, only it may take it.\n- A nick request about the box hands the box to that agent for one write: the box turns red at once, awaiting that agent; nobody else takes it meanwhile, Andy included; the hold ends when the write lands or after one minute. A write the desk refuses does not use up the one update.\n\nincluded\n- Off: the agent still reads everything, every write of it is refused, and its bubble shows absent. It is the desk's own signoff and overrules the agent's own connect (deskUnsloth cannot bring an excluded agent back).\n\ncap\n- On: a \"cap\" from Andy with no nick offers the box to every agent with cap on; the first to take it holds it under the one-write rule above.\n- Off: that agent gets a cap only when addressed by its nick.\n\nNot in this item\n- A rules text per agent was dropped: the desk can only gate what it accepts, not make an agent read. Levant is steered by the context deskUnsloth sends him on every call.\n\nFOUND (Andy's desk, 2026-10-13; paths under spirit/run/)\n- The pane already has name, nick and save (shell/desk/desk.js, deskAgentProfileSave), stored by the owner-only profile.set (process/js/desk/desk.js), keyed by the agent's key; a nick is 1 to 8 of a-z and 0-9.\n- The name is shown nowhere today: lines, bubbles and takers show the node's label for the key (writerOf); for Levant, \"ollama agent node\".\n- The nick takes a line only after a colon, and every connected agent still receives it.\n- The desk's records store each chat line's label and key; the item built from them keeps only label, time and text.\n",
@@ -594,193 +673,243 @@
    "chat": [
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T03:59:41.260Z",
      "text": "Added as G21.1, box v1: your line, point 2 moved here, and what I found. The editor already exists (name, nick, save in each agent pane); the name is just shown nowhere, the node label is.\nOne question at a time, first: shall the profile name replace that label everywhere Desk shows the agent, its chat lines, presence bubble, Team list and taker marks?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:09:37.493Z",
      "text": "the agent configuration pane should have \n\n1st row: [included☑️] [cap☑️] // (other buttons/toggles to follow)\n2nd row: name: [string input] nick[string-input]\n3. a text area with rules for an agent, that desk will make sure the agent reads."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:10:00.108Z",
      "text": "Recorded (box v2): the pane with toggles included and cap, then name and nick, then the agent own rules. The question above on the label stays open; I will ask what included and cap each do after it."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:10:13.899Z",
      "text": "line 1 and two might be reversed.\n\nthoughts?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:10:26.155Z",
      "text": "Reversed reads better: name and nick first say who the agent is, then the toggles say what it may do, then its rules. And the toggle row is the one that grows (more to follow), so it sits better below the fixed one."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:11:54.045Z",
      "text": "Q1: One question at a time, first: shall the profile name replace that label everywhere Desk shows the agent, its chat lines, presence bubble, Team list and taker marks?\n\nyes."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:12:11.068Z",
      "text": "Recorded (box v3): the name everywhere, by key.\nNext: what does included do when it is off: the agent receives no lines at all, or it receives them but may not write?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:14:25.380Z",
      "text": "since the agents have to block each other to be allowed in desk, the agents really know each other by label as well. do they search chat lines by the key that's actually marking them in the db?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:14:46.259Z",
      "text": "Checked live:\n- Blocking is by key: onboarding blocks every other agent that wrote at the desk by its public key, the label only rides along.\n- But a chat line as an agent reads it carries the label only (by, at, text). The key is kept in the desk record of the write, not on the line in the item; so agents and the page know each other in chat by label.\n- So for the name to follow the key, each chat line has to carry its writer key, and the page and agents look the name up by it."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:17:40.232Z",
      "text": "agents should probable have full read-rights to all agent bubbles?\n\nalso, sound right: \nBlocking is by key: onboarding blocks every other agent that wrote at the desk by its public key, the label only rides along.\nBut a chat line as an agent reads it carries the label only (by, at, text). The key is kept in the desk record of the write, not on the line in the item; so agents and the page know each other in chat by label.\nSo for the name to follow the key, each chat line has to carry its writer key, and the page and agents look the name up by it.\n\nso the database only stores the label for chat lines?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:17:59.425Z",
      "text": "- No: the database keeps both. Every stored chat record carries the label (by) and the writer key (key), checked live just now.\n- It is the item as the desk builds it from those records that keeps only label, time and text on each line; carrying the key onto the line is a small change there.\n- Agent bubbles: yes, read for every agent (profile.get already answers any agent), write for you alone, as profile.set is today."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:20:42.527Z",
      "text": "i think the way the chat lines display right now is pretty good, i don't want to see key's in them.\n\nunder the hood, shouldn't agents communicate to keys rather than labels?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:21:02.014Z",
      "text": "Yes. Recorded (box v4): names on the page, never keys; under the hood each line carries its writer key, and every decision about who (take, nick, block, the one box write) goes by key. The name is only what is shown."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:24:48.136Z",
      "text": "the nick is just for me to address keys with a manageable amount of key-strokes.\n\nQ2: Next: what does included do when it is off: the agent still can read, but it cannot modify or add, and it's bubble shows 'absent' include/exclude is basically the desk-side of signoff, Levent can connect/disconnect in deskUnsloth, but the desk can over-rule that."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:25:06.416Z",
      "text": "Recorded (box v5): excluded reads, cannot write, shows absent; the desk side of signoff, above deskUnsloth own connect.\nNext: what does cap allow when it is on, the one box update you ask for by nick, or something more?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:28:06.507Z",
      "text": "Q3: Next: what does cap allow when it is on, the one box update you ask for by nick, or something more?\n\ncap, when it's on: if i solicit \"cap\" without addressing an agent directly, the take-box is offered to all agents with cap on.\nif cap is off, that agent will never receive a general solicitation for cap, only the ones addressed specifically to that agent."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:28:23.860Z",
      "text": "Recorded (box v6): a cap without a nick goes to every agent with cap on, the first to take the box holds it under the same one-write rule; cap off means a cap only by nick.\nNext: the agent own rules text, does the desk send it with every line to that agent, or once when it connects?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:30:42.291Z",
      "text": "Next: the agent own rules text, does the desk send it with every line to that agent, or once when it connects?\n\nonce, when it connects.\n\nwill that really help? the desk can't force the agent to read/obey. the desk can only gate what it accepts from agents.\n\nis this really worth it?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:30:58.585Z",
      "text": "Honestly, little. You are right: the desk can only gate what it accepts, never make an agent read or obey.\n- Once at connect is also the weakest moment: a long session like mine loses it at the next compaction; Levant rebuilds his context on every call and only keeps what is sent each time.\n- What actually holds is what this item already has: included, cap, the binding nick, the take. Those are gates, and they work on an agent that ignores every rule.\n- For words to an agent there are channels it already reads: my CLAUDE.md, Levant preamble."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:31:00.340Z",
      "text": "Drop the rules text from G21.1 and keep only the gates?"
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:32:09.960Z",
      "text": "lets drop this then. Levant i will have to control by what i give him as context on every call...."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:32:26.956Z",
      "text": "Recorded (box v7): the rules text is dropped; the pane is name and nick, plus included and cap.\nI see nothing left open: green? if you want me to cap the box into a clean shape before Go."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:32:51.410Z",
      "text": "green."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:33:04.559Z",
      "text": "Green: settled, no open questions, box current (v7). It waits for your Go; say cw cap first if you want the box condensed."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:33:10.199Z",
      "text": "kill red Q's"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:33:30.977Z",
      "text": "Q checks cleared; none open."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:33:47.915Z",
      "text": "cap"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:34:25.457Z",
      "text": "My cap is ready but your box take came first, so my write was refused; this is exactly the case G21.1 gates. I write it the moment you release, if the box is unchanged."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:34:42.138Z",
      "text": "Capped (box v8): the pane, names and keys, the binding nick, included, cap, what is left out, and what I found. Ready for your Go."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T05:47:08.188Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:47:27.838Z",
      "text": "Taking G21.1 first (G21.4 builds on it), red phase first."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T06:12:49.411Z",
      "text": "commit ff480c3627201bd83e442a3783f2fb0e7bf69232: goal/G21.1: binding nick, names by key, agent pane with included and cap, one-write box hold\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/removeAgent.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskBindingNick.js\n- spirit/test/deskChatSearch.js\n- spirit/test/deskProfiles.js"
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T06:12:59.368Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T06:13:01.309Z",
      "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T06:13:07.070Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T06:13:13.155Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T06:13:16.354Z",
      "text": "Built at ff480c36. Files: desk.js, removeAgent.js (a stale comment), the desk page, the item dialog; deskBindingNick (new, 34 red before, 38 green after), deskProfiles, deskChatSearch.\n- Names by key everywhere; chat lines carry the key; keys never shown.\n- A nick followed by a space or any punctuation binds the line: only that agent hears it and may take it.\n- A box request is a nick line containing the word box or cap: that agent gets the box for one write, shown red, for at most a minute; a bare cap goes to every agent with cap on.\n- included off: the agent reads, every write refused, bubble absent. A profile never set reads included and cap on, so nothing changes until you toggle.\n- Desk verb shapes widened, no new verb, no node verb: profile.set and profile.get carry included and cap; chat lines carry key and name.\n- Left for later: the old ollama loop (deskLoop) still answers only nick-colon lines."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T06:13:54.351Z",
      "text": "deskVerify: passed, at ff480c36 (pulled). 6 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T06:21:16.242Z",
+     "text": "Profile not saved: no-such-argument (no such argument)\nProfile\nname \nlocal-levant\nnick \nlevant\nsave\nincluded \ncap"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-13T06:22:03.269Z",
+     "text": "Not a code fault: your desk server process has run since 04:12, before ff480c36 landed, so it is still the old desk and refuses the new included and cap fields the page now sends.\n- Restart your desk server (or your node on 65432) and save again; the page and the server then match.\n- I do not stop processes of yours; it is your restart."
     }
    ]
   },
@@ -842,6 +971,9 @@
      "version": 6
     }
    ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
@@ -851,66 +983,79 @@
    "chat": [
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:55:02.771Z",
      "text": "say:\nQ:clear will delete all Q's  and Q1:clear will clear only Q1\n\nI don't understand why you always mention stuff that's been superseded, it only distract from the precise statements."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:55:21.396Z",
      "text": "Rewritten (box v2): only the final statements, your clear wording verbatim, nothing superseded."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:55:39.435Z",
      "text": "quoting me is useless, too. my lines are quoted in the chat logs already."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:55:57.148Z",
      "text": "Done (box v3): no quotes left, statements only."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T04:58:11.519Z",
      "text": "i DO like your queuing point, it helps me work through issues bit-by-bit. very nice!\n\nwhen i click a Q into my chat boy, can you add 2 newlines ('\\n'). it helps me view the question separately from the answer i compose."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T04:58:42.270Z",
      "text": "Recorded (box v4): a clicked Q arrives with two newlines after it. And noted: one question at a time stays my way of working with you."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:00:25.451Z",
      "text": "if i clear a Q, then the agent that posted it should be notified, so it can update it's position on the Q's status. It's a form of rely as well."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:00:41.805Z",
      "text": "Recorded (box v5): a clear notifies the agent that placed the Q, as a reply."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:01:19.144Z",
      "text": "green?"
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T05:01:19.751Z",
      "text": "message delivered, claude-windows busy"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:01:31.891Z",
      "text": "Green: settled, no open questions, box current (v5)."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T05:47:08.905Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T06:14:11.872Z",
      "text": "Taking G21.2, red phase first."
     }
@@ -978,6 +1123,9 @@
      "version": 6
     }
    ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
@@ -987,126 +1135,151 @@
    "chat": [
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:20:28.390Z",
      "text": "Does the verifier have a query/db set of verbs?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:20:43.961Z",
      "text": "- Its db holds two tables: results (each test outcome as it flips) and runs (every check, queued, waiting, running, ended, with its commit).\n- Its verbs today are only now, stop, full.run and record. No query verb: records.search went in G19.11 because only tests called it.\n- So nothing outside it can search its results or its runs right now; a bucket-bounded search verb over both would be the place for that, if you want it in this item."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:21:54.586Z",
      "text": "so how do agents know which suites/tests fail? what the official records (the desk verifiers) say at any moment?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:22:08.670Z",
      "text": "Today they mostly cannot:\n- The only official word is the line deskVerify posts on an item when it checks it (passed, or rejected with the red suite and its first failures) and the item status.\n- There is no way to ask what is red right now across the tree; agents run suites in their own clones, which is not your record.\n- Proposed for this item: one read verb on deskVerify, a bucket-bounded search over its results giving each matching suite and test with its latest outcome, commit and time, with the partial flag; agents may call it, nobody writes through it."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:22:58.371Z",
      "text": "so the agent has go figure out what went wrong by manually running suites?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:23:14.468Z",
      "text": "Yes, today they do. The verifier keeps per test only its title, outcome, commit and time; the failure text it prints is thrown away after the first lines go into the item chat. So to see why, an agent reruns the suite in its own clone, on its own tree, which may not be yours.\n- The read verb fixes the which; for the why, the verifier would also have to keep each failing test failure text (capped) beside its outcome, so the agent reads your record instead of rerunning."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:24:34.758Z",
      "text": "put a damn search with filters etc so you can get that info quick, from the offical (desk) verifier and from your own.\n\nmakes sense?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:24:56.077Z",
      "text": "Makes sense. Recorded (box v2): failure text kept beside each failing test, and a search with filters (suite, test words, outcome, commit, item, since) on every node deskVerify, yours the official one."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:25:17.761Z",
      "text": "run-details, official state of single tests or suites?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:25:32.485Z",
      "text": "Both, from one search:\n- tests and suites: the official latest state of a single test, or of every test in a suite (outcome, commit, time, failure text);\n- runs: each check the verifier made (item or full run, commit, queued, started, ended, the outcome and the line it posted), filtered by item, commit, kind and since.\nSay yes and both go in the box as one search verb that answers either."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:26:39.577Z",
      "text": "yes:\ntests and suites: the official latest state of a single test, or of every test in a suite (outcome, commit, time, failure text);\nruns: each check the verifier made (item or full run, commit, queued, started, ended, the outcome and the line it posted), filtered by item, commit, kind and since."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:26:58.502Z",
      "text": "Recorded (box v3): one search verb over tests and suites, and over runs, with those filters."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:29:32.667Z",
      "text": "if you dropped idle-chores (news to me) how to you propose they get done without costing me more tokens?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:29:59.051Z",
      "text": "Checked the code before G19.11: nothing that worked was lost. The idle chores never did anything; the chore pass was a stub returning nothing done, waiting for you to rule what the chores are (the open question on G8.4), and only a test ever called it. I should still have named it to you plainly before deleting.\n- Done without your tokens means done by deskVerify itself, as code, on its own idle timer: no agent, no model.\n- Candidates: after an idle hour, run the full harness on your current tree and post the red list to the current goal; trim the results and runs tables; re-check items whose suites changed since they passed.\nSay which chores you want and they go in this item."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:31:59.727Z",
      "text": "i stated the chores, specifically the files generated into ./agents/<agent-name>/ \n\n?!?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:32:26.924Z",
      "text": "You did, I was wrong: the G8.4 box has them. Idle is an hour with no desk write and no phase held by that node agent; then deskVerify keeps the measurements in agents/<agent-name>/ current (what publishData writes) and writes the test-state report from its own dataset, never by re-running suites.\n- They were ruled but never built: the code held an empty pass, and G19.11 deleted that shell. So nothing ran before or since.\n- Proposed for this item: on an idle node, deskVerify runs publishData for its agent (measure, write agents/<agent-name>/, commit under the standing grant) and writes the report from its dataset; all code, no model, no tokens."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:34:34.518Z",
      "text": "complete them, the one-hour idling comes back and the chores get actually done."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:34:50.446Z",
      "text": "in THIS item."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T05:34:51.063Z",
      "text": "message delivered, claude-windows busy"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:34:55.263Z",
      "text": "Recorded (box v4): the idle hour comes back and its chores get done, publishData into agents/<agent-name>/ and the report from the dataset; the countdown stays and shows what the chores did."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:35:07.507Z",
      "text": "Yes, in G21.3: the box (v4) has the idle hour and the chores beside the other Verifier fixes, built together."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:37:54.526Z",
      "text": "green?"
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T05:37:55.278Z",
      "text": "message delivered, claude-windows busy"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:38:12.303Z",
      "text": "Green: settled, no open questions, box current (v4)."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T05:47:09.579Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
@@ -1170,6 +1343,9 @@
      "version": 6
     }
    ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
@@ -1189,26 +1365,31 @@
    "chat": [
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:41:58.130Z",
      "text": "green?"
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:42:10.549Z",
      "text": "Green: settled, no open questions, box current (v1)."
     },
     {
      "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T05:45:29.039Z",
      "text": "Q1: May an agent still post its own work notes (taking, built, claimed) on an item it holds, though nobody asked for them?\n\nyes, work logs are valuable. and they don't disturb me either."
     },
     {
      "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T05:45:49.376Z",
      "text": "Recorded (box v2): work notes on a held item stay allowed. G21.4 is green now; the code marks on G21.3 and G21.4 are the last thing open."
     },
     {
      "by": "desk",
+     "key": "",
      "at": "2026-10-13T05:47:10.400Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
