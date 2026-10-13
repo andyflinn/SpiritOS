@@ -1,5 +1,5 @@
 {
- "change": 42595,
+ "change": 53340,
  "line": 8510,
  "goal": "goal/G19",
  "items": [
@@ -15,7 +15,6 @@
    "blocking": [],
    "blocked": [
     "goal/G19.7",
-    "goal/G19.11",
     "goal/G19.13"
    ],
    "go": false,
@@ -38,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -3191,9 +3190,12 @@
    "id": "goal/G19.11",
    "title": "Hygiene: temp_loop, localEar leftovers, dead code, stale notes",
    "goal": "goal/G19",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G19"
    ],
@@ -3201,18 +3203,89 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/boundedByTime.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyCommitBound.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyDoneGates.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyGoalRun.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyLive.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyModes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyQueueKept.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyReject.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyTab.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/hygieneG19_11.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerPostWiring.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/publishData.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/removePeer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/rollNarrow.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -3250,8 +3323,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Hygiene: temp_loop, localEar leftovers, dead code, stale notes.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- At the repo root, tracked: temp_loop.js, temp_loop2.js to temp_loop6.js, temp_loop_clean.js, temp-desk-reply.js (UTF-16). Andy: \"The temp_loop/.js scratch file gotta go.\"\n- localEar leftovers: process/js/desk/reply.js (UTF-16, throws on load), localEar.json pointing at a deleted localEar.js, create-localEar.js.\n- process/js/deskUnsloth/configuration.json is still tracked although .gitignore:92 lists it; it holds no secret.\n- process/js/fileServer/fileServer.js:107-110: Buffer.alloc(length) with no cap (CHUNK = 6000 at :138).\n- Dead code: relay.who (relay.js:896), hub.handleMatches (:573), hub.handleWho and withRelay (:1560, :1009), relayKeys.unseat (if 19.1 does not give it a caller); the deskVerify verbs only tests call (loop.once, suites, goal.check, claim.check, chore.once, idle, mode, records.search).\n- Stale words: whoBook / who.json in DICTIONARY.md, AGENT.md, CLAUDE.md, CLINE.md, relay.js:1765, .gitignore:128, UI_DESIGN_STYLE.md, labMaster/BONES.md, test/peerPostWiring.js; comments leaning on the deleted /api/relay/who route (natterDetails.js:460, hub.js:2077, relay.js:2365, 3097, 3492, 4254, 1062, js/relayStatus.js:15, server.js:2063); others describing removed behaviour.\n- Repo notes: .gitignore:218-220 pasted console.log lines; .claude/settings.json:4 a one-machine path; CLINE.md a byte copy of CLAUDE.md; notASuite.js lists the deleted appServerWorlds.js and labMaster.js in a subfolder, and its own header makes runAll take it for a suite; rollNarrow.js guards only partly (:64, :77, :144, :152).\n\nDECIDED (Andy, 2026-10-12), asked whether the hygiene list goes in as one item as its box lists it: \"yes.\" (The stale-word and comment cleanup also follows his G19.10 rule: \"error messages and rule related cleanup belong to every update/new-code.\")\n\nADDED (claude-windows, 2026-10-12, found bringing up noderoutes.net under goal/G19.16):\n- bash/README.md (from 2026-09-06) still says clone to /opt/spirit-os and run as an unprivileged spirit account; that contradicts bash/ONE-OPERATOR.md, AGENT.md and the scripts themselves (lib.sh: CLONE_DIR /root/SpiritOS, the unit runs as root).\n- bash/status probes GET /api/relay/who, which the relay no longer serves, so a healthy relay reads \"https who failed ... local node not answering\"; it should ask /api/relay/key.\n",
-   "version": 3,
+   "box": "Hygiene: temp_loop, localEar leftovers, dead code, stale notes.\n\nFOUND (Checked against the tree at f0d03916 (2026-10-12); paths under spirit/run/ unless noted.)\n- At the repo root, tracked: temp_loop.js, temp_loop2.js to temp_loop6.js, temp_loop_clean.js, temp-desk-reply.js (UTF-16). Andy: \"The temp_loop/.js scratch file gotta go.\"\n- localEar leftovers: process/js/desk/reply.js (UTF-16, throws on load), localEar.json pointing at a deleted localEar.js, create-localEar.js.\n- process/js/deskUnsloth/configuration.json is still tracked although .gitignore:92 lists it; it holds no secret.\n- process/js/fileServer/fileServer.js:107-110: Buffer.alloc(length) with no cap (CHUNK = 6000 at :138).\n- Dead code: relay.who (relay.js:896), hub.handleMatches (:573), hub.handleWho and withRelay (:1560, :1009), relayKeys.unseat (if 19.1 does not give it a caller); the deskVerify verbs only tests call (loop.once, suites, goal.check, claim.check, chore.once, idle, mode, records.search).\n- Stale words: whoBook / who.json in DICTIONARY.md, AGENT.md, CLAUDE.md, CLINE.md, relay.js:1765, .gitignore:128, UI_DESIGN_STYLE.md, labMaster/BONES.md, test/peerPostWiring.js; comments leaning on the deleted /api/relay/who route (natterDetails.js:460, hub.js:2077, relay.js:2365, 3097, 3492, 4254, 1062, js/relayStatus.js:15, server.js:2063); others describing removed behaviour.\n- Repo notes: .gitignore:218-220 pasted console.log lines; .claude/settings.json:4 a one-machine path; CLINE.md a byte copy of CLAUDE.md; notASuite.js lists the deleted appServerWorlds.js and labMaster.js in a subfolder, and its own header makes runAll take it for a suite; rollNarrow.js guards only partly (:64, :77, :144, :152).\n\nDECIDED (Andy, 2026-10-12), asked whether the hygiene list goes in as one item as its box lists it: \"yes.\" (The stale-word and comment cleanup also follows his G19.10 rule: \"error messages and rule related cleanup belong to every update/new-code.\")\n\nADDED (claude-windows, 2026-10-12, found bringing up noderoutes.net under goal/G19.16):\n- bash/README.md (from 2026-09-06) still says clone to /opt/spirit-os and run as an unprivileged spirit account; that contradicts bash/ONE-OPERATOR.md, AGENT.md and the scripts themselves (lib.sh: CLONE_DIR /root/SpiritOS, the unit runs as root).\n- bash/status probes GET /api/relay/who, which the relay no longer serves, so a healthy relay reads \"https who failed ... local node not answering\"; it should ask /api/relay/key.\n- \"CLINE.md goes.\" So CLINE.md is deleted with this item.\n- On the agent files nobody reads (GROK.md, GPT-OSS.md, RULES.md, AGENT_ONBOARDING.md, .cursor, .github/agents, agents): \"these. kell'em\" So they are deleted with this item, and the lines pointing at them (AGENT.md, ANDYS_RULES_FOR_AGENTS.md, DICTIONARY.md) are corrected.\n",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -3261,6 +3334,51 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-12T13:01:40.058Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/relay.js, spirit/run/js/hub.js, spirit/run/js/relayStatus.js, spirit/run/js/server.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-13T00:43:16.935Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "md go?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T00:53:14.047Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "11 as built, and make the one canonical agent file its own item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T00:53:15.382Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "md before it goes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T00:53:16.563Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "May I delete those three junk files from your tree?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-13T01:07:23.175Z"
     }
    ],
    "chat": [
@@ -3278,6 +3396,176 @@
      "by": "desk",
      "at": "2026-10-12T19:33:22.244Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T21:05:32.752Z",
+     "text": "Taking G19.11, red first: the scratch files and localEar leftovers go, dead verbs go, stale words and comments are corrected, the fileServer buffer gets its cap, the relay README and status probe are fixed.\nG1 asks the grant for the five core files the cleanup touches.\nrelayKeys.unseat stays: G19.1 gave it its caller."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T21:41:03.405Z",
+     "text": "Built in my clone, not committed: the new suite 21 red before, all green after; 182 suites run, none red.\n- Gone: the temp_loop files, the localEar leftovers, relay.who, three dead hub functions, and eight deskVerify verbs only tests called. The fileServer refuses an over-size chunk with a why. bash README and status are fixed.\n- Your decision lines, reworded, not dropped: \"whoBook never uploads\" now reads \"the contacts book never uploads, whoBook until 2026-09-18\", the same in AGENT.md, CLAUDE.md and DICTIONARY.md.\n- Gone with the deskVerify verbs: the tolerated-reds grant (G8.7), the short loop (G8.6) and the idle chores (G8.4). Nothing could start them any more except the removed verbs.\n- CLINE.md is still a byte copy of CLAUDE.md; I would delete it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-12T21:41:05.172Z",
+     "text": "Are the reworded decision lines right, and shall CLINE.md go?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T00:46:18.231Z",
+     "text": "(AGENT.md, ANDYS_RULES_FOR_AGENTS.md at 70 KB, CLAUDE.md and CLINE.md byte-identical, GROK.md, GPT-OSS.md, RULES.md, AGENT_ONBOARDING.md) plus .cursor/, .github/agents/ and agents/. One canonical file with short pointers would stop them drifting."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T00:46:18.814Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T00:46:32.748Z",
+     "text": "- That is a bigger cut than this item: eight agent files and three folders folded into one canonical file with short pointers, your rules file among them.\n- G19.11 as built only rewords the stale lines and would delete CLINE.md."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T00:46:34.615Z",
+     "text": "Ship G19.11 as built, and make the one canonical agent file its own item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T00:46:44.914Z",
+     "text": "that'ts from clowd-claude"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T00:46:45.656Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T00:46:57.504Z",
+     "text": "Noted: the reviewer line, not a ruling. My question above stands; G19.11 waits for it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T00:50:10.273Z",
+     "text": "CLINE.md goes. \n\nwhich ones do you read?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T00:50:31.238Z",
+     "text": "Recorded (box v4): CLINE.md goes.\n- CLAUDE.md is loaded into every session of mine by itself; it sends me to AGENT.md and ANDYS_RULES_FOR_AGENTS.md first, and to DICTIONARY.md for your words.\n- The others, GROK.md, GPT-OSS.md, RULES.md, AGENT_ONBOARDING.md, .cursor, .github/agents and agents, I never open."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T00:51:21.183Z",
+     "text": "The others, GROK.md, GPT-OSS.md, RULES.md, AGENT_ONBOARDING.md, .cursor, .github/agents and agents, I never open.\n\nthese. kell'em"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T00:52:00.611Z",
+     "text": "Recorded (box v5). Checked before deleting; two are not what they look like.\n- agents/ is not instructions: it is the per-agent measurement data publishData writes under your standing grant G4.33 (harness and capacity per agent); deleting it, publishData writes it again on its next run.\n- RULES.md is where AGENT.md says the UI rules live (with UI_DESIGN_STYLE.md); I do not read it, but deleting it drops those rules.\n- GROK.md, GPT-OSS.md, AGENT_ONBOARDING.md, .cursor and .github/agents go, with the pointers to them corrected."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T00:52:02.173Z",
+     "text": "Keep agents/ as measurement data, and fold RULES.md into UI_DESIGN_STYLE.md before it goes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T00:52:52.736Z",
+     "text": "kill red Q's"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T00:53:18.181Z",
+     "text": "Red Qs closed. I go with the safe side of each, say if not:\n- the reworded decision lines stand as posted;\n- agents/ stays (measurement data), RULES.md is folded into UI_DESIGN_STYLE.md, then deleted with the other agent files;\n- one canonical agent file is not in this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:00:20.141Z",
+     "text": "commit 8b41dd27d5d8b5ee95f763286deac8b5e0d058c6: goal/G19.11: hygiene: scratch and localEar files gone, dead verbs gone, stale words corrected, fileServer chunk capped, relay README and status fixed, unread agent files deleted\n- .cursor/rules/karpathy-guidelines.mdc\n- .cursor/settings.local.json\n- .github/agents/gpt-oss.agent.md\n- .gitignore\n- AGENT.md\n- AGENT_ONBOARDING.md\n- ANDYS_RULES_FOR_AGENTS.md\n- CLAUDE.md\n- CLINE.md\n- DICTIONARY.md\n- GPT-OSS.md\n- GROK.md\n- RULES.md\n- UI_DESIGN_STYLE.md\n- bash/README.md\n- bash/RELAY-HOST.md\n- bash/status\n- spirit/run/create-localEar.js\n- spirit/run/js/hub.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayStatus.js\n- spirit/run/js/server.js\n- spirit/run/localEar.json\n- spirit/run/process/js/desk/reply.js\n- spirit/run/process/js/deskUnsloth/configuration.json\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/fileServer/fileServer.js\n- spirit/run/process/js/grokReview/OPENING.md\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/boundedByTime.js\n- spirit/test/deskVerifyCommitBound.js\n- spirit/test/deskVerifyDoneGates.js\n- spirit/test/deskVerifyGoalRun.js\n- spirit/test/deskVerifyIdle.js\n- spirit/test/deskVerifyLive.js\n- spirit/test/deskVerifyLoop.js\n- spirit/test/deskVerifyModes.js\n- spirit/test/deskVerifyQueueKept.js\n- spirit/test/deskVerifyReject.js\n- spirit/test/deskVerifyTab.js\n- spirit/test/deskVerifyTolerated.js\n- spirit/test/hygieneG19_11.js\n- spirit/test/labMaster/BONES.md\n- spirit/test/notASuite.js\n- spirit/test/peerPostWiring.js\n- spirit/test/publishData.js\n- spirit/test/removePeer.js\n- spirit/test/rollNarrow.js\n- temp-desk-reply.js\n- temp_loop.js\n- temp_loop2.js\n- temp_loop3.js\n- temp_loop4.js\n- temp_loop5.js\n- temp_loop6.js\n- temp_loop_clean.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:00:26.181Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:00:28.158Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:00:32.534Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:00:38.223Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:00:43.214Z",
+     "text": "Built at 8b41dd27, 57 files. Core: relay, hub, relayStatus, server, natterDetails (G1).\n- Removed verbs: relay.who; hub handleMatches, handleWho, withRelay; deskVerify mode, suites, loop.once, idle, chore.once, goal.check, records.search, claim.check.\n- Deleted: the temp_loop files, the localEar leftovers, CLINE.md, GROK.md, GPT-OSS.md, AGENT_ONBOARDING.md, RULES.md (its two rules moved into UI_DESIGN_STYLE.md), .cursor, .github/agents; configuration.json untracked; agents/ kept."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:03:54.839Z",
+     "text": "deskVerify: rejected, at 8b41dd27 (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/hygieneG19_11.js: FAILURE #1.1: OWED by goal/G19.11: still there: .cursor"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-13T01:03:56.636Z",
+     "text": "verify rejected: spirit/test/hygieneG19_11.js: FAILURE #1.1: OWED by goal/G19.11: still there: .cursor"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:04:39.465Z",
+     "text": "commit 4ca06b910b2a34434878d13ed2f1316bfb61b77f: goal/G19.11: the hygiene suite counts a folder gone when no file is left in it\n- spirit/test/hygieneG19_11.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:04:50.603Z",
+     "text": "Fixed at 4ca06b91: your pull left .cursor as an empty folder; the suite now counts a folder gone when no file is left in it. Claimed again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:04:51.973Z",
+     "text": "deskVerify: not checked, at 8b41dd27 (dirty, not pulled): the tree lacks the item's commit 4ca06b91. Nothing was measured, so this is not a pass."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:04:57.339Z",
+     "text": "deskVerify: not checked, at 8b41dd27 (dirty, not pulled): the tree lacks the item's commit 4ca06b91. Nothing was measured, so this is not a pass."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:05:16.311Z",
+     "text": "- Your tree now reads dirty: three junk files at its root, named like code fragments, left on 2026-10-08 by a shell command that redirected by mistake.\n- The pasted console.log lines in .gitignore were hiding exactly these; G19.11 removed those lines, so they show now and deskVerify will not pull.\n- They hold only scraps of that command."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:05:17.962Z",
+     "text": "May I delete those three junk files from your tree?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:07:09.656Z",
+     "text": "Q5: May I delete those three junk files from your tree?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-13T01:07:24.702Z",
+     "text": "Deleted; your tree is clean. Asking deskVerify again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-13T01:10:19.010Z",
+     "text": "deskVerify: passed, at 4ca06b91 (pulled). 14 suites ran green."
     }
    ]
   },
