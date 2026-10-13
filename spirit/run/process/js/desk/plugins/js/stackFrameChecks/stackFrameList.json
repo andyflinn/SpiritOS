@@ -1,7 +1,7 @@
 [
   {
     "id": "d1",
-    "gate": "spirit/run/js/peerPost.js::holdStreams",
+    "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "spirit/run/js/presenceNode.js",
     "suites": [
       "serverSurface.js",
@@ -11,7 +11,7 @@
   },
   {
     "id": "d2",
-    "gate": "spirit/run/js/peerPost.js::pump",
+    "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "spirit/run/js/postQueue.js",
     "suites": [
       "serverSurface.js",
@@ -21,7 +21,7 @@
   },
   {
     "id": "d3",
-    "gate": "spirit/run/js/peerPost.js::onRequest",
+    "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "node:http+https+fetch",
     "paths": [
       "/api/relay/"
@@ -34,7 +34,7 @@
   },
   {
     "id": "d4",
-    "gate": "spirit/run/js/peerPost.js::sendAttempt",
+    "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "spirit/run/js/relayRequest.js",
     "suites": [],
     "item": "plugin/stackFrameChecks.2"
