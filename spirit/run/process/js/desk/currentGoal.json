@@ -1,5 +1,5 @@
 {
- "change": 54047,
+ "change": 54048,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -14,6 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
+    "goal/G14.3",
     "goal/G14.9"
    ],
    "go": false,
@@ -634,12 +635,9 @@
    "id": "goal/G14.3",
    "title": "Block the Goal/G14 from running the Verifier for an hour.",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "deskVerify passed",
    "with": "claude-windows",
-   "buttons": [
-    "close",
-    "reopen"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G14"
    ],
@@ -647,7 +645,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
