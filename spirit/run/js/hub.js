@@ -2790,27 +2790,47 @@ function createHub(rootDir) {
   function relayLabel(row) {
     var who = row.refused ? 'refused this node' : (row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined'));
     var up = row.status === 200 ? 'online' : 'offline';
-    // A relay with no name goes by its host, never its whole url: the
-    // search below matches this label, and since Andy's '*' rule (G2,
-    // 48d189f4) a '*' never spans the '/' of "https://".
+    // A relay with no name goes by its host, never its whole url.
     var name = row.label || String(row.url || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '');
     return name + ' — ' + who + ', ' + up;
   }
 
+  // ── RANKED, NOT FILTERED (goal/G19.17) ──────────────────────────────
+  //
+  //   Andy, in the item: "we should have put in the new search thinggie for
+  //   relay's" ; "add it."
+  //
+  // It matched its own way (searchBucket over gradedSearch), where a '*'
+  // never spans a '/': a relay whose label is its url, as a claim lists
+  // one, was left out of Natter's list although relay.get found it. Now
+  // it ranks as the desk's items.search does (desk.js, ranked(), goal/G18.5):
+  // every listed relay is weighed with probabilityStringObjectMatch and
+  // seated in a probabilityBucket, which orders them and cuts the answer
+  // in bytes. No text (or only '*', what the page kernel asks) weighs
+  // every relay 0, and the bucket keeps the node's list order.
+  var probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+  var createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+  var RELAY_SEARCH_SCANNED = 1000;
+  var RELAY_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
+
   function relaySearch(body) {
     return relaySummary().then(function (summary) {
-      var s = require('./searchBucket').createSearch({
-        query: body && body.q,
-        // The label only (slim/G1.3, Andy's relay display): with the url in
-        // it, '*' matched nothing, and Natter asks for every relay with '*'.
-        getLabelStringFromIncomingObject: function (r) { return relayLabel(r); },
-        extractKeyAndLabelFromRow: function (r) { return { key: r.url, label: relayLabel(r) }; },
-      });
-      for (var i = 0; i < summary.rows.length; i += 1) { if (!s.offer(summary.rows[i])) break; }
-      var r = s.getResult();
+      var q = String((body && body.q) || '').trim();
+      var text = /^\*+$/.test(q) ? '' : q;
+      var bucket = createProbabilityBucket(RELAY_SEARCH_SCANNED);
+      var more = false;
+      for (var i = 0; i < summary.rows.length; i += 1) {
+        if (i >= RELAY_SEARCH_SCANNED) { more = true; break; }
+        var row = summary.rows[i];
+        var pair = { key: String(row.url), label: relayLabel(row) };
+        // One pair too big for the answer alone is skipped and said by more.
+        if (Buffer.byteLength(JSON.stringify([pair]), 'utf8') > RELAY_SEARCH_ROOM) { more = true; continue; }
+        bucket.seatFor(text ? probabilityStringObjectMatch(text, { label: pair.label, url: pair.key }) : 0, pair);
+      }
+      var r = bucket.serialize(null, RELAY_SEARCH_ROOM);
       // One fact about this node, never a row: it owns more than one relay
       // and has to pick which one it is known by.
-      return { ok: true, status: 200, items: r.items, more: r.more, mustPick: !!summary.mustPick,
+      return { ok: true, status: 200, items: r.items, more: !!(r.more || more), mustPick: !!summary.mustPick,
         name: String((body && body.name) || '') };
     });
   }
