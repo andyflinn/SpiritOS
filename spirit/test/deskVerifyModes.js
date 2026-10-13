@@ -23,9 +23,11 @@
 // THE SHAPE ASSERTED, names mine for the builder to argue:
 //   mode {} -> {mode, apps}: what it read, and the app names it read it from. (A verb until goal/G19.11; now only
 //   the function inside deskVerify, judged by what `record` keeps.)
-//   record: in 'desk' mode it keeps rows as goal/G8.1 built it; in 'agent' and 'none' modes it answers the outcome it
-//   was told and stores NOTHING - his "no commit for deskVerify on an agents node" - so an agent's copy can still
-//   answer "is my work done" without a record existing anywhere but his clone.
+//   record: in 'desk' and 'agent' modes it keeps rows as goal/G8.1 built it; in 'none' mode it answers and stores
+//   nothing.
+// SINCE goal/G21.3: every node's deskVerify keeps its own test records in the same shape; the desk node's records are
+// the authoritative ones, an agent's are private to its own work and never go through git. "No commit" means the
+// agent's deskVerify writes nothing official, not that it keeps no records. Section 3 asserts that.
 
 const fs = require('fs');
 const os = require('os');
@@ -117,14 +119,16 @@ async function start(name, apps) {
     if (kept.body && kept.body.written === true && deskNode.rows().length === 1) test.check('a record on the desk node is written, as goal/G8.1 has it');
     else test.fail(OWED + 'the desk node answered ' + short(kept.body) + ' with ' + deskNode.rows().length + ' rows');
 
-    test.subHeading('3. an agent\'s clone keeps nothing, and still answers');
+    test.subHeading('3. an agent\'s clone keeps its own records (goal/G21.3)');
+    const OWED3 = 'OWED by goal/G21.3: ';
     const seen = await agentNode.ask('record', { suite: 'mini.js', title: 'it holds', outcome: 'red' });
     if (seen.status === 200 && seen.body && seen.body.ok !== false) test.check('an agent node takes the record without refusing it');
-    else test.fail(OWED + 'the agent node answered ' + short(seen.body));
-    if (seen.body && seen.body.written === false) test.check('and says it wrote nothing');
-    else test.fail(OWED + 'written answered ' + short(seen.body && seen.body.written));
-    if (!agentNode.rows().length) test.check('its database holds no row: no commit for deskVerify on an agent node');
-    else test.fail(OWED + 'the agent node stored ' + short(agentNode.rows()));
+    else test.fail(OWED3 + 'the agent node answered ' + short(seen.body));
+    if (seen.body && seen.body.written === true) test.check('and says it wrote it');
+    else test.fail(OWED3 + 'written answered ' + short(seen.body && seen.body.written));
+    const agentRows = agentNode.rows();
+    if (agentRows.length === 1 && agentRows[0].suite === 'mini.js' && agentRows[0].outcome === 'red') test.check('its own database holds the row, in the same shape as the desk node\'s');
+    else test.fail(OWED3 + 'the agent node stored ' + short(agentRows));
     const bareRec = await bare.ask('record', { suite: 'mini.js', title: 'it holds', outcome: 'green' });
     if (bareRec.status === 200 && !bare.rows().length) test.check('a node that is neither stores nothing either');
     else test.fail(OWED + 'the bare node answered ' + short(bareRec.body) + ' with ' + bare.rows().length + ' rows');

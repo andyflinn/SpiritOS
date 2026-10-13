@@ -21,8 +21,11 @@
 //
 // WHERE IT RUNS (goal/G8.3, his rulings of 2026-10-09): "deskVerify belongs to my clone and is a companion to desk, it
 // runs on your clone only as a personal check (is my work done?)", and on an agent's clone "it will never commit" —
-// an agent's copy answers its own agent and keeps no record. This file is the same code either way; what differs is
-// whose node runs it.
+// an agent's copy answers its own agent and never speaks for the desk. This file is the same code either way; what
+// differs is whose node runs it.
+// EVERY NODE KEEPS ITS OWN RECORDS (goal/G21.3, Andy's ruling): an agent's copy keeps test records in the same shape
+// as the desk node's, private to that agent's work and never shared through git, so the agent's results can be
+// compared with the official record through the search verb. The desk node's copy stays the authoritative record.
 
 const fs = require('fs');
 const path = require('path');
@@ -1229,7 +1232,7 @@ async function writeTestState(dir, agent, m) {
   const report = {
     agent: agent, node: String(spirit.core.node.const.NODE_NAME || ''), measuredAt: new Date().toISOString(), commit: t.short || t.commit || '',
     from: 'verify.db: the newest row of each test this node\'s deskVerify keeps; no suite was run for this report',
-    note: rows.length ? '' : (m.mode === 'agent' ? 'no records: an agent node\'s deskVerify keeps none (goal/G8.2)' : 'no records yet'),
+    note: rows.length ? '' : 'no records yet',
     tests: rows.length, green: rows.length - reds.length, red: reds.length,
     suites: Object.keys(bySuite).sort().map(function (k) { return bySuite[k]; }),
     reds: reds,
@@ -1325,8 +1328,8 @@ appServer.serve({
     },
   },
   // ONE RECORD, AS IT HAPPENS (his words above). The answer says whether it was kept: a repeat of the same outcome is
-  // not, and that is the whole of the de-duplication - the history is the flips. Only his clone keeps anything: on an
-  // agent's node "it will never commit", so a record there is taken and answered, and nothing is stored.
+  // not, and that is the whole of the de-duplication - the history is the flips. His clone and an agent's both keep
+  // their own (goal/G21.3); a node that is neither answers and stores nothing.
   // THE WHY TRAVELS WITH THE RED (goal/G21.3): `failure`, optional, is the text the suite printed for it; capped by keep.
   record: {
     request: { suite: '', title: '', outcome: '', failure: '' }, reply: { written: true },
@@ -1343,7 +1346,7 @@ appServer.serve({
       const outcome = String(a.outcome || '');
       if (!suite || !title) throw new Error('a record needs its suite and its title');
       if (outcome !== 'red' && outcome !== 'green') throw new Error('an outcome is red or green');
-      return mode().then(function (m) { return m.mode === 'desk' ? keep(suite, title, outcome, a.failure) : { written: false }; });
+      return mode().then(function (m) { return m.mode === 'desk' || m.mode === 'agent' ? keep(suite, title, outcome, a.failure) : { written: false }; });
     },
   },
   // ONE SEARCH, OVER TESTS OR RUNS (goal/G21.3). A read: nothing is written through it. Every key is optional; `over`
