@@ -74,6 +74,12 @@ function deskUnslothRemoteAnswerOf(target, r) {
   return said.body && typeof said.body === 'object' ? said.body : { ok: false, error: 'the puppet answered nothing' };
 }
 
+// A REFUSAL IN DESKUNSLOTH'S OWN WORDS (goal/G14.10): its reason rides in extra.why, while error is the catalogue's
+// wording for the code ("text required" for any bad-request, seen live on a refused model list). The reason first.
+function deskUnslothRemoteWhy(said, otherwise) {
+  return (said && ((said.extra && said.extra.why) || said.error || said.code)) || otherwise || '';
+}
+
 // THE CHAT FOLLOWS THE TARGET TOO (Andy, 2026-10-10, lifting his earlier ruling that the chat box shows on the
 // hosting node only: "so we should be able to run chat on 65432 just by removing the check", "go."). The send is
 // the one ask, through the same function as the switch; the answer comes down the stream on either node.
@@ -275,7 +281,7 @@ function deskUnslothRemotePairPress(event) {
   var verb = use ? 'connection.use' : 'connection.remove';
   deskUnslothRemoteAsk(target, verb, { name: use || remove }).then(function (said) {
     if (target !== deskUnslothRemoteTarget) return;
-    if (!said || said.ok === false) { deskUnslothRemoteSay((said && ((said.extra && said.extra.why) || said.error || said.code)) || verb + ' was refused', true); return; }
+    if (!said || said.ok === false) { deskUnslothRemoteSay(deskUnslothRemoteWhy(said, verb + ' was refused'), true); return; }
     if (use) deskUnslothRemoteSay(said.answers ? 'using ' + use + ': a server answers there' : 'using ' + use + ', but nothing answers there: ' + said.error, !said.answers);
     else deskUnslothRemoteSay(remove + ' is removed', false);
     deskUnslothRemoteLoadState();
@@ -329,11 +335,17 @@ function deskUnslothRemoteSaveServer() {
   }
   if (!u) { deskUnslothRemoteSay('a url is needed, the OpenAI root, for example http://127.0.0.1:8888/v1', true); return; }
   var target = deskUnslothRemoteTarget;
-  deskUnslothRemoteAsk(target, 'connection.set', { name: n, url: u, key: String((key && key.value) || '') }).then(function (said) {
+  var args = { name: n, url: u, key: String((key && key.value) || '') };
+  // The workspace goes only when filled (goal/G14.10): a server that asks for none is sent what it always was.
+  var workspace = document.getElementById('dur-server-workspace');
+  var w = String((workspace && workspace.value) || '').trim();
+  if (w) args.workspace = w;
+  deskUnslothRemoteAsk(target, 'connection.set', args).then(function (said) {
     if (target !== deskUnslothRemoteTarget) return;
-    if (!said || said.ok === false) { deskUnslothRemoteSay((said && ((said.extra && said.extra.why) || said.error || said.code)) || 'the connection was not set', true); return; }
+    if (!said || said.ok === false) { deskUnslothRemoteSay(deskUnslothRemoteWhy(said, 'the connection was not set'), true); return; }
     deskUnslothRemoteSay(said.answers ? 'connected: a server answers at ' + said.url : 'saved, but nothing answers at ' + said.url + ': ' + said.error, !said.answers);
     if (key) key.value = '';
+    if (workspace) workspace.value = '';
     deskUnslothRemoteLoadState();
     deskUnslothRemoteLoadModels();
   });
@@ -349,7 +361,7 @@ function deskUnslothRemoteDrawModels() {
   var got = deskUnslothRemoteModels;
   if (!got || got.ok === false || !Array.isArray(got.models)) {
     box.innerHTML = got && got.ok === false
-      ? '<div class="job-start-error">the studio could not be read: ' + escape(got.error || got.code || 'no answer') + '</div>'
+      ? '<div class="job-start-error">the studio could not be read: ' + escape(deskUnslothRemoteWhy(got, 'no answer')) + '</div>'
       : '';
     return;
   }
@@ -431,7 +443,7 @@ function deskUnslothRemoteTest() {
   deskUnslothRemoteDrawModels();
   var target = deskUnslothRemoteTarget;
   deskUnslothRemoteAsk(target, 'model.test', { id: pair.id, quant: pair.quant }).then(function (said) {
-    if (said && said.ok === false) { deskUnslothRemoteSay(said.error || said.code || 'the test was refused', true); return; }
+    if (said && said.ok === false) { deskUnslothRemoteSay(deskUnslothRemoteWhy(said, 'the test was refused'), true); return; }
     if (target !== deskUnslothRemoteTarget) return;
     deskUnslothRemoteSay('testing ' + pair.id + (pair.quant ? ' ' + pair.quant : '') + ': it loads first, which can take minutes', false);
   });
@@ -523,7 +535,7 @@ function deskUnslothRemoteApplyPublished(obj) {
 // Andy, 2026-10-10, after a load failed live: "your UI must release the hour-glass status. and allow another
 // loading attempt." A pure function, so the red can hold it.
 function deskUnslothRemoteLoadOver(got, id) {
-  if (!got || got.ok === false) return { over: true, error: (got && (got.error || got.code)) || 'the studio could not be read' };
+  if (!got || got.ok === false) return { over: true, error: deskUnslothRemoteWhy(got, 'the studio could not be read') };
   // id is a pair key (id|quant, goal/G10.9) or a bare id, as before it.
   var bare = String(id || '').split('|')[0];
   var loaded = Array.isArray(got.models) && got.models.some(function (m) { return (deskUnslothRemoteKey(m) === id || m.id === id) && m.loaded; });
@@ -549,7 +561,7 @@ function deskUnslothRemoteLoad() {
     if (target !== deskUnslothRemoteTarget) return;
     if (said && said.ok === false) {
       deskUnslothRemoteLoadTimer = null;
-      deskUnslothRemoteSay((said.extra && said.extra.why) || said.error || said.code || 'the load was refused', true);
+      deskUnslothRemoteSay(deskUnslothRemoteWhy(said, 'the load was refused'), true);
       deskUnslothRemoteDrawModels();
     }
   });
@@ -562,7 +574,7 @@ function deskUnslothRemoteLoadState() {
   return deskUnslothRemoteAsk(deskUnslothRemoteTarget, 'state', {}).then(function (said) {
     deskUnslothRemoteState = said;
     deskUnslothRemoteBusy = false;
-    deskUnslothRemoteSay(said && said.ok === false ? (said.error || said.code || 'no answer') : '', true);
+    deskUnslothRemoteSay(said && said.ok === false ? deskUnslothRemoteWhy(said, 'no answer') : '', true);
     deskUnslothRemoteDrawAll();
     return said;
   });
@@ -576,7 +588,7 @@ function deskUnslothRemoteFlip() {
   deskUnslothRemoteAsk(deskUnslothRemoteTarget, 'connect', { on: on }).then(function (said) {
     deskUnslothRemoteBusy = false;
     if (said && said.ok === false) {
-      deskUnslothRemoteSay(said.error || said.code || 'the switch was not flipped', true);
+      deskUnslothRemoteSay(deskUnslothRemoteWhy(said, 'the switch was not flipped'), true);
       deskUnslothRemoteDraw();
       return;
     }
@@ -622,7 +634,7 @@ function deskUnslothRemoteAbort() {
   var target = deskUnslothRemoteTarget;
   deskUnslothRemoteAsk(target, 'abort', {}).then(function (said) {
     if (target !== deskUnslothRemoteTarget) return;
-    if (said && said.ok === false) { deskUnslothRemoteSay((said.extra && said.extra.why) || said.error || said.code || 'the abort was refused', true); return; }
+    if (said && said.ok === false) { deskUnslothRemoteSay(deskUnslothRemoteWhy(said, 'the abort was refused'), true); return; }
     deskUnslothRemoteSay('aborted: the model is free', false);
   });
 }
@@ -669,7 +681,7 @@ function deskUnslothRemoteChatSend() {
   Object.keys(payload).forEach(function (k) { if (k !== 'verb') rest[k] = payload[k]; });
   deskUnslothRemoteApi.verb(payload.verb, rest).then(function (r) {
     var said = deskUnslothRemoteAnswerOf(target, r);
-    if (!said || said.ok === false || !said.id) throw new Error((said && (said.error || said.code)) || 'the chat was refused');
+    if (!said || said.ok === false || !said.id) throw new Error(deskUnslothRemoteWhy(said, 'the chat was refused'));
     // THE ANSWER ARRIVES AS A PUBLISHED OBJECT (goal/G14.5): chat {id, done, text}, taken by
     // deskUnslothRemoteApplyPublished. Nothing is polled, and nothing gives up on it: since goal/G19.7 the model's
     // answer has no timeout, so the chat waits for the answer or for Abort, which publishes it done.
@@ -767,6 +779,8 @@ spirit.shell.activateApp({
           '<input type="text" id="dur-server-url" placeholder="http://127.0.0.1:8888/v1">' +
         '</label>' +
         '<label class="field-label">key<input type="password" id="dur-server-key" placeholder="the server key"></label>' +
+        // THE WORKSPACE (goal/G14.10): beside the key, empty unless the server asks for one (Anthropic does).
+        '<label class="field-label">workspace<input type="text" id="dur-server-workspace" placeholder="only if the server asks for one"></label>' +
         '<button type="button" id="dur-server-save">Save and use</button>' +
       '</div>' +
       '<div class="job-manifest-note">Connected, the agent reads the desk and answers what is addressed to it, ' +

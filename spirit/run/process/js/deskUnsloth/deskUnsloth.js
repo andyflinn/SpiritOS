@@ -82,21 +82,31 @@ const CONFIGURATION = fs.existsSync(path.join(STATE, CONFIGURATION_FILE)) ? read
 // [{name, url, key, use, model}]: one pair in use, and the model chosen on each pair kept with it. AN OLD FILE, one
 // {url, key}, is read as one pair named studio, in use, its model the configuration's; it is rewritten as an array at
 // the first change (stored data stays readable).
+// A WORKSPACE BESIDE THE KEY (goal/G14.10): Andy wants his Anthropic user key, which Anthropic accepts only with a
+// workspace id on every call. So a pair keeps an optional workspace, '' when the server asks for none, and every call
+// to a pair that has one carries the header anthropic-workspace-id (pairHeaders below). One header, not an
+// adapter: Andy refused an adapter for deskUnsloth in goal/G21.
 const LEGACY_PAIR = 'studio';
 function readConnections() {
   let c = null;
   try { c = JSON.parse(fs.readFileSync(path.join(STATE, CONNECTION_FILE), 'utf8')); } catch (e) { return []; }
   if (Array.isArray(c)) {
     return c.filter(function (p) { return p && typeof p.name === 'string' && p.name; }).map(function (p) {
-      return { name: p.name, url: String(p.url || ''), key: String(p.key || ''), use: p.use === true, model: String(p.model || '') };
+      return { name: p.name, url: String(p.url || ''), key: String(p.key || ''), use: p.use === true, model: String(p.model || ''), workspace: String(p.workspace || '') };
     });
   }
-  if (c && typeof c === 'object' && c.url) return [{ name: LEGACY_PAIR, url: String(c.url), key: String(c.key || ''), use: true, model: String(CONFIGURATION.model || '') }];
+  if (c && typeof c === 'object' && c.url) return [{ name: LEGACY_PAIR, url: String(c.url), key: String(c.key || ''), use: true, model: String(CONFIGURATION.model || ''), workspace: '' }];
   return [];
 }
 function writeConnections() {
-  const rows = CONNECTIONS.map(function (p) { return { name: p.name, url: p.url, key: p.key, use: p.use, model: p.model }; });
+  const rows = CONNECTIONS.map(function (p) { return { name: p.name, url: p.url, key: p.key, use: p.use, model: p.model, workspace: p.workspace || '' }; });
   fs.writeFileSync(path.join(STATE, CONNECTION_FILE), JSON.stringify(rows, null, 2) + '\n');
+}
+// The headers of every call to a pair: its key, and its workspace only when it has one (goal/G14.10).
+function pairHeaders(pair) {
+  const headers = { Authorization: 'Bearer ' + String((pair && pair.key) || '') };
+  if (pair && pair.workspace) headers['anthropic-workspace-id'] = String(pair.workspace);
+  return headers;
 }
 function pairNamed(name) { return CONNECTIONS.filter(function (p) { return p.name === name; })[0] || null; }
 let CONNECTIONS = readConnections();
@@ -269,7 +279,7 @@ function studio(method, pathname, body, timeoutMs, conn, flight) {
   const text = body === undefined ? '' : JSON.stringify(body);
   const lib = url.protocol === 'https:' ? https : http;
   return new Promise(function (resolve, reject) {
-    const headers = { Authorization: 'Bearer ' + String(pair.key || '') };
+    const headers = pairHeaders(pair);
     if (text) { headers['Content-Type'] = 'application/json'; headers['Content-Length'] = Buffer.byteLength(text); }
     const req = lib.request({
       hostname: url.hostname,
@@ -925,7 +935,7 @@ function probe() {
     const lib = url.protocol === 'https:' ? https : http;
     const req = lib.request({
       hostname: url.hostname, port: url.port || (url.protocol === 'https:' ? 443 : 80), path: url.pathname + url.search,
-      method: 'GET', headers: { Authorization: 'Bearer ' + String(CONNECTION.key || '') },
+      method: 'GET', headers: pairHeaders(CONNECTION),
     }, function (res) { res.resume(); resolve({ ok: true, error: '' }); });
     req.on('error', function (e) { resolve({ ok: false, error: String((e && e.message) || e) }); });
     req.setTimeout(PROBE_MS, function () { req.destroy(new Error('no answer within ' + PROBE_MS + ' ms')); });
@@ -943,14 +953,15 @@ function nameWhy(name) {
   return 'the pair\'s ' + p + (bytes > fr.MAX_BYTES ? ' (' + bytes + ' bytes, the limit is ' + fr.MAX_BYTES + ')' : '');
 }
 function connectionsNow() { return CONNECTIONS.map(function (p) { return { name: p.name, url: p.url, use: p.use === true }; }); }
-function setConnection(name, url, key) {
+function setConnection(name, url, key, workspace) {
   const why = nameWhy(name);
   if (why) throw refused(why);
   const n = require('../../../js/fieldRules.js').normalize(name);
   let p = pairNamed(n);
-  if (!p) { p = { name: n, url: '', key: '', use: false, model: '' }; CONNECTIONS.push(p); }
+  if (!p) { p = { name: n, url: '', key: '', use: false, model: '', workspace: '' }; CONNECTIONS.push(p); }
   p.url = String(url || '');
   p.key = String(key || '');
+  p.workspace = String(workspace || '').trim();
   return usePair(n);
 }
 function usePair(name) {
@@ -1329,11 +1340,19 @@ appServer.serve({
   },
   // THE SERVER BUBBLE'S VERB (goal/G10.7): the url and the key into connection.json, and whether a server answers.
   // Since goal/G18.6 a named pair, one of several kept in connection.json; the key never comes back.
+  // Since goal/G14.10 an optional workspace beside the key, left out when the server asks for none.
   'connection.set': {
-    request: { name: '', url: '', key: '' }, reply: { url: '', answers: true, error: '' },
+    request: { name: '', url: '', key: '', workspace: '' }, reply: { url: '', answers: true, error: '' },
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
+      const known = ['name', 'url', 'key', 'workspace'];
+      return Object.keys(a).every(function (k) { return known.indexOf(k) !== -1; }) &&
+        typeof a.name === 'string' && typeof a.url === 'string' && typeof a.key === 'string' &&
+        (a.workspace === undefined || typeof a.workspace === 'string');
+    },
     handler: function (a) {
       if (!String(a.url || '')) throw { refusal: 'bad-request', extra: { why: 'a url is needed' } };
-      return setConnection(a.name, a.url, a.key);
+      return setConnection(a.name, a.url, a.key, a.workspace);
     },
   },
   'connection.use': {
