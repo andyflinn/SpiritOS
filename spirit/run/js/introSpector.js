@@ -120,10 +120,12 @@ function family(dir, opts) {
         getLabelStringFromIncomingObject: function (pair) { return pair.label; },
         extractKeyAndLabelFromRow: function (pair) { return pair; },
       });
+      // NAMES ONLY (goal/G24.4). Andy: "first get the list of verbs ... for the allowed ones it gets the description".
+      // A label carried the verb's whole description, so past about 8 KB of them the listing was cut and the verbs at
+      // its end were lost to a caller that read one answer. The label is the verb's name now, so a family fits one
+      // answer; the description is AGENTS.<verb>'s, asked for each verb the caller keeps.
       for (const stem of stems) {
-        let label = '';
-        try { label = String(JSON.parse(fs.readFileSync(path.join(dir, folder.files[stem]), 'utf8')).description || ''); } catch (e) { continue; }
-        if (!bucket.offer({ key: prefix + stem, label: label })) break;
+        if (!bucket.offer({ key: prefix + stem, label: stem })) break;
       }
       return bucket.getResult();
     },

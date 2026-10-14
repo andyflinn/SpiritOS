@@ -85,6 +85,8 @@ function createTools(opts) {
     return Number(r) > 0 ? Number(r) : 4096;
   };
   if (!ask && !Object.keys(routes).length) throw new Error('tools: an ask of the node or a route is required');
+  // The verbs never offered, each '<namespace>.<verb>' (goal/G24.4); none unless the caller names them.
+  const withhold = Array.isArray(o.withhold) ? o.withhold.map(String) : [];
   let known = Object.create(null);   // tool name -> { route, stem, request }
 
   function routeOf(ns) {
@@ -105,6 +107,10 @@ function createTools(opts) {
           if (!key) return tools;
           // The node lists net.fetch, a process server lists item.get: the stem is what follows the namespace.
           const stem = key.indexOf(ns + '.') === 0 ? key.slice(ns.length + 1) : key;
+          // WITHHELD BEFORE ITS DETAILS ARE ASKED (goal/G24.4). Andy: "first get the list of verbs ... for the allowed
+          // ones it gets the description". A verb named in withhold ('<namespace>.<verb>') is not offered, and its
+          // AGENTS.<verb> is never asked.
+          if (withhold.indexOf(ns + '.' + stem) !== -1) return tools;
           return route.ask(route.family(stem), {}).then(function (f) {
             const file = f && isPlain(f.body) ? f.body : {};
             const description = String(file.description || item.label || '');
