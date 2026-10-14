@@ -1,5 +1,5 @@
 {
- "change": 61059,
+ "change": 61063,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
@@ -676,34 +675,60 @@
    "id": "goal/G24.6",
    "title": "Desk: the List takes new items from the stream",
    "goal": "goal/G24",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G24.5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -713,7 +738,14 @@
    "box": "The List (the table of items) takes additions from the stream: an item added, by Andy or an agent, appears in its place; a changed item's row is replaced; a closed one follows the include-closed toggle.\nToday a published change for an item the List does not hold makes it ask items.search again (deskOnPublished in desk.js), a pull, against Andy's \"no pulling\".\nThe row is drawn from what the publish carries, in the order the server gives.\nTest: a published new item appears as a row with no items.search asked; a published change replaces its row.\n",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T04:39:31.547Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G24.7",
