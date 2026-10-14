@@ -1,5 +1,5 @@
 {
- "change": 58652,
+ "change": 58655,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -44,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -4141,10 +4141,9 @@
    "id": "goal/G14.11",
    "title": "deskUnsloth: a plain server's context from its model entry",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
