@@ -1,0 +1,7 @@
+{
+  "description": "Take a phase of an item (red, build, verify); one holder each, one task at a time.",
+  "request": {
+    "id": "",
+    "phase": ""
+  }
+}

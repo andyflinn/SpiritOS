@@ -1,0 +1,6 @@
+{
+  "description": "Add a goal by title; answers its id. Only on Andy's word.",
+  "request": {
+    "title": ""
+  }
+}

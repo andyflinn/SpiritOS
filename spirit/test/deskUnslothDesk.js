@@ -157,11 +157,14 @@ async function suite() {
   // SINCE goal/G10.8 FIFTEEN: Andy, 2026-10-12, "yes." to box.write, press, check.set, item.files.add and verify.again
   // being described for Levant too, so the family lists the ten and those five.
   // Since goal/G19.13 SIXTEEN: the desk's claim {id, phase, commit} has its verb file, claim.json.
-  const ALL = TEN.concat(['box.write', 'press', 'check.set', 'item.files.add', 'verify.again', 'claim']);
+  // Since goal/G24.1 THIRTY-THREE: the seventeen desk verbs cw uses daily got their files (deskAgentVerbFiles.js).
+  const ALL = TEN.concat(['box.write', 'press', 'check.set', 'item.files.add', 'verify.again', 'claim',
+    'line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may',
+    'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get']);
   let family = null;
   try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: ALL, manifest: 'desk.json' }); } catch (e) { family = null; }
   const listed = family ? Object.keys(family.verbs).filter(function (n) { return n.indexOf('AGENTS.') === 0 && n !== 'AGENTS.introspect'; }).map(function (n) { return n.slice(7); }).sort() : [];
-  if (family && !family.stale.length && listed.join(',') === ALL.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the sixteen, no stale file (desk.json and currentGoal.json left alone)');
+  if (family && !family.stale.length && listed.join(',') === ALL.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the thirty-three, no stale file (desk.json and currentGoal.json left alone)');
   else test.fail(OWED + 'the family lists ' + listed.join(',') + '; stale ' + short(family && family.stale));
 
   // ── 2. THE OBJECT WITH A DESK ROUTE ─────────────────────────────────────

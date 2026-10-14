@@ -1,0 +1,8 @@
+{
+  "description": "Add an item to a goal (blocks: what it blocks, empty for the goal); answers its id. Only on Andy's word.",
+  "request": {
+    "goal": "",
+    "title": "",
+    "blocks": ""
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "description": "Whether you may commit on an item now: {allowed, why}.",
+  "request": {
+    "id": ""
+  }
+}

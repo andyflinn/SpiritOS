@@ -1,0 +1,10 @@
+{
+  "description": "Search an item's chat lines by text, by, since, before; newest first, more when cut.",
+  "request": {
+    "id": "",
+    "text": "",
+    "by": "",
+    "since": "",
+    "before": ""
+  }
+}

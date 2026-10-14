@@ -1,0 +1,6 @@
+{
+  "description": "Take an item's box before box.write; first wins, others are refused taken.",
+  "request": {
+    "id": ""
+  }
+}

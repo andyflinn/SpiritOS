@@ -1,0 +1,6 @@
+{
+  "description": "Read one desk rule by its key, as rules.search answers it.",
+  "request": {
+    "key": ""
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "description": "Finish your phase; verify sends pass and why (a fail goes back to build).",
+  "request": {
+    "id": "",
+    "phase": "",
+    "pass": false,
+    "why": ""
+  }
+}
