@@ -1,5 +1,5 @@
 {
- "change": 58133,
+ "change": 58155,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run started",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -1211,42 +1210,68 @@
    "id": "goal/G22.4",
    "title": "Hub and offboard reach relays only through peerPost",
    "goal": "goal/G22",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G22"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The hub and offboard reach relays only through peerPost.\n\nDECIDED (Andy, 2026-10-13)\n- The relay violators the stack-frame doors find are fixed in goal/G22, so its goal run goes green honestly.\n- Every request our production code sends to a relay goes through peerPost (the gate peerPost.js::createPeerPost); the stack-frame test is the judge, through deskVerify.\n- peerPost owns every contact with a relay, its relaying and its public verbs (key, claim) alike, and uses relayRequest only inside itself; the hub never touches a relay or relayRequest, it asks peerPost. Relay listing is a search over the relays peerPost already knows, with no call to a relay.\n- Offboard asks its node, never a relay.\n- One door holds it: nothing reaches a relay or relayRequest except through peerPost.js::createPeerPost.\n- No exception: since goal/G22.5 the node has its key from boot, so even a post to the node itself before it knows a relay goes through peerPost.\n\nFOUND (the relay door's run, 2026-10-13; paths under spirit/run/)\n- js/hub.js:300 sealedClaim, from handleClaim: fetches the relay's key itself.\n- js/hub.js:1084 handleClaim: posts the claim to the relay itself.\n- js/hub.js:2784 relaySummary, from relayGet and from relaySearch, via ownerBadge's probe: asks each relay for its key itself.\n- js/hub.js:2651 handlePartnerCheck: fetches the relay's key itself.\n- js/hub.js:1019 withClaimRelay and js/hub.js:1774 handleContact: check a relay's address with the relay library directly.\n- process/js/desk/offboard.js:78 main: fetches the relay's key with a plain fetch, around even the relay library.\n- peerPost today offers post, onRequest, onReply and its stream functions; none of these fetch a relay's key or send a claim, so peerPost needs those calls of its own.",
-   "version": 4,
+   "box": "Hub and offboard reach relays only through peerPost.\n\nDECIDED (Andy, 2026-10-13/14)\n- peerPost owns every contact with a relay; the hub never touches a relay or the relay library, it asks peerPost. Nothing reaches a relay except through peerPost.js::createPeerPost; there is no exception.\n- What remains in this item:\n  1. The relay list (relay.get, relay.search) is a search over the relays peerPost already knows, from its streams, with no call to any relay. A relay peerPost has never met shows as not joined.\n  2. The relay address check (assertRelayUrl) moves out of relayRequest.js into a module of its own, since it sends nothing; the relay library then means only traffic on the wire.\n\nDONE ELSEWHERE (goal/G22.6, 113d1327)\n- Claiming a name and the partner check go through peerPost (relayKey, claim); offboard asks its node with relay.get; the relay's public routes are closed, so no path reaches a relay around peerPost.\n\nFOUND (2026-10-14)\n- hub.js relaySummary still asks every relay live for its card, now through peerPost.relayKey.\n- relayRequest.js still exports assertRelayUrl, used by hub.js withClaimRelay and handleContact.",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -1464,6 +1489,42 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-13T20:48:29.325Z",
      "text": "Added: goal/G22.6, \"Relay answers unknown IDs asking for public services\", blocking G22.4; its box holds the fix and the flag day it means. Ready on your Go and code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T00:08:57.316Z",
+     "text": "how does this look now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:09:21.252Z",
+     "text": "Most of it landed with G22.6, because closing the public routes forced every caller over:\n- Claiming a name and the partner check: the hub now asks peerPost (relayKey, claim); done.\n- Offboard: asks its node with relay.get; done.\n- No path to a relay goes around peerPost any more: the relay door's last run found none on /api/relay/.\nWhat is left for G22.4:\n1. The relay list still asks every relay live for its card (now through peerPost); your ruling was a search over what peerPost already knows, with no call at all.\n2. The address check (assertRelayUrl) still sits in the relay library; it moves to a module of its own.\n3. The http door counts 42 local calls to the node's own /api/spirit and /api/events, since you widened it to /api/; those are the kernel's road to its own node, not relay traffic, and want a door of their own rather than counting here.\nI'd rewrite the box to just 1 and 2 and leave 3 for its own item. Do that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T00:09:42.463Z",
+     "text": "cap item with revised plan"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:10:04.492Z",
+     "text": "taking"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:10:17.360Z",
+     "text": "Capped: the box is the revised plan, the relay list as a search over what peerPost knows and the address check in its own module; what G22.6 already did is listed as done elsewhere."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:11:56.975Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
