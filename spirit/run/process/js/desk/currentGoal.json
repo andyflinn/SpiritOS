@@ -1,5 +1,5 @@
 {
- "change": 58629,
+ "change": 58631,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -45,14 +45,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3777,10 +3779,9 @@
    "id": "goal/G14.10",
    "title": "deskUnsloth: the pair keeps a workspace id, sent as a header",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
