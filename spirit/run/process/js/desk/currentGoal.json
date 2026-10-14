@@ -1,5 +1,5 @@
 {
- "change": 61058,
+ "change": 61059,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "excluded": [
     "ollama agent node"
    ],
@@ -719,10 +719,9 @@
    "id": "goal/G24.7",
    "title": "Desk: the item dialog follows the item it is opened on",
    "goal": "goal/G24",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
