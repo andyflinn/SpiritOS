@@ -1,5 +1,5 @@
 {
- "change": 62758,
+ "change": 62760,
  "line": 8510,
  "goal": "goal/G9",
  "items": [
@@ -7,10 +7,10 @@
    "id": "goal/G9",
    "title": "Desk without agents: the user creates goals and items",
    "goal": "",
-   "status": "goal run started",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -42,12 +42,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [],
    "live": [
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "ollama agent node"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
