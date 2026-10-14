@@ -1,5 +1,5 @@
 {
- "change": 62435,
+ "change": 62436,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -43,7 +43,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "ollama agent node"
@@ -1501,10 +1501,9 @@
    "id": "goal/G24.9",
    "title": "Add a Delete Button in Item Details.",
    "goal": "goal/G24",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
