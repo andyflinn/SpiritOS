@@ -285,9 +285,10 @@ async function suite() {
   const sawTool = published.some(function (p) { return p.chat && p.chat.tool && p.chat.tool.name === 'fs_load' && /example\.test/.test(String(p.chat.tool.url || '')); });
   if (sawTool) test.check('the published chat.tool named the tool and its path while it ran');
   else test.fail(OWED + 'no published object carried chat.tool for the load: ' + short(published.map(function (p) { return p.chat; })));
-  // THE ROUNDS ARE SPENT AND THE MODEL STILL ASKS FOR A TOOL (found live by Andy, 2026-10-10: three fetches of
-  // CodeMirror sources and the answer read "the model kept asking for tools after 3 rounds and said nothing"): it
-  // is asked once more without tools, told the budget is spent, and its words are the answer.
+  // NO ROUND COUNT (goal/G23.4): with no context known every tool call the model makes runs, and its own text is the
+  // answer. Andy: rounds "tied to the context, and if no context is specified, no limit either". This check asserted
+  // the three-round cap until goal/G23.4; the room-spent path (asked once more without tools) is
+  // deskUnslothToolRounds.js's, with a known small context.
   script = [
     { toolCalls: [toolCall('r1', 'fs_load', { path: 'shell/example.test/1' })] },
     { toolCalls: [toolCall('r2', 'fs_load', { path: 'shell/example.test/2' })] },
@@ -304,9 +305,9 @@ async function suite() {
   const last = studio.chats[studio.chats.length - 1];
   const lastUser = last && Array.isArray(last.messages) ? last.messages[last.messages.length - 1] : null;
   const fetchesRun = nodeAsks.filter(function (a) { return a.verb === 'fs.load' && /example\.test\/[1-4]/.test(String(a.path)); }).map(function (a) { return a.path.slice(-1); });
-  if (a2.done === true && /three pages of examples/.test(a2.text) && studio.chats.length === 5 && script.length === 1 && last && !('tools' in last) && lastUser && lastUser.role === 'user' && /budget/.test(String(lastUser.content)) && fetchesRun.join('') === '123') {
-    test.check('three tool rounds at most: three fetches run, the fourth call for a tool is not run, the model is asked once more without tools and told the budget is spent, and its words are the answer');
-  } else test.fail(OWED + 'rounds: ' + studio.chats.length + ' calls, script left ' + script.length + ', fetches ' + fetchesRun.join('') + ', last call tools ' + (last && 'tools' in last) + ', last message ' + short(lastUser) + ', answer ' + short(a2));
+  if (a2.done === true && /three pages of examples/.test(a2.text) && studio.chats.length === 5 && script.length === 1 && last && Array.isArray(last.tools) && last.tools.length && lastUser && lastUser.role === 'tool' && fetchesRun.join('') === '1234') {
+    test.check('no round count with no context known: all four fetches run, the last request still offers the tools, and the model\'s own words are the answer');
+  } else test.fail('goal/G23.4: rounds: ' + studio.chats.length + ' calls, script left ' + script.length + ', fetches ' + fetchesRun.join('') + ', last call tools ' + (last && 'tools' in last) + ', last message ' + short(lastUser) + ', answer ' + short(a2));
 
   // ── 4. A TOOL CALL WRITTEN AS TEXT NEVER REACHES CHAT (goal/G21.5) ──────
   // Andy's box: deskUnsloth never posts a call the model spelled as text; it asks the model again. It is no adapter

@@ -19,8 +19,8 @@
 //      that asks fs_load, the next chat request carries the tool message with the whole file.
 //   2. the known list (models.json, that pair's) keeps the context on big-x's entry: context 1000000.
 //   3. a plain server whose list gives context_length: 1000000 on len-x: honoured the same way, kept the same way.
-//   4. a plain server whose list gives no context (none-x): the same result is cut or dropped, sized to 8192, as
-//      today. Asked after the big ones, so a context left over from another pair or model would show here.
+//   4. a plain server whose list gives no context (none-x): since goal/G23.4 the result reaches the model whole, no
+//      room known, nothing cut (it was cut to 8192 until then). Asked after the big ones.
 //   5. no request to any stand-in carries the context: no body, url or header names max_input_tokens, context_length
 //      or context, or carries 1000000.
 // NOT ASSERTED: the wording of a cut; whether the published state or the Remote shows the context.
@@ -178,10 +178,12 @@ async function serverHalf() {
   if (le.entry && le.entry.context === BIG_CONTEXT) test.check('models.json keeps context ' + BIG_CONTEXT + ' on len-x\'s entry');
   else test.fail(OWED + 'len-x\'s entry in models.json reads ' + short(le.entry));
 
-  test.subHeading('4. a plain server whose list gives no context: sized to 8192, as today');
+  // SINCE goal/G23.4 no context known means no limit: Andy, rounds "tied to the context, and if no context is
+  // specified, no limit either". This check asserted the 8192 cut until then.
+  test.subHeading('4. a plain server whose list gives no context: nothing cut for room (goal/G23.4)');
   const n = await exercise('none', NONE_URL, 'none-x', noneSeen);
-  if (n.tool !== null && !whole(n) && Buffer.byteLength(n.tool, 'utf8') <= FALLBACK_TOOL_ROOM) test.check('none-x: the result is cut or dropped to fit 8192 (' + Buffer.byteLength(n.tool, 'utf8') + ' bytes, at most ' + FALLBACK_TOOL_ROOM + ')');
-  else test.fail('none-x is not sized to 8192: ' + said(n));
+  if (whole(n)) test.check('none-x: the tool message carries the whole file (' + Buffer.byteLength(n.tool, 'utf8') + ' bytes, more than the ' + FALLBACK_TOOL_ROOM + ' the 8192 fallback would give)');
+  else test.fail('none-x: the result is cut for room with no context known: ' + said(n));
   const ne = entryOf('none', 'none-x');
   if (ne.entry && !(Number(ne.entry.context) > 0)) test.check('none-x\'s entry keeps no context');
   else test.fail('none-x\'s entry in models.json reads ' + short(ne.entry));

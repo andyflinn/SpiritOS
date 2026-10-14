@@ -149,6 +149,18 @@ const BYTES_PER_TOKEN = Number(CONFIGURATION.bytesPerToken) || 4;
 // HIS FORMULA (goal/G10.3): the room for the whole prompt is what is left of the context once the answer has its
 // own, in bytes, at bytesPerToken each. A function since the limit may follow the studio.
 function promptRoom() { return Math.max(0, (contextLimit() - ANSWER_TOKENS) * BYTES_PER_TOKEN); }
+// WHETHER THE MODEL'S CONTEXT IS KNOWN (goal/G23.4): the studio's context_length once read, or a plain pair's entry
+// that gave one. Unknown, the tool loop has no bound and no tool result is cut for room: the server decides. The
+// window of chat lines a call is built with still uses promptRoom, the fallback included.
+function contextKnown() {
+  const have = readKnown();
+  if (have && have.studio === false) {
+    const chosen = MODEL || String(have.active || '');
+    const entry = have.models.filter(function (m) { return m && m.id === chosen; })[0];
+    return !!(entry && Number(entry.context) > 0);
+  }
+  return studioContext > 0;
+}
 
 // ── THE DESK, THROUGH THIS NODE'S deskClient (goal/G10.3 point 1) ─────
 //
@@ -397,10 +409,12 @@ function note(from, kind, text) {
 //
 //   Andy, 2026-10-10: "now we want a tool that expands Levant's knowledge, our proxy internet call....". The tools
 //   come from the node's own description of its verbs (tools.js: describe), the first being net.fetch; the model
-//   calls one, this runs it through the node (tools.js: run) and asks the model again with the result, at most
-//   TOOL_ROUNDS times, then the model's last text is the answer. Nothing hand-written here about any tool.
-function toolRoom() { return Math.floor(promptRoom() / 4); }
-const TOOL_ROUNDS = 3;
+//   calls one, this runs it through the node (tools.js: run) and asks the model again with the result, for as long as
+//   the prompt has room, then the model's last text is the answer. Nothing hand-written here about any tool.
+// ROUNDS BOUNDED BY THE CONTEXT, NOT A COUNT (goal/G23.4). Andy: rounds "tied to the context, and if no context is
+// specified, no limit either. like in unsloth studio that manages the context automatically." The old cap of three
+// rounds was a guard from the small local models, never ruled. Abort is the brake.
+function toolRoom() { return contextKnown() ? Math.floor(promptRoom() / 4) : Infinity; }
 // THE ROUTES (goal/G14.7): net through the node's loopback door; the desk through this node's deskClient, the verb
 // bare and the family under AGENTS, as a process server lists it. The desk's answer comes back as the asked body;
 // a refusal of the desk (not granted, no such item, a rule) is a body with ok false, which run hands to the model
@@ -494,6 +508,7 @@ const TOOLS_NOTE_BYTES = bytes('\n\n' + TOOLS_NOTE);
 const ROOM_RESERVE = 256;
 function messageBytes(m) { return bytes(m.content || '') + (m.tool_calls ? bytes(JSON.stringify(m.tool_calls)) : 0); }
 function roomLeft(messages) {
+  if (!contextKnown()) return Infinity; // goal/G23.4: no context known, nothing is cut for room
   return promptRoom() - ROOM_RESERVE - messages.reduce(function (s, m) { return s + messageBytes(m); }, 0);
 }
 const ROOM_MIN = 96;
@@ -513,8 +528,10 @@ function lastWords(messages) {
 
 // THE LAST WORD IS THE MODEL'S, NOT A PLACEHOLDER (found live by Andy, 2026-10-10: Levant fetched sources three
 // rounds long and the answer read "the model kept asking for tools after 3 rounds and said nothing"). When the
-// rounds are spent and the model still asks for a tool, it is asked once more WITHOUT tools and told the budget is
-// spent, so it answers with what it has read; only if that too says nothing does the placeholder stand.
+// room is spent (goal/G23.4: a known context with no room left for a result) and the model still asks for a tool, it
+// is asked once more WITHOUT tools and told the budget is spent, so it answers with what it has read; only if that too
+// says nothing does the placeholder stand.
+function roomSpent(messages) { return roomLeft(messages) <= ROOM_MIN; }
 const BUDGET_SPENT = '(the tool budget of this answer is spent: answer now with what you have read)';
 // A TOOL CALL WRITTEN AS TEXT (goal/G21.5, Andy's box): seen live 2026-10-13, Levant ending its answer with a
 // desk_chat_add call spelled in tags, which went into chat while nothing it claimed was done. Such text is never
@@ -559,12 +576,12 @@ function askModelRound(messages, list, round, flight, onTool) {
     const message = choice && choice.message ? choice.message : null;
     const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
     if (message && String(message.content || '')) note(flight.from, 'reply', String(message.content));
-    if (calls.length && round >= TOOL_ROUNDS && list.length) {
+    if (calls.length && list.length && roomSpent(messages)) {
       note(flight.from, 'reply', 'asked for ' + calls.length + ' more tool call(s) with the budget spent: asked once more, without tools');
       messages.push({ role: 'user', content: BUDGET_SPENT });
       return askModelRound(messages, [], round + 1, flight, onTool);
     }
-    if (calls.length && round < TOOL_ROUNDS) {
+    if (calls.length && list.length) {
       messages.push({ role: 'assistant', content: String(message.content || ''), tool_calls: calls });
       return calls.reduce(function (chain, call) {
         return chain.then(function () {
@@ -587,7 +604,7 @@ function askModelRound(messages, list, round, flight, onTool) {
     }
     const content = message ? String(message.content || '') : '';
     if (!content) {
-      if (calls.length) return '(the model kept asking for tools after ' + TOOL_ROUNDS + ' rounds and said nothing)';
+      if (calls.length) return '(the model kept asking for tools after ' + round + ' rounds, the room spent, and said nothing)';
       throw new Error('the model answered nothing');
     }
     if (SPELLED_CALL.test(content)) {
