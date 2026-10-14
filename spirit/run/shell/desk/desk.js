@@ -470,10 +470,10 @@ function deskSearchItems() {
   return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
     .then(function (r) { deskItems = deskLabels(r); deskNotePlugins(deskItems); deskDraw(); }, deskWriteError('read its list'));
 }
-// A published change: {change, verb, item: <facts>, listed}. A new session
-// asks again, since it adds and drops whole rows; so does a change to an item
-// the List does not show, since only the server knows whether the search and
-// toggles let it in (wsl-claude's review).
+// A published change: {change, verb, item: <facts>, listed, rows}. A new session
+// asks again, since it adds and drops whole rows. A row the List does not hold
+// is drawn from the publish since goal/G24.6 (below); only while text is in the
+// search box does it still ask again.
 // A MISSED PUBLISH IS NOTICED (desk/G3.10): every publish goes out since fileTransfer goal/G1.4, but one can still
 // go unseen here (an oversize drop notice, a stream reconnect); a change number that skips one means exactly that,
 // and the List asks once.
@@ -512,16 +512,52 @@ function deskOnPublished(obj) {
   var unknown = false;
   // goal/G22.3: a plugin goal's row seen first on the stream gives it its tab under Apps.
   deskNotePlugins(rows);
+  // THE LIST TAKES ADDITIONS FROM THE STREAM (goal/G24.6). Andy: "no pulling". A row the List does not hold is drawn
+  // from the publish itself, which carries the same facts items.search gives as a label, and placed where items.search
+  // would place it: an item is appended to its goal's members (process/js/desk/desk.js item.add), and with no search
+  // text every item ranks alike, so the List reads the goal, then its members in session order; the new row goes after
+  // the last row of its goal, several in the order the publish gives them.
+  // WHILE TEXT IS IN THE SEARCH BOX the List still asks again: the publish carries no rank, so the client cannot know a
+  // new row's place among ranked ones. That is Andy's open red Q1 on goal/G24.6, left as it was until he answers.
+  var searching = String(deskFilter.text || '').trim() !== '';
   rows.forEach(function (row) {
     if (!row || !row.id) return;
-    var at = -1;
-    deskItems.forEach(function (r, i) { if (r.id === row.id) at = i; });
-    if (row.listed === false) { if (at !== -1) deskItems.splice(at, 1); }
-    else if (at !== -1) deskItems[at] = row;
-    else unknown = true;
+    var at = deskRowAt(row.id);
+    // A CLOSED ROW FOLLOWS INCLUDE CLOSED (goal/G24.6): listed false leaves the List only while Include Closed is off;
+    // with it on the row stays, redrawn closed, as items.search would still list it.
+    if (row.listed === false && !deskFilter.includeClosed) { if (at !== -1) deskItems.splice(at, 1); return; }
+    if (at !== -1) { deskItems[at] = row; return; }
+    if (searching) { unknown = true; return; }
+    if (!deskRowShown(row, rows)) return;
+    deskItems.splice(deskRowPlace(row), 0, row);
   });
   if (unknown) { deskSearchItems(); return; }
   deskDraw();
+}
+function deskRowAt(id) {
+  var at = -1;
+  deskItems.forEach(function (r, i) { if (r.id === id) at = i; });
+  return at;
+}
+function deskGoalOf(row) { return row.goal === '' ? String(row.id) : String(row.goal); }
+// Whether the toggles let a new row in, as far as the page knows (goal/G24.6). Goals Only: goal rows alone. Current
+// Goal Only: the row's goal must be the current one, and the page knows that only from the goal's row, held or in this
+// publish: the server offers make-current on an open goal that is not current (goal/G2.19), so a goal row without it
+// is taken as current. A goal whose row the page has never seen is taken as not current, and its rows wait for the
+// next search.
+function deskRowShown(row, published) {
+  if (deskFilter.goalsOnly && row.goal !== '') return false;
+  if (!deskFilter.currentGoalOnly) return true;
+  var gid = deskGoalOf(row);
+  var g = deskItems.concat(published || []).filter(function (r) { return r && r.id === gid && r.goal === ''; })[0];
+  return !!g && (g.buttons || []).indexOf('make-current') === -1;
+}
+// After the last row of its goal; a goal's first row goes at the end.
+function deskRowPlace(row) {
+  var gid = deskGoalOf(row);
+  var last = -1;
+  deskItems.forEach(function (r, i) { if (deskGoalOf(r) === gid) last = i; });
+  return last === -1 ? deskItems.length : last + 1;
 }
 // A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not
 // textual information." It goes to the desk server; the row changes when the
