@@ -1,6 +1,8 @@
 {
-  "description": "The text of one file in your clone, by its repository path. Nothing under .git, nothing outside the clone.",
+  "description": "The text of one file in your clone, by its repository path. Nothing under .git, nothing outside the clone. A file of any size is read part by part: give offset (the first line, from 1; 0 for the first) and limit (how many lines; 0 for as many as fit); the answer is {path, text, lines, next}: the text as numbered lines (number, tab, line), lines the file's line count, next the offset to ask for next, 0 when you have reached the end. A part is cut at the last whole line that fits one answer, so follow next until it is 0.",
   "request": {
-    "path": ""
+    "path": "",
+    "offset": 0,
+    "limit": 0
   }
 }

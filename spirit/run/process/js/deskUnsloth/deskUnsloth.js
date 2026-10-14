@@ -1060,12 +1060,42 @@ function fenced(rel) {
   });
 }
 const LOAD_MAX = require('../../../js/appClient').ANSWER_MAX - 1024;
-function fileLoad(p) {
+// A FILE OF ANY SIZE, PART BY PART (goal/G23.3): Levant could not read a file bigger than one answer. Andy: "so let
+// him read files with a tool that matches yours." With no range the file comes whole, as before, when it fits; with
+// offset (the first line, from 1) and/or limit (how many lines) the answer is {path, text, lines, next}: the lines as
+// `<n>\t<line>`, the file's line count, and the line to ask for next (0 at the end), cut at the last whole line whose
+// whole reply fits one answer. A single line that alone does not fit is refused, saying so: it is never cut in two.
+function fileLoad(p, offset, limit) {
   const at = insideClone(p);
   let text = null;
   try { text = fs.readFileSync(at.full, 'utf8'); } catch (e) { throw refused('no such file: ' + at.rel); }
-  if (bytes(text) > LOAD_MAX) throw refused(at.rel + ' is ' + bytes(text) + ' bytes, more than one answer carries (' + LOAD_MAX + ')');
-  return { path: at.rel, text: text };
+  if (offset === undefined && limit === undefined) {
+    if (bytes(text) > LOAD_MAX) throw refused(at.rel + ' is ' + bytes(text) + ' bytes, more than one answer carries (' + LOAD_MAX + '): read it part by part with offset and limit, following next');
+    return { path: at.rel, text: text };
+  }
+  // 0 or left out is the default: from line 1, to the end as far as fits. The model's tool requires every key
+  // (tools.js), so a model that wants no range sends 0s.
+  const whole = function (n) { return n === undefined || (Number.isInteger(n) && n >= 0); };
+  if (!whole(offset)) throw refused('offset is the first line to read, a whole number from 1 (0 for the first)');
+  if (!whole(limit)) throw refused('limit is how many lines to read, a whole number (0 for as many as fit)');
+  const all = text.split('\n');
+  const total = all.length;
+  const from = offset ? offset : 1;
+  if (from > total) throw refused('offset ' + from + ' is past the last line of ' + at.rel + ' (' + total + ')');
+  const end = limit ? Math.min(total, from - 1 + limit) : total;
+  const rows = [];
+  // What the reply costs without its text, next at its widest; each row adds its escaped bytes and a "\n" (2 escaped).
+  let size = bytes(JSON.stringify({ path: at.rel, text: '', lines: total, next: total }));
+  for (let n = from; n <= end; n++) {
+    const row = n + '\t' + all[n - 1];
+    const cost = bytes(JSON.stringify(row)) - 2 + (rows.length ? 2 : 0);
+    if (size + cost > LOAD_MAX) break;
+    size += cost;
+    rows.push(row);
+  }
+  if (!rows.length) throw refused('line ' + from + ' of ' + at.rel + ' alone is ' + bytes(all[from - 1]) + ' bytes, more than one answer carries (' + LOAD_MAX + ')');
+  const last = from + rows.length - 1;
+  return { path: at.rel, text: rows.join('\n'), lines: total, next: last >= total ? 0 : last + 1 };
 }
 function fileSave(p, content) {
   const at = insideClone(p);
@@ -1436,8 +1466,13 @@ appServer.serve({
   },
   // THE FILE AND GIT VERBS (goal/G10.8), each with its file beside this script, so introspection lists them.
   'file.load': {
-    request: { path: '' }, reply: { path: '', text: '' },
-    handler: function (a) { return fileLoad(a.path); },
+    // {path} or {path, offset, limit}, either of the two alone too (goal/G23.3): appServer matches exact argument sets.
+    request: { path: '', offset: 0, limit: 0 }, reply: { path: '', text: '' }, // a ranged read carries lines and next beside them
+    accepts: function (a) {
+      if (!a || typeof a !== 'object' || Array.isArray(a) || typeof a.path !== 'string') return false;
+      return Object.keys(a).every(function (k) { return k === 'path' || ((k === 'offset' || k === 'limit') && typeof a[k] === 'number'); });
+    },
+    handler: function (a) { return fileLoad(a.path, a.offset, a.limit); },
   },
   'file.save': {
     request: { path: '', content: '' }, reply: { path: '', bytes: 0 },
