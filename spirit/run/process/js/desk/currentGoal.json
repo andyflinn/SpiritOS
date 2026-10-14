@@ -1,5 +1,5 @@
 {
- "change": 58700,
+ "change": 58707,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -43,15 +43,17 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 2,
+   "design": false,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -67,22 +69,19 @@
    "id": "goal/G23.1",
    "title": "deskUnsloth: Levant takes the line before he answers it",
    "goal": "goal/G23",
-   "status": "",
+   "status": "running",
    "with": "claude-windows",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G23"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [
     {
@@ -97,15 +96,44 @@
     }
    ],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -115,7 +143,14 @@
    "box": "Levant answered Andy under goal/G17 at 01:55 and the answer never reached the desk: deskUnsloth posted without taking Andy's line, the desk refused the post (take first), and deskUnsloth dropped the refusal without a word. A line that starts with \"Levant:\" binds him and so went through.\nBefore posting an answer under an item, Levant takes Andy's latest line there (line.take), as every agent must.\nEvery desk write deskUnsloth makes is checked: a refusal and its reason go into Levant's log, never silently dropped.\nTest: a stand-in desk that refuses chat.add until the line is taken; Levant's answer lands, and a refused post shows in his log with the desk's reason.",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:03:55.167Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
