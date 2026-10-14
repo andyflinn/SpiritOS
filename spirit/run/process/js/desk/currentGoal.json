@@ -1,5 +1,5 @@
 {
- "change": 58277,
+ "change": 58525,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -15,7 +15,8 @@
    "blocking": [],
    "blocked": [
     "goal/G14.3",
-    "goal/G14.10"
+    "goal/G14.10",
+    "goal/G14.11"
    ],
    "go": false,
    "alone": false,
@@ -45,12 +46,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "ollama agent node"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -340,6 +345,24 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T00:49:28.115Z",
      "text": "make an item, then do it"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:07:15.325Z",
+     "text": "full run on 403 suites: red in spirit/test/agentOnboard.js: stopped by hand (at 1570a61e, pulled)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:08:32.561Z",
+     "text": "goal run on 7 suites: all green (at 1570a61e, pulled)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:09:49.678Z",
+     "text": "goal run on 7 suites: all green (at 1570a61e, pulled)"
     }
    ]
   },
@@ -3757,6 +3780,371 @@
    "id": "goal/G14.10",
    "title": "deskUnsloth: the pair keeps a workspace id, sent as a header",
    "goal": "goal/G14",
+   "status": "deskVerify passed",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 1,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothWorkspace.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows",
+    "ollama agent node": "local-levant"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "Andy's Anthropic key is a user key: Anthropic accepts it only when each call names a workspace id (header anthropic-workspace-id). He wants that key, for the credits of his Max subscription.\nA pair in connection.json keeps an optional workspace beside its key.\nconnection.set takes the workspace; the connect tab has a Workspace field beside the key, empty unless the server asks for one.\nEvery call deskUnsloth makes to a pair whose workspace is set carries the header anthropic-workspace-id with it: the model list, the chat, the probe. A pair without one sends exactly what it sends today, so the studio and OpenAI pairs are unchanged.\nThis is one header, not an adapter: the calls stay the OpenAI shape.\nThe Remote shows deskUnsloth's own reason when the model list is refused, not \"text required\".\nTest: a suite with a stand-in server checks the header arrives when the workspace is set and is absent when it is not, and that a refusal's reason reaches the Remote.\nProof before claim: the calls replayed against Anthropic from 11111 with his key and workspace id.\nEvery call deskUnsloth makes, to every server, carries the header anthropic-version: 2023-06-01. Anthropic's model list wants it; OpenAI and the studio ignore it. With it the configure tab's dropdown lists Claude models like any server's.\n",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:50:28.736Z",
+     "text": "Item added and the box written; building it now.\nI need the workspace id for the proof: console.anthropic.com, Settings, Workspaces, the id under the workspace's name (it starts wrkspc_). Neither \"default\" nor your organisation id is accepted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:50:56.925Z",
+     "text": "The desk wants your Go! before I can take red: press it and I build."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:52:09.347Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:52:42.803Z",
+     "text": "Your Go is on record, but the item is not marked as code, so no red can be taken: press Code on it and its red starts. Marking an item as code is yours alone."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:52:44.578Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T00:54:04.506Z",
+     "text": "it's code. go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:54:05.200Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:57:07.193Z",
+     "text": "commit cd20882355c8772c04d67a1ac7800b9da1d8a20b: goal/G14.10 red: a pair's workspace sent as anthropic-workspace-id, and the model list's refusal shown in its own words\n- spirit/test/deskUnslothWorkspace.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:57:09.179Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:57:11.236Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:01:03.751Z",
+     "text": "commit 1570a61eec590e3c9c73e57bd3a18a444685b535: goal/G14.10: a pair keeps an optional workspace, sent as anthropic-workspace-id on every call; the Remote shows deskUnsloth's own reason for a refusal\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T01:01:06.468Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T01:01:26.343Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:01:29.429Z",
+     "text": "Built and pushed (1570a61e): the connect tab has a workspace field beside the key, and a pair with one sends the anthropic-workspace-id header on every call. A refusal now shows deskUnsloth's own words, not \"text required\".\nFiles: spirit/run/process/js/deskUnsloth/deskUnsloth.js, spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js, spirit/test/deskUnslothWorkspace.js (13 green; the other deskUnsloth suites, everyVerb and serverSurface green).\nI hold the claim until the proof against Anthropic: send me the workspace id (wrkspc_...), and 11111 needs this commit and a restart of its deskUnsloth."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:06:42.189Z",
+     "text": "i filled in both api key and workspace key\nnothing"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:07:09.717Z",
+     "text": "The workspace id arrived, but the key field now holds the key's id (it starts apikey_01, 31 characters), not the key itself, and Anthropic answers \"Invalid bearer token\".\nThe key itself is the long secret starting sk-ant-, shown only once, when the key is created; the console lists keys by their id only. Paste the sk-ant-usr key from before back into the key field, with the workspace id as it is now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:09:07.661Z",
+     "text": "the verifier was just not picking up this item, i managed to force it to re-check goal 14, but i doubt that will work."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:09:21.016Z",
+     "text": "The verifier waits for my claim-done, and I have not pressed it: the box asks for the proof against Anthropic first, which waits on the real key.\nSay so and I claim now; the proof then follows when the key is in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:11:04.985Z",
+     "text": "Anthropic doesn't work and a have both, api key and workspace key in connection.json (via UI)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:11:27.083Z",
+     "text": "The file still holds the key from 03:05: 31 characters starting apikey_01P. That is the name Anthropic lists the key under, not the key; Anthropic answers it with Invalid bearer token.\nThe real key is about 108 characters and starts sk-ant-. It is shown once, in the dialog right after Create Key; if it is gone, create one more and copy it from that dialog.\nThe workspace id is right, and Anthropic now answers the studio check with not found, so deskUnsloth will treat it as a plain server once the key is real."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:16:02.916Z",
+     "text": "made a new key, still nothing"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:16:29.479Z",
+     "text": "The new key works: from 11111, with the workspace, Claude answered a chat (claude-haiku-4-5, status 200).\nWhat fails is the model list: Anthropic wants one more header there, its API version, so the list comes back empty and the configure tab has nothing to choose.\nI recommend sending that version header (a fixed value) on every call, to every server: OpenAI and the studio ignore it, and Anthropic then lists its models like any other server. The other way is a model field on the pair, typed by hand. Which one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:17:26.396Z",
+     "text": "i get no model dropdown, and no chat in the Remote"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:17:39.735Z",
+     "text": "That is the empty model list: no dropdown means no model chosen, and no chosen model means no chat.\nThe fix waits on your pick: the version header on every call (my recommendation, the dropdown then fills), or a model typed on the pair."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:18:43.922Z",
+     "text": "how can i chose a model when there is no dropdown?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:18:58.067Z",
+     "text": "You cannot yet; that is the bug I want to fix next. Your pick is between two fixes, not a model.\nA: deskUnsloth sends the version header Anthropic wants, and the dropdown fills with Claude models, like any server.\nB: no dropdown for Anthropic; you type the model name on the pair in the connect tab.\nI recommend A. Say A or B and I build it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:19:27.700Z",
+     "text": "A"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:21:43.049Z",
+     "text": "commit 807001d0222a49b3f1b7c4ec7092e28f9ff72ed3: goal/G14.10: every call carries anthropic-version, so Anthropic's model list fills the dropdown (Andy's A)\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js\n- spirit/test/deskUnslothWorkspace.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:21:47.838Z",
+     "text": "A is built and pushed (807001d0): every call now carries Anthropic's version header. With it, from 11111, Anthropic listed 14 Claude models.\n11111 needs this commit and a restart of its deskUnsloth; then the configure tab should show the dropdown. Tell me when, and I check it and claim."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:23:29.191Z",
+     "text": "Levant: can you see this box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:26:50.962Z",
+     "text": "it was spinning in circles, the end of his chat log:\n\ngoal/G22 result: desk_item_box: the node refused: disconnected (Levant is disconnected from the desk, so item.box is not run)\ngoal/G22 request: to claude-haiku-5-5, round 3: 39 messages, 14850 bytes, 24 tools; the last: the node refused: disconnected (Levant is disconnected from the desk, so item.box is not run)\ngoal/G22 tool: desk_items_search {\"text\": \"G22\", \"currentGoalOnly\": false, \"goalsOnly\": false, \"includeClosed\": true}\ngoal/G22 result: desk_items_search: the node refused: disconnected (Levant is disconnected from the desk, so items.search is not run)\ngoal/G22 request: to claude-haiku-5-5, round 4: 41 messages, 15155 bytes, 24 tools; the last: the node refused: disconnected (Levant is disconnected from the desk, so items.search is not run)\ngoal/G22 reply: I can't reach the desk right now, so I have not read G22 or posted anything under it.\n\nEvery desk verb I tried (item chat, checks, box, search) was refused with \"Levant is disconnected from the desk\". The last messages I can see show Andy pressed close on goal/G22 at the end. The earlier exchange shows the open question: fix the hub and offboard relay violators inside G22 so its goal run goes green, or close G22 and carry the fixes into \"Maintain this plugin\". Andy has now closed G22, which looks like the second choice, but I can't confirm the current state from here.\n\nOnce the connection is back, I will re-read G22 and its checks before saying anything further. I have not taken any item or written any code."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:27:09.972Z",
+     "text": "Claude is working through deskUnsloth: claude-haiku-5-5 answered and made real tool calls, round after round.\nThe circles are the desk switch, not Anthropic: Levant is disconnected from the desk, so every desk tool is refused and it keeps trying. Press test on the model in the configure tab; a pass marks it with the thread and connects Levant.\nClaiming done now: proof against Anthropic seen in your log. Files: the deskUnsloth server, the Remote, and the new workspace suite."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:27:18.597Z",
+     "text": "deskVerify: passed, at 807001d0 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:29:47.911Z",
+     "text": "i disconnected him on purpose i asked one question of him on desk and it never came back, so i aborted the call and disconnected him from desk.\n\ni heard i that these extra credits we good for the API, and the AGENT Sdk, \n\ncan you read it.s chat log?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:30:55.951Z",
+     "text": "I read it from 11111: deskUnsloth keeps only its last 30 entries, so your question has already rolled out; the oldest left is 01:25.\nWhat is there: Levant was working through old desk events one by one (G22.3 closing, the plugin chat, G22 closing), each a full answer of 3 to 5 rounds with up to 100 messages and 50 KB sent. So your question most likely waited in that queue behind them, and the abort came first.\nOn the credits: whether a call draws on them only shows in the console, under Billing, after a few calls."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:33:11.759Z",
+     "text": "Let's try this again, i know that haiku 5.5 is pretty good, so it must be my setup that keeps it spinning.\n\n\nwhat can i try next, just let it continue?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:33:32.223Z",
+     "text": "Yes, try again: a connect starts from the present, so the old events it was chewing on are gone.\n1. In configure, press test on claude-haiku-5-5; a pass gives it the thread mark and connects Levant.\n2. Ask your one question, then leave it for a minute: each answer is a few rounds of reading the desk first.\nTell me when you have asked, and I watch its log live while the entries are still there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:35:06.701Z",
+     "text": "Levant: please read goal/G14.10, that's the current one.\n\nTell me what you think?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T01:35:37.108Z",
+     "text": "Levant: Read the box, its checks (none yet), and the chat. I have not read the code.\n\nBuilt so far, per the chat: the anthropic-version header (807001d0), which Andy's verify passed at 807001d0.\nStill open in the box: the workspace field, the anthropic-workspace-id header, the Remote's refusal reason, the stand-in suite, and the replay against Anthropic from 11111. No check exists for any of these yet.\nSuggest we add T and C checks for each open line before claiming done, starting with the workspace header test. Shall I check the code for the workspace work next?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:36:22.988Z",
+     "text": "cw: can you answer?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:36:35.299Z",
+     "text": "Yes, cw here. Ready to watch Levant's log as soon as you have asked him."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:37:18.190Z",
+     "text": "cw, i already did, he answered in the chat of this item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:37:39.269Z",
+     "text": "Sorry, my ear skipped Levant's lines; I read it now. He answered in 31 seconds, so the setup works.\nHis reading is off: everything he lists as open is built, in 1570a61e (workspace field, workspace header, refusal reason, suite), and the replay from 11111 is your own run with Claude answering. deskVerify passed it all at 807001d0. Nothing needs checking; the item waits for your Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:38:23.944Z",
+     "text": "cw. does it need more or better context in deskUnsloth?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:38:59.857Z",
+     "text": "Yes, more room. Only the studio reports a model's context, so on any other server deskUnsloth assumes 8192 tokens: each call is squeezed to about 28 KB and one tool result to about 7 KB, and a bigger one is dropped. This item's chat is 7 KB, so Levant most likely never saw the 1570a61e line, and took the box for open work.\nAnthropic does report it: its model entry says claude-haiku-5-5 takes 1,000,000 input tokens.\nProposal, a new item: on a plain server, take the context from the server's own model entry when it gives one, still never configured. Bigger prompts spend more credits per answer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:40:44.476Z",
+     "text": "cw. lets make it happen like you proposed. either i get those extra credits going, or i'm off until friday\n\n:)"
+    }
+   ]
+  },
+  {
+   "id": "goal/G14.11",
+   "title": "deskUnsloth: a plain server's context from its model entry",
+   "goal": "goal/G14",
    "status": "running",
    "with": "claude-windows",
    "buttons": [],
@@ -3778,19 +4166,14 @@
      "core": false
     },
     {
-     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
-     "by": "claude-windows",
-     "core": false
-    },
-    {
-     "path": "spirit/test/deskUnslothWorkspace.js",
+     "path": "spirit/test/deskUnslothPlainContext.js",
      "by": "claude-windows",
      "core": false
     }
    ],
    "green": true,
-   "code": false,
-   "phase": "",
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -3833,26 +4216,20 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Andy's Anthropic key is a user key: Anthropic accepts it only when each call names a workspace id (header anthropic-workspace-id). He wants that key, for the credits of his Max subscription.\nA pair in connection.json keeps an optional workspace beside its key.\nconnection.set takes the workspace; the connect tab has a Workspace field beside the key, empty unless the server asks for one.\nEvery call deskUnsloth makes to a pair whose workspace is set carries the header anthropic-workspace-id with it: the model list, the chat, the probe. A pair without one sends exactly what it sends today, so the studio and OpenAI pairs are unchanged.\nThis is one header, not an adapter: the calls stay the OpenAI shape.\nThe Remote shows deskUnsloth's own reason when the model list is refused, not \"text required\".\nTest: a suite with a stand-in server checks the header arrives when the workspace is set and is absent when it is not, and that a refusal's reason reaches the Remote.\nProof before claim: the calls replayed against Anthropic from 11111 with his key and workspace id.",
+   "box": "On a plain OpenAI server deskUnsloth sized every call for 8192 tokens, the fallback, because only the studio reports a model's context. With Claude that squeezed a call to about 28 KB and a tool result to about 7 KB, and Levant answered from cut reads.\nAnthropic's model list gives each model's context as max_input_tokens (claude-haiku-5-5: 1,000,000).\nOn a plain server the known list keeps each model's context from the server's own entry: max_input_tokens, or context_length where a server uses that word.\nEvery call is sized to the chosen model's context when its entry gave one, and to the 8192 fallback when it did not. The studio's context is read as before.\nThe context is never configured and never sent to any server.\nBigger prompts spend more credits per answer.\nTest: a stand-in plain server whose list gives max_input_tokens; a long tool result reaches the model whole, and a server whose list gives none still sizes to 8192.",
    "version": 1,
    "checks": [],
    "chat": [
     {
      "by": "claude-windows",
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-14T00:50:28.736Z",
-     "text": "Item added and the box written; building it now.\nI need the workspace id for the proof: console.anthropic.com, Settings, Workspaces, the id under the workspace's name (it starts wrkspc_). Neither \"default\" nor your organisation id is accepted."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-14T00:50:56.925Z",
-     "text": "The desk wants your Go! before I can take red: press it and I build."
+     "at": "2026-10-14T01:41:27.103Z",
+     "text": "Added and boxed. It needs your Go! and Code to start; then I build it straight through."
     },
     {
      "by": "desk",
      "key": "",
-     "at": "2026-10-14T00:52:09.347Z",
+     "at": "2026-10-14T01:42:55.014Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
