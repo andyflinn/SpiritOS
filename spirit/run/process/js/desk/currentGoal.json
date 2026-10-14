@@ -1,5 +1,5 @@
 {
- "change": 62783,
+ "change": 62786,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -7,7 +7,7 @@
    "id": "goal/G23",
    "title": "Make Levant work",
    "goal": "",
-   "status": "",
+   "status": "goal run started",
    "with": "",
    "buttons": [
     "close"
@@ -42,12 +42,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "ollama agent node"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1723,10 +1725,9 @@
    "id": "goal/G23.8",
    "title": "deskUnsloth: Levant runs commands in his clone, like cw",
    "goal": "goal/G23",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
