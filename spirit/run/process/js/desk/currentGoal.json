@@ -1,5 +1,5 @@
 {
- "change": 61940,
+ "change": 61942,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -542,22 +541,19 @@
    "id": "goal/G24.3",
    "title": "deskUnsloth: Levant is told the current goal",
    "goal": "goal/G24",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G24.2"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [
     {
@@ -573,14 +569,43 @@
    ],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -590,7 +615,14 @@
    "box": "Every call deskUnsloth makes for Levant tells him which goal is current: its id, title and box.\nToday his prompt carries only the box of the goal of the item he answers under; he learns the current goal only when he happens to search, and Andy saw him answer about G23 after G24 was made current.\nTest: after a make-current press, his next call carries the new current goal.\n",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:13:17.646Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G24.4",
