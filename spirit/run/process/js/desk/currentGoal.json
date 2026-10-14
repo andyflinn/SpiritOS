@@ -1,5 +1,5 @@
 {
- "change": 58655,
+ "change": 58661,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -14,7 +14,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3"
+    "goal/G14.3",
+    "goal/G14.11"
    ],
    "go": false,
    "alone": false,
@@ -43,8 +44,8 @@
    "asks": 1,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 2,
+   "design": true,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -870,7 +871,9 @@
    "goal": "goal/G14",
    "status": "deskVerify passed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "delete"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -4141,10 +4144,11 @@
    "id": "goal/G14.11",
    "title": "deskUnsloth: a plain server's context from its model entry",
    "goal": "goal/G14",
-   "status": "closed",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G14"
@@ -4153,7 +4157,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -4212,7 +4216,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "local-levant"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "On a plain OpenAI server deskUnsloth sized every call for 8192 tokens, the fallback, because only the studio reports a model's context. With Claude that squeezed a call to about 28 KB and a tool result to about 7 KB, and Levant answered from cut reads.\nAnthropic's model list gives each model's context as max_input_tokens (claude-haiku-5-5: 1,000,000).\nOn a plain server the known list keeps each model's context from the server's own entry: max_input_tokens, or context_length where a server uses that word.\nEvery call is sized to the chosen model's context when its entry gave one, and to the 8192 fallback when it did not. The studio's context is read as before.\nThe context is never configured and never sent to any server.\nBigger prompts spend more credits per answer.\nTest: a stand-in plain server whose list gives max_input_tokens; a long tool result reaches the model whole, and a server whose list gives none still sizes to 8192.",
