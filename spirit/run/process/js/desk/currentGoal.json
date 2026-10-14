@@ -1,5 +1,5 @@
 {
- "change": 62764,
+ "change": 62767,
  "line": 8510,
  "goal": "goal/G17",
  "items": [
@@ -7,10 +7,10 @@
    "id": "goal/G17",
    "title": "A fresh node works before it has a relay",
    "goal": "",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -42,7 +42,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [],
    "live": [
     "ollama agent node"
