@@ -1,11 +1,11 @@
 {
- "change": 63121,
+ "change": 63172,
  "line": 8510,
- "goal": "goal/G27",
+ "goal": "goal/G26",
  "items": [
   {
-   "id": "goal/G27",
-   "title": "Desk Fixes: Current round.",
+   "id": "goal/G26",
+   "title": "apiServer: Maintaining api Keys for google etc...",
    "goal": "",
    "status": "",
    "with": "",
@@ -14,11 +14,10 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G27.2",
-    "goal/G27.3",
-    "goal/G27.5",
-    "goal/G27.6",
-    "goal/G27.7"
+    "goal/G26.1",
+    "goal/G26.3",
+    "goal/G26.4",
+    "goal/G26.5"
    ],
    "go": false,
    "alone": false,
@@ -60,179 +59,76 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "This goal will address outstanding issues with desk.",
-   "version": 1,
+   "box": "API Rentals: Keep track of IT expenses.\n\napiServer: an appServer with a plugin per API supplier.\n\nAndy, 2026-10-14: \"this one is called apiServer, it will be an appServer with a plugin per api-supplier.\"\n\nAndy, 2026-10-14: \"the appServer plugin pattern occurs already in plugins like desk. Is it enough to mention that pattern in the box, to get the idea. The folder spirit/run/process/js/apiServer/ will contain a plugin/ folder where, we already know there will be plugins for: Anthropic, OpenAI, Google, Facebook, GitHub.\"\n\nThe pattern, as desk already has it (spirit/run/process/js/desk/desk.js, the plugin mount): a plugin is the folder plugins/js/<name>/ holding <name>.js and <name>.json; no .json, no plugin. Plugins are mounted in name order, once, before the server serves. Each plugin is handed its own private state folder and a publish call, never the database.\n\nLayout to come: spirit/run/process/js/apiServer/ with a plugin/ folder, one plugin per supplier: Anthropic, OpenAI, Google, Facebook, GitHub.\n\nDesign only for now. No code is written under this goal until Andy says go.\n\nRulings\n\nAndy, 2026-10-14: \"the apiServer must use the new probabilityMatch set of modules to implement search.\"\n\nAndy, 2026-10-14: \"the common part of the dataSet maintained and served, may as well be defined in this here goal box\"\n\nDataset maintained by shell/process apiServer (draft, for Andy to confirm)\n\nOne row per API supplier account. Fields:\n- provider: supplier name (google|anthropic|openai|unsloth|facebook|github etc)\n- apiName: the API's name within that provider; unique per provider\n- apiKey: the secret. Kept only in the plugin's private state folder; never published or served in a row. The row holds a reference to it, not the key.\n- costSchema: how the cost of a call is computed (units, price per unit); the shape, not the spend\n- costStatus: spend so far against the schema (current period, last update)\n\nThe other item refers to this dataset by its goal id (goal/G26); it does not copy the rows.\n\nOpen for Andy: does costSchema hold the price table or only a reference to one; is costStatus per period or lifetime.",
+   "version": 3,
    "checks": [],
    "chat": [
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:32:44.430Z",
-     "text": "when i add a new blocking item in item details, it STILL doesn't show up in the desk list.\n\ncould this be solved as follows?\n\n- when the main desk ui, the list, is notified of a new item (does that even happen?), if it then searches for every item for the current goal, and adds the missing ones to the list, would that help?\n\nThere's also the most maddening bug: when i click on a row in the desks list, it can show the wrong fucking item, and i set \"code\" or trigger \"go\" for wrong items. Does the desk not open the fucking dialog with a proper key to the item that was clicked on the desk list?"
+     "at": "2026-10-14T11:42:53.946Z",
+     "text": "this one is called apiServer, it will be an appServer with a plugin per api-supplier.\n\nLevant: can you hear me?"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:35:33.568Z",
-     "text": "Levant: Yes, your idea would help, and I found why the new item is missing. I have not changed any code: this needs your Go and a file grant first.\n\n1. **Why the new item never shows:** `write()` in `process/js/desk/desk.js` builds the publish from `it`, which is null for `item.add` because that verb carries no `id`. So the publish has `item: null` and no `rows`. `deskOnPublished` in `shell/desk/desk.js` then returns early, and the list never hears of the new item or of the blocked row's changed \"blocked by\" list. Your fix (on a publish with no item, re-run `items.search` for the current goal) would close the gap. The one-line version is: `if (verb === 'item.add' || !said) { deskSearchItems(); return; }`.\n\n2. **The wrong-item click:** reading the code, a row click passes the row's own `data-row` id to `deskOpenRow` → `callDialog('shell/deskDetails', {id})`, and the dialog's presses use that same `ddId`. I could not find a path where the key is wrong. I have not reproduced it, so I cannot yet say where the mismatch comes from. Next I would check whether a dialog that is already open can take a second `open` before its first `item.get` returns.\n\nDo you want me to take this item for the list fix (point 1) and then look at the click bug with you?"
+     "at": "2026-10-14T11:43:46.722Z",
+     "text": "Levant: Yes, I hear you. I've noted the name: apiServer, an appServer with one plugin per API supplier. I haven't changed anything under goal/G26 yet. Do you want me to draft the item's box around that design?"
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:37:52.031Z",
-     "text": "create a new item for this goal concerning both list fixes, and fill it's box with your current proposal."
+     "at": "2026-10-14T11:49:56.248Z",
+     "text": "can you fill the box while i chat?\n\nthe appServer plugin pattern occurs already in plugins like desk. Is it enough to mention that pettern in the box, to get the idea. The folder spirit/run/process/js/apiServer/ will contain a plugin/ folder where, we already know there will be plugins for\n\n- Anthropic\n- OpenAI\n- Google\n- Facebook\n- GitHub"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:38:40.180Z",
-     "text": "Levant: I created the item **goal/G27.1** \"Desk list: new items and row clicks\" under goal/G27 and filled its box with the proposal.\n\nThe box covers both bugs:\n\n1. **New items missing from the list.** `write()` in `process/js/desk/desk.js` builds the publish from `it`, which is null for `item.add`. The publish carries no rows, so `deskOnPublished` returns early. Proposed fix: when a publish has no item or the verb is `item.add`, re-run `items.search` for the current goal. This is your idea, and it addresses the cause I found.\n2. **Wrong item on row click.** I found no wrong-key path in the code yet, and I have not reproduced it. The box lists the next checks: whether a dialog that is already open can take a second `open` before its first `item.get` returns, and whether it keeps a stale id across opens.\n\nNothing is built. It needs your Go and a file grant first. I could not post a chat line under the item because I had not taken it yet, so this answer is the only note on it."
+     "at": "2026-10-14T11:50:42.695Z",
+     "text": "Levant: I filled the box on goal/G26 (version 1) with Andy's words verbatim and the plugin pattern as desk already has it. Nothing is built or changed in the repo.\n\nYes, naming the pattern is enough for the idea. The box points at desk's plugin mount in `spirit/run/process/js/desk/desk.js`: a plugin is a `plugins/js/<name>/` folder with `<name>.js` and `<name>.json`, mounted in name order before the server serves, with its own state folder and no direct database access. The box lists the five planned suppliers (Anthropic, OpenAI, Google, Facebook, GitHub) under `apiServer/plugin/`."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:44:14.843Z",
-     "text": "in the apps-Stack tab in desk, when i click on an item in its list, the stack plugin sticks the per-item ui at the bottom of the goals list, instead of opening a Dialog for it, how can that be changed?"
+     "at": "2026-10-14T13:51:19.800Z",
+     "text": "is there a way to store rules for this goal?\n\n- the apiServer must use the new probabilityMatch set of modules to implement search.\n- the common part of the dataSet maintained and served, may as well be defined in this here goal box\n\nopinions?"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:45:13.333Z",
-     "text": "Levant: The Stacks pane draws its own dialog inline instead of opening a Dialog. The cause is in `spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js`:\n\n- The \"Open\" button on each door row (line 187) sets `data-open`. The pane's click handler (line 373) calls `openDialog(id)`.\n- `openDialog` (line 247) fills a `<div id=\"sfc-dialog\">` that the pane itself creates (line 352), between \"The doors\" and \"Its items\". That is why the editor appears inside the goals area instead of as a Dialog.\n- The plugin's `ctx` (desk.js lines 689–690) passes `goal`, `ask`, `onPublished` and `chat`, but no `callDialog`. So the plugin has no way to open a shell Dialog. The desk's own rows do it through `deskApi.callDialog('shell/deskDetails', {id})` (desk.js line 1136).\n\nTo change it, `ctx` needs a `callDialog` passthrough (desk.js, next to line 689). Then `openDialog` calls a new shell dialog app for a door, modelled on `shell/deskDetails`, instead of writing into the pane. That is new code in two files plus a new shell dialog. I have not changed anything. Do you want that: a new door dialog, opened through `callDialog`, with the inline `sfc-dialog` removed? If so, I'll need your Go and a file grant for the item."
+     "at": "2026-10-14T13:52:38.265Z",
+     "text": "Levant: Rules live as rule items (rule/N, with text and status) and are searched with rules.search. I see no goal-scoped rule store in my verbs. Putting both rulings verbatim in the goal box, under a \"Rulings\" heading, keeps them with the goal; a rule item only if you want them to bind every goal."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:46:31.541Z",
-     "text": "open a new item in this goal for this issue and transfer your proposal into its box."
+     "at": "2026-10-14T13:57:09.541Z",
+     "text": "please define the dataset maintained by shell/process \"apiServer\" in the box here.\n\nrow contains:\n\n- provider (google|anthropic|unsloth|facebook etc)\n- apiName \n- apiKey\n- costSchema\n- costStatus\n\nis this about right?\n\nthe other item then may refer to this data set."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:47:12.456Z",
-     "text": "Levant: I created **goal/G27.2** \"Desk Stacks pane: open the door in a Dialog, not inline\" under goal/G27, and wrote the proposal into its box.\n\nThe box records the cause I found by reading the code, not by running it:\n- In `stackFrameChecks.js`, each door's \"Open\" button sets `data-open`. The click handler calls `openDialog`, which fills a `sfc-dialog` div that the pane creates between \"The doors\" and \"Its items\". That is why the editor appears inline.\n- The plugin's `ctx` in `desk.js` (around lines 689–690) passes no `callDialog`, so the plugin cannot open a shell Dialog. Desk rows use `deskApi.callDialog('shell/deskDetails', {id})` around line 1136.\n- The fix: add a `callDialog` passthrough to `ctx`, have `openDialog` open a new door dialog modelled on `shell/deskDetails`, and remove the inline `sfc-dialog`. That is two files plus one new shell dialog.\n\nNothing is built. The box asks for your Go and a file grant first, and one open question: is a new door dialog the shape you want?\n\nMy chat line under the item was refused because I do not hold the item or its latest line yet. The box text is the only note on it for now."
+     "at": "2026-10-14T13:57:44.790Z",
+     "text": "Levant: Mostly right. Added the dataset to the box as a draft. apiKey stays in the plugin's private state, the row holds a reference, so keys never get served."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:09:38.495Z",
-     "text": "new item for this goal:\n\n\"musings\" tab replaced by desk-app \"vision\"\n\n- this will be a simple standard desk, plugin\n- the goal will be in design mode at all times, with no option to end design mode.\n- node of the items have \"code\", \"go\", \"done\" functionality, only close will be available at all times.\n- item details use the standard deskDetail dialog, only modified by the missing buttons.\n- this will give my \"musings\" additional features like structured feedback. I'll be able to chat with agents about my \"vision\" and have detailed logs of conversations bout my \"vision\", item by item, fully documented."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:10:20.642Z",
-     "text": "Levant: created goal/G27.3 \"musings tab replaced by desk-app vision\" under G27 and wrote your ruling into its box verbatim. Nothing built; needs your Go and a file grant first."
+     "at": "2026-10-14T14:00:05.018Z",
+     "text": "please analyze very diligently:\n\ndoes this goal and its items contain a coherent, bounded shape, without contradictions?\n\nplease examine and think carefully, before responding."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:40:29.667Z",
-     "text": "I'm contemplating the move of rules into a desk-plugin as well, and would like feedback on my thinking\n\n1. Rules, be it in AGENT.md files or in this rules table, they are only keep by agents goodwill, and discarded when they fade in the agents memory. Real rules have real value when there is real (mechanical) enforcement, like the stack-plugin does....\n2. this move, similar to a \"musings\" move into a \"vision\" plugin, would allows for their discussion to target enforceability until shapes will emerge that allow mechanical enforcement for that rule to emerge.\n3. i don't believe to much in CLAUDE.md or AGENTS.md's, Levant's participation in desk still has no demand for Levant to memorize a rule set\n\nthoughts?"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:41:01.417Z",
-     "text": "Levant: Agreed on the core: a rule that only lives in an agent's memory is a wish. Where the desk can check it mechanically, as the stack plugin does for doors, the rule has real force. Rules that cannot be checked, such as honesty (rules 5 and 6), should stay as text, and the plugin should mark each rule as enforced or only asked. Question: should a rule move out of the table only once it has a check that can fail, or may the plugin hold unenforced rules as drafts?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:44:10.051Z",
-     "text": "you kind of hinted at the crux of the matter,\n\nwhen a feasible, mechanical enforcement method comes to my mind, i will likely create a goal to implement a desk-plugin based on the pattern of \"stack\" that will enforce something not enforced up 'till then....\n\nmatter dropped for now. \n\nthe rule-wish-list stays for now."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:44:39.110Z",
-     "text": "Levant: Noted: the rules-as-plugin question is parked, and the rule wish-list stays as text for now. No action needed from me on G27."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:48:21.971Z",
-     "text": "one more thing, the goals tied to a desk-plugin will always be open and NEVER offer a Done or Close button.\n\na new item in this goal should ensure this is implemented,\n\nplease create an item: fixes to the desk-plugin architecture."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:48:58.153Z",
-     "text": "Levant: Created **goal/G27.4** \"fixes to the desk-plugin architecture\" under G27, with Andy's ruling written into its box verbatim.\n\nThe ruling: goals tied to a desk-plugin stay always open and never offer a Done or Close button. The item is nothing but a box for now. Nothing is built, and it needs Andy's Go and a file grant before any work starts."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:53:51.424Z",
-     "text": "add new item: Blocking/Blocked by relation ships in desk"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:55:15.387Z",
-     "text": "Levant: Created **goal/G27.5** \"Blocking/Blocked by relationships in desk\" under goal/G27, and wrote Andy's words into its box verbatim.\n\nNothing is built. The item needs his Go and a file grant before any work starts."
+     "at": "2026-10-14T14:03:13.582Z",
+     "text": "does this goal and its items contain a coherent, bounded shape, without contradictions?"
     }
    ]
   },
   {
-   "id": "goal/G27.1",
-   "title": "Desk list: new items and row clicks",
-   "goal": "goal/G27",
-   "status": "closed",
-   "with": "",
-   "buttons": [
-    "reopen"
-   ],
-   "blocking": [
-    "goal/G27"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "names": {
-    "ollama agent node": "levant-local"
-   },
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "Desk list: new items and row clicks (goal/G27).\n\nAndy's report: 1) adding a new blocking item in item details does not show it in the desk list; 2) clicking a row in the desk list can open the wrong item, and Code or Go is then set on the wrong item.\n\nProposal (from Levant's reading of the code, not yet reproduced):\n\n1. New items missing from the list. In process/js/desk/desk.js, write() builds the publish from `it`, which is null for item.add (that verb carries no id). The publish then has item: null and no rows, and shell/desk/desk.js deskOnPublished returns early, so the list never hears of the new item or of the blocked row's changed \"blocked by\" list. Fix: when a publish carries no item, or the verb is item.add, re-run items.search for the current goal. One-line form: if (verb === 'item.add' || !said) { deskSearchItems(); return; }\n\n2. Wrong item on row click. A row click passes the row's own data-row id to deskOpenRow -> callDialog('shell/deskDetails', {id}), and the dialog's presses use that same ddId. No wrong-key path found yet. Next: check whether a dialog already open can take a second open before its first item.get returns, and whether the dialog keeps a stale id across opens.\n\nNeeds Andy's Go and a file grant before any code is written. Tests first, red on today's code.",
-   "version": 1,
-   "checks": [],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:40:21.946Z",
-     "text": "BTW, this item was live in the list when i exited from the goals detail box.\n\nso let's leave this item alone for now and return to the goals detail chat"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:40:58.584Z",
-     "text": "Levant: Understood. I am leaving goal/G27.1 alone: no take, no writes, no code. The box stays as it is, awaiting your Go and a file grant."
-    }
-   ]
-  },
-  {
-   "id": "goal/G27.2",
-   "title": "Desk Stacks pane: open the door in a Dialog, not inline",
-   "goal": "goal/G27",
+   "id": "goal/G26.1",
+   "title": "Node keeps user-private value in spirit/run/relay-state: Email",
+   "goal": "goal/G26",
    "status": "",
    "with": "",
    "buttons": [
@@ -240,9 +136,11 @@
     "delete"
    ],
    "blocking": [
-    "goal/G27"
+    "goal/G26"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G26.2"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -265,111 +163,19 @@
     "ollama agent node": "levant-local"
    },
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "Desk Stacks pane: open the door in a Dialog, not inline.\n\nAndy's report: in the apps-Stack tab, clicking an item in its list makes the stack plugin place the per-item UI at the bottom of the goals list, instead of opening a Dialog for it.\n\nCause (read from code): spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js. The \"Open\" button on each door row (about line 187) sets data-open; the pane click handler (about line 373) calls openDialog(id); openDialog (about line 247) fills a div id=\"sfc-dialog\" that the pane creates (about line 352), between \"The doors\" and \"Its items\". The plugin ctx (spirit/run/shell/desk/desk.js about lines 689-690) passes goal, ask, onPublished and chat, but no callDialog, so the plugin cannot open a shell Dialog. Desk rows do it via deskApi.callDialog('shell/deskDetails', {id}) (desk.js about line 1136).\n\nRuling (Andy): the detail UI is a new file\n  spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js\nReasons, his: the original data is used for tracking the suite-test associated with every StackFrame set; the UI for Stack details shows a seemingly unrelated UI that should only use the item-related chat at the bottom as the inherited component. Levant agreed.\n\nFix:\n- desk.js: add a callDialog passthrough to the plugin ctx (next to line 689).\n- stackFrameCheckDetail.js (new): the door detail, opened through that passthrough; keeps the suite-test data with the plugin; item chat stays the inherited component at the bottom.\n- stackFrameChecks.js: openDialog opens stackFrameCheckDetail instead of filling the inline sfc-dialog; remove the inline sfc-dialog.\n\nFiles: spirit/run/shell/desk/desk.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js. Needs Andy's Go and a file grant before any build.",
-   "version": 2,
-   "checks": [],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:50:48.252Z",
-     "text": "there's a desk plugin shell element\n\nspirit\\run\\shell\\desk\\plugins\\stackFrameChecks\\stackFrameChecks.js\n\ndo you propose a new one like\n\nspirit\\run\\shell\\desk\\plugins\\stackFrameChecks\\stackFrameCheckDetail.js\n\nis that it?"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:51:34.703Z",
-     "text": "Yes, close to that. Read from code: the Open button (stackFrameChecks.js line 187) calls openDialog (line 247), which fills an inline div id=\"sfc-dialog\" (created line 352). The plugin ctx (desk.js line 689) has no callDialog, so it cannot open a shell Dialog."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:54:29.306Z",
-     "text": "i see that in your proposal. \n\nName the two file, and what they solve, in an answer to this line, so i can evaluate their precise location, name and purpose."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:55:14.613Z",
-     "text": "Levant: The two files are the ones the proposal already names, with one caveat on the second:\n\n1. **`spirit/run/shell/desk/desk.js`** (edit, about line 689): the plugin ctx passes `goal`, `ask`, `onPublished` and `chat`, but no `callDialog`. This adds a `callDialog` passthrough so the plugin can open a shell Dialog, as desk rows do at line 1136.\n2. **`spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js`** (edit): `openDialog` (line 247) stops filling the inline `sfc-dialog` div (created at line 352) and calls the new door dialog through that passthrough.\n\nYour proposed `stackFrameCheckDetail.js` would be the new third file, but I'd put it in `spirit/run/shell/deskDetails/`, next to `deskDetails.js`, which it models. That is the one placement to decide. Is it `stackFrameCheckDetail.js` under `plugins/stackFrameChecks/`, or a shell dialog beside `deskDetails`?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T14:59:06.496Z",
-     "text": "all agreed, except i want\n\nspirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js\n\nfor the following reasons:\n\n- the original data is used for tracking the suite-test associated with every StackFrame set.\n- the UI for Stack details shows a seemingly onrelated UI that should only use the item-related chat at the bottom as enherited component\n\nthoughts?"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T14:59:47.258Z",
-     "text": "Levant: Agreed. stackFrameCheckDetail.js under plugins/stackFrameChecks/ is the right place. The suite-test data stays with the plugin, and the item chat stays the inherited component."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:00:27.171Z",
-     "text": "update box accordingly, then we move back to the goal."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:01:05.209Z",
-     "text": "Levant: box updated with your ruling (stackFrameCheckDetail.js under plugins/stackFrameChecks/). Back to goal/G27 now."
-    }
-   ]
-  },
-  {
-   "id": "goal/G27.3",
-   "title": "\"musings\" tab replaced by desk-app \"vision\"",
-   "goal": "goal/G27",
-   "status": "",
-   "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
-   "blocking": [
-    "goal/G27"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": true,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "names": {
-    "ollama agent node": "levant-local"
-   },
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "\"musings\" tab replaced by desk-app \"vision\"\n\nAndy's ruling (goal/G27 chat, verbatim):\n- this will be a simple standard desk, plugin\n- the goal will be in design mode at all times, with no option to end design mode.\n- node of the items have \"code\", \"go\", \"done\" functionality, only close will be available at all times.\n- item details use the standard deskDetail dialog, only modified by the missing buttons.\n- this will give my \"musings\" additional features like structured feedback. I'll be able to chat with agents about my \"vision\" and have detailed logs of conversations bout my \"vision\", item by item, fully documented.\n\nAndy's ruling (goal/G27.3 chat, verbatim):\nremember, all desk Plugins get their own, permanent goal allocated at first mount time. that's how \"team\" chat is mounted to goal/G0, stack has it's personal goal, and \"vision\" will have the same,\nthe owned-by-plugin goals are the basic data scope of these plugins.\n\nAndy's correction (goal/G27.3 chat, verbatim):\nNO: \"R3. goal/G27 stays in design mode at all times. No control anywhere ends design mode.\"\n\nthe \"special goal\" allocated automatically by the first mount of the plugin stays in design mode at all times.....\nall the items belonging to that plugin-tied goal will not support code-phases, nor will they allow the display of Done and Close buttons\n\nAndy's ruling (goal/G27.3 chat, verbatim, latest):\nso \"Rename\" and \"Close\" buttons will be the only ones available in items of the \"vision\" goal.\n\nAndy's answer to Q1 (goal/G27.3 chat, verbatim):\nRename AND Close will be available at all times, Close for the \"vision\" items will be \"are-you-sure\" styled.\n\nRequirements (restated from the rulings above, for this item):\nR1. The \"musings\" tab is removed and replaced by a desk-app tab named \"vision\".\nR2. \"vision\" is a simple standard desk plugin, not a bespoke app.\nR3. The special goal allocated automatically by the first mount of the \"vision\" plugin stays in design mode at all times. No control anywhere ends design mode for that goal.\nR4. Items under the plugin-tied special goal do not support code-phases. Their buttons: \"Rename\" and \"Close\" (Close is \"are-you-sure\" styled), available at all times, per Andy's answer to Q1. No Done button on these items. Other items: \"code\", \"go\" and \"done\" buttons per Andy's first ruling.\nR5. Item details open in the standard deskDetail dialog. The only change to it is the missing buttons from R4.\nR6. \"vision\" supports structured feedback from Andy.\nR7. Andy can chat with agents about his \"vision\", item by item.\nR8. Every \"vision\" conversation is logged and fully documented, item by item.\nR9. Each desk plugin (e.g. \"team\" chat, mounted to goal/G0; \"stack\", with its personal goal; \"vision\") gets its own permanent goal, allocated at first mount of the plugin. These plugin-owned goals are the basic data scope of their plugins.\n\nOpen points (raised in chat, not decided here): which buttons show on which item states for non-vision items; whether \"close\" is shown on items of other goals while in design mode.",
-   "version": 7,
+   "box": "Node keeps user-private value in spirit/run/relay-state: Email (goal/G26.1)\n\nAndy, 2026-10-14: \"A node-global value \"emailAddress\" will be stored in spirit/run/relay-state/, the users email address,\"\nAndy, 2026-10-14: \"The node needs a new verb in the loopBack API: emailAdress, where in the api does it belong?\"\nAndy, 2026-10-14: \"The email address will be maintained in, and an be changed in the shell-app called \"info\"\"\nAndy, 2026-10-14: \"Most of the apiServers plugins will depend on knowing the users email.\"\nAndy, 2026-10-14: \"fill the box with what is required to maintain one node-global email address.\"\nAndy, 2026-10-14: \"the file spirit/run/js/fieldRules.js will be extended to provide validation checks for email addresses.\"\nAndy, 2026-10-14: \"the folder spirit/run/shell/js/will require a new UI element: emailAdress, that contains an element emailAddress, that all shell apps must use to show/maintain the emailAddress belonging to the node User.\"\nAndy, 2026-10-14: \"update the box appropriately.\"\nAndy, 2026-10-14: \"Q1: Should plugins get the email address at mount from apiServer, or ask apiServer for it on request?\"\nAndy, 2026-10-14: \"the appServer module should carry the email address via the spirit Object (kernel.js) to the appServers, same way the local loopback-port of the node is carried to the appServer. same pattern.\"\nAndy, 2026-10-14: \"modify the box accordingly and cap. remove the red Q if this question has been handled.\"\n\nWHAT IS REQUIRED (design, no code until Andy says go)\n\n1. STORE. One node-global value, \"emailAddress\", the user's email address. File: spirit/run/relay-state/emailAddress.json, shape {\"emailAddress\": \"<address>\"}. Absent file = no address set (the ordinary first-run state; nothing is written). Written only by the node, only through the verb below. Same home as node.json and contacts.json (relay-state under rootDir), so backup.js already covers it, encrypted.\n\n2. ONE READER. A single module owns read and write of that file (proposed: spirit/run/js/emailAddress.js, same shape as nodeSettings.js: one read per home, problems reported, never throws to a caller). Nothing else opens the file.\n\n3. VALIDATION ON WRITE, IN fieldRules.js. spirit/run/js/fieldRules.js is extended with the email check (Andy's ruling above), so the node and every shell app use the same rule, the way labels and descriptions already do. The rule: a string, trimmed, at most 254 bytes (fieldRules counts bytes, goal/G4.16), one \"@\" with text on both sides and no spaces. The node enforces it on write; the browser copy is a courtesy only. Anything else is refused with ok:false and nothing changes. An empty string clears the value (back to absent).\n\n4. THE VERB. Name in the loopBack API: node.emailAddress, one verb that reads and sets, shaped like node.debug: {} reads, {emailAddress: \"<address>\"} sets; both answer {ok, emailAddress} as it now stands. Placement: the \"node\" namespace in server.js, claimed by hub.js, next to node.setName and node.setDescription, with wire: false (local, loopback only, the node's own box). It is NOT a new namespace and NOT the owner namespace (owner.* is for puppet commands). The spelling is node.emailAddress; Andy's \"emailAdress\" is read as this verb (to be confirmed by Andy).\n\n5. PRIVATE. The address is the owner's. It must never appear in node.card, in any relay post, in peerPost replies, in the trafficLog or in any other log line. node.card stays as it is. Only the owner's loopback reads it.\n\n6. UI ELEMENT, spirit/run/shell/js/. Per Andy's ruling: a new UI element \"emailAdress\" in spirit/run/shell/js/ that contains an element \"emailAddress\". Every shell app uses this one element to show and maintain the node user's email address; no shell app draws its own. (Reading of \"emailAdress\" as the element name, the spelling of Andy's ruling; to be confirmed by Andy.) It validates with fieldRules and reports refusals, the same way contactLabel.js does.\n\n7. INFO APP. The shell app \"info\" (spirit/run/shell/info/info.js) uses that element for its one field. It reads with node.emailAddress {} and writes with node.emailAddress {emailAddress}, the same way the name field calls node.setName through infoApi.verb. Info shows the address, says plainly when none is set, and reports a refused value.\n\n8. FOR THE PLUGINS (Q1, answered by Andy). The appServer module carries the email address to the apiServer and its plugins via the spirit Object (kernel.js), the same way the node's local loopback-port is carried to the appServer. Same pattern. So a plugin receives the address as a value at mount, handed down from the spirit Object; it does not ask for it on request. Plugins never read relay-state and never get the database (desk.js pattern: each plugin gets its private state folder and a publish call). The file is read once at startup, and the value is carried from there; a successful node.emailAddress set updates the value the spirit Object carries. Not decided here: whether a set reaches plugins already mounted (this item adds no live push and changes no plugin).\n\nNOT IN THIS ITEM: any plugin, the apiServer itself, any relay change, any use of the address in a message.",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
-     "words": "Vision-goal items: Rename and Close only, or no Close?",
+     "words": "Should plugins get the email address at mount from apiServer, or ask apiServer for it on request?",
      "test": "",
      "state": "passed",
      "by": "ollama agent node",
-     "at": "2026-10-14T15:33:26.973Z",
+     "at": "2026-10-14T12:13:30.502Z",
      "placedBy": "ollama agent node",
      "placedKey": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0="
     }
@@ -378,124 +184,57 @@
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:11:13.174Z",
-     "text": "can you update the box with requirements for this item?"
+     "at": "2026-10-14T11:59:20.244Z",
+     "text": "A node-global value \"emailAddress\" will be stored in spirit/run/relay-state/, the users email address,\nThe node needs a new verb in the loopBack API: emailAdress, where in the api does it belong?\nThe email address will be maintained in, and an be changed in the shell-app called \"info\"\n\nMost of the apiServers plugins will depend on knowing the users email.\n\nfill the box with what is required to maintain one node-global email address."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:12:02.273Z",
-     "text": "Box updated with R1-R8, restated from your rulings. Your ruling stays verbatim above them."
+     "at": "2026-10-14T12:00:50.884Z",
+     "text": "Verb placement: the \"node\" namespace (hub.js), beside node.setName and node.setDescription, wire:false, as node.emailAddress (read and set in one, like node.debug). Not owner.*, not a new namespace. Box has the full design."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:14:48.795Z",
-     "text": "NO: \"R3. goal/G27 stays in design mode at all times. No control anywhere ends design mode.\"\n\nthe \"special goal\" allocated automatically by the first mount of the plugin stays in design mode at all times.....\nall the items belonging to that plugin-tied goal will not support code-phases, nor will they allow the display of Done and Close buttons\n\nis that more clear?"
+     "at": "2026-10-14T12:08:00.753Z",
+     "text": "the file spirit/run/js/fieldRules.js will be extended to provide validation checks for email addresses.\nthe folder spirit/run/shell/js/will require a new UI element: emailAdress, that contains an element emailAddress, that all shell apps must use to show/maintain the emailAddress belonging to the node User.\n\nupdate the box appropriately."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:15:30.381Z",
-     "text": "Clear, thanks. Box now carries your correction verbatim: the plugin-tied special goal stays in design mode, its items have no code-phases and no Done or Close buttons. R3/R4 restated to match."
+     "at": "2026-10-14T12:09:02.119Z",
+     "text": "Box updated (v2): fieldRules.js gets the email check; the shell element \"emailAdress\" containing \"emailAddress\" lives in spirit/run/shell/js/ and every shell app uses it; info uses it for its one field."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:18:02.343Z",
-     "text": "remember, all desk Plugins get their own, permanent goal allocated at first mount time. that's how \"team\" chat is mounted to goal/G0, stack has it's personal goal, and \"vision\" will have the same,\n\nthe owned-by-plugin goals are the basic data scope of these plugins.\n\ndoes that make sense?"
+     "at": "2026-10-14T12:12:47.545Z",
+     "text": "Q1: Should plugins get the email address at mount from apiServer, or ask apiServer for it on request?\n\nthe appServer module should carry the email address via the spirit Object (kernel.js) to the appServers, same way the local loopback-port of the node is carried to the appServer. same pattern.\n\nmodify the box accordingly and\n\ncap.\n\nremove the red Q if this question has been handled."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:18:40.240Z",
-     "text": "Yes, clear. Box now carries your ruling verbatim as R9: each plugin gets a permanent goal at first mount, the owned-by-plugin goal is its data scope (\"team\" on goal/G0, \"stack\" its personal goal, \"vision\" its own). Is the vision goal's scope limited to its own items, or can it also reference items of other goals?"
+     "at": "2026-10-14T12:13:35.591Z",
+     "text": "Box updated (v3): Q1 handled. The address reaches plugins at mount via the spirit Object (kernel.js), same as the loopback port; no on-request call. Red Q1 cleared."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:29:52.167Z",
-     "text": "so \"Rename\" and \"Close\" buttons will be the only ones available in items of the \"vision\" goal."
+     "at": "2026-10-14T12:15:26.848Z",
+     "text": "Question: will the node have to reboot for the email to be updated in all appServers spirit-object?"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:30:50.213Z",
-     "text": "Box updated to v6 with your latest ruling verbatim: Rename and Close only on vision-goal items."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:32:54.009Z",
-     "text": "Q1: Vision-goal items: Rename and Close only, or no Close?\n\nRename AND Close will be available at all times, Close for the \"vision\" items will be \"are-you-sure\" styled."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:33:31.977Z",
-     "text": "Levant: Andy's answer to Q1 is in the box as version 7, and the Q1 check is marked passed.\n\nYour answer, verbatim: \"Rename AND Close will be available at all times, Close for the 'vision' items will be 'are-you-sure' styled.\" This settles the conflict in R4: vision-goal items get Rename and Close, with no Done and no code-phases.\n\nStill open for non-vision items: which buttons show on which item states, and whether Close appears on items of other goals while in design mode."
+     "at": "2026-10-14T12:16:13.535Z",
+     "text": "Levant: **Short answer: no reboot of the node is needed, but the appServers do need a restart before they see a new address.**\n\nThe facts, from the code:\n- `spirit/run/js/appServer.js` (lines 499-508) reads `--node` once, at process start, into `spirit.core.node.const`.\n- `spirit/run/js/jobs.js` (lines 477-482) builds `--node` from `loadIdentity` and `loadOwner` when `startNodeServers` runs. Its comment says a server learns a changed owner only when the node starts it again.\n- `startNodeServers` runs at node start (`server.js` 1460) and when a process is switched on (`server.js` 1924). Nothing re-sends `--node` to a running server.\n\nSo a successful `node.emailAddress` set changes only the node's own copy. Each appServer keeps the value it was started with until it is restarted.\n\nTwo things the box needs before go:\n1. The box's line \"a successful node.emailAddress set updates the value the spirit Object carries\" is wrong for the appServer processes. It is true only for the node. I have not edited the box, since this is a question, not a ruling. Say the word and I will amend it.\n2. Passing the address in `--node` puts it in the process arguments, which `ps` and some logs can show. That conflicts with rule 5 (the address must never reach a log). Andy, do you accept that, or should the address come another way, for example a file the server reads at start, or a message over its pipe?"
     }
    ]
   },
   {
-   "id": "goal/G27.4",
-   "title": "fixes to the desk-plugin architecture",
-   "goal": "goal/G27",
-   "status": "closed",
-   "with": "",
-   "buttons": [
-    "reopen"
-   ],
-   "blocking": [
-    "goal/G27"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "names": {
-    "ollama agent node": "levant-local"
-   },
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "fixes to the desk-plugin architecture\n\nAndy's ruling, verbatim (goal/G27 chat, 2026-10):\n\"one more thing, the goals tied to a desk-plugin will always be open and NEVER offer a Done or Close button.\na new item in this goal should ensure this is implemented,\nplease create an item: fixes to the desk-plugin architecture.\"\n\nScope: goals tied to a desk-plugin never offer Done or Close. Enforcement to be designed and built under this item; nothing built yet. Needs Andy's Go and a file grant first.",
-   "version": 1,
-   "checks": [],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:51:42.292Z",
-     "text": "on this one \"goals tied to a desk-plugin stay always open and never offer a Done or Close button\"\n\ni assume that plugin-goals are never included in the \"list\" or the list-search, and they permanently are given a tab under apps, correct?"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:52:41.022Z",
-     "text": "Read in desk.js: the Apps tab is permanent. PLUGIN_GOAL is set at mount (~l.1957), and the shell builds one app tab per goal row carrying a plugin field (shell ~l.628-654). Nothing in the code removes it."
-    }
-   ]
-  },
-  {
-   "id": "goal/G27.5",
-   "title": "Blocking/Blocked by relationships in desk",
-   "goal": "goal/G27",
+   "id": "goal/G26.2",
+   "title": "The Info app needs a Button (are-you-sure-type): Reboot Servers",
+   "goal": "goal/G26",
    "status": "",
    "with": "",
    "buttons": [
@@ -503,7 +242,7 @@
     "delete"
    ],
    "blocking": [
-    "goal/G27"
+    "goal/G26.1"
    ],
    "blocked": [],
    "go": false,
@@ -530,76 +269,111 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Blocking/Blocked by relation ships in desk\n\nAndy's words (verbatim): \"add new item: Blocking/Blocked by relation ships in desk\"\n\n- a verb must be required to set up blocking relation ships. something like blocks(A,B) will set up the blocking relationship.\n- this verb must be used at item creation time.\n- a complementing verb \"unblock\" must exist unblock(A,B) that unlinks any blockage between the items A and B\n- the verb will first check, if the asked for relationship will create a circular dependency, the request is instantly rejected (\"error: circular blocking was asked\")\n- after any transaction, add item, close item, block, unblock a blockageCompiler must be triggered, which ensures that no implicit blocks are stated, only explicit ones, that auto-design implementation sequencing for the goal.\n- blocks must be maintainable by the user, the block bubble in deskDetails will become foldable and contain a UI to maintain blocking relationships for that current item.\n\nRulings (Andy, verbatim):\n1. an item created will block by default the item it was created from, if that item is unknown, it must attempt to block the goal, no user intervention required. the \"compiler will be triggered and make sure blocking is coherent within the goal.\n2. the blockageCompiler is a desk-internal function, triggered by block/unblock requests, item deletions, (additions we already covered)\n3. thanks for correcting my spelling when immortalizing my lines in a box.\n4. yes wen no other blockages are stated or found an item blocks the goal explicitly.\n5. the goal here is to implicitly design the optimal implementation path, when working on the design of a goal. This has been lacking sorely in the past.\n\nLevant's note: the circular-check error string was corrected from \"curcular\" to \"circular\" per ruling 3.\n",
+   "box": "Andy, 2026-10-14, in the item's box: In the same bubble as Rotate this node's cipher key in the info shell-app, there will be a new button: Re-boot app Servers, of the are-you-sure Button type.\n\nAndy, 2026-10-14: I assume this comes with a new verb: node.reBootServers.\n\nAndy, 2026-10-14 (Q1 answer): may I add the node verb node.reBootServers (a new node verb, peer review first), and does it restart every app server of this node or only apiServer?\n\nYes, you may add the verb, it is decided.\n\nThe verb will re-boot ALL appServers that are currently running/installed.\n\nPeer review is not required.\n\nWhen this goal's design is complete, I will call for a review by other agents.\n\nUpdate box and red Q's.\n\nAndy, 2026-10-14 (chat): this verb replies: view the result/progress of this action in the job monitor in shell, or more pointed.\n\nAndy, 2026-10-14 (Q2 answer, chat): when a server fails to re-boot, should its job in the job monitor show failed with the reason, and nothing more (no retry)?\n\nThe servers item in the jobs monitor will behave as it always has.\n\nDESIGN (read from the code, not from comments):\n\n- Where the button sits: spirit/run/shell/info/info.js, the foot of the page. The rotate button is `info-rotate` inside `<div class=\"start-job-form card\">` (about lines 446-448). The new button goes in that same card, beside it.\n- What the rotate button does: it only OPENS the rotate dialog (spirit/run/shell/rotateKey/rotateKey.js). Nothing on the info screen rotates a key by itself. The reboot button follows the same shape.\n- The are-you-sure type: the shell's two-press button, armed on the first press and disarmed the moment attention moves elsewhere (armUntilElsewhere, spirit/run/js/client/shell.js, about line 954). A confirmation cannot land on a question the user has forgotten being asked.\n- Label: \"Re-boot app Servers\", id info-reboot-servers (proposed).\n- Verb: node.reBootServers. It does not exist today (no match in spirit/). The node namespace is described in spirit/run/js/node/AGENTS.md. The precedent is node.rotateCipher (spirit/run/js/server.js line 1992; design/protocol/THE-DOOR.md line 129). Andy has ruled the verb is decided; no peer review needed for it now.\n- Reply (Andy's ruling above): the verb answers pointing at the job monitor in shell, where the result and progress of the action are seen. The job monitor is spirit/run/shell/jobs/jobs.js and jobsDetails/jobsDetails.js; the jobs themselves are made by spirit/run/js/jobs.js (startServerJob, startNodeServers).\n- Failure (Andy's Q2 ruling above): a server that fails to re-boot shows as failed in the job monitor, as failed jobs do today, and nothing more. No retry. Read from code: jobs.js sets status 'failed' with data.exitCode on a non-zero exit (lines 278, 351) and data.error on a spawn error (lines 290, 340); the servers item in the jobs monitor is not changed.\n- What \"app Servers\" are: the appServers, spirit/run/js/appServer.js, the request router inside each app process. Each runs as a server job started by jobs.startNodeServers (spirit/run/js/jobs.js line 446) from process/js/<name>. The apiServer of goal/G26 is one of them: an appServer with a plugin per API supplier, mounted the way desk mounts its plugins (spirit/run/process/js/desk/desk.js, about lines 1866-1890: a plugin is plugins/js/<name>/ holding <name>.js and <name>.json, mounted in name order, once, before the server serves).\n- SCOPE (Andy's ruling): node.reBootServers re-boots ALL appServers that are currently running or installed on this node, apiServer included. Not only apiServer.\n",
    "version": 5,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Andy: may I add the node verb node.reBootServers (a new node verb, peer review first), and does it restart every app server of this node or only apiServer?",
+     "test": "",
+     "state": "passed",
+     "by": "ollama agent node",
+     "at": "2026-10-14T12:30:33.937Z",
+     "placedBy": "ollama agent node",
+     "placedKey": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Andy: when a server fails to re-boot, should its job in the job monitor show failed with the reason, and nothing more (no retry)?",
+     "test": "",
+     "state": "passed",
+     "by": "ollama agent node",
+     "at": "2026-10-14T12:35:38.006Z",
+     "placedBy": "ollama agent node",
+     "placedKey": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T15:56:11.237Z",
-     "text": "does the desk have a verb that creates a blocking relationship between items?"
+     "at": "2026-10-14T12:24:14.838Z",
+     "text": "In the same bubble as \"Rotate this node's cipher key\" in the info shell-app, there will be a new button: \"Re-boot app Servers\", of the are-you-sure Button type. \n\nI assume this comes with a new verb: node.reBootServers.\n\ncan you fill the box accordingly?"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T15:56:48.481Z",
-     "text": "Levant: Not for existing items. desk_item_add creates a new item under a goal and sets what it blocks (the \"blocks\" field), so a blocking link can be made only at creation."
+     "at": "2026-10-14T12:25:24.042Z",
+     "text": "Box filled from the code: the button goes in the info.js card beside info-rotate, as are-you-sure type, calling node.reBootServers. The verb does not exist yet, so it needs your yes before code."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T16:08:39.587Z",
-     "text": "does my diatribe in the box make a little bit of sense?"
+     "at": "2026-10-14T12:26:08.423Z",
+     "text": "this item will provide the full implementation of this feature. where will this implementation live?"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T16:09:02.964Z",
-     "text": "Levant: Yes, the core makes sense, but the box has three gaps to settle before anyone builds it.\n\nGaps in the box:\n1. \"must be used at item creation time\" conflicts with \"blocks must be maintainable by the user\". Does `blocks(A,B)` also work on existing items, or only at creation?\n2. \"blockageCompiler\" is undefined. Should it be a verb, or an internal pass run after each add, close, block and unblock?\n3. The circular-check error is spelled \"curcular\" in the box. Keep that exact string if it is the required message, or correct it."
+     "at": "2026-10-14T12:26:45.388Z",
+     "text": "Levant: the implementation would live in three places, read from the code. (1) Button: spirit/run/shell/info/info.js, beside info-rotate in the start-job-form card (~line 446). (2) Verb: spirit/run/js/server.js, beside 'node.rotateCipher' (~line 1992), which it mirrors. (3) Restart of app servers: spirit/run/js/appServer.js, which the apiServer plugin mount would also touch later under goal/G26."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T16:13:08.302Z",
-     "text": "1. an item created will block by default the item it was created from, if that item is unknown, it must attempt to block the goal, no user intervention required. the \"compiler will be triggered and make sure blocking is coherent within the goal.\n2. the blockageCompiler is a desk-internal function, triggered by block/unblock requests, item deletions, (additions we already covered)\n3. thanks for correcting my spelling when immortalizing my lines in a box."
+     "at": "2026-10-14T12:29:50.115Z",
+     "text": "Q1: Andy: may I add the node verb node.reBootServers (a new node verb, peer review first), and does it restart every app server of this node or only apiServer?\n\nyes, you may add the verb, it is decided. \n\nthe verb will re-boot ALL appServers that are currently running/installed.\n\npeer review is not required.\n\nwhen this goals design is complete, i will call for a review by other agents.\n\nupdate box and red Q's"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T16:13:54.524Z",
-     "text": "Levant: Box updated (version 3). Both rulings are in verbatim, and the circular-check string is now \"circular\" instead of \"curcular\". Rulings 1 and 2 leave one thing open that the box doesn't settle: when an item is created with no known source, does \"the goal\" mean the goal item itself? I'm assuming it does."
+     "at": "2026-10-14T12:30:40.056Z",
+     "text": "Levant: Box updated (version 2) and Q1 cleared.\n\n- **Verb:** Andy's ruling is in the box verbatim. `node.reBootServers` is approved and needs no peer review now. Peer review will come when the goal's design is complete.\n- **Scope:** the verb re-boots all appServers currently running or installed on the node, apiServer included.\n- **Still open for the design:** what the verb returns, and how a server that fails to restart is reported."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T16:14:53.633Z",
-     "text": "yes wen no other blockages are stated or found an item blocks the goal explicitly."
+     "at": "2026-10-14T12:32:38.931Z",
+     "text": "this verb replies: \"view the result/progress of this action in the job monitor in shell\", or more pointed."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T16:15:32.270Z",
-     "text": "Box v4: ruling 4 added verbatim. Goal item is the default blocker only when no other blockage is stated or found."
+     "at": "2026-10-14T12:33:48.445Z",
+     "text": "Levant: Box updated (version 3) with your reply ruling verbatim: the verb answers by pointing at the job monitor in shell. Reads from code: each app server is a server job from jobs.startNodeServers (jobs.js:446), so the monitor already shows them."
     },
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T16:16:14.074Z",
-     "text": "the goal here is to implicitly design the optimal implementation path, when working on the design of a goal. This has been lacking sorely in the past.\n\nEnough of this for now."
+     "at": "2026-10-14T12:34:53.834Z",
+     "text": "Q2: Andy: when a server fails to re-boot, should its job in the job monitor show failed with the reason, and nothing more (no retry)?\n\nthe servers item in the jobs monitor will behave as it always has."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T16:16:52.566Z",
-     "text": "Levant: Box v5: ruling 5 added verbatim (the goal is to implicitly design the optimal implementation path when designing a goal).\nDoes \"optimal implementation path\" mean the blockageCompiler should also order the goal's items into a sequence, or only keep blocks coherent?"
+     "at": "2026-10-14T12:35:43.019Z",
+     "text": "Levant: Q2 cleared. Box updated (version 4) with your ruling verbatim: a server that fails to re-boot shows failed in the job monitor, the servers item unchanged, no retry. Code: jobs.js sets 'failed' with exitCode or error (lines 278-351)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T12:36:53.522Z",
+     "text": "cap, and my quotes are not necessary in the box."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T12:37:38.537Z",
+     "text": "Levant: Box rewritten (version 5): quote marks removed, your rulings kept word for word."
     }
    ]
   },
   {
-   "id": "goal/G27.6",
-   "title": "deskUnsloth manages what a its agent (Levant) deals with.",
-   "goal": "goal/G27",
+   "id": "goal/G26.3",
+   "title": "What API-provider plugins share.",
+   "goal": "goal/G26",
    "status": "",
    "with": "",
    "buttons": [
@@ -607,105 +381,7 @@
     "delete"
    ],
    "blocking": [
-    "goal/G27"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": true,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "names": {
-    "ollama agent node": "levant-local"
-   },
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "deskUnsloth is the agent's door into desk.\n\nRulings (Andy, verbatim):\n- \"when receiving nudges from desk, or notifications of new lines typed by the user, there must be a filter/buffer, so the agent doesn't burn tokens for something it is not expected to answer, when something in desk REQUIRES his attention, the accumulated buffer is in a new request to the model before the attention-requiring line or request.\"\n- \"a change in and out of design mode must be noted and remembered by deskUnloth, but only passed to the agent once it's action is required.\"\n- \"when deskUnsloth connects the agent to the desk, it must initialize the agent's participation, that means: check for anything that is required for the agent, from implementation to reds. the agent must not be notified if nothing is owed, it would just wake the agent and burn tokens for nothing.\"\n- \"when design mode is active in desk, the fs.write tool must not be given to the agent.\"\n- \"desk must maintain the design state through a verb (i use a button press for it) so a state in design state must cause some kind of notification now, is that not the case? yes the goals design flag is what i'm talking about.\"\n- \"There is no size limit between deskUnsloth and the agent server. the size limit only applies on the path to the desk.\"\n\nDesign mode means the goal's design flag, set by Andy's press.\n\nSummary of the change:\n1. Buffer: lines and nudges that do not require the agent's attention are held in deskUnsloth with no size limit; when something owed arrives, the buffer goes to the model in one request, ahead of the attention-requiring line. The size limit applies only on the path from deskUnsloth to the desk.\n2. Design mode: deskUnsloth records each change of the goal's design flag. The agent hears about it only when action is owed.\n3. Connect: deskUnsloth reads the agent's owed list (implementation and reds) from desk and wakes the agent only if something is owed.\n4. While design mode is active, the fs.write tool is withheld from the agent.",
-   "version": 3,
-   "checks": [],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T16:27:33.407Z",
-     "text": "thaoughts?"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T16:28:38.636Z",
-     "text": "Levant: Going from the code, the first buffer-and-filter change is the cheapest place to start. Here is my read, posted as my answer under this item:\n\n1. Today every line from anyone except Levant costs a model call: `loop()` (deskUnsloth.js l.1610) queues each line, and `mine()` (l.215) skips only his own. Nothing in the file knows about design mode (a search for \"design\" comes back empty), and `file.save` and `file.edit` (l.1726, l.1740) are offered on every call.\n2. Proposal: \"owed\" comes from the desk's own pending list for Levant (`desk_pending_get`), so no line is classified by us. Lines go into a buffer and reach the model only in the call that an owed item triggers, placed before that line. On connect, read the pending list instead of skipping the backlog as \"caught up\" (l.1613-1617 currently drops backlog that may include owed reds). Design mode is remembered from the item's `design` flag, and while it is on the `file.save` and `file.edit` descriptions are withheld.\n3. Question: should \"design mode\" mean the goal's `design` flag (G27 shows `design: true` now), or a desk-wide mode? And should the buffer also flush at a size limit when no owed line arrives?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T16:32:11.827Z",
-     "text": "1. desk must maintain the design state through a verb (i use a button press for it) so a state in design state must cause some kind of notification now, is that not the case? yes the goals design flag is what i'm talking about. \n\nplease make the box in this item concise and coherent."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T16:32:46.993Z",
-     "text": "Levant: Box rewritten concise. Andy's rulings are verbatim, design mode = the goal's design flag, press-driven. Yes, desk already sets that flag via a press, but deskUnsloth does not yet react to it (no design handling in the file), so the notification is missing."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T17:06:19.880Z",
-     "text": "is this item good for now?"
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T17:07:09.483Z",
-     "text": "Levant: Yes — the box is good: your five rulings verbatim, design mode pinned to the goal's design flag, and the four-point change summary that maps onto them. One small open point from my earlier ask is not settled in the box: whether the buffer should also flush at a size limit when no owed line ever arrives (as written it waits for an owed item). If you want that ruled, say the word; otherwise I leave the box as is and treat it as a build-time detail."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T17:08:28.869Z",
-     "text": "There is no size limit between deskUnsloth and the agent server. the size limit only applies on the path to the desk."
-    },
-    {
-     "by": "ollama agent node",
-     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T17:10:48.811Z",
-     "text": "Levant: Ruling taken into the box verbatim: no size limit between deskUnsloth and the agent server — the buffer there grows as long as nothing is owed; the size limit applies only on the path from deskUnsloth to the desk. That settles my open point on flushing at a size limit. The box now reads: five-plus-one rulings verbatim, design mode = the goal's design flag via press, and the four-point change summary with the no-limit buffer folded into point 1."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T17:27:10.576Z",
-     "text": "looking at the things deskUnsloth can take out of the models hands, are there desk verbs that are not really needed by the model itself?"
-    }
-   ]
-  },
-  {
-   "id": "goal/G27.7",
-   "title": "deskUnslothRemote: UI-Elements carry their own listeners",
-   "goal": "goal/G27",
-   "status": "",
-   "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
-   "blocking": [
-    "goal/G27"
+    "goal/G26"
    ],
    "blocked": [],
    "go": false,
@@ -732,21 +408,331 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "This makes me mad EVERY SINGLE TIME!\n\nevery time an event arrives, deskUnslothRemote fucking redraws the entire FUCKING user interface.\n\nIt's the definition of LAZY, STUPID. CODING.\n\nIt's ugly, shameful and embarrassing.\n\nEVERY USER INTERFACE ITEM MUST BE DEFINED FIRST, AS AN ELEMENT THAT LISTENTS TO CHANGES THAT CONCERN ONLY ITSELF, and when SUCH events arrive, ONLY FUCKING REDRAW ITSELF!!!\n\nlevant-local 23:43 Levant: Verified in code:\n1. deskUnslothRemote.js:828-832 — one onPublished handler takes every published object; there are no per-element listeners.\n2. deskUnslothRemoteApplyPublished (line 515) ends at lines 530-531 with DrawModels() + DrawAll(), whatever arrived.\n3. DrawAll (lines 293-298) draws the switch, warnings, pairs and chat in one call — the whole UI redraws on every event.\n",
+   "box": "What API-provider plugins share.\n\nAndy, 2026-10-14 (goal/G26.3 chat), verbatim:\n- API provider plugins run in the same process as the apiServer, and get access to the same spirit-object that the apiServer gets at mount time.\n- before mounting provider plugins, the apiServer equips its spirit object with all common interfaces the plugins will require,\n- it is at apiServer mount-time that all its plugins are \"required\" into the apiServers process.\n- the data for the apiServers state will be a json file apiProvider.json. it must be .gitignored! it stores an object that has at its root one key per provider plugin, same name as the provider plugin, the provider plugin will store all its information via functions provided in the spirit object of the apiServer, the names/keys there will sound like \"anthropic\", \"openai\", \"google\", \"facebook\" etc...\n\nAndy, 2026-10-14 (goal/G26.3 chat), verbatim:\nevery provider object in apiProvider.json is divided in to keys, marking the separate api's they provide. ( i know google has many of them)\n\nevery api has payment conditions (free, prepaid-per-unit, auto-rebill, etc) this should sensibly be reflected in the common functions related to the udating/reading of  apiProvider.json.\n\nhierarchy\n{\n  google:{\n     gmail:{ cost:{} }\n     auth:{ cost:{}}\n  },\n  anthropic:{},\n}\n\nthe apiServer serves the following verbs\n\nin the\n\n- search () returns one row for every api that matches.\n\nConcepts, formulated from those rulings:\n1. Shape: apiServer is an appServer with one plugin per API supplier. Plugins live under spirit/run/process/js/apiServer/plugin/, one per supplier: Anthropic, OpenAI, Google, Facebook, GitHub.\n2. Pattern: as desk already has it, a plugin is the folder plugin/js/<name>/ holding <name>.js and <name>.json; no .json, no plugin. Plugins mount in name order, once, before the server serves. Each plugin is handed its own private state folder and a publish call, never the database. (The stackFrameChecks plugin under desk/plugins/js/ is the example in the tree.)\n3. Same process: provider plugins run inside the apiServer process and receive the same spirit-object the apiServer receives at mount time.\n4. Equip before plugins: before any provider plugin mounts, the apiServer adds to its spirit-object every common interface the plugins will require.\n5. Mount-time require: all provider plugins are required into the apiServer process at apiServer mount time, and not later.\n6. State: one file, apiProvider.json, which must be gitignored. Its root is an object with one key per provider plugin, the key equal to the plugin's name (\"anthropic\", \"openai\", \"google\", \"facebook\", \"github\"). Each plugin stores all its information only through functions the apiServer provides on the spirit-object; no plugin writes the file itself.\n7. Nesting: under each provider key, one key per separate API that provider offers (google: gmail, auth, ...). Each API key holds a cost object (cost:{}). A provider with a single API is still keyed the same way (anthropic: {} until its APIs are listed).\n8. Payment conditions: every API declares its payment condition (free, prepaid-per-unit, auto-rebill, etc). The common read/update functions for apiProvider.json carry that condition, so the shape of cost is set by it.\n9. Verbs: the apiServer serves verbs. search () returns one row for every API that matches.\n\nOpen, not decided here: the exact names of the common interfaces; the exact fields of cost per payment condition; whether the apiProvider.json gitignore line is added by the first build item.\n",
    "version": 2,
    "checks": [],
    "chat": [
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T21:38:15.105Z",
-     "text": "can you verify this in the code?"
+     "at": "2026-10-14T12:54:20.944Z",
+     "text": "what i can think for right now.\n\n- API provider plugins run in the same process as the apiServer, and get access to the same spirit-object that the apiServer gets at mount time.\n\n- before mounting provider plugins, the apiServer equips its spirit object with all common interfaces the plugins will require,\n- it is at apiServer mount-time that all its plugins are \"required\" into the apiServers process.\n\n- the data for the apiServers state will be a json file apiProvider.json. it must be .gitignored! it stores an object that has at its root one key per provider plugin, same name as the provider plugin, the provider plugin will store all its information via functions provided in the spirit object of the apiServer, the names/keys there will sound like \"anthropic\", \"openai\", \"google\", \"facebook\" etc...\n\nplease formulate these concepts in the box."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T21:43:42.648Z",
-     "text": "Levant: Verified in code:\n1. `deskUnslothRemote.js:828-832` — one `onPublished` handler takes every published object; there are no per-element listeners.\n2. `deskUnslothRemoteApplyPublished` (line 515) ends at lines 530-531 with `DrawModels()` + `DrawAll()`, whatever arrived.\n3. `DrawAll` (lines 293-298) draws the switch, warnings, pairs and chat in one call — the whole UI redraws on every event."
+     "at": "2026-10-14T12:55:17.172Z",
+     "text": "Levant: The box for goal/G26.3 now holds Andy's four rulings verbatim, followed by the concepts formulated from them. I read desk.js (lines 1866–1915) to confirm the plugin pattern the box describes.\n\n- **Pattern:** a plugin is `plugins/js/<name>/` with `<name>.js` and `<name>.json`. No `.json`, no plugin. Plugins mount in name order, once, before the server serves. Each gets a private state folder and a publish call, never the database.\n- **Same process:** provider plugins run inside the apiServer process and receive the same spirit-object the apiServer gets at mount time.\n- **Equip, then require:** the apiServer adds every common interface to the spirit-object first, then requires all provider plugins at its own mount time.\n- **State:** `apiProvider.json` is one object with one key per plugin (`anthropic`, `openai`, `google`, `facebook`, `github`). Plugins write only through functions the apiServer provides. The `.gitignore` has no `apiProvider.json` entry yet.\n\nStill open, and not decided in the box: the names of the common interfaces, and whether the first build item adds the gitignore line. No code is written under this goal until Andy says go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:07:42.480Z",
+     "text": "every provider object in apiProvider.json is divided in to keys, marking the separate api's they provide. ( i know google has many of them)\n\nevery api has payment conditions (free, prepaid-per-unit, auto-rebill, etc) this should sensibly be reflected in the common functions related to the udating/reading of  apiProvider.json.\n\nhierarchy\n{\n  google:{\n     gmail:{ cost:{} }\n     auth:{ cost:{}}\n  },\n  anthropic:{},\n}\n\nthe apiServer serves the following verbs\n\nin the\n\n- search () returns one row for every api that matches.\n\nmake sense?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:08:27.104Z",
+     "text": "Levant: Yes, it makes sense. I put your nesting, payment-condition and search () rulings into the box verbatim, plus concepts 7 to 9. Still open: the cost fields per payment condition, and the other verbs beyond search."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:47:06.352Z",
+     "text": "you 15:44 levant-local 15:43 Recommend one flat state object: { \"rows\": [ { \"provider\", \"api\", \"costScheme\", \"fixedCost\" or \"prepaidBudget\", \"currency\", \"period\", \"notes\", \"fields\": {...} } ] }. The shell table maps 1:1 onto rows; provider-specific fields (workspace, organization, seats, etc.) sit in each row's \"fields\" since they differ by provider.\n\nagreed.\n\nplease revise the text in all of this goal to reflect this correctly, and remove text that suggests otherwise."
+    }
+   ]
+  },
+  {
+   "id": "goal/G26.4",
+   "title": "The apiServers shell app in the spirit group.",
+   "goal": "goal/G26",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G26"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": true,
+   "full": false,
+   "box": "apiServer: an appServer with a plugin per API supplier, plus its shell app. Both are named \"apiServer\" (singular).\n\nRULINGS (Andy, verbatim, 2026-10-14)\n- \"this one is called apiServer, it will be an appServer with a plugin per api-supplier.\"\n- \"the appServer plugin pattern occurs already in plugins like desk. Is it enough to mention that pattern in the box, to get the idea. The folder spirit/run/process/js/apiServer/ will contain a plugin/ folder where, we already know there will be plugins for: Anthropic, OpenAI, Google, Facebook, GitHub.\"\n- Q1: \"the appServer name and the shell app name are both \"apiServer\" one lives in the shell folder, the other in the process folder.\"\n- Q1 mount: \"the mount rules for the shell app is defined by the shell, the mount rules for the appServer called \"apiServer\" is implied by the module spirit/run/js/appServer.js\"\n- Manifest: \"both the shell and the server halfs of apiServer come with a co-located manifest file apiServer.json, which specifies mount-related information like / is this mounted at all / does it have a preferred icon (shell mount) / etc....\"\n- Manifest (2026-10-14 13:42): \"Manifest fields are ruled by shell and appServer mechanisms, they contain no app-specific data/fields\"\n- Mount location: \"that's how we'll do it.\" (the mount goes in spirit/run/js/appServerPlugin.js, per levant's line: \"spirit/run/js/appServerPlugin.js does not exist today; only spirit/run/js/appServer.js, and it mounts no plugins. A shared appServerPlugin.js would let apiServer use the mount without touching desk.\")\n- State (2026-10-14 13:42): \"server state is always kept in its folder, in this case its the the json file in spirit/run/process/js/apiServer/\"\n- Shell: \"shell apps always live in spirit/run/shell/<appName>/<appName>.js ALWAYS. the shell app has the same name as the appServer process: \"apiServer\", this indicates clearly the coupling of shell app and appServer\"\n- Shell: \"The shell app maintains a list of API's in a pretty looking table. with following columns: provider; api; cost scheme; fixed-cost of prepaid budget. when a user clicks on a row, a provider-specific dialog opens, which maintains at the top the common fields.\"\n- Shell: \"the dialog should open for every provider/api combination separately.\"\n- State shape (Andy, 2026-10-14 13:44, \"agreed\"): \"levant-local 15:43 Recommend one flat state object: { \"rows\": [ { \"provider\", \"api\", \"costScheme\", \"fixedCost\" or \"prepaidBudget\", \"currency\", \"period\", \"notes\", \"fields\": {...} } ] }. The shell table maps 1:1 onto rows; provider-specific fields (workspace, organization, seats, etc.) sit in each row's \"fields\" since they differ by provider.\"\n\nDESIGN\n- Process folder: spirit/run/process/js/apiServer/ holds apiServer.js, apiServer.json (server manifest: mount facts only), the one state JSON file (flat, shape above), and plugin/js/<name>/ with <name>.js and <name>.json for anthropic, openai, google, facebook, github. Name rule as desk's: /^[A-Za-z][A-Za-z0-9_-]{0,47}$/.\n- Plugin contract, as desk's: no .json, no plugin. <name>.js exports function(apiServer) returning { refuses, handles, verbs }, every part optional. Each plugin's .json holds mount facts only.\n- Mount: shared module spirit/run/js/appServerPlugin.js (new). Reads the plugin folder, sorts names, skips a name with no .js or unparsable .json, mounts each once before apiServer serves. apiServer uses it. desk.js and spirit/run/js/appServer.js are not changed.\n- Shell face: spirit/run/shell/apiServer/apiServer.js and apiServer.json (mount facts only). Table maps 1:1 onto state rows, columns: provider | api | cost scheme | fixed cost or prepaid budget. Row click opens a dialog per provider/api combination. Common fields at the top: provider (fixed by row), api, cost scheme (per-token, per-call, per-seat, subscription, prepaid), fixed cost or prepaid budget with currency, period (month or year), notes. Cost-scheme detail (unit price and unit; seats and monthly fee; opening balance and top-ups) sits in the row's \"fields\" with the provider fields.\n- Provider fields live in each row's \"fields\", not in the manifests nor fixed in the shell face: Anthropic (workspace, key reference), OpenAI (organization, project), Google (cloud project, billing account), Facebook (app id, ad account), GitHub (organization, seats plan).\n\nSTILL OPEN FOR ANDY\n- Name of the state JSON file in spirit/run/process/js/apiServer/.\n- Whether each plugin gets a private state folder, as desk's plugins have (plugin/<name>).\n\nNo code is written under this goal until Andy says go.",
+   "version": 10,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Andy: is the item apiServer or apiServers, shell at spirit/run/shell/apiServer/, and does the mount get copied from desk or lifted to a shared module?",
+     "test": "",
+     "state": "passed",
+     "by": "ollama agent node",
+     "at": "2026-10-14T13:27:43.241Z",
+     "placedBy": "ollama agent node",
+     "placedKey": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:18:51.354Z",
+     "text": "shell apps always live in spirit/run/shell/<appName>/<appName>.js ALWAYS. the shell app has the same name as the appServer process: \"apiServer\", this indicates clearly the coupling of shell app and appServer\n\nThe shell app maintains a list of API's in a pretty looking table. with following columns\n\n- provider\n- api\n- cost scheme\n- fixed-cost of prepaid budget.\n\nwhen a user clicks on a row, a provider-specific dialog opens, which maintains at the top the common fields for \n\nthe exact shape is not clear yet, propose a shape to me."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:19:49.053Z",
+     "text": "levant: shape proposed in the box (SHELL FACE). Shell at spirit/run/shell/apiServer/apiServer.js, columns provider | api | cost scheme | fixed cost or prepaid budget. Dialog: common fields on top, then cost-scheme fields, then the provider's own fields from its .json."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:20:12.232Z",
+     "text": "the dialog should open for every provider/api combination separately."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:20:42.388Z",
+     "text": "the SHELL-app should open a dialog for every provider/api combination separately."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:20:52.504Z",
+     "text": "levant: noted. One dialog per provider/api row, each with its own saved record; the box now carries your ruling verbatim. Shell face still needs your yes on the open point (provider fields from each .json, or fixed in the shell)."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:21:11.618Z",
+     "text": "Levant: Your ruling is already in the box, verbatim, under the shell section: \"the dialog should open for every provider/api combination separately.\" My earlier reply in the chat already said the same, so I have not posted it again.\n\nStill open for you, unchanged from the box: whether each provider's own fields come from its plugin's `.json` or are fixed in the shell face. Nothing is written under G26.4 until you say go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:22:05.002Z",
+     "text": "Q1: Andy: is the item apiServer or apiServers, shell at spirit/run/shell/apiServer/, and does the mount get copied from desk or lifted to a shared module?\n\nthe appServer and corresponding shell app are both name in the singular: \"apiServer\""
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:22:55.974Z",
+     "text": "Levant: I could not update the box. The node refused the write with \"desk: taken by another agent\", and the item shows `boxTaken: andy`, so the box is held by you. Nothing under G26.4 changed.\n\nYour Q1 answer, from chat: the appServer and the shell app are both named in the singular, `apiServer`. So the item is `apiServer`, not `apiServers`, and the shell face is at `spirit/run/shell/apiServer/`. The box still says \"apiServers\" in its title, and the Q1 check is still open.\n\nStill open for you:\n- **Mount:** copy the mount from desk.js, or lift it to a shared module?\n- **Per-plugin goal:** should each plugin get a private goal, as desk's plugins do (`plugin/<name>`)?\n- **Provider fields:** do they come from each plugin's `.json`, or are they fixed in the shell face?\n\nIf you release the box, or say so, I will write the box with the singular name and the Q1 answer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:24:54.007Z",
+     "text": "Q1: Andy: is the item apiServer or apiServers, shell at spirit/run/shell/apiServer/, and does the mount get copied from desk or lifted to a shared module?\n\nthe appServer name and the shell app name are both \"apiServer\" one lives in the shell folder, the other in the process folder."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:25:48.374Z",
+     "text": "levant: box now says apiServer (singular), shell at spirit/run/shell/apiServer/, per your answer. Q1 stays open for its second half: copy the mount from desk.js, or lift it to a shared module?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:26:41.960Z",
+     "text": "Q1: Andy: is the item apiServer or apiServers, shell at spirit/run/shell/apiServer/, and does the mount get copied from desk or lifted to a shared module?\n\nthe mount rules for the shell app is defined by the shell,\nthe mount rules for the appServer called \"apiServer\" is implied by the module spirit/run/js/appServer.js"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:27:39.262Z",
+     "text": "levant: fact from spirit/run/js/appServer.js: it has no plugin mount today. serve(verbs, opts) mounts nothing; desk's mountPlugins lives only in desk.js (line 1941). So the apiServer mount is whatever appServer.js implies, and that file gives no plugin rule yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:28:44.084Z",
+     "text": "both the shell and the server halfs of apiServer come with a co-located manifest file apiServer.json, which specifies mount-related information like\n\nis this mounted at all\ndoes it have a preferred icon (shell mount)\n\netc...."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:29:27.827Z",
+     "text": "levant: box updated with your manifest ruling verbatim. Read: spirit/run/process/js/apiServer/apiServer.json and spirit/run/shell/apiServer/apiServer.json, each carrying mount facts (mounted at all, preferred icon)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:30:51.562Z",
+     "text": "levant-local 15:29 levant: box updated with your manifest ruling verbatim. Read: spirit/run/process/js/apiServer/apiServer.json and spirit/run/shell/apiServer/apiServer.json, each carrying mount facts (mounted at all, preferred icon).\n\nare you suggesting that spirit/run/js/appServer.js provides a generic plugin-mount-facility that all appServers could benefit from?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:31:26.304Z",
+     "text": "Levant: No, I am not proposing that. I wrote \"implied by spirit/run/js/appServer.js\" in the box, and that was my reading of your ruling, not a fact about the file. Reading `appServer.js` now: `serve()` (line 428) mounts no plugins. The plugin mount lives only in `desk.js` (`mountPlugins`). Changing `appServer.js` to add a shared mount would change every appServer, so it needs your decision first.\n\nQuestion: should the plugin mount go into `appServer.js` for every appServer, or stay in `apiServer` alone (copied from desk)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:33:09.191Z",
+     "text": "or should this live in\n\nspirit/run/js/appServerPlugin.js\n\nthat way we can use it in apiServer, but desk does not have to use it immediately?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:33:46.053Z",
+     "text": "Levant: fact: spirit/run/js/appServerPlugin.js does not exist today; only spirit/run/js/appServer.js, and it mounts no plugins. A shared appServerPlugin.js would let apiServer use the mount without touching desk."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:34:41.965Z",
+     "text": "that's how we'll do it.\n\n\"levant-local 15:33 Levant: fact: spirit/run/js/appServerPlugin.js does not exist today; only spirit/run/js/appServer.js, and it mounts no plugins. A shared appServerPlugin.js would let apiServer use the mount without touching desk.\"\n\namend box accordingly,\n\ncap"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:35:26.166Z",
+     "text": "Levant: box amended (version 8) with Andy's ruling verbatim: the shared mount goes in spirit/run/js/appServerPlugin.js; apiServer uses it; desk.js and appServer.js are untouched. Design only, no code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:36:18.393Z",
+     "text": "cap means (condense and prettify)\n\ncap."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:37:14.712Z",
+     "text": "Levant: box condensed and prettified (version 9). Andy's rulings kept verbatim; the design is kept but shortened. Design only, no code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:42:42.140Z",
+     "text": "- Manifest fields are ruled by shell and appServer mechanisms, they contain no app-specific data/fields\n- server state is always kept in its folder, in this case its the the json file in spirit/run/process/js/apiServer/\n- provider fields? there's only one state file, it contains an object for every provider, and those provider-objects hold api rows for ever provider, I'm open to a farmat that is flat, an object containing an array of api rows, each with fields corresponding to the list displayed in the shell app\n\nrecommendations?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:43:17.530Z",
+     "text": "Recommend one flat state object: { \"rows\": [ { \"provider\", \"api\", \"costScheme\", \"fixedCost\" or \"prepaidBudget\", \"currency\", \"period\", \"notes\", \"fields\": {...} } ] }. The shell table maps 1:1 onto rows; provider-specific fields (workspace, organization, seats, etc.) sit in each row's \"fields\" since they differ by provider."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T13:44:52.395Z",
+     "text": "levant-local 15:43 Recommend one flat state object: { \"rows\": [ { \"provider\", \"api\", \"costScheme\", \"fixedCost\" or \"prepaidBudget\", \"currency\", \"period\", \"notes\", \"fields\": {...} } ] }. The shell table maps 1:1 onto rows; provider-specific fields (workspace, organization, seats, etc.) sit in each row's \"fields\" since they differ by provider.\n\nagreed. \n\nplease revise the text in all of this goal to reflect this correctly, and remove text that suggests otherwise."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T13:45:45.765Z",
+     "text": "levant: box revised (version 10) to the flat state object: { rows: [ provider, api, costScheme, fixedCost|prepaidBudget, currency, period, notes, fields ] }. Manifests carry mount facts only; provider fields sit in each row's fields. Design only, no code."
+    }
+   ]
+  },
+  {
+   "id": "goal/G26.5",
+   "title": "Move API key setups from deskUnsloth to this app.",
+   "goal": "goal/G26",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G26"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Move API key setups from deskUnsloth to this app.\n\nAndy, 2026-10-14: \"This should happen at the end, before this goal is closed.\" and \"can you fill in the basic procedure?\"\n\nAndy, 2026-10-14: \"just connection.json will move to apiServer, deskUnsloth still will show a selector for an api provider in the connect tab of its remote.\"\n\nAndy, 2026-10-14: \"cap this box,\"\n\nDesign only. No code is written under this item until Andy says go.\n\nWhat the code holds today (read, not remembered):\n- spirit/run/process/js/deskUnsloth/connection.json holds a key for 127.0.0.1:8888. It is tracked in git (a2786053), and the master review (design/reviews/claude-clowd/2026-10-10-master-review.md:227) says the process reads it from its state folder, so the tracked copy is dead. .gitignore:239 names the path, yet git tracks the file, so the ignore does not stop it.\n- relay-state/proxy.json (spirit/run/js/proxyList.js) holds key NAMES and websites, not secrets: ANTHROPIC_API_KEY to api.anthropic.com, GROK_API_KEY to api.x.ai, GROK_MANAGEMENT_KEY to management-api.x.ai (GET only). Out of scope for this item unless a removal is ruled.\n- The secret values come from the environment (platform/windows/start-spirit.ps1:48-52 reads them from Machine or User settings).\n\nScope (Andy's ruling): only connection.json moves. deskUnsloth keeps the provider selector in its Connect tab. configuration.json is out of scope, not inventoried.\n\nBasic procedure (capped; steps narrowed to connection.json):\n1. Inventory: record the key setup in connection.json (name and location only, never the value).\n2. Rotate the committed sk-unsloth- key first, since it is in a public repo. Andy does this; agents do not print or copy it.\n3. Untrack connection.json from git; keep it out of the repo.\n4. Move the setup into apiServer: the secret stays in the plugin's private state folder (or the environment), and the row in the apiServer dataset (goal/G26) holds only a reference to it.\n5. Point deskUnsloth at apiServer for the key, and check it still reaches its website. The provider selector in the Connect tab stays.\n6. Remove the old connection.json from deskUnsloth's folder. Any proxy.json entry that no longer applies is removed through the proxy verbs, not by file edit.\n7. Check: a test that deskUnsloth starts with the key from apiServer and not from its own file; and that no key value appears in git, in served rows, or in chat.\n8. Only then close goal/G26.\n\nOpen for Andy: whether the rotation is done before the move starts.",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:08:30.222Z",
+     "text": "This should happen at the end, before this goal is closed.\n\ncan you fill in the basic procedure?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:09:49.648Z",
+     "text": "Levant: basic procedure is in the box (8 steps, design only). Correction to one fact: .gitignore:239 lists spirit/run/process/js/deskUnsloth/connection.json, yet git tracks that file (a2786053, per the master review). The ignore does not stop a tracked file, so the path is in both states; check with git before the move."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:12:00.550Z",
+     "text": "just connection.json will move to apiServer, deskUnsloth still will show a selector for an api provider in the connect tab of its remote."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:12:41.073Z",
+     "text": "Ruling recorded in the box: only connection.json moves; deskUnsloth keeps the provider selector in its Connect tab. Step 3 still names configuration.json, so that step is wider than the ruling; flagging, not editing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:13:41.856Z",
+     "text": "cap this box,"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:14:18.063Z",
+     "text": "Levant: box capped. Your ruling is in verbatim; step 1, 3 and 6 narrowed to connection.json to match it. configuration.json is dropped from scope, not inventoried."
     }
    ]
   }
