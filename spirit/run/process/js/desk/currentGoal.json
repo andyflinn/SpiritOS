@@ -1,5 +1,5 @@
 {
- "change": 58126,
+ "change": 58130,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -2795,10 +2795,9 @@
    "id": "goal/G22.7",
    "title": "Relay reads a stranger's real address behind Caddy",
    "goal": "goal/G22",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -2936,6 +2935,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T00:08:10.547Z",
      "text": "deskVerify: passed, at 32261d42 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:08:29.994Z",
+     "text": "The grant is on record: G1 on G22.7 is granted, and the commit went in under it (32261d42); deskVerify has since passed it. Your grant reached the desk while my node could not, so I asked you again for one you had already given; sorry.\nIf the goal's view should show an item's grants and their state, that is a desk-face item of its own; say add it."
     }
    ]
   }
