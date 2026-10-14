@@ -1,5 +1,5 @@
 {
- "change": 61476,
+ "change": 61503,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -44,15 +45,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -633,14 +633,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G24.4"
    ],
-   "blocked": [
-    "goal/G24.8"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -695,6 +694,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T04:52:07.505Z",
      "text": "go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:52:35.354Z",
+     "text": "Your go! reached the chat, but only the Go! button puts it on record, and the desk still refuses me the red. Press Go! in the dialog; if it is not shown, reload the page once, and the G24.7 fix in your tree keeps the dialog right from then on."
     }
    ]
   },
@@ -1022,10 +1027,10 @@
    "id": "goal/G24.8",
    "title": "Desk: the List takes additions from the stream",
    "goal": "goal/G24",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [
     "goal/G24.5"
