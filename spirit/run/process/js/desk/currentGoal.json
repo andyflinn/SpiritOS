@@ -1,5 +1,5 @@
 {
- "change": 58631,
+ "change": 58652,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -14,8 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3",
-    "goal/G14.11"
+    "goal/G14.3"
    ],
    "go": false,
    "alone": false,
@@ -45,16 +44,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4144,9 +4141,12 @@
    "id": "goal/G14.11",
    "title": "deskUnsloth: a plain server's context from its model entry",
    "goal": "goal/G14",
-   "status": "build",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -4154,7 +4154,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -4172,10 +4172,10 @@
    ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
    "waived": true,
@@ -4267,6 +4267,36 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T01:46:57.813Z",
      "text": "go"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T01:49:56.434Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:49:58.638Z",
+     "text": "commit 624915451a333170f577d8889f0f76f376617a17: goal/G14.11: a plain server's context comes from its own model entry, so Claude is no longer squeezed to 8192 tokens\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T01:50:09.199Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:50:11.681Z",
+     "text": "Built and pushed (62491545): on a plain server each call is sized to the chosen model's own context, 1,000,000 tokens for claude-haiku-5-5; a model whose entry names none keeps 8192.\nFiles: the deskUnsloth server and the new plain-context suite, 9 green; the other deskUnsloth suites, everyVerb and serverSurface green.\nClaiming done. 11111 needs this commit and a deskUnsloth restart; then Levant reads whole files and chats."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:50:26.431Z",
+     "text": "deskVerify: passed, at 62491545 (pulled). 1 suite ran green."
     }
    ]
   }
