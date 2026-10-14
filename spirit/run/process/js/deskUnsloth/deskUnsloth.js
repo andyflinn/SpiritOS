@@ -1119,6 +1119,71 @@ function fileLoad(p, offset, limit) {
   const last = from + rows.length - 1;
   return { path: at.rel, text: rows.join('\n'), lines: total, next: last >= total ? 0 : last + 1 };
 }
+// FILE SEARCH AT THE REPO ROOT (goal/G23.6), like cw's Glob and Grep; Andy: "give him everything." pattern is a glob on
+// the whole repository path ("**" any folders, "*" within one name, "?" one character; '' every file); text a regular
+// expression tried on each line ('' a search by name alone); path the folder to search under ('' the repo root), inside
+// the clone. Nothing under .git, at any level. The answer is {files, cut} or {matches: [{path, line, text}], cut}, cut
+// at the last whole result that fits one answer, the walk stopped there.
+function globRegExp(pattern) {
+  let re = '';
+  for (let i = 0; i < pattern.length; i++) {
+    const c = pattern[i];
+    if (c === '*' && pattern[i + 1] === '*') {
+      if (pattern[i + 2] === '/') { re += '(?:.*/)?'; i += 2; } else { re += '.*'; i += 1; }
+    } else if (c === '*') re += '[^/]*';
+    else if (c === '?') re += '[^/]';
+    else re += c.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp('^' + re + '$');
+}
+function fileSearch(pattern, text, under) {
+  let line = null;
+  if (text) { try { line = new RegExp(text); } catch (e) { throw refused('text is no regular expression: ' + e.message); } }
+  const glob = pattern ? globRegExp(String(pattern)) : null;
+  let start = { rel: '', full: CLONE };
+  if (under) {
+    start = insideClone(under);
+    let isDir = false;
+    try { isDir = fs.statSync(start.full).isDirectory(); } catch (e) { isDir = false; }
+    if (!isDir) throw refused('no such folder: ' + start.rel);
+  }
+  const key = line ? 'matches' : 'files';
+  const found = [];
+  let size = bytes(JSON.stringify({ [key]: [], cut: false }));
+  let cut = false;
+  function add(item) {
+    const cost = bytes(JSON.stringify(item)) + (found.length ? 1 : 0);
+    if (size + cost > LOAD_MAX) { cut = true; return false; }
+    size += cost;
+    found.push(item);
+    return true;
+  }
+  function walk(full, rel) {
+    let entries = [];
+    try { entries = fs.readdirSync(full, { withFileTypes: true }); } catch (e) { return; }
+    entries.sort(function (a, b) { return a.name < b.name ? -1 : a.name > b.name ? 1 : 0; });
+    for (const d of entries) {
+      if (cut) return;
+      if (d.name === '.git') continue;
+      const r = rel ? rel + '/' + d.name : d.name;
+      const f = path.join(full, d.name);
+      if (d.isDirectory()) { walk(f, r); continue; }
+      if (!d.isFile() || (glob && !glob.test(r))) continue;
+      if (!line) { add(r); continue; }
+      let body = '';
+      try { body = fs.readFileSync(f, 'utf8'); } catch (e) { continue; }
+      const lines = body.split('\n');
+      for (let n = 0; n < lines.length && !cut; n++) {
+        const t = lines[n].replace(/\r$/, '');
+        if (line.test(t)) add({ path: r, line: n + 1, text: t });
+      }
+    }
+  }
+  walk(start.full, start.rel);
+  const out = { cut: cut };
+  out[key] = found;
+  return out;
+}
 function fileSave(p, content) {
   const at = insideClone(p);
   return fenced(at.rel).then(function () {
@@ -1495,6 +1560,11 @@ appServer.serve({
       return Object.keys(a).every(function (k) { return k === 'path' || ((k === 'offset' || k === 'limit') && typeof a[k] === 'number'); });
     },
     handler: function (a) { return fileLoad(a.path, a.offset, a.limit); },
+  },
+  // goal/G23.6: by name and by text, at the repo root of the clone.
+  'file.search': {
+    request: { pattern: '', text: '', path: '' }, reply: { cut: true }, // and files or matches beside it
+    handler: function (a) { return fileSearch(String(a.pattern || ''), String(a.text || ''), String(a.path || '')); },
   },
   'file.save': {
     request: { path: '', content: '' }, reply: { path: '', bytes: 0 },

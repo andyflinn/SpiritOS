@@ -1,0 +1,8 @@
+{
+  "description": "Find files in your clone, at the repo root, by name and by text. pattern is a glob on the repository path (\"**\" any folders, \"*\" anything within one name, \"?\" one character; empty for every file); text is a regular expression tried on each line (empty to search by name only); path is a folder to search under (empty for the repo root). Nothing under .git. A name search answers {files, cut}, a text search {matches: [{path, line, text}], cut}; cut is true when the answer stopped at the last whole result that fits, so narrow the search.",
+  "request": {
+    "pattern": "",
+    "text": "",
+    "path": ""
+  }
+}
