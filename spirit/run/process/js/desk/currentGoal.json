@@ -1,5 +1,5 @@
 {
- "change": 62436,
+ "change": 62439,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -7,16 +7,16 @@
    "id": "goal/G24",
    "title": "Fix Desk Issues",
    "goal": "",
-   "status": "goal run passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done",
-    "close"
+    "close",
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
