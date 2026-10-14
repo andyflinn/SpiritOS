@@ -103,8 +103,11 @@ function writeConnections() {
   fs.writeFileSync(path.join(STATE, CONNECTION_FILE), JSON.stringify(rows, null, 2) + '\n');
 }
 // The headers of every call to a pair: its key, and its workspace only when it has one (goal/G14.10).
+// AND ANTHROPIC'S API VERSION ON EVERY CALL, TO EVERY SERVER (goal/G14.10, Andy's A): Anthropic's model list refuses
+// a call without it, so the configure tab had no dropdown; OpenAI and the studio ignore it. A fixed value.
+const ANTHROPIC_VERSION = '2023-06-01';
 function pairHeaders(pair) {
-  const headers = { Authorization: 'Bearer ' + String((pair && pair.key) || '') };
+  const headers = { Authorization: 'Bearer ' + String((pair && pair.key) || ''), 'anthropic-version': ANTHROPIC_VERSION };
   if (pair && pair.workspace) headers['anthropic-workspace-id'] = String(pair.workspace);
   return headers;
 }

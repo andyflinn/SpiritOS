@@ -18,6 +18,7 @@
 //   1. a pair without a workspace: the probe, the model list and the chat are all made, and none carries the header.
 //   2. a pair saved with workspace wrkspc_test: connection.set takes it; connection.json keeps it on the pair; the
 //      probe, the model list calls and the chat call all carry anthropic-workspace-id: wrkspc_test.
+//   2b. every call, to every server, carries anthropic-version: 2023-06-01 (Andy's A: Anthropic's model list wants it).
 //   3. the model list refused (401): the models ask's reason is deskUnsloth's own, and the Remote's model box shows it,
 //      never "text required".
 //   4. the connect tab: a Workspace input (dur-server-workspace) beside the key, empty at first; Save sends it in
@@ -44,6 +45,8 @@ const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'gpt-x', answerTokens: 100, bytesPerToken: 4 };
 const WORKSPACE = 'wrkspc_test';
 const HEADER = 'anthropic-workspace-id';
+const VERSION_HEADER = 'anthropic-version';
+const VERSION = '2023-06-01';
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -173,6 +176,12 @@ async function serverHalf() {
   else test.fail(OWED + 'the chat call: ' + said(wk.chat));
   if (marked(workSeen)) test.check('every one of the ' + workSeen.length + ' calls to that pair carries it');
   else test.fail(OWED + 'calls to the workspace pair: ' + said(workSeen.filter(function (s) { return s.headers[HEADER] !== WORKSPACE; })));
+
+  // Andy's A (box v2): Anthropic's model list wants its API version, so every call to every server carries it.
+  test.subHeading('2b. every call, to every server, carries ' + VERSION_HEADER + ': ' + VERSION);
+  const unversioned = plainSeen.concat(workSeen).filter(function (s) { return s.headers[VERSION_HEADER] !== VERSION; });
+  if (plainSeen.length && workSeen.length && unversioned.length === 0) test.check('all ' + (plainSeen.length + workSeen.length) + ' calls carry it, with or without a workspace');
+  else test.fail(OWED + 'calls without ' + VERSION_HEADER + ': ' + short(unversioned.map(function (s) { return s.method + ' ' + s.path; })));
 
   test.subHeading('3. the model list refused: deskUnsloth\'s own reason');
   await ask('connection.set', { name: 'refuser', url: REFUSER_URL, key: 'k-bad' });
