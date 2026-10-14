@@ -1,5 +1,5 @@
 {
- "change": 62439,
+ "change": 62442,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -7,10 +7,9 @@
    "id": "goal/G24",
    "title": "Fix Desk Issues",
    "goal": "",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [],
@@ -43,7 +42,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [],
    "live": [
     "ollama agent node"
