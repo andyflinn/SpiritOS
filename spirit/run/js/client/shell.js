@@ -2841,6 +2841,11 @@
         : function (container) { container.textContent = 'Loading ' + manifest.name + '…'; },
       render: (existing && existing._activated) ? existing.render : function () {},
       loadFile: existing && existing.loadFile,
+      // goal/G24.7: activateApp sets open once, so after a reconnect the
+      // shell re-declared every app and dropped it, and a dialog showed
+      // the item opened before (Andy's two Code presses in the
+      // goal/G23.2 dialog went to goal/G23.1).
+      open: existing && existing.open,
       _scriptPath: scriptPath,
       _activated: !!(existing && existing._activated),
       _el: existing && existing._el,
