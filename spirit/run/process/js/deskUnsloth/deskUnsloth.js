@@ -128,7 +128,20 @@ let MODEL = String(CONNECTION.name ? CONNECTION.model : CONFIGURATION.model || '
 // only sizes what this process sends, and no context length is ever sent to the studio.
 const CONTEXT_FALLBACK = 8192;
 let studioContext = 0;
-function contextLimit() { return studioContext > 0 ? studioContext : CONTEXT_FALLBACK; }
+// A PLAIN SERVER'S CONTEXT (goal/G14.11): only the studio reports one, so every call to a plain OpenAI server was sized
+// to CONTEXT_FALLBACK, and Levant answered Andy from cut reads. On a plain pair the room is the chosen model's own
+// entry in the known list, kept from the server's v1/models (plainList), read again with every call so nothing of one
+// pair stays for the next; still never configured and never sent (goal/G10.7). The cost, stated (rule/5): a bigger
+// room is a bigger prompt, and a paid server bills more per answer.
+function contextLimit() {
+  const have = readKnown();
+  if (have && have.studio === false) {
+    const chosen = MODEL || String(have.active || '');
+    const entry = have.models.filter(function (m) { return m && m.id === chosen; })[0];
+    return entry && Number(entry.context) > 0 ? Number(entry.context) : CONTEXT_FALLBACK;
+  }
+  return studioContext > 0 ? studioContext : CONTEXT_FALLBACK;
+}
 // NEVER 0 (goal/G19.7): started on defaults (goal/G19.12) the answer had no room and the call asked for 0 tokens.
 const ANSWER_TOKENS_DEFAULT = 1024;
 const ANSWER_TOKENS = Number(CONFIGURATION.answerTokens) > 0 ? Number(CONFIGURATION.answerTokens) : ANSWER_TOKENS_DEFAULT;
@@ -671,7 +684,11 @@ function plainList(conn, name, got) {
   const list = (Array.isArray(got && got.data) ? got.data : []).filter(function (m) { return m && m.id; }).map(function (m) {
     const id = String(m.id);
     const w = was[id] || {};
-    return { id: id, quant: '', loaded: id === chosen, bytes: 0, task: '', vision: false, reasoning: w.reasoning === true, audio: w.audio === true, recommended: w.recommended === true, tested: String(w.tested || '') };
+    const entry = { id: id, quant: '', loaded: id === chosen, bytes: 0, task: '', vision: false, reasoning: w.reasoning === true, audio: w.audio === true, recommended: w.recommended === true, tested: String(w.tested || '') };
+    // The model's context as the server names it (goal/G14.11): max_input_tokens, or context_length; else none.
+    const context = Number(m.max_input_tokens) > 0 ? Number(m.max_input_tokens) : Number(m.context_length) > 0 ? Number(m.context_length) : 0;
+    if (context) entry.context = context;
+    return entry;
   });
   return { active: chosen, activeQuant: '', studio: false, models: list };
 }
