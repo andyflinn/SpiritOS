@@ -618,8 +618,14 @@ function askModelRound(messages, list, round, flight, onTool) {
           if (onTool) onTool({ name: name, url: url, done: false });
           // The room is taken before the tool runs: a tool that writes runs even when its result will not fit.
           const room = resultRoom(messages);
-          return tools.run(call, room > ROOM_MIN ? room : undefined).then(function (r) {
+          // goal/G24.2: a chat post under the item this turn answers takes the line first, once per turn (takeOnce).
+          const here = name === 'desk_chat_add' && String(given.id || '') === flight.from;
+          return (here ? takeOnce(flight) : Promise.resolve()).then(function () {
+            return tools.run(call, room > ROOM_MIN ? room : undefined);
+          }).then(function (r) {
             note(flight.from, 'result', name + ': ' + r.text);
+            // goal/G24.2: an accepted chat post under the item this turn answers is the turn's answer.
+            if (here && !/^the node refused/.test(String(r.text))) flight.postedHere = true;
             messages.push({ role: 'tool', tool_call_id: r.id, content: fitResult(name, r.text, room, messages) });
             if (onTool) onTool({ name: name, url: url, done: true });
           });
@@ -1494,10 +1500,21 @@ function post(id, text) {
 // TAKE BEFORE ANSWERING (goal/G23.1): every agent takes Andy's latest line under an item before it answers there
 // (Andy, 2026-10-12: "no agent should answer without taking"). A refused take is logged and the post goes on: there
 // may be no line of his to take, and then the desk decides on the post.
-function postAll(id, texts) {
+// ONE TURN, ONE ANSWER, TAKEN FIRST (goal/G24.2): the line is taken at the moment of posting, never at the start of the
+// turn: a taken line bars every other agent from answering it ("a second answer comes only when Andy names the
+// agent"), so a turn that posts nothing must take nothing. The take is made once per turn, by whichever post comes
+// first: the model's desk_chat_add under this very item, or the final answer. When the model posted under this item
+// with the tool (accepted), that post is the turn's answer and the final text is not posted as well; a tool post under
+// another item does not count.
+function takeOnce(flight) {
+  if (flight.took || !connected) return Promise.resolve();
+  flight.took = true;
+  return deskWrite(flight.from, 'line.take', { id: flight.from });
+}
+function postAll(id, texts, flight) {
   return texts.reduce(function (chain, text) {
     return chain.then(function () { return post(id, text); });
-  }, connected ? deskWrite(id, 'line.take', { id: id }) : Promise.resolve());
+  }, flight ? takeOnce(flight) : Promise.resolve());
 }
 
 // AN ANSWER THAT FAILS OR IS ABORTED POSTS NOTHING, AND FREES LEVANT AT ONCE (goal/G19.7): it is said, logged,
@@ -1508,7 +1525,8 @@ function answerItem(job) {
   return callFor(id, job.changes).then(function (messages) { return askModel(messages, flight); }).then(function (content) {
     land(flight);
     if (flight.aborted) return null;
-    return postAll(id, linesOf(content));
+    if (flight.postedHere) { note(id, 'reply', 'answered with the tool: the final answer is not posted'); return null; }
+    return postAll(id, linesOf(content), flight);
   }).catch(function (e) {
     land(flight);
     say('the answer for ' + id + ' failed: ' + e.message);
