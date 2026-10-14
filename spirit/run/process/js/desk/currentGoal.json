@@ -1,5 +1,5 @@
 {
- "change": 61518,
+ "change": 61527,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -44,15 +44,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -739,10 +738,9 @@
    "id": "goal/G24.6",
    "title": "Desk: the List takes new items from the stream",
    "goal": "goal/G24",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
