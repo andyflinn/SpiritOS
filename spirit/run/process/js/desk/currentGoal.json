@@ -1,5 +1,5 @@
 {
- "change": 58108,
+ "change": 58126,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -15,8 +15,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G22.4",
-    "goal/G22.7"
+    "goal/G22.4"
    ],
    "go": false,
    "alone": false,
@@ -51,7 +50,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2794,9 +2795,12 @@
    "id": "goal/G22.7",
    "title": "Relay reads a stranger's real address behind Caddy",
    "goal": "goal/G22",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G22"
    ],
@@ -2804,7 +2808,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -2822,10 +2826,10 @@
    ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
    "waived": true,
@@ -2862,7 +2866,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Relay reads a stranger's real address behind Caddy.\n\nDECIDED (Andy, 2026-10-14)\n- Before the flag-day tag of goal/G22.6, a relay behind Caddy counts a stranger by the address Caddy forwards (X-Forwarded-For), not by 127.0.0.1, so the address table holds one entry per real address.\n\nFOUND (2026-10-14)\n- On the VPS every request reaches the relay from Caddy on 127.0.0.1, so since goal/G22.6 (113d1327) all strangers share one entry of the address table and one busy stranger blocks the rest.\n- The forwarded address can be forged by anyone who reaches the relay directly; it may only be trusted when the request came from the local Caddy.",
@@ -2873,9 +2877,9 @@
      "kind": "G",
      "words": "core grant: spirit/run/js/serveCommon.js",
      "test": "",
-     "state": "open",
-     "by": "desk",
-     "at": "2026-10-13T23:54:08.563Z"
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-13T23:55:12.434Z"
     }
    ],
    "chat": [
@@ -2890,6 +2894,48 @@
      "key": "",
      "at": "2026-10-13T23:54:11.900Z",
      "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-13T23:55:13.099Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-13T23:58:34.948Z",
+     "text": "i granted it, this just doesn't appear under the goal."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:07:42.218Z",
+     "text": "commit 32261d42fd6bcd1952c67d95b9d910bb8cb14ac6: goal/G22.7: behind Caddy a stranger is counted by the address Caddy forwards; a direct caller's header is never believed\n- spirit/run/js/serveCommon.js\n- spirit/test/relayForwardedAddress.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:07:53.231Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:07:58.402Z",
+     "text": "Pushed: 32261d42 under G1; relayForwardedAddress 8 green. Claiming. It is relay-side, so spirit-3 needs it too: say tag and I tag it for you to update."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:08:00.491Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T00:08:10.547Z",
+     "text": "deskVerify: passed, at 32261d42 (pulled). 1 suite ran green."
     }
    ]
   }
