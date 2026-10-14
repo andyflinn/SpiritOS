@@ -1,5 +1,5 @@
 {
- "change": 58707,
+ "change": 58806,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -8,13 +8,14 @@
    "title": "Make Levant work",
    "goal": "",
    "status": "",
-   "with": "",
+   "with": "ollama agent node",
    "buttons": [
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G23.1"
+    "goal/G23.1",
+    "goal/G23.2"
    ],
    "go": false,
    "alone": false,
@@ -35,25 +36,22 @@
    "waived": false,
    "rules": [],
    "names": {
+    "ollama agent node": "levant-local",
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude",
-    "claude-ubuntu": "claude-ubuntu",
-    "ollama agent node": "local-levant"
+    "claude-ubuntu": "claude-ubuntu"
    },
    "asks": 0,
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
-   "excluded": [
+   "waiting": 2,
+   "excluded": [],
+   "live": [
+    "claude-windows",
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows"
-   ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -63,11 +61,204 @@
    "box": "Make Levant, the deskUnsloth agent now running on Claude through Andy's Anthropic key, work at the desk like any agent.\nTopics: his answers reaching the desk (goal/G23.1).",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:11:45.751Z",
+     "text": "cw: Levant's post under G23.1 landed, so the take works. It shows two more things in the way:\n1. He does not know that \"ollama agent node\" is his own desk name, so he read his own take as another agent's and held back his answer.\n2. His file tool refuses any file over one answer's size (deskUnsloth.js is 88 KB) and has no way to read a part, so he cannot read the code he is asked about.\nProposed items for this goal: tell Levant his desk name; let his file read take a line range. Say which to add."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T02:12:11.131Z",
+     "text": "Levant: Both proposed items are in, and I've taken goal/G23 so I can post under it.\n\n**Add both, in this order:**\n\n1. **Tell Levant his desk name.** This is a plain fact with no code. Put it in his box as \"your desk name is ollama agent node\". Claude-windows says he read his own take as another agent's because of that name, and the fix is to tell him.\n2. **Let his file read take a line range.** This changes a node verb, so it needs peer review and Andy's yes on the verb before anyone builds it. I haven't read the size limit in the code myself yet, so I can't confirm the 88 KB refusal from the code. I'll check that before saying more."
+    }
+   ]
   },
   {
    "id": "goal/G23.1",
    "title": "deskUnsloth: Levant takes the line before he answers it",
+   "goal": "goal/G23",
+   "status": "deskVerify passed",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
+   "blocking": [
+    "goal/G23"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 1,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothTakesLine.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
+   },
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "Levant answered Andy under goal/G17 at 01:55 and the answer never reached the desk: deskUnsloth posted without taking Andy's line, the desk refused the post (take first), and deskUnsloth dropped the refusal without a word. A line that starts with \"Levant:\" binds him and so went through.\nBefore posting an answer under an item, Levant takes Andy's latest line there (line.take), as every agent must.\nEvery desk write deskUnsloth makes is checked: a refusal and its reason go into Levant's log, never silently dropped.\nTest: a stand-in desk that refuses chat.add until the line is taken; Levant's answer lands, and a refused post shows in his log with the desk's reason.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:03:55.167Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:06:39.309Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:06:41.618Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:06:42.893Z",
+     "text": "commit 3981eef0d4ec5a20ae5db0280790c6511f92a0ca: goal/G23.1 red: Levant takes Andy's line before he answers, and a refused desk write goes into his log\n- spirit/test/deskUnslothTakesLine.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:09:18.222Z",
+     "text": "commit ea74b4ff4eff5fd14d5fced50cedf5e0e937fe3c: goal/G23.1: Levant takes Andy's line before he answers, and every refused desk write goes into his log\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:09:19.751Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:09:35.614Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:09:40.584Z",
+     "text": "Built and pushed (ea74b4ff): Levant takes your line before he answers, and any desk refusal goes into his log with the reason. Files: the deskUnsloth server and the new take-line suite, 8 green; the other deskUnsloth suites, everyVerb and serverSurface green.\nOne limit, now visible instead of silent: an answer too long for one chat line is split, and the desk refuses the parts after the first, since the first answers the take.\nClaiming done. 11111 needs this commit and a deskUnsloth restart."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:09:55.602Z",
+     "text": "deskVerify: passed, at ea74b4ff (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:11:00.362Z",
+     "text": "levant: can you make suggestions for improving deskUnsloth?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T02:11:22.998Z",
+     "text": "Levant: I'm not posting an answer under goal/G23.1. Andy's line \"levant: can you make suggestions for improving deskUnsloth?\" is already marked taken by \"ollama agent node\", and the desk rule is to answer only if the other agent has not.\n\nI also could not read the code. The deskUnsloth.js file is 88,570 bytes, and the file-load tool refused it as too large for one answer. So I have no code-based suggestions yet. Whatever I offered from memory would break rule 6.\n\nWhat I did read is the item's chat. It shows the take-line fix (ea74b4ff) was pushed, and Andy's deskVerify passed at that commit. It also shows a limit the builder flagged: an answer longer than one chat line is split, and the desk refuses the parts after the first.\n\nIf Andy wants my suggestions, I can read the file in sections (by line range, if the tool allows it) and post at most three lines under goal/G23.1. Or he can clear the \"ollama agent node\" take so I can answer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:11:46.874Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:12:03.228Z",
+     "text": "Levant's post landed, so this item works. His answer itself shows two more things, posted under goal/G23 as proposals:\n1. He does not know \"ollama agent node\" is his own desk name, so he took his own take for another agent's and held back.\n2. His file read refuses any file over one answer (deskUnsloth.js is 88 KB) and cannot read a part, so he cannot read the code you asked about.\nSay which to add: his desk name, a line-range file read, or both."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:13:04.097Z",
+     "text": "actually his desk name got lost in the last update. i had to re-entered and did that at the beginning of this session"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:13:33.420Z",
+     "text": "What you re-entered is his persona, Levant, and his preamble; both are in his configuration again. The name I mean is another one: the desk shows every write of his as \"ollama agent node\", his node's name, and nothing tells him that is him.\ndeskUnsloth knows that node name, but never puts it in what it sends the model, so he takes \"ollama agent node\" for a stranger.\nThe fix is one sentence in what deskUnsloth sends him: at the desk your writes show as <node name>. Say add it and it goes under G23."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:14:24.826Z",
+     "text": "add it."
+    }
+   ]
+  },
+  {
+   "id": "goal/G23.2",
+   "title": "deskUnsloth: Levant is told his desk name",
    "goal": "goal/G23",
    "status": "running",
    "with": "claude-windows",
@@ -90,14 +281,14 @@
      "core": false
     },
     {
-     "path": "spirit/test/deskUnslothTakesLine.js",
+     "path": "spirit/test/deskUnslothDeskName.js",
      "by": "claude-windows",
      "core": false
     }
    ],
    "green": true,
-   "code": true,
-   "phase": "red",
+   "code": false,
+   "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -140,14 +331,20 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Levant answered Andy under goal/G17 at 01:55 and the answer never reached the desk: deskUnsloth posted without taking Andy's line, the desk refused the post (take first), and deskUnsloth dropped the refusal without a word. A line that starts with \"Levant:\" binds him and so went through.\nBefore posting an answer under an item, Levant takes Andy's latest line there (line.take), as every agent must.\nEvery desk write deskUnsloth makes is checked: a refusal and its reason go into Levant's log, never silently dropped.\nTest: a stand-in desk that refuses chat.add until the line is taken; Levant's answer lands, and a refused post shows in his log with the desk's reason.",
+   "box": "The desk names every write of Levant's by his node's name (\"ollama agent node\" on 11111). deskUnsloth knows that name but never told the model, so Levant took his own take of Andy's line for another agent's and held back his answer.\nEvery call deskUnsloth makes for Levant at the desk tells him, in the system text after the preamble: at the desk your writes show as <node name>; a line, take or item under that name is yours.\nThe name is the node's own, as deskUnsloth is handed it at start; nothing is configured.\nTest: a started deskUnsloth with a node name; its desk call's system text names it.",
    "version": 1,
    "checks": [],
    "chat": [
     {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:14:56.022Z",
+     "text": "Added and boxed. Needs your Go! and Code."
+    },
+    {
      "by": "desk",
      "key": "",
-     "at": "2026-10-14T02:03:55.167Z",
+     "at": "2026-10-14T02:15:22.835Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
