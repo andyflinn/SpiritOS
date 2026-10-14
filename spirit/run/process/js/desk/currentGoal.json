@@ -1,5 +1,5 @@
 {
- "change": 58256,
+ "change": 58277,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -14,7 +14,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.3"
+    "goal/G14.3",
+    "goal/G14.10"
    ],
    "go": false,
    "alone": false,
@@ -49,9 +50,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -317,6 +316,30 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T00:47:01.951Z",
      "text": "brand new key from anthropic didn't work either"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:47:25.233Z",
+     "text": "The new key is valid now, but it is a user key (it starts sk-ant-usr): Anthropic answers \"This API key is not scoped to a workspace\", and wants a workspace id on every call.\ndeskUnsloth sends no such header, and adding one would be the adapter you didn't want, so make the key inside a workspace instead: console.anthropic.com, pick a workspace (Default is fine), API Keys, Create Key. That kind starts sk-ant-api03.\nSave the pair with it and I'll replay the calls."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T00:48:07.030Z",
+     "text": "i want to use the key to get the extra credits that come with my MAX subscription"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:48:27.973Z",
+     "text": "I can't confirm from here whether the Max credits apply to calls made with that key; that is Anthropic's billing, and the console page for the key should say which balance it draws on.\nWhat I can say: Anthropic accepts that user key, but only with a workspace id named on every call. deskUnsloth sends a URL and a Bearer key only, so it needs that one extra header, the workspace id kept on the pair beside the key.\nThat is a small change to deskUnsloth, a header rather than an adapter. Want an item for it? Send me the workspace id from the console and I'll replay the calls with it first, to prove it works before anything is built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T00:49:28.115Z",
+     "text": "make an item, then do it"
     }
    ]
   },
@@ -3727,6 +3750,110 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-13T03:07:01.668Z",
      "text": "deskVerify: passed, at 0eab8571 (pulled). 3 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G14.10",
+   "title": "deskUnsloth: the pair keeps a workspace id, sent as a header",
+   "goal": "goal/G14",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothWorkspace.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy's Anthropic key is a user key: Anthropic accepts it only when each call names a workspace id (header anthropic-workspace-id). He wants that key, for the credits of his Max subscription.\nA pair in connection.json keeps an optional workspace beside its key.\nconnection.set takes the workspace; the connect tab has a Workspace field beside the key, empty unless the server asks for one.\nEvery call deskUnsloth makes to a pair whose workspace is set carries the header anthropic-workspace-id with it: the model list, the chat, the probe. A pair without one sends exactly what it sends today, so the studio and OpenAI pairs are unchanged.\nThis is one header, not an adapter: the calls stay the OpenAI shape.\nThe Remote shows deskUnsloth's own reason when the model list is refused, not \"text required\".\nTest: a suite with a stand-in server checks the header arrives when the workspace is set and is absent when it is not, and that a refusal's reason reaches the Remote.\nProof before claim: the calls replayed against Anthropic from 11111 with his key and workspace id.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:50:28.736Z",
+     "text": "Item added and the box written; building it now.\nI need the workspace id for the proof: console.anthropic.com, Settings, Workspaces, the id under the workspace's name (it starts wrkspc_). Neither \"default\" nor your organisation id is accepted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:50:56.925Z",
+     "text": "The desk wants your Go! before I can take red: press it and I build."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:52:09.347Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
