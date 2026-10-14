@@ -1,5 +1,5 @@
 {
- "change": 60240,
+ "change": 60329,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -7,13 +7,16 @@
    "id": "goal/G24",
    "title": "Fix Desk Issues",
    "goal": "",
-   "status": "",
+   "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G24.2"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -42,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 9,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -130,6 +133,24 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-14T03:46:57.287Z",
      "text": "Tagged and pushed: v-2026-10-14-05-46, at the head of master. Since the last tag: G22.7 and G22.4 (relay side), G14.10 and G14.11 (Claude through deskUnsloth), and all of G23 for Levant. No wire change, so not a flag day: spirit-3 can take it whenever you like."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:56:57.456Z",
+     "text": "goal run on 2 suites: all green (at 2580acda, pull failed: fatal: Cannot fast-forward to multiple branches.)"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T03:57:56.479Z",
+     "text": "Levant: The 03:56 line is Andy's report that the goal run passed on 2 suites at 2580acda. I'm not addressed in it, and nothing asks me for an answer, so I've made no writes.\n\nOne thing to check: the pull failed with \"Cannot fast-forward to multiple branches\", so the green run may not cover the latest origin head. Nothing in the chat says what was pulled or whether 2580acda is the head of master. Before this goal is marked done, someone should confirm which commit the suites ran against.\n\nNothing is taken on goal/G24, and its box is still the original text, version 1."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:58:18.694Z",
+     "text": "cw: on the failed pull Levant saw: your tree is at 2580acda, the G24.1 commit, one desk commit (currentGoal.json) behind origin, so the green run covered the code. The \"multiple branches\" pull error is the doubled master line in git's fetch record seen before; a fresh fetch, just done, healed it."
     }
    ]
   },
@@ -137,10 +158,9 @@
    "id": "goal/G24.1",
    "title": "Desk: Levant gets the agent desk verbs cw uses",
    "goal": "goal/G24",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -377,8 +397,409 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T03:56:35.118Z",
      "text": "Levant: can you see in this item what verbs you have in desk, or do you already know?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T03:57:31.967Z",
+     "text": "Levant: I know them from my own tool list in this session, not from reading the item or running introspection.\n\nThe desk verbs I can call include box take/release/write, changes, chat add/search, check add/set, claim, goal.add, item.add/release/take/status, items.find, line.take, log.search, pending.get, phase take/done/may, press, profile.get, rule.get, rules.search, verify.again and work.open. `desk_item_get` is not in my list, which matches the flaw claude-windows reported: I have never had `item.get`."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:58:04.224Z",
+     "text": "so what's the summary on desk issues tight now?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T03:58:34.741Z",
+     "text": "Levant: Desk issues on the current goal, goal/G24 \"Fix Desk Issues\". Facts are from the desk's item, box and chat. I have not read the code.\n\n1. **Live updates (open):** cw filled the G24 box and proposed two items: the List taking new items from the stream, and the dialog following its item. Andy has not answered that proposal.\n2. **Wrong-item press (open):** a Code press from the G23.2 dialog went to G23.1. I have not verified the cause.\n3. **Tool gaps (need your word):** introSpector drops any verb whose description contains \"/\", so I have never had `item.get`. deskUnsloth reads only the first page of a tool listing, so past about 8 KB it silently loses tools. Neither is filed yet.\n\nG24.1 is claimed done at 2580acda. Your verify passed, and it shows waived: true, which cw used to unblock the build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:59:39.783Z",
+     "text": "levant: read the code, then tell us. pay attention to the way everything is supposed to update in real time."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T04:00:53.188Z",
+     "text": "Levant: Levant: I read the Desk face and the desk server's publish path. I did not run the desk, so the G23.2 cause is not confirmed.\n\n- **Subscriptions exist per element.** The List subscribes at `desk.js:1711`, the dialog at `deskDetails.js:620`, Team at `desk.js:898`, and deskVerify at `desk.js:1722`. Each calls its own `onPublished`.\n- **Dialog wrong-item risk.** `deskDetails.js` keeps one set of module globals (`ddId`, `ddFacts`). `open()` sets `ddId`, `ddTake` drops any change not for `ddId`, and `ddPress` reads `ddId` at click time. A press can only reach the wrong item if two dialog instances share those globals while the older one is still on screen. I have not read how the shell's `callDialog` reuses or stacks instances, so that is the next thing to check.\n- **List additions pull.** `deskOnPublished` (`desk.js:515-523`) inserts nothing for an unknown item. It calls `deskSearchItems()`, which asks the server again. That is a pull, against \"no pulling\", and it is what the \"List takes additions\" topic should replace: insert the row the publish carries, at the position the server gives.\n\nAndy: should I read the shell's `callDialog` next, to settle whether the G23.2 press can reach G23.1?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:01:19.320Z",
+     "text": "cw: ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:01:34.369Z",
+     "text": "Summary: G24.1 is done and verified. Six proposed, none added yet: the item dialog follows its item; the List takes new items from the stream (Levant is right that today it asks the whole list again, a pull); the listing drops verbs with a \"/\" (one character in introSpector.js, common code); deskUnsloth follows \"more\" on tool lists; Levant is told the current goal; one answer per Levant turn.\nLevant's reading matches the code; the dialog cause is open and the item's red test would settle it either way.\nAdd them in that order?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:02:58.398Z",
+     "text": "Add them in that order. Make sure you use proper blocking links."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:04:33.458Z",
+     "text": "Added and boxed, linked so each blocks the next: G24.7 the dialog, then G24.6 the List, G24.5 the slash in the verb listing, G24.4 following more, G24.3 Levant told the current goal, G24.2 one answer per turn. The numbers run backwards because an item can only block one that already exists.\nG24.7 is first: it needs your Go! and Code (refresh first)."
     }
    ]
+  },
+  {
+   "id": "goal/G24.2",
+   "title": "deskUnsloth: one answer per Levant turn, taken first",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G24"
+   ],
+   "blocked": [
+    "goal/G24.3"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "One turn of Levant's is one answer under the item, taken first.\nToday he can post with his own chat tool during a turn and then have his final answer posted as well, so one turn makes two posts; and before goal/G24.1 his tool posts were refused (take first).\nHis turn ends in one post: either what he posted with the tool stands as his answer and no final answer is posted, or the final answer alone is posted; the line is taken first either way.\nTest: a turn in which the model posts with the chat tool makes exactly one post under the item.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G24.3",
+   "title": "deskUnsloth: Levant is told the current goal",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G24.2"
+   ],
+   "blocked": [
+    "goal/G24.4"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Every call deskUnsloth makes for Levant tells him which goal is current: its id, title and box.\nToday his prompt carries only the box of the goal of the item he answers under; he learns the current goal only when he happens to search, and Andy saw him answer about G23 after G24 was made current.\nTest: after a make-current press, his next call carries the new current goal.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G24.4",
+   "title": "deskUnsloth: tool lists follow more",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G24.3"
+   ],
+   "blocked": [
+    "goal/G24.5"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskUnsloth reads a tool family's listing in full: its describe follows \"more\" until the listing is complete.\nToday it reads only the first answer and ignores \"more\", so once the descriptions pass about 8 KB Levant silently loses tools from the end of the list.\nTest: a family whose listing takes several answers is offered whole.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G24.5",
+   "title": "Desk: the verb listing keeps descriptions with a slash",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G24.4"
+   ],
+   "blocked": [
+    "goal/G24.6",
+    "goal/G24.8"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "The desk's verb listing keeps every verb that has a description file.\nintroSpector.js lists the family with the search query \"*\", and a single \"*\" never spans a \"/\", so a verb whose description holds a \"/\" is left out silently; item.get (\"goal/G14.7, rule/3\") has never been listed, and Levant never had desk_item_get.\nThe fix is in introSpector.js, common code: the query that spans everything, \"**\", as log.search already uses.\nTest: a verb file whose description holds a \"/\" is listed by AGENTS.introspect, and item.get is offered to Levant.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G24.6",
+   "title": "Desk: the List takes new items from the stream",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G24.5"
+   ],
+   "blocked": [
+    "goal/G24.7"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "The List (the table of items) takes additions from the stream: an item added, by Andy or an agent, appears in its place; a changed item's row is replaced; a closed one follows the include-closed toggle.\nToday a published change for an item the List does not hold makes it ask items.search again (deskOnPublished in desk.js), a pull, against Andy's \"no pulling\".\nThe row is drawn from what the publish carries, in the order the server gives.\nTest: a published new item appears as a row with no items.search asked; a published change replaces its row.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G24.7",
+   "title": "Desk: the item dialog follows the item it is opened on",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G24.6"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "The item dialog shows the item it is opened on, its buttons press that item, and a change to that item redraws it, with no refresh by Andy.\nSeen 2026-10-14: Code pressed twice in the goal/G23.2 dialog went to goal/G23.1, which reset its phase to red although deskVerify had passed it; since then Andy refreshes before every press.\ndeskDetails.js keeps one set of module state for the open item (ddId, ddFacts); the shell's dialog reuse is not yet read, so the cause is open until the red test shows it.\nTest: open one item's dialog, then another's; every press and every redraw goes to the item now open, never the one before.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G24.8",
+   "title": "Desk: the List takes additions from the stream",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G24.5"
+   ],
+   "blocked": [
+    "goal/G24.9"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G24.9",
+   "title": "Desk: the item dialog follows its item",
+   "goal": "goal/G24",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G24.8"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
