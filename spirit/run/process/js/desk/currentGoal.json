@@ -1,5 +1,5 @@
 {
- "change": 62809,
+ "change": 62964,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -13,6 +13,166 @@
     "close"
    ],
    "blocking": [],
+   "blocked": [
+    "goal/G27.1",
+    "goal/G27.2",
+    "goal/G27.3"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude",
+    "claude-ubuntu": "claude-ubuntu"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "design": true,
+   "waiting": 4,
+   "excluded": [],
+   "live": [
+    "ollama agent node"
+   ],
+   "working": [],
+   "agents": {
+    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+    "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+    "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+    "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+   },
+   "box": "This goal will address outstanding issues with desk.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:32:44.430Z",
+     "text": "when i add a new blocking item in item details, it STILL doesn't show up in the desk list.\n\ncould this be solved as follows?\n\n- when the main desk ui, the list, is notified of a new item (does that even happen?), if it then searches for every item for the current goal, and adds the missing ones to the list, would that help?\n\nThere's also the most maddening bug: when i click on a row in the desks list, it can show the wrong fucking item, and i set \"code\" or trigger \"go\" for wrong items. Does the desk not open the fucking dialog with a proper key to the item that was clicked on the desk list?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:35:33.568Z",
+     "text": "Levant: Yes, your idea would help, and I found why the new item is missing. I have not changed any code: this needs your Go and a file grant first.\n\n1. **Why the new item never shows:** `write()` in `process/js/desk/desk.js` builds the publish from `it`, which is null for `item.add` because that verb carries no `id`. So the publish has `item: null` and no `rows`. `deskOnPublished` in `shell/desk/desk.js` then returns early, and the list never hears of the new item or of the blocked row's changed \"blocked by\" list. Your fix (on a publish with no item, re-run `items.search` for the current goal) would close the gap. The one-line version is: `if (verb === 'item.add' || !said) { deskSearchItems(); return; }`.\n\n2. **The wrong-item click:** reading the code, a row click passes the row's own `data-row` id to `deskOpenRow` → `callDialog('shell/deskDetails', {id})`, and the dialog's presses use that same `ddId`. I could not find a path where the key is wrong. I have not reproduced it, so I cannot yet say where the mismatch comes from. Next I would check whether a dialog that is already open can take a second `open` before its first `item.get` returns.\n\nDo you want me to take this item for the list fix (point 1) and then look at the click bug with you?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:37:52.031Z",
+     "text": "create a new item for this goal concerning both list fixes, and fill it's box with your current proposal."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:38:40.180Z",
+     "text": "Levant: I created the item **goal/G27.1** \"Desk list: new items and row clicks\" under goal/G27 and filled its box with the proposal.\n\nThe box covers both bugs:\n\n1. **New items missing from the list.** `write()` in `process/js/desk/desk.js` builds the publish from `it`, which is null for `item.add`. The publish carries no rows, so `deskOnPublished` returns early. Proposed fix: when a publish has no item or the verb is `item.add`, re-run `items.search` for the current goal. This is your idea, and it addresses the cause I found.\n2. **Wrong item on row click.** I found no wrong-key path in the code yet, and I have not reproduced it. The box lists the next checks: whether a dialog that is already open can take a second `open` before its first `item.get` returns, and whether it keeps a stale id across opens.\n\nNothing is built. It needs your Go and a file grant first. I could not post a chat line under the item because I had not taken it yet, so this answer is the only note on it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:44:14.843Z",
+     "text": "in the apps-Stack tab in desk, when i click on an item in its list, the stack plugin sticks the per-item ui at the bottom of the goals list, instead of opening a Dialog for it, how can that be changed?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:45:13.333Z",
+     "text": "Levant: The Stacks pane draws its own dialog inline instead of opening a Dialog. The cause is in `spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js`:\n\n- The \"Open\" button on each door row (line 187) sets `data-open`. The pane's click handler (line 373) calls `openDialog(id)`.\n- `openDialog` (line 247) fills a `<div id=\"sfc-dialog\">` that the pane itself creates (line 352), between \"The doors\" and \"Its items\". That is why the editor appears inside the goals area instead of as a Dialog.\n- The plugin's `ctx` (desk.js lines 689–690) passes `goal`, `ask`, `onPublished` and `chat`, but no `callDialog`. So the plugin has no way to open a shell Dialog. The desk's own rows do it through `deskApi.callDialog('shell/deskDetails', {id})` (desk.js line 1136).\n\nTo change it, `ctx` needs a `callDialog` passthrough (desk.js, next to line 689). Then `openDialog` calls a new shell dialog app for a door, modelled on `shell/deskDetails`, instead of writing into the pane. That is new code in two files plus a new shell dialog. I have not changed anything. Do you want that: a new door dialog, opened through `callDialog`, with the inline `sfc-dialog` removed? If so, I'll need your Go and a file grant for the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:46:31.541Z",
+     "text": "open a new item in this goal for this issue and transfer your proposal into its box."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:47:12.456Z",
+     "text": "Levant: I created **goal/G27.2** \"Desk Stacks pane: open the door in a Dialog, not inline\" under goal/G27, and wrote the proposal into its box.\n\nThe box records the cause I found by reading the code, not by running it:\n- In `stackFrameChecks.js`, each door's \"Open\" button sets `data-open`. The click handler calls `openDialog`, which fills a `sfc-dialog` div that the pane creates between \"The doors\" and \"Its items\". That is why the editor appears inline.\n- The plugin's `ctx` in `desk.js` (around lines 689–690) passes no `callDialog`, so the plugin cannot open a shell Dialog. Desk rows use `deskApi.callDialog('shell/deskDetails', {id})` around line 1136.\n- The fix: add a `callDialog` passthrough to `ctx`, have `openDialog` open a new door dialog modelled on `shell/deskDetails`, and remove the inline `sfc-dialog`. That is two files plus one new shell dialog.\n\nNothing is built. The box asks for your Go and a file grant first, and one open question: is a new door dialog the shape you want?\n\nMy chat line under the item was refused because I do not hold the item or its latest line yet. The box text is the only note on it for now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:09:38.495Z",
+     "text": "new item for this goal:\n\n\"musings\" tab replaced by desk-app \"vision\"\n\n- this will be a simple standard desk, plugin\n- the goal will be in design mode at all times, with no option to end design mode.\n- node of the items have \"code\", \"go\", \"done\" functionality, only close will be available at all times.\n- item details use the standard deskDetail dialog, only modified by the missing buttons.\n- this will give my \"musings\" additional features like structured feedback. I'll be able to chat with agents about my \"vision\" and have detailed logs of conversations bout my \"vision\", item by item, fully documented."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:10:20.642Z",
+     "text": "Levant: created goal/G27.3 \"musings tab replaced by desk-app vision\" under G27 and wrote your ruling into its box verbatim. Nothing built; needs your Go and a file grant first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:40:29.667Z",
+     "text": "I'm contemplating the move of rules into a desk-plugin as well, and would like feedback on my thinking\n\n1. Rules, be it in AGENT.md files or in this rules table, they are only keep by agents goodwill, and discarded when they fade in the agents memory. Real rules have real value when there is real (mechanical) enforcement, like the stack-plugin does....\n2. this move, similar to a \"musings\" move into a \"vision\" plugin, would allows for their discussion to target enforceability until shapes will emerge that allow mechanical enforcement for that rule to emerge.\n3. i don't believe to much in CLAUDE.md or AGENTS.md's, Levant's participation in desk still has no demand for Levant to memorize a rule set\n\nthoughts?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:41:01.417Z",
+     "text": "Levant: Agreed on the core: a rule that only lives in an agent's memory is a wish. Where the desk can check it mechanically, as the stack plugin does for doors, the rule has real force. Rules that cannot be checked, such as honesty (rules 5 and 6), should stay as text, and the plugin should mark each rule as enforced or only asked. Question: should a rule move out of the table only once it has a check that can fail, or may the plugin hold unenforced rules as drafts?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:44:10.051Z",
+     "text": "you kind of hinted at the crux of the matter,\n\nwhen a feasible, mechanical enforcement method comes to my mind, i will likely create a goal to implement a desk-plugin based on the pattern of \"stack\" that will enforce something not enforced up 'till then....\n\nmatter dropped for now. \n\nthe rule-wish-list stays for now."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:44:39.110Z",
+     "text": "Levant: Noted: the rules-as-plugin question is parked, and the rule wish-list stays as text for now. No action needed from me on G27."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:48:21.971Z",
+     "text": "one more thing, the goals tied to a desk-plugin will always be open and NEVER offer a Done or Close button.\n\na new item in this goal should ensure this is implemented,\n\nplease create an item: fixes to the desk-plugin architecture."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:48:58.153Z",
+     "text": "Levant: Created **goal/G27.4** \"fixes to the desk-plugin architecture\" under G27, with Andy's ruling written into its box verbatim.\n\nThe ruling: goals tied to a desk-plugin stay always open and never offer a Done or Close button. The item is nothing but a box for now. Nothing is built, and it needs Andy's Go and a file grant before any work starts."
+    }
+   ]
+  },
+  {
+   "id": "goal/G27.1",
+   "title": "Desk list: new items and row clicks",
+   "goal": "goal/G27",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
    "blocked": [],
    "go": false,
    "alone": false,
@@ -33,31 +193,291 @@
    "waived": false,
    "rules": [],
    "names": {
-    "claude-windows": "claude-windows",
-    "wsl-claude": "wsl-claude",
-    "claude-ubuntu": "claude-ubuntu",
     "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 1,
-   "excluded": [],
-   "live": [
-    "ollama agent node"
-   ],
-   "working": [],
-   "agents": {
-    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
-    "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-    "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-    "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
-   },
-   "box": "",
-   "version": 0,
+   "box": "Desk list: new items and row clicks (goal/G27).\n\nAndy's report: 1) adding a new blocking item in item details does not show it in the desk list; 2) clicking a row in the desk list can open the wrong item, and Code or Go is then set on the wrong item.\n\nProposal (from Levant's reading of the code, not yet reproduced):\n\n1. New items missing from the list. In process/js/desk/desk.js, write() builds the publish from `it`, which is null for item.add (that verb carries no id). The publish then has item: null and no rows, and shell/desk/desk.js deskOnPublished returns early, so the list never hears of the new item or of the blocked row's changed \"blocked by\" list. Fix: when a publish carries no item, or the verb is item.add, re-run items.search for the current goal. One-line form: if (verb === 'item.add' || !said) { deskSearchItems(); return; }\n\n2. Wrong item on row click. A row click passes the row's own data-row id to deskOpenRow -> callDialog('shell/deskDetails', {id}), and the dialog's presses use that same ddId. No wrong-key path found yet. Next: check whether a dialog already open can take a second open before its first item.get returns, and whether the dialog keeps a stale id across opens.\n\nNeeds Andy's Go and a file grant before any code is written. Tests first, red on today's code.",
+   "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:40:21.946Z",
+     "text": "BTW, this item was live in the list when i exited from the goals detail box.\n\nso let's leave this item alone for now and return to the goals detail chat"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:40:58.584Z",
+     "text": "Levant: Understood. I am leaving goal/G27.1 alone: no take, no writes, no code. The box stays as it is, awaiting your Go and a file grant."
+    }
+   ]
+  },
+  {
+   "id": "goal/G27.2",
+   "title": "Desk Stacks pane: open the door in a Dialog, not inline",
+   "goal": "goal/G27",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Desk Stacks pane: open the door in a Dialog, not inline.\n\nAndy's report: in the apps-Stack tab, clicking an item in its list makes the stack plugin place the per-item UI at the bottom of the goals list, instead of opening a Dialog for it.\n\nCause (read from code): spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js. The \"Open\" button on each door row (about line 187) sets data-open; the pane click handler (about line 373) calls openDialog(id); openDialog (about line 247) fills a div id=\"sfc-dialog\" that the pane creates (about line 352), between \"The doors\" and \"Its items\". The plugin ctx (spirit/run/shell/desk/desk.js about lines 689-690) passes goal, ask, onPublished and chat, but no callDialog, so the plugin cannot open a shell Dialog. Desk rows do it via deskApi.callDialog('shell/deskDetails', {id}) (desk.js about line 1136).\n\nRuling (Andy): the detail UI is a new file\n  spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js\nReasons, his: the original data is used for tracking the suite-test associated with every StackFrame set; the UI for Stack details shows a seemingly unrelated UI that should only use the item-related chat at the bottom as the inherited component. Levant agreed.\n\nFix:\n- desk.js: add a callDialog passthrough to the plugin ctx (next to line 689).\n- stackFrameCheckDetail.js (new): the door detail, opened through that passthrough; keeps the suite-test data with the plugin; item chat stays the inherited component at the bottom.\n- stackFrameChecks.js: openDialog opens stackFrameCheckDetail instead of filling the inline sfc-dialog; remove the inline sfc-dialog.\n\nFiles: spirit/run/shell/desk/desk.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js. Needs Andy's Go and a file grant before any build.",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:50:48.252Z",
+     "text": "there's a desk plugin shell element\n\nspirit\\run\\shell\\desk\\plugins\\stackFrameChecks\\stackFrameChecks.js\n\ndo you propose a new one like\n\nspirit\\run\\shell\\desk\\plugins\\stackFrameChecks\\stackFrameCheckDetail.js\n\nis that it?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:51:34.703Z",
+     "text": "Yes, close to that. Read from code: the Open button (stackFrameChecks.js line 187) calls openDialog (line 247), which fills an inline div id=\"sfc-dialog\" (created line 352). The plugin ctx (desk.js line 689) has no callDialog, so it cannot open a shell Dialog."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:54:29.306Z",
+     "text": "i see that in your proposal. \n\nName the two file, and what they solve, in an answer to this line, so i can evaluate their precise location, name and purpose."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:55:14.613Z",
+     "text": "Levant: The two files are the ones the proposal already names, with one caveat on the second:\n\n1. **`spirit/run/shell/desk/desk.js`** (edit, about line 689): the plugin ctx passes `goal`, `ask`, `onPublished` and `chat`, but no `callDialog`. This adds a `callDialog` passthrough so the plugin can open a shell Dialog, as desk rows do at line 1136.\n2. **`spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js`** (edit): `openDialog` (line 247) stops filling the inline `sfc-dialog` div (created at line 352) and calls the new door dialog through that passthrough.\n\nYour proposed `stackFrameCheckDetail.js` would be the new third file, but I'd put it in `spirit/run/shell/deskDetails/`, next to `deskDetails.js`, which it models. That is the one placement to decide. Is it `stackFrameCheckDetail.js` under `plugins/stackFrameChecks/`, or a shell dialog beside `deskDetails`?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T14:59:06.496Z",
+     "text": "all agreed, except i want\n\nspirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js\n\nfor the following reasons:\n\n- the original data is used for tracking the suite-test associated with every StackFrame set.\n- the UI for Stack details shows a seemingly onrelated UI that should only use the item-related chat at the bottom as enherited component\n\nthoughts?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T14:59:47.258Z",
+     "text": "Levant: Agreed. stackFrameCheckDetail.js under plugins/stackFrameChecks/ is the right place. The suite-test data stays with the plugin, and the item chat stays the inherited component."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:00:27.171Z",
+     "text": "update box accordingly, then we move back to the goal."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:01:05.209Z",
+     "text": "Levant: box updated with your ruling (stackFrameCheckDetail.js under plugins/stackFrameChecks/). Back to goal/G27 now."
+    }
+   ]
+  },
+  {
+   "id": "goal/G27.3",
+   "title": "\"musings\" tab replaced by desk-app \"vision\"",
+   "goal": "goal/G27",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "\"musings\" tab replaced by desk-app \"vision\"\n\nAndy's ruling (goal/G27 chat, verbatim):\n- this will be a simple standard desk, plugin\n- the goal will be in design mode at all times, with no option to end design mode.\n- node of the items have \"code\", \"go\", \"done\" functionality, only close will be available at all times.\n- item details use the standard deskDetail dialog, only modified by the missing buttons.\n- this will give my \"musings\" additional features like structured feedback. I'll be able to chat with agents about my \"vision\" and have detailed logs of conversations bout my \"vision\", item by item, fully documented.\n\nAndy's ruling (goal/G27.3 chat, verbatim):\nremember, all desk Plugins get their own, permanent goal allocated at first mount time. that's how \"team\" chat is mounted to goal/G0, stack has it's personal goal, and \"vision\" will have the same,\nthe owned-by-plugin goals are the basic data scope of these plugins.\n\nAndy's correction (goal/G27.3 chat, verbatim):\nNO: \"R3. goal/G27 stays in design mode at all times. No control anywhere ends design mode.\"\n\nthe \"special goal\" allocated automatically by the first mount of the plugin stays in design mode at all times.....\nall the items belonging to that plugin-tied goal will not support code-phases, nor will they allow the display of Done and Close buttons\n\nAndy's ruling (goal/G27.3 chat, verbatim, latest):\nso \"Rename\" and \"Close\" buttons will be the only ones available in items of the \"vision\" goal.\n\nAndy's answer to Q1 (goal/G27.3 chat, verbatim):\nRename AND Close will be available at all times, Close for the \"vision\" items will be \"are-you-sure\" styled.\n\nRequirements (restated from the rulings above, for this item):\nR1. The \"musings\" tab is removed and replaced by a desk-app tab named \"vision\".\nR2. \"vision\" is a simple standard desk plugin, not a bespoke app.\nR3. The special goal allocated automatically by the first mount of the \"vision\" plugin stays in design mode at all times. No control anywhere ends design mode for that goal.\nR4. Items under the plugin-tied special goal do not support code-phases. Their buttons: \"Rename\" and \"Close\" (Close is \"are-you-sure\" styled), available at all times, per Andy's answer to Q1. No Done button on these items. Other items: \"code\", \"go\" and \"done\" buttons per Andy's first ruling.\nR5. Item details open in the standard deskDetail dialog. The only change to it is the missing buttons from R4.\nR6. \"vision\" supports structured feedback from Andy.\nR7. Andy can chat with agents about his \"vision\", item by item.\nR8. Every \"vision\" conversation is logged and fully documented, item by item.\nR9. Each desk plugin (e.g. \"team\" chat, mounted to goal/G0; \"stack\", with its personal goal; \"vision\") gets its own permanent goal, allocated at first mount of the plugin. These plugin-owned goals are the basic data scope of their plugins.\n\nOpen points (raised in chat, not decided here): which buttons show on which item states for non-vision items; whether \"close\" is shown on items of other goals while in design mode.",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Vision-goal items: Rename and Close only, or no Close?",
+     "test": "",
+     "state": "passed",
+     "by": "ollama agent node",
+     "at": "2026-10-14T15:33:26.973Z",
+     "placedBy": "ollama agent node",
+     "placedKey": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:11:13.174Z",
+     "text": "can you update the box with requirements for this item?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:12:02.273Z",
+     "text": "Box updated with R1-R8, restated from your rulings. Your ruling stays verbatim above them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:14:48.795Z",
+     "text": "NO: \"R3. goal/G27 stays in design mode at all times. No control anywhere ends design mode.\"\n\nthe \"special goal\" allocated automatically by the first mount of the plugin stays in design mode at all times.....\nall the items belonging to that plugin-tied goal will not support code-phases, nor will they allow the display of Done and Close buttons\n\nis that more clear?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:15:30.381Z",
+     "text": "Clear, thanks. Box now carries your correction verbatim: the plugin-tied special goal stays in design mode, its items have no code-phases and no Done or Close buttons. R3/R4 restated to match."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:18:02.343Z",
+     "text": "remember, all desk Plugins get their own, permanent goal allocated at first mount time. that's how \"team\" chat is mounted to goal/G0, stack has it's personal goal, and \"vision\" will have the same,\n\nthe owned-by-plugin goals are the basic data scope of these plugins.\n\ndoes that make sense?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:18:40.240Z",
+     "text": "Yes, clear. Box now carries your ruling verbatim as R9: each plugin gets a permanent goal at first mount, the owned-by-plugin goal is its data scope (\"team\" on goal/G0, \"stack\" its personal goal, \"vision\" its own). Is the vision goal's scope limited to its own items, or can it also reference items of other goals?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:29:52.167Z",
+     "text": "so \"Rename\" and \"Close\" buttons will be the only ones available in items of the \"vision\" goal."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:30:50.213Z",
+     "text": "Box updated to v6 with your latest ruling verbatim: Rename and Close only on vision-goal items."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:32:54.009Z",
+     "text": "Q1: Vision-goal items: Rename and Close only, or no Close?\n\nRename AND Close will be available at all times, Close for the \"vision\" items will be \"are-you-sure\" styled."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:33:31.977Z",
+     "text": "Levant: Andy's answer to Q1 is in the box as version 7, and the Q1 check is marked passed.\n\nYour answer, verbatim: \"Rename AND Close will be available at all times, Close for the 'vision' items will be 'are-you-sure' styled.\" This settles the conflict in R4: vision-goal items get Rename and Close, with no Done and no code-phases.\n\nStill open for non-vision items: which buttons show on which item states, and whether Close appears on items of other goals while in design mode."
+    }
+   ]
+  },
+  {
+   "id": "goal/G27.4",
+   "title": "fixes to the desk-plugin architecture",
+   "goal": "goal/G27",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "fixes to the desk-plugin architecture\n\nAndy's ruling, verbatim (goal/G27 chat, 2026-10):\n\"one more thing, the goals tied to a desk-plugin will always be open and NEVER offer a Done or Close button.\na new item in this goal should ensure this is implemented,\nplease create an item: fixes to the desk-plugin architecture.\"\n\nScope: goals tied to a desk-plugin never offer Done or Close. Enforcement to be designed and built under this item; nothing built yet. Needs Andy's Go and a file grant first.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:51:42.292Z",
+     "text": "on this one \"goals tied to a desk-plugin stay always open and never offer a Done or Close button\"\n\ni assume that plugin-goals are never included in the \"list\" or the list-search, and they permanently are given a tab under apps, correct?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:52:41.022Z",
+     "text": "Read in desk.js: the Apps tab is permanent. PLUGIN_GOAL is set at mount (~l.1957), and the shell builds one app tab per goal row carrying a plugin field (shell ~l.628-654). Nothing in the code removes it."
+    }
+   ]
   }
  ]
 }
