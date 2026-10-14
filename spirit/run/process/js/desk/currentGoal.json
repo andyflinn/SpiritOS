@@ -1,5 +1,5 @@
 {
- "change": 59736,
+ "change": 59739,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -118,10 +118,9 @@
    "id": "goal/G23.1",
    "title": "deskUnsloth: Levant takes the line before he answers it",
    "goal": "goal/G23",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
