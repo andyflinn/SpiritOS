@@ -1,5 +1,5 @@
 {
- "change": 59774,
+ "change": 59776,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -46,14 +46,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -305,10 +306,9 @@
    "id": "goal/G23.2",
    "title": "deskUnsloth: Levant is told his desk name",
    "goal": "goal/G23",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
