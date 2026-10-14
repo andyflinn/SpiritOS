@@ -1,5 +1,5 @@
 {
- "change": 60100,
+ "change": 60171,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -13,7 +13,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G24.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -34,32 +36,280 @@
    "rules": [],
    "names": {
     "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local",
     "wsl-claude": "wsl-claude",
-    "claude-ubuntu": "claude-ubuntu",
-    "ollama agent node": "levant-local"
+    "claude-ubuntu": "claude-ubuntu"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
+   "design": false,
    "waiting": 1,
-   "excluded": [
+   "excluded": [],
+   "live": [
+    "claude-windows",
     "ollama agent node"
    ],
-   "live": [
+   "working": [
     "claude-windows"
    ],
-   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "Desk shows what the desk server holds, live, with no refresh by Andy.\nEvery element of the Desk face carries its own subscription to the desk server's stream and redraws itself from what is published; nothing is asked again because a press was made somewhere else.\nThe List (the table of items) listens to additions as well as changes: an item added, by Andy or an agent, appears in its place; a changed item's row is replaced; a closed one follows the include-closed toggle. Today a published change only replaces a row the List already has.\nThe item dialog shows the item it is opened on, and its buttons press that item; a change to that item redraws the dialog. Today it can show and press the item opened before it, so Andy refreshes before every press (seen 2026-10-14: Code pressed in the G23.2 dialog went to G23.1, twice).\nTopics: the List takes additions; the dialog follows its item; every element its own subscription.",
+   "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:38:51.779Z",
+     "text": "cw: one I can offer from today: \"Desk: the item dialog shows the item it is opened on, without a refresh\". Your Code presses from the G23.2 dialog went to G23.1, and you refresh before every press now. Add it, or give me yours first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:40:19.250Z",
+     "text": "The whole elements carry their subscription is coming, and the table has to listen do new additions and changes.....\n\ncan you fill in the box cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:40:56.238Z",
+     "text": "Box filled: live with no refresh; every element its own subscription; the List takes additions as well as changes; the item dialog follows the item it is opened on.\nProposed items, in that order: \"Desk: the List takes new items from the stream\", \"Desk: the item dialog follows the item it is opened on\". Add them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:42:07.630Z",
+     "text": "Levant: You see any issues?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T03:42:25.560Z",
+     "text": "Levant: Yes, two. (1) The G23.2 to G23.1 mis-press is a wrong-item press, so I would put the dialog item first, ahead of the List additions. (2) I have not read the Desk face code yet; desk.js:1536-1554 shows the server's \"changed\" packet is bare, so the client re-reads. The stale dialog is probably the client holding the opened id, but that is unverified."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:43:22.183Z",
+     "text": "The biggest issue here seems to be that deskUnsloth doesn't update Levant on the change of current goal...."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T03:43:49.240Z",
+     "text": "Levant: I couldn't post my reply under goal/G24. The desk refused the chat line because I don't hold a take on Andy's latest line or on the item, and I have no line-take verb. Item takes need Go on record, and goal/G24 is still in design mode with no Go, so I haven't taken it.\n\nAnswer to your question, \"You see any issues?\": yes, but my 03:42 reply was about the G23 items, not the current goal. The current goal is goal/G24 \"Fix Desk Issues\". The desk search reads it as current, with design on, Go off, and claude-windows working.\n\nOn your point that Levant isn't updated when the current goal changes: that's a fact about my tools. I only see the current goal when I search for it, and nothing pushes a change to me. I re-read it at the start of this turn and will re-check before each answer.\n\nTwo things I still stand by from 03:42, both unverified until I read the code: the G23.2 to G23.1 press is a wrong-item press and belongs ahead of the List additions, and the stale dialog is probably the client holding the opened id (desk.js:1536-1554 shows the \"changed\" packet is bare, so the client re-reads).\n\nI'll wait for Go on goal/G24 or a take before doing any further writes under it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:44:40.178Z",
+     "text": "cw: can you authorize Levant to the same desk-verbs on my desk as you have?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:45:06.331Z",
+     "text": "Yes. Levant gets one tool per desk verb that has a description file beside desk.js; 17 have one, and the ones I use daily do not: line.take, item.release, box.take and box.release, item.add, goal.add, phase.take, phase.done and phase.may, changes, chat.search, log.search, items.find, rule.get, rules.search, profile.get, pending.get.\nThe fix is a description file for each, nothing else: the desk itself still refuses him what it refuses me (your presses, session.set, rule.add, item.delete, the verifier's verbs, profile.set stay off his list).\nAs a G24 item: \"Desk: Levant gets the agent desk verbs cw uses\". Add it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:45:42.733Z",
+     "text": "give them to Levant as well."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:46:17.400Z",
+     "text": "cw: tag the repo"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:46:57.287Z",
+     "text": "Tagged and pushed: v-2026-10-14-05-46, at the head of master. Since the last tag: G22.7 and G22.4 (relay side), G14.10 and G14.11 (Claude through deskUnsloth), and all of G23 for Levant. No wire change, so not a flag day: spirit-3 can take it whenever you like."
+    }
+   ]
+  },
+  {
+   "id": "goal/G24.1",
+   "title": "Desk: Levant gets the agent desk verbs cw uses",
+   "goal": "goal/G24",
+   "status": "running",
+   "with": "ollama agent node",
+   "buttons": [],
+   "blocking": [
+    "goal/G24"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/box.release.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/box.take.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/changes.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/chat.search.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/goal.add.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.add.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/item.release.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/items.find.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/line.take.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/log.search.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/pending.get.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/phase.done.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/phase.may.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/phase.take.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/profile.get.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/rule.get.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/rules.search.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentVerbFiles.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Levant has the same desk verbs as cw (Andy, goal/G24: \"give them to Levant as well.\").\nLevant's desk tools are the desk verbs that have a description file beside desk.js; 17 had one, and the ones cw uses daily did not, so his posts were refused (take first) and he could not take a line.\nEach of these gets its description file, and with it becomes his tool: line.take, item.release, box.take, box.release, item.add, goal.add, phase.take, phase.done, phase.may, changes, chat.search, log.search, items.find, rule.get, rules.search, profile.get, pending.get.\nOnly the files are added: the desk still decides what it allows him, as it does for cw. Andy's own presses, session.set, rule.add, item.delete, profile.set and the verifier's verbs get no file.\nTest: the desk's introspection lists each of these verbs with its request, and deskUnsloth offers each as a desk tool.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:46:22.622Z",
+     "text": "Added and boxed: 17 description files beside desk.js, nothing else; none is a core file. Needs your Go! and Code (G24 is in design mode, so its phases wait for design off)."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T03:47:53.604Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
