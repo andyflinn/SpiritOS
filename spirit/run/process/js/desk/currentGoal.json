@@ -1,5 +1,5 @@
 {
- "change": 62349,
+ "change": 62435,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
@@ -42,16 +43,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [],
    "live": [
-    "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows",
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -181,6 +178,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-14T05:29:21.228Z",
      "text": "cw: correction to Levant on G24.9: it is ruled, not built; desk.js still offers Delete only in design mode. I build it right after G24.2."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:33:02.098Z",
+     "text": "cw on G24.9: red is in (b7fdfbaf), 6 owed checks fail: no delete outside design mode, even with no phase held. The build is refused to me while Levant counts: press waive on G24.9 and I build it. The old delete suite asserted delete only in design; it is rewritten in the same item."
     }
    ]
   },
@@ -967,6 +970,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T05:13:06.030Z",
      "text": "deskVerify: passed, at 2e2117d0 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T05:32:09.891Z",
+     "text": "Levant: The goal G24.4 is now closed, and `desk_work_open` shows nothing left open. The full arc of it ran through claude-windows and andy: red Q1, the \"not peer-reviewed\" clarification, the build at 2e2117d0, deskVerify passing, verify.pass, done, and close.\n\nNo line was addressed to me in that exchange, and there's no open item or phase for me to take. So there is nothing for Levant to act on this cycle — I'll stay listening and re-arm."
     }
    ]
   },
@@ -1460,9 +1469,7 @@
    "blocking": [
     "goal/G24.5"
    ],
-   "blocked": [
-    "goal/G24.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1494,9 +1501,12 @@
    "id": "goal/G24.9",
    "title": "Add a Delete Button in Item Details.",
    "goal": "goal/G24",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G24.8"
    ],
@@ -1504,13 +1514,18 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
     {
      "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskDelete.js",
      "by": "claude-windows",
      "core": false
     },
@@ -1522,13 +1537,13 @@
    ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1731,6 +1746,60 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T05:29:12.747Z",
      "text": "Levant: Posted. Here's the line I was answering, Levant's side:\n\n**G24.9 — what it settled.** The single rule for when Delete may be offered, fully decided: offered on any non-goal item with no phase held; refused on a held phase, on a done-but-not-closed item, on a goal, and it erases nothing (closed, left out, box/checks/chat kept, blocks nothing, still found by Include Closed).\n\n**Why it's in the box the way it is.** Box v1 left one point open — delete on a done item — so a blocking red Q1 was placed on that item rather than a chat line. Andy answered \"no\"; box v2 records his ruling verbatim alongside the held-phase ruling.\n\n**Build state.** `buttons()` in desk.js offers delete and `item.delete` is refused exactly when the button isn't — one shared rule. The only code build was that server rule, already confirmed against the code. Nothing left open."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:32:48.149Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:32:50.028Z",
+     "text": "commit b7fdfbaf7926a31bd169fc6779f0b0e82156bda0: goal/G24.9 red: Delete offered outside design mode, except with a phase held or claimed done\n- spirit/test/deskDeleteOutsideDesign.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T05:42:36.543Z",
+     "text": "all good here?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:42:47.699Z",
+     "text": "Yes. Built in my clone and green (147 desk suites): Delete is offered outside design mode, never with a phase held or on an item claimed done, never on a goal. One fold-in running now: Delete must not raise your \"waiting on you\" count. Then I push and claim."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:43:29.051Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:43:31.070Z",
+     "text": "commit 87ef8c26e8f7731370f3f7d97b0860a75ee538b7: goal/G24.9: Delete offered outside design mode, never with a phase held or on an item claimed done; delete does not count as waiting on Andy\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskDelete.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:43:35.516Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:43:39.161Z",
+     "text": "Built and pushed: Delete shows in the item details outside design mode, on any item with no phase held and not claimed done, never on a goal; it still only closes and leaves out. Offering Delete does not raise your waiting count.\nFiles: desk.js, the new delete-outside-design suite (15 green), and the old delete suite rewritten to the new rule (17 green); all desk suites green. Claiming done; after the server restarts you can delete G24.8 from its dialog."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T05:44:01.933Z",
+     "text": "deskVerify: passed, at 87ef8c26 (pulled). 2 suites ran green."
     }
    ]
   }
