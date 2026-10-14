@@ -1,5 +1,5 @@
 {
- "change": 61696,
+ "change": 61703,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,14 +44,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
-    "ollama agent node"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -586,22 +585,19 @@
    "id": "goal/G24.4",
    "title": "deskUnsloth: tool lists follow more",
    "goal": "goal/G24",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G24.3"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [
     {
@@ -617,14 +613,43 @@
    ],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -634,16 +659,22 @@
    "box": "deskUnsloth reads a tool family's listing in full: its describe follows \"more\" until the listing is complete.\nToday it reads only the first answer and ignores \"more\", so once the descriptions pass about 8 KB Levant silently loses tools from the end of the list.\nTest: a family whose listing takes several answers is offered whole.\n",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:00:14.871Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G24.5",
    "title": "Desk: the verb listing keeps descriptions with a slash",
    "goal": "goal/G24",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
