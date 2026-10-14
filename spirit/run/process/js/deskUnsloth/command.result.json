@@ -1,0 +1,6 @@
+{
+  "description": "The state of a command started by command_run, by the id it answered: {id, running, exit, output, cut, timedOut}, as command_run answers. Ask again while running is true. A finished command is kept for a while (the last 20), then forgotten; an unknown id is refused.",
+  "request": {
+    "id": ""
+  }
+}

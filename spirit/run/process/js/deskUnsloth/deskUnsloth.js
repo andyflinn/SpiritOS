@@ -1264,6 +1264,99 @@ function push() {
   });
 }
 
+// ── A COMMAND IN HIS CLONE (goal/G23.8) ───────────────────────────────
+//
+// Like cw's Bash; Andy: "give him everything." A command runs in his clone's root through a shell found on the machine:
+// Git's bash on Windows when it is installed (never System32's bash, which is WSL), /bin/bash elsewhere when there is
+// one, else the platform's own shell. His clone is the checkout node 11111 runs from, so a command there can stop or
+// break that node: recorded in the box, no guard asked.
+// A JOB, because a verb answers within 12 s (appClient DOOR_WAIT_MS): command.run waits up to INLINE_MS for the
+// command to end and answers its result, else {id, running: true}, and command.result {id} is asked until it is done.
+// The timeout runs on the command (its own process tree killed, timedOut true), never on the answer. The output is
+// stdout and stderr as they came, its LAST whole lines that fit one answer (errors land at the end), cut said.
+const INLINE_MS = 10000;
+const COMMAND_TIMEOUT_DEFAULT = 120000;
+const COMMAND_TIMEOUT_MAX = 600000;
+const COMMAND_KEEP = 20;            // finished jobs kept for command.result, the oldest forgotten first
+const COMMAND_HOLD_BYTES = 4 * LOAD_MAX; // the output's tail held while it runs; what falls off makes it cut
+const commandJobs = new Map();
+let commandSeq = 0;
+function shellOf() {
+  if (process.platform === 'win32') {
+    const roots = [process.env.ProgramFiles, process.env['ProgramFiles(x86)'], process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, 'Programs')].filter(Boolean);
+    for (const r of roots) { const b = path.join(r, 'Git', 'bin', 'bash.exe'); if (fs.existsSync(b)) return b; }
+    return '';
+  }
+  return fs.existsSync('/bin/bash') ? '/bin/bash' : '';
+}
+function killTree(job) {
+  const pid = job.child && job.child.pid;
+  if (!pid) return;
+  if (process.platform === 'win32') spawn('taskkill', ['/T', '/F', '/PID', String(pid)], { stdio: 'ignore', windowsHide: true });
+  else { try { process.kill(-pid, 'SIGKILL'); } catch (e) { try { job.child.kill('SIGKILL'); } catch (e2) { /* gone */ } } }
+}
+// The last whole lines of the output that fit one answer beside the rest of the reply.
+function outputTail(job) {
+  const text = job.held;
+  const room = LOAD_MAX - bytes(JSON.stringify({ id: job.id, running: true, exit: -1, output: '', cut: true, timedOut: false }));
+  const cost = function (s) { return bytes(JSON.stringify(s)) - 2; };
+  if (!job.dropped && cost(text) <= room) return { output: text, cut: false };
+  const lines = text.split('\n');
+  const kept = [];
+  let size = 0;
+  // The first line held may be a part of one when the head was dropped: it is never kept.
+  for (let i = lines.length - 1; i >= (job.dropped ? 1 : 0); i--) {
+    const c = cost(lines[i]) + (kept.length ? 2 : 0);
+    if (size + c > room) break;
+    size += c;
+    kept.unshift(lines[i]);
+  }
+  return { output: kept.join('\n'), cut: true };
+}
+function commandReply(job) {
+  const t = outputTail(job);
+  return { id: job.id, running: !job.done, exit: job.done ? job.exit : -1, output: t.output, cut: t.cut, timedOut: job.timedOut };
+}
+function commandRun(command, timeoutMs) {
+  if (!String(command || '').trim()) throw refused('command is empty');
+  const limit = Math.min(COMMAND_TIMEOUT_MAX, Number(timeoutMs) > 0 ? Number(timeoutMs) : COMMAND_TIMEOUT_DEFAULT);
+  const shell = shellOf();
+  const opts = { cwd: CLONE, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true, detached: process.platform !== 'win32' };
+  const child = shell ? spawn(shell, ['-c', String(command)], opts) : spawn(String(command), Object.assign({ shell: true }, opts));
+  const job = { id: 'c' + (++commandSeq) + '-' + Date.now().toString(36), child: child, held: '', dropped: false, done: false, exit: -1, timedOut: false, waiters: [] };
+  commandJobs.set(job.id, job);
+  const take = function (chunk) {
+    job.held += chunk.toString('utf8');
+    // In bytes; a character cut in two at the head is in the first line, never kept once dropped.
+    if (bytes(job.held) > COMMAND_HOLD_BYTES) { job.held = Buffer.from(job.held, 'utf8').subarray(-COMMAND_HOLD_BYTES).toString('utf8'); job.dropped = true; }
+  };
+  child.stdout.on('data', take);
+  child.stderr.on('data', take);
+  const timer = setTimeout(function () { if (!job.done) { job.timedOut = true; killTree(job); } }, limit);
+  const finish = function (code) {
+    if (job.done) return;
+    clearTimeout(timer);
+    job.done = true;
+    job.exit = typeof code === 'number' ? code : -1;
+    job.child = null;
+    const finished = Array.from(commandJobs.values()).filter(function (j) { return j.done; });
+    while (finished.length > COMMAND_KEEP) commandJobs.delete(finished.shift().id);
+    job.waiters.splice(0).forEach(function (w) { w(); });
+  };
+  child.on('close', finish);
+  child.on('error', function (e) { take(Buffer.from(String(e.message || e) + '\n')); finish(-1); });
+  say('command ' + job.id + ' (' + (shell || 'the platform shell') + ', ' + limit + ' ms): ' + String(command).slice(0, 200));
+  return new Promise(function (resolve) {
+    const t = setTimeout(resolve, INLINE_MS);
+    job.waiters.push(function () { clearTimeout(t); resolve(); });
+  }).then(function () { return commandReply(job); });
+}
+function commandResult(id) {
+  const job = commandJobs.get(String(id || ''));
+  if (!job) throw refused('no command ' + JSON.stringify(String(id || '')) + ': unknown, or finished long enough ago to be forgotten');
+  return commandReply(job);
+}
+
 // ── THE CHAT BOX'S CALLS (goal/G14.4) ──────────────────────────────────
 //
 //   Andy, 2026-10-10: a chat box "sticky, at the bottom of the window (panel)", "Enter = send, one line only",
@@ -1595,6 +1688,16 @@ appServer.serve({
   'file.edit': {
     request: { path: '', old: '', new: '', all: false }, reply: { path: '', replaced: 0 },
     handler: function (a) { return fileEdit(a.path, a.old, a.new, a.all === true); },
+  },
+  // goal/G23.8: a command in his clone, as a job (a verb answers within 12 s); both write or read a job, so neither is
+  // answered to the model while he is disconnected.
+  'command.run': {
+    request: { command: '', timeoutMs: 0 }, reply: { id: '', running: false, exit: 0, output: '', cut: false, timedOut: false },
+    handler: function (a) { return commandRun(a.command, a.timeoutMs); },
+  },
+  'command.result': {
+    request: { id: '' }, reply: { id: '', running: false, exit: 0, output: '', cut: false, timedOut: false },
+    handler: function (a) { return commandResult(a.id); },
   },
   'file.save': {
     request: { path: '', content: '' }, reply: { path: '', bytes: 0 },
