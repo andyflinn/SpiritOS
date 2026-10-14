@@ -1,5 +1,5 @@
 {
- "change": 59918,
+ "change": 59921,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -14,7 +14,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G23.3",
     "goal/G23.5",
     "goal/G23.6",
     "goal/G23.7",
@@ -48,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -848,9 +847,12 @@
    "id": "goal/G23.3",
    "title": "deskUnsloth: Levant reads files by line range, like cw",
    "goal": "goal/G23",
-   "status": "waiting for deskVerify",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G23"
    ],
@@ -1065,6 +1067,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T03:07:47.004Z",
      "text": "The verifier just won't start anymore."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:09:39.928Z",
+     "text": "deskVerify: passed, at b8407746 (pulled). 1 suite ran green."
     }
    ]
   },
