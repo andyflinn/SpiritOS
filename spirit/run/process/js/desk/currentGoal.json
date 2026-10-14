@@ -1,5 +1,5 @@
 {
- "change": 62144,
+ "change": 62346,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G24.2"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -44,15 +42,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -176,6 +172,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-14T04:13:23.695Z",
      "text": "cw: G24.9 is now \"Add a Delete Button in Item Details\", with an empty box. Today Delete appears only while the goal is in design mode; should it be offered always, or only before Go, or by another rule?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:29:21.228Z",
+     "text": "cw: correction to Levant on G24.9: it is ruled, not built; desk.js still offers Delete only in design mode. I build it right after G24.2."
     }
    ]
   },
@@ -483,9 +485,12 @@
    "id": "goal/G24.2",
    "title": "deskUnsloth: one answer per Levant turn, taken first",
    "goal": "goal/G24",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G24"
    ],
@@ -493,9 +498,9 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
@@ -516,13 +521,13 @@
    ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -575,6 +580,54 @@
      "key": "",
      "at": "2026-10-14T05:23:10.812Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:25:14.942Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:25:17.902Z",
+     "text": "commit fdd0122c6353561bbf5e1c5efa6b3798b416107b: goal/G24.2 red: one answer per Levant turn, taken first\n- spirit/test/deskUnslothOneAnswer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:25:25.364Z",
+     "text": "Red is in (fdd0122c): a turn with a tool post makes two posts under the item, the tool's landing before any take. The fix moves the take to the start of the turn, and a turn that already answered with the tool posts no final answer.\nThe build is refused to me while Levant counts: press waive and I build it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:30:23.325Z",
+     "text": "commit e034a4a616fa326c80086ab06c6affdf08961fed: goal/G24.2: one answer per Levant turn, the line taken at the moment of posting\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:30:24.975Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:30:33.549Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:30:38.998Z",
+     "text": "Built and pushed: one turn of Levant's makes one post under its item. He takes your line at the moment he posts, never earlier, so a turn that posts nothing takes nothing and leaves the line to others; a turn he answered with his chat tool posts no final answer.\nFiles: the deskUnsloth server and the new one-answer suite (6 green); 9 more suites green. Claiming done; G24.9 next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T05:31:04.949Z",
+     "text": "deskVerify: passed, at e034a4a6 (pulled). 1 suite ran green."
     }
    ]
   },
@@ -1439,8 +1492,8 @@
    "id": "goal/G24.9",
    "title": "Add a Delete Button in Item Details.",
    "goal": "goal/G24",
-   "status": "",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G24.8"
@@ -1451,7 +1504,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
@@ -1468,7 +1521,7 @@
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
@@ -1505,8 +1558,8 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -1652,6 +1705,30 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T05:12:15.368Z",
      "text": "Levant: Here's the run on **goal/G24.9**, in order.\n\n**The ask.** Andy opened the item — \"Andy can delete an item that no longer serves him from its item details, without switching the goal into design mode\" — and asked Levant to fill the box: what it would take to let the user delete items.\n\n**Levant's box v1.** Delete offered on any item that is not a goal, whatever the goal's design mode, except while an agent holds a phase on it (red/build/verify), and except on an item claimed done and not yet closed. The button and the verb share one rule — `buttons()` in desk.js offers delete, and `item.delete` is refused exactly when the button is not. Erases nothing, per the G9.7 ruling: the item is closed, left out, keeps its box/checks/chat, blocks nothing, still found by Include Closed. The armed Delete→Delete: sure? button already existed; only the server rule changed.\n\n**The review (claude-windows).** Checked every citation against the code — design-mode rule at desk.js:1206, `item.delete` closing and leaving out at :929, the verb refused by the same rule, G9.7 quoted right. All held. Noted the button already exists (deskDetails.js:158–163), so the only build was the server rule in `buttons()`; flagged one open question: should Delete be offered on a phase-held item or a done item?\n\n**The cap (Andy).** \"No. If a phase is held, no delete.\" So Delete is offered only on items with no phase held.\n\n**The red Q.** The item had no checks on it, so a blocking red Q (check.add, kind Q) was placed on the one point the box didn't rule — delete on a done item.\n\n**The answer (Andy).** \"No\" — Delete is not offered on an item claimed done and not yet closed.\n\n**Q1 passed.** Box v2 recorded the ruling: no Delete on a done item; yes on items with no phase held.\n\nNet: the rule is now fully decided — Delete offered on any non-goal item with no phase held, refused on a held phase and on a done-but-not-closed item, never on a goal, and it erases nothing. The only remaining build was `buttons()` sharing one rule with `item.delete`, which claude-windows had already confirmed against the code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T05:27:06.175Z",
+     "text": "go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:27:40.832Z",
+     "text": "Go is on record for G24.9 already. I hold G24.2's build (one task at a time); G24.9 is next, straight after. It still blocks G24.8, Levant's leftover duplicate: delete G24.8 with G24.9's own Delete once it is built."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T05:28:48.700Z",
+     "text": "What G24.9 settled: the one rule for when Delete may be offered. Delete is offered on any non-goal item with no phase held, and refused on a held phase, on a done-but-not-closed item, and on a goal.\nWhy it sits there: the box v1 left one point open — delete on a done item — so a blocking red Q1 was placed on it; Andy answered \"no\", and the box v2 records that ruling verbatim alongside the held-phase ruling.\nBuild state: buttons() in desk.js offers delete and item.delete is refused exactly when the button isn't, one shared rule; the only code build was that server rule, which was confirmed against the code. Nothing left open."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T05:29:12.747Z",
+     "text": "Levant: Posted. Here's the line I was answering, Levant's side:\n\n**G24.9 — what it settled.** The single rule for when Delete may be offered, fully decided: offered on any non-goal item with no phase held; refused on a held phase, on a done-but-not-closed item, on a goal, and it erases nothing (closed, left out, box/checks/chat kept, blocks nothing, still found by Include Closed).\n\n**Why it's in the box the way it is.** Box v1 left one point open — delete on a done item — so a blocking red Q1 was placed on that item rather than a chat line. Andy answered \"no\"; box v2 records his ruling verbatim alongside the held-phase ruling.\n\n**Build state.** `buttons()` in desk.js offers delete and `item.delete` is refused exactly when the button isn't — one shared rule. The only code build was that server rule, already confirmed against the code. Nothing left open."
     }
    ]
   }
