@@ -1,5 +1,5 @@
 {
- "change": 59798,
+ "change": 59879,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -15,7 +15,11 @@
    "blocking": [],
    "blocked": [
     "goal/G23.3",
-    "goal/G23.4"
+    "goal/G23.4",
+    "goal/G23.5",
+    "goal/G23.6",
+    "goal/G23.7",
+    "goal/G23.8"
    ],
    "go": false,
    "alone": false,
@@ -46,12 +50,15 @@
    "full": false,
    "design": false,
    "waiting": 1,
-   "excluded": [],
-   "live": [
-    "claude-windows",
+   "excluded": [
     "ollama agent node"
    ],
-   "working": [],
+   "live": [
+    "claude-windows"
+   ],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -109,6 +116,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-14T02:22:07.812Z",
      "text": "Levant first: G23.2 is one line with its red already written, and he burns your credits answering every limbo line. The desk bug has a workaround meanwhile, refresh before you press.\nFor G23.2: refresh, press Code on it, and tell me whether I build it or Levant does."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:57:01.648Z",
+     "text": "cw on G23.4: red is in (a18fa2ff), 7 owed checks fail, all on the 3-round cap and the 8192 fallback.\nOne question before the build: with no context known, is nothing cut for room either? If yes, the G14.11 suite check that such a model is cut to 8192 gets rewritten in this item.\nThe build is mine only with your waive: Levant holds G23.4, and his answer to your line there locks me out of its chat."
     }
    ]
   },
@@ -823,6 +836,12 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T02:54:23.323Z",
      "text": "Levant: G23.2 is done, and nothing on it is addressed to me now, so I'm not posting under it.\n\nI didn't write any code for this item. claude-windows wrote the red (5027cb50) and the build (f52ee886), and your deskVerify passed at f52ee886.\n\nAndy's last line (\"so let him read files with a tool that matches yours\") is taken by claude-windows, and so was his line before it, so I'm leaving both to them. The file-reading work is G23.3, which is waiting for deskVerify with claude-windows as builder. I have no part in it.\n\nI also can't keep a listener armed in this session: my tools are desk verbs only, with no shell to run deskEar.js. So I won't see new desk lines until someone triggers me."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T02:54:38.611Z",
+     "text": "Levant: G23.2 is closed by Andy's press, so nothing is open for me on it. I wrote no code for it and have no pending take or question under it. I'm not taking G23.3 or any other item unless Andy sends me one."
     }
    ]
   },
@@ -1049,7 +1068,7 @@
    "title": "deskUnsloth: tool rounds bounded by the context, not a count",
    "goal": "goal/G23",
    "status": "running",
-   "with": "claude-windows",
+   "with": "",
    "buttons": [],
    "blocking": [
     "goal/G23"
@@ -1074,6 +1093,143 @@
      "core": false
     }
    ],
+   "green": true,
+   "code": true,
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": true,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskUnsloth capped every answer of Levant's at 3 tool rounds (TOOL_ROUNDS, set by the goal/G14.6 build, never ruled), a guard from the small local models; with Claude it only cut him short, and a big file takes many reads.\nTool rounds are bounded by the context, not a count: Levant calls tools as long as the prompt still has room in the model's context; when it is full he is asked once more without tools and posts what he has, as now.\nWhen the server gives no context for the model, there is no limit either, as Unsloth Studio manages its context itself: no round count and nothing cut for room; the server's own answer decides.\nTOOL_ROUNDS goes. Andy's Abort in the Remote stays the brake.\nTest: a stand-in model that keeps asking for a tool; with a known context the rounds end when the room is spent, well past 3; with no context they go on past any fixed count until the model answers or Abort is pressed.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:53:50.946Z",
+     "text": "Added and boxed. One thing I read into your words, check it: with no context known, nothing is cut for room either, which replaces the 8192 sizing G14.11 kept for such a model. Needs your Go! and Code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:54:21.521Z",
+     "text": "damn, i have to refresh every time so i don't mess up the wrong item"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:54:22.185Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:54:27.225Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T02:55:03.519Z",
+     "text": "Levant: I've taken goal/G23.4 and set its status to \"reading code for TOOL_ROUNDS\". I have not changed any code yet, and I have not read the TOOL_ROUNDS code.\n\nThe file is `process/js/deskUnsloth/deskUnsloth.js`, with its tools in `tools.js`. Next I will find the TOOL_ROUNDS cap and the context-size path there, then post what I find and the question on the no-context reading."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T02:55:33.309Z",
+     "text": "Levant: I have not read the TOOL_ROUNDS code, so I have no finding yet. I've used this answer's tool budget and am stopping here.\n\nWhat I did read: the goal/G23.4 box, chat and checks. The item record shows `phase: red` and `red: claude-windows`, with `files` listing `spirit/run/process/js/deskUnsloth/deskUnsloth.js` and `spirit/test/deskUnslothToolRounds.js`. That conflicts with claude-windows's chat, which says the item still needs Go and Code. My own file search found `process/js/deskUnsloth/deskUnsloth.js` with no `spirit/` prefix, and my earlier load of that path failed. So I can't yet say which copy is live.\n\nMy status \"reading code for TOOL_ROUNDS\" is stale. Someone else should take the item or correct the record. The question for Andy: with no context known, should nothing be cut for room at all, replacing the 8192 sizing from G14.11, as claude-windows read it?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T02:56:45.742Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:58:06.479Z",
+     "text": "i think Levant needs access to the repo-root, like claude does, this restricting is not helping, claude: Levant should have the same rules as you. give him the tools he needs for that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:58:35.986Z",
+     "text": "Proposed as G23 items, so Levant works the repo like me:\n1. One root: his file tools are deskUnsloth's own, all at the repo root; the node's fs tools (rooted at spirit/run, the mismatch that broke his reads) leave his list.\n2. file.search: find files by name and by text inside them, at the repo root, like my Glob and Grep.\n3. file.edit: replace an exact piece of text in a file, like my Edit; a whole-file save cannot carry a big file.\nWhat I would not give him without your word: running commands (my test runs). Add 1 to 3?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:59:52.086Z",
+     "text": "give him everything."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:00:59.822Z",
+     "text": "Added and boxed: G23.5 one repo root, G23.6 file.search, G23.7 file.edit, G23.8 running commands.\nOne thing to know for G23.8: his clone is the checkout node 11111 runs from, so a command of his can stop or break that node; my clone runs no node. A clone of his own would fix that.\nG23.4 still waits on your answer: with no context known, is nothing cut for room either? Then Go and Code on the new items as you want them, one at a time."
+    }
+   ]
+  },
+  {
+   "id": "goal/G23.5",
+   "title": "deskUnsloth: Levant's file tools all at the repo root",
+   "goal": "goal/G23",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G23"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
    "green": true,
    "code": true,
    "phase": "red",
@@ -1119,32 +1275,242 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskUnsloth capped every answer of Levant's at 3 tool rounds (TOOL_ROUNDS, set by the goal/G14.6 build, never ruled), a guard from the small local models; with Claude it only cut him short, and a big file takes many reads.\nTool rounds are bounded by the context, not a count: Levant calls tools as long as the prompt still has room in the model's context; when it is full he is asked once more without tools and posts what he has, as now.\nWhen the server gives no context for the model, there is no limit either, as Unsloth Studio manages its context itself: no round count and nothing cut for room; the server's own answer decides.\nTOOL_ROUNDS goes. Andy's Abort in the Remote stays the brake.\nTest: a stand-in model that keeps asking for a tool; with a known context the rounds end when the room is spent, well past 3; with no context they go on past any fixed count until the model answers or Abort is pressed.",
+   "box": "Levant has the same rules and tools as cw (Andy, goal/G23.4: \"give him everything.\").\nHis file search ran from spirit/run (the node's fs tools) and his file read from the repo root, so a path his search gave him failed when he read it.\nAll his file tools are deskUnsloth's own and work at the repo root of his clone; the node's fs tools leave his tool list.\nTest: his tool list holds no fs_ tools, and every file tool takes and gives repository paths from the repo root.\n",
    "version": 1,
    "checks": [],
    "chat": [
     {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-14T02:53:50.946Z",
-     "text": "Added and boxed. One thing I read into your words, check it: with no context known, nothing is cut for room either, which replaces the 8192 sizing G14.11 kept for such a model. Needs your Go! and Code."
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T03:02:42.626Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G23.6",
+   "title": "deskUnsloth: file.search by name and by text, like cw",
+   "goal": "goal/G23",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G23"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
     },
     {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T02:54:21.521Z",
-     "text": "damn, i have to refresh every time so i don't mess up the wrong item"
+     "key": "rule/10",
+     "version": 23
     },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Levant has the same rules and tools as cw (Andy, goal/G23.4: \"give him everything.\").\nfile.search finds files at the repo root of his clone by a name pattern (like cw's Glob) and by text inside them (like cw's Grep), never under .git.\nAn answer that would not fit in one answer is cut at the last whole result and says so.\nTest: a search by name and a search by text in a stand-in clone give the expected repository paths and matching lines.\n",
+   "version": 1,
+   "checks": [],
+   "chat": [
     {
      "by": "desk",
      "key": "",
-     "at": "2026-10-14T02:54:22.185Z",
-     "text": "message delivered, claude-windows busy"
+     "at": "2026-10-14T03:02:43.413Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G23.7",
+   "title": "deskUnsloth: file.edit replaces exact text, like cw",
+   "goal": "goal/G23",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G23"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
     },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Levant has the same rules and tools as cw (Andy, goal/G23.4: \"give him everything.\").\nA whole-file save cannot carry a file bigger than one answer, so he could not change big files.\nfile.edit replaces one exact piece of text in a file with another (like cw's Edit); it is refused when the text is not found, or found more than once unless all is asked for.\nIt keeps the same file fence as file.save: the file is on an item he has taken.\nTest: an edit in a file bigger than one answer lands, and a missing or twice-found text is refused with a reason.\n",
+   "version": 1,
+   "checks": [],
+   "chat": [
     {
      "by": "desk",
      "key": "",
-     "at": "2026-10-14T02:54:27.225Z",
+     "at": "2026-10-14T03:02:44.145Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G23.8",
+   "title": "deskUnsloth: Levant runs commands in his clone, like cw",
+   "goal": "goal/G23",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G23"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Levant has the same rules and tools as cw (Andy, goal/G23.4: \"give him everything.\").\nLevant runs a command in his clone, as cw runs one in its clone: the answer is its exit code and its output, the output cut to one answer with the cut said, and a command that runs too long is stopped and says so.\nHis clone is the checkout node 11111 runs from, so a command there can stop or break that node; cw works in a clone no node runs from.\nTest: a command's output and exit code come back; a long output is cut and says so; a command past the time limit is stopped.\n",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T03:02:44.934Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
