@@ -1,11 +1,11 @@
 {
- "change": 58664,
+ "change": 58700,
  "line": 8510,
- "goal": "goal/G17",
+ "goal": "goal/G23",
  "items": [
   {
-   "id": "goal/G17",
-   "title": "A fresh node works before it has a relay",
+   "id": "goal/G23",
+   "title": "Make Levant work",
    "goal": "",
    "status": "",
    "with": "",
@@ -13,7 +13,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G23.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -42,7 +44,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -56,17 +58,64 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "TOPIC (not for today; opened at Andy's word on 2026-10-11 so it is remembered): a node downloaded fresh, say from GitHub, is useless until it has a relay to join. Its owner cannot even play with the apps, though many would be useful with no internet and no relay.\n\nAndy, 2026-10-11, under goal/G16.8:\n- \"I'm talking about the very first relay shipped, let's say via gitHub, what happens with the user-node is: it will be useless, until there is a relay to connect to. The user wont even be able to play with the apps on it. even though they'll be useful without and internet connection or a relay connection.\"\n- \"there's no reason for a node not to generate a key on first boot.\"\n- \"What should happen is: A persisten message in shell somewhere: \\\"this would be WAY more fun if you were connected, with a link to the alpha-onboarding site....\\\"  likely \\\"noderoutes.net\\\"\"\n- \"no, make another goal, not for today, with this as a topic. that way it'll be remembered.\"\n\nFOUND by claude-windows on a brand-new node with no relay (2026-10-11, at 0005e443):\n- A fresh node does write a key at first boot, but with an empty name; the code that loads a key refuses one with no name, so the node acts as if it has none (\"this node has no key yet\") until it claims a seat on a relay.\n- It serves its page, and local verbs that need no key answer (the contacts search did); anything that needs its own key refuses.\n- Since goal/G16.8 a relay's owner is written at install from the owner's node key, so for a first relay the owner needs a usable key before any relay exists.\n\nTOPICS for the design: a usable key from first boot; what a node does well offline; the persistent shell note pointing to the onboarding site; how Natter behaves with no relay instead of holding the user on its claim screen.\n\nAND THE OWNER NODE'S PERSISTENT LIVENESS (Andy, 2026-10-11: \"add a new goal, with the bare fact, PLUS, the discussion of the owner-node persistent liveness, for which i do have a crazy idea, as well.\"): the relay is owned by a node, and that node is not always running. What the owner's node being alive, or not, means for the relay and its members is a topic for this goal. His idea for it is his to bring.\n\nDECIDED (Andy, 2026-10-11): \"one goal only: it will point toward a comprehensive rollout.\" The fresh node and the owner node liveness stay together in this goal.\n\nONE GOAL, AND IT POINTS AT THE ROLLOUT (Andy, 2026-10-11, closing the question of whether liveness should stand apart): \"one goal only: it will point toward a comprehensive rollout.\" So this goal is not a pair of facts filed together: it is where the story of shipping to somebody who has nothing yet gets worked out, and the owner node's liveness belongs in it for that reason.\n\nBEFORE ALPHA, ONE LINE OF CODE (Andy, 2026-10-11, under goal/G16.3, when told that seeding his own relay sends every downloaded node to a box he had just said is only theirs): \"before alpha we'll remove the hard-coded spirit.andyflinn.com\". So a shipped node is seeded with both today and with noderoutes.net alone at alpha; spirit is added by hand on their own machines. Recorded here because this goal is where the rollout is worked out, and the line that seeds it is ownerBadge.js (FIRST_RELAY). He also decided, same day, that noderoutes.net cannot be deleted at all: \"we'll remove the option to delete noderoutes.net\", which makes it the floor a node always keeps.",
-   "version": 5,
+   "box": "Make Levant, the deskUnsloth agent now running on Claude through Andy's Anthropic key, work at the desk like any agent.\nTopics: his answers reaching the desk (goal/G23.1).",
+   "version": 1,
    "checks": [],
-   "chat": [
+   "chat": []
+  },
+  {
+   "id": "goal/G23.1",
+   "title": "deskUnsloth: Levant takes the line before he answers it",
+   "goal": "goal/G23",
+   "status": "",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G23"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [
     {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
      "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-11T04:03:05.864Z",
-     "text": "claude-windows: this goal now holds both: the bare fact that a fresh node is useless without a relay, and the owner node persistent liveness, with your words and a place for your idea. If you want liveness as a goal of its own, say so."
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothTakesLine.js",
+     "by": "claude-windows",
+     "core": false
     }
-   ]
+   ],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Levant answered Andy under goal/G17 at 01:55 and the answer never reached the desk: deskUnsloth posted without taking Andy's line, the desk refused the post (take first), and deskUnsloth dropped the refusal without a word. A line that starts with \"Levant:\" binds him and so went through.\nBefore posting an answer under an item, Levant takes Andy's latest line there (line.take), as every agent must.\nEvery desk write deskUnsloth makes is checked: a refusal and its reason go into Levant's log, never silently dropped.\nTest: a stand-in desk that refuses chat.add until the line is taken; Levant's answer lands, and a refused post shows in his log with the desk's reason.",
+   "version": 1,
+   "checks": [],
+   "chat": []
   }
  ]
 }
