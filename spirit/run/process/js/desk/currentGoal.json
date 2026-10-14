@@ -1,5 +1,5 @@
 {
- "change": 61942,
+ "change": 62141,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -44,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -486,14 +487,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G24"
    ],
-   "blocked": [
-    "goal/G24.3"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -504,7 +504,17 @@
    "files": [
     {
      "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
      "by": "ollama agent node",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothOneAnswer.js",
+     "by": "claude-windows",
      "core": false
     }
    ],
@@ -541,9 +551,12 @@
    "id": "goal/G24.3",
    "title": "deskUnsloth: Levant is told the current goal",
    "goal": "goal/G24",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G24.2"
    ],
@@ -551,9 +564,9 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
@@ -569,13 +582,13 @@
    ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -621,6 +634,48 @@
      "key": "",
      "at": "2026-10-14T05:13:17.646Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:15:35.673Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:16:57.936Z",
+     "text": "commit dd0d540622ae64f057fad149720f50de115a8007: goal/G24.3 red: Levant is told the current goal in every call\n- spirit/test/deskUnslothCurrentGoal.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:22:13.341Z",
+     "text": "commit c42bcbf594f73df71155f32ceb8d2b0b2decf5f7: goal/G24.3: every call tells Levant the current goal, its id, title and box\n- spirit/run/process/js/deskUnsloth/deskUnsloth.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:22:14.888Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T05:22:23.246Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T05:22:26.924Z",
+     "text": "Built and pushed: every call now starts with THE CURRENT GOAL, its id, title and box, asked fresh each time; when the item belongs to another goal, that goal's box follows as THE GOAL OF THIS ITEM.\nFiles: the deskUnsloth server and the new current-goal suite (6 green); 9 more deskUnsloth suites, everyVerb and serverSurface green. Claiming done; G24.2, one answer per Levant turn, is the last; it needs your Go!."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T05:22:49.634Z",
+     "text": "deskVerify: passed, at c42bcbf5 (pulled). 1 suite ran green."
     }
    ]
   },
@@ -629,7 +684,7 @@
    "title": "deskUnsloth: tool lists follow more",
    "goal": "goal/G24",
    "status": "closed",
-   "with": "ollama agent node",
+   "with": "",
    "buttons": [
     "reopen"
    ],
@@ -701,8 +756,8 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
