@@ -1,5 +1,5 @@
 {
- "change": 62797,
+ "change": 62801,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -7,10 +7,9 @@
    "id": "goal/G23",
    "title": "Make Levant work",
    "goal": "",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [],
@@ -43,7 +42,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [],
    "live": [
     "ollama agent node"
@@ -1821,7 +1820,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
