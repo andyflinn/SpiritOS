@@ -22,6 +22,10 @@ horizontal spacing of inline elements: Items in a (button/info) row: each item c
 
 ## code
 
+### rule/13 (version 31): A node boot ends with a key and a default name
+
+No node-boot is done until the node has a key and a default name. The node makes its one permanent identity first thing at boot, the machine name as its default name, before anything else may ask for it; nothing later makes another.
+
 ### rule/11 (version 27): tests report to deskVerify
 
 tests must be written so deskVerify can judge them. 
