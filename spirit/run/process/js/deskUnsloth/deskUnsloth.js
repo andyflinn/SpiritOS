@@ -239,7 +239,10 @@ function callFor(id, changes) {
         const goalBox = got[1];
         const itemBox = got[2];
         const chat = got[3];
-        const system = [rules, PREAMBLE].filter(Boolean).join('\n\n');
+        // HIS DESK NAME (goal/G23.2): Levant took his own take of Andy's line for another agent's, because nothing told
+        // him the desk names his writes by his node's name. The name is the node's own, handed at start, never configured.
+        const nameLine = NODE_NAME ? 'At the desk your writes show as "' + NODE_NAME + '": a line, a take or an item under that name is yours.' : '';
+        const system = [rules, PREAMBLE, nameLine].filter(Boolean).join('\n\n');
         const head = [];
         if (goalBox) head.push('THE GOAL\n' + goalBox);
         if (itemBox) head.push('THE ITEM ' + id + '\n' + itemBox);
