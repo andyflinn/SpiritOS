@@ -1210,15 +1210,36 @@ function linesOf(answer) {
   return safe.length ? safe : [PERSONA + ': (nothing to say)'];
 }
 
+// EVERY DESK WRITE IS CHECKED (goal/G23.1). Levant's answer to Andy under goal/G17 vanished: posted without a take,
+// the desk's refusal dropped. A refusal comes back as an answer, {ok: false, code, error, extra: {why}}, so it is
+// read here, in one place, and goes into his log with the desk's reason; it is never thrown past answerItem, so
+// Levant stays free for the next job.
+function deskWrite(from, verb, args) {
+  return desk(verb, args).then(function (b) {
+    if (b && b.ok === false) {
+      const why = (b.extra && b.extra.why) || b.error || b.code || 'no reason given';
+      say('the desk refused ' + verb + ' for ' + from + ': ' + why);
+      note(from, 'error', 'the desk refused ' + verb + ': ' + why);
+    }
+    return b;
+  }, function (e) {
+    note(from, 'error', 'the desk could not be asked ' + verb + ': ' + String((e && e.message) || e));
+    return { ok: false, error: String((e && e.message) || e) };
+  });
+}
+
 function post(id, text) {
   // An answer that comes back after a disconnect is said here and nowhere else (goal/G18.9).
   if (!connected) { say('disconnected: the answer for ' + id + ' is not posted'); return Promise.resolve({ dropped: true }); }
-  return desk('chat.add', { id: id, text: text });
+  return deskWrite(id, 'chat.add', { id: id, text: text });
 }
+// TAKE BEFORE ANSWERING (goal/G23.1): every agent takes Andy's latest line under an item before it answers there
+// (Andy, 2026-10-12: "no agent should answer without taking"). A refused take is logged and the post goes on: there
+// may be no line of his to take, and then the desk decides on the post.
 function postAll(id, texts) {
   return texts.reduce(function (chain, text) {
     return chain.then(function () { return post(id, text); });
-  }, Promise.resolve());
+  }, connected ? deskWrite(id, 'line.take', { id: id }) : Promise.resolve());
 }
 
 // AN ANSWER THAT FAILS OR IS ABORTED POSTS NOTHING, AND FREES LEVANT AT ONCE (goal/G19.7): it is said, logged,
@@ -1296,7 +1317,7 @@ function setConnected(on) {
     waiting.length = 0;
     publishState();
     say(PERSONA + ' leaves the desk: signing off');
-    return desk('signoff', {}).then(function () { return { connected: false }; }, function (e) {
+    return deskWrite('switch', 'signoff', {}).then(function () { return { connected: false }; }, function (e) {
       say('the signoff could not be said: ' + e.message);
       return { connected: false };
     });
