@@ -2090,8 +2090,9 @@ contactBook.syncMarks(ROOT_DIR);
     // `relay.roster` STOOD HERE — the public roll of a relay this node
     // is not on, "what a partnership makes visible". Deleted 2026-09-17
     // with the only screen that drew it; see the tombstone in hub.js.
-    // relay.status is gone: a list is a search (puppets/G2). One probe
-    // serves a search and the gets that follow it (hub.js, PROBE_FRESH_MS).
+    // relay.status is gone: a list is a search (puppets/G2). Both answer
+    // from what the node and its peerPost already hold, with no call to
+    // any relay (Andy's decision, goal/G22.4; hub.js relaySummary).
     'relay.search': { request: { q: '', name: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, mustPick: false, name: '' }, handler: proxyVerb(function (b) { return hub.relaySearch(b, { router: peerRouter }); }) },
     'relay.get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { router: peerRouter }); }) },
     // ONE RELAY OFF THIS NODE'S OWN LIST (goal/G16.3), keyed by the url

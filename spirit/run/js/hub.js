@@ -126,8 +126,13 @@ const packet = require('./client/packet');
 //
 // Re-exported below, unchanged, so every existing caller is untouched.
 const wire = require('./relayRequest');
-const assertRelayUrl = wire.assertRelayUrl;
 const relayRequest = wire.relayRequest;
+// THE ADDRESS CHECK IS NOT THE RELAY LIBRARY. Andy's decision (goal/G22.4):
+// "The relay address check (assertRelayUrl) moves out of relayRequest.js
+// into a module of its own, since it sends nothing; the relay library then
+// means only traffic on the wire." The hub checks an address before it
+// hands a claim or a contact to peerPost, and sends nothing itself.
+const assertRelayUrl = require('./relayUrl').assertRelayUrl;
 
 // signedClaim AND sealedClaim STOOD HERE: the claim's body, sealed to the
 // cipher key this node fetched from the relay's public key route, for the
@@ -945,13 +950,12 @@ function createHub(rootDir) {
             // A SEAT HELD IS A RELAY USED (goal/G16.3): a new seat, or a 409
             // that is this node's own key already sitting there, which is
             // the answer Natter also reads as success. Either way the relay
-            // goes on the node's own list, and the probe cache is dropped so
-            // the next relay.search sees it.
+            // goes on the node's own list, which the next relay.search reads.
             var mineAlready = false;
             try { mineAlready = r.status === 409 && !!JSON.parse(marked).mine; }
             catch (e) { mineAlready = false; }
             if ((r.status >= 200 && r.status < 300) || mineAlready) {
-              try { ownerBadge.addRelay(rootDir, url, '', learnedKey); probeCache = null; }
+              try { ownerBadge.addRelay(rootDir, url, '', learnedKey); }
               catch (e) { /* the claim stands; the list is written on the next claim */ }
               // The seat is held again, so a refusal recorded on this relay's
               // row no longer stands: the new invite brought it back (goal/G19.1).
@@ -2572,23 +2576,67 @@ function createHub(rootDir) {
   //   member, offline'", and relay.get {url} answering one relay's full
   //   status.
   //
-  // relay.status answered every relay whole. The probe it ran asks every
-  // relay on this node's own list (relay-state/relays.json, goal/G16.3)
-  // for its key; a search and the handful of gets a
-  // screen then makes share ONE probe, kept for PROBE_FRESH_MS, so a page
-  // painting three relays does not probe each of them four times.
-  var PROBE_FRESH_MS = 3000;
-  var probeCache = null;
-  // THE KEY ASK GOES THROUGH peerPost (goal/G22.6: GET /api/relay/key is
-  // closed, and "the hub asks peerPost for a relay's key"). Making the
-  // relay list a search with no call to a relay at all is goal/G22.4's.
+  // ── THE LIST ASKS NO RELAY (goal/G22.4) ─────────────────────────────
+  //
+  // Andy's decision: "The relay list (relay.get, relay.search) is a search
+  // over the relays peerPost already knows, from its streams, with no call
+  // to any relay. A relay peerPost has never met shows as not joined." And
+  // peerPost owns every contact with a relay; the hub never touches one.
+  //
+  // It asked every listed relay for its card on each search (the probe,
+  // through peerPost.relayKey, cached 3 s). Now each row is built from
+  // what this node already holds, and nothing is fetched:
+  //
+  //   the row, its label, a refusal   the node's list (relayKeys.listed, node.db)
+  //   online (status 200)             peerPost holds a stream to it (router.relaysHeld)
+  //   owned                           it sent this node the report a relay sends
+  //                                   only to its owner's key, which it does the
+  //                                   moment the owner's stream opens (router.relayStatus)
+  //   claimed                         owned, or a seat recorded at claim (relayKeys)
+  //   roll.relayKey                   the key pinned for it (relayKeys.pinned)
+  //   roll.myLabel, claimedLabel      the seat label recorded at claim
+  //   roll.ownerKey, roll.owner       this node's key and seat label when owned
+  //
+  // What only the relay's card said is not known here and is left empty,
+  // never fetched: the relay's own label (roll.relayLabel), and who owns a
+  // relay this node does not own (roll.ownerKey, roll.owner). Every reader
+  // already falls back on the list's label for the first.
   function relaySummary(router) {
-    if (probeCache && Date.now() - probeCache.at < PROBE_FRESH_MS) return probeCache.promise;
     var me = auth.loadIdentity(rootDir);
-    var p = ownerBadge.probe(rootDir, relayKeyAsk(router), me.publicKey);
-    probeCache = { at: Date.now(), promise: p };
-    p.catch(function () { if (probeCache && probeCache.promise === p) probeCache = null; });
-    return p;
+    var held = Object.create(null);
+    var reports = {};
+    if (router && typeof router.relaysHeld === 'function') {
+      router.relaysHeld().forEach(function (u) { held[ownerBadge.normalizeUrl(u)] = true; });
+    }
+    if (router && typeof router.relayStatus === 'function') reports = router.relayStatus() || {};
+    var seated = Object.create(null);
+    relayKeys.seatedUrls(rootDir).forEach(function (u) { seated[ownerBadge.normalizeUrl(u)] = true; });
+    var rows = ownerBadge.loadRelays(rootDir).map(function (relay) {
+      var url = relay.url;
+      var row = { url: url, label: relay.label, status: held[url] ? 200 : 0, owned: !!reports[url] };
+      row.claimed = row.owned || !!seated[url];
+      // A relay that refused this node holds no seat for it (goal/G19.1).
+      if (relay.refused) {
+        row.refused = relay.refused;
+        row.claimed = false;
+        row.owned = false;
+      }
+      if (row.claimed) {
+        var seatLabel = relayKeys.seatLabel(rootDir, url);
+        row.roll = {
+          owner: row.owned ? seatLabel : '',
+          ownerKey: row.owned ? me.publicKey : '',
+          relayKey: relayKeys.pinned(rootDir, url),
+          relayLabel: '',
+          myLabel: seatLabel,
+        };
+        row.claimedLabel = seatLabel;
+      } else {
+        row.error = 'no row here';
+      }
+      return row;
+    });
+    return Promise.resolve(ownerBadge.summarize(rows));
   }
   function relayLabel(row) {
     var who = row.refused ? 'refused this node' : (row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined'));
@@ -2654,7 +2702,6 @@ function createHub(rootDir) {
   function relayRemove(body) {
     var out = ownerBadge.removeRelay(rootDir, String((body && body.key) || ''));
     if (out.ok) {
-      probeCache = null;
       try { relayKeys.unseat(rootDir, out.key); }
       catch (e) { /* the relay is off the list; a seat left on disk is never probed */ }
     }

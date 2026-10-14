@@ -45,7 +45,7 @@ function normalizeUrl(u) {
 //
 // ── PUBLIC, AND WHY "WORKING" IS NOT PART OF THIS ────────────────────
 //
-// Public is a property of the URL and the same one hub.assertRelayUrl
+// Public is a property of the URL and the same one relayUrl.assertRelayUrl
 // already enforces on the wire: https, or http only to loopback. A
 // loopback relay is a lab fixture — no peer on the internet can reach
 // you there, so it is not what keeps a node alive.

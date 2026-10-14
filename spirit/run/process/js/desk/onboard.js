@@ -80,10 +80,9 @@ async function main() {
     const claim = await ask('relay.claim', { url: url, name: name, invite: token, inviteLabel: name });
     if (claim.status >= 200 && claim.status < 300) say('seat claimed on ' + url + ' as ' + name);
     else {
-      // relay.get answers from the node's relay probe, cached 3 s (hub.js PROBE_FRESH_MS): a run right after the
-      // first still reads "not joined", and its claim is refused because the invite is spent. Asked again past the
-      // cache, a seat this node already holds shows, and the run goes on (found by wsl-claude).
-      await sleep(3500);
+      // A refused claim may still leave a seat this node holds (its invite spent by an earlier run): asked once
+      // more, that seat shows and the run goes on (found by wsl-claude). relay.get reads the node's own records
+      // with no cache since goal/G22.4, so no wait comes first.
       const again = await ask('relay.get', { key: url });
       const now = (ok(again) && again.body.relay) || {};
       if (!(now.claimed || now.owned)) end(1, 'onboard: the relay refused the invite: ' + claim.status + ' ' + claim.text);

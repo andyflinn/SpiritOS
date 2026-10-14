@@ -25,16 +25,19 @@
 // URL and a path, with no state, no identity and no opinion about who is
 // calling — which is exactly why it could move without a caller noticing.
 //
-// ── WHAT IT REFUSES, AND THAT IS THE POINT OF assertRelayUrl ─────────
+// ── WHAT IT REFUSES: relayUrl.js's assertRelayUrl ────────────────────
 //
-// https, or http to loopback. A public relay reached over plain http is a
-// signature read by every hop in between, and the loopback exception
-// exists for lab relays on one machine where there are no hops.
+// https, or http to loopback, checked before any socket opens. The check
+// itself lives in relayUrl.js: Andy's decision (goal/G22.4), "the relay
+// address check (assertRelayUrl) moves out of relayRequest.js into a
+// module of its own, since it sends nothing; the relay library then means
+// only traffic on the wire." This file exports transport and nothing else.
 
 const http = require('http');
 const https = require('https');
 const spirit = require('./kernel.js');
 const limits = require('./limits.js');
+const assertRelayUrl = require('./relayUrl.js').assertRelayUrl;
 
 // ── WHAT THE ANSWER MAY COST, AND HOW LONG IT MAY TAKE (goal/G16.6) ──
 //
@@ -62,19 +65,8 @@ const limits = require('./limits.js');
 // suites fetch a local node's page through this same function.
 const RELAY_ANSWER_DEADLINE_MS = 30000;
 
-function isLoopbackHost(hostname) {
-  var h = String(hostname || '').toLowerCase();
-  return h === 'localhost' || h === '127.0.0.1' || h === '::1';
-}
-
-function assertRelayUrl(relayUrl) {
-  var target;
-  try { target = new URL(relayUrl); }
-  catch (e) { throw new Error('bad relay url'); }
-  if (target.protocol === 'https:') return target;
-  if (target.protocol === 'http:' && isLoopbackHost(target.hostname)) return target;
-  throw new Error('relay url must be https (loopback http is allowed for lab relays)');
-}
+// isLoopbackHost and assertRelayUrl STOOD HERE; they are relayUrl.js's
+// (goal/G22.4, Andy's decision quoted at the top of this file).
 
 // Answers `{ status, text }` — never throws on a status, because a refusal
 // is an answer and the caller decides what it means. It rejects only when
@@ -214,6 +206,4 @@ module.exports = {
   pipeRequest: pipeRequest,
   relayRequest: relayRequest,
   RELAY_ANSWER_DEADLINE_MS: RELAY_ANSWER_DEADLINE_MS,
-  assertRelayUrl: assertRelayUrl,
-  isLoopbackHost: isLoopbackHost,
 };
