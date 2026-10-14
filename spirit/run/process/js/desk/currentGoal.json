@@ -1,5 +1,5 @@
 {
- "change": 60369,
+ "change": 61058,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -44,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 8,
    "excluded": [
     "ollama agent node"
    ],
@@ -153,6 +154,30 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-14T03:58:18.694Z",
      "text": "cw: on the failed pull Levant saw: your tree is at 2580acda, the G24.1 commit, one desk commit (currentGoal.json) behind origin, so the green run covered the code. The \"multiple branches\" pull error is the doubled master line in git's fetch record seen before; a fresh fetch, just done, healed it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:10:43.717Z",
+     "text": "cw: G24.8 and G24.9 are duplicates that Levant added 7 seconds after mine, with his new item.add (the same \"Add them\" of yours, read as meant for him too): G24.8 repeats G24.6, G24.9 repeats G24.7, and G24.8 now also blocks G24.5. They have no box.\nDeleting is yours alone: delete G24.8 and G24.9 and the chain is clean again. All six real ones have Code; G24.7 needs your Go! to start."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:11:11.180Z",
+     "text": "cw: taking G24.7, the dialog. Note your Code and Go also went to G24.9, Levant's duplicate of it: if he takes G24.9 we build the same thing twice. Delete G24.8 and G24.9 when you can."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:13:05.438Z",
+     "text": "cw: Delete is offered only while the goal is in design mode. Start design on G24, delete G24.8 and G24.9, then end design; I hold G24.7's red meanwhile and only write its test locally, so nothing is lost."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:13:23.695Z",
+     "text": "cw: G24.9 is now \"Add a Delete Button in Item Details\", with an empty box. Today Delete appears only while the goal is in design mode; should it be offered always, or only before Go, or by another rule?"
     }
    ]
   },
@@ -654,14 +679,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G24.5"
    ],
-   "blocked": [
-    "goal/G24.7"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -695,9 +719,12 @@
    "id": "goal/G24.7",
    "title": "Desk: the item dialog follows the item it is opened on",
    "goal": "goal/G24",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G24.6"
    ],
@@ -705,20 +732,15 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
-     "path": "spirit/run/shell/desk/desk.js",
+     "path": "spirit/run/js/client/shell.js",
      "by": "claude-windows",
-     "core": false
-    },
-    {
-     "path": "spirit/run/shell/deskDetails/deskDetails.js",
-     "by": "claude-windows",
-     "core": false
+     "core": true
     },
     {
      "path": "spirit/test/deskDialogFollowsItem.js",
@@ -728,13 +750,13 @@
    ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -773,13 +795,83 @@
    "full": false,
    "box": "The item dialog shows the item it is opened on, its buttons press that item, and a change to that item redraws it, with no refresh by Andy.\nSeen 2026-10-14: Code pressed twice in the goal/G23.2 dialog went to goal/G23.1, which reset its phase to red although deskVerify had passed it; since then Andy refreshes before every press.\ndeskDetails.js keeps one set of module state for the open item (ddId, ddFacts); the shell's dialog reuse is not yet read, so the cause is open until the red test shows it.\nTest: open one item's dialog, then another's; every press and every redraw goes to the item now open, never the one before.\n",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-14T04:32:40.622Z"
+    }
+   ],
    "chat": [
     {
      "by": "desk",
      "key": "",
      "at": "2026-10-14T04:10:38.065Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:17:18.886Z",
+     "text": "commit b03776758b332d21d5c5ebce6ff263f90c72185f: goal/G24.7 red: the item dialog follows the item it is opened on, also after the page stream comes back\n- spirit/test/deskDialogFollowsItem.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:17:29.277Z",
+     "text": "Found it, and it is the shell, not the dialog: when your node restarts and the page stream comes back, the shell re-declares every app and drops its open function, so the next dialog you open is the old one, unchanged, with the old item's facts, Code mark and id. Your two Code presses in the G23.2 dialog went to G23.1 exactly that way, and a refresh brings open back.\nRed is in (b0377675): 9 owed checks fail in that sequence. The fix is one line in shell.js, keeping open when an app is re-declared; it mends every dialog app, not only Desk's.\nshell.js is a core file: it needs your grant (G1), and the build needs your waive while Levant counts as an agent."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:22:49.445Z",
+     "text": "Built in my clone, waiting only on your grant G1 for shell.js: the shell keeps open when it re-declares an app, five lines in declareDynamicApp. The dialog suite goes from 9 failing to 22 green, and 38 more suites that load the shell are green (oneDecoder keeps its one old G16.5 failure, unrelated).\nTwo more things the shell drops the same way, not built, yours to add if wanted: an app's titlebar mark, and a dialog's result when a reconnect happens while it is open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:37:07.780Z",
+     "text": "Granted a while back....."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:38:01.629Z",
+     "text": "commit 6503c0a636842fad954fa5cb023752349f4ebf65: goal/G24.7: the shell keeps an app's open when it re-declares it after a reconnect, so the item dialog follows the item it is opened on\n- spirit/run/js/client/shell.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T04:38:03.815Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T04:38:09.734Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:38:21.173Z",
+     "text": "Sorry, your grant did not wake me: my ear dropped every check.set line, yours included. Fixed now: it keeps your check.set and item.add lines.\nBuilt and pushed (6503c0a6): the shell keeps an app's open when it re-declares it after a reconnect, so a dialog opens on the item you chose. Files: the shell (G1) and the new dialog suite, 22 green; 38 suites that load the shell green. Claiming done; G24.6 next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:38:31.116Z",
+     "text": "deskVerify: passed, at 6503c0a6 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:38:48.347Z",
+     "text": "deskVerify passed G24.7; it waits for your Done. G24.6, the List taking new items, is next and needs your Go!."
     }
    ]
   },
@@ -827,7 +919,7 @@
   },
   {
    "id": "goal/G24.9",
-   "title": "Desk: the item dialog follows its item",
+   "title": "Add a Delete Button in Item Details.",
    "goal": "goal/G24",
    "status": "running",
    "with": "",
@@ -843,7 +935,18 @@
    "boxTaken": "",
    "limbo": true,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskDeleteOutsideDesign.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
    "phase": "red",
@@ -883,19 +986,142 @@
      "version": 6
     }
    ],
-   "names": {},
+   "names": {
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
+   "box": "Andy can delete an item that no longer serves him from its item details, without switching the goal into design mode.\nDelete is offered on any item that is not a goal, whatever the goal's design mode, except while an agent holds a phase on it (red, build or verify), and except on an item claimed done and not yet closed.\nThe button and the verb share one rule: buttons() in desk.js offers delete, and item.delete is refused exactly when the button is not offered.\nDelete erases nothing, as goal/G9.7 ruled: the item is closed and left out, keeps its box, checks and chat, blocks nothing, and Include Closed finds it.\nThe armed Delete button in the item details exists already (Delete, then Delete: sure?); only the server's rule changes.\nTest: an item of a goal not in design mode offers delete and is deleted; an item with a phase held, and an item claimed done, offer no delete and item.delete is refused; a goal never offers delete.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should Delete also be offered on an item that is done (claimed done, not yet closed), or only on items with no phase held?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-14T04:31:24.168Z",
+     "placedBy": "ollama agent node",
+     "placedKey": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0="
+    }
+   ],
    "chat": [
     {
      "by": "desk",
      "key": "",
      "at": "2026-10-14T04:10:32.872Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:12:46.528Z",
+     "text": "i have no delete option for this item"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:15:13.149Z",
+     "text": "Levant, fill this box please, what will it take to let the user delete items that no longer serve him?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:17:14.184Z",
+     "text": "Levant, fill this box please, what will it take to let the user delete items that no longer serve him?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:19:27.605Z",
+     "text": "l done! first time?\n\ncw. can you review this when you have time?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:20:27.687Z",
+     "text": "Reviewed Levant's box against the code: every citation holds (the design-mode rule at desk.js:1206, item.delete closing and leaving out at :929, the verb refused by the same rule), and Andy's G9.7 words are quoted right.\nOne correction: the button already exists, armed, in the item details (deskDetails.js:158-163, Delete then Delete: sure?), so point 4 is done and the build is only the server rule in buttons(); the title could say \"Delete offered outside design mode\".\nOne gap for you to rule: should Delete be offered on an item someone is working on (a phase held, commits on record) or a done one? I would offer it only before Go or on an item with no phase held."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:21:32.060Z",
+     "text": "no. if a phase is held, no delete...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:21:41.057Z",
+     "text": "cap accordingly"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:22:10.583Z",
+     "text": "taking the cap"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:23:19.117Z",
+     "text": "Levant: not taking this one's reds?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:24:32.949Z",
+     "text": "Levant: usually you must place red questions on the item, this will block the item until the question is reviewed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:27:32.725Z",
+     "text": "aren't there verbs for putting blocking red questions on the item (not in the box)?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:28:08.812Z",
+     "text": "Yes: check.add with kind Q puts a blocking red question on the item, and I should have used it for the delete question instead of a chat line; my slip. You have answered it (no delete while a phase is held) and it is in the box, so nothing is left open here. The next open question I owe you goes on its item as a red Q."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:28:47.689Z",
+     "text": "so the purpose of that one was nod clear from the tool descriptions."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:29:09.510Z",
+     "text": "Agreed: check.add's description says it, but buried in one long sentence that starts with \"Put a check\", so an agent reading the tool list never sees \"ask Andy a blocking question\".\nI would rewrite it to lead with that, one short line per kind (Q a blocking question for Andy, T a test file, G a core-file grant), and fold it into G24.5, which already touches how verbs are listed. Fold it there?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T04:30:35.536Z",
+     "text": "Levant: I was wrong earlier to say no red question was needed. The desk had none on this item, so I have put one now (Q, blocking) on the one point the box does not rule: delete on a done item. Box v2 holds your ruling on held phases."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:31:02.569Z",
+     "text": "Q1: Should Delete also be offered on an item that is done (claimed done, not yet closed), or only on items with no phase held?\n\nno."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T04:31:24.897Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:31:29.225Z",
+     "text": "In the box: no Delete on an item claimed done and not yet closed. Q1 passed."
     }
    ]
   }
