@@ -1,5 +1,5 @@
 {
- "change": 61063,
+ "change": 61476,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -44,15 +44,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
-   "excluded": [
+   "waiting": 7,
+   "excluded": [],
+   "live": [
+    "claude-windows",
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows"
-   ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "ollama agent node"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -639,7 +639,6 @@
     "goal/G24.4"
    ],
    "blocked": [
-    "goal/G24.6",
     "goal/G24.8"
    ],
    "go": false,
@@ -649,7 +648,18 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/introSpector.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/deskVerbListingSlash.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
    "phase": "",
@@ -668,16 +678,36 @@
    "full": false,
    "box": "The desk's verb listing keeps every verb that has a description file.\nintroSpector.js lists the family with the search query \"*\", and a single \"*\" never spans a \"/\", so a verb whose description holds a \"/\" is left out silently; item.get (\"goal/G14.7, rule/3\") has never been listed, and Levant never had desk_item_get.\nThe fix is in introSpector.js, common code: the query that spans everything, \"**\", as log.search already uses.\nTest: a verb file whose description holds a \"/\" is listed by AGENTS.introspect, and item.get is offered to Levant.\n",
    "version": 1,
-   "checks": [],
-   "chat": []
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/introSpector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-14T04:50:59.390Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:52:07.505Z",
+     "text": "go!"
+    }
+   ]
   },
   {
    "id": "goal/G24.6",
    "title": "Desk: the List takes new items from the stream",
    "goal": "goal/G24",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G24.5"
    ],
@@ -685,20 +715,36 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskList.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskListTakesAdditions.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -735,15 +781,81 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The List (the table of items) takes additions from the stream: an item added, by Andy or an agent, appears in its place; a changed item's row is replaced; a closed one follows the include-closed toggle.\nToday a published change for an item the List does not hold makes it ask items.search again (deskOnPublished in desk.js), a pull, against Andy's \"no pulling\".\nThe row is drawn from what the publish carries, in the order the server gives.\nTest: a published new item appears as a row with no items.search asked; a published change replaces its row.\n",
-   "version": 1,
-   "checks": [],
+   "box": "The List (the table of items) takes additions from the stream: an item added, by Andy or an agent, appears in its place; a changed item's row is replaced; a closed one follows the include-closed toggle.\nToday a published change for an item the List does not hold makes it ask items.search again (deskOnPublished in desk.js), a pull, against Andy's \"no pulling\".\nThe row is drawn from what the publish carries, in the order the server gives.\nTest: a published new item appears as a row with no items.search asked; a published change replaces its row.\nWhile text is in the List's search box, a new item makes the List ask items.search again, in that case only: the server ranks rows by a score the publish does not carry.\n",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "While text is in the List search box the server ranks rows by a score the publish does not carry: may the List ask items.search again in that case only?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-14T04:49:04.276Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "desk",
      "key": "",
      "at": "2026-10-14T04:39:31.547Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:42:53.545Z",
+     "text": "commit 7eabb06f1153eca7640be12ec2a3038e9f66e2c7: goal/G24.6 red: the List takes additions from the stream, no pull\n- spirit/test/deskListTakesAdditions.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:42:57.568Z",
+     "text": "Red is in: 6 owed checks fail. Two causes in the List: a new item from the stream makes it ask items.search again instead of drawing the row it was sent (the server's publish carries the whole row and its place), and with Include Closed on a closed row is removed instead of shown closed.\nOne case the publish cannot place: a new row while text is in the search box, where order is the server's ranking; that is the red Q1."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:48:18.200Z",
+     "text": "Q1: While text is in the List search box the server ranks rows by a score the publish does not carry: may the List ask items.search again in that case only?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:49:05.969Z",
+     "text": "In the box; Q1 passed. That is how it is being built: with an empty search box the List draws the new row from the stream, with text in it the List asks again. The build is running its suites now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:50:15.426Z",
+     "text": "commit 1712394ca2e8f6f5270b3b8b7d609dd47825004f: goal/G24.6: the List draws a new item from the stream instead of asking again; a closed row stays, drawn closed, with Include Closed on\n- spirit/run/shell/desk/desk.js\n- spirit/test/deskList.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T04:50:17.757Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T04:50:22.297Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T04:50:26.743Z",
+     "text": "Built and pushed: the List draws a new item straight from the stream (empty search box), asks again only while text is in the search box (your Q1), and keeps a closed row, drawn closed, while Include Closed is on.\nFiles: the Desk face and the new list-additions suite (14 green), plus the old list suite rewritten where it asserted the ask-again (22 green); all 60 suites that load the Desk face green. Claiming done; G24.5 next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:51:47.929Z",
+     "text": "deskVerify: passed, at 1712394c (pulled). 2 suites ran green."
     }
    ]
   },
@@ -1153,6 +1265,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-14T04:31:29.225Z",
      "text": "In the box: no Delete on an item claimed done and not yet closed. Q1 passed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T04:43:49.838Z",
+     "text": "Levant? are you there?"
     }
    ]
   }
