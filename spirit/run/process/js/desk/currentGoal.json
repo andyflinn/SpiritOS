@@ -1,5 +1,5 @@
 {
- "change": 62780,
+ "change": 62783,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G23.8"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1725,10 +1723,11 @@
    "id": "goal/G23.8",
    "title": "deskUnsloth: Levant runs commands in his clone, like cw",
    "goal": "goal/G23",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G23"
@@ -1810,7 +1809,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Levant has the same rules and tools as cw (Andy, goal/G23.4: \"give him everything.\").\nLevant runs a command in his clone, as cw runs one in its clone: the answer is its exit code and its output, the output cut to one answer with the cut said, and a command that runs too long is stopped and says so.\nHis clone is the checkout node 11111 runs from, so a command there can stop or break that node; cw works in a clone no node runs from.\nTest: a command's output and exit code come back; a long output is cut and says so; a command past the time limit is stopped.\nA process answers a verb within 12 seconds (appClient's door), and a test run takes minutes, so a command is a job: command.run answers its result at once when the command ends within about 10 seconds, and otherwise answers its id, still running; command.result with that id answers the same result once it is done, still running until then. The time limit (default 120 s, at most 600 s, like cw) runs on the command, not on the answer.\n",
