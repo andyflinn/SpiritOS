@@ -1,0 +1,9 @@
+{
+  "description": "Replace one exact piece of text in a file of your clone, by its repository path, with another: for a file of any size, where a whole-file save cannot carry it. old is the exact text to find (no regular expression), new its replacement; all false replaces exactly one and is refused when old is found more than once (give more of the text to make it unique), all true replaces every one. Refused when old is not found. Only a file on the list of an item you have taken (item.files.add first). The answer is {path, replaced}.",
+  "request": {
+    "path": "",
+    "old": "",
+    "new": "",
+    "all": false
+  }
+}

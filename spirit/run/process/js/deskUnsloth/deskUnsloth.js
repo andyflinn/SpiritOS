@@ -1192,6 +1192,31 @@ function fileSave(p, content) {
     return { path: at.rel, bytes: bytes(content) };
   });
 }
+// ONE EXACT PIECE REPLACED (goal/G23.7), like cw's Edit: a whole-file save cannot carry a file bigger than one answer,
+// so he could not change big files. Andy: "give him everything." The same fence as file.save; old is matched as bytes,
+// exactly (no regular expression), refused when absent or, unless all, found more than once; every other byte of the
+// file stays as it was.
+function fileEdit(p, oldText, newText, all) {
+  const at = insideClone(p);
+  if (!String(oldText || '')) return Promise.reject(refused('old is empty: name the exact text to replace'));
+  return fenced(at.rel).then(function () {
+    let body = null;
+    try { body = fs.readFileSync(at.full); } catch (e) { throw refused('no such file: ' + at.rel); }
+    const from = Buffer.from(String(oldText), 'utf8');
+    const to = Buffer.from(String(newText || ''), 'utf8');
+    const at0 = [];
+    for (let i = body.indexOf(from); i !== -1; i = body.indexOf(from, i + from.length)) at0.push(i);
+    const said = String(oldText).length > 80 ? String(oldText).slice(0, 80) + '...' : String(oldText);
+    if (!at0.length) throw refused('the text ' + JSON.stringify(said) + ' is not found in ' + at.rel);
+    if (at0.length > 1 && all !== true) throw refused('the text ' + JSON.stringify(said) + ' is found ' + at0.length + ' times in ' + at.rel + ': give more of it to make it unique, or all true');
+    const parts = [];
+    let last = 0;
+    at0.forEach(function (i) { parts.push(body.subarray(last, i), to); last = i + from.length; });
+    parts.push(body.subarray(last));
+    fs.writeFileSync(at.full, Buffer.concat(parts));
+    return { path: at.rel, replaced: at0.length };
+  });
+}
 // git in the clone, awaited, never blocking this process: its own pipe keeps answering while a hook runs.
 function gitIn(args) {
   return new Promise(function (resolve) {
@@ -1565,6 +1590,11 @@ appServer.serve({
   'file.search': {
     request: { pattern: '', text: '', path: '' }, reply: { cut: true }, // and files or matches beside it
     handler: function (a) { return fileSearch(String(a.pattern || ''), String(a.text || ''), String(a.path || '')); },
+  },
+  // goal/G23.7: one exact piece replaced; it writes, so it is no read off the desk.
+  'file.edit': {
+    request: { path: '', old: '', new: '', all: false }, reply: { path: '', replaced: 0 },
+    handler: function (a) { return fileEdit(a.path, a.old, a.new, a.all === true); },
   },
   'file.save': {
     request: { path: '', content: '' }, reply: { path: '', bytes: 0 },
