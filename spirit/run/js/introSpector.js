@@ -114,7 +114,9 @@ function family(dir, opts) {
     request: {}, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function () {
       const bucket = require('./searchBucket').createSearch({
-        query: '*', maxBytes: room() - 512,
+        // '**', AS log.search ASKS (goal/G24.5): a single '*' never spans a "/", so a verb whose description held one
+        // was dropped silently; item.get, config.searchModules and relay.search were never listed.
+        query: '**', maxBytes: room() - 512,
         getLabelStringFromIncomingObject: function (pair) { return pair.label; },
         extractKeyAndLabelFromRow: function (pair) { return pair; },
       });
