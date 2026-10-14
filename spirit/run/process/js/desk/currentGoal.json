@@ -1,5 +1,5 @@
 {
- "change": 62964,
+ "change": 63005,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -14,9 +14,9 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G27.1",
     "goal/G27.2",
-    "goal/G27.3"
+    "goal/G27.3",
+    "goal/G27.5"
    ],
    "go": false,
    "alone": false,
@@ -157,6 +157,18 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T15:48:58.153Z",
      "text": "Levant: Created **goal/G27.4** \"fixes to the desk-plugin architecture\" under G27, with Andy's ruling written into its box verbatim.\n\nThe ruling: goals tied to a desk-plugin stay always open and never offer a Done or Close button. The item is nothing but a box for now. Nothing is built, and it needs Andy's Go and a file grant before any work starts."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:53:51.424Z",
+     "text": "add new item: Blocking/Blocked by relation ships in desk"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:55:15.387Z",
+     "text": "Levant: Created **goal/G27.5** \"Blocking/Blocked by relationships in desk\" under goal/G27, and wrote Andy's words into its box verbatim.\n\nNothing is built. The item needs his Go and a file grant before any work starts."
     }
    ]
   },
@@ -164,11 +176,10 @@
    "id": "goal/G27.1",
    "title": "Desk list: new items and row clicks",
    "goal": "goal/G27",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -476,6 +487,104 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T15:52:41.022Z",
      "text": "Read in desk.js: the Apps tab is permanent. PLUGIN_GOAL is set at mount (~l.1957), and the shell builds one app tab per goal row carrying a plugin field (shell ~l.628-654). Nothing in the code removes it."
+    }
+   ]
+  },
+  {
+   "id": "goal/G27.5",
+   "title": "Blocking/Blocked by relationships in desk",
+   "goal": "goal/G27",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Blocking/Blocked by relation ships in desk\n\nAndy's words (verbatim): \"add new item: Blocking/Blocked by relation ships in desk\"\n\n- a verb must be required to set up blocking relation ships. something like blocks(A,B) will set up the blocking relationship.\n- this verb must be used at item creation time.\n- a complementing verb \"unblock\" must exist unblock(A,B) that unlinks any blockage between the items A and B\n- the verb will first check, if the asked for relationship will create a circular dependency, the request is instantly rejected (\"error: circular blocking was asked\")\n- after any transaction, add item, close item, block, unblock a blockageCompiler must be triggered, which ensures that no implicit blocks are stated, only explicit ones, that auto-design implementation sequencing for the goal.\n- blocks must be maintainable by the user, the block bubble in deskDetails will become foldable and contain a UI to maintain blocking relationships for that current item.\n\nRulings (Andy, verbatim):\n1. an item created will block by default the item it was created from, if that item is unknown, it must attempt to block the goal, no user intervention required. the \"compiler will be triggered and make sure blocking is coherent within the goal.\n2. the blockageCompiler is a desk-internal function, triggered by block/unblock requests, item deletions, (additions we already covered)\n3. thanks for correcting my spelling when immortalizing my lines in a box.\n4. yes wen no other blockages are stated or found an item blocks the goal explicitly.\n\nLevant's note: the circular-check error string was corrected from \"curcular\" to \"circular\" per ruling 3.\n",
+   "version": 4,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T15:56:11.237Z",
+     "text": "does the desk have a verb that creates a blocking relationship between items?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T15:56:48.481Z",
+     "text": "Levant: Not for existing items. desk_item_add creates a new item under a goal and sets what it blocks (the \"blocks\" field), so a blocking link can be made only at creation."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T16:08:39.587Z",
+     "text": "does my diatribe in the box make a little bit of sense?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T16:09:02.964Z",
+     "text": "Levant: Yes, the core makes sense, but the box has three gaps to settle before anyone builds it.\n\nGaps in the box:\n1. \"must be used at item creation time\" conflicts with \"blocks must be maintainable by the user\". Does `blocks(A,B)` also work on existing items, or only at creation?\n2. \"blockageCompiler\" is undefined. Should it be a verb, or an internal pass run after each add, close, block and unblock?\n3. The circular-check error is spelled \"curcular\" in the box. Keep that exact string if it is the required message, or correct it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T16:13:08.302Z",
+     "text": "1. an item created will block by default the item it was created from, if that item is unknown, it must attempt to block the goal, no user intervention required. the \"compiler will be triggered and make sure blocking is coherent within the goal.\n2. the blockageCompiler is a desk-internal function, triggered by block/unblock requests, item deletions, (additions we already covered)\n3. thanks for correcting my spelling when immortalizing my lines in a box."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T16:13:54.524Z",
+     "text": "Levant: Box updated (version 3). Both rulings are in verbatim, and the circular-check string is now \"circular\" instead of \"curcular\". Rulings 1 and 2 leave one thing open that the box doesn't settle: when an item is created with no known source, does \"the goal\" mean the goal item itself? I'm assuming it does."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T16:14:53.633Z",
+     "text": "yes wen no other blockages are stated or found an item blocks the goal explicitly."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T16:15:32.270Z",
+     "text": "Box v4: ruling 4 added verbatim. Goal item is the default blocker only when no other blockage is stated or found."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T16:16:14.074Z",
+     "text": "the goal here is to implicitly design the optimal implementation path, when working on the design of a goal. This has been lacking sorely in the past.\n\nEnough of this for now."
     }
    ]
   }
