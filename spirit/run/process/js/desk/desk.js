@@ -1200,10 +1200,12 @@ function buttonsOf(s, it) {
   // button. Never on an item, which has no List of its own, and never on an abandoned goal, which is invisible. A
   // closed goal returns above with Reopen alone, which is the order his words give: "re-open and ... make current goal".
   if (it.goal && g && !g.abandoned && s.current !== it.id) out.push('make-current');
-  // DELETE WHILE IN DESIGN (goal/G9.7). Andy, 2026-10-07: "the button bar of items will offer an arm-able [delete]
-  // while in design mode." An item of a goal in design mode, never a goal itself; the dialog draws it from here, as it
-  // draws every button of his.
-  if (!it.goal && g && g.design) out.push('delete');
+  // DELETE, IN DESIGN MODE OR OUT OF IT (goal/G24.9; it was design mode only under goal/G9.7). Andy, 2026-10-14: "i have
+  // no delete option for this item". So any item that is not a goal offers it whatever the goal's design mode, with two
+  // exceptions: none while an agent holds a phase on it (red, build or verify), and none on an item claimed done and
+  // not yet closed (his "no." to Q1). A closed or done item returned above and offers none. G9.7's ruling stands: delete
+  // closes and leaves out, it erases nothing. The dialog draws it from here, and item.delete refuses what is not here.
+  if (!it.goal && g && !it.phaseWith && !claimed) out.push('delete');
   return out;
 }
 // The items that block a sub-goal (its split), closed or done ones included; and those of them offering Go!.
@@ -1406,7 +1408,8 @@ function facts(s, it) {
     if (PLUGIN_GOAL[it.id]) { f.plugin = PLUGIN_GOAL[it.id]; f.pluginTab = PLUGIN_TAB[it.id] || f.plugin; }
     f.design = g.design;
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
-      return o && listed(s, o) && (buttons(s, o).length > 0 || asksOf(s, o) > 0);
+      // goal/G24.9: delete is on offer on running items now, and offering it is not Andy being waited on.
+      return o && listed(s, o) && (buttons(s, o).filter(function (b) { return b !== 'delete'; }).length > 0 || asksOf(s, o) > 0);
     }).length;
     // AN AGENT NOT INCLUDED IS ABSENT (goal/G21.1), whatever it last wrote: out of live, named in excluded.
     f.excluded = Object.keys(s.agentKey).filter(function (l) { return excludedKey(s, s.agentKey[l]); }).sort();
@@ -2372,8 +2375,9 @@ appServer.serve(withPlugins({
   },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
-  // HIS DELETE (goal/G9.7): his alone, an item of a goal in design mode, never a goal. It is offered in the item's
-  // buttons, so the refusal and the button cannot drift apart.
+  // HIS DELETE (goal/G9.7, widened by goal/G24.9): his alone, never a goal, never while a phase is held or a claim is
+  // open, in design mode or out of it. It is offered in the item's buttons, so the refusal and the button cannot drift
+  // apart.
   // A VERB AND NOT A PRESS, BY HIS WORD. Asked which, Andy answered "press." on 2026-10-09 and then, on the same
   // question: "make it a verb, plus the arm able delete button." The later word is the one in force; it was built as a
   // press in between (417f150c) and reverted. Do not turn it back into a press without asking him again.

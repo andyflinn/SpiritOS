@@ -95,15 +95,28 @@ async function server() {
   if (((await facts('d/G1.2')).blocked || []).indexOf('d/G1.1') === -1) test.check('d/G1.2 no longer waits on it');
   else test.fail(OWED + 'd/G1.2 still waits on ' + short((await facts('d/G1.2')).blocked));
 
-  test.subHeading('4. out of design mode there is no delete');
+  // Until goal/G24.9 this section asserted the opposite: no delete out of design mode. Andy, 2026-10-14: "i have no
+  // delete option for this item", so delete is offered whatever the design mode (spirit/test/deskDeleteOutsideDesign.js
+  // holds its exceptions: a phase held, a claim open).
+  test.subHeading('4. out of design mode delete is still offered (goal/G24.9)');
   await call('press', { id: 'd/G1', what: 'end-design' }, ANDY);
   if ((await facts('d/G1')).design === false) test.check('the world: design mode ended');
   else test.fail('the world: end-design did not take');
-  if (((await facts('d/G1.3')).buttons || []).indexOf('delete') === -1) test.check('d/G1.3 offers no delete out of design mode');
-  else test.fail(OWED + 'd/G1.3 still offers delete out of design mode');
+  if (((await facts('d/G1.3')).buttons || []).indexOf('delete') !== -1) test.check('d/G1.3 offers delete out of design mode');
+  else test.fail('d/G1.3 offers no delete out of design mode: ' + short((await facts('d/G1.3')).buttons));
   const late = await call('item.delete', { id: 'd/G1.3' }, ANDY);
-  if (refusedByVerb(late) && (await listed(false)).indexOf('d/G1.3') !== -1) test.check('item.delete out of design mode is refused');
-  else test.fail(OWED + 'item.delete out of design mode answered ' + late.status + ' ' + short(late.body));
+  if (took(late) && (await listed(false)).indexOf('d/G1.3') === -1) test.check('item.delete out of design mode is taken');
+  else test.fail('item.delete out of design mode answered ' + late.status + ' ' + short(late.body));
+
+  // goal/G24.9: delete is on offer on a running item, and offering it is not Andy being waited on. d/G1.2 offers Go
+  // (it is counted); after his Go it runs with no phase held, offers delete alone, and leaves the goal's waiting count.
+  const before = (await facts('d/G1')).waiting;
+  const go = await call('press', { id: 'd/G1.2', what: 'go' }, ANDY);
+  const running = await facts('d/G1.2');
+  const after = (await facts('d/G1')).waiting;
+  if (go.status === 200 && (running.buttons || []).indexOf('delete') !== -1 && typeof before === 'number' && after === before - 1) {
+    test.check('a running item with no phase held offers delete and does not count as waiting on him');
+  } else test.fail('after his Go on d/G1.2: buttons ' + short(running.buttons) + ', waiting ' + before + ' -> ' + after + ' (Go ' + go.status + ')');
 }
 
 // ── THE DIALOG ─────────────────────────────────────────────────────────
