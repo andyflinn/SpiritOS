@@ -1,5 +1,5 @@
 {
- "change": 62346,
+ "change": 62349,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -42,13 +42,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "ollama agent node"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -485,10 +488,9 @@
    "id": "goal/G24.2",
    "title": "deskUnsloth: one answer per Levant turn, taken first",
    "goal": "goal/G24",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
