@@ -1,5 +1,5 @@
 {
- "change": 59739,
+ "change": 59774,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -10,12 +10,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G23.2",
-    "goal/G23.3"
+    "goal/G23.3",
+    "goal/G23.4"
    ],
    "go": false,
    "alone": false,
@@ -45,14 +46,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
-    "ollama agent node"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -304,10 +305,11 @@
    "id": "goal/G23.2",
    "title": "deskUnsloth: Levant is told his desk name",
    "goal": "goal/G23",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G23"
@@ -375,7 +377,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "The desk names every write of Levant's by his node's name (\"ollama agent node\" on 11111). deskUnsloth knows that name but never told the model, so Levant took his own take of Andy's line for another agent's and held back his answer.\nEvery call deskUnsloth makes for Levant at the desk tells him, in the system text after the preamble: at the desk your writes show as <node name>; a line, take or item under that name is yours.\nThe name is the node's own, as deskUnsloth is handed it at start; nothing is configured.\nTest: a started deskUnsloth with a node name; its desk call's system text names it.",
@@ -908,8 +910,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Levant could not read any file bigger than one answer of his process (deskUnsloth.js is 88 KB; even a 13.8 KB test file was refused), so he could not read the code he was asked about. His file read is deskUnsloth's own file.load verb; no node verb changes.\nLevant reads files with a tool that matches cw's: file.load takes an optional offset (the first line, from 1) and limit (how many lines).\nEach answer carries the lines asked for, numbered, plus the file's total line count, so he knows how far he is and asks again for the next part.\nA read that would not fit in one answer is cut at the last whole line that fits, and the answer says where it stopped.\nA file small enough is still read whole when no range is given.\nThe tool's description tells the model to read a large file part by part.\nTest: a file several answers long is read whole in parts, each answer under the cap, the lines numbered, the total line count given.",
-   "version": 1,
+   "box": "Levant could not read any file bigger than one answer of his process (deskUnsloth.js is 88 KB; even a 13.8 KB test file was refused), so he could not read the code he was asked about. His file read is deskUnsloth's own file.load verb; no node verb changes.\nLevant reads files with a tool that matches cw's: file.load takes an optional offset (the first line, from 1) and limit (how many lines).\nEach answer carries the lines asked for, numbered, plus the file's total line count, so he knows how far he is and asks again for the next part.\nA read that would not fit in one answer is cut at the last whole line that fits, and the answer says where it stopped.\nA file small enough is still read whole when no range is given.\nThe tool's description tells the model to read a large file part by part.\nTest: a file several answers long is read whole in parts, each answer under the cap, the lines numbered, the total line count given.\nRuling (andy, 2026-10-14): the tool-round limit (TOOL_ROUNDS = 3, deskUnsloth, from goal/G14.6) is tied to the context. If no context is specified, there is no limit either, like Unsloth Studio, which manages the context automatically.",
+   "version": 2,
    "checks": [],
    "chat": [
     {
@@ -995,8 +997,91 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-14T02:48:08.022Z",
      "text": "Found the slowness: the two stray Code presses put G23.1 back to phase red although deskVerify passed it, so the desk offers its red as a job every few seconds; Levant and I wake on it and each wake is a write, about one every 3 seconds.\nPressing Done on G23.1 (it is offered) ends that. I also stopped a second listener of mine that was doubling it.\nverify.again for G23.3 is sent; the verifier picks it up when it wakes."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T02:49:12.060Z",
+     "text": "Levant: Read works: I can page through deskUnsloth.js now. What's missing is a bigger read: each part is about 7 KB and I get 3 tool rounds per answer, so the 88 KB file takes several answers.\nI haven't yet tried a take, box write or check from my side, so I can't name other gaps.\nShould I start by taking goal/G23.3's next phase, or first run a small desk write to test the path?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:49:59.214Z",
+     "text": "why is it only the tool calls per answer, where does that limitation come from?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:50:17.731Z",
+     "text": "It is deskUnsloth's own, not the model's: one constant, TOOL_ROUNDS = 3, set by the build that gave Levant his first tool (goal/G14.6, commit 4f79adff), with no ruling of yours behind it.\nIt was a guard for the small local models on 8192 tokens, so one answer could not loop on tools forever. After 3 rounds deskUnsloth asks once more without tools and posts what he has.\nWith Claude and a million tokens it is only a brake now. It could be raised, or tied to the context; say which and I propose the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:52:06.497Z",
+     "text": "tied to the context, and if no context is specified, no limit either. like in unsloth studio that manages the context automatically."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T02:52:26.727Z",
+     "text": "Proposed under G23: \"deskUnsloth: tool rounds bounded by the context, not a count\".\nLevant calls tools as long as the prompt still has room in the model's context; when it is full he is asked once more without tools, as now. When the server gives no context for the model, there is no limit at all. TOOL_ROUNDS goes. Your Abort stays the brake. Add it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T02:53:11.259Z",
+     "text": "add it"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T02:53:30.408Z",
+     "text": "Levant: The \"add it\" was Andy's answer to claude-windows's proposal, so it isn't mine to answer. I haven't written anything to the desk. Nothing is taken and no box, check or press has changed.\n\nThe proposal (\"deskUnsloth: tool rounds bounded by the context, not a count\") needs a new item under G23, and I have no verb to create items. claude-windows should add it.\n\nFor the record, the constant is `TOOL_ROUNDS = 3` in deskUnsloth.js, from goal/G14.6. I read the chat under goal/G23.3 and the G14.6 item and did not open the code myself."
     }
    ]
+  },
+  {
+   "id": "goal/G23.4",
+   "title": "deskUnsloth: tool rounds bounded by the context, not a count",
+   "goal": "goal/G23",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G23"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
