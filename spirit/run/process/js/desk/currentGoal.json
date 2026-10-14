@@ -1,5 +1,5 @@
 {
- "change": 58525,
+ "change": 58629,
  "line": 8510,
  "goal": "goal/G14",
  "items": [
@@ -15,7 +15,6 @@
    "blocking": [],
    "blocked": [
     "goal/G14.3",
-    "goal/G14.10",
     "goal/G14.11"
    ],
    "go": false,
@@ -47,15 +46,13 @@
    "full": false,
    "design": false,
    "waiting": 3,
-   "excluded": [],
+   "excluded": [
+    "ollama agent node"
+   ],
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
-   "working": [
-    "claude-windows",
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3780,10 +3777,11 @@
    "id": "goal/G14.10",
    "title": "deskUnsloth: the pair keeps a workspace id, sent as a header",
    "goal": "goal/G14",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G14"
@@ -3856,7 +3854,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "local-levant"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy's Anthropic key is a user key: Anthropic accepts it only when each call names a workspace id (header anthropic-workspace-id). He wants that key, for the credits of his Max subscription.\nA pair in connection.json keeps an optional workspace beside its key.\nconnection.set takes the workspace; the connect tab has a Workspace field beside the key, empty unless the server asks for one.\nEvery call deskUnsloth makes to a pair whose workspace is set carries the header anthropic-workspace-id with it: the model list, the chat, the probe. A pair without one sends exactly what it sends today, so the studio and OpenAI pairs are unchanged.\nThis is one header, not an adapter: the calls stay the OpenAI shape.\nThe Remote shows deskUnsloth's own reason when the model list is refused, not \"text required\".\nTest: a suite with a stand-in server checks the header arrives when the workspace is set and is absent when it is not, and that a refusal's reason reaches the Remote.\nProof before claim: the calls replayed against Anthropic from 11111 with his key and workspace id.\nEvery call deskUnsloth makes, to every server, carries the header anthropic-version: 2023-06-01. Anthropic's model list wants it; OpenAI and the studio ignore it. With it the configure tab's dropdown lists Claude models like any server's.\n",
@@ -4145,7 +4143,7 @@
    "id": "goal/G14.11",
    "title": "deskUnsloth: a plain server's context from its model entry",
    "goal": "goal/G14",
-   "status": "running",
+   "status": "build",
    "with": "claude-windows",
    "buttons": [],
    "blocking": [
@@ -4157,7 +4155,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
@@ -4173,13 +4171,13 @@
    ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -4211,7 +4209,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "local-levant"
    },
    "asks": 0,
    "half": false,
@@ -4231,6 +4230,42 @@
      "key": "",
      "at": "2026-10-14T01:42:55.014Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T01:43:32.870Z",
+     "text": "Levant: I've taken goal/G14.11 (the take went through, change 58537), but I haven't built or designed anything yet. The tool budget ran out before I read the code.\n\nWhat I've read so far:\n- The box (its spec, version 1), the chat (claude-windows's note and the limbo line), and the checks (none yet).\n- The file list from fs_search: process/js/deskUnsloth/deskUnsloth.js and tools.js exist.\n\nTwo loads of those files were refused with \"text required (no such file\", even though the search lists them, so the load call is probably wrong. I haven't read how deskUnsloth sizes its calls, so I can't yet say where the 8192 fallback lives or what the known list keeps.\n\nNext, when I'm back: read the sizing code and the known-list code from the files themselves, not their comments, then post a design-complete or a question under this item. I'm not offering Done, and I'm not adding a grant or a red check yet."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T01:43:50.476Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:43:52.111Z",
+     "text": "commit 24355527028f7bf95dbb38d0ecedc026daee94d1: goal/G14.11 red: a plain server's context from its own model entry\n- spirit/test/deskUnslothPlainContext.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T01:44:06.426Z",
+     "text": "Red is in (24355527): 4 owed checks fail, the plain server's 8192 squeeze among them.\nLevant took this item too, so the desk counts two agents and will not let me, the red writer, build it. Either Levant builds, from the red, or you press waive and I build it now.\nLevant is still working at 8192, the very squeeze this item removes, and his file loads were refused; I recommend waive."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:46:11.365Z",
+     "text": "go"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T01:46:57.813Z",
+     "text": "go"
     }
    ]
   }
