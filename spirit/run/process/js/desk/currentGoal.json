@@ -1,5 +1,5 @@
 {
- "change": 60171,
+ "change": 60240,
  "line": 8510,
  "goal": "goal/G24",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G24.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -44,15 +42,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -141,9 +137,12 @@
    "id": "goal/G24.1",
    "title": "Desk: Levant gets the agent desk verbs cw uses",
    "goal": "goal/G24",
-   "status": "running",
-   "with": "ollama agent node",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G24"
    ],
@@ -151,9 +150,9 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
@@ -245,17 +244,27 @@
      "path": "spirit/test/deskAgentVerbFiles.js",
      "by": "claude-windows",
      "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentVerbFiles.js",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothDesk.js",
+     "by": "claude-windows",
+     "core": false
     }
    ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -287,14 +296,14 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Levant has the same desk verbs as cw (Andy, goal/G24: \"give them to Levant as well.\").\nLevant's desk tools are the desk verbs that have a description file beside desk.js; 17 had one, and the ones cw uses daily did not, so his posts were refused (take first) and he could not take a line.\nEach of these gets its description file, and with it becomes his tool: line.take, item.release, box.take, box.release, item.add, goal.add, phase.take, phase.done, phase.may, changes, chat.search, log.search, items.find, rule.get, rules.search, profile.get, pending.get.\nOnly the files are added: the desk still decides what it allows him, as it does for cw. Andy's own presses, session.set, rule.add, item.delete, profile.set and the verifier's verbs get no file.\nTest: the desk's introspection lists each of these verbs with its request, and deskUnsloth offers each as a desk tool.",
-   "version": 1,
+   "box": "Levant has the same desk verbs as cw (Andy, goal/G24: \"give them to Levant as well.\").\nLevant's desk tools are the desk verbs that have a description file beside desk.js; 16 had one, and the ones cw uses daily did not, so his posts were refused (take first) and he could not take a line.\nEach of these gets its description file, and with it becomes his tool: line.take, item.release, box.take, box.release, item.add, goal.add, phase.take, phase.done, phase.may, changes, chat.search, log.search, items.find, rule.get, rules.search, profile.get, pending.get.\nOnly the files are added: the desk still decides what it allows him, as it does for cw. Andy's own presses, session.set, rule.add, item.delete, profile.set and the verifier's verbs get no file.\nTest: the desk's introspection lists each of these verbs with its request, and deskUnsloth offers each as a desk tool.",
+   "version": 2,
    "checks": [],
    "chat": [
     {
@@ -308,6 +317,66 @@
      "key": "",
      "at": "2026-10-14T03:47:53.604Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T03:49:42.854Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:49:44.727Z",
+     "text": "commit b3cfdf4ac73e09535565ccf88a31fd8111ecf612: goal/G24.1 red: Levant gets the agent desk verbs cw uses\n- spirit/test/deskAgentVerbFiles.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:49:54.989Z",
+     "text": "Red is in (b3cfdf4a): 20 owed checks fail, the 17 files missing. I corrected the box: 16 verbs had a file, not 17.\nThe build is refused to me while Levant counts as a second agent: press waive and I build it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T03:53:54.812Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:53:56.632Z",
+     "text": "commit 2580acdad7b2d40abc227e090de37ad6547d0696: goal/G24.1: Levant gets the agent desk verbs cw uses, one description file each\n- spirit/run/process/js/desk/box.release.json\n- spirit/run/process/js/desk/box.take.json\n- spirit/run/process/js/desk/changes.json\n- spirit/run/process/js/desk/chat.search.json\n- spirit/run/process/js/desk/goal.add.json\n- spirit/run/process/js/desk/item.add.json\n- spirit/run/process/js/desk/item.release.json\n- spirit/run/process/js/desk/items.find.json\n- spirit/run/process/js/desk/line.take.json\n- spirit/run/process/js/desk/log.search.json\n- spirit/run/process/js/desk/pending.get.json\n- spirit/run/process/js/desk/phase.done.json\n- spirit/run/process/js/desk/phase.may.json\n- spirit/run/process/js/desk/phase.take.json\n- spirit/run/process/js/desk/profile.get.json\n- spirit/run/process/js/desk/rule.get.json\n- spirit/run/process/js/desk/rules.search.json\n- spirit/test/deskUnslothDesk.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T03:53:59.618Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T03:54:11.577Z",
+     "text": "Built and pushed (2580acda): the 17 description files; Levant now has line.take and the rest. Files: the 17 files beside desk.js, the new desk-verb-files suite (21 green), and the desk-unsloth desk suite widened to the 33 verbs; the desk, introspection and deskUnsloth suites green. Claiming done.\nTwo flaws found on the way, each a G24 item if you say so:\n1. The desk's verb listing silently drops any verb whose description holds a \"/\" (introSpector searches with *): Levant has never had item.get. The fix is one character in introSpector.js, common code, so your word first.\n2. deskUnsloth reads only the first page of a tool listing and ignores \"more\", so past about 8 KB of descriptions Levant silently loses tools; it should follow \"more\"."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:54:29.450Z",
+     "text": "deskVerify: passed, at 2580acda (pulled). 2 suites ran green."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T03:54:39.870Z",
+     "text": "Levant: The G24.1 work is already built and verified, so I have nothing to add to it.\n\n- **Build:** claude-windows built it at commit 2580acda: 17 description files beside `desk.js` and the widened desk-unsloth suite. Its claim-done is on record.\n- **Verifier:** Andy's deskVerify passed at 2580acda, with 2 suites green.\n- **Open checks:** none on the item.\n- **Blockers:** none on my side. The \"limbo\" lines are the desk's notices that nobody has taken the item, and Done is Andy's press.\n\nI did not take the item, since there is no red left for me to write and no open question addressed to me. Two follow-ups claude-windows raised are not part of G24.1 and need Andy's word first: a one-character fix in `introSpector.js` so verbs with a \"/\" in their description are listed (this is why I have never had `item.get`), and deskUnsloth following \"more\" on tool listings. I'll wait for Andy's Done and for any new work on G24.1."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T03:56:35.118Z",
+     "text": "Levant: can you see in this item what verbs you have in desk, or do you already know?"
     }
    ]
   }
