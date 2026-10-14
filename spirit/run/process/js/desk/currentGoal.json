@@ -1,5 +1,5 @@
 {
- "change": 58155,
+ "change": 58222,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G22.4"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -44,14 +42,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1210,9 +1206,12 @@
    "id": "goal/G22.4",
    "title": "Hub and offboard reach relays only through peerPost",
    "goal": "goal/G22",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G22"
    ],
@@ -1220,20 +1219,66 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerBadge.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayRequest.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayUrl.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/desk/onboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayListIsNodeState.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayListNoCall.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relaySearch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1283,6 +1328,15 @@
      "at": "2026-10-13T20:47:25.926Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/hub.js, spirit/run/js/ownerBadge.js, spirit/run/js/relayRequest.js, spirit/run/js/relayUrl.js, spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-14T00:31:30.079Z"
     }
    ],
    "chat": [
@@ -1525,6 +1579,60 @@
      "key": "",
      "at": "2026-10-14T00:11:56.975Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:12:41.414Z",
+     "text": "Taking the red: a test that the relay list answers with no call to any relay and the address check lives in its own module; then the build."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:30:37.668Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:30:53.237Z",
+     "text": "Built, waiting on grant G1 (hub, server, relayRequest, ownerBadge, the new relayUrl).\nThe relay list asks no relay now: online means peerPost holds a stream to it; \"yours\" means it has sent you its owner's status report; \"member\" a seat recorded at claim; otherwise not joined. Two things the list no longer knows, left empty rather than fetched: a relay's own published label (the list label stands in) and who owns a relay you do not own.\nassertRelayUrl moved to relayUrl.js; the relay library is transport only.\nRed was 9 failing; relayListNoCall now 14 green, and every relay, owner, contact, natter and search suite green.\nTwo things still open: the hub still loads the relay library, only to hand relayRequest to peerPost through server.js; and presenceNode's start still asks each relay for its card, through peerPost, to choose its streams. Both are inside or for peerPost; I'd leave them unless you want them gone in this item."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:31:30.814Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:32:01.522Z",
+     "text": "commit 2414dd8d908298a3750ba4bfc51969fe1d09d9b0: goal/G22.4: the relay list asks no relay, built from what peerPost and the node already hold; the address check moves to relayUrl.js\n- spirit/run/js/hub.js\n- spirit/run/js/ownerBadge.js\n- spirit/run/js/relayRequest.js\n- spirit/run/js/relayUrl.js\n- spirit/run/js/server.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/test/relayListNoCall.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:32:04.498Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-14T00:32:09.615Z",
+     "text": "Pushed: 2414dd8d under G1. Claiming."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-14T00:32:11.898Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T00:32:27.849Z",
+     "text": "deskVerify: passed, at 2414dd8d (pulled). 3 suites ran green."
     }
    ]
   },
