@@ -241,22 +241,42 @@ function agentsText() {
   return desk('AGENTS', {}).then(function (b) { return String(b.text || ''); }, function () { return ''; });
 }
 
+// THE CURRENT GOAL, ASKED FOR EVERY CALL (goal/G24.3): Andy saw Levant answer about G23 after G24 was made current;
+// his call carried only the goal of the item he answered under. The desk names its current goal to an empty
+// current-goal search of goals alone; its facts give the id and title, item.box its box. Nothing current, or the desk
+// not answering: no section.
+function currentGoal() {
+  return desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }).then(function (b) {
+    const first = b && Array.isArray(b.items) ? b.items[0] : null;
+    if (!first || !first.key) return null;
+    let f = {};
+    try { f = JSON.parse(first.label || '{}'); } catch (e) { f = {}; }
+    const id = String(first.key);
+    return boxOf(id).then(function (box) { return { id: id, title: String(f.title || ''), box: box }; });
+  }).catch(function () { return null; });
+}
+
 // THE CHANGES THAT WOKE IT are in the call, after the item's chat, so the model knows what happened (goal/G10.8).
 function callFor(id, changes) {
   return factsOf(id).then(function (facts) {
     const goalId = facts.goal ? String(facts.goal) : id;
-    return Promise.all([agentsText(), boxOf(goalId), goalId === id ? Promise.resolve('') : boxOf(id), chatOf(id)])
+    return Promise.all([agentsText(), boxOf(goalId), goalId === id ? Promise.resolve('') : boxOf(id), chatOf(id), currentGoal()])
       .then(function (got) {
         const rules = got[0];
         const goalBox = got[1];
         const itemBox = got[2];
         const chat = got[3];
+        const current = got[4];
         // HIS DESK NAME (goal/G23.2): Levant took his own take of Andy's line for another agent's, because nothing told
         // him the desk names his writes by his node's name. The name is the node's own, handed at start, never configured.
         const nameLine = NODE_NAME ? 'At the desk your writes show as "' + NODE_NAME + '": a line, a take or an item under that name is yours.' : '';
         const system = [rules, PREAMBLE, nameLine].filter(Boolean).join('\n\n');
         const head = [];
-        if (goalBox) head.push('THE GOAL\n' + goalBox);
+        // The current goal first, counted in the room as every panel is; when it is the item's own goal it is said
+        // once, as the current goal, and its box is not repeated.
+        const own = current && current.id === goalId;
+        if (current) head.push('THE CURRENT GOAL ' + current.id + ' "' + current.title + '"' + (own ? ', this item\'s' : '') + '\n' + current.box);
+        if (goalBox && !own) head.push('THE GOAL OF THIS ITEM ' + goalId + '\n' + goalBox);
         if (itemBox) head.push('THE ITEM ' + id + '\n' + itemBox);
         // THE WINDOW: the newest lines that fit. Everything but the chat is owed to the call, so the chat takes
         // whatever room is left and the oldest line goes first (his "rolling window ... the oldest dropped").
