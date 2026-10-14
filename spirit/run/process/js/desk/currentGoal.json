@@ -1,16 +1,16 @@
 {
- "change": 62767,
+ "change": 62773,
  "line": 8510,
- "goal": "goal/G17",
+ "goal": "goal/G20",
  "items": [
   {
-   "id": "goal/G17",
-   "title": "A fresh node works before it has a relay",
+   "id": "goal/G20",
+   "title": "Fill the one-door test with endpoints past peerPost that could be called illegally",
    "goal": "",
-   "status": "closed",
+   "status": "",
    "with": "",
    "buttons": [
-    "reopen"
+    "close"
    ],
    "blocking": [],
    "blocked": [],
@@ -42,7 +42,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 0,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "ollama agent node"
@@ -54,71 +54,10 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "TOPIC (not for today; opened at Andy's word on 2026-10-11 so it is remembered): a node downloaded fresh, say from GitHub, is useless until it has a relay to join. Its owner cannot even play with the apps, though many would be useful with no internet and no relay.\n\nAndy, 2026-10-11, under goal/G16.8:\n- \"I'm talking about the very first relay shipped, let's say via gitHub, what happens with the user-node is: it will be useless, until there is a relay to connect to. The user wont even be able to play with the apps on it. even though they'll be useful without and internet connection or a relay connection.\"\n- \"there's no reason for a node not to generate a key on first boot.\"\n- \"What should happen is: A persisten message in shell somewhere: \\\"this would be WAY more fun if you were connected, with a link to the alpha-onboarding site....\\\"  likely \\\"noderoutes.net\\\"\"\n- \"no, make another goal, not for today, with this as a topic. that way it'll be remembered.\"\n\nFOUND by claude-windows on a brand-new node with no relay (2026-10-11, at 0005e443):\n- A fresh node does write a key at first boot, but with an empty name; the code that loads a key refuses one with no name, so the node acts as if it has none (\"this node has no key yet\") until it claims a seat on a relay.\n- It serves its page, and local verbs that need no key answer (the contacts search did); anything that needs its own key refuses.\n- Since goal/G16.8 a relay's owner is written at install from the owner's node key, so for a first relay the owner needs a usable key before any relay exists.\n\nTOPICS for the design: a usable key from first boot; what a node does well offline; the persistent shell note pointing to the onboarding site; how Natter behaves with no relay instead of holding the user on its claim screen.\n\nAND THE OWNER NODE'S PERSISTENT LIVENESS (Andy, 2026-10-11: \"add a new goal, with the bare fact, PLUS, the discussion of the owner-node persistent liveness, for which i do have a crazy idea, as well.\"): the relay is owned by a node, and that node is not always running. What the owner's node being alive, or not, means for the relay and its members is a topic for this goal. His idea for it is his to bring.\n\nDECIDED (Andy, 2026-10-11): \"one goal only: it will point toward a comprehensive rollout.\" The fresh node and the owner node liveness stay together in this goal.\n\nONE GOAL, AND IT POINTS AT THE ROLLOUT (Andy, 2026-10-11, closing the question of whether liveness should stand apart): \"one goal only: it will point toward a comprehensive rollout.\" So this goal is not a pair of facts filed together: it is where the story of shipping to somebody who has nothing yet gets worked out, and the owner node's liveness belongs in it for that reason.\n\nBEFORE ALPHA, ONE LINE OF CODE (Andy, 2026-10-11, under goal/G16.3, when told that seeding his own relay sends every downloaded node to a box he had just said is only theirs): \"before alpha we'll remove the hard-coded spirit.andyflinn.com\". So a shipped node is seeded with both today and with noderoutes.net alone at alpha; spirit is added by hand on their own machines. Recorded here because this goal is where the rollout is worked out, and the line that seeds it is ownerBadge.js (FIRST_RELAY). He also decided, same day, that noderoutes.net cannot be deleted at all: \"we'll remove the option to delete noderoutes.net\", which makes it the floor a node always keeps.",
-   "version": 5,
+   "box": "\nFill the one-door test with endpoints past peerPost that could be called illegally.\n\nDECIDED (Andy, 2026-10-12, on goal/G19.14)\n- \"make a goal that is only: fill that test with endpoints past peerPost that could be called illegally.\"\n- The test is the one goal/G19.14 builds: a harness suite with one test id per pair of allowed door (peerPost, the bottom frame) and endpoint (a component of peerPost), failing on any stack that reaches the endpoint without the door.\n\nFOUND at G19.14 (to be re-checked when the goal opens): besides presenceNode and postQueue, peerPost requires arrivals (also reached from hub, nodeCard, server), seal (hub, relay, relayServer), contacts (apiAuth, hub, server) and nodeCard (contacts, hub, presenceNode, relay, server); relayAuth and spiritErrors are shared by design.\n",
+   "version": 1,
    "checks": [],
-   "chat": [
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-11T04:03:05.864Z",
-     "text": "claude-windows: this goal now holds both: the bare fact that a fresh node is useless without a relay, and the owner node persistent liveness, with your words and a place for your idea. If you want liveness as a goal of its own, say so."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T01:54:44.518Z",
-     "text": "I wonder if this one already is almost done, because now a node has identity right of the bat.....\n\nLevant, can you figure it out?"
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T01:55:47.333Z",
-     "text": "he didn't pick up on the coal change at all."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-14T01:56:42.629Z",
-     "text": "cw: Levant did answer you, at 01:55, but it never reached the desk. deskUnsloth posts without taking your line first, the desk refuses that post (take first), and deskUnsloth drops the refusal without logging it. Your G14.10 line started with Levant: and bound him, so that one went through.\nAlso, 11111 still runs the old deskUnsloth: its model list has no context, so he is still squeezed to 8192 (his log says the results were dropped for room). A restart of its deskUnsloth fixes that one.\nProposal, a new G14 item: Levant takes the line before he answers it, and a refused post goes into his log."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T01:58:13.486Z",
-     "text": "11111 is running the newest code now..."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-14T01:58:42.768Z",
-     "text": "Confirmed: after one model-list read, claude-haiku-5-5 has its 1,000,000-token context on 11111, and keeps the desk mark. Levant now gets whole files.\nHis answers still vanish when he has not taken your line, unless the line starts with Levant: . That stays until the proposed item; say add it if you want it."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T02:00:14.798Z",
-     "text": "what's the proposed item?"
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-14T02:00:28.484Z",
-     "text": "Title: \"deskUnsloth: Levant takes the line before he answers it\", under G14.\nWhat it does: before posting, Levant takes your line (as every agent must), so his answer lands; and when the desk refuses a post anyway, the refusal and its reason go into his log instead of vanishing."
-    },
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T02:01:15.531Z",
-     "text": "let's make a new goal: Make Levant work, and add this item to it.\n\ndo it."
-    },
-    {
-     "by": "claude-windows",
-     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
-     "at": "2026-10-14T02:01:59.750Z",
-     "text": "Done: goal/G23 Make Levant work, with goal/G23.1 boxed in it. It needs your Go! and Code to start."
-    }
-   ]
+   "chat": []
   }
  ]
 }
