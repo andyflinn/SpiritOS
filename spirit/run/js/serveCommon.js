@@ -199,8 +199,21 @@ function bodyBytes(req) { return req[BODY_BYTES] || 0; }
 // the request body, which the sender chooses, so rotating it reset the
 // budget; this is the one thing about a request the caller can't restate
 // at will.
+// BEHIND CADDY, THE ADDRESS CADDY FORWARDS (goal/G22.7, Andy's decision): on a VPS every request reaches the relay
+// from Caddy on the loopback, so the socket says 127.0.0.1 for every stranger and the address table would hold them
+// all in one entry. A request that came from the loopback is counted by the last X-Forwarded-For entry, the one Caddy
+// itself appended; earlier entries are whatever the sender wrote and are ignored. A request from anywhere else is
+// counted by its socket address, whatever header it carries, since anyone reaching the relay directly could write one.
+function isLoopbackSocket(address) {
+  const a = String(address || '');
+  return a === '127.0.0.1' || a === '::1' || a === '::ffff:127.0.0.1' || /^127\./.test(a) || /^::ffff:127\./.test(a);
+}
 function clientKeyFor(req) {
-  return req.socket.remoteAddress || '';
+  const socketAddress = (req.socket && req.socket.remoteAddress) || '';
+  if (!isLoopbackSocket(socketAddress)) return socketAddress;
+  const forwarded = String((req.headers && req.headers['x-forwarded-for']) || '');
+  const last = forwarded.split(',').map(function (s) { return s.trim(); }).filter(Boolean).pop();
+  return last || socketAddress;
 }
 
 // One answer for every way this can fail, and it says nothing.
