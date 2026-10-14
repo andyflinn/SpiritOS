@@ -1,5 +1,5 @@
 {
- "change": 58130,
+ "change": 58133,
  "line": 8510,
  "goal": "goal/G22",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -2117,10 +2117,9 @@
    "id": "goal/G22.6",
    "title": "Relay answers unknown IDs asking for public services",
    "goal": "goal/G22",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
