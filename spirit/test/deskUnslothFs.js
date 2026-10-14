@@ -21,7 +21,7 @@
 //   3. THE OBJECT: describe(fs) through the node's route gives fs_load, fs_save, fs_search, fs_stat and
 //      fs_annotations typed from the declarations; run fs_load hands the text back; run fs_save writes; a refusal
 //      of the gate comes back as a refusal.
-//   4. THE PROCESS: the call to the studio carries the fs tools and no net tool.
+//   4. THE PROCESS: the call to the studio carries no net tool, and since goal/G23.5 no fs tool either.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -254,7 +254,7 @@ async function suite() {
   else test.fail(OWED + 'run fs_save of js/kernel.js answered ' + short(r3));
 
   // ── 4. THE PROCESS ──────────────────────────────────────────────────────
-  test.subHeading('4. the process: the call carries the fs tools and no net tool');
+  test.subHeading('4. the process: the call carries no fs tool and no net tool (goal/G23.5)');
   await new Promise(function (r) { fake.listen(0, '127.0.0.1', r); });
   await new Promise(function (r) { studioServer.listen(0, '127.0.0.1', r); });
   fs.writeFileSync(path.join(scratch, 'relay-state', 'environment.json'), JSON.stringify({ PORT: fake.address().port }));
@@ -273,9 +273,12 @@ async function suite() {
   let a1 = {};
   for (let i = 0; i < 80; i++) { a1 = await askAgent('chat.answer', { id: s1.id }); if (a1.done) break; await sleep(100); }
   const sent = studio.chats[0] && Array.isArray(studio.chats[0].tools) ? studio.chats[0].tools.map(function (t) { return t.function.name; }) : [];
+  // SINCE goal/G23.5 the node's fs tools leave Levant's list: his file tools are deskUnsloth's own, at the repo root of
+  // his clone (deskUnslothRepoRoot.js). This check asserted fs_load and fs_save in the call until then.
   const netAsked = nodeAsks.some(function (a) { return /^net\./.test(String(a.verb)); });
-  if (sent.indexOf('fs_load') !== -1 && sent.indexOf('fs_save') !== -1 && !sent.some(function (n) { return /^net_/.test(n); }) && !netAsked) test.check('the call to the studio carries fs_load and fs_save and no net tool, and net was never asked');
-  else test.fail(OWED + 'the call carried ' + short(sent) + ', net asked ' + netAsked);
+  const fsAsked = nodeAsks.some(function (a) { return /^fs\./.test(String(a.verb)); });
+  if (studio.chats.length >= 1 && !sent.some(function (n) { return /^(fs|net)_/.test(n); }) && !netAsked && !fsAsked) test.check('the call to the studio carries no fs tool and no net tool, and the node\'s fs and net were never asked (goal/G23.5)');
+  else test.fail('goal/G23.5: ' + studio.chats.length + ' call(s), the first carried ' + short(sent) + ', net asked ' + netAsked + ', fs asked ' + fsAsked);
 }
 
 suite().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(async function () {

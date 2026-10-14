@@ -419,24 +419,28 @@ function toolRoom() { return contextKnown() ? Math.floor(promptRoom() / 4) : Inf
 // bare and the family under AGENTS, as a process server lists it. The desk's answer comes back as the asked body;
 // a refusal of the desk (not granted, no such item, a rule) is a body with ok false, which run hands to the model
 // in the desk's words. Andy: "Levant is restricted by the tools we give him": what has no verb file is no tool.
-// THE NAMESPACES (goal/G14.8): desk and fs; net no longer. Andy, 2026-10-10: "i'm more inclined to deny URL fetch,
-// and allow loadFile, it's much narrower." and "net_fetch will be removed for Levant." The fs tools are the verbs
-// js/fs describes (load, save, search, stat, annotations), through the node's loopback door; a tool configurator
-// in deskUnslothRemote is a later item, and this list is its seed.
+// THE NAMESPACES (goal/G14.8): net no longer. Andy, 2026-10-10: "net_fetch will be removed for Levant." A tool
+// configurator in deskUnslothRemote is a later item, and this list is its seed.
 // AND deskUnsloth's own (goal/G10.8): its file and git verbs, rooted at its clone, listed by its own introspection and
 // asked through its node as any caller asks them, so the fence below holds for the model as for everyone.
-const TOOL_NAMESPACES = ['desk', 'fs', 'deskUnsloth'];
+// ONE ROOT (goal/G23.5): the node's fs tools left his list. They were rooted at spirit/run and his own file verbs at
+// the repo root of his clone, so a path his search gave him failed when he read it. Andy: "give him everything." and
+// "Levant should have the same rules as you". Every file tool is deskUnsloth's own, in repository paths.
+const TOOL_NAMESPACES = ['desk', 'deskUnsloth'];
 // NOTHING RUNS ON THE DESK WHILE HE IS DISCONNECTED (goal/G18.9). Found in the record on 2026-10-12: his signoff
 // reached the desk, and an answer already in flight went on writing (two check.set, a chat.add, item.status,
 // item.files.add), each write making him live again for ten minutes. So a desk or deskUnsloth tool asked while he is
 // disconnected is refused, and the model is told so. The tools' descriptions (AGENTS...) are still read: the test
-// describes them after it disconnects him, and a description writes nothing. His fs reads stay, they reach no desk.
+// describes them after it disconnects him, and a description writes nothing.
+// HIS FILE READS STAY (goal/G23.5, G18.9): they reach no desk, so file.load (and file.search) are answered while he is
+// disconnected, as the node's fs reads were before his file tools became his own; file.save, commit and push stay
+// refused.
+const READS_OFF_THE_DESK = ['file.load', 'file.search'];
 function offTheDesk(verb) {
   const body = { ok: false, code: 'not-offered', error: 'disconnected', extra: { why: PERSONA + ' is disconnected from the desk, so ' + verb + ' is not run' } };
   return { status: 400, body: body, text: JSON.stringify(body) };
 }
 const tools = require('./tools').createTools({
-  ask: function (verb, args) { return spirit.core.ask(verb, args, NODE_URL); },
   routes: {
     desk: {
       ask: function (verb, args) {
@@ -449,7 +453,7 @@ const tools = require('./tools').createTools({
     },
     deskUnsloth: {
       ask: function (verb, args) {
-        if (!connected && String(verb).indexOf('AGENTS') !== 0) return Promise.resolve(offTheDesk(verb));
+        if (!connected && String(verb).indexOf('AGENTS') !== 0 && READS_OFF_THE_DESK.indexOf(String(verb)) === -1) return Promise.resolve(offTheDesk(verb));
         const one = {}; one[String(verb)] = args || {};
         return spirit.core.ask('jobs.api', { ask: { deskUnsloth: one } }, NODE_URL).then(function (r) {
           const body = (r && r.body) || {};
@@ -604,6 +608,7 @@ function askModelRound(messages, list, round, flight, onTool) {
     }
     const content = message ? String(message.content || '') : '';
     if (!content) {
+      if (calls.length && !messages.some(function (m) { return m.content === BUDGET_SPENT; })) return '(the model asked for a tool though none was offered, and said nothing)';
       if (calls.length) return '(the model kept asking for tools after ' + round + ' rounds, the room spent, and said nothing)';
       throw new Error('the model answered nothing');
     }

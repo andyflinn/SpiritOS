@@ -67,7 +67,7 @@ function callBytes(body) { return (body && Array.isArray(body.messages) ? body.m
 test.startTest('goal/G19.7: deskUnsloth timeouts, tool results in the room, working reset, the Remote\'s abort');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskunsloth-abort-'));
 
-// ── THE FAKE NODE: fs.load for the tools, deskClient's next and desk, jobs.update ──
+// ── THE FAKE NODE: file.load for the tools (deskUnsloth's own since goal/G23.5), deskClient's next and desk, jobs.update ──
 const BIG = 'A long paragraph of a file, repeated so it overflows the tool room many times. '.repeat(300);
 const nodeAsks = [];
 const published = [];
@@ -81,10 +81,14 @@ const node = http.createServer(function (req, res) {
     nodeAsks.push(b);
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
-    if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: 'load a file' }], more: false });
-    if (b.verb === 'fs.AGENTS.load') return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
-    if (b.verb === 'fs.load') {
-      const p = String(b.path || '');
+    // THE FILE TOOL IS deskUnsloth's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskUnsloth: ...}, and
+    // the node answers them here as it answered fs.load before (recorded as verb file.load / AGENTS.introspect).
+    const du = b.verb === 'jobs.api' && b.ask && b.ask.deskUnsloth;
+    if (du && du['AGENTS.introspect']) { nodeAsks.push({ verb: 'deskUnsloth.AGENTS.introspect' }); return answer(200, { items: [{ key: 'file.load', label: 'load a file' }], more: false }); }
+    if (du && du['AGENTS.file.load']) return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
+    if (du && du['file.load']) {
+      const p = String(du['file.load'].path || '');
+      nodeAsks.push({ verb: 'file.load', path: p });
       if (/witherror/.test(p)) return answer(200, { path: p, text: 'hello from the file', error: 'a field of the data, not a refusal' });
       if (/slow/.test(p)) return setTimeout(function () { answer(200, { path: p, text: 'slow file' }); }, 900);
       return answer(200, { path: p, text: /big/.test(p) ? BIG : 'a small file' });
@@ -277,7 +281,7 @@ async function serverHalf() {
     const n = toolMessages(body).length;
     calls++;
     if (n >= 6) return { text: 'read them all' };
-    return { toolCalls: [toolCall('big-' + n, 'fs_load', { path: 'shell/big/' + n }), toolCall('big-' + (n + 1), 'fs_load', { path: 'shell/big/' + (n + 1) })] };
+    return { toolCalls: [toolCall('big-' + n, 'deskUnsloth_file_load', { path: 'shell/big/' + n }), toolCall('big-' + (n + 1), 'deskUnsloth_file_load', { path: 'shell/big/' + (n + 1) })] };
   };
   const r0 = studio.chats.length;
   const sRoom = await ask('chat.send', { lines: [{ role: 'user', text: 'room please' }] });
@@ -317,7 +321,7 @@ async function serverHalf() {
   // A fetched JSON with an error field is data, not a refusal.
   respond = function (body) {
     const t = asked(body);
-    if (/witherror please/.test(t)) return toolMessages(body).length ? { text: 'read it' } : { toolCalls: [toolCall('we-1', 'fs_load', { path: 'shell/witherror.json' })] };
+    if (/witherror please/.test(t)) return toolMessages(body).length ? { text: 'read it' } : { toolCalls: [toolCall('we-1', 'deskUnsloth_file_load', { path: 'shell/witherror.json' })] };
     if (/second please/.test(t)) return { text: 'second' };
     return { text: 'other' };
   };
@@ -329,32 +333,32 @@ async function serverHalf() {
   if (/hello from the file/.test(weTool) && !/refused/.test(weTool)) test.check('a fetched JSON with an error field is handed back as data, not "the node refused"');
   else test.fail(OWED + 'the tool result reads ' + short(weTool));
   const tools0 = (weCall && Array.isArray(weCall.tools)) ? weCall.tools : [];
-  const load = tools0.filter(function (t) { return t.function && t.function.name === 'fs_load'; })[0];
+  const load = tools0.filter(function (t) { return t.function && t.function.name === 'deskUnsloth_file_load'; })[0];
   const req = load && load.function.parameters && load.function.parameters.required;
-  if (Array.isArray(req) && req.join(',') === 'path') test.check('a tool declares its request\'s keys required: fs_load requires path');
-  else test.fail(OWED + 'fs_load declares required ' + short(req));
-  const introBefore = nodeAsks.filter(function (a) { return a.verb === 'fs.AGENTS.introspect'; }).length;
+  if (Array.isArray(req) && req.join(',') === 'path') test.check('a tool declares its request\'s keys required: deskUnsloth_file_load requires path');
+  else test.fail(OWED + 'deskUnsloth_file_load declares required ' + short(req));
+  const introBefore = nodeAsks.filter(function (a) { return a.verb === 'deskUnsloth.AGENTS.introspect'; }).length;
   const s2 = await ask('chat.send', { lines: [{ role: 'user', text: 'second please' }] });
   await answerOf(s2.id, 8000);
-  const introAfter = nodeAsks.filter(function (a) { return a.verb === 'fs.AGENTS.introspect'; }).length;
+  const introAfter = nodeAsks.filter(function (a) { return a.verb === 'deskUnsloth.AGENTS.introspect'; }).length;
   if (introAfter === introBefore) test.check('the tools are not described again for the next answer');
-  else test.fail(OWED + 'the next answer described the tools again: fs.AGENTS.introspect asked ' + (introAfter - introBefore) + ' more time(s)');
+  else test.fail(OWED + 'the next answer described the tools again: deskUnsloth AGENTS.introspect asked ' + (introAfter - introBefore) + ' more time(s)');
 
   // One chat's record is its own: a tool of chat A finishing after chat B is never published under B's id.
   respond = function (body) {
     const t = asked(body);
-    if (/slow chat A/.test(t)) return toolMessages(body).length ? { text: 'A done' } : { toolCalls: [toolCall('slow-1', 'fs_load', { path: 'shell/slow' })] };
+    if (/slow chat A/.test(t)) return toolMessages(body).length ? { text: 'A done' } : { toolCalls: [toolCall('slow-1', 'deskUnsloth_file_load', { path: 'shell/slow' })] };
     if (/quick chat B/.test(t)) return { text: 'B done' };
     return { text: 'other' };
   };
   published.length = 0;
   const sA = await ask('chat.send', { lines: [{ role: 'user', text: 'slow chat A' }] });
-  await until(function () { return published.some(function (o) { return o.chat && o.chat.id === sA.id && o.chat.tool && o.chat.tool.name === 'fs_load'; }); }, 5000);
+  await until(function () { return published.some(function (o) { return o.chat && o.chat.id === sA.id && o.chat.tool && o.chat.tool.name === 'deskUnsloth_file_load'; }); }, 5000);
   const sB = await ask('chat.send', { lines: [{ role: 'user', text: 'quick chat B' }] });
   await answerOf(sB.id, 5000);
   await answerOf(sA.id, 8000);
   await sleep(300);
-  const wrong = published.filter(function (o) { return o.chat && o.chat.id === sB.id && o.chat.tool && o.chat.tool.name === 'fs_load'; });
+  const wrong = published.filter(function (o) { return o.chat && o.chat.id === sB.id && o.chat.tool && o.chat.tool.name === 'deskUnsloth_file_load'; });
   const doneA = published.filter(function (o) { return o.chat && o.chat.id === sA.id && o.chat.done && /A done/.test(o.chat.text); });
   if (!wrong.length && doneA.length) test.check('a chat\'s published record is its own: chat A\'s tool is never published under chat B\'s id');
   else test.fail(OWED + 'chat A\'s tool was published under chat B\'s id ' + wrong.length + ' time(s); A done published ' + doneA.length);

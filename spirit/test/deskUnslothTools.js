@@ -24,7 +24,8 @@
 //      rounds at most; the published object's chat.tool names the tool and what it works on while it runs.
 //      Since goal/G14.8 the process names desk and fs and no longer net ("net_fetch will be removed for Levant."),
 //      so the loop is exercised with fs.load against the fake node, the object (2.) still with net: the loop is
-//      generic, and which namespaces ride is the process's list.
+//      generic, and which namespaces ride is the process's list. Since goal/G23.5 the file tool is deskUnsloth's own
+//      file.load, answered by the fake node as it answered fs.load.
 //   4. SINCE goal/G21.5: a tool call the model writes as text is never posted and never run; the model is asked again.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
@@ -69,12 +70,18 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     nodeAsks.push(b);
     function answer(status, body, type) { res.writeHead(status, { 'Content-Type': type || 'application/json; charset=utf-8' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); }
-    if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: LOAD_DESCRIPTION }], more: false });
-    if (b.verb === 'fs.AGENTS.load') return answer(200, { description: LOAD_DESCRIPTION, request: { path: '' }, reply: { path: '', text: '' } });
-    if (b.verb === 'fs.load') {
-      if (!b.path) return answer(400, { error: 'path is required' });
-      return answer(200, { path: b.path, text: /big\.test/.test(b.path) ? BIG_PAGE : PAGE });
+    // THE FILE TOOL IS deskUnsloth's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskUnsloth: ...}, and
+    // the node answers them here as it answered fs.load before (recorded as verb file.load), so the loop is the same.
+    const du = b.verb === 'jobs.api' && b.ask && b.ask.deskUnsloth;
+    if (du && du['AGENTS.introspect']) return answer(200, { items: [{ key: 'file.load', label: LOAD_DESCRIPTION }], more: false });
+    if (du && du['AGENTS.file.load']) return answer(200, { description: LOAD_DESCRIPTION, request: { path: '' }, reply: { path: '', text: '' } });
+    if (du && du['file.load']) {
+      const p = String(du['file.load'].path || '');
+      nodeAsks.push({ verb: 'file.load', path: p });
+      if (!p) return answer(400, { error: 'path is required' });
+      return answer(200, { path: p, text: /big\.test/.test(p) ? BIG_PAGE : PAGE });
     }
+    if (du) return answer(404, { ok: false, code: 'no-such-verb' });
     if (b.verb === 'net.AGENTS.introspect') return answer(200, { items: introspectItems, more: false });
     if (b.verb === 'net.AGENTS.fetch') return answer(200, { description: FETCH_DESCRIPTION, request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} });
     if (b.verb === 'net.fetch') {
@@ -253,7 +260,7 @@ async function suite() {
   // studio's context_length; then a page over a quarter of (2000 - 100) * 4 bytes comes back cut to that room.
   await ask('models', {});
   await sleep(300);
-  script = [{ toolCalls: [toolCall('room-1', 'fs_load', { path: 'shell/big.test' })] }, { text: 'seen the big page' }];
+  script = [{ toolCalls: [toolCall('room-1', 'deskUnsloth_file_load', { path: 'shell/big.test' })] }, { text: 'seen the big page' }];
   studio.chats.length = 0;
   const sRoom = await ask('chat.send', { lines: [{ role: 'user', text: 'read the big page' }] });
   let aRoom = {};
@@ -264,7 +271,7 @@ async function suite() {
   if (roomTool && roomBytes <= TOOL_ROOM + 200 && roomBytes > TOOL_ROOM / 2 && /cut/.test(String(roomTool.content))) test.check('the tool room follows the studio\'s context_length: the big page came back cut to ' + roomBytes + ' bytes of room ' + TOOL_ROOM);
   else test.fail(OWED + 'the tool result was ' + roomBytes + ' bytes against a room of ' + TOOL_ROOM + ' (' + short(roomTool && roomTool.content) + ')');
   script = [
-    { toolCalls: [toolCall('call-1', 'fs_load', { path: 'shell/example.test' })] },
+    { toolCalls: [toolCall('call-1', 'deskUnsloth_file_load', { path: 'shell/example.test' })] },
     { text: 'The page says: Example Domain, for use in illustrative examples.' },
   ];
   studio.chats.length = 0; published.length = 0;
@@ -272,7 +279,7 @@ async function suite() {
   await until(function () { return studio.chats.length >= 2; }, 10000);
   const c1 = studio.chats[0], c2 = studio.chats[1];
   const sentTools = c1 && Array.isArray(c1.tools) ? c1.tools : [];
-  if (sentTools.length === 1 && sentTools[0].function && sentTools[0].function.name === 'fs_load' && sentTools[0].function.description === LOAD_DESCRIPTION) test.check('the call to the studio carries the tools from describe(fs), and no net tool (goal/G14.8)');
+  if (sentTools.length === 1 && sentTools[0].function && sentTools[0].function.name === 'deskUnsloth_file_load' && sentTools[0].function.description === LOAD_DESCRIPTION) test.check('the call to the studio carries the file tool, deskUnsloth\'s own since goal/G23.5, and no net tool (goal/G14.8)');
   else test.fail(OWED + 'the first call carried tools ' + short(sentTools));
   const toolMsg = c2 && Array.isArray(c2.messages) ? c2.messages.filter(function (m) { return m.role === 'tool'; })[0] : null;
   const assistantMsg = c2 && Array.isArray(c2.messages) ? c2.messages.filter(function (m) { return m.role === 'assistant' && m.tool_calls; })[0] : null;
@@ -282,7 +289,7 @@ async function suite() {
   for (let i = 0; i < 80; i++) { a1 = await ask('chat.answer', { id: s1.id }); if (a1.done) break; await sleep(100); }
   if (a1.done === true && /illustrative examples/.test(a1.text)) test.check('the model\'s text after the tool is the answer');
   else test.fail(OWED + 'chat.answer ended ' + short(a1));
-  const sawTool = published.some(function (p) { return p.chat && p.chat.tool && p.chat.tool.name === 'fs_load' && /example\.test/.test(String(p.chat.tool.url || '')); });
+  const sawTool = published.some(function (p) { return p.chat && p.chat.tool && p.chat.tool.name === 'deskUnsloth_file_load' && /example\.test/.test(String(p.chat.tool.url || '')); });
   if (sawTool) test.check('the published chat.tool named the tool and its path while it ran');
   else test.fail(OWED + 'no published object carried chat.tool for the load: ' + short(published.map(function (p) { return p.chat; })));
   // NO ROUND COUNT (goal/G23.4): with no context known every tool call the model makes runs, and its own text is the
@@ -290,10 +297,10 @@ async function suite() {
   // the three-round cap until goal/G23.4; the room-spent path (asked once more without tools) is
   // deskUnslothToolRounds.js's, with a known small context.
   script = [
-    { toolCalls: [toolCall('r1', 'fs_load', { path: 'shell/example.test/1' })] },
-    { toolCalls: [toolCall('r2', 'fs_load', { path: 'shell/example.test/2' })] },
-    { toolCalls: [toolCall('r3', 'fs_load', { path: 'shell/example.test/3' })] },
-    { toolCalls: [toolCall('r4', 'fs_load', { path: 'shell/example.test/4' })] },
+    { toolCalls: [toolCall('r1', 'deskUnsloth_file_load', { path: 'shell/example.test/1' })] },
+    { toolCalls: [toolCall('r2', 'deskUnsloth_file_load', { path: 'shell/example.test/2' })] },
+    { toolCalls: [toolCall('r3', 'deskUnsloth_file_load', { path: 'shell/example.test/3' })] },
+    { toolCalls: [toolCall('r4', 'deskUnsloth_file_load', { path: 'shell/example.test/4' })] },
     { text: 'With what I have read: three pages of examples.' },
     { text: 'never reached' },
   ];
@@ -304,7 +311,7 @@ async function suite() {
   await sleep(300);
   const last = studio.chats[studio.chats.length - 1];
   const lastUser = last && Array.isArray(last.messages) ? last.messages[last.messages.length - 1] : null;
-  const fetchesRun = nodeAsks.filter(function (a) { return a.verb === 'fs.load' && /example\.test\/[1-4]/.test(String(a.path)); }).map(function (a) { return a.path.slice(-1); });
+  const fetchesRun = nodeAsks.filter(function (a) { return a.verb === 'file.load' && /example\.test\/[1-4]/.test(String(a.path)); }).map(function (a) { return a.path.slice(-1); });
   if (a2.done === true && /three pages of examples/.test(a2.text) && studio.chats.length === 5 && script.length === 1 && last && Array.isArray(last.tools) && last.tools.length && lastUser && lastUser.role === 'tool' && fetchesRun.join('') === '1234') {
     test.check('no round count with no context known: all four fetches run, the last request still offers the tools, and the model\'s own words are the answer');
   } else test.fail('goal/G23.4: rounds: ' + studio.chats.length + ' calls, script left ' + script.length + ', fetches ' + fetchesRun.join('') + ', last call tools ' + (last && 'tools' in last) + ', last message ' + short(lastUser) + ', answer ' + short(a2));
@@ -314,8 +321,8 @@ async function suite() {
   // for formats: the spelled call is never parsed or run. The preamble says tools are called only as real calls.
   const OWED5 = 'OWED by goal/G21.5: ';
   test.subHeading('4. a tool call written as text is never posted, and never run');
-  const SPELLED = '<tool_call>\n<function=fs_load>\n<parameter=path>\nshell/spelled.test\n</parameter>\n</function>\n</tool_call>';
-  function spelledLoads() { return nodeAsks.filter(function (a) { return a.verb === 'fs.load' && /spelled\.test/.test(String(a.path)); }).length; }
+  const SPELLED = '<tool_call>\n<function=deskUnsloth_file_load>\n<parameter=path>\nshell/spelled.test\n</parameter>\n</function>\n</tool_call>';
+  function spelledLoads() { return nodeAsks.filter(function (a) { return a.verb === 'file.load' && /spelled\.test/.test(String(a.path)); }).length; }
   script = [{ text: SPELLED }, { text: 'The file holds the example page.' }];
   studio.chats.length = 0;
   const s3 = await ask('chat.send', { lines: [{ role: 'system', text: 'you are Levant' }, { role: 'user', text: 'what is in shell/spelled.test' }] });
@@ -328,7 +335,7 @@ async function suite() {
   const againLast = again && Array.isArray(again.messages) ? again.messages[again.messages.length - 1] : null;
   if (a3.done === true && a3.text === 'The file holds the example page.' && studio.chats.length === 2 && againLast && againLast.role === 'user' && /as text/i.test(String(againLast.content))) test.check('a spelled call is not the answer: the model is asked again, told its call was written as text, and its next words are the answer');
   else test.fail(OWED5 + studio.chats.length + ' studio calls, the second ending ' + short(againLast) + ', answer ' + short(a3));
-  if (!spelledLoads()) test.check('the spelled call was never run: no fs.load reached the node');
+  if (!spelledLoads()) test.check('the spelled call was never run: no file.load reached the node');
   else test.fail(OWED5 + 'the spelled call reached the node ' + spelledLoads() + ' time(s)');
   script = [{ text: SPELLED }, { text: 'still ' + SPELLED }, { text: 'never reached' }];
   studio.chats.length = 0;

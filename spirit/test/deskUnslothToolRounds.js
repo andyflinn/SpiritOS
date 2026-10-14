@@ -11,12 +11,12 @@
 //
 // THE WORLD: one deskUnsloth, four plain OpenAI stand-ins (as deskUnslothPlainContext.js), each with its own v1/models
 // entry, used in turn through connection.set and model.load; the answer is driven through the test tab's chat.send,
-// which runs the same tool loop as a desk answer. The tool is fs_load, served by the fake node: SMALL_RESULT bytes for
+// which runs the same tool loop as a desk answer. The tool is deskUnsloth_file_load (fs_load before goal/G23.5), served by the fake node: SMALL_RESULT bytes for
 // any path, LONG (~40 KB) for shell/long.txt. A round is one tool call; the stand-ins count rounds by the tool
 // messages in the request.
 //
 // WHAT IS ASSERTED
-//   1. big-x (max_input_tokens 1000000), asking fs_load for K = 12 rounds and then answering text: the model is asked
+//   1. big-x (max_input_tokens 1000000), asking deskUnsloth_file_load for K = 12 rounds and then answering text: the model is asked
 //      13 times, and the answer is its own text, never asked without tools.
 //   2. small-x (max_input_tokens SMALL_CONTEXT, room for about 5 rounds of SMALL_RESULT): asking for a tool whenever it
 //      is offered tools, answering text when it is not: more than 3 rounds happen, the last request has no tools, and
@@ -76,7 +76,7 @@ function plainServer(entry, seen, decide, delayMs) {
         const round = toolMessages(body).length;
         const d = decide(body, round);
         const message = d.tool
-          ? { role: 'assistant', content: '', tool_calls: [{ id: 'call-' + round, type: 'function', function: { name: 'fs_load', arguments: JSON.stringify({ path: d.tool }) } }] }
+          ? { role: 'assistant', content: '', tool_calls: [{ id: 'call-' + round, type: 'function', function: { name: 'deskUnsloth_file_load', arguments: JSON.stringify({ path: d.tool }) } }] }
           : { role: 'assistant', content: d.text };
         const send = function () { answer(200, { choices: [{ index: 0, finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message: message }] }); };
         return delayMs ? setTimeout(send, delayMs) : send();
@@ -92,7 +92,7 @@ const small = plainServer({ id: 'small-x', max_input_tokens: SMALL_CONTEXT }, sm
 const none = plainServer({ id: 'none-x' }, noneSeen, kRounds('shell/long.txt'));
 const endless = plainServer({ id: 'endless-x' }, endlessSeen, function (body, round) { return { tool: 'shell/small' + round + '.txt' }; }, 60);
 
-// ── THE FAKE NODE: fs.load for the tool; the desk holds nothing ──
+// ── THE FAKE NODE: file.load for the tool; the desk holds nothing ──
 const node = http.createServer(function (req, res) {
   let raw = '';
   req.on('data', function (c) { raw += c; });
@@ -100,10 +100,14 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const answer = answerer(res);
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: 'load a file' }], more: false });
-    if (b.verb === 'fs.AGENTS.load') return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
-    if (b.verb === 'fs.load') return answer(200, { path: String(b.path || ''), text: String(b.path) === 'shell/long.txt' ? LONG : SMALL_RESULT });
     const ask = b.verb === 'jobs.api' && b.ask;
+    // THE FILE TOOL IS deskUnsloth's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskUnsloth: ...}, and the
+    // node answers them as it answered fs.load before.
+    const du = ask && ask.deskUnsloth;
+    if (du && du['AGENTS.introspect']) return answer(200, { items: [{ key: 'file.load', label: 'load a file' }], more: false });
+    if (du && du['AGENTS.file.load']) return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
+    if (du && du['file.load']) { const p = String(du['file.load'].path || ''); return answer(200, { path: p, text: p === 'shell/long.txt' ? LONG : SMALL_RESULT }); }
+    if (du) return answer(404, { ok: false, code: 'no-such-verb' });
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient) return answer(200, { change: 1 });
     answer(404, { ok: false, code: 'no-such-verb' });
@@ -151,7 +155,7 @@ async function suite() {
   test.subHeading('1. a big context: ' + K + ' tool rounds, then the model\'s own answer');
   await usePair('big', urlOf(big), 'big-x');
   const a1 = await chat('use your tools');
-  if (bigSeen.length >= 1 && hasTools(bigSeen[0])) test.check('the world: the first request offers the tools (fs_load among them)');
+  if (bigSeen.length >= 1 && hasTools(bigSeen[0])) test.check('the world: the first request offers the tools (deskUnsloth_file_load among them)');
   else test.fail('the world: big-x was asked ' + bigSeen.length + ' time(s), the first ' + short(bigSeen[0] && bigSeen[0].tools));
   if (bigSeen.length === K + 1 && a1.text === 'my own answer after ' + K + ' rounds' && !budgetSaid(bigSeen)) test.check('asked ' + (K + 1) + ' times; the answer is the model\'s own: ' + short(a1.text));
   else test.fail(OWED + 'big-x was asked ' + bigSeen.length + ' times (want ' + (K + 1) + '), tool messages in the last ' + toolMessages(bigSeen[bigSeen.length - 1]).length + ', budget said ' + budgetSaid(bigSeen) + '; the answer ' + short(a1.text));

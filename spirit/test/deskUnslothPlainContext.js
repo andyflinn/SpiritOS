@@ -10,13 +10,13 @@
 //   not; the studio's context is read as before;
 //   the context is never configured and never sent to any server.
 //
-// HOW THE SIZE IS SEEN: a tool result. The fake node serves fs.load with a file of LONG_BYTES (~40 KB). At 8192 tokens
+// HOW THE SIZE IS SEEN: a tool result. The fake node serves file.load (deskUnsloth's own since goal/G23.5) with a file of LONG_BYTES (~40 KB). At 8192 tokens
 // (answerTokens 100, bytesPerToken 4) a tool result gets a quarter of (8192 - 100) * 4, about 8 KB, so the file is cut
 // or dropped; at 1,000,000 tokens it fits many times over and reaches the model whole in the next chat request.
 //
 // WHAT IS ASSERTED
 //   1. a plain server whose v1/models gives {id: big-x, max_input_tokens: 1000000}: after model.load big-x and a chat
-//      that asks fs_load, the next chat request carries the tool message with the whole file.
+//      that asks the file tool, the next chat request carries the tool message with the whole file.
 //   2. the known list (models.json, that pair's) keeps the context on big-x's entry: context 1000000.
 //   3. a plain server whose list gives context_length: 1000000 on len-x: honoured the same way, kept the same way.
 //   4. a plain server whose list gives no context (none-x): since goal/G23.4 the result reaches the model whole, no
@@ -69,7 +69,7 @@ function plainServer(entry, seen) {
       if (p === '/v1/chat/completions' && req.method === 'POST') {
         const asked = JSON.stringify((body && body.messages) || []);
         const message = /read the long file/.test(asked) && !toolMessages(body).length
-          ? { role: 'assistant', content: '', tool_calls: [toolCall('long-1', 'fs_load', { path: 'shell/long.txt' })] }
+          ? { role: 'assistant', content: '', tool_calls: [toolCall('long-1', 'deskUnsloth_file_load', { path: 'shell/long.txt' })] }
           : { role: 'assistant', content: 'read it' };
         return answer(200, { choices: [{ index: 0, finish_reason: message.tool_calls ? 'tool_calls' : 'stop', message: message }] });
       }
@@ -84,7 +84,7 @@ const big = plainServer({ id: 'big-x', max_input_tokens: BIG_CONTEXT }, bigSeen)
 const len = plainServer({ id: 'len-x', context_length: BIG_CONTEXT }, lenSeen);
 const none = plainServer({ id: 'none-x' }, noneSeen);
 
-// ── THE FAKE NODE: fs.load for the tool, jobs.api asks of deskUnsloth (the desk holds nothing), jobs.update ──
+// ── THE FAKE NODE: file.load for the tool, jobs.api asks of deskUnsloth (the desk holds nothing), jobs.update ──
 let client = null;
 const node = http.createServer(function (req, res) {
   let raw = '';
@@ -93,10 +93,14 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const answer = answerer(res);
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: 'load a file' }], more: false });
-    if (b.verb === 'fs.AGENTS.load') return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
-    if (b.verb === 'fs.load') return answer(200, { path: String(b.path || ''), text: LONG });
     const ask = b.verb === 'jobs.api' && b.ask;
+    // THE FILE TOOL IS deskUnsloth's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskUnsloth: ...}, and the
+    // node answers them as it answered fs.load before.
+    const du = ask && ask.deskUnsloth;
+    if (du && du['AGENTS.introspect']) return answer(200, { items: [{ key: 'file.load', label: 'load a file' }], more: false });
+    if (du && du['AGENTS.file.load']) return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
+    if (du && du['file.load']) return answer(200, { path: String(du['file.load'].path || ''), text: LONG });
+    if (du) return answer(404, { ok: false, code: 'no-such-verb' });
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient) return answer(200, { change: 1 });
     answer(404, { ok: false, code: 'no-such-verb' });
@@ -122,7 +126,7 @@ const ask = function (verb, a) { const q = {}; q[verb] = a || {}; return client.
 function readJson(name) { try { return JSON.parse(fs.readFileSync(path.join(state, name), 'utf8')); } catch (e) { return null; } }
 function ids(m) { return ((m && m.models) || []).map(function (x) { return x.id; }).sort().join(','); }
 
-// One pair: saved and used, its list read, its model chosen, and one chat that asks fs_load. Returns what the
+// One pair: saved and used, its list read, its model chosen, and one chat that asks the file tool. Returns what the
 // stand-in was sent after the tool ran: the chat request carrying the tool message.
 async function exercise(name, url, model, seen) {
   const set = await ask('connection.set', { name: name, url: url, key: 'k-' + name });
@@ -160,7 +164,7 @@ async function serverHalf() {
 
   test.subHeading('1. a plain server whose list gives max_input_tokens: ' + BIG_CONTEXT);
   const b = await exercise('big', BIG_URL, 'big-x', bigSeen);
-  if (b.set.answers === true && b.answered.done === true && b.tool !== null) test.check('the world: the pair answers, the chat asked fs_load and was asked again with its result');
+  if (b.set.answers === true && b.answered.done === true && b.tool !== null) test.check('the world: the pair answers, the chat asked the file tool and was asked again with its result');
   else test.fail('the world: big pair set ' + short(b.set) + '; ' + said(b));
   if (whole(b)) test.check('the tool message carries the whole file (' + Buffer.byteLength(b.tool, 'utf8') + ' bytes): the call is sized to big-x\'s context');
   else test.fail(OWED + 'big-x (max_input_tokens ' + BIG_CONTEXT + '): ' + said(b));
