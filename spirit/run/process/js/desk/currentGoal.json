@@ -1,5 +1,5 @@
 {
- "change": 60067,
+ "change": 60068,
  "line": 8510,
  "goal": "goal/G23",
  "items": [
@@ -44,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -1587,10 +1587,9 @@
    "id": "goal/G23.7",
    "title": "deskUnsloth: file.edit replaces exact text, like cw",
    "goal": "goal/G23",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
