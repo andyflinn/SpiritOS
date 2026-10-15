@@ -1,19 +1,23 @@
 {
- "change": 63537,
+ "change": 63540,
  "line": 8510,
- "goal": "goal/G25",
+ "goal": "goal/G28",
  "items": [
   {
-   "id": "goal/G25",
-   "title": "Design Review Internal",
+   "id": "goal/G28",
+   "title": "Fix node stuff and intrinsic shell apps",
    "goal": "",
-   "status": "closed",
-   "with": "",
+   "status": "",
+   "with": "ollama agent node",
    "buttons": [
-    "reopen"
+    "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G28.1",
+    "goal/G28.2",
+    "goal/G28.3"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -42,7 +46,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 0,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "ollama agent node"
@@ -54,33 +58,166 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "A lot has gone wrong in the shell(Apps) this goal here will be achieved when all it's items are done.\n\nevery data-changing UI element in spirit\\run\\shell\\js MUST carry it's own listener and redraw only itself.\n\nlevant-local 00:26 Read spirit/run/shell/js: apiBranchSelector, appServerSelector, contactLabel, iconSelector, contactSelector, appHeader — each element carries its own listeners and redraws only itself. Two violations: iconSelector.js (onDocumentClick) and contactSelector.js (line 202) put a click listener on document; that is not the element's own listener, and it closes the selector when anything else on the page is clicked — redrawing across elements. appHeader's resize listener only measures itself. Are those two document-level click handlers to be fixed?",
+   "version": 3,
    "checks": [],
    "chat": [
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T05:52:49.593Z",
-     "text": "Do you have a review ready already?"
+     "at": "2026-10-14T22:16:45.645Z",
+     "text": "please verify that\nevery data-changing UI element in spirit\\run\\shell\\js MUST carries it's own listener and redraws only itself."
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T05:52:52.213Z",
-     "text": "Levant: goal/G25 \"Design Review Internal\" is now current. Its box is empty, there are no rulings, no chat, and no items under it yet."
-    },
+     "at": "2026-10-14T22:26:55.476Z",
+     "text": "Read spirit/run/shell/js: apiBranchSelector, appServerSelector, contactLabel, iconSelector, contactSelector, appHeader — each element carries its own listeners and redraws only itself. Two violations: iconSelector.js (onDocumentClick) and contactSelector.js (line 202) put a click listener on document; that is not the element's own listener, and it closes the selector when anything else on the page is clicked — redrawing across elements. appHeader's resize listener only measures itself. Are those two document-level click handlers to be fixed?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G28.1",
+   "title": "Natter is fucked up",
+   "goal": "goal/G28",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G28"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Natter won't allow me to add a relay, that I'm not a member of, insisting that relays only can be added when a node's seat on the relay is confirmed. HOW FUCKING stupid is that, when the onboarding procedure for relay sits in natterDetails....\n\nNatter must read the relay list from it's Shadow roll, no? certainly NOT from a json file anymore. if it still does. kill that code.\nNatter may reject the adding of a relay if it is refused a card-fetch for the relay, (the only non-sealed verb on a relay)\nNatter may reject the adding of a relay if the private label input field is invalid or empty\nNatter may reject the adding of a relay if the relay fails to respond properly to a card call.\n\nif it Gets a relay-card from the relay via PeerPost, IT MUST ADD the relay to its list, otherwise the onboarding facilities in natter details can never be reached.\n\n\nIdiots!!!!",
+   "version": 4,
+   "checks": [],
+   "chat": [
     {
      "by": "andy",
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-14T05:54:51.291Z",
-     "text": "have you looked at the whole repo, or at least spirit/run. I'm looking for an evaluation of the project status."
+     "at": "2026-10-15T06:44:04.227Z",
+     "text": "can you verify this problem?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G28.2",
+   "title": "Get rid of the last \"device\" remnants!!!!!",
+   "goal": "goal/G28",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G28"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "there is STILL a folder \"spirit/run/js/device/\" in the repo! It contains an AGENTS.md!\n\nWTF is it doing there?\n\nGet rid of it!\n\nGet rid of any \"device\" reference in comments, documentation and design references.",
+   "version": 4,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G28.3",
+   "title": "BUG: Relay does not persist member labels.",
+   "goal": "goal/G28",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G28"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Relay does not persist member Labels. When i set my own label in the info shell app, it must propagate to all the relays I'm a member of. \n\nIt dose seem to do that.\n\nBut afterwards the Relay does not seem to remember.\n\n",
+   "version": 3,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T08:14:47.520Z",
+     "text": "Levant, can you confirm this from the code?"
     },
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
-     "at": "2026-10-14T05:56:06.463Z",
-     "text": "Levant: Yes, I looked at the repo, mainly `spirit/run`, plus the top-level docs and `spirit/test`. I did not run the test suite, so this rests on file reads and the last recorded scoreboard.\n\n- **Size:** `spirit/run` has 131 JS files (about 60k lines, the largest being `relay.js` and `hub.js`), plus `process/js` with about 30 processes (desk, deskClient, deskUnsloth, deskVerify, localReview and others). `spirit/test` has 478 files (about 115k lines). The repo has about 3,400 commits.\n- **Last recorded run:** `spirit/test/scoreboard-runs.log` shows 306 suites, 4406 green, 16 red and 7 unhappy, at commit 3ce4152f. Six requirements are listed as failing (public-app-server/G17, puppets/G1, G10, G2, transport/R12, R16). That log is the newest entry I found, so the current tree may differ.\n- **Loose ends:** `DONE.md` has a row marked \"no test names it: built, or dropped?\" (puppets/G5). `run/shell/natter/relays.json` is untracked. Recent history shows the desk work moving in red/green pairs (G24.x, G24.9).\n- **Docs:** `design/` is extensive (protocol, principles, shell, desk). `shell/README.md` says `dialogs` is listed but not provided.\n\nI have not checked whether these failures are still current. If you want a fresh evaluation, I can run `spirit/test/runAll.js` in a separate pass, or I can check the six red rows against the code."
+     "at": "2026-10-15T08:26:37.207Z",
+     "text": "Levant: Confirmed from the code:\n\n- **iconSelector.js** — `onDocumentClick` (line 110) is registered at line 122 with `document.addEventListener('click', onDocumentClick)`; it closes the selector when anything else on the page is clicked.\n- **contactSelector.js** — line 202 does the same: `document.addEventListener('click', …)` closes the pane when the click lands outside `root`.\n\nBoth are document-level listeners, not the element's own, and each closes across elements. Yes — those two document-level click handlers are in the code and both need fixing."
     }
    ]
   }
