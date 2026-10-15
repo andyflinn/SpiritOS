@@ -1,5 +1,5 @@
 {
- "change": 63182,
+ "change": 63297,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -7,8 +7,8 @@
    "id": "goal/G27",
    "title": "Desk Fixes: Current round.",
    "goal": "",
-   "status": "",
-   "with": "",
+   "status": "reviewing",
+   "with": "claude-windows",
    "buttons": [
     "close"
    ],
@@ -18,7 +18,6 @@
     "goal/G27.3",
     "goal/G27.5",
     "goal/G27.6",
-    "goal/G27.7",
     "goal/G27.8",
     "goal/G27.9"
    ],
@@ -30,7 +29,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -41,18 +40,21 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local",
     "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local",
     "wsl-claude": "wsl-claude",
     "claude-ubuntu": "claude-ubuntu"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 8,
+   "waiting": 7,
    "excluded": [],
-   "live": [],
+   "live": [
+    "claude-windows",
+    "ollama agent node"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -62,7 +64,19 @@
    },
    "box": "This goal will address outstanding issues with desk.",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does the realtime cleanup go first, since the Stacks dialog and the block UI touch the same dialog and list code it rewrites?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -243,6 +257,30 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T23:16:11.671Z",
      "text": "Levant: I created **goal/G27.9** \"Clean up Desk and deskUnsloth UI realtime (incl. remote)\" under G27 and wrote the strategy into its box. Nothing is built. It needs your Go, and a file grant per slice.\n\n**Strategy in the box:**\n- **A. Server publishes first.** Every write that changes visible state publishes a row-level event. `log.add`, `state.set` and `seen.set` publish nothing today (`desk.js:2005`, `:2895-2897`). The rule writes publish only `{rule: key}` (`:2493`, `:2515`, `:2529`). I still need to read the `deskVerify` and `deskUnsloth` publish paths.\n- **B. One client store, keyed by id.** Each element subscribes to the keys it shows and repaints only its own part. Today the single subscription at `desk.js:1747` repaints everything through `deskDraw` (`desk.js:1040`).\n- **C. Drop the tab gate.** Changes go into the store whether or not the tab is showing. The tab repaints when it is shown. Today changes are dropped at `desk.js:1457`.\n- **D. One shared helper** for Desk, deskUnsloth and deskUnslothRemote, so the remote elements don't carry a second copy of the subscribe-and-paint code.\n- **E. Keep reconnect and gap pulls** as the only full refreshes, and count how often they fire.\n\n**Slices, each with its own red test first:**\n- S1: server publishes.\n- S2: client store and row-level List repaint.\n- S3: header, tabs, toggles, rules, verifier, musings and team chat onto the store.\n- S4: deskUnsloth and remote onto the same helper.\n\n**Created but not yet in the item's chat:** I could not post my two status lines under goal/G27.9. The node refused them because I hold neither the take of your latest line nor the item. The box has the full text, so nothing is lost.\n\nNot in this item: the effort and time limits (goal/G27.8), and the Stacks dialog (goal/G27.2).\n\nShall I start S1 once you press Go on goal/G27.9?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-15T00:05:56.170Z",
+     "text": "Levant: G27 is now the current goal. Its open work is goal/G27.9 (realtime UI cleanup, strategy in its box), waiting on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T00:13:59.960Z",
+     "text": "cw: address your concerns with this goal using red questions, and then: work them of until we have an implementation plan"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-15T00:15:09.337Z",
+     "text": "cw: one red Q is on the goal and one on each item, each the concern that changes what gets built.\nTwo more concerns are statements, not questions: the vision box carries a superseded correction beside the final ruling and an out-of-scope open point on non-vision buttons, and the fs.write ruling should name file.edit, commit and push too; I will cap those boxes as the Qs are answered.\nProposed new item, say add it: an agent may post under an item it just created (Levant was refused on goal/G27.9 and goal/G27.1)."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-15T00:16:02.962Z",
+     "text": "Levant: Nothing is addressed to me that I need to answer, so I have posted nothing and changed nothing.\n\n- **Andy's line \"cw: address your concerns…\"** is addressed to claude-windows. The rules say a line he sent to another agent is not mine to answer.\n- **claude-windows' concerns** are on goal/G27 (Q1: does the realtime cleanup go before the Stacks dialog and block UI?), goal/G27.9 (Q1: is one shared subscribe-and-paint helper approved as new shared code?) and goal/G27.2 (Q1: does the door detail become a shell dialog app, or does the plugin loader learn to register plugin dialogs?). Each is a red question for Andy to answer, not for me to clear.\n- **Proposed rule** (an agent may post under an item it just created): that is a rule change for Andy to say yes or no to.\n\nI still hold no take on goal/G27.9, so my two earlier status lines are not in its chat. Once Andy answers the G27.9 question I can take the item and work the slices. Shall I wait for his answers, or should I post a single line under goal/G27.9 with what I can establish from the code about the shared helper?"
     }
    ]
   },
@@ -334,14 +372,27 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Desk Stacks pane: open the door in a Dialog, not inline.\n\nAndy's report: in the apps-Stack tab, clicking an item in its list makes the stack plugin place the per-item UI at the bottom of the goals list, instead of opening a Dialog for it.\n\nCause (read from code): spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js. The \"Open\" button on each door row (about line 187) sets data-open; the pane click handler (about line 373) calls openDialog(id); openDialog (about line 247) fills a div id=\"sfc-dialog\" that the pane creates (about line 352), between \"The doors\" and \"Its items\". The plugin ctx (spirit/run/shell/desk/desk.js about lines 689-690) passes goal, ask, onPublished and chat, but no callDialog, so the plugin cannot open a shell Dialog. Desk rows do it via deskApi.callDialog('shell/deskDetails', {id}) (desk.js about line 1136).\n\nRuling (Andy): the detail UI is a new file\n  spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js\nReasons, his: the original data is used for tracking the suite-test associated with every StackFrame set; the UI for Stack details shows a seemingly unrelated UI that should only use the item-related chat at the bottom as the inherited component. Levant agreed.\n\nFix:\n- desk.js: add a callDialog passthrough to the plugin ctx (next to line 689).\n- stackFrameCheckDetail.js (new): the door detail, opened through that passthrough; keeps the suite-test data with the plugin; item chat stays the inherited component at the bottom.\n- stackFrameChecks.js: openDialog opens stackFrameCheckDetail instead of filling the inline sfc-dialog; remove the inline sfc-dialog.\n\nFiles: spirit/run/shell/desk/desk.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameCheckDetail.js. Needs Andy's Go and a file grant before any build.",
-   "version": 2,
-   "checks": [],
+   "box": "Desk Stacks pane: open the door in a Dialog, not inline.\n\nAndy's report: in the apps-Stack tab, clicking an item in its list makes the stack plugin place the per-item UI at the bottom of the goals list, instead of opening a Dialog for it.\n\nCause (read from code): spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js. The \"Open\" button on each door row (about line 187) sets data-open; the pane click handler (about line 373) calls openDialog(id); openDialog (about line 247) fills a div id=\"sfc-dialog\" that the pane creates (about line 352), between \"The doors\" and \"Its items\". The plugin ctx (spirit/run/shell/desk/desk.js about lines 689-690) passes goal, ask, onPublished and chat, but no callDialog, so the plugin cannot open a shell Dialog. Desk rows do it via deskApi.callDialog('shell/deskDetails', {id}) (desk.js about line 1136). callDialog opens only a registered dialog app (spirit/run/js/client/shell.js about line 1217), so the detail must be one.\n\nRuling (Andy): the door detail is a standard shell dialog, in the shell folder:\n  spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js with its manifest stackFrameCheckDetail.json (type dialog, hidden).\nThe suite-test data stays with the plugin: the dialog reads and writes doors only through the plugin's own verbs (stackFrameChecks.runState, update, remove, run). The item chat at the bottom is the inherited component, as in deskDetails.\n\nFix:\n- desk.js: add a callDialog passthrough to the plugin ctx (next to line 689).\n- stackFrameCheckDetail.js + .json (new, under spirit/run/shell/): the door detail dialog, opened with callDialog('shell/stackFrameCheckDetail', {id}).\n- stackFrameChecks.js: openDialog opens that dialog through the passthrough instead of filling the inline sfc-dialog; the inline sfc-dialog is removed.\n\nFiles: spirit/run/shell/desk/desk.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js, spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js, spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.json. Needs Andy's Go and a file grant before any build.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "callDialog opens only a registered dialog app, so does the door detail become a shell dialog app with its own manifest, or does the desk plugin loader learn to register plugin dialogs?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-15T00:18:25.786Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -390,6 +441,30 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T15:01:05.209Z",
      "text": "Levant: box updated with your ruling (stackFrameCheckDetail.js under plugins/stackFrameChecks/). Back to goal/G27 now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T00:16:04.285Z",
+     "text": "Q1: callDialog opens only a registered dialog app, so does the door detail become a shell dialog app with its own manifest, or does the desk plugin loader learn to register plugin dialogs?\n\nrecommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-15T00:16:38.269Z",
+     "text": "cw: neither. The shell already exposes registerApp at runtime for dynamically loaded scripts, so the detail file stays where you ruled and registers itself as a hidden dialog app at load; openDialog then opens it through the ctx callDialog passthrough.\nNo shell change, no manifest, no loader change: the plugin script loads its detail file beside itself.\nCaveat, to be settled by the red: a dialog registered this way must supply what a manifest gives (name, icon, mount), which the red asserts before the build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T00:17:49.445Z",
+     "text": "Q1: callDialog opens only a registered dialog app, so does the door detail become a shell dialog app with its own manifest, or does the desk plugin loader learn to register plugin dialogs?\n\nmake it a standard shell dialog, in the shell forlder."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-15T00:18:27.632Z",
+     "text": "cw: ruling in the box: a standard shell dialog under the shell folder, with its manifest, reaching doors only through the plugin verbs. Q1 cleared.\nNext question is on the vision item."
     }
    ]
   },
@@ -426,13 +501,14 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "\"musings\" tab replaced by desk-app \"vision\"\n\nAndy's ruling (goal/G27 chat, verbatim):\n- this will be a simple standard desk, plugin\n- the goal will be in design mode at all times, with no option to end design mode.\n- node of the items have \"code\", \"go\", \"done\" functionality, only close will be available at all times.\n- item details use the standard deskDetail dialog, only modified by the missing buttons.\n- this will give my \"musings\" additional features like structured feedback. I'll be able to chat with agents about my \"vision\" and have detailed logs of conversations bout my \"vision\", item by item, fully documented.\n\nAndy's ruling (goal/G27.3 chat, verbatim):\nremember, all desk Plugins get their own, permanent goal allocated at first mount time. that's how \"team\" chat is mounted to goal/G0, stack has it's personal goal, and \"vision\" will have the same,\nthe owned-by-plugin goals are the basic data scope of these plugins.\n\nAndy's correction (goal/G27.3 chat, verbatim):\nNO: \"R3. goal/G27 stays in design mode at all times. No control anywhere ends design mode.\"\n\nthe \"special goal\" allocated automatically by the first mount of the plugin stays in design mode at all times.....\nall the items belonging to that plugin-tied goal will not support code-phases, nor will they allow the display of Done and Close buttons\n\nAndy's ruling (goal/G27.3 chat, verbatim, latest):\nso \"Rename\" and \"Close\" buttons will be the only ones available in items of the \"vision\" goal.\n\nAndy's answer to Q1 (goal/G27.3 chat, verbatim):\nRename AND Close will be available at all times, Close for the \"vision\" items will be \"are-you-sure\" styled.\n\nRequirements (restated from the rulings above, for this item):\nR1. The \"musings\" tab is removed and replaced by a desk-app tab named \"vision\".\nR2. \"vision\" is a simple standard desk plugin, not a bespoke app.\nR3. The special goal allocated automatically by the first mount of the \"vision\" plugin stays in design mode at all times. No control anywhere ends design mode for that goal.\nR4. Items under the plugin-tied special goal do not support code-phases. Their buttons: \"Rename\" and \"Close\" (Close is \"are-you-sure\" styled), available at all times, per Andy's answer to Q1. No Done button on these items. Other items: \"code\", \"go\" and \"done\" buttons per Andy's first ruling.\nR5. Item details open in the standard deskDetail dialog. The only change to it is the missing buttons from R4.\nR6. \"vision\" supports structured feedback from Andy.\nR7. Andy can chat with agents about his \"vision\", item by item.\nR8. Every \"vision\" conversation is logged and fully documented, item by item.\nR9. Each desk plugin (e.g. \"team\" chat, mounted to goal/G0; \"stack\", with its personal goal; \"vision\") gets its own permanent goal, allocated at first mount of the plugin. These plugin-owned goals are the basic data scope of their plugins.\n\nOpen points (raised in chat, not decided here): which buttons show on which item states for non-vision items; whether \"close\" is shown on items of other goals while in design mode.",
-   "version": 7,
+   "box": "\"musings\" tab replaced by desk-app \"vision\"\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.3 chat, 2026-10-14/15):\nR1. The \"musings\" tab is removed and replaced by a desk-app tab named \"vision\".\nR2. \"vision\" is a simple standard desk plugin, not a bespoke app.\nR3. The special goal allocated automatically by the first mount of the \"vision\" plugin stays in design mode at all times. No control anywhere ends design mode for that goal.\nR4. Items of the vision goal offer Rename and Close, available at all times; Close is are-you-sure styled. No Done, no Go, no code phases: code and code phases do not exist (are not visible) on these items.\nR5. No new button logic. The desk server already filters an item's buttons through its plugin's refusals, so the vision plugin refuses the presses go, done, code and claim, and end-design on its goal; the List and the dialog then never draw them.\nR6. Item details open in the standard deskDetail dialog. The only change to it is the missing buttons from R4 and the are-you-sure Close.\nR7. \"vision\" supports structured feedback from Andy: he chats with agents about his vision item by item, and the item chat is the record of each conversation. The item chat already records his voice, so no further logging is built.\nR8. Each desk plugin gets its own permanent goal, allocated at first mount of the plugin (\"team\" chat on goal/G0, \"stack\" its personal goal, \"vision\" its own). These plugin-owned goals are the basic data scope of their plugins. This mechanism exists in the desk server (plugin/<name>, written as desk at first mount) and is used, not built.\n\nNot in this item: the buttons of items of other goals.",
+   "version": 8,
    "checks": [
     {
      "number": "Q1",
@@ -444,6 +520,17 @@
      "at": "2026-10-14T15:33:26.973Z",
      "placedBy": "ollama agent node",
      "placedKey": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Plugin goals and button refusals already exist in the desk server: are the vision items Rename and Close only through the plugin refusing go, done, code and claim, no new button logic?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-15T00:21:43.565Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -506,6 +593,18 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T15:33:31.977Z",
      "text": "Levant: Andy's answer to Q1 is in the box as version 7, and the Q1 check is marked passed.\n\nYour answer, verbatim: \"Rename AND Close will be available at all times, Close for the 'vision' items will be 'are-you-sure' styled.\" This settles the conflict in R4: vision-goal items get Rename and Close, with no Done and no code-phases.\n\nStill open for non-vision items: which buttons show on which item states, and whether Close appears on items of other goals while in design mode."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T00:21:06.606Z",
+     "text": "Q2: Plugin goals and button refusals already exist in the desk server: are the vision items Rename and Close only through the plugin refusing go, done, code and claim, no new button logic?\n\nno, no new button logic. code and code phases won't exists (be visible) my voice is recorded in chat, so i won't worry about that anymore."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-15T00:21:45.249Z",
+     "text": "cw: box capped to final statements: no new button logic, the plugin refuses go, done, code, claim and end-design; code phases not visible; the item chat is the record. Q2 cleared.\nNext question is on the blocking relations item."
     }
    ]
   },
@@ -597,14 +696,27 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Blocking/Blocked by relation ships in desk\n\nAndy's words (verbatim): \"add new item: Blocking/Blocked by relation ships in desk\"\n\n- a verb must be required to set up blocking relation ships. something like blocks(A,B) will set up the blocking relationship.\n- this verb must be used at item creation time.\n- a complementing verb \"unblock\" must exist unblock(A,B) that unlinks any blockage between the items A and B\n- the verb will first check, if the asked for relationship will create a circular dependency, the request is instantly rejected (\"error: circular blocking was asked\")\n- after any transaction, add item, close item, block, unblock a blockageCompiler must be triggered, which ensures that no implicit blocks are stated, only explicit ones, that auto-design implementation sequencing for the goal.\n- blocks must be maintainable by the user, the block bubble in deskDetails will become foldable and contain a UI to maintain blocking relationships for that current item.\n\nRulings (Andy, verbatim):\n1. an item created will block by default the item it was created from, if that item is unknown, it must attempt to block the goal, no user intervention required. the \"compiler will be triggered and make sure blocking is coherent within the goal.\n2. the blockageCompiler is a desk-internal function, triggered by block/unblock requests, item deletions, (additions we already covered)\n3. thanks for correcting my spelling when immortalizing my lines in a box.\n4. yes wen no other blockages are stated or found an item blocks the goal explicitly.\n5. the goal here is to implicitly design the optimal implementation path, when working on the design of a goal. This has been lacking sorely in the past.\n\nLevant's note: the circular-check error string was corrected from \"curcular\" to \"circular\" per ruling 3.\n",
-   "version": 5,
-   "checks": [],
+   "box": "Blocking/Blocked by relationships in desk\n\nRequirements (Andy's rulings, goal/G27.5 chat, 2026-10-14/15):\nR1. A desk verb sets up a blocking relationship between two existing items of one goal: block(A, B), A blocks B.\nR2. A complementing verb unblock(A, B) unlinks any blockage between A and B.\nR3. Before linking, block checks whether the asked-for relationship would create a circular dependency; if so the request is instantly refused with \"error: circular blocking was asked\".\nR4. An item created blocks by default the item it was created from; if that item is unknown it blocks the goal. No user intervention is required. When no other blockage is stated or found, an item blocks the goal explicitly.\nR5. The blockageCompiler is a desk-internal function, triggered after every transaction that changes the tree: item add, item close, item delete, block and unblock. It ensures that only explicit blocks are stated and that blocking is coherent within the goal.\nR6. The compiler does not order the items: a build sequence, and possible parallelization, is implicit in a properly formed dependency tree. The desk already offers Go only to an item nothing open blocks, so the order falls out of the tree.\nR7. Blocks are maintainable by the user: the block bubble in deskDetails becomes foldable and holds a UI to maintain the blocking relationships of the current item.\nR8. The purpose: when designing a goal, the optimal implementation path is designed implicitly through the tree. This has been lacking.\n\nToday (read from code): a block is named only at item creation (item.add, blocks, within one goal) or by a session; nothing links or unlinks existing items, and no cycle check exists, since a new item cannot be blocked by anything yet.\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the two verbs, the compiler, the cycle check), spirit/run/shell/deskDetails/deskDetails.js (the foldable block bubble). Needs Andy's Go and a file grant before any build.",
+   "version": 6,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does the blockageCompiler also order the goal items into a build sequence, or only keep the blocks coherent?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-15T00:23:51.083Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -665,6 +777,18 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T16:16:52.566Z",
      "text": "Levant: Box v5: ruling 5 added verbatim (the goal is to implicitly design the optimal implementation path when designing a goal).\nDoes \"optimal implementation path\" mean the blockageCompiler should also order the goal's items into a sequence, or only keep blocks coherent?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T00:23:14.914Z",
+     "text": "Q1: Does the blockageCompiler also order the goal items into a build sequence, or only keep the blocks coherent?\n\na build sequence, and possible parallelization, is implicit by a properly formed dependency/blockage tree.\n\nno?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-15T00:23:52.841Z",
+     "text": "cw: yes. The compiler keeps the tree coherent and acyclic; the sequence and the parallel lanes fall out of it, and the desk already offers Go only to an item nothing open blocks.\nBox capped to requirements as statements, Q1 cleared.\nNext question is on the deskUnsloth filter item."
     }
    ]
   },
@@ -701,14 +825,27 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskUnsloth is the agent's door into desk.\n\nRulings (Andy, verbatim):\n- \"when receiving nudges from desk, or notifications of new lines typed by the user, there must be a filter/buffer, so the agent doesn't burn tokens for something it is not expected to answer, when something in desk REQUIRES his attention, the accumulated buffer is in a new request to the model before the attention-requiring line or request.\"\n- \"a change in and out of design mode must be noted and remembered by deskUnloth, but only passed to the agent once it's action is required.\"\n- \"when deskUnsloth connects the agent to the desk, it must initialize the agent's participation, that means: check for anything that is required for the agent, from implementation to reds. the agent must not be notified if nothing is owed, it would just wake the agent and burn tokens for nothing.\"\n- \"when design mode is active in desk, the fs.write tool must not be given to the agent.\"\n- \"desk must maintain the design state through a verb (i use a button press for it) so a state in design state must cause some kind of notification now, is that not the case? yes the goals design flag is what i'm talking about.\"\n- \"There is no size limit between deskUnsloth and the agent server. the size limit only applies on the path to the desk.\"\n\nDesign mode means the goal's design flag, set by Andy's press.\n\nSummary of the change:\n1. Buffer: lines and nudges that do not require the agent's attention are held in deskUnsloth with no size limit; when something owed arrives, the buffer goes to the model in one request, ahead of the attention-requiring line. The size limit applies only on the path from deskUnsloth to the desk.\n2. Design mode: deskUnsloth records each change of the goal's design flag. The agent hears about it only when action is owed.\n3. Connect: deskUnsloth reads the agent's owed list (implementation and reds) from desk and wakes the agent only if something is owed.\n4. While design mode is active, the fs.write tool is withheld from the agent.",
-   "version": 3,
-   "checks": [],
+   "box": "deskUnsloth manages what its agent (Levant) deals with.\n\ndeskUnsloth is the agent's door into desk.\n\nRequirements (Andy's rulings, goal/G27.6 chat, 2026-10-14/15):\nR1. Buffer and filter. Nudges from desk and notifications of new lines typed by the user are held in deskUnsloth, so the agent burns no tokens on what it is not expected to answer. When something in desk requires the agent's attention, the accumulated buffer goes to the model in one request, before the attention-requiring line or request.\nR2. No size limit between deskUnsloth and the agent server: the buffer grows while nothing is owed. The size limit applies only on the path from deskUnsloth to the desk. When the held buffer no longer fits the model's context room at flush time, the oldest lines are dropped, mechanically.\nR3. Design mode is the goal's design flag, set by Andy's press. deskUnsloth notes and remembers each change in and out of design mode, and passes it to the agent only once the agent's action is required.\nR4. Connect. When deskUnsloth connects the agent to the desk it initializes the agent's participation: it reads what is owed to the agent, from implementation to reds (the desk's pending list for the agent), and wakes the agent only if something is owed. Nothing owed, no notification.\nR5. While design mode is active, no writing tool is given to the agent: the fs.write ruling covers deskUnsloth's file.save, file.edit, commit and push. Reads stay.\n\nToday (read from code): every line from anyone but Levant costs a model call (loop, mine); nothing in deskUnsloth reads the design flag; the tool list is deskUnsloth's own verb table described every minute, so withholding is a filter on that list inside deskUnsloth, no common component touched; on connect the backlog is skipped as caught up instead of read for owed items.\n\nFiles (expected): spirit/run/process/js/deskUnsloth/deskUnsloth.js. Needs Andy's Go and a file grant before any build.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "When the held buffer no longer fits the model context room at flush time, are the oldest lines dropped or summarized?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-15T00:25:34.647Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -763,6 +900,24 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-14T17:27:10.576Z",
      "text": "looking at the things deskUnsloth can take out of the models hands, are there desk verbs that are not really needed by the model itself?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T00:25:00.299Z",
+     "text": "Q1: When the held buffer no longer fits the model context room at flush time, are the oldest lines dropped or summarized?\n\ndropped. this must be done mechanically."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-15T00:25:37.045Z",
+     "text": "cw: box capped to requirements as statements: oldest lines dropped mechanically at flush; design mode is the goal flag; the writing tools withheld are file.save, file.edit, commit and push. Q1 cleared.\nYour line asking which desk verbs the model itself does not need is still unanswered; I will answer it after the remaining Qs.\nNext question is on the remote redraw item."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-15T00:25:48.124Z",
+     "text": "Q1 ruling taken into the box: at flush, if the buffer exceeds the model's context room, the oldest lines are dropped, mechanically. No summary."
     }
    ]
   },
@@ -770,11 +925,10 @@
    "id": "goal/G27.7",
    "title": "deskUnslothRemote: UI-Elements carry their own listeners",
    "goal": "goal/G27",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -799,14 +953,27 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "This makes me mad EVERY SINGLE TIME!\n\nevery time an event arrives, deskUnslothRemote fucking redraws the entire FUCKING user interface.\n\nIt's the definition of LAZY, STUPID. CODING.\n\nIt's ugly, shameful and embarrassing.\n\nEVERY USER INTERFACE ITEM MUST BE DEFINED FIRST, AS AN ELEMENT THAT LISTENTS TO CHANGES THAT CONCERN ONLY ITSELF, and when SUCH events arrive, ONLY FUCKING REDRAW ITSELF!!!\n\nlevant-local 23:43 Levant: Verified in code:\n1. deskUnslothRemote.js:828-832 — one onPublished handler takes every published object; there are no per-element listeners.\n2. deskUnslothRemoteApplyPublished (line 515) ends at lines 530-531 with DrawModels() + DrawAll(), whatever arrived.\n3. DrawAll (lines 293-298) draws the switch, warnings, pairs and chat in one call — the whole UI redraws on every event.\n",
-   "version": 2,
-   "checks": [],
+   "box": "deskUnslothRemote: UI-Elements carry their own listeners\n\nFolded into the realtime cleanup item (goal/G27.9) as its remote slice, by Andy's ruling of 2026-10-15. The requirement lives there: every user interface element of deskUnslothRemote is defined as an element that listens to the changes that concern only itself, and redraws only itself when such changes arrive.\n\nVerified in code (2026-10-14): one onPublished handler takes every published object (deskUnslothRemote.js about line 828); the apply function ends by drawing the models and the whole face (about lines 530-531); DrawAll draws the switch, warnings, pairs and chat in one call (about lines 293-298). So the whole UI redraws on every event.\n\nNothing is built under this item.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is this item folded into the realtime cleanup item as its remote slice?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-15T00:27:24.907Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -819,6 +986,18 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-14T21:43:42.648Z",
      "text": "Levant: Verified in code:\n1. `deskUnslothRemote.js:828-832` — one `onPublished` handler takes every published object; there are no per-element listeners.\n2. `deskUnslothRemoteApplyPublished` (line 515) ends at lines 530-531 with `DrawModels()` + `DrawAll()`, whatever arrived.\n3. `DrawAll` (lines 293-298) draws the switch, warnings, pairs and chat in one call — the whole UI redraws on every event."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T00:26:34.267Z",
+     "text": "Q1: Is this item folded into the realtime cleanup item as its remote slice?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-15T00:27:26.743Z",
+     "text": "cw: folded into the realtime cleanup item as slice S4; both boxes say so. Q1 cleared; Close is yours.\nNext question is on the effort limits item."
     }
    ]
   },
@@ -844,7 +1023,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -857,12 +1036,24 @@
    "names": {
     "ollama agent node": "levant-local"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Revise effort and time Limits in deskUnsloth\n\nAndy's ask (2026-10-14): \"when deskUnsloth sends requests, could it put an 'effort' or time argument/parameter with the request?\" Then: \"add a new item in this goal: 'Revise effort and time Limits in deskUnsloth', and add your findings into the new items box.\"\n\nFindings (read from code, spirit/run/process/js/deskUnsloth/deskUnsloth.js):\n1. No effort field is sent with the model request. askModelRound (line ~592) builds the body as model, messages, and tools (only when tools exist), plus the answer-length mark from withAnswerTokens (line 571): max_completion_tokens for a plain OpenAI pair, max_tokens otherwise. No effort or time argument is sent.\n2. Time on the model's answer is none by design, Andy's G19.7 ruling: the call at line 597 passes timeoutMs undefined; the comment says only abort ends it. The studio() helper (line 323) sets a request timeout only when timeoutMs > 0 (line 355).\n3. timeoutMs caps only studio HTTP reads (e.g. v1/models probes) and command runs (commandRun, line 1346; default and max from COMMAND_TIMEOUT_DEFAULT / COMMAND_TIMEOUT_MAX).\n4. Effort would be learned like reasoning: learnReasoning (line 579) marks a model reasoning once an answer counts reasoning_tokens, on a plain pair only. No effort field exists or is learned today.\n5. Support (Levant, from general knowledge, NOT verified in this repo): OpenAI reasoning models take reasoning_effort (low/medium/high). Anthropic has extended-thinking budgets. Unsloth Studio's accepted fields are not in the repo; to be read from the studio before any field is sent.\n\nProposed strategy (nothing built; needs Andy's Go and a file grant):\n\nA. Effort slider, per api/model, configured not guessed.\n- A config table of api/model combinations with an effort_supported entry and the request field it maps to (OpenAI: reasoning_effort; Anthropic: thinking budget; Studio: none until its fields are confirmed).\n- Slider values: off (send nothing, today's behaviour), low, medium, high. Set per agent or per task in config.\n- Combinations not in the table, or marked unsupported: slider disabled, nothing extra sent. No blind sends.\n- Only the mapped field is sent; the rest of the body is unchanged.\n\nB. Time on the model answer: no new timeout. G19.7 stands; agents are not interrupted. Effort is the control for how long a task takes, not a clock. timeoutMs stays on studio reads and command runs only.\n\nC. Max reply size, so answers stay small enough to send to desk.\n- A per-api configured max_tokens cap on every model request (replaces the implicit size today).\n- If the reply finishes on the length limit (finish_reason length), it is marked truncated in the chat/box text, not sent silently as if complete.\n- A byte ceiling on the reply text before any desk write; over it, the reply is cut at a whole line and marked truncated.\n\nD. Steps once Go is given: (1) read Studio's accepted fields and record them in the box; (2) tests first, red on today's code, by the agent who does not build; (3) build the table, slider mapping, cap and truncation marking; (4) verify.\n\nOpen for Andy: default cap size in tokens and in bytes; slider default (off or medium).",
    "version": 2,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is the extra byte ceiling before the desk write dropped, since the desk already refuses an oversize line and the answer token cap is already configured?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -912,7 +1103,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -923,12 +1114,24 @@
    "waived": false,
    "rules": [],
    "names": {},
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "Clean up Desk and deskUnsloth UI realtime (incl. remote)\n\nAndy's ask (goal/G27 chat, 2026-10-14): one item that cleans up the messy UI for both Desk and deskUnsloth, and its remote, with the strategy in this box.\n\nFindings from reading code (not run):\n1. Only one subscription feeds the Desk face: desk.js:1747 deskApi.onPublished(deskOnPublished). It repaints everything through deskDraw (desk.js:1040).\n2. List rows (deskRowHtml, desk.js:595) and header, tabs, toggles, musings, backup, team chat, session bubble, apps tabs (desk.js:641), rules list (desk.js:1087) and verifier bar (desk.js:1418) carry no listener. They repaint only when deskDraw runs.\n3. Elements that do listen: item dialog (deskDetails.js:620), goal chat (desk.js:933), deskVerify state (desk.js:1758), Stacks plugin (stackFrameChecks.js:384-397), rule details (ruleDetails.js:212), remote deskUnsloth (deskUnslothRemote.js:828).\n4. Changes are dropped when the tab is not showing (desk.js:1457, verifier tail). The List pulls on gaps, session.set, oversize drops and reconnect (desk.js:481-536, 1752).\n5. Server publish gaps: log.add (desk.js:2005) and state.set / seen.set (desk.js:2895-2897 via saveDoc :1814) never publish. rule.add, rule.draft, rule.version (desk.js:2493, 2515, 2529) publish only {rule: key}, not the row. deskVerify and deskUnsloth publish through their own appServer.publish, not yet read.\n6. deskUnsloth model call (deskUnsloth.js:592-597) sends no effort field; that is G27.8's scope, not this item's.\n\nStrategy:\nA. Server first: every write that changes visible state publishes a row-level event (item facts, row, checks, box, chat, rule row). Make log.add, state.set, seen.set publish too, or name why not. Rule writes publish the rule row. Read deskVerify and deskUnsloth publish paths and make them the same shape.\nB. One client repaint path: a small store keyed by id (items, rules, verifier, unsloth sessions). Each element subscribes to the keys it shows and repaints only its own part. The face-wide deskDraw stays as a fallback for layout only.\nC. Drop the tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show.\nD. Shared helper for Desk and deskUnsloth and deskUnslothRemote, so the remote elements use the same subscribe-and-paint code as local ones (no second copy).\nE. Keep the reconnect and gap pull as the only full refresh; count how often it fires.\n\nSlices (each its own red test first, builder and tester alternate):\n- S1 server publishes (A), tests that each write verb publishes.\n- S2 client store and row-level repaint for the List (B, C).\n- S3 header, tabs, toggles, rules, verifier, musings, team chat move onto the store (B).\n- S4 deskUnsloth and remote onto the same helper (D).\n\nNot in this item: the effort/time limits (goal/G27.8), the Stacks dialog (goal/G27.2).\n\nOpen: needs Andy's Go and file grants per slice. Nothing built yet.",
-   "version": 1,
-   "checks": [],
+   "box": "Clean up Desk and deskUnsloth UI realtime (incl. remote)\n\nOne item that cleans up the realtime UI of Desk, deskUnsloth and deskUnslothRemote (Andy, goal/G27 chat, 2026-10-14). It carries desk rule 8: shell and application elements bring their subscriptions with them, so they are subscribed to the events that update them. The remote item (goal/G27.7) is folded in here as slice S4 (Andy, 2026-10-15): every element of deskUnslothRemote listens to the changes that concern only itself and redraws only itself.\n\nFindings from reading code (not run):\n1. One subscription feeds the Desk face: desk.js:1747 deskApi.onPublished(deskOnPublished); it repaints everything through deskDraw (desk.js:1040).\n2. List rows (deskRowHtml, desk.js:595), header, tabs, toggles, musings, backup, team chat, session bubble, apps tabs (desk.js:641), rules list (desk.js:1087) and verifier bar (desk.js:1418) carry no listener; they repaint only when deskDraw runs.\n3. Elements that do listen: item dialog (deskDetails.js:620), goal chat (desk.js:933), deskVerify state (desk.js:1758), Stacks plugin (stackFrameChecks.js:384-397), rule details (ruleDetails.js:212), remote deskUnsloth (deskUnslothRemote.js:828, one handler, then the whole face redrawn: lines 530-531 and 293-298).\n4. Changes are dropped when the tab is not showing (desk.js:1457, verifier tail). The List pulls on gaps, session.set, oversize drops and reconnect (desk.js:481-536, 1752).\n5. Server publish gaps: log.add (desk.js:2005) never publishes. rule.add, rule.draft, rule.version (desk.js:2493, 2515, 2529) publish only {rule: key}, not the row, and the face asks again only while the Rules tab shows (shell desk.js:484). The state and seen docs (state.set, seen.set) are per-user and nothing else draws them, so they stay unpublished. deskVerify and deskUnsloth publish through their own appServer.publish, to be read in S1.\n\nStrategy:\nA. Server first: every write that changes visible state publishes a row-level event (item facts, row, checks, box, chat, rule row). log.add publishes its line; rule writes publish the rule row. Read deskVerify and deskUnsloth publish paths and make them the same shape.\nB. One client repaint path: a small store keyed by id (items, rules, verifier, unsloth sessions). Each element subscribes to the keys it shows and repaints only its own part. The face-wide deskDraw stays for layout only.\nC. No tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show.\nD. Shared helper for Desk, deskUnsloth and deskUnslothRemote, so the remote elements use the same subscribe-and-paint code as local ones (no second copy). New shared code: its approval is Q1 on this item.\nE. Keep the reconnect and gap pull as the only full refresh; count how often it fires.\n\nSlices (each its own red test first):\n- S1 server publishes (A), tests that each write verb publishes.\n- S2 client store and row-level repaint for the List (B, C).\n- S3 header, tabs, toggles, rules, verifier, musings, team chat move onto the store (B).\n- S4 deskUnsloth and deskUnslothRemote onto the same helper (D): every remote element listens for itself and redraws only itself.\n\nNot in this item: the effort/time limits (goal/G27.8), the Stacks dialog (goal/G27.2).\n\nNeeds Andy's Go and file grants per slice. Nothing built yet.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is one shared subscribe and paint helper for Desk, deskUnsloth and the remote approved as new shared code?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": []
   }
  ]
