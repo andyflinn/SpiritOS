@@ -1,5 +1,5 @@
 {
- "change": 63534,
+ "change": 63537,
  "line": 8510,
  "goal": "goal/G25",
  "items": [
@@ -7,10 +7,10 @@
    "id": "goal/G25",
    "title": "Design Review Internal",
    "goal": "",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -42,7 +42,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [],
    "live": [
     "ollama agent node"
