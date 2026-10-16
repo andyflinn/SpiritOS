@@ -485,10 +485,13 @@ function mayChat(to, verb, args) {
   return askDesk(to, 'item.get', { id: id }).then(function (r) {
     let it = {};
     try { it = JSON.parse((r && r.item) || '{}'); } catch (e) { it = {}; }
-    if (it.with && it.with === SELF) return true;
+    // THE DESK KEEPS HOLDS AND TAKES BY LABEL; ITS NAMES MAP GIVES THE NAME (goal/G27.6: Levant's label is not his name).
+    const names = it.names || {};
+    const nameOf = function (label) { return names[label] || label; };
+    if (it.with && nameOf(it.with) === SELF) return true;
     return askDesk(to, 'item.chat', { id: id }).then(function (c) {
       const lines = (c && Array.isArray(c.chat)) ? c.chat : [];
-      return lines.some(function (l) { return l && l.taken === SELF; });
+      return lines.some(function (l) { return l && l.taken && nameOf(l.taken) === SELF; });
     });
   }).catch(function () { return false; });
 }
