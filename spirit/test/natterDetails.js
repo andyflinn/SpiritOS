@@ -644,17 +644,19 @@ function aRelayNotYetListedIsOfferedTheClaim() {
 // time, and `status` is the same "did it answer" test the binding check
 // uses.
 function aRelayThatIsDownOffersNoClaim() {
-  test.subHeading('A relay that did not answer is not offered a claim form');
+  // goal/G28.1, Andy 2026-10-16: "if a natter detail knows there is no seat, it MUST offer the redeem-invite interface."
+  // A seat is the test, not a stream: a relay that is down, with no seat, is offered the form.
+  test.subHeading('A relay with no seat is offered the redeem form, answering or not');
 
   const app = mountApp({
     rows: [{ url: OWNED, label: 'spirit', status: 0, error: 'connect ECONNREFUSED' }],
   });
 
   return settle().then(function () {
-    if (!/nd-claim-go/.test(app.open('claim').body().innerHTML)) {
-      test.check('no Claim button on a relay that could not be reached');
+    if (/nd-claim-go/.test(app.open('claim').body().innerHTML)) {
+      test.check('the Claim button is offered on a relay with no seat, though it did not answer');
     } else {
-      test.fail('a down relay offered a claim form');
+      test.fail('a relay with no seat was not offered the redeem form');
     }
   });
 }

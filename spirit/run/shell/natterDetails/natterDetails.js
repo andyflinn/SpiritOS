@@ -614,9 +614,11 @@ function ndClaimHtml() {
   // An unlisted relay has no badge — the node probes only what it lists —
   // and the claim is the one way onto the list (goal/G16.3), so it is
   // offered without one.
+  // A SEAT IS THE TEST, NOT A STREAM (goal/G28.1). Andy, 2026-10-16: "if a natter detail knows there is no seat, it
+  // MUST offer the redeem-invite interface." A stream can only be had with a seat, so a relay with no seat gets the
+  // form whether or not it answers this minute.
   if (!ndUnlisted) {
     if (!ndBadge || ndBadge.owned || ndBadge.claimed) return '';
-    if (!Number(ndBadge.status)) return '';
   }
   return ndPanel('claim', ndIcon.POINTRIGHT, 'Claim a seat on this relay',
     // ── THE ORDER IS THE ORDER OF THE PHONE CALL ────────────────────
