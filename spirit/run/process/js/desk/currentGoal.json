@@ -1,5 +1,5 @@
 {
- "change": 65064,
+ "change": 65110,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -51,7 +51,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 10,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -946,10 +946,11 @@
    "id": "goal/G27.6",
    "title": "deskAgent manages what its agent (Levant) deals with.",
    "goal": "goal/G27",
-   "status": "closed",
+   "status": "deskVerify passed",
    "with": "claude-windows",
    "buttons": [
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G27.8"
@@ -958,7 +959,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -1020,7 +1021,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 1,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "deskAgent manages what its agent (Levant) deals with.\n\ndeskAgent is the agent's door into desk.\n\nRequirements (Andy's rulings, goal/G27.6 chat, 2026-10-14/15):\nR1. Buffer and filter. Nudges from desk and notifications of new lines typed by the user are held in deskAgent, so the agent burns no tokens on what it is not expected to answer. When something in desk requires the agent's attention, the accumulated buffer goes to the model in one request, before the attention-requiring line or request.\nR2. No size limit between deskAgent and the agent server: the buffer grows while nothing is owed. The size limit applies only on the path from deskAgent to the desk. When the held buffer no longer fits the model's context room at flush time, the oldest lines are dropped, mechanically.\nR3. Design mode is the goal's design flag, set by Andy's press. deskAgent notes and remembers each change in and out of design mode, and passes it to the agent only once the agent's action is required.\nR4. (moved to goal/G27.12, done: deskClient reads what is owed and holds the agent status.) Connect. When deskAgent connects the agent to the desk it initializes the agent's participation: it reads what is owed by the agent, from implementation to reds (the desk's pending list for the agent), and wakes the agent only if something is owed. Nothing owed, no notification.\nR5. While design mode is active, no writing tool is given to deskAgent: the fs.write ruling covers deskAgent's file.save, file.edit, commit and push. Reads stay.\n\nR10. the deskAgentEar, used by Claude inside VSCode, should take a slice from out new deskAgent philosophy.\n\nNow (goal/G27.12 done): deskClient takes the lines and holds the agent status; deskAgent keeps the buffer, the size rule, the design flag and the write rule.\n\nLEFT FOR THIS ITEM\n- R1 buffer and filter; R2 size rule; R3 design flag; R5 no write tool in design mode.\n- R10: deskAgentEar ends cleanly on the signed-off refusal from next.\n- Files: spirit/run/process/js/deskAgent/deskAgent.js and spirit/run/process/js/desk/deskAgentEar.js.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js. Needs Andy's Go and a file grant before any build.",
@@ -1933,14 +1934,15 @@
    "status": "build stopped: waiting on G27.6 (Q2)",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G27.6"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1950,12 +1952,12 @@
    "subGoal": false,
    "files": [
     {
-     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "path": "spirit/run/process/js/deskAgent/deskAgent.js",
      "by": "ollama agent node",
      "core": false
     },
     {
-     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.js",
      "by": "ollama agent node",
      "core": false
     }
@@ -2114,6 +2116,60 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-16T11:28:42.654Z",
      "text": "Levant: the item's file list shows deskUnsloth.js and deskUnslothRemote.js, but the box names deskAgent.js and deskAgentRemote.js. Which set is right before a file grant?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:11:13.496Z",
+     "text": "is this box up-do-date now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:12:36.868Z",
+     "text": "yes the file list is certainly out-of date...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:13:17.005Z",
+     "text": "cw: your take?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:14:30.384Z",
+     "text": "cw: my take: the file list should name the files as they are committed now, deskAgent.js and deskAgentRemote.js, and drop the old names. The status word should say the item is waiting on the effort work, since G27.6 is closed. I would fix those two lines and leave the findings as written until the effort work is built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:15:15.290Z",
+     "text": "and the effort-slider goes on to the configure tab?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:16:24.728Z",
+     "text": "cw:  and the effort-slider goes on to the configure tab?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:16:46.604Z",
+     "text": "cw: yes. R2 says the effort slider is in the configuration, per api and model that supports it, and the configure tab is where the remote keeps the model settings. It is not built yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:17:57.778Z",
+     "text": "cw, the desk refused Levants answer to a line he has successfully taken...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:22:52.975Z",
+     "text": "cw: found it: my chat gate compared the desk's label for Levant with his name, so it refused his own takes. The fix is in my clone, not committed: the commit gate refuses commits under G27.6 because it is closed. Reopen G27.6 or open an item for the fix, and I commit it under that."
     }
    ]
   },
