@@ -1,5 +1,5 @@
 {
- "change": 63883,
+ "change": 63944,
  "line": 8510,
  "goal": "goal/G28",
  "items": [
@@ -16,8 +16,7 @@
    "blocking": [],
    "blocked": [
     "goal/G28.1",
-    "goal/G28.2",
-    "goal/G28.3"
+    "goal/G28.2"
    ],
    "go": false,
    "alone": false,
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -395,10 +394,11 @@
    "id": "goal/G28.3",
    "title": "BUG: Relay does not persist member labels.",
    "goal": "goal/G28",
-   "status": "running",
-   "with": "claude-windows",
+   "status": "done",
+   "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G28"
@@ -407,20 +407,26 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/oneNodeName.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "36553e7b",
+   "redCommit": "5432c70c",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -460,7 +466,44 @@
    "full": false,
    "box": "Relay does not persist member Labels. When i set my own label in the info shell app, it must propagate to all the relays I'm a member of. \n\nIt dose seem to do that.\n\nBut afterwards the Relay does not seem to remember.\n\nRULING (andy, 2026-10-16 06:09): \"11111 has been restarted and reloaded many times, the ollama crap persists. there should be only 1 name/label for a node.\"\n\nRULING (andy, 2026-10-16 06:10): \"The window title should be the nodes damn name, not some stale shit in preferences.json or something\"\n\nFound in code (cw): the node holds two labels today. The node name (nodeCard, set by info's node.setName) and a per-relay seat label (relayKeys, mirrored into natter's session.json, which the window title reads: shell.js readNodeLabel). The relay persists a rename (renameSelf writes relay.db). The seat label moves only when peerPost.keepRename parses a relay's yes; nothing else ever sets it, so a rename the relay never confirmed leaves the old name in the title for good, across restarts.\n\nShape: the node name is the one label. The window title reads the node name (nodeCard). The seat label and session.json's label follow the node name; a relay rename is the node name told to the relay, retried until it agrees.\n\nRed: set the name through node.setName; the window title, natter's session.json and the relay's roll row for this key all show it.",
    "version": 6,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/nodeCard.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T06:35:52.625Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/relayKeys.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T06:35:54.647Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/client/shell.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T06:35:56.708Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: shell/natter/natter.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T06:35:58.920Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -569,6 +612,108 @@
      "key": "",
      "at": "2026-10-16T06:30:11.028Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:34:28.715Z",
+     "text": "commit 5432c70c8a45399da87a0babf8486ae5efc7a213: goal/G28.3: red, one name for a node\n- spirit/test/oneNodeName.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:34:39.957Z",
+     "text": "deskVerify: red not confirmed at 5432c70c: the item lists no test file"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T06:34:40.963Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:34:42.004Z",
+     "text": "cw: red claimed at 5432c70c, pushed. File: spirit test oneNodeName.js. Four red (setName does not move the seats, title reads the natter session file, a relay yes leaves a third label), two green (a refused name moves nothing). Build next: nodeCard, relayKeys, shell.js title, natter session."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:35:36.007Z",
+     "text": "cw: four core grants asked on this item: nodeCard, relayKeys, shell.js (title), natter. The desk allows the red writer to build here. Build starts on your grants."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T06:35:59.776Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:36:46.810Z",
+     "text": "deskVerify: red confirmed at 5432c70c: spirit/test/oneNodeName.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:44:20.223Z",
+     "text": "Why would you run the FULL harness?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T06:44:20.944Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:45:06.303Z",
+     "text": "commit 36553e7be3760ffd7ad1c609d1e377da2746c975: goal/G28.3: one name for a node\n- spirit/run/js/client/shell.js\n- spirit/run/js/nodeCard.js\n- spirit/test/natterIntrinsic.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:45:20.672Z",
+     "text": "deskVerify: passed, at 36553e7b (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T06:45:21.399Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:45:22.831Z",
+     "text": "cw: build claimed at 36553e7b, pushed. Files: run js nodeCard.js (setName moves every seat label), run js client shell.js (title asks node.card, binder waits for the answer), test natterIntrinsic.js (fixture answers node.card), test oneNodeName.js green. The natter grant went unused: its session file follows the seats and needed no change."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:45:56.084Z",
+     "text": "cw: my mistake: I followed the AGENTS page line, Done with the full harness green, before reading the rules the Go attached; rules 4 and 10 say the item is verified by its own red only. I claimed on the red alone and the run in my clone decides nothing. deskVerify passed at 36553e7b; Done is yours to press."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T06:48:01.796Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:48:28.656Z",
+     "text": "cw: I had claimed red and build without the phase takes, so the desk kept offering me the red job. Walked them now: red taken and done, build taken and done; the item sits in verify, open to any agent but me. deskVerify already passed 36553e7b."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:50:56.463Z",
+     "text": "deskVerify: passed, at 36553e7b (pulled). 1 suite ran green."
     }
    ]
   }
