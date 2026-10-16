@@ -1097,33 +1097,28 @@ spirit.shell.activateApp({
         return;
       }
 
-      // ── ADD IS A CLAIM (goal/G16.3) ────────────────────────────────
+      // ── ADD IS relay.add (goal/G28.1) ──────────────────────────────
       //
-      // This pushed a row and saved this app's relays.json. The list is the
-      // node's now and no verb adds to it: the node lists a relay when a
-      // claim on it succeeds. So Add opens that relay's own screen, where
-      // the claim form is, and the line below says how it ended — a
-      // progress line that cannot finish looks identical to a hang.
-      natterStatus('claim a seat on it to add it — a claim that succeeds puts it on this list');
-      Promise.resolve(natterOpenRelay(api, container, relays, url))
-        .then(function (result) {
-          if (!(result && result.claimed)) {
-            natterStatus('not added — a relay joins this list when a claim on it succeeds');
-            return;
-          }
-          // The caption typed is this app's to keep, under the url the
-          // node now lists.
-          return natterSaveCaption(api, url, label).then(function () {
-            labelInput.value = '';
-            urlInput.value = '';
-            relays.forEach(function (row) { if (row.url === url) row.label = label; });
-            natterRenderList(container, api, relays);
-            natterStatus('added, and you have a seat there');
-          });
-        })
-        .catch(function (err) {
-          natterStatus('could not open it: ' + ((err && err.message) || 'unknown'));
+      // Andy, 2026-10-16: "Add adds a row and opens nothing." The node
+      // asks the relay for its card and lists it on a good answer; the
+      // private label stays this app's caption. No dialog opens.
+      natterStatus('adding ' + url + '…');
+      natterPost(api, 'relay.add', { url: url, label: label }).then(function (r) {
+        var said = (r && r.body) || {};
+        if (!said.ok) {
+          natterStatus('not added: ' + (said.error || 'no answer'));
+          return;
+        }
+        return natterSaveCaption(api, url, label).then(function () {
+          labelInput.value = '';
+          urlInput.value = '';
+          return natterProbe(api, container, relays);
+        }).then(function () {
+          natterStatus('added ' + url + ' to the list');
         });
+      }).catch(function (err) {
+        natterStatus('not added: ' + ((err && err.message) || 'unknown'));
+      });
     });
 
     container.querySelector('#natter-tbody').addEventListener('click', function (e) {

@@ -2708,6 +2708,33 @@ function createHub(rootDir) {
     return out;
   }
 
+  // ── relay.add: ONE RELAY ONTO THIS NODE'S LIST (goal/G28.1) ──────────
+  //
+  //   Andy, 2026-10-16: "relay.add is approved." and "a relay shows in the list whether or not the node is a member;
+  //   the green dot shows the connection status." A relay goes on the list when its card answers over peerPost, and
+  //   nothing else lists it. Refused with a reason: an address that is not https (or loopback http), an empty or
+  //   invalid private label, and a relay that gives no card.
+  function relayAdd(body, deps) {
+    var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
+    var label = String((body && body.label) || '').trim();
+    if (!label) return Promise.resolve({ ok: false, status: 400, error: 'a label is required' });
+    var labelBad = fieldRules.problem(label);
+    if (labelBad) return Promise.resolve({ ok: false, status: 400, error: labelBad });
+    try { assertRelayUrl(url); }
+    catch (e) { return Promise.resolve({ ok: false, status: 400, error: e.message }); }
+    if (!deps || !deps.router || typeof deps.router.relayKey !== 'function') {
+      return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
+    }
+    return deps.router.relayKey(url).then(function (card) {
+      if (!relayKeys.list(rootDir, url, label, card.relayPublicKey)) {
+        return { ok: false, status: 409, error: 'that relay could not be listed under its key' };
+      }
+      return { ok: true, status: 200, url: url, relayKey: card.relayPublicKey };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no card from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
   function relayGet(body, deps) {
     var key = String((body && body.key) || '');
     if (!key) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
@@ -2789,6 +2816,7 @@ function createHub(rootDir) {
     handleStatus: handleStatus,
     relaySearch: relaySearch,
     relayRemove: relayRemove,
+    relayAdd: relayAdd,
     relayGet: relayGet,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,

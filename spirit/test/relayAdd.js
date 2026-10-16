@@ -38,7 +38,9 @@ test.subHeading('3. Natter\'s Add opens no dialog');
 {
   const natter = stripComments(fs.readFileSync(path.join(RUN, 'shell', 'natter', 'natter.js'), 'utf8'));
   const addStart = natter.indexOf("getElementById('natter-add')");
-  const addBody = addStart === -1 ? '' : natter.slice(addStart, addStart + 2500);
+  // The Add handler ends where the table's row-click handler begins; the row click may open details.
+  const tbodyAt = natter.indexOf("querySelector('#natter-tbody')", addStart);
+  const addBody = addStart === -1 ? '' : natter.slice(addStart, tbodyAt === -1 ? addStart + 2500 : tbodyAt);
   if (addStart !== -1 && /relay\.add/.test(addBody)) test.check('Add calls relay.add');
   else test.fail(OWED + 'natter.js Add does not call relay.add');
   if (addStart !== -1 && !/callDialog|natterOpenRelay/.test(addBody)) test.check('and opens no dialog');
