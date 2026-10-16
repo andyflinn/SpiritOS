@@ -1,20 +1,22 @@
 {
- "change": 16,
- "line": 0,
- "goal": "w/G1",
+ "change": 63708,
+ "line": 8510,
+ "goal": "goal/G28",
  "items": [
   {
-   "id": "w/G1",
-   "title": "Written",
+   "id": "goal/G28",
+   "title": "Fix node stuff and intrinsic shell apps",
    "goal": "",
    "status": "",
-   "with": "",
+   "with": "ollama agent node",
    "buttons": [
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "w/G1.2"
+    "goal/G28.1",
+    "goal/G28.2",
+    "goal/G28.3"
    ],
    "go": false,
    "alone": false,
@@ -34,49 +36,74 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "names": {},
+   "names": {
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude",
+    "claude-ubuntu": "claude-ubuntu"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 2,
+   "design": true,
+   "waiting": 4,
    "excluded": [],
-   "live": [
-    "claude-windows"
-   ],
+   "live": [],
    "working": [],
    "agents": {
-    "claude-windows": "MCowBQYDK2VwAyEAdeskGoalFileTestPeerCWAAAAAAAAAAAAAAA="
+    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
+    "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+    "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+    "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "A lot has gone wrong in the shell(Apps) this goal here will be achieved when all it's items are done.\n\nevery data-changing UI element in spirit\\run\\shell\\js MUST carry it's own listener and redraw only itself.\n\nlevant-local 00:26 Read spirit/run/shell/js: apiBranchSelector, appServerSelector, contactLabel, iconSelector, contactSelector, appHeader — each element carries its own listeners and redraws only itself. Two violations: iconSelector.js (onDocumentClick) and contactSelector.js (line 202) put a click listener on document; that is not the element's own listener, and it closes the selector when anything else on the page is clicked — redrawing across elements. appHeader's resize listener only measures itself. Are those two document-level click handlers to be fixed?",
+   "version": 3,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-14T22:16:45.645Z",
+     "text": "please verify that\nevery data-changing UI element in spirit\\run\\shell\\js MUST carries it's own listener and redraws only itself."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-14T22:26:55.476Z",
+     "text": "Read spirit/run/shell/js: apiBranchSelector, appServerSelector, contactLabel, iconSelector, contactSelector, appHeader — each element carries its own listeners and redraws only itself. Two violations: iconSelector.js (onDocumentClick) and contactSelector.js (line 202) put a click listener on document; that is not the element's own listener, and it closes the selector when anything else on the page is clicked — redrawing across elements. appHeader's resize listener only measures itself. Are those two document-level click handlers to be fixed?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-15T10:15:58.419Z",
+     "text": "Levant: I read the six files at the head of the goal. Confirmed: `iconSelector.js` puts `onDocumentClick` on `document` (lines 110-122) and closes when any click lands outside its root; `contactSelector.js` line 202 does the same for the dropdown face. Those are not the element's own listener and they redraw across elements.\n\nThat is a violation of \"each data-changing UI element carries its own listener and redraws only itself.\" The fix is to stop closing on any outside click; the selector closes only by its own actions (a pick, Escape, or clicking its field). I'll take the item and make that change now."
+    }
+   ]
   },
   {
-   "id": "w/G1.1",
-   "title": "First",
-   "goal": "w/G1",
-   "status": "done",
+   "id": "goal/G28.1",
+   "title": "Natter is fucked up",
+   "goal": "goal/G28",
+   "status": "",
    "with": "",
    "buttons": [
     "close",
-    "reopen"
+    "delete"
    ],
    "blocking": [
-    "w/G1"
+    "goal/G28"
    ],
    "blocked": [],
-   "go": true,
+   "go": false,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -89,47 +116,42 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE-BOX-OF-FIRST",
-   "version": 1,
+   "box": "Natter won't allow me to add a relay, that I'm not a member of, insisting that relays only can be added when a node's seat on the relay is confirmed. HOW FUCKING stupid is that, when the onboarding procedure for relay sits in natterDetails....\n\nNatter must read the relay list from it's Shadow roll, no? certainly NOT from a json file anymore. if it still does. kill that code.\nNatter may reject the adding of a relay if it is refused a card-fetch for the relay, (the only non-sealed verb on a relay)\nNatter may reject the adding of a relay if the private label input field is invalid or empty\nNatter may reject the adding of a relay if the relay fails to respond properly to a card call.\n\nif it Gets a relay-card from the relay via PeerPost, IT MUST ADD the relay to its list, otherwise the onboarding facilities in natter details can never be reached.\n\n\nIdiots!!!!",
+   "version": 4,
    "checks": [],
    "chat": [
     {
-     "by": "desk",
-     "key": "",
-     "at": "2026-10-15T15:15:03.643Z",
-     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
-    },
-    {
      "by": "andy",
-     "key": "MCowBQYDK2VwAyEAdeskGoalFileTestDeskNodeAAAAAAAAAAAAA=",
-     "at": "2026-10-15T15:15:03.866Z",
-     "text": "a line after the Go"
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T06:44:04.227Z",
+     "text": "can you verify this problem?"
     }
    ]
   },
   {
-   "id": "w/G1.2",
-   "title": "Second",
-   "goal": "w/G1",
-   "status": "running",
+   "id": "goal/G28.2",
+   "title": "Get rid of the last \"device\" remnants!!!!!",
+   "goal": "goal/G28",
+   "status": "",
    "with": "",
    "buttons": [
+    "close",
     "delete"
    ],
    "blocking": [
-    "w/G1"
+    "goal/G28"
    ],
    "blocked": [],
-   "go": true,
+   "go": false,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -142,29 +164,23 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "there is STILL a folder \"spirit/run/js/device/\" in the repo! It contains an AGENTS.md!\n\nWTF is it doing there?\n\nGet rid of it!\n\nGet rid of any \"device\" reference in comments, documentation and design references.",
+   "version": 4,
    "checks": [],
-   "chat": [
-    {
-     "by": "desk",
-     "key": "",
-     "at": "2026-10-15T15:15:04.309Z",
-     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
-    }
-   ]
+   "chat": []
   },
   {
-   "id": "w/G1.3",
-   "title": "Closed early",
-   "goal": "w/G1",
-   "status": "closed",
+   "id": "goal/G28.3",
+   "title": "BUG: Relay does not persist member labels.",
+   "goal": "goal/G28",
+   "status": "",
    "with": "",
    "buttons": [
-    "reopen"
+    "close",
+    "delete"
    ],
    "blocking": [
-    "w/G1"
+    "goal/G28"
    ],
    "blocked": [],
    "go": false,
@@ -185,14 +201,29 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "names": {},
+   "names": {
+    "ollama agent node": "levant-local"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "Relay does not persist member Labels. When i set my own label in the info shell app, it must propagate to all the relays I'm a member of. \n\nIt dose seem to do that.\n\nBut afterwards the Relay does not seem to remember.\n\n",
+   "version": 3,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T08:14:47.520Z",
+     "text": "Levant, can you confirm this from the code?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-15T08:26:37.207Z",
+     "text": "Levant: Confirmed from the code:\n\n- **iconSelector.js** — `onDocumentClick` (line 110) is registered at line 122 with `document.addEventListener('click', onDocumentClick)`; it closes the selector when anything else on the page is clicked.\n- **contactSelector.js** — line 202 does the same: `document.addEventListener('click', …)` closes the pane when the click lands outside `root`.\n\nBoth are document-level listeners, not the element's own, and each closes across elements. Yes — those two document-level click handlers are in the code and both need fixing."
+    }
+   ]
   }
  ]
 }
