@@ -1,5 +1,5 @@
 {
- "change": 63952,
+ "change": 63980,
  "line": 8510,
  "goal": "goal/G28",
  "items": [
@@ -16,8 +16,7 @@
    "blocking": [],
    "blocked": [
     "goal/G28.1",
-    "goal/G28.2",
-    "goal/G28.3"
+    "goal/G28.2"
    ],
    "go": false,
    "alone": false,
@@ -47,14 +46,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -113,35 +110,62 @@
    "id": "goal/G28.1",
    "title": "Natter is fucked up",
    "goal": "goal/G28",
-   "status": "ready",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G28"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -295,6 +319,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T06:29:53.402Z",
      "text": "cw: recorded: no peer review on relay.add, your yes is the approval. Ready for Go; red first, then build."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T07:02:04.764Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -395,11 +425,10 @@
    "id": "goal/G28.3",
    "title": "BUG: Relay does not persist member labels.",
    "goal": "goal/G28",
-   "status": "deskVerify passed",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done",
-    "delete"
+    "reopen"
    ],
    "blocking": [
     "goal/G28"
@@ -503,6 +532,15 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-16T06:35:58.920Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: shell/info/info.js",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -727,6 +765,66 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T06:51:16.595Z",
      "text": "cw: Done recorded, thanks. Nothing else open on this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:53:23.161Z",
+     "text": "The window title is not updated in real time."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:54:00.994Z",
+     "text": "when i change the name in info, the window title is supposed to follow"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:55:09.018Z",
+     "text": "fix it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:55:48.453Z",
+     "text": "cw: found it. Info saves with node.setName and never tells the shell, so nothing re-asks the node and the title keeps the old name until reload.\nThe fix is one line in info: call api.nodeLabelChanged() after a saved name. info.js is intrinsic, so it needs your grant; I am asking for it now.\nGrant shell/info/info.js, and does the reopened item need a new red first?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:56:51.429Z",
+     "text": "why? doesn't the shell have a listener for the node's name change, isn't that how it's supposed to work?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:57:10.317Z",
+     "text": "cw: you are right that a listener is meant to exist, and the shell has the right pieces: nodeLabelChanged, which only Natter calls when its session file changes, and a relay-event stream it does not use for the node name.\nThe gap: Info saves with node.setName and sends nothing to the shell, so no listener fires. The name is not on any stream today.\nWhich do you want: Info calls nodeLabelChanged after a save, or the node announces its own name on the event stream the shell already hears?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:59:47.532Z",
+     "text": "whe you change the node name, the request goes to node, and node sets the name and streams the change to the shell?\nOnly the tream from node is supposed to change what's painted, That's how a UI is supposed to work, the info app is supposed to as the node to change the name, if that succeeds, the new name is streamed to the shell, why is this not done with everything?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:00:06.442Z",
+     "text": "cw: agreed, and you are right: the name should travel node to shell by the stream, not by Info calling the shell. Today node.setName writes identity.json and streams nothing; the shell only has relay-event (server.js:290) and never hears a node name.\nThe fix is node-side: after a saved name, the node sends a name event on the stream, and the shell repaints from that event only; Info stops reaching into the shell. Node side touches server and nodeCard, both core, so it needs your grant and a new red first.\nGo on that shape, and grants for server.js and hub.js?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:01:33.162Z",
+     "text": "fuck, is this implementation ever a mess!\n\nleave it alone. i'll delete this item, a shell overhaul is coming anyways...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:01:47.826Z",
+     "text": "cw: leaving it alone. No further edits from me; the pushed build 36553e7b stays in history for the overhaul."
     }
    ]
   }
