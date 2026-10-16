@@ -1649,6 +1649,12 @@ appServer.serve({
     request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }], working: true },
     handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow(), working: flights.size > 0 }; },
   },
+  // CLEAR SIGNOFF (goal/G27.6, approved by Andy 2026-10-16): the Remote's button lifts a signoff the desk gave. The
+  // node asks its deskClient, which clears the state and answers with it.
+  clearSignoff: {
+    request: {}, reply: { cleared: true, status: '' },
+    handler: function () { return askNode({ deskClient: { clearSignoff: { agent: PERSONA } } }).then(function (b) { return { cleared: b.cleared === true, status: String(b.status || '') }; }); },
+  },
   // THE REMOTE'S ABORT (goal/G19.7): cancels every model answer in flight and frees Levant. Andy's manual
   // intervention, in place of any automatic timeout. No verb file: it is the Remote's, never a tool of Levant's.
   abort: {

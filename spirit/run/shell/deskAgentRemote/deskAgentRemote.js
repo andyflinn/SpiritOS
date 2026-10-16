@@ -580,6 +580,17 @@ function deskAgentRemoteLoadState() {
   });
 }
 
+// CLEAR SIGNOFF (goal/G27.6): asks the node to lift a signoff the desk gave, then re-asks the state (never assumed).
+function deskAgentRemoteClear() {
+  if (deskAgentRemoteBusy) return;
+  deskAgentRemoteBusy = true;
+  deskAgentRemoteAsk(deskAgentRemoteTarget, 'clearSignoff', {}).then(function (said) {
+    deskAgentRemoteBusy = false;
+    if (said && said.ok === false) { deskAgentRemoteSay(deskAgentRemoteWhy(said, 'the signoff was not cleared'), true); deskAgentRemoteDraw(); return; }
+    return deskAgentRemoteLoadState();
+  });
+}
+
 function deskAgentRemoteFlip() {
   if (deskAgentRemoteBusy || !deskAgentRemoteState || deskAgentRemoteState.ok === false) return;
   var on = !deskAgentRemoteState.connected;
@@ -789,6 +800,7 @@ spirit.shell.activateApp({
       '<div class="start-job-form card">' +
         '<div class="grow" id="dur-state">asking…</div>' +
         '<button type="button" id="dur-switch" disabled>Connect</button>' +
+        ' <button type="button" id="dur-clear" title="lift a signoff the desk gave (goal/G27.6)">Clear signoff</button>' +
       '</div>';
     deskAgentRemoteDrawTabs();
 
@@ -821,6 +833,7 @@ spirit.shell.activateApp({
       deskAgentRemoteLoadModels();
     });
     document.getElementById('dur-switch').addEventListener('click', deskAgentRemoteFlip);
+    document.getElementById('dur-clear').addEventListener('click', deskAgentRemoteClear);
     document.getElementById('dur-server-save').addEventListener('click', deskAgentRemoteSaveServer);
     document.getElementById('dur-pairs').addEventListener('click', deskAgentRemotePairPress);
     // THE STREAM (goal/G14.5): every change of deskAgent's state, local or from the chosen puppet, through one
