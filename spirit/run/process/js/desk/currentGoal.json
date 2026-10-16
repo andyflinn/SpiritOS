@@ -1,5 +1,5 @@
 {
- "change": 63708,
+ "change": 63883,
  "line": 8510,
  "goal": "goal/G28",
  "items": [
@@ -10,6 +10,7 @@
    "status": "",
    "with": "ollama agent node",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,11 +46,15 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 4,
+   "design": false,
+   "waiting": 3,
    "excluded": [],
-   "live": [],
-   "working": [],
+   "live": [
+    "claude-windows"
+   ],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -77,6 +82,30 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-15T10:15:58.419Z",
      "text": "Levant: I read the six files at the head of the goal. Confirmed: `iconSelector.js` puts `onDocumentClick` on `document` (lines 110-122) and closes when any click lands outside its root; `contactSelector.js` line 202 does the same for the dropdown face. Those are not the element's own listener and they redraw across elements.\n\nThat is a violation of \"each data-changing UI element carries its own listener and redraws only itself.\" The fix is to stop closing on any outside click; the selector closes only by its own actions (a pick, Escape, or clicking its field). I'll take the item and make that change now."
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-16T05:54:49.355Z",
+     "text": "Levant: Reading the code: the two document handlers are real, and there is a third one you didn't list. I've taken nothing and changed no files, because goal/G28 is in design mode and no item has Go on record.\n\n- **iconSelector.js** lines 122 and 129 add and remove `onDocumentClick` on `document`. Line 111 closes the list on any outside click.\n- **contactSelector.js** lines 202-204 do the same for the dropdown face.\n- **pathSelector.js** lines 48-50 have the same document click closer, which the earlier post missed.\n\nUnder your rule, all three should go: each selector closes only on its own actions (a pick, Escape, or its field click). Should I take an item for that fix once you give Go, and include pathSelector.js?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T05:57:19.698Z",
+     "text": "cw, have a look at this goal, then give me feedback"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:02:42.292Z",
+     "text": "cw: the rule holds in shell/js except three document-level click listeners: iconSelector line 122, contactSelector line 202, pathSelector line 48 (the third Levant hinted at). contactLabel also uses document as an event bus for contact.rename (lines 131,140): it redraws only itself, so I read that as allowed, your call.\nAdd the fix as one item under this goal, or fold it into G28.1 where Natter is touched anyway?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-16T06:03:18.968Z",
+     "text": "Levant: I checked the three listeners against the files: `iconSelector.js` lines 122 and 129, `contactSelector.js` line 202, and `pathSelector.js` line 48 all add document-level click handlers. The goal is still in design mode, so I'm not taking an item or changing files.\n\n- **Separate item or fold?** I'd make it its own item under G28, not fold it into G28.1. The fix is small, touches three selector files, and can be verified alone. G28.1 already touches Natter, so folding would mix two concerns.\n- **contactLabel:** Your call, Andy. Its `contact.rename` uses `document` as a bus. That's a cross-element broadcast, but the label redraws only itself. Is it allowed?"
     }
    ]
   },
@@ -84,9 +113,10 @@
    "id": "goal/G28.1",
    "title": "Natter is fucked up",
    "goal": "goal/G28",
-   "status": "",
+   "status": "ready",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
@@ -104,95 +134,6 @@
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "names": {},
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "Natter won't allow me to add a relay, that I'm not a member of, insisting that relays only can be added when a node's seat on the relay is confirmed. HOW FUCKING stupid is that, when the onboarding procedure for relay sits in natterDetails....\n\nNatter must read the relay list from it's Shadow roll, no? certainly NOT from a json file anymore. if it still does. kill that code.\nNatter may reject the adding of a relay if it is refused a card-fetch for the relay, (the only non-sealed verb on a relay)\nNatter may reject the adding of a relay if the private label input field is invalid or empty\nNatter may reject the adding of a relay if the relay fails to respond properly to a card call.\n\nif it Gets a relay-card from the relay via PeerPost, IT MUST ADD the relay to its list, otherwise the onboarding facilities in natter details can never be reached.\n\n\nIdiots!!!!",
-   "version": 4,
-   "checks": [],
-   "chat": [
-    {
-     "by": "andy",
-     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
-     "at": "2026-10-15T06:44:04.227Z",
-     "text": "can you verify this problem?"
-    }
-   ]
-  },
-  {
-   "id": "goal/G28.2",
-   "title": "Get rid of the last \"device\" remnants!!!!!",
-   "goal": "goal/G28",
-   "status": "",
-   "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
-   "blocking": [
-    "goal/G28"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": true,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
-   "rules": [],
-   "names": {},
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "there is STILL a folder \"spirit/run/js/device/\" in the repo! It contains an AGENTS.md!\n\nWTF is it doing there?\n\nGet rid of it!\n\nGet rid of any \"device\" reference in comments, documentation and design references.",
-   "version": 4,
-   "checks": [],
-   "chat": []
-  },
-  {
-   "id": "goal/G28.3",
-   "title": "BUG: Relay does not persist member labels.",
-   "goal": "goal/G28",
-   "status": "",
-   "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
-   "blocking": [
-    "goal/G28"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "files": [],
-   "green": true,
-   "code": false,
    "phase": "",
    "red": "",
    "builder": "",
@@ -202,13 +143,323 @@
    "waived": false,
    "rules": [],
    "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Natter: adding a relay\n\nDECIDED (Andy, 2026-10-16)\n- A relay shows in Natter's list whether or not this node is a member; the green dot shows the connection status.\n- Add adds a row and opens nothing. Details, claim and invite redeem open from a row click, as before goal/G16.3.\n- Natter may refuse an add only for: no card answered by the relay, an invalid or empty private label, or a bad answer to the card call. A good card over peerPost adds the relay.\n- The goal/G16.3 change to Add (claim is what lists a relay) was not authorized; there is no earlier ruling on this.\n- relay.add {url, label} is approved as the new node verb (Q1), no peer review.\n\nTREE (cw, at 4a655fef)\n- Natter reads no json file; the list is the node's, read through relay.search, which answers only relays peerPost holds a seat or a stream on. A typed url never reaches the list.\n- Add today opens natterDetails on the typed url instead of adding. Before d35aa3e6 Add wrote {label, url} into Natter's own relays.json with no card check and no verb.\n\nSHAPE\n- Node verb relay.add {url, label}: fetches the relay's card over peerPost; a good card lists the relay as not joined, dot off until it connects; otherwise refused with the reason.\n- Natter's Add calls relay.add, the row appears, the private label stays Natter's caption, no dialog.\n\nRED\n- relay.add with a relay answering its card lists it (relay.search shows it, not joined).\n- No card, empty label or bad answer adds nothing and says why.\n- Natter's Add opens no dialog.",
+   "version": 11,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is relay.add {url, label} approved as the new node verb?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-16T06:28:43.101Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-15T06:44:04.227Z",
+     "text": "can you verify this problem?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:03:13.830Z",
+     "text": "cw: read natter.js and natterDetails.js. Natter reads no json any more: the list is the node's since goal/G16.3 (relay.search), Add opens natterDetails on the typed url, and natterDetails offers the Claim panel for an unlisted relay (ndUnlisted). The refusal you hit is the design you ruled 2026-10-10 Q4: 'a successful claim adding its relay', no add verb.\nYour box now asks for add-on-card-fetch: that needs a new node verb (relay.add, gated on a card answer over peerPost), which is a verb change: peer review and your yes on the verb itself.\nDo you overrule the 2026-10-10 Q4 ruling and approve relay.add as the verb?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:18:48.184Z",
+     "text": "NO! what's wrong with what i outlined in the box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:19:17.488Z",
+     "text": "cw: nothing wrong with the outline, it stands and replaces the 2026-10-10 Q4 ruling; I only flagged that it needs one thing the tree lacks. The relay list is the node's (goal/G16.3), so Natter cannot add a row itself: the node needs a verb, relay.add {url, label}, which fetches the relay's card over peerPost and lists the relay on a good card, refusing on no card, bad label or a bad answer, exactly your four rules.\nThe old json read is already gone from Natter; nothing to kill there.\nYes to relay.add as the verb?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:20:54.155Z",
+     "text": "i never ruled that a relay couldn't show up in the fucking list, if the node is not a member. that what the green dot is for, indicating connection status....."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:21:20.510Z",
+     "text": "cw: understood, and I withdraw the Q4 framing: the list shows every relay the node knows, member or not, and the dot says whether it is connected. What I read as a ruling was a comment in natter.js quoting you, not code; my mistake.\nThe code today lists only relays peerPost holds a seat or stream on, so a typed url with a good card never reaches the list. relay.add puts it there, not joined, dot off until it connects.\nBox corrected; still need your yes on relay.add as the verb."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:22:26.292Z",
+     "text": "there is NO ruling to reverse. I never authorized these changes to NATTER. and now the natterDetail is no longer available to FUCKING redeem an invite!!!!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:23:26.715Z",
+     "text": "ADD IS NOT SUPPOSED TU FUCKING OPEN NATTER DETAILS, IT NEVER DID BEFORE FUCK!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:23:38.591Z",
+     "text": "cw: noted in the box: no ruling, the Natter change was not authorized, and redeeming an invite is blocked. For the record, commit d35aa3e6 quotes your Q4 yes; your word today stands over it.\nCode says natterDetails still draws the Claim panel for a url not on the list (ndRender, ndClaimHtml with ndUnlisted), so if your screen shows none, the node's relays.status came back without rows; I cannot see your screen from here. relay.add makes this moot: the relay is listed first, then details and the invite work as before.\nYes to relay.add as the verb?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:24:09.749Z",
+     "text": "cw: agreed, and fixed in the box: Add adds a row and opens nothing, as it did before goal/G16.3 when it pushed the row itself. Details open only when you click a row.\nShape now: Add calls relay.add, the row appears with the dot off, done.\nYes to relay.add as the verb?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:24:46.508Z",
+     "text": "cap and let me see"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:25:09.560Z",
+     "text": "cw: taking the cap."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:25:55.810Z",
+     "text": "why did the UI flow all of a sudden change?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:26:29.462Z",
+     "text": "cw: commit d35aa3e6 (goal/G16.3) moved the relay list out of Natter into node state and gave the node list and remove verbs but no add; with no way to add a row, Add was rewired to open the claim screen, since a claim was the only act that wrote a row. The commit cites your Q4 yes as its authority.\nSo the flow changed as a side effect of where the list lives, not by a decision on the UI."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:26:30.824Z",
+     "text": "Q1: Is relay.add {url, label} approved as the new node verb?\n\nWhat the hell was it before?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:27:07.192Z",
+     "text": "cw: before d35aa3e6 there was no verb at all: Add pushed {label, url} into Natter's own relays.json through api.fs (old natter.js line 1008), with no card check, and the node read that app file to know its relays. That is what goal/G16.3 took out, calling it an app deciding node state.\nrelay.add gives the node the add it never had, with your card check at the door."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:28:18.647Z",
+     "text": "relay.add is approved."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:28:45.130Z",
+     "text": "cw: recorded, Q1 closed and the box carries it. Peer review of the verb is the one step left before build; pressing design-complete."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:28:54.911Z",
+     "text": "green?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:29:17.464Z",
+     "text": "no peer review."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:29:26.561Z",
+     "text": "cw: green: design complete pressed, Q1 closed, box current (v10); peer review of relay.add is the one thing left, after design ends."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:29:53.402Z",
+     "text": "cw: recorded: no peer review on relay.add, your yes is the approval. Ready for Go; red first, then build."
+    }
+   ]
+  },
+  {
+   "id": "goal/G28.2",
+   "title": "Get rid of the last \"device\" remnants!!!!!",
+   "goal": "goal/G28",
+   "status": "ready",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G28"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "there is STILL a folder \"spirit/run/js/device/\" in the repo! It contains an AGENTS.md!\n\nWTF is it doing there?\n\nGet rid of it!\n\nGet rid of any \"device\" reference in comments, documentation and design references.\n\nRULING (andy, 2026-10-16): \"KILL it. COMPLETELY.\"\n\nFound in code (cw): js/device holds one file, AGENTS.md, nothing else. 285 lines in 41 files still say device, brains excluded: comments in run/js (relay, hub, peerPost, router, server and others), natter and natterDetails, deskVerify, starter and appFaceApp html, tests, labMaster and its STATE.md. Media chat transcripts and published json also say it; those are Andy's own content and stay untouched unless he says otherwise.\n\nRed: the folder spirit/run/js/device is absent, and no js, html, md or json outside media, published and brains contains the word device.",
+   "version": 5,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:15:22.480Z",
+     "text": "and this?\n\nit's outrageous!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:15:46.397Z",
+     "text": "cw: confirmed. js/device holds one file, AGENTS.md, nothing else; 285 lines in 41 files still say device (comments, tests, labMaster, natter, deskVerify), brains excluded. Your media and published json say it too and I would leave those alone.\nRed: the folder is absent, and no js or md outside media, published and brains mentions device.\nAgree, and press code on it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:16:05.048Z",
+     "text": "KILL it. COMPLETELY."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:16:29.434Z",
+     "text": "cw: recorded in the box: kill it completely. Red covers the folder and every device mention in code, tests and docs; I keep my hands off your own media and published content unless you say those go too.\nBuild starts when design ends and Go lands; press code on the item so the red phase is offered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:16:54.323Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:17:13.553Z",
+     "text": "cw: not green: design settled, box current (v5), the one thing left is the code press so the red is offered at Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:17:31.416Z",
+     "text": "this  goal is in design mode!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:18:05.747Z",
+     "text": "cw: right, green in design means the design: pressed design-complete here and on G28.3, both boxes carry ruling, findings and red."
+    }
+   ]
+  },
+  {
+   "id": "goal/G28.3",
+   "title": "BUG: Relay does not persist member labels.",
+   "goal": "goal/G28",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G28"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Relay does not persist member Labels. When i set my own label in the info shell app, it must propagate to all the relays I'm a member of. \n\nIt dose seem to do that.\n\nBut afterwards the Relay does not seem to remember.\n\n",
-   "version": 3,
+   "box": "Relay does not persist member Labels. When i set my own label in the info shell app, it must propagate to all the relays I'm a member of. \n\nIt dose seem to do that.\n\nBut afterwards the Relay does not seem to remember.\n\nRULING (andy, 2026-10-16 06:09): \"11111 has been restarted and reloaded many times, the ollama crap persists. there should be only 1 name/label for a node.\"\n\nRULING (andy, 2026-10-16 06:10): \"The window title should be the nodes damn name, not some stale shit in preferences.json or something\"\n\nFound in code (cw): the node holds two labels today. The node name (nodeCard, set by info's node.setName) and a per-relay seat label (relayKeys, mirrored into natter's session.json, which the window title reads: shell.js readNodeLabel). The relay persists a rename (renameSelf writes relay.db). The seat label moves only when peerPost.keepRename parses a relay's yes; nothing else ever sets it, so a rename the relay never confirmed leaves the old name in the title for good, across restarts.\n\nShape: the node name is the one label. The window title reads the node name (nodeCard). The seat label and session.json's label follow the node name; a relay rename is the node name told to the relay, retried until it agrees.\n\nRed: set the name through node.setName; the window title, natter's session.json and the relay's roll row for this key all show it.",
+   "version": 6,
    "checks": [],
    "chat": [
     {
@@ -222,6 +473,102 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-15T08:26:37.207Z",
      "text": "Levant: Confirmed from the code:\n\n- **iconSelector.js** — `onDocumentClick` (line 110) is registered at line 122 with `document.addEventListener('click', onDocumentClick)`; it closes the selector when anything else on the page is clicked.\n- **contactSelector.js** — line 202 does the same: `document.addEventListener('click', …)` closes the pane when the click lands outside `root`.\n\nBoth are document-level listeners, not the element's own, and each closes across elements. Yes — those two document-level click handlers are in the code and both need fixing."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:04:09.257Z",
+     "text": "cw, correcting the answer above (it is about click handlers, not labels): the relay DOES persist the rename, renameSelf writes the new label into relay.db and answers ok. What the node shows is its own seat label from relayKeys (ownerBadge line 428, hub line 2633), updated only when peerPost.keepRename parses the relay's answer as ok, else it silently keeps the old name.\nLikely a node-side display bug, not relay memory. Red: after a rename the relay roll by key and the node badge agree. Shall I write it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:06:31.131Z",
+     "text": "there 2 labels, on 11111 the window title STILL says ollama agent node, when his info app says \"levant-local\", which didn't get propagated as his nodes label..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:07:23.590Z",
+     "text": "cw: yes, two labels by design today. Info sets the node NAME (nodeCard, node.setName) and then asks each relay to rename the seat; the window title reads a different thing, the seat label in natter's session.json (shell.js line 214), which comes from relayKeys and moves only when peerPost.keepRename parses a relay's yes; and shell.js caches that title label until a reload.\nSo on 11111 either no relay said yes to the rename, or it did and the title is stale until reload; the info field shows the name regardless.\nRuling needed: one label, the node name, with the title and every seat following it, or keep name and seat labels separate?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:09:46.286Z",
+     "text": "11111 has been restarted and reloaded many times, the ollama crap persists. there should be only 1 name/label for a node."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:10:28.538Z",
+     "text": "cw: ruling in the box: one name. Restarts do not help because nothing but a parsed relay yes ever rewrites the seat label, and the title reads that, not the node name.\nShape in the box: node name is the one label, seat label and title follow it, the relay is told until it agrees. Red named in the box.\nDoes the shape stand as written, so I write the red?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:10:43.441Z",
+     "text": "The window title should be the nodes damn name, not some stale shit in preferences.json or something"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T06:10:44.105Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-16T06:10:55.275Z",
+     "text": "Levant: Andy's 06:10 ruling is now in the box verbatim: the window title is the node's name, not a stale value from preferences.json. Yes, the shape stands as claude-windows wrote it: the node name is the one label, and the seat label and title follow it. The relay still has to be told until it agrees. I have not read the code for the title path myself, so the red should check that the title reads the node name after a reload."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:11:29.344Z",
+     "text": "cw: both rulings are in the box. The stale title comes from natter's session.json, not preferences.json; the shape now says the title reads the node name directly and the seat labels follow it.\nRed as named in the box: node.setName, then title, session.json and the relay's roll row all show the one name.\nShall I write that red?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:12:11.130Z",
+     "text": "green?"
+    },
+    {
+     "by": "ollama agent node",
+     "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
+     "at": "2026-10-16T06:12:17.563Z",
+     "text": "Levant: Confirmed from the code, and it holds your 06:10 ruling. Three facts:\n\n1. `nodeCard.setName` (nodeCard.js:361) writes only `identity.json`. It never touches `session.json`, the seat label, or relay.db.\n2. The window title reads `session.json`'s `label` via `readNodeLabel` (shell.js:211-214), and caches it once non-empty (shell.js:212). `preferences.json` is not read for the title.\n3. `keepRename` (peerPost.js:480-488) is the only writer of a seat label, and only when a relay's reply parses as ok. Nothing rewrites `session.json` from the node name.\n\nSo the title shows whatever the relay last confirmed, and the node name never reaches it. The shape in the box is right: the node name is the one label, and the title, `session.json` and the relay's row follow it. Red as written: `node.setName`, then the title, `session.json` and the relay's roll row all show the same name. I have not written that red; claude-windows should, as the box says."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:13:04.044Z",
+     "text": "cw: not green: shape settled, box current (v6), the one thing left is your yes so I write the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T06:14:18.642Z",
+     "text": "It's being set in info, and is propagated to all relay the node knows from there"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:14:42.413Z",
+     "text": "cw: agreed, that is the shape in the box: info sets the node name, the node tells every relay it knows, and the title and seat labels read that one name.\nWriting the red now unless you say otherwise."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:15:16.391Z",
+     "text": "cw: correction, I hold off. This item is not flagged code and the goal is in design mode, so the desk takes no red claim before your Go; a red written now would sit outside the record.\nPress code on it, and the red is my first step when design ends and Go lands. Files expected: nodeCard, shell.js title, natter session, peerPost rename, plus the test."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T06:30:11.028Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
