@@ -1,5 +1,5 @@
 {
- "change": 64083,
+ "change": 64087,
  "line": 8510,
  "goal": "goal/G28",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "ollama agent node",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -45,12 +44,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -109,10 +110,9 @@
    "id": "goal/G28.1",
    "title": "Natter is fucked up",
    "goal": "goal/G28",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -578,35 +578,70 @@
    "id": "goal/G28.2",
    "title": "Get rid of the last \"device\" remnants!!!!!",
    "goal": "goal/G28",
-   "status": "ready",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G28"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -664,6 +699,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T06:18:05.747Z",
      "text": "cw: right, green in design means the design: pressed design-complete here and on G28.3, both boxes carry ruling, findings and red."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T07:22:41.994Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
