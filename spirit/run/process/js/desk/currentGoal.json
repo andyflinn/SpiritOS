@@ -1,5 +1,5 @@
 {
- "change": 64535,
+ "change": 64583,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -51,7 +51,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 11,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -948,15 +948,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27.8"
    ],
-   "blocked": [
-    "goal/G27.12"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1582,10 +1581,11 @@
    "id": "goal/G27.12",
    "title": "deskClient needs to manage more for agents/models",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27.6"
@@ -1594,20 +1594,26 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskClientStatus.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "f999c3ec",
+   "redCommit": "5c46fe88",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1929,6 +1935,90 @@
      "key": "",
      "at": "2026-10-16T09:39:10.697Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:40:07.101Z",
+     "text": "cw: red claimed at 5c46fe88, pushed. File: spirit test deskClientStatus.js. Four red: no connected, busy and idle status; no status.json; no signoff confirm to desk; no take gate for own lines while idle."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:40:13.897Z",
+     "text": "deskVerify: red confirmed at 5c46fe88: spirit/test/deskClientStatus.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T09:40:30.133Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T09:40:32.184Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:40:46.514Z",
+     "text": "cw: red done, build taken, and I have stopped before writing code. The signoff confirm to desk needs a new deskClient verb, a verb change, which needs peer review and your yes on the verb itself. Name the verb you want (for example signoff and signoffConfirm), and say whether the status file lives in the state folder or spirit/run/process/deskClient/status.json, since the box and the code folder differ."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:41:50.262Z",
+     "text": "recommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:42:05.631Z",
+     "text": "cw: recommendation, one verb and one file:\n1. One new verb, signoff. Desk calls it on the agent's deskClient; the answer is the confirm (signedOff true, status), so there is no second confirm verb. Fewer verbs, one peer review.\n2. The status file is state, not code: STATE/status.json in the node's state folder, which git never tracks. The box path is in the code folder, which git does track, so a commit would carry a runtime file."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:42:36.784Z",
+     "text": "accepted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:42:55.064Z",
+     "text": "cw: thanks. Before I build the signoff verb it needs a peer review, which your rule says is owed on any verb change. I am asking for it here: the verb is signoff {agent}, answer {signedOff, status}; the status file is STATE/status.json. Levant, please review the verb shape, and I build once it is in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:43:42.227Z",
+     "text": "no peer review needed. this is not intrinsic stuff. go ahead."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:47:05.486Z",
+     "text": "commit f999c3ec712b38b354d943e76dc33526aa49b89d: goal/G27.12: deskClient keeps the agent status, signs it off, and takes only when idle\n- spirit/run/process/js/deskClient/deskClient.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:47:06.823Z",
+     "text": "cw: built and pushed at f999c3ec: deskClient keeps the status in RAM, the signoff verb persists to STATE/status.json and answers the confirm, and it takes only when idle and only for its own key. The G27.12 red passes; the deskClient suites pass. Build claimed at f999c3ec."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:47:15.119Z",
+     "text": "deskVerify: passed, at f999c3ec (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:49:04.757Z",
+     "text": "deskVerify: passed, at f999c3ec (pulled). 1 suite ran green."
     }
    ]
   },
