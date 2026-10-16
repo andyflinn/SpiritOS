@@ -53,6 +53,7 @@ function refusedBy(r) { return r.status !== 200 || !r.body || r.body.ok === fals
 // THE WAIT. An answer with lines is printed and ends it; one without is asked again; a refusal ends it.
 function wait() {
   ask('next', {}).then(function (r) {
+    if (r.body && r.body.code === 'signed-off') end(1, 'deskAgentEar: this agent is signed off; the desk clears it, or your listen does', true);
     if (refusedBy(r) || !Array.isArray(r.body.lines)) end(1, 'deskAgentEar: ' + r.text, true);
     if (r.body.lines.length) end(0, r.body.lines.join('\n'));
     setTimeout(wait, PAUSE_MS);

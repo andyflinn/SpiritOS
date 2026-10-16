@@ -579,6 +579,18 @@ appServer.serve({
       return { signedOff: true, status: agentState };
     },
   },
+  // CLEAR SIGNOFF (goal/G27.6, approved by Andy 2026-10-16). Owner-only: the desk lifts a signoff it gave, and the agent
+  // is connected again. The cleared state is written to STATE/status.json, the same file the signoff uses.
+  'clearSignoff': {
+    request: { agent: '' }, reply: { cleared: true, status: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      agentState = 'connected';
+      try { fs.writeFileSync(path.join(STATE, 'status.json'), JSON.stringify({ status: agentState, signedOff: false, at: new Date().toISOString() })); }
+      catch (e) { throw refused('not-saved', { why: 'could not persist the cleared signoff' }); }
+      return { cleared: true, status: agentState };
+    },
+  },
   // THE DESK'S NUDGE (goal/G3.5): something changed there. The desk's alone, by the key setDesk named. It asks
   // nothing itself: a waiting agent's wait does, at once, and with nobody waiting the next wait will.
   'changed': {
