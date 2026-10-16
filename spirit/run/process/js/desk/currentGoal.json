@@ -1,5 +1,5 @@
 {
- "change": 63948,
+ "change": 63952,
  "line": 8510,
  "goal": "goal/G28",
  "items": [
@@ -16,7 +16,8 @@
    "blocking": [],
    "blocked": [
     "goal/G28.1",
-    "goal/G28.2"
+    "goal/G28.2",
+    "goal/G28.3"
    ],
    "go": false,
    "alone": false,
@@ -46,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -394,10 +395,11 @@
    "id": "goal/G28.3",
    "title": "BUG: Relay does not persist member labels.",
    "goal": "goal/G28",
-   "status": "closed",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G28"
@@ -406,7 +408,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -460,7 +462,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Relay does not persist member Labels. When i set my own label in the info shell app, it must propagate to all the relays I'm a member of. \n\nIt dose seem to do that.\n\nBut afterwards the Relay does not seem to remember.\n\nRULING (andy, 2026-10-16 06:09): \"11111 has been restarted and reloaded many times, the ollama crap persists. there should be only 1 name/label for a node.\"\n\nRULING (andy, 2026-10-16 06:10): \"The window title should be the nodes damn name, not some stale shit in preferences.json or something\"\n\nFound in code (cw): the node holds two labels today. The node name (nodeCard, set by info's node.setName) and a per-relay seat label (relayKeys, mirrored into natter's session.json, which the window title reads: shell.js readNodeLabel). The relay persists a rename (renameSelf writes relay.db). The seat label moves only when peerPost.keepRename parses a relay's yes; nothing else ever sets it, so a rename the relay never confirmed leaves the old name in the title for good, across restarts.\n\nShape: the node name is the one label. The window title reads the node name (nodeCard). The seat label and session.json's label follow the node name; a relay rename is the node name told to the relay, retried until it agrees.\n\nRed: set the name through node.setName; the window title, natter's session.json and the relay's roll row for this key all show it.",
@@ -719,6 +721,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T06:51:04.581Z",
      "text": "cw: deskVerify passed at 36553e7b, and the item offers Done. Done is yours to press."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:51:16.595Z",
+     "text": "cw: Done recorded, thanks. Nothing else open on this item."
     }
    ]
   }
