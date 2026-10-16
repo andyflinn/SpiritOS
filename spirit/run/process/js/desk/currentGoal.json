@@ -1,5 +1,5 @@
 {
- "change": 65110,
+ "change": 65152,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -57,7 +57,9 @@
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -946,11 +948,11 @@
    "id": "goal/G27.6",
    "title": "deskAgent manages what its agent (Levant) deals with.",
    "goal": "goal/G27",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "claude-windows",
    "buttons": [
-    "done",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27.8"
@@ -959,7 +961,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -976,7 +978,7 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
-   "claimCommit": "55e04dbd",
+   "claimCommit": "d9b3fd23",
    "redCommit": "60a59aed",
    "waived": true,
    "rules": [
@@ -1021,7 +1023,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 2,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "deskAgent manages what its agent (Levant) deals with.\n\ndeskAgent is the agent's door into desk.\n\nRequirements (Andy's rulings, goal/G27.6 chat, 2026-10-14/15):\nR1. Buffer and filter. Nudges from desk and notifications of new lines typed by the user are held in deskAgent, so the agent burns no tokens on what it is not expected to answer. When something in desk requires the agent's attention, the accumulated buffer goes to the model in one request, before the attention-requiring line or request.\nR2. No size limit between deskAgent and the agent server: the buffer grows while nothing is owed. The size limit applies only on the path from deskAgent to the desk. When the held buffer no longer fits the model's context room at flush time, the oldest lines are dropped, mechanically.\nR3. Design mode is the goal's design flag, set by Andy's press. deskAgent notes and remembers each change in and out of design mode, and passes it to the agent only once the agent's action is required.\nR4. (moved to goal/G27.12, done: deskClient reads what is owed and holds the agent status.) Connect. When deskAgent connects the agent to the desk it initializes the agent's participation: it reads what is owed by the agent, from implementation to reds (the desk's pending list for the agent), and wakes the agent only if something is owed. Nothing owed, no notification.\nR5. While design mode is active, no writing tool is given to deskAgent: the fs.write ruling covers deskAgent's file.save, file.edit, commit and push. Reads stay.\n\nR10. the deskAgentEar, used by Claude inside VSCode, should take a slice from out new deskAgent philosophy.\n\nNow (goal/G27.12 done): deskClient takes the lines and holds the agent status; deskAgent keeps the buffer, the size rule, the design flag and the write rule.\n\nLEFT FOR THIS ITEM\n- R1 buffer and filter; R2 size rule; R3 design flag; R5 no write tool in design mode.\n- R10: deskAgentEar ends cleanly on the signed-off refusal from next.\n- Files: spirit/run/process/js/deskAgent/deskAgent.js and spirit/run/process/js/desk/deskAgentEar.js.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js. Needs Andy's Go and a file grant before any build.",
@@ -1924,6 +1926,30 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T12:08:59.570Z",
      "text": "cw: Done recorded. Nothing else open on this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:23:23.223Z",
+     "text": "cw, this is open again"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:23:47.910Z",
+     "text": "commit d9b3fd23951abd7f27d670730eaf48806efed5fb: goal/G27.6: the chat gate reads the desk's names, so Levant's own takes are not refused\n- spirit/run/process/js/deskClient/deskClient.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:23:57.082Z",
+     "text": "cw: the fix is pushed as d9b3fd23 under the reopened G27.6: the chat gate reads the desk's names, so Levant's own takes are not refused. Build claimed at d9b3fd23 so deskVerify checks it. Both nodes need a restart to load it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:24:08.972Z",
+     "text": "deskVerify: passed, at d9b3fd23 (pulled). 1 suite ran green."
     }
    ]
   },
@@ -1934,15 +1960,14 @@
    "status": "build stopped: waiting on G27.6 (Q2)",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
-   "blocked": [
-    "goal/G27.6"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -2170,6 +2195,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T12:22:52.975Z",
      "text": "cw: found it: my chat gate compared the desk's label for Levant with his name, so it refused his own takes. The fix is in my clone, not committed: the commit gate refuses commits under G27.6 because it is closed. Reopen G27.6 or open an item for the fix, and I commit it under that."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:26:05.762Z",
+     "text": "it's commited now."
     }
    ]
   },
