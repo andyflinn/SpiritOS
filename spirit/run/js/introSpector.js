@@ -24,7 +24,7 @@
 //                      request and reply prototypes (point 4 of the box)
 //
 // ON A PROCESS SERVER the folder is the script's own, the verb name is the
-// file name as is (item.add.json -> AGENTS.item.add), and appServer adds the
+// file name as is (item.add.json -> AGENTS.item.add), and the server adds the
 // family at start, as it adds DEBUG and DEPENDENCIES (withAgents). ON THE
 // NODE the namespace is the folder (js/fs/) and the file name has no dot
 // (stat.json -> fs.AGENTS.stat): claim() below takes a namespace in the
@@ -35,7 +35,7 @@
 // WHICH .json FILES ARE VERB FILES: one whose name is a verb name, that is
 // not the server's manifest (<script>.json), and that parses to an object
 // with a string `description`. A folder holds other json (currentGoal.json
-// beside the desk, loop.json beside deskUnsloth, package.json), and none of
+// beside the desk, loop.json beside an agent, package.json), and none of
 // those is a verb. A verb file naming a verb nobody declared is said at
 // boot, by file name, so a typo is found the day it is made.
 
@@ -44,7 +44,7 @@ const path = require('path');
 
 const AGENTS_FILE = 'AGENTS.md';
 const INTROSPECT = 'introspect';
-// A verb name as appServer takes it, without the family's own uppercase.
+// A verb name as the server takes it, without the family's own uppercase.
 const STEM_RE = /^[a-z_][A-Za-z0-9_.-]{0,63}$/;
 
 function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
