@@ -74,12 +74,12 @@ async function run() {
 
   {
     let status = 0; let body = '';
-    serveCommon.deviceRefusal({ writeHead: function (s) { status = s; }, end: function (b) { body = b; } }, 403);
+    serveCommon.nodeRefusal({ writeHead: function (s) { status = s; }, end: function (b) { body = b; } }, 403);
     const parsed = JSON.parse(body);
-    if (status === 403 && parsed.error === 'not now' && parsed.code === 'device-not-now') {
-      test.check('"not now" stays, and "device-not-now" rides beside it — never a code-only body');
+    if (status === 403 && parsed.error === 'not now' && parsed.code === 'node-not-now') {
+      test.check('"not now" stays, and "node-not-now" rides beside it — never a code-only body');
     } else {
-      test.fail('deviceRefusal: ' + status + ' ' + body);
+      test.fail('nodeRefusal: ' + status + ' ' + body);
     }
   }
 

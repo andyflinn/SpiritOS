@@ -890,7 +890,7 @@ function createRelay(rootDir, deps) {
   // for the two-johns case. Its only callers were `send` and `inbox`, and
   // it went with them (R8).
   //
-  // The router never needed it. `deviceIdentity` resolves a row by KEY,
+  // The router never needed it. `senderIdentity` resolves a row by KEY,
   // which is what an address is on this wire, so the ambiguity a LABEL
   // creates cannot arise: two johns are two keys and always were. The
   // ring is what made labels addressable, and that is the half of the
@@ -1538,7 +1538,7 @@ function createRelay(rootDir, deps) {
     // A MEMBER IS ADDED — BROADCAST IT (0012, 2026-09-18; built in R28).
     if (out && out.ok && out.peer && out.peer.publicKey) {
       // ALREADY CONNECTED, THEN ACTIVE NOW. The owner holds a stream before
-      // he holds a row (deviceIdentity resolves him by owner.json), and since
+      // he holds a row (senderIdentity resolves him by owner.json), and since
       // goal/G22.6 his claim arrives on the one door while that stream is
       // open: his row joins the active members here, or a search over the
       // connected (walkRoll) would not find him until he reconnected.
@@ -1757,7 +1757,7 @@ function createRelay(rootDir, deps) {
   // WHO A TOKEN IS: the owner, or a member with a row. The general identity
   // lookup every route uses; the name is older than the device enrolment
   // that goal/G16.2 removed, and has nothing to do with it any more.
-  function deviceIdentity(token) {
+  function senderIdentity(token) {
     var t = String(token == null ? '' : token).trim();
 
     // A TOKEN IS A KEY (cycle 3). This resolved the owner by label too, and
@@ -1783,8 +1783,8 @@ function createRelay(rootDir, deps) {
 
   // AN OMITTED TOKEN IS NOBODY: it refuses, like any other token that
   // resolves to no row.
-  function deviceIdentityOr(token) {
-    return deviceIdentity(token);
+  function senderIdentityOr(token) {
+    return senderIdentity(token);
   }
 
   // deviceOffer, and the relay's own post() that carried it, were removed
@@ -2331,7 +2331,7 @@ function createRelay(rootDir, deps) {
 
     // NOT THROUGH routeReply, and the reason is the asymmetry that made
     // this necessary in the first place: routeReply begins with
-    // deviceIdentity, which resolves the owner and peer rows and NOT this
+    // senderIdentity, which resolves the owner and peer rows and NOT this
     // relay's own key. Sending its own answer through the public door
     // would have it refuse itself. Everything else is identical — same
     // table, same check that the replier is the route's target, same
@@ -2909,7 +2909,7 @@ function createRelay(rootDir, deps) {
     // addresses the relay itself with an empty target (to: \"\"), since it
     // does not know the relay's key yet."
     var selfAddressed = to === '' || postedToSelf(to);
-    var target = selfAddressed ? null : deviceIdentity(to);
+    var target = selfAddressed ? null : senderIdentity(to);
 
     // ── WHO IS ASKING: A MEMBER, OR A STRANGER ────────────────────────
     //
@@ -2923,7 +2923,7 @@ function createRelay(rootDir, deps) {
     // of THIS RELAY'S MEMBERS. A post for anybody else needs a sender this
     // relay holds: it is refused with the sentence that names the sender
     // (goal/G19.1), the same on the post, the reply and the stream.
-    var who = deviceIdentity(fromToken);
+    var who = senderIdentity(fromToken);
     if (!who) {
       var strangerKey = String(fromToken == null ? '' : fromToken).trim();
       if (!strangerKey || (!selfAddressed && !target)) {
@@ -3003,7 +3003,7 @@ function createRelay(rootDir, deps) {
     // separate: here, whether this box is being addressed; there, one
     // verb at a time, whether this caller may ask for it.
     //
-    // Checked before deviceIdentity is asked about the target, because
+    // Checked before senderIdentity is asked about the target, because
     // the relay's own key is deliberately not a row and never will be —
     // publishing it as one would put it in every roll.
     if (selfAddressed) {
@@ -3178,7 +3178,7 @@ function createRelay(rootDir, deps) {
   // target is the permission — anyone who saw the bytes could compute
   // the hash, so the two are never the same check.
   function routeReply(fromToken, hash, text, sig) {
-    var who = deviceIdentity(fromToken);
+    var who = senderIdentity(fromToken);
     if (!who) return { ok: false, status: 403, error: 'your id is not a valid sender here' };
     if (!hash) return { ok: false, status: 400, error: 'hash required' };
     if (typeof text === 'string' && Buffer.byteLength(text, 'utf8') > MAX_ROUTED_TEXT) {
@@ -3270,7 +3270,7 @@ function createRelay(rootDir, deps) {
     //   Andy: "streamed route updates should need to be accompanied by
     //   updated labels."
     //
-    // This box holds it — `deviceIdentity` hands the label back beside
+    // This box holds it — `senderIdentity` hands the label back beside
     // the key — and was sending the key alone. The same shape as
     // everything else found discarded this cycle: known at the moment of
     // throwing away, and expensive to go back for.
@@ -3295,7 +3295,7 @@ function createRelay(rootDir, deps) {
     // exchange between siblings, not on every packet, and the node is
     // its only reader.
     if (landed) {
-      var asker = deviceIdentity(matched.requester);
+      var asker = senderIdentity(matched.requester);
       presentNow.send(matched.requester, 'route', {
         key: who.id, at: mineKey(), label: who.label || '',
       });
@@ -3711,7 +3711,7 @@ function createRelay(rootDir, deps) {
     //    stranger reaches it, so a stranger must not reach it. A stranger
     //    holds no stream: what it asks is answered on its own post
     //    (goal/G22.6).
-    var who_ = deviceIdentity(token);
+    var who_ = senderIdentity(token);
     if (!who_) return { ok: false, status: 403, error: 'your id is not a valid sender here' };
 
     // 2. The signature, against THAT identity's own row key. Never the
@@ -3813,7 +3813,7 @@ function createRelay(rootDir, deps) {
   // close. Only the cut settles the routes: see failRoutesOf.
   function streamClose(token, sink, why) {
     // THE SAME IDENTITIES streamOpen ADMITS — members and the owner.
-    var who_ = deviceIdentity(token);
+    var who_ = senderIdentity(token);
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
     forgetActive(who_.id);

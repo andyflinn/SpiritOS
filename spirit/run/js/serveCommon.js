@@ -229,9 +229,9 @@ function clientKeyFor(req) {
 // (DEVICE-CYCLE3.md).
 // "not now" stays the sentence — Grok's review: "Do not drop "not now" to a
 // code-only body" — and the code rides beside it (R36 phase B).
-function deviceRefusal(res, status) {
+function nodeRefusal(res, status) {
   res.writeHead(status || 403, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ error: 'not now', code: 'device-not-now' }));
+  res.end(JSON.stringify({ error: 'not now', code: 'node-not-now' }));
 }
 
 // ── TOO BIG IS ANSWERED ONCE, HERE, BEFORE ANY ROUTE ─────────────────
@@ -330,7 +330,7 @@ module.exports = {
   sendFile: sendFile,
   readJsonBody: readJsonBody,
   clientKeyFor: clientKeyFor,
-  deviceRefusal: deviceRefusal,
+  nodeRefusal: nodeRefusal,
   refuseTooBig: refuseTooBig,
   parseRequestPath: parseRequestPath,
   sendVersion: sendVersion,

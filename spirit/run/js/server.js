@@ -222,7 +222,7 @@ function peekVerb(req) {
     .catch(function () { return ''; });
 }
 
-// clientKeyFor, deviceRefusal, handleDeviceOffer and handleRelayClaim
+// clientKeyFor, nodeRefusal, handleDeviceOffer and handleRelayClaim
 // STOOD HERE. They answer the relay routes, which a node no longer serves
 // (cycle 0, Andy 2026-09-19): they live in relayServer.js and serveCommon.js.
 

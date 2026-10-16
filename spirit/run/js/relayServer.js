@@ -35,7 +35,7 @@ const streamSink = require('./streamSink');
 // R36 phase B: a refusal carries the catalogue's code beside its sentence.
 const spiritErrors = require('./spiritErrors');
 const readJsonBody = common.readJsonBody;
-const deviceRefusal = common.deviceRefusal;
+const nodeRefusal = common.nodeRefusal;
 
 // THE RELAY'S PORT, which is not the node's (65432). Caddy proxies :443 to
 // 127.0.0.1:65430 on spirit-3 (bash/caddy/Caddyfile, bash/lib.sh), so a
@@ -421,7 +421,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && pathname === '/api/relay/stream') {
     const from = createRelay.streamSignatureFrom(url.searchParams.get('sig'), req.headers);
     if (!from.ok) {
-      deviceRefusal(res, from.status);
+      nodeRefusal(res, from.status);
       return;
     }
     const token = url.searchParams.get('key') || '';
@@ -472,7 +472,7 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ error: opened.error, code: spiritErrors.classify(403, opened.error).code }));
         return;
       }
-      deviceRefusal(res, opened && opened.status);
+      nodeRefusal(res, opened && opened.status);
       return;
     }
 

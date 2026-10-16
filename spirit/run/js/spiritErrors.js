@@ -50,7 +50,7 @@
 // ── THE RELAY SENDS THE CODE NOW (R36 phase B, cycle 7) ──────────────
 //
 // ~~The relay does not SEND codes.~~ — since cycle 7 it does: every refusal
-// in relayServer.js's whitelist, and deviceRefusal, carries `code` beside
+// in relayServer.js's whitelist, and nodeRefusal, carries `code` beside
 // `error` (Grok's review: "{ status, error, code } … Keep the sentence").
 // `classify` takes a code it knows as meant, first; a code it does not
 // know — a newer relay's — falls through to the sentence, and so does an
@@ -724,7 +724,7 @@ define('not-target', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not the target of that request'],
 });
-define('device-not-now', {
+define('node-not-now', {
   status: 403, presence: NONE, retry: 'after', fault: 'caller',
   texts: ['not now'],
 });
