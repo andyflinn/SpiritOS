@@ -1,5 +1,5 @@
 {
- "change": 64521,
+ "change": 64535,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -51,14 +51,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 10,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -423,7 +421,7 @@
   },
   {
    "id": "goal/G27.9",
-   "title": "Clean up Desk and deskUnsloth UI realtime (incl. remote)",
+   "title": "Clean up Desk and deskAgent UI realtime (incl. remote)",
    "goal": "goal/G27",
    "status": "",
    "with": "",
@@ -945,7 +943,7 @@
   },
   {
    "id": "goal/G27.6",
-   "title": "deskUnsloth manages what its agent (Levant) deals with.",
+   "title": "deskAgent manages what its agent (Levant) deals with.",
    "goal": "goal/G27",
    "status": "",
    "with": "",
@@ -1118,7 +1116,7 @@
   },
   {
    "id": "goal/G27.8",
-   "title": "Revise effort and time Limits in deskUnsloth",
+   "title": "Revise effort and time Limits in deskAgent",
    "goal": "goal/G27",
    "status": "building",
    "with": "ollama agent node",
@@ -1584,35 +1582,62 @@
    "id": "goal/G27.12",
    "title": "deskClient needs to manage more for agents/models",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27.6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -1886,6 +1911,24 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T08:47:03.765Z",
      "text": "cw: the three adjustments are in the box, and nothing is left open in it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:37:27.770Z",
+     "text": "is this the proper item to do next?\n\nand is this item still green? (coherent and ready to go?)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:38:34.779Z",
+     "text": "cw: yes, it is next: it blocks G27.6, which blocks G27.8, and the rename it waited for is done.\nNot green: the box is coherent and capped, but there is no red yet, and it has not been pressed design-complete. Go is offered, so the next step is your Go, then a red from me."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T09:39:10.697Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -2226,6 +2269,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T09:33:20.788Z",
      "text": "cw: checked: no AGENTS.md or markdown in the repo names deskUnsloth or deskEar now. desk/AGENTS.md and deskAgent/AGENTS.md carry the new names, from the rename commit. The CLAUDE.md in the repo is clean too. Your session instructions outside the repo still give the old deskEar.js path; that file is not in the repo, so I did not touch it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:34:06.043Z",
+     "text": "cw: Done recorded. Nothing else is open on this item."
     }
    ]
   },
