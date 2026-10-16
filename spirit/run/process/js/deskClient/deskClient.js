@@ -470,6 +470,22 @@ function handOver(to, t0) {
   return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return { lines: lines }; });
 }
 
+// THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
+// answer decides; no answer refuses.
+function mayChat(to, verb, args) {
+  if (verb !== 'chat.add' || !args || !args.id) return Promise.resolve(true);
+  const id = String(args.id);
+  return askDesk(to, 'item.get', { id: id }).then(function (r) {
+    let it = {};
+    try { it = JSON.parse((r && r.item) || '{}'); } catch (e) { it = {}; }
+    if (it.with && it.with === SELF) return true;
+    return askDesk(to, 'item.chat', { id: id }).then(function (c) {
+      const lines = (c && Array.isArray(c.chat)) ? c.chat : [];
+      return lines.some(function (l) { return l && l.taken === SELF; });
+    });
+  }).catch(function () { return false; });
+}
+
 appServer.serve({
   // ONE ASK OF ANDY'S DESK. What comes back is the answer, a refusal of the desk's included: it is the desk's to
   // say no. THE ANSWER ITSELF, NOT A JSON STRING (goal/G4.19, issue 4): the reply is declared {} and may carry more
@@ -487,17 +503,22 @@ appServer.serve({
       // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
       if (!a.verb) throw refused('bad-request', { why: 'desk needs the verb to ask' });
       if (!args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request', { why: 'desk needs json: the arguments as a JSON object' });
-      const one = countedAsk(to, a.verb, args);
-      // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
-      const answer = one.answer.then(function (got) {
-        if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
-        return got;
+      // CHAT IS GATED (goal/G27.6; Andy 2026-10-16): on an item this agent holds, or where it has taken a line, its chat may
+      // be written; anywhere else it may only reply to lines it successfully took. If the desk cannot say, it is refused.
+      return mayChat(to, a.verb, args).then(function (ok) {
+        if (!ok) throw refused('not-taken', { why: 'this agent holds neither the item nor a line it took here' });
+        const one = countedAsk(to, a.verb, args);
+        // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
+        const answer = one.answer.then(function (got) {
+          if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
+          return got;
+        });
+        let timer = null;
+        const held = new Promise(function (resolve, reject) {
+          timer = setTimeout(function () { reject(refused('no-answer', { id: String(one.id) })); }, HOLD_MS);
+        });
+        return Promise.race([answer, held]).finally(function () { clearTimeout(timer); });
       });
-      let timer = null;
-      const held = new Promise(function (resolve, reject) {
-        timer = setTimeout(function () { reject(refused('no-answer', { id: String(one.id) })); }, HOLD_MS);
-      });
-      return Promise.race([answer, held]).finally(function () { clearTimeout(timer); });
     },
   },
   // WHICH NODE IS THE DESK, told once by the node's owner and kept.
