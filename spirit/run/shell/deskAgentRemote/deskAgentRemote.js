@@ -476,6 +476,9 @@ function deskAgentRemoteLoadModels() {
     deskAgentRemoteModelsInFlight = false;
     if (target !== deskAgentRemoteTarget) return said;
     deskAgentRemoteModels = said;
+    // AN EMPTY ANSWER SAYS SO (goal/G27.6): a refresh that finds no models must not look like one that did nothing.
+    var listed = said && Array.isArray(said.models) ? said.models.length : 0;
+    if (!listed) deskAgentRemoteSay('the refresh ran, and the provider listed no models for this key', true);
     deskAgentRemoteDrawModels();
     deskAgentRemoteDrawAll();
     return said;
