@@ -52,6 +52,8 @@ const auth = require('./relayAuth');
 const fieldRules = require('./fieldRules');
 // The node layer's one reading of what arrived (N1, goal/G16.5).
 const arrivals = require('./arrivals');
+// The seats this node holds, whose labels follow its one name (goal/G28.3).
+const relayKeys = require('./relayKeys');
 
 // ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
 //
@@ -366,6 +368,13 @@ function setName(rootDir, text) {
   id.name = fieldRules.normalize(text);
   try { auth.saveIdentity(rootDir, id); }
   catch (e) { return { ok: false, status: 500, error: 'could not write identity.json' }; }
+  // ONE NAME FOR A NODE (goal/G28.3). Andy, 2026-10-16: "there should be
+  // only 1 name/label for a node." Each seat carried its own label, written
+  // only when a relay said yes to a rename, so a name the relays never
+  // confirmed left the old one on every seat, and in the window title that
+  // read it, for good. The seats follow the name here; telling the relays
+  // is Info's push, retried until each agrees.
+  relayKeys.seatedUrls(rootDir).forEach(function (url) { relayKeys.seat(rootDir, url, id.name); });
   return { ok: true, status: 200, name: id.name };
 }
 

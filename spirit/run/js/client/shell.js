@@ -195,30 +195,40 @@
   // The bare "SpiritOS" stays for a node with nothing to say: no label,
   // no app, and an empty title shows the URL instead.
   //
-  // The label is the one Relay Chat claimed and stored. The shell reads
-  // that file directly: reading across app folders is what a component
-  // above the app layer is for, and the alternative — asking the mailbox
-  // at boot — would put a network round trip in front of the first
-  // paint, to answer a question a local file already answers. A stale
-  // label costs nothing here; a slow boot costs every boot.
-  //
-  // Nothing is cached once found for good: an unbound node re-reads on
-  // each paint, so claiming a name in Relay Chat titles the tab on the
-  // next navigation instead of waiting for a reload. A node that already
-  // has its label never reads again.
+  // THE LABEL IS THE NODE'S ONE NAME (goal/G28.3). Andy, 2026-10-16: "there
+  // should be only 1 name/label for a node." and "The window title should
+  // be the nodes damn name". This read shell/natter/session.json, Natter's
+  // mirror of the label a relay last confirmed for a seat, and cached it
+  // once found — so a name set in Info that no relay had confirmed never
+  // reached the tab, across restarts. The name is the node's (node.card,
+  // set by node.setName), asked once at boot and again whenever an app
+  // says the name moved; the answer is held here so every reader stays
+  // synchronous, and the first paint says SpiritOS until it lands.
   var nodeLabel = '';
+  var nodeNameAsking = null;
 
   function readNodeLabel() {
-    if (nodeLabel) return nodeLabel;
-    try {
-      var raw = spirit.core.fs.loadFile('shell/natter/session.json');
-      if (raw == null) return '';
-      var parsed = JSON.parse(raw);
-      nodeLabel = String((parsed && parsed.label) || '').trim();
-    } catch (e) {
-      nodeLabel = '';
-    }
     return nodeLabel;
+  }
+
+  // Ask the node what it is called; when the answer differs from what is
+  // held, hold it and repaint everything that says the name.
+  function askNodeName() {
+    if (nodeNameAsking) return nodeNameAsking;
+    function take(r) {
+      var b = (r && r.body) || null;
+      var next = b && b.name ? String(b.name).trim() : '';
+      if (next === nodeLabel) return;
+      nodeLabel = next;
+      paintForNodeName();
+    }
+    var answer = null;
+    try { answer = spirit.core.ask('node.card', {}); } catch (e) { answer = null; }
+    // An answer already in hand is taken at once; a promised one when it
+    // lands. The kernel promises; a page that holds the card need not.
+    if (!answer || typeof answer.then !== 'function') { take(answer); return Promise.resolve(); }
+    nodeNameAsking = answer.then(function (r) { nodeNameAsking = null; take(r); }, function () { nodeNameAsking = null; });
+    return nodeNameAsking;
   }
 
   // `detail` is whatever the screen is actually showing: an app's name,
@@ -231,6 +241,19 @@
     if (label) parts.push(label);
     if (detail) parts.push(detail);
     document.title = parts.length ? parts.join(' - ') : 'SpiritOS';
+  }
+
+  // Everything that says the name, repainted when it moves: the tab, the
+  // desktop, the chrome, THE SCREEN SOMEBODY IS ACTUALLY LOOKING AT (a
+  // node that had just taken a name once showed the change everywhere
+  // except where the eyes were), and the binder, since a node that has
+  // just lost its name has one thing to do again.
+  function paintForNodeName() {
+    paintWindowTitle(activeAppId && apps[activeAppId] ? apps[activeAppId].name : '');
+    renderDesktop();
+    paintTitlebarChrome();
+    renderActive();
+    openBinderIfUnbound();
   }
 
   var preferencesRaw = spirit.core.fs.loadFile('preferences.json');
@@ -1587,19 +1610,10 @@
       // would repaint the desktop — but only because the file is NEW,
       // and only while that watcher is alive. A claim is not the place
       // to depend on either.
+      // Since goal/G28.3 the name is the node's, so "changed" means ask
+      // the node again; the repaint follows the answer (paintForNodeName).
       nodeLabelChanged: function () {
-        nodeLabel = '';
-        paintWindowTitle(activeAppId && apps[activeAppId] ? apps[activeAppId].name : '');
-        renderDesktop();
-        paintTitlebarChrome();
-        // THE SCREEN SOMEBODY IS ACTUALLY LOOKING AT, which this did not
-        // repaint. The desktop behind it did, and the chrome did, so a
-        // node that had just taken a name showed the change everywhere
-        // except where the eyes were.
-        renderActive();
-        // Symmetrical with boot: a node that has just lost its name has
-        // one thing to do again, and the desktop behind it is empty.
-        openBinderIfUnbound();
+        return askNodeName();
       },
     };
     if (app._scriptPath) {
@@ -2991,12 +3005,17 @@
   mountListeners();
 
   // First paint: the tab says which node this is before anything is
-  // opened.
+  // opened. The name is asked of the node (goal/G28.3) and the tab, the
+  // desktop and the binder are painted again when it answers.
   paintWindowTitle('');
   paintTitlebarChrome();
 
-  // And on a node with no name, the binder is what "opened" means.
-  openBinderIfUnbound();
+  // And on a node with no name, the binder is what "opened" means. Asked
+  // of the node first: a binder opened before the name arrived would sit
+  // on top of a node that has one.
+  var nameAsked = askNodeName();
+  if (nodeNameAsking) nameAsked.then(openBinderIfUnbound);
+  else openBinderIfUnbound();
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
   spirit.core.jobs.subscribe({

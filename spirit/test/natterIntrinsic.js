@@ -129,7 +129,16 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
       // This fixture drives no verb, so the mouth is present and
       // loud: a suite that starts posting should say so, not quietly
       // reach a global.
-      ask: ask || function () { throw new Error('this fixture hands shell.js no fetch'); },
+      // THE NODE'S NAME IS ASKED, NOT READ OFF A FILE (goal/G28.3): the shell
+      // asks node.card for the one name a node has, and the window title and
+      // the first-run gate both read that answer. Supplied by the test
+      // rather than fetched: a real card is whoever's clone this runs in.
+      // Answered in hand, not promised, so the suite stays synchronous.
+      ask: function (verb, args) {
+        if (verb === 'node.card') return { status: 200, text: '', body: { ok: true, name: sessionLabel || '' } };
+        if (ask) return ask(verb, args);
+        throw new Error('this fixture hands shell.js no fetch');
+      },
       const: { ICON: spirit.core.const.ICON, MIME: {} },
       util: {
         escapeHtml: spirit.core.util.escapeHtml,
@@ -138,16 +147,9 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
       fs: {
         loadFile: function (rel) {
           if (rel === 'preferences.json') return JSON.stringify(preferences);
-          // The label Relay Chat claimed, which the shell reads for the
-          // window title. Supplied by the test rather than fetched off
-          // disk: the real file is Andy's own binding, and a test that
-          // reads it passes or fails depending on whose clone it runs in.
-          // Natter's file since packet 3: claiming is what that app does,
-          // and the shell reads this one path for the window title and
-          // the first-run gate alike.
-          if (rel === 'shell/natter/session.json') {
-            return sessionLabel ? JSON.stringify({ label: sessionLabel, boundAt: '2026-09-07T00:00:00.000Z' }) : null;
-          }
+          // A branch answering shell/natter/session.json stood here, the
+          // file the shell read for its title until goal/G28.3; the shell
+          // asks node.card now (see `ask` above), and nothing reads it.
           // The relay list's branch stood here. goal/G16.3 made the list
           // node state (relay-state/relays.json), which no shell reads
           // through fs, so `relaysRaw` is kept only as a slot callers pass.
