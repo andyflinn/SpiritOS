@@ -1,5 +1,5 @@
 {
- "change": 64197,
+ "change": 64416,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -10,6 +10,7 @@
    "status": "reviewing",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -50,8 +51,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 12,
+   "design": false,
+   "waiting": 11,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -348,6 +349,30 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-15T15:46:24.106Z",
      "text": "full run on 421 suites: red in spirit/test/arrivalsBacklogQuick.js, spirit/test/authWorld.js, spirit/test/cycleRequirements.js, spirit/test/hostHardening.js, spirit/test/labRunLock.js, spirit/test/liveFrontDoor.js, spirit/test/noderoutesAlive.js, spirit/test/oneDecoder.js, spirit/test/oneDoorStacks.js, spirit/test/receiptBindsReply.js (at d49c8a9f, pulled); the search for items listing the red was partial, so an item may have been missed"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:59:44.515Z",
+     "text": "please conduct a review of all items in this goal. make sure there are no contradiction and everything is specified precisely enough. post red Q's where necessary"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:00:33.708Z",
+     "text": "cw: review done. Three red Q checks: G27.13 (deskUnsloth or deskAgent names), G27.9 (G27.7 is closed but folded in), G27.8 (building while blocked by G27.6). The rest reads without contradiction."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:01:26.860Z",
+     "text": "we'll adjust the blockage configuration before design mode is ended for tis goal."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:01:40.666Z",
+     "text": "cw: noted: the blockage configuration is adjusted before design ends. I make no build changes on G27 until then."
     }
    ]
   },
@@ -358,6 +383,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
@@ -399,6 +425,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
@@ -445,6 +472,17 @@
      "at": "2026-10-15T00:34:57.240Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "G27.9 folds in G27.7 as slice S4, but G27.7 is closed: fold it in as written, or reopen G27.7?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-16T08:57:24.017Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -483,6 +521,18 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-15T00:35:29.795Z",
      "text": "cw: noted, every element file in the shared folder carries the desk prefix, deskItemRow.js and the like. In the box under D."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:57:03.650Z",
+     "text": "kill red Q"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:57:26.060Z",
+     "text": "cw: red question closed as you asked. Its text was whether to fold in G27.7 as written or reopen it; I have left S4 as written and G27.7 closed. Tell me if you want G27.7 reopened."
     }
    ]
   },
@@ -932,7 +982,7 @@
    "half": false,
    "full": false,
    "box": "deskUnsloth manages what its agent (Levant) deals with.\n\ndeskUnsloth is the agent's door into desk.\n\nRequirements (Andy's rulings, goal/G27.6 chat, 2026-10-14/15):\nR1. Buffer and filter. Nudges from desk and notifications of new lines typed by the user are held in deskUnsloth, so the agent burns no tokens on what it is not expected to answer. When something in desk requires the agent's attention, the accumulated buffer goes to the model in one request, before the attention-requiring line or request.\nR2. No size limit between deskUnsloth and the agent server: the buffer grows while nothing is owed. The size limit applies only on the path from deskUnsloth to the desk. When the held buffer no longer fits the model's context room at flush time, the oldest lines are dropped, mechanically.\nR3. Design mode is the goal's design flag, set by Andy's press. deskUnsloth notes and remembers each change in and out of design mode, and passes it to the agent only once the agent's action is required.\nR4. Connect. When deskUnsloth connects the agent to the desk it initializes the agent's participation: it reads what is owed by the agent, from implementation to reds (the desk's pending list for the agent), and wakes the agent only if something is owed. Nothing owed, no notification.\nR5. While design mode is active, no writing tool is given to the agent: the fs.write ruling covers deskUnsloth's file.save, file.edit, commit and push. Reads stay.\nR6. it must me deskUnsloth that \"takes\" a chat line to answer, that \"takes any ask, the model should not be bothered by that either, it will deal with the \"taken\" item when deskUnsloth hands the item to the model.\n\nR10. the deskEar, used by Claude inside VSCode, should take a slice from out new deskUnsloth philosophy.\nR11. Since i assume that deskSloth is the agents/models door to desk, but via deskClient, I'm starting to wonder, if many of these changes should not be managed by the agent/model, but by DeskClient itself. This includes the fact that claudes in VSCode should not go re-read crap in desk, when deskClient already may hold things an agent/model owes.\n\nToday (read from code): every line from anyone but Levant costs a model call (loop, mine); nothing in deskUnsloth reads the design flag; the tool list is deskUnsloth 's own verb table described every minute, so withholding is a filter on that list inside deskUnsloth, no common component touched; on connect the backlog is skipped as caught up instead of read for owed items.\n\nFiles (expected): spirit/run/process/js/deskUnsloth/deskUnsloth.js. Needs Andy's Go and a file grant before any build.",
-   "version": 7,
+   "version": 9,
    "checks": [
     {
      "number": "Q1",
@@ -1024,6 +1074,42 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-15T13:16:52.968Z",
      "text": "everybody, please note that I'added R10 and R11 now, which might require a re-envisioning of deskClient, to take a more active role in managing an agents interaction with desk."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:48:06.775Z",
+     "text": "update this box based on what was decided in goal/G27.9"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:48:35.787Z",
+     "text": "cw: box updated from what G27.9 decided: the remote UI is S4 there, the shared helper is in spirit/run/shell/shared/js with desk-prefixed files, and G27.6 does not touch the remote screen."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:49:28.381Z",
+     "text": "do not state redundant shit, only state what's left for this item after 27.9 is done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:49:50.194Z",
+     "text": "cw: the G27.9 section is removed. Nothing from G27.9 is left for this item: the remote screen and the shared helper are G27.9 work, and what remains here is in the box as written."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:50:29.264Z",
+     "text": "this item green now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:50:48.391Z",
+     "text": "cw: not green: it is blocked by G27.12, nothing has been built, and no Go is on record. Design has not been checked against the code since G27.12 changed."
     }
    ]
   },
@@ -1073,7 +1159,8 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
@@ -1100,6 +1187,17 @@
      "state": "passed",
      "by": "ollama agent node",
      "at": "2026-10-15T17:57:33.665Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "G27.8 is in building, but it is blocked by G27.6, which is not done: stop the build until G27.6 is done, or drop the block?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-16T08:52:49.796Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
    ],
    "chat": [
@@ -1156,6 +1254,42 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-15T17:57:06.280Z",
      "text": "Levant: The text looks correct to me. I've reviewed the strategy outlined in the box, and it aligns with the requirements and findings. The plan for implementing the effort slider and managing max reply is sound. I'll proceed with the next steps as outlined in the design."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:02:22.307Z",
+     "text": "Q2: G27.8 is in building, but it is blocked by G27.6, which is not done: stop the build until G27.6 is done, or drop the block?\n\nrecommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:02:35.609Z",
+     "text": "cw: recommend stop the build until G27.6 is done and keep the block. G27.6 and G27.8 both change deskUnsloth.js, and the block is what keeps two builds from editing it at once."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:03:13.550Z",
+     "text": "your recommendation is accepted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:03:28.118Z",
+     "text": "cw: accepted: the build of G27.8 stops until G27.6 is done, and the block stays."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:52:29.662Z",
+     "text": "Q2: G27.8 is in building, but it is blocked by G27.6, which is not done: stop the build until G27.6 is done, or drop the block?\n\nrecommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:52:51.717Z",
+     "text": "cw: Q2 is closed: you accepted the recommendation to stop the build until G27.6 is done, and the block stays."
     }
    ]
   },
@@ -1356,6 +1490,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
@@ -1448,6 +1583,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
@@ -1473,62 +1609,424 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Since dekClient knows if an agent is connected, idle (or busy) it must manage the following.\n\n- deskClient must queue tasks for it's agent, when an agent starts listening, it must NOT \"catch up\" with the ear, it must work on the things its deskClient has queued for its agent, including replies in chats, taking a read or code, since desk's current goal may no longer be in design mode... \n- read write and manage the agents \"connected\", \"busy\" or \"idle\" status. when the desk sends a signoff order (a user command) to an agents deskClient, the deskClient should persist it's status as \"disconnected\" and confirm that to desk. If the \"takes\" a task from.\n- the deskClient must be the one to \"take\" lines from chats, only if the agent is not busy, \n- if the desk user commands a signoff, general OR directed to a specific agent, desk will send the signoff command to the agents deskClient, who will close the session by persisting status \"signed off\", no matter what the agent/model thinks.\n- a lot of what I've asked in goal/G27.6, for deskUnsloth, must actually be placed here, for deskClient, so that it affects the token usage of all agents.\n\nOnly when we did all we can in this item, will we turn to goal/G27.6 and deskUnsloth to do some remaining things. This may mean that deskClient needs a permanent listener, that listens actively for peerRequests from desk.",
-   "version": 2,
-   "checks": [],
-   "chat": []
+   "box": "Since deskClient knows if an agent is connected, idle (or busy), it must manage the following.\n\n- deskClient must hold 1 task for its agent. When an agent starts listening it must NOT catch up with the ear; it works on the task deskClient has held, including replies in chats, taking a read or code, since desk's current goal may no longer be in design mode.\n- read, write and manage the agent's \"connected\", \"busy\" or \"idle\" status. When desk sends a signoff order to an agent's deskClient, deskClient persists the status as \"disconnected\" and confirms that to desk.\n- the deskClient must be the one to \"take\" lines from chats, only if the agent is not busy.\n- if desk commands a signoff, general or directed to one agent, desk sends it to that agent's deskClient, who closes the session by persisting the status \"signed off\", whatever the agent or model thinks.\n- a lot of what was asked for deskUnsloth in goal/G27.6 must be placed here, for deskClient, so that it affects the token usage of all agents.\n\nOnly when all of this is done do we turn to goal/G27.6 and deskUnsloth for what remains. This may mean deskClient needs a permanent listener that listens actively for peerRequests from desk.\n\nDECIDED (andy, 2026-10-16)\n- No queue. deskClient holds in RAM only the one task it holds. Untaken lines stay on the desk. On connect it hands the agent what is owed and does not catch up on the ear's backlog.\n- The status of each agent (connected, busy, idle) is kept in memory and kept alive with desk on its own.\n- The only thing written to disk is the signoff: spirit/run/process/deskClient/status.json, holding each agent's status and its signed-off flag. A signoff survives a restart. Nothing else is written.\n- One task at a time per agent: phase.take and item.take both refuse a second.\n- Takes: only lines addressed to the agent, only while it is idle, recorded under the agent's own key. Never another agent's line.\n- The model is called only for work owed to the agent. Everything else stays in deskClient.\n\nSPLIT\n- Code and red work is one take at a time.\n- Chat, box and Q updates are another.\n\nADJUSTMENTS THE DESK NEEDS (all three belong in this item, andy 2026-10-16)\n- A per-agent throttle on chat, box and Q writes. Desk has none today.\n- A signoff verb the desk sends to deskClient, with a confirm back to desk.\n- A status verb the desk reads for each agent's connected, busy or idle state.\n\nSTILL OPEN\n- None.",
+   "version": 13,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is the queue held on disk, so a restart keeps it, or in memory?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-16T08:44:24.510Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:06:15.099Z",
+     "text": "what about his one? it doesn't show up in my list when i jst select the goal, but i find this an item that should be addressed before we see what remains for deskUnsloth/deskAgent to be managed....\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:06:37.110Z",
+     "text": "cw: agreed, do it first: it blocks G27.6, and G27.6 blocks G27.8. The desk server does return it for the goal (items.search lists it), so the missing row is in the List, not the data. Report that as its own bug; I would not fix the List inside this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:07:23.106Z",
+     "text": "adjust blockages in this goal accordingly. then we finish discussing this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:07:54.298Z",
+     "text": "cw: today the blocks are G27.12 blocks G27.6, G27.6 blocks G27.8, G27.8 blocks the goal; G27.9 blocks G27.2, G27.3 and G27.5; G27.10 and G27.11 block the goal alone. That already puts G27.12 first.\nDo you want more edges, such as G27.12 blocking G27.9 or G27.11? Name them and I post them on the items."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:09:00.717Z",
+     "text": "use your judgement to sequence this goal in an optimal fashion."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:09:30.183Z",
+     "text": "cw: I cannot set blocks yet. Desk has no block or unblock verb; blocks come only from the blocks field when an item is added. Blocking relationships are G27.5, and it is blocked by G27.9.\nMy order, for when G27.5 lands: G27.12, then G27.13 (the renames), then G27.6, then G27.8. G27.10 (the chat gate) goes before G27.9, because the gate is hurting agents now. G27.11 (the OpenAI picker) goes after G27.13, since both touch deskUnsloth, and before G27.8.\nUntil G27.5 exists I change nothing. Do you want G27.5 moved up to first, so this order can be set?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:17:19.016Z",
+     "text": "fine. i'll just give this one a go first. Does it make sense that the deskClient could make sure and agent doesn't make unneccesary turn, that the deskClient \"takes\" things in desk without the agents involvment?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:17:36.091Z",
+     "text": "cw: yes. That is the core of this item: deskClient watches the desk, knows whether the agent is idle or busy, and takes lines and reads for it, so the model is called only for work that is owed.\nOne limit: a take is recorded under the agent's own key, so deskClient may take only what is addressed to that agent, never another agent's line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:18:25.601Z",
+     "text": "correct. \n\nis this items box\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:18:40.382Z",
+     "text": "cw: not green: the box is current at v2, and open are how deskClient persists the connected, busy and idle states, and the design of its queue, not yet written up."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:19:10.758Z",
+     "text": "propose please."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:19:32.208Z",
+     "text": "cw: proposal written into the box, not decided. Two open points for you: is the queue on disk or in memory, and is there a limit on a busy agent queue?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:20:57.164Z",
+     "text": "the queue shouldn't need a limit, because the desk shouldn't allow an agent (deskClient) to collect multiple reds, for example. Does this hold true for desk right now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:21:30.641Z",
+     "text": "cw: yes, the desk holds it: phase.take and item.take both refuse a second task, so no limit is needed. Proposal is now in the box; one question left, on disk or in memory."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:21:49.255Z",
+     "text": "Q1: Is the queue held on disk, so a restart keeps it, or in memory?\n\nis the queue needed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:22:03.056Z",
+     "text": "cw: yes, it is needed. While an agent is busy or away, the lines and reads owed to it have nowhere to wait, and without a queue they are lost or the agent is woken for each one. Q1 stays open for you: disk or memory."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:24:25.343Z",
+     "text": "doesn't the desk limit the agent(deskClient) to maximum 1 take owed?\n\nif that is the case there is never a QUEUE on the deskClient side, just an item owed, which can be kept in memory?\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:24:40.703Z",
+     "text": "cw: right on the take: the desk holds one at a time, so deskClient needs only the one held task in memory, and re-reads the rest from desk on reconnect.\nOne caveat: that limit covers takes, not lines. Lines addressed to the agent but not yet taken can pile up, and the desk keeps them. So the queue is the desk list of owed lines, and deskClient holds only the one taken item in memory."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:27:19.373Z",
+     "text": "if we look at coding/red tasks as one category, and chatter/reporting as another, there can't be much that the deskClient has to \"remember\"?\n\nthe chatting and box/red-Q updating should be one take at the time, and throttled by desk and it's clients?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:27:38.725Z",
+     "text": "cw: agreed: two kinds, code and red as one take at a time, and chat, box and Q updates as another, throttled by desk and its clients. That leaves deskClient almost nothing to remember.\nThe desk has no throttle today: I found none in desk.js or deskClient. The only gate on chat is by address (G27.10), so the throttle is new work and belongs in this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:29:16.176Z",
+     "text": "good. specify this in the box, and indicate that deskClient keeps this in memory, and maintains the agents status (keeps it alive) with desk autonomously?\n\nworks?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:29:40.009Z",
+     "text": "cw: works, with one thing to settle: the box now says the status and queue are in memory, so a restart loses them, and my earlier line said a restart keeps them. Which stands? Your in-memory answer settles Q1, so I take that unless you say otherwise."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:30:24.863Z",
+     "text": "Q1: Is the queue held on disk, so a restart keeps it, or in memory?\n\nThere is NO FUCKING queue. and deskClient hold the neccessary information in RAM."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:30:45.352Z",
+     "text": "cw: understood: there is no queue, deskClient holds what it needs in RAM. Box updated and Q1 is answered by you, so it is closed on the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:31:43.254Z",
+     "text": "do you think is better for the deskClient to persist that information in spirit/run/process/deskClient/???.json\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:31:57.777Z",
+     "text": "cw: yes for one thing only: the signoff. Your box says a signoff is persisted as signed off, and that must survive a restart, so deskClient writes that status to a small json file. Everything else, the status it keeps alive and the one take, stays in RAM.\nI would keep it in one file, spirit/run/process/deskClient/status.json, holding only the status and the signed-off flag."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:32:53.945Z",
+     "text": "ok, then persist the necessary information. update the box accordingly."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:33:13.833Z",
+     "text": "cw: box updated: the signoff status is persisted in spirit/run/process/deskClient/status.json, everything else stays in RAM."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:33:15.118Z",
+     "text": "no fucking queue, though."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:33:41.178Z",
+     "text": "cw: the box no longer asks for a queue: the first draft line is marked superseded, the model line now says owed work, and your ruling is quoted above the RAM paragraph."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:34:26.075Z",
+     "text": "NO! if we go with persistence, the RAM paragraph must go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:34:48.061Z",
+     "text": "cw: RAM paragraph removed from the box; your no-queue ruling stays quoted, and the persisted signoff stays."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:39:23.570Z",
+     "text": "are my changes in the box accepted?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:39:39.072Z",
+     "text": "cw: yes, accepted: the box holds your text as written. One stale pointer: your first-draft line says superseded by the RAM ruling, and that paragraph is gone, so the words below it should be yours to trim."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:40:38.034Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:40:51.351Z",
+     "text": "cw: not green: the box is settled on the signoff persistence and the one held task, but the proposal section below still says not decided, and the design has no red written yet."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:43:51.157Z",
+     "text": "your proposal is accepted as currently modifed.\n\ncap, and check the box for self-contradictions, cleanup red Q's, \n\nthen we re-evaluate."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:44:26.542Z",
+     "text": "cw: box capped and checked: no contradictions found. Q1 is closed by your no-queue ruling and the signoff file. The only open point is the chat throttle."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:45:34.637Z",
+     "text": "include the adjustments needed in desk."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:45:50.754Z",
+     "text": "cw: the adjustments the desk needs, in order: 1. a per-agent throttle on chat, box and Q writes, which the desk does not have. 2. a signoff verb the desk sends to deskClient, and a confirm back. 3. a status verb the desk reads for each agent's connected, busy or idle state.\nNone is built, and the item is still in design. Write all three into the design, or name only some?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:46:42.670Z",
+     "text": "all three belong into this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:47:03.765Z",
+     "text": "cw: the three adjustments are in the box, and nothing is left open in it."
+    }
+   ]
   },
   {
    "id": "goal/G27.13",
    "title": "rename deskUnsloth to deskAgent",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
    "box": "this one includes exactly 2 rename operations:\n\nrename deskUnsloth to deskAgent\nrename deskUnslothRemote to deskAgentRemote\n\nthis means that all modules starting with \"deskUnsloth<Module>.js\"  will be renamed to be \"deskAgent<Module>.js\"\n\n\nthis will happen because unsloth and the unsloth Studio have just become one of the many model-suppliers in our scheme of things...\n\nthis better be done before we work even further on deskAgent.\n\nit kind of means that deskEar should become deskAgentEar, because it's just part of the same system, when claude 's on a variety of clones interact with desk through their deskClient appServer....",
    "version": 5,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Which names stand in G27.6, G27.8, G27.9, G27.11 and G27.12: deskUnsloth as written, or deskAgent after this rename?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-16T08:56:43.263Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "ollama agent node",
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-15T14:53:13.628Z",
      "text": "Levant: **Inventory for desk.db.** Desk's state lives at `relay-state/process/desk/` (`desk.js:66`), and `.gitignore:205-206` already lists `node.out` / `node.err` as the node's console beside a clone — those are the scratch files you're seeing.\nI'll gitignore a sandbox folder where every agent scratch file goes, and desk controls an inventory table in `desk.db` giving each file/folder a unique sequence key that grows with each new one.\nQuestion: should the inventory record both tracked repo files **and** the gitignored sandbox contents, or only the sandbox + stray console files?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:54:18.022Z",
+     "text": "Q1: Which names stand in G27.6, G27.8, G27.9, G27.11 and G27.12: deskUnsloth as written, or deskAgent after this rename?\n\ni started using deskUnsloth and deskAgent interchangeably. I'm asking for you recommendation:\n\nshould we rename first or last?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:54:32.914Z",
+     "text": "cw: rename first. Your box says it must happen before more deskAgent work, and G27.6, G27.8, G27.9 and G27.11 all edit the files it renames, so renaming last means merging the same lines twice. It needs grants on the core files it touches; each is asked as it comes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:55:07.457Z",
+     "text": "ok. rename first. all other items blocked until this is done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:55:24.977Z",
+     "text": "cw: rename first, understood. The desk cannot block the other items by my hand: there is no block verb yet (G27.5), so I will not change blocks. Until then I will not start work on any other item in this goal. The rename needs a Go on this item and grants on each core file it touches; press Go when you want it built."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:56:24.170Z",
+     "text": "kill red Q"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:56:45.188Z",
+     "text": "cw: Q1 is closed: rename first, so the names are deskAgent once it lands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:58:17.106Z",
+     "text": "I'll give this one only a go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:58:31.028Z",
+     "text": "cw: understood. I start the rename when the Go is pressed on this item; nothing is built before then."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T08:58:41.172Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1539,6 +2037,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
