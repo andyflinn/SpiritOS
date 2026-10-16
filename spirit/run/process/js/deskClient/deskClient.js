@@ -304,6 +304,13 @@ function meantForAgent(got, from) {
     if (r.key && !mine && r.by && r.by !== 'andy' && r.by !== 'desk') rememberOther(r.key, r.by);
     if (r.by === 'andy') {
       if (r.verb === 'press' && /"what":"seen"/.test(r.body)) return;
+      // A PROFILE CHANGE IS ABOUT ONE AGENT (goal/G27.6, Andy 2026-10-16: "your deskClient should not be forwarding that info"):
+      // a profile.set for another agent is not handed to this one.
+      if (r.verb === 'profile.set') {
+        let about = '';
+        try { about = String(JSON.parse(r.body).agent || ''); } catch (e) { about = ''; }
+        if (about !== SELF_KEY) return;
+      }
       if (r.verb === 'chat.add') publishOn(r.body);
       out.push({ text: 'DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
     } else if (r.by && !mine && r.verb === 'chat.add') {
