@@ -92,7 +92,7 @@ function claimMessage(name) {
 //
 // The token is a public KEY, not a label. Labels duplicate by design, so
 // a signature naming one identifies nobody on a relay holding two johns
-// (PEER-DEVICES.md, and B2 carried it inward).
+// (the device design, and B2 carried it inward).
 //
 // AND IT NAMES THE RELAY (goal/G16.12, S8 of the review of 2026-10-10).
 // Without it a relay that saw a member's header could replay it on another
@@ -701,7 +701,7 @@ function nameIdentity(rootDir, name) {
 // That rule is unchanged and now structural: a device signature does not
 // verify against a row's key at all, so it is not narrowly refused — it
 // never matches. A device is the owner's window, not the owner's
-// credentials (design/relay/DEVICE.md).
+// credentials.
 
 
 module.exports = {
