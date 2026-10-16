@@ -1,5 +1,5 @@
 {
- "change": 65152,
+ "change": 65160,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -51,15 +51,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 9,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -948,10 +946,9 @@
    "id": "goal/G27.6",
    "title": "deskAgent manages what its agent (Levant) deals with.",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
