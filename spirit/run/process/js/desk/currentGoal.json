@@ -1,5 +1,5 @@
 {
- "change": 63944,
+ "change": 63948,
  "line": 8510,
  "goal": "goal/G28",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -394,10 +394,9 @@
    "id": "goal/G28.3",
    "title": "BUG: Relay does not persist member labels.",
    "goal": "goal/G28",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -714,6 +713,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-16T06:50:56.463Z",
      "text": "deskVerify: passed, at 36553e7b (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T06:51:04.581Z",
+     "text": "cw: deskVerify passed at 36553e7b, and the item offers Done. Done is yours to press."
     }
    ]
   }
