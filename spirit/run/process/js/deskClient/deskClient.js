@@ -196,6 +196,8 @@ let turn = null;
 let said = '';
 // nudged: the desk said something changed, and no poll has started since. wakers: the waits a nudge ends early.
 let nudged = false;
+// THE AGENT'S STATUS, KEPT IN RAM AND KEPT ALIVE WITH DESK (goal/G27.12): connected, busy, idle, or signed off.
+let agentState = 'connected';
 const wakers = [];
 
 function keepPlace(p) {
@@ -288,6 +290,8 @@ function pumpPulls() {
 
 // What one answer of changes holds for this agent, in the order the desk gave it, each with the place after it.
 
+// A LINE IS TAKEN ONLY WHEN IT IS ADDRESSED TO ITS OWN AGENT (goal/G27.12): the records below count only when their key is
+// this agent's, so a line addressed to another agent is never handed here.
 function meantForAgent(got, from) {
   const out = [];
   const cur = { n: from.n, line: from.line };
@@ -462,6 +466,7 @@ function handOver(to, t0) {
     last = waiting.shift();
   }
   keepPlace(waiting.length ? { n: last.n, line: last.line } : fetched);
+  agentState = 'busy';
   return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return { lines: lines }; });
 }
 
@@ -509,6 +514,9 @@ appServer.serve({
     request: {}, reply: { lines: [''] },
     handler: function (a, caller) {
       ownerOnly(caller);
+      if (agentState === 'signed off') throw refused('signed-off', { why: 'this agent is signed off' });
+      // ONLY WHEN IDLE: the agent asks here when it waits, so it is idle; a line is handed over only then.
+      agentState = 'idle';
       const to = deskKey();
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
@@ -557,6 +565,18 @@ appServer.serve({
           return ending(function () { return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return { lines: [job] }; }); });
         });
       });
+    },
+  },
+  // SIGNOFF (goal/G27.12). Desk sends the order; deskClient persists signed off and confirms it back to desk, whatever
+  // the agent or model thinks. Only the signoff is written to disk.
+  'signoff': {
+    request: { agent: '' }, reply: { signedOff: true, status: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      agentState = 'signed off';
+      try { fs.writeFileSync(path.join(STATE, 'status.json'), JSON.stringify({ status: agentState, signedOff: true, at: new Date().toISOString() })); }
+      catch (e) { throw refused('not-saved', { why: 'could not persist the signoff' }); }
+      return { signedOff: true, status: agentState };
     },
   },
   // THE DESK'S NUDGE (goal/G3.5): something changed there. The desk's alone, by the key setDesk named. It asks
