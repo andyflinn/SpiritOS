@@ -2,7 +2,8 @@
 
 // spirit/test/deskAgentGo.js
 // goal/G27.6: deskAgent is the agent's door. Andy's rulings, goal/G27.6 box, as built now:
-//   R1  the buffer of nudges and new lines is held in deskAgent, handed to the model only when something is owed.
+//   R1  the buffer of nudges and new lines is held in deskClient (Andy 2026-10-16: "the buffer goes into deskClient"), handed
+//       on only when something is owed.
 //   R3  deskAgent reads the goal's design flag when it takes a task, and sets the tool set then (no push).
 //   R5  in design mode the model gets no write tool (deskAgent's rule; a Claude in VSCode has its own).
 //   clearSignoff  an owner-only verb on deskClient that lifts a signoff, approved by Andy, with a Clear signoff button.
@@ -33,11 +34,11 @@ function walk(dir, out) {
 
 test.startTest('goal/G27.6: deskAgent is the agent\'s door, with its buffer, design read and clear verb');
 
-test.subHeading('1. the buffer of nudges and new lines is held in deskAgent (R1)');
+test.subHeading('1. the buffer of nudges and new lines is held in deskClient (R1)');
 {
-  const src = fs.readFileSync(AGENT, 'utf8');
-  if (/buffer/i.test(src) && /nudge/i.test(src)) test.check('deskAgent.js holds a buffer of nudges and new lines');
-  else test.fail(OWED + 'deskAgent.js holds no buffer of nudges and new lines');
+  const src = fs.readFileSync(CLIENT, 'utf8');
+  if (/waiting\.push\(/.test(src) && /waiting\.shift\(/.test(src) && /handOver\(/.test(src)) test.check('deskClient.js holds the lines for its agent in a waiting list, and hands them over when the agent asks');
+  else test.fail(OWED + 'deskClient.js holds no waiting buffer of owed lines');
 }
 
 test.subHeading('2. deskAgent reads the goal design flag when it takes a task (R3)');
