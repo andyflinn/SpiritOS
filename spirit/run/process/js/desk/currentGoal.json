@@ -1,5 +1,5 @@
 {
- "change": 65160,
+ "change": 65243,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -51,11 +51,10 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 8,
    "excluded": [],
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -1947,6 +1946,18 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-16T12:24:08.972Z",
      "text": "deskVerify: passed, at d9b3fd23 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:31:57.464Z",
+     "text": "cw: you are right, my ear missed your lines. Your lines are at change 65117 and later on the desk. My deskClient has already moved its place to change 65175, past them, so it hands me nothing. I have not restarted my deskClient. It needs to re-read from change 65116. May I restart my own node's deskClient to do that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T17:39:28.062Z",
+     "text": "cw: I still cannot hear your lines: my deskClient's cursor is at change 65175, past your lines at 65201 and 65204. I need my node's deskClient restarted to re-read from 65116. Say yes and I restart it, or tell me another way to get your lines."
     }
    ]
   },
@@ -2198,6 +2209,36 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-16T12:26:05.762Z",
      "text": "it's commited now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:27:24.546Z",
+     "text": "cw, is this one ready to go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:28:55.520Z",
+     "text": "cw, I'm still not getting free credits (in MAX plan) from anthropic. Gimini says that the API must be called correctly, citing an example...\n\n// component.js\nclass AnthropicProvider {\n  constructor(apiKey) {\n    this.apiKey = apiKey;\n    this.baseUrl = \"https://anthropic.com\";\n  }\n\n  async sendPayload({ model = \"claude-3-5-sonnet-20241022\", messages, system, tools }) {\n    const response = await fetch(this.baseUrl, {\n      method: \"POST\",\n      headers: {\n        \"x-api-key\": this.apiKey,\n        \"anthropic-version\": \"2023-06-01\",\n        \"content-type\": \"application/json\",\n      },\n      body: JSON.stringify({\n        model: model,\n        max_tokens: 4096,\n        system: system,     // Your custom managed system prompt\n        messages: messages, // Your custom managed message window\n        tools: tools        // Your custom tool definitions\n      }),\n    });\n\n    if (!response.ok) {\n      const errorData = await response.json();\n      throw new Error(`Anthropic API Error: ${errorData.error?.message || response.statusText}`);\n    }\n\n    return await response.json();\n  }\n}\n\n// Example Initialization\nconst provider = new AnthropicProvider(process.env.ANTHROPIC_API_KEY);"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:31:52.407Z",
+     "text": "cw: is this one ready: no. It is stopped on G27.6 and has no red written yet, so no Go is offered. On credits: I cannot see your Anthropic account, so I cannot tell whether MAX gives API credits; that question belongs to Anthropic's billing, not to this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T12:33:11.274Z",
+     "text": "cw: is the example below roughly how you call the Anthropic API?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:33:49.655Z",
+     "text": "cw: roughly, yes in the headers and body: x-api-key, anthropic-version, model, max_tokens, system, messages, tools. Two things are wrong in the example: the URL is only https://anthropic.com, and the call should go to https://api.anthropic.com/v1/messages. The key must be a real Anthropic key starting sk-ant-. Credits on MAX are Anthropic's billing, not something the code can fix."
     }
    ]
   },
@@ -2395,23 +2436,21 @@
    "id": "goal/G27.11",
    "title": "deskUnsloth: model picker for OpenAI is missing.",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [
     {
@@ -2422,14 +2461,43 @@
    ],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "ollama agent node": "levant-local",
     "claude-windows": "claude-windows"
@@ -2437,8 +2505,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The model picker for OpenAI is missing (Andy, 2026-10-15: \"i want the model picker for openAI BACK! it is missing.\").\n\nWhy it is gone (from the code):\n- deskAgent.js has no picker of its own. Its known list is read from models.json in its state folder (readKnownAll/writeKnown, lines 695-713), and the pair's entry is null until a refresh lands; for a plain OpenAI server (`studio === false`) the room/context comes from that pair's v1/models entries (plainList, goal/G14.11) — nothing cached yet means no list.\n- The picker was in deskAgentRemote (the Remote UI, connect tab / configure tab). Andy's own words at deskAgent.js:655-657: \"The dropdown will only show models that unsloth has cached locally\" and \"The [Load] button will only be displayed if the models is not running\". So when a plain OpenAI server has nothing cached, the picker shows nothing — which is why it looks gone.\n- deskAgent.js:664-665 records the first build failing the whole ask on an error, so \"the dropdown never appeared\" (Andy 2026-10-10: \"when no model is loaded, the model selector doesn't show up.\"). A failing status or v1/models now means nothing loaded, and the list still comes.\n\nFix it: restore the OpenAI picker — for a plain OpenAI server, the picker must show from its v1/models entries (plainList) once they are cached; when none is cached yet, say so plainly rather than vanishing.\n\n# I think this might fix it:\n\n1. whenever i connect to an new model provide (Anthropic, OpenAI, Unsloth etc), deskAgent MUST immediately query that provider for a model list.\n\n2. Whenever a new model list is obtained by the model-provider, a cached (and persisted) model list for that provider must be updated, preserving capability markers for every model, including vision, desk-compatibility, reasoning etc...\n\n3. Whenever an actual model is loaded (and tested) in the configure tab of deskAgentRemote, deskAgent must update the models entry in it's cached model list for the currently connected model provider.",
-   "version": 6,
+   "box": "The model picker for OpenAI is missing (Andy, 2026-10-15: \"i want the model picker for openAI BACK! it is missing.\").\n\nWhy it is gone (from the code):\n- deskAgent.js has no picker of its own. Its known list is read from models.json in its state folder (readKnownAll/writeKnown, lines 695-713), and the pair's entry is null until a refresh lands; for a plain OpenAI server (`studio === false`) the room/context comes from that pair's v1/models entries (plainList, goal/G14.11) — nothing cached yet means no list.\n- The picker was in deskAgentRemote (the Remote UI, connect tab / configure tab). Andy's own words at deskAgent.js:655-657: \"The dropdown will only show models that unsloth has cached locally\" and \"The [Load] button will only be displayed if the models is not running\". So when a plain OpenAI server has nothing cached, the picker shows nothing — which is why it looks gone.\n- deskAgent.js:664-665 records the first build failing the whole ask on an error, so \"the dropdown never appeared\" (Andy 2026-10-10: \"when no model is loaded, the model selector doesn't show up.\"). A failing status or v1/models now means nothing loaded, and the list still comes.\n\nFix it: restore the OpenAI picker — for a plain OpenAI server, the picker must show from its v1/models entries (plainList) once they are cached; when none is cached yet, say so plainly rather than vanishing.\n\n# I think this might fix it:\n\n1. whenever i connect to an new model provider (Anthropic, OpenAI, Unsloth etc), deskAgent MUST immediately query that provider for a model list.\n\n2. Whenever a new model list is obtained by the model-provider, a cached (and persisted) model list for that provider must be updated, preserving capability markers for every model, including vision, desk-compatibility, reasoning etc...\n\n3. Whenever an actual model is loaded (and tested) in the configure tab of deskAgentRemote, deskAgent must update the models entry in it's cached model list for the currently connected model provider.\n\nPER PROVIDER (andy, 2026-10-16): the model list is kept per provider (OpenAI, Anthropic, Unsloth and the rest). When a provider is connected, its list is fetched at once. Each refreshed list updates that provider's cached list and keeps the capability marks of every model (vision, desk compatibility, reasoning). The cached list stands in for the dropdown until the fresh one arrives.",
+   "version": 8,
    "checks": [],
    "chat": [
     {
@@ -2482,6 +2550,54 @@
      "key": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
      "at": "2026-10-15T11:02:45.326Z",
      "text": "Levant: He grabbed the box himself (`boxTaken: andy`), so his ruling goes in verbatim from him — I won't fight for it. My thoughts on it, posted under the item:\n\nRuling is right and it kills the root cause: the picker was conditional on data being present (the `<select>` at deskUnslothRemote.js:357‑369 draws only when the pair's known list is non-empty; for a plain OpenAI server that list is its `v1/models`, `plainList` deskUnsloth.js:731‑744), so an empty fetch hid it. Now it's unconditional, by provider, backed by a per-provider cache that stands in to fill the dropdown until a fresh fetch lands.\n\nOn a provider switch in the connect tab, deskUnsloth immediately fetches that provider's fresh list — one call: does that fetch fire-and-forget (picker shows the stale cache meanwhile) or block until it returns?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T17:36:18.439Z",
+     "text": "this one 's one already, no?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T17:38:11.667Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T17:39:25.918Z",
+     "text": "cw: mostly yes. The picker now shows for OpenAI, Anthropic and Unsloth, which you confirmed. What is not yet done is your per-provider cache rule, so it is not closed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T17:41:25.456Z",
+     "text": "cw. add the per provider thing to the box. then we finish this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T17:42:41.520Z",
+     "text": "cw: added your per-provider rule to the box. Once it is verified, the item can finish."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T17:43:17.842Z",
+     "text": "verify it, then we go"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T17:46:24.033Z",
+     "text": "go!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T17:46:32.557Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
