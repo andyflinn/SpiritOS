@@ -70,7 +70,7 @@ async function run() {
     }
   }
 
-  test.subHeading('The device refusal keeps its sentence');
+  test.subHeading('The node refusal keeps its sentence');
 
   {
     let status = 0; let body = '';

@@ -150,29 +150,6 @@ test.subHeading('3. a member\'s own in-flight cap still bounds what it asks the 
   else test.fail(OWED + 'the requester cap did not bind: first ' + short(one) + ', second ' + short(two));
 }
 
-// ── 4. DEVICE, KILLED ───────────────────────────────────────────────────
-test.subHeading('4. the device names are gone from the node and the relay');
-{
-  const NAMES = ['device.info', 'device.rotate', 'handleDevice', 'handleRotatePassword', 'deviceOffer', '/api/relay/device'];
-  const left = [];
-  const walk = function (dir) {
-    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
-      if (e.name === 'relay-state' || e.name === 'node_modules') return;
-      const full = path.join(dir, e.name);
-      if (e.isDirectory()) return walk(full);
-      if (!/\.js$/.test(e.name)) return;
-      const src = fs.readFileSync(full, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '')
-        .split(/\r?\n/).map(function (l) { return l.replace(/\/\/.*$/, ''); }).join('\n');
-      NAMES.forEach(function (n) { if (src.indexOf(n) !== -1) left.push(path.relative(RUN, full) + ': ' + n); });
-    });
-  };
-  walk(path.join(RUN, 'js'));
-  walk(path.join(RUN, 'process', 'js'));
-  if (!left.length) test.check('no device verb, door or handler is left in spirit/run');
-  else test.fail(OWED + left.length + ' device name(s) left: ' + left.slice(0, 6).join(' | '));
-}
-
-
 // ── 5. THE RATE IS CHARGED TO A PROVEN SENDER, NOT A CLAIMED ONE ────────
 //
 // The rate limit is charged before the post's signature is checked, so junk

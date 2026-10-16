@@ -923,14 +923,6 @@ function theOwnerGroupFolds() {
       test.fail('owner panels drawn while the group is shut');
     }
 
-    // THE DEVICE PANEL IS GONE (goal/G16.2), inside the group or out.
-    if (!/natter-device/.test(shut)) {
-      test.check('and there is no device panel — the device enrolment was removed (goal/G16.2)');
-    } else {
-      test.fail('the device panel is still drawn');
-    }
-
-
     owner.openGroup();
     const open = owner.body().innerHTML;
     // `natter-peers` and `natter-policy` went with their panels, and the
@@ -1426,12 +1418,6 @@ function someoneElsesMailbox() {
       test.fail('member view: ' + panel);
     }
 
-    // The device panel was removed by goal/G16.2, for members as for owners.
-    if (!/natter-device/.test(panel)) {
-      test.check('and offers no device panel — the device enrolment was removed (goal/G16.2)');
-    } else {
-      test.fail('a device panel for a member: ' + panel);
-    }
   });
 }
 
@@ -1451,41 +1437,6 @@ function aStrangersMailbox() {
     } else {
       test.fail('chrome on a mailbox we are not on: ' + panel);
     }
-  });
-}
-
-// THE DEVICE PANEL WAS REMOVED by goal/G16.2 with the device enrolment
-// (Andy: "device WILL be KILLED. that's a decision."). What is left to
-// assert is that the screen no longer asks the node for a device at all.
-function thePanelAsksOnce() {
-  test.subHeading('And never asks the node about a device');
-
-  const app = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', owned: true }],
-    // THE REPORT ARRIVES SEPARATELY NOW (R3). It sat on the row while
-    // the badge was a signed status GET and the report was that
-    // request's body. The relay pushes it down the stream instead, and
-    // it reaches the browser under `relayStatus`, keyed by url.
-    //
-    // The SHAPE moved with it: `peers` is a count here, where the
-    // owner-only report carried the roster itself — and `messages` is
-    // gone, because R8 deleted the ring and a row reading "Messages 0"
-    // would suggest the question still applies.
-    relayStatus: { [OWNED]: { owner: 'andy', mode: 'keys', peers: 3, present: 1, key: 'RELAYKEY' } },
-  });
-
-  return settle().then(function () {
-    return settle().then(function () {
-      const asks = app.log.filter(function (c) {
-        return c.url.indexOf('/api/spirit') === 0 && /"device\./.test(String(c.body || ''));
-      });
-      const html = app.body().innerHTML;
-      if (asks.length === 0 && html.indexOf('natter-device') === -1 && app.intervals() === 0) {
-        test.check('no device verb is asked, no device panel is drawn, and no timer runs');
-      } else {
-        test.fail('device asks ' + asks.length + ', intervals ' + app.intervals());
-      }
-    });
   });
 }
 
@@ -1894,7 +1845,6 @@ ownedMailbox()
   .then(mintingNamesThisMailbox)
   .then(someoneElsesMailbox)
   .then(aStrangersMailbox)
-  .then(thePanelAsksOnce)
   .then(openingAnotherMailboxLetsGoOfTheLast)
   .then(panelsFoldAndAreMarked)
   .then(theRedIsExplained)

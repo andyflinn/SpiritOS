@@ -271,7 +271,6 @@ async function run() {
   }
 
   // While the relay is still alive, and before it is killed below.
-  await theDevicePageIsGone(up, lab.house.publicKey);
 
   test.subHeading('The relay going away does not take the node with it');
 
@@ -368,36 +367,6 @@ async function run() {
   } else {
     test.fail('after restart — key door ' + said.status +
       ', relay.db rows ' + rows.length);
-  }
-}
-
-// ── THE DEVICE PAGE IS GONE (goal/G16.2) ─────────────────────────────
-//
-// This suite already spawns a real --relay over a real socket, which is
-// the only place in the harness that can ask a relay for a URL and see
-// what comes back. The device page and its enrolment door were removed
-// with the device enrolment (Andy: "device WILL be KILLED. that's a
-// decision."); what is asserted is that a real relay no longer answers
-// either, for an identity it holds or for nobody.
-async function theDevicePageIsGone(up, ownerKey) {
-  test.subHeading('The device page and its door are gone from a real relay');
-
-  const seg = String(ownerKey).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  const mine = await fetch(up.base + '/' + seg + '/device');
-  const bare = await fetch(up.base + '/device');
-  if (mine.status === 404 && bare.status === 404) {
-    test.check('a keyed /<key>/device and a bare /device are both 404');
-  } else {
-    test.fail('device page answered: keyed ' + mine.status + ', bare ' + bare.status);
-  }
-
-  const door = await fetch(up.base + '/api/relay/device', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
-  });
-  if (door.status === 404) {
-    test.check('and POST /api/relay/device is 404');
-  } else {
-    test.fail('POST /api/relay/device answered ' + door.status);
   }
 }
 

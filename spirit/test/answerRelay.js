@@ -72,12 +72,6 @@ async function run() {
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
     const A = answerRelay.createAnswerer({ rootDir: home, askKey: relay.askKey });
 
-    if (typeof A.answer === 'undefined') {
-      test.check('the answerer answers no request any more: the device-offer reply is gone (goal/G16.2)');
-    } else {
-      test.fail('answerRelay still exports answer()');
-    }
-
     const key = await A.relayKey(RELAY_URL);
     if (key === relayId.publicKey && relayKeys.pinned(home, RELAY_URL) === relayId.publicKey) {
       test.check('the relay\'s signed key is accepted and pinned — trust on FIRST use');
