@@ -3,7 +3,7 @@
 // goal/G3.3: deskClient, a server on an agent's own node, passes one ask to Andy's desk and counts it.
 // Red on today's tree: there is no such server.
 //   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
-//   deskEar does, and statistics are kept somewhere you can access them easily.", then "accepted." to the proposal
+//   deskAgentEar does, and statistics are kept somewhere you can access them easily.", then "accepted." to the proposal
 //   of a deskClient server, "you both chose verb name and all", and "a guarantee that no core modules are touched.
 //   this is a agent/user appclication". His Go on this item is his press in Desk.
 // The contract the builder follows (the box of goal/G3.3; the names are the agents', as he left them to us):

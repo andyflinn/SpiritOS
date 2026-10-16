@@ -11,7 +11,7 @@
 //   - one answer: the bucket cuts, more says so, and resuming from the returned cursors loses nothing and
 //     doubles nothing (the rowid is the cursor BECAUSE a time re-reads or misses on equal stamps);
 //   - a read: it takes no by.
-//   DONE WHEN also held deskEar.js to asking this verb instead of opening the db file. That listener went with
+//   DONE WHEN also held deskAgentEar.js to asking this verb instead of opening the db file. That listener went with
 //   the agents app (goal/G3.2); the one that replaces it is held to account by its own suites (goal/G3.4, G3.6).
 
 const fs = require('fs');

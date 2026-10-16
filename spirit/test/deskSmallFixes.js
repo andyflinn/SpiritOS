@@ -1,11 +1,11 @@
 'use strict';
 
 // spirit/test/deskSmallFixes.js
-// goal/G10.10: deskUnsloth and its Remote: smaller fixes, and the desk's. Red on today's code (386f450b); claude-windows
+// goal/G10.10: deskAgent and its Remote: smaller fixes, and the desk's. Red on today's code (386f450b); claude-windows
 // wrote it and builds it. The item's box (v4), Andy, 2026-10-12:
 //   - "on the Remote: we need a button to the left of the model-picker that allows me to refresh the model list, so i
 //     don't have to re-start the Remote or 11111"
-//   - "we don't need this: "select the node where your local agent lives", if deskUnsloth lives on the same node as the
+//   - "we don't need this: "select the node where your local agent lives", if deskAgent lives on the same node as the
 //     Remote, we'll just automatically configure it to the same node, and never show this bubble."
 //   - "all refusals everywhere should say why." (Q3); the 19 bare bad-request refusals in desk.js, deskClient.js,
 //     chatClerver.js and server.js.
@@ -18,7 +18,7 @@
 //   3. the item dialog: the title input is marked data-field="label"; typed over 64 bytes it shows the bytes over and
 //      Add is refused without asking the desk; within the limit Add sends; a refusal from the desk is shown with why.
 //      The Rename input is marked data-field="label" and refused past the limit the same way.
-//   4. the Remote: a refresh button left of the model picker asks the models again; with deskUnsloth on the Remote's own
+//   4. the Remote: a refresh button left of the model picker asks the models again; with deskAgent on the Remote's own
 //      node the target is that node and the where bubble is never shown; without it the bubble shows.
 // NOT ASSERTED: the words of each reason beyond the ones named; layout.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
@@ -38,8 +38,8 @@ const ROOT = path.join(__dirname, '..', '..');
 const RUN = path.join(ROOT, 'spirit', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
-const APP = path.join(RUN, 'shell', 'deskUnslothRemote', 'deskUnslothRemote.js');
-const LONG = 'deskUnslothRemote: Smaller Fixes to the UI and to both deskUnsloth and its Remote';
+const APP = path.join(RUN, 'shell', 'deskAgentRemote', 'deskAgentRemote.js');
+const LONG = 'deskAgentRemote: Smaller Fixes to the UI and to both deskAgent and its Remote';
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskSmallFixesTestOwnerAAAAAAAAAAAAAAA=', label: 'andy' };
 const CW = { key: 'MCowBQYDK2VwAyEAdeskSmallFixesTestCWAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 
@@ -202,11 +202,11 @@ async function remoteHalf() {
       fs: { loadFile: function (n) { return n === 'puppets.json' ? JSON.stringify({ puppets: [{ name: 'agent', key: 'KEY-AGENT' }] }) : null; } },
       verb: function (name, body) {
         calls.push({ name: name, body: body });
-        if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: local ? { desk: {}, deskUnsloth: {} } : { desk: {} } });
-        const a = (body && body.ask && body.ask.deskUnsloth) || (body && body.body && body.body.ask && body.body.ask.deskUnsloth);
+        if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: local ? { desk: {}, deskAgent: {} } : { desk: {} } });
+        const a = (body && body.ask && body.ask.deskAgent) || (body && body.body && body.body.ask && body.body.ask.deskAgent);
         const v = a ? Object.keys(a)[0] : '';
         const here = name === 'jobs.api';
-        if (here && !local) return Promise.resolve({ status: 404, body: { ok: false, code: 'app-not-served', error: 'deskUnsloth is not served here' } });
+        if (here && !local) return Promise.resolve({ status: 404, body: { ok: false, code: 'app-not-served', error: 'deskAgent is not served here' } });
         const said = v === 'state' ? READY : v === 'models' ? MODELS : {};
         return Promise.resolve(here ? { status: 200, body: said } : { status: 200, body: { ok: true, status: 200, body: said } });
       },
@@ -220,19 +220,19 @@ async function remoteHalf() {
   const s = models.indexOf('id="dur-model"');
   if (r !== -1 && s !== -1 && r < s) test.check('a refresh button sits left of the model picker');
   else test.fail(OWED + '#dur-models reads ' + short(models));
-  const asked = function (c) { return c.slice().filter(function (x) { const a = (x.body && x.body.ask && x.body.ask.deskUnsloth) || (x.body && x.body.body && x.body.body.ask && x.body.body.ask.deskUnsloth); return a && a.models; }).length; };
+  const asked = function (c) { return c.slice().filter(function (x) { const a = (x.body && x.body.ask && x.body.ask.deskAgent) || (x.body && x.body.body && x.body.body.ask && x.body.body.ask.deskAgent); return a && a.models; }).length; };
   const before = asked(own.calls);
   own.doc.getElementById('dur-refresh').fire('click', {});
   await settled();
   if (asked(own.calls) > before) test.check('pressing it asks the models again');
   else test.fail(OWED + 'refresh asked nothing: ' + short(own.calls.slice(-3)));
   const where = own.doc.getElementById('dur-where');
-  if (own.doc.getElementById('dur-target').value === '0' && where.style.display === 'none') test.check('with deskUnsloth on its own node, the target is that node and the where bubble is not shown');
+  if (own.doc.getElementById('dur-target').value === '0' && where.style.display === 'none') test.check('with deskAgent on its own node, the target is that node and the where bubble is not shown');
   else test.fail(OWED + 'own node: target ' + short(own.doc.getElementById('dur-target').value) + ', where bubble display ' + short(where.style.display));
   const away = await mount(false);
   const where2 = away.doc.getElementById('dur-where');
   if (where2.style.display !== 'none' && /select the node where your local agent lives/.test(away.doc.getElementById('dur-tab-connect').innerHTML)) test.check('without it on its own node, the where bubble shows');
-  else test.fail(OWED + 'no deskUnsloth here: where bubble display ' + short(where2.style.display));
+  else test.fail(OWED + 'no deskAgent here: where bubble display ' + short(where2.style.display));
 }
 
 (async function () {

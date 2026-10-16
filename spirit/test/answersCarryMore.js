@@ -21,8 +21,8 @@
 //   2. deskClient.desk declares its reply {} and hands back the desk's answer as it is, an object: no json string.
 //   3. A desk read near the desk's room comes back whole through deskClient.desk: a changes read from the start of a
 //      long desk is answered, not refused app-answer-too-large.
-//   4. deskEar prints the desk's answer as JSON and exits 0, a big read too.
-// NOT ASSERTED, the builder's: how deskClient.desk passes a desk refusal on (deskEar must still exit 1 on one);
+//   4. deskAgentEar prints the desk's answer as JSON and exits 0, a big read too.
+// NOT ASSERTED, the builder's: how deskClient.desk passes a desk refusal on (deskAgentEar must still exit 1 on one);
 // deskClientAsk.js, which reads today's {json} shape, moves with the change.
 
 const fs = require('fs');
@@ -40,7 +40,7 @@ const OWED = 'owed by goal/G4.19: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
-const EAR = path.join(RUN, 'process', 'js', 'desk', 'deskEar.js');
+const EAR = path.join(RUN, 'process', 'js', 'desk', 'deskAgentEar.js');
 const appServer = require('../run/js/appServer.js');
 
 const OWNER = { owner: true, key: 'MCowBQYDK2VwAyEAanswersCarryMoreOwnerAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
@@ -99,7 +99,7 @@ async function theAppServer() {
   server.close();
 }
 
-// ── 2-4. deskClient AND deskEar ─────────────────────────────────────
+// ── 2-4. deskClient AND deskAgentEar ─────────────────────────────────────
 
 const deskPipe = pipeFor('desk');
 const clientPipe = pipeFor('deskClient');
@@ -113,7 +113,7 @@ const call = function (app, verb, args, caller) {
 };
 
 // THE PRETEND NODE: deskClient's peer.post goes into the real desk server as the agent's own ask, its answer back down
-// the event stream by re, as a relay brings it; jobs.api from deskEar reaches deskClient as its node's owner.
+// the event stream by re, as a relay brings it; jobs.api from deskAgentEar reaches deskClient as its node's owner.
 const node = http.createServer(function (req, res) {
   if (req.method === 'GET' && req.url === '/api/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream' });
@@ -202,12 +202,12 @@ async function theDeskPath() {
 
   const e1 = await ear(port, 'item.get', JSON.stringify({ id: 'b/G1.1' }));
   let p1 = null; try { p1 = JSON.parse(e1.out); } catch (e) { p1 = null; }
-  if (e1.code === 0 && p1 && typeof p1.item === 'string') test.check('deskEar item.get prints the desk\'s answer as JSON and exits 0');
-  else test.fail(OWED + 'deskEar item.get exited ' + e1.code + ': ' + (e1.out || e1.err).trim().slice(0, 200));
+  if (e1.code === 0 && p1 && typeof p1.item === 'string') test.check('deskAgentEar item.get prints the desk\'s answer as JSON and exits 0');
+  else test.fail(OWED + 'deskAgentEar item.get exited ' + e1.code + ': ' + (e1.out || e1.err).trim().slice(0, 200));
   const e2 = await ear(port, 'changes', JSON.stringify({ n: 0, line: 0 }));
   let p2 = null; try { p2 = JSON.parse(e2.out); } catch (e) { p2 = null; }
-  if (e2.code === 0 && p2 && Array.isArray(p2.records) && p2.records.length > 0) test.check('deskEar changes from the start prints the big answer whole and exits 0');
-  else test.fail(OWED + 'deskEar changes exited ' + e2.code + ': ' + (e2.out || e2.err).trim().slice(0, 200));
+  if (e2.code === 0 && p2 && Array.isArray(p2.records) && p2.records.length > 0) test.check('deskAgentEar changes from the start prints the big answer whole and exits 0');
+  else test.fail(OWED + 'deskAgentEar changes exited ' + e2.code + ': ' + (e2.out || e2.err).trim().slice(0, 200));
 }
 
 async function main() {

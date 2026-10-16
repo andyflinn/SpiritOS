@@ -56,7 +56,7 @@ function gitDir() {
   return path.resolve(r.stdout.trim());
 }
 
-// One ask of the desk through this agent's own deskClient, as deskEar asks it: the desk's answer, parsed; a
+// One ask of the desk through this agent's own deskClient, as deskAgentEar asks it: the desk's answer, parsed; a
 // refusal, deskClient's or the desk's, or a node that does not answer, ends the check as refused.
 function desk(verb, args) {
   let timer = null;

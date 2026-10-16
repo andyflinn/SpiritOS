@@ -5,7 +5,7 @@
 // it, and while its agent waits it reads what changed at the desk and holds what is meant for that agent.
 //
 //   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
-//   deskEar does, and statistics are kept somewhere you can access them easily.", then "accepted." to a deskClient
+//   deskAgentEar does, and statistics are kept somewhere you can access them easily.", then "accepted." to a deskClient
 //   server, "you both chose verb name and all", and "a guarantee that no core modules are touched. this is a
 //   agent/user appclication". Of the statistics: "so you can report facts, not fiction."
 //
@@ -513,7 +513,7 @@ appServer.serve({
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
       if (said !== 'listening') say(to, 'listening');
-      // A JOB AT ONCE (goal/G5.8). Andy: "will the deskEar return immediately with a job to do if one is available?"
+      // A JOB AT ONCE (goal/G5.8). Andy: "will the deskAgentEar return immediately with a job to do if one is available?"
       // One read first, so lines waiting are handed before a job; then a job open to this agent comes back as a JOB
       // line, with the rules recorded on its item at his Go; else the wait goes on as before.
       function firstJob() {

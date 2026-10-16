@@ -502,7 +502,7 @@ function namesFor(s, labels) {
   return out;
 }
 // NOT INCLUDED (goal/G21.1). Andy: "Off: the agent still reads everything, every write of it is refused, and its bubble
-// shows absent. It is the desk's own signoff and overrules the agent's own connect (deskUnsloth cannot bring an
+// shows absent. It is the desk's own signoff and overrules the agent's own connect (deskAgent cannot bring an
 // excluded agent back)." So the refusal is here, by key, at every write, whatever the agent's node does.
 function excludedKey(s, key) { return !!key && !profileOf(s, key).included; }
 function mayWrite(s, w) {

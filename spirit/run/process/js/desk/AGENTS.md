@@ -22,7 +22,7 @@ they bind all the same.
   when i close vscode." No turn ends without a listener armed: when it fires,
   read, answer here under the item, re-arm. A listener stopped by its time
   limit is re-armed, or your window says `listener stopped`. The listener:
-  `node spirit/run/process/js/desk/deskEar.js <port>`, run in the background,
+  `node spirit/run/process/js/desk/deskAgentEar.js <port>`, run in the background,
   the port being your own node's; it asks your node's deskClient server, which
   reads Desk's `changes` over peerPost.
 - A line he sent to the other agent is not yours to answer.
@@ -31,13 +31,13 @@ they bind all the same.
 
 - Everything Desk shows is the desk server's: items, the one box, checks,
   chat and presses. Andy: "The server determines all the content to be drawn."
-- Read it with `node deskEar.js <port> items.search '{"text":"","currentGoalOnly":true,"goalsOnly":false}'`
-  and `node deskEar.js <port> item.get '{"id":"<area/G1.2>"}'` for an item's facts;
+- Read it with `node deskAgentEar.js <port> items.search '{"text":"","currentGoalOnly":true,"goalsOnly":false}'`
+  and `node deskAgentEar.js <port> item.get '{"id":"<area/G1.2>"}'` for an item's facts;
   its box, checks and chat are `item.box`, `item.checks` and `item.chat`, one
   answer each (Andy: "lazy load the panels when thy open"). The same verbs the
   List and the dialog read. `by` is always you; you cannot write as andy.
 - A claim, a design-complete, a box write, a check, a check result are
-  writes through `deskEar.js <port> <verb> <json>`, never text lines. Chat stays chat
+  writes through `deskAgentEar.js <port> <verb> <json>`, never text lines. Chat stays chat
   (`chat.add`). An answer with `ok: false` was refused, and nothing changed.
 - A bare `changed` packet from his Desk means the state moved: read it.
 

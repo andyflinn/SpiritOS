@@ -77,8 +77,8 @@ FAIL  authWorld.js                 2 ✅   1 ❌                 282ms
   ok  deskDialog.js               22 ✅                        103ms
   ok  deskDialogClose.js           4 ✅                        109ms
   ok  deskDoneAsks.js              6 ✅                        951ms
-  ok  deskEarState.js              3 ✅                       1302ms
-  ok  deskEarThin.js               8 ✅                       2419ms
+  ok  deskAgentEarState.js              3 ✅                       1302ms
+  ok  deskAgentEarThin.js               8 ✅                       2419ms
   ok  deskExplainTop.js            1 ✅                         99ms
   ok  deskFold.js                  2 ✅                        102ms
   ok  deskForAgents.js             6 ✅                        767ms

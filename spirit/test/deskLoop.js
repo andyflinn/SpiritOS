@@ -4,8 +4,8 @@
 // wsl-claude wrote it, claude-windows builds it.
 //   Andy, 2026-10-04, in Team chat: "how do we git it to stick to that loop that you are in when working over desk?";
 //   to "New code, so it needs an item: open one, with your Go?": "yes. open one"; then his Go on goal/G4.28.
-//   The box, SHAPE: one small script in process/js/desk waits on deskEar <port>; when lines come, it hands them to the
-//   model with opencode run --session <one session>; the model answers in Desk with deskEar chat.add; the script
+//   The box, SHAPE: one small script in process/js/desk waits on deskAgentEar <port>; when lines come, it hands them to the
+//   model with opencode run --session <one session>; the model answers in Desk with deskAgentEar chat.add; the script
 //   waits again. Nothing in gemma's model or opencode changes.
 //
 // THE WORLD: agentOnboard's three real nodes in scratch homes (a relay; Andy's node owning it and running the desk; the
@@ -13,8 +13,8 @@
 // and prints what opencode run --format json prints.
 //
 // THE SHAPES, NAMED HERE where the box leaves them open (wsl-claude's picks; the builder may argue them in Desk first):
-//   1  node spirit/run/process/js/desk/deskLoop.js <port> <command> [args...]. Each time the listener (deskEar <port>)
-//      hands over lines, the command runs with its args plus one more: the lines exactly as deskEar printed them. The
+//   1  node spirit/run/process/js/desk/deskLoop.js <port> <command> [args...]. Each time the listener (deskAgentEar <port>)
+//      hands over lines, the command runs with its args plus one more: the lines exactly as deskAgentEar printed them. The
 //      loop waits for it to end, then listens again. For gemma: deskLoop.js 11111 opencode run --format json --session <id>, so the
 //      session is given, not found.
 //   2  It never ends by itself: each line is handed over once, and a quiet Desk only means another wait.
@@ -29,7 +29,7 @@
 //   4  THE ECHO. Andy, 2026-10-04: "it inspires more confidence if i seeing it sputtering on its terminal". While the
 //      command runs, the loop shows each of its events in its own window as it comes (a tool call by its input, a
 //      text by its words); Desk still gets only the final answer.
-// LEFT OPEN, not asserted: what it does on a refusal from deskEar (unblocked, no-answer) beyond waiting again; on
+// LEFT OPEN, not asserted: what it does on a refusal from deskAgentEar (unblocked, no-answer) beyond waiting again; on
 //   Windows, opencode is a .cmd, so the command may need a shell there.
 
 const fs = require('fs');
@@ -50,7 +50,7 @@ const OWED = 'OWED by goal/G4.28: ';
 const DESK_DIR = path.join(__dirname, '..', 'run', 'process', 'js', 'desk');
 const LOOP = path.join(DESK_DIR, 'deskLoop.js');
 const ONBOARD = path.join(DESK_DIR, 'onboard.js');
-const EAR = path.join(DESK_DIR, 'deskEar.js');
+const EAR = path.join(DESK_DIR, 'deskAgentEar.js');
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskLoopTestOwnerAAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -205,7 +205,7 @@ function handed(log) {
   await deskAsk('chat.add', { id: 'l/G1.1', text: 'gemma: first question from andy' }, ANDY);
   const one = await waitFor(function () { return handed(log).length >= 1; }, 60000);
   const first = handed(log)[0] || '';
-  if (one && /gemma: first question from andy/.test(first)) test.check('the model was handed his "gemma:" line, as deskEar printed it');
+  if (one && /gemma: first question from andy/.test(first)) test.check('the model was handed his "gemma:" line, as deskAgentEar printed it');
   else test.fail(OWED + 'the model was handed ' + short(handed(log)) + (loopSaid ? '; the loop said ' + short(loopSaid) : ''));
   if (one && !/a line for the claudes/.test(first)) test.check('his line without "gemma:" was not handed over');
   else test.fail(OWED + 'the hand-over carries his line for the claudes: ' + short(first));

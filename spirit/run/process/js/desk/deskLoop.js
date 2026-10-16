@@ -14,12 +14,12 @@
 //
 //   node spirit/run/process/js/desk/deskLoop.js <port of the agent's own node> <command> [args...]
 //
-// Each time the listener (deskEar.js <port>) prints lines, the agent's nick is read from the desk (profile.get, the
+// Each time the listener (deskAgentEar.js <port>) prints lines, the agent's nick is read from the desk (profile.get, the
 // one Andy set in its pane, goal/G4.23), and each line of his that starts "<nick>:" is handed over on its own: the
-// command runs with its args plus one more, deskLoopManual.md followed by the line as deskEar printed it. Every other
+// command runs with its args plus one more, deskLoopManual.md followed by the line as deskAgentEar printed it. Every other
 // line is for somebody else and is passed over. The command must print opencode run --format json's events; the text
 // of the step that ends the run (reason stop, else the last step) is posted under the line's item, through the agent's
-// own deskEar, and nothing of the steps before it. Then it listens again; it never ends by itself. For gemma:
+// own deskAgentEar, and nothing of the steps before it. Then it listens again; it never ends by itself. For gemma:
 //
 //   node spirit/run/process/js/desk/deskLoop.js 11111 <path to opencode.exe> run --format json --session <its id>
 //
@@ -34,7 +34,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const USAGE = 'usage: node deskLoop.js <port of the agent\'s own node> <command> [args...]';
-const EAR = path.join(__dirname, 'deskEar.js');
+const EAR = path.join(__dirname, 'deskAgentEar.js');
 const MANUAL = path.join(__dirname, 'deskLoopManual.md');
 const REFUSED_PAUSE_MS = 10000;
 // A model's reasoning can leak into its text, ending at this marker (seen in gemma's output, 2026-10-04).
@@ -96,7 +96,7 @@ async function nick() {
   try { return String(JSON.parse(r.out).nick || '').toLowerCase(); } catch (e) { return ''; }
 }
 
-// A line deskEar printed, "DESK <who> <verb> <json>", taken apart; null when it is not his chat.add for this nick.
+// A line deskAgentEar printed, "DESK <who> <verb> <json>", taken apart; null when it is not his chat.add for this nick.
 function forMe(line, mine) {
   const m = /^DESK (\S+) (\S+) (\{.*\})$/.exec(line);
   if (!m || m[1] !== 'andy' || m[2] !== 'chat.add' || !mine) return null;

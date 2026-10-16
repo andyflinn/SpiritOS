@@ -10,7 +10,7 @@ Commit
 Finding
 High
 Levant
-process/js/deskUnsloth/tools.js:140, js/server.js:585-649
+process/js/deskAgent/tools.js:140, js/server.js:585-649
 4f79adff
 The model's net_fetch can POST to 127.0.0.1:<port>/api/spirit and run any node verb (fs.delete, jobs.create, device.info), then send the answer anywhere.
 High
@@ -25,7 +25,7 @@ ac32d117
 A seat is never given up: unseat has no caller and any pin counts as a seat, so an evicted node stays claimed forever and can't re-claim.
 Medium
 Hygiene
-process/js/deskUnsloth/connection.json:4
+process/js/deskAgent/connection.json:4
 a2786053
 An sk-unsloth- API key is committed to a public repo. The file is never read by the code.
 Medium-high
@@ -75,17 +75,17 @@ js/server.js:633-637
 net.fetch buffers the whole response; a large URL picked by the model can exhaust memory or crash the node.
 Medium
 Levant
-deskUnsloth.js:289
+deskAgent.js:289
 4f79adff
 The chat-completion call has no timeout; a hung studio leaves working true and Levant silent until restart.
 Medium
 Levant
-deskUnsloth.js:371
+deskAgent.js:371
 3f00fda5, 65a6d4f3
 Two of three model-refresh calls have no timeout; a hang keeps the list "cached" and Load is never offered again.
 Medium
 Levant
-deskUnsloth.js:235, 297-309
+deskAgent.js:235, 297-309
 4f79adff, 0d4f6bb9
 Tool results aren't counted against the prompt room, so a full chat plus a fetch overflows the context.
 Medium
@@ -95,7 +95,7 @@ eca62251
 Any contact can push published objects into the master's apps; a change:1e12 freezes the desk view, and a fake chat line can name another peer.
 Medium
 Levant
-shell/deskUnslothRemote/deskUnslothRemote.js:293-303
+shell/deskAgentRemote/deskAgentRemote.js:293-303
 eca62251
 A fast load refusal can arrive before the answer, leaving the hourglass stuck and Load blocked.
 Medium
@@ -171,14 +171,14 @@ Detail for the table rows
 • Restart mid-run. The watcher treats records seen on its first walk as history (deskVerify.js:414-425), and goal.emptied is written once.
 • Orphaned servers. runAll already spawns detached and kills the process group (spirit/test/runAll.js:174-197); deskVerify should do the same.
 • Repeated check numbers. check.set takes the first match (desk.js:491), so a grant press or commitCheck can hit the wrong check.
-• deskClient pull. spawnSync blocks past the 10 s hold and the node's 12 s door, so deskEar exits "did not answer". The pull can also fire twice after a restart.
+• deskClient pull. spawnSync blocks past the 10 s hold and the node's 12 s door, so deskAgentEar exits "did not answer". The pull can also fire twice after a restart.
 • publishData. Fix: git commit -- <rel> or --only. With commitCheck hooks the commit is refused and agents/<agent>/ stays staged.
 Low
 • goalShare noise. 277 auto-commits this month. desk.js:1288 writes a writtenAt timestamp, so the "same" short-cut at goalShare.js:64 never fires. Concurrent jobs race on fetch and push. The mechanism is safe for the checkout: it uses a temporary index and pushes by hash.
 • commitCheck confirm (desk/commitCheck.js:265-271) misses a commit when another push lands within 250 ms, because merge-base can't see an unfetched tip. Stale pending entries are matched by subject only.
 • Stop flag. stopped is reset only in claimCheck (deskVerify.js:291), so the next full run stops after one suite. The Stop button is off during full runs, because running.id is ''.
 • deskDetails box (shell/deskDetails/deskDetails.js:417-424, 542-556): the blur uses the current item id, so a take or write can hit the newly opened item.
-• Levant's tools declare required: [] (deskUnsloth/tools.js:116), but desk verbs refuse any missing key.
+• Levant's tools declare required: [] (deskAgent/tools.js:116), but desk verbs refuse any missing key.
 • Item file paths aren't normalised, so spirit/test/../../x.js passes the regex and deskVerify runs it (deskVerify.js:225, 244).
 • localEar leftovers: desk/reply.js is a UTF-16 scratch file that throws on load, spirit/run/localEar.json points at the deleted localEar.js, and spirit/run/create-localEar.js regenerates it.
 Dead code
@@ -190,19 +190,19 @@ net.fetch's gate (js/proxyList.js:227-244) is a deny list: it refuses only hosts
 Fix direction: refuse loopback, link-local and private destinations after DNS resolution on the agent path, allow only GET there, and never let the model supply ${ENV:…} placeholders.
 Detail for the other table rows
 • Unbounded buffering. Past about 512 MB, toString throws ERR_STRING_TOO_LONG inside the 'end' listener, which is uncaught and stops the node. Cap bytes on the agent path.
-• Chat call timeout. The Remote gives up after 120 s on its side, but deskUnsloth's working stays true, so every later desk line waits forever.
+• Chat call timeout. The Remote gives up after 120 s on its side, but deskAgent's working stays true, so every later desk line waits forever.
 • Model refresh. /api/models/cached-gguf and /api/inference/status have no timeout; only /v1/models is capped. The first ask with no models.json still runs past 12 s, the case 65a6d4f3 meant to fix.
 • Context overflow. Each tool result may take a quarter of the room on top of a chat that already fills it, for up to three rounds.
 • Published objects. chatter (shell/chatter/chatter.js:347), desk (shell/desk/desk.js:516), deskDetails and ruleDetails ignore the sender. Fix: check the sender is a known puppet in deliverStreamed.
-• Stuck hourglass. When the answer arrives, run deskUnslothRemoteLoadOver before setting the load flag. This is the case Andy asked for: "your UI must release the hour-glass status".
+• Stuck hourglass. When the answer arrives, run deskAgentRemoteLoadOver before setting the load flag. This is the case Andy asked for: "your UI must release the hour-glass status".
 Low
-• Switching target keeps the old transcript, pending answer and busy flag (deskUnslothRemote.js:451-460).
-• A published state object re-enables the switch mid-flip, so a second click sends a second connect (deskUnslothRemote.js:262).
-• Concurrent model calls overwrite lastChat.tool (deskUnsloth.js:526).
+• Switching target keeps the old transcript, pending answer and busy flag (deskAgentRemote.js:451-460).
+• A published state object re-enables the switch mid-flip, so a second click sends a second connect (deskAgentRemote.js:262).
+• Concurrent model calls overwrite lastChat.tool (deskAgent.js:526).
 • A fetched JSON page with its own error field is reported as "the node refused" (tools.js:146).
-• model.load with no id writes "undefined" into configuration.json (deskUnsloth.js:695).
+• model.load with no id writes "undefined" into configuration.json (deskAgent.js:695).
 Nits and dead code
-Stale comments at deskUnslothRemote.js:30-32 (removed polls) and :340 ("hosting node only"). deskUnslothRemoteChatAskFor is a pointless alias, deskUnslothRemoteContainer is never read, and deskUnslothRemoteLoadTimer is now a boolean. describeAll re-runs all introspection on every ask, streamedLast in js/client/shell.js:1982 grows without bound, and max_tokens: 0 is sent when answerTokens is unset.
+Stale comments at deskAgentRemote.js:30-32 (removed polls) and :340 ("hosting node only"). deskAgentRemoteChatAskFor is a pointless alias, deskAgentRemoteContainer is never read, and deskAgentRemoteLoadTimer is now a boolean. describeAll re-runs all introspection on every ask, streamedLast in js/client/shell.js:1982 grows without bound, and max_tokens: 0 is sent when answerTokens is unset.
 Checked and sound: dd5503ef's shim headers, puppetStream's one-at-a-time sending, net.fetch not following redirects, and fileServer hash ids staying inside the store.
 Face process move and error codes (G13.2)
 The move of the face machinery out of the node left one red suite, a setup doc that no longer works, and a process that reads the private key. A script resolved every relative require() in the tree: no live require of a deleted module remains.
@@ -221,10 +221,10 @@ Low
 • jobs.js:319-328 keeps the options.module path that only startAll used; appServer.js keeps an unused fallback passthrough; server.js still passes rootDir, which appClient ignores.
 • spirit/test/puppetsPending.js:195-203 credits a pass to puppetOwner.js, which was deleted.
 The merges and the "oops" / "fuck" / "change" commits
-Neither merge (7964922a, 65d72451) has conflict leftovers or lost hunks. For about six minutes after 7964922a, bc28b883 and 8fa0df86 had replaced code names with numbers, so every error-code lookup failed; 84164a6b and ec71aa17 fixed it, and master is correct. a2786053, 3c01e496 and 1ed9965e touch only deskUnsloth config and .claude/settings.json; a2786053 is the one that committed the key.
+Neither merge (7964922a, 65d72451) has conflict leftovers or lost hunks. For about six minutes after 7964922a, bc28b883 and 8fa0df86 had replaced code names with numbers, so every error-code lookup failed; 84164a6b and ec71aa17 fixed it, and master is correct. a2786053, 3c01e496 and 1ed9965e touch only deskAgent config and .claude/settings.json; a2786053 is the one that committed the key.
 Repo hygiene and dead code
 The one credential committed this month is the Unsloth key; the rest is scratch files and orphans.
-• Committed key (medium). spirit/run/process/js/deskUnsloth/connection.json:4 holds an sk-unsloth- key for 127.0.0.1:8888, added in a2786053 to a public repo. The process reads connection.json and configuration.json from its state folder, so the tracked copies are dead. Rotate the key, untrack both, and add them to .gitignore, which covers loop.json but not these.
+• Committed key (medium). spirit/run/process/js/deskAgent/connection.json:4 holds an sk-unsloth- key for 127.0.0.1:8888, added in a2786053 to a public repo. The process reads connection.json and configuration.json from its state folder, so the tracked copies are dead. Rotate the key, untrack both, and add them to .gitignore, which covers loop.json but not these.
 • Scratch files at the root (medium). temp_loop.js to temp_loop6.js and temp_loop_clean.js (3d0ab23d) are copies of a deleted loop.js; temp_loop_clean.js differs from temp_loop.js by one blank line, and five fail node --check. temp-desk-reply.js (570923eb) is UTF-16, which git treats as binary.
 • pushOrigin (medium). spirit/run/process/js/pushOrigin/pushOrigin.js:48-54 ignores the exit status of git stash pop, pops the top stash rather than its own, and on a detached HEAD pushes HEAD:HEAD. The header says no retries, but MAX_PUSH_TRIES = 3 loops.
 • fileServer chunk (medium). Cap length at CHUNK (6000), which the client already uses.
@@ -244,11 +244,11 @@ client.startAll is not a function (013dc827, see the face section)
 appClientName.js
 appServers still named in server.js, appFaceApp.js, appFaceProcess.js, contactLabel.js
 keyTail.js
-a key is cut outside kernel.js at shell/deskUnslothRemote/deskUnslothRemote.js:135
+a key is cut outside kernel.js at shell/deskAgentRemote/deskAgentRemote.js:135
 runStandsAlone.js
 deskVerify.js and deskVerify.json hard-code the path spirit/test
 appDependencies.js
-deskUnsloth won't start without a hand-written configuration.json in its state folder
+deskAgent won't start without a hand-written configuration.json in its state folder
 harnessAppSuites.js
 runAll --list doesn't find app or process suites (owed by G4.23)
 nodeKnowsNoApps.js

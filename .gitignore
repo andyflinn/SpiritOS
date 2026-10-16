@@ -236,7 +236,8 @@ spirit/run/app/
 spirit/run/process/js/deskVerify/verify.db*
 
 #
-spirit/run/process/js/deskUnsloth/connection.json
+spirit/run/process/js/deskAgent/connection.json
+spirit/run/relay-state/process/deskAgent/connection.json
 
 #
 #

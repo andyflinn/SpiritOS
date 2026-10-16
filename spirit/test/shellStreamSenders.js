@@ -21,7 +21,7 @@
 // damned ownerBadge", "so the relays owner code and the puppets owner code should be the same." A puppet's signed
 // card names its owner (nodeCard, from owner.json); contacts.setCard marks the row owned through ownerBadge.ownedBy,
 // the one comparison probe makes for a relay's answer; contact.get carries the mark. Section 4 is the node side.
-// deskUnslothRemote named its puppets to the shell before this; that fallback is gone (section 3).
+// deskAgentRemote named its puppets to the shell before this; that fallback is gone (section 3).
 //
 // Driven as listeningApp.js drives the real shell.js: small document, fs and jobs stubs, a fake ask.
 
@@ -35,7 +35,7 @@ const packet = require('../run/js/client/packet');
 const OWED = 'OWED by goal/G19.8: ';
 const RUN = path.join(__dirname, '..', 'run');
 const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
-const REMOTE = path.join(RUN, 'shell', 'deskUnslothRemote', 'deskUnslothRemote.js');
+const REMOTE = path.join(RUN, 'shell', 'deskAgentRemote', 'deskAgentRemote.js');
 
 const OWN = 'OWN-NODE-KEY';
 const RELAY = 'OWNED-RELAY-KEY';
@@ -166,7 +166,7 @@ function bootShell() {
 }
 
 // The apps that took streamed objects without looking at the sender (chatter, desk, deskDetails, ruleDetails),
-// each subscribed as it is in the tree, plus deskVerify's tab in desk, deskUnslothRemote as it subscribes, and one
+// each subscribed as it is in the tree, plus deskVerify's tab in desk, deskAgentRemote as it subscribes, and one
 // handler that names a key.
 function mountAll(page) {
   const got = [];
@@ -178,8 +178,8 @@ function mountAll(page) {
       api.onPublished(take('deskVerify'), 'deskVerify');
       api.onPublished(take('deskDetails'), 'desk');
       api.onPublished(take('ruleDetails'), 'desk');
-      api.onPublished(take('deskUnslothRemote'), 'deskUnsloth');
-      api.onPublished(take('namer'), 'deskUnsloth', { from: [NAMED] });
+      api.onPublished(take('deskAgentRemote'), 'deskAgent');
+      api.onPublished(take('namer'), 'deskAgent', { from: [NAMED] });
     },
   });
   return got;
@@ -275,13 +275,13 @@ test.startTest('goal/G19.8: the shell takes streamed objects only from senders i
     page.stream(STRANGER, 'process/js/desk', { change: 1e12 });
     page.stream(STRANGER, 'process/js/chatClerver', { lines: [{ from: OWN, text: 'fake' }] });
     page.stream(STRANGER, 'process/js/deskVerify', { verdict: 'green' });
-    page.stream(STRANGER, 'process/js/deskUnsloth', { chat: { id: 'x', done: true, text: 'fake' } });
+    page.stream(STRANGER, 'process/js/deskAgent', { chat: { id: 'x', done: true, text: 'fake' } });
     page.stream(MEMBER_RELAY, 'process/js/desk', { change: 1e12 });
     await settled();
     page.stream(STRANGER, 'process/js/desk', { change: 2e12 });
     await settled();
     const fromStranger = got.filter(function (g) { return g.from === STRANGER || g.from === MEMBER_RELAY; });
-    if (!fromStranger.length) test.check('(e) a stranger\'s objects, and a relay this node only sits on, reach no app: not desk (a change:1e12), chatter, deskDetails, ruleDetails, deskVerify or deskUnslothRemote');
+    if (!fromStranger.length) test.check('(e) a stranger\'s objects, and a relay this node only sits on, reach no app: not desk (a change:1e12), chatter, deskDetails, ruleDetails, deskVerify or deskAgentRemote');
     else test.fail(OWED + 'a stranger reached ' + JSON.stringify(fromStranger.map(function (g) { return g.who + ' ' + JSON.stringify(g.obj); })));
     const strangerLines = warned.filter(function (w) { return w.indexOf(STRANGER) !== -1 || w.indexOf(kernel.keyTail(STRANGER)) !== -1; });
     if (strangerLines.length === 1) test.check('one console line for the dropped sender, not one per object');
@@ -304,9 +304,9 @@ test.startTest('goal/G19.8: the shell takes streamed objects only from senders i
     // (b) an owned puppet: a contact marked owned, heard by every app.
     got.length = 0;
     page.stream(PUPPET, 'process/js/desk', { items: 4 });
-    page.stream(PUPPET, 'process/js/deskUnsloth', { server: { answers: true } });
+    page.stream(PUPPET, 'process/js/deskAgent', { server: { answers: true } });
     await settled();
-    if (names(got) === 'desk,deskDetails,deskUnslothRemote,namer,ruleDetails') test.check('(b) a contact marked owned (its card names this node) reaches every app of each module, with no app naming it');
+    if (names(got) === 'desk,deskDetails,deskAgentRemote,namer,ruleDetails') test.check('(b) a contact marked owned (its card names this node) reaches every app of each module, with no app naming it');
     else test.fail(OWED + 'owned puppet: got ' + names(got));
 
     // A contact the search found whose get says not owned is a stranger.
@@ -320,7 +320,7 @@ test.startTest('goal/G19.8: the shell takes streamed objects only from senders i
 
     // (d) a key an app named: that handler only.
     got.length = 0;
-    page.stream(NAMED, 'process/js/deskUnsloth', { server: { answers: true } });
+    page.stream(NAMED, 'process/js/deskAgent', { server: { answers: true } });
     await settled();
     if (names(got) === 'namer') test.check('(d) a key an app named reaches that handler, and not a handler of the same module that did not name it');
     else test.fail(OWED + 'named key: got ' + names(got));
@@ -330,7 +330,7 @@ test.startTest('goal/G19.8: the shell takes streamed objects only from senders i
     page.stream(NAMED, 'process/js/desk', { change: 3e12 });
     await settled();
     if (!got.length) test.check('a key named for one server is not heard on another');
-    else test.fail(OWED + 'a key named for deskUnsloth reached ' + names(got));
+    else test.fail(OWED + 'a key named for deskAgent reached ' + names(got));
 
     // A puppet whose card arrives after the shell asked: dropped until the ask is a minute old, then heard.
     got.length = 0;
@@ -361,12 +361,12 @@ test.startTest('goal/G19.8: the shell takes streamed objects only from senders i
     else test.fail(OWED + 'late subscriber got ' + JSON.stringify(late));
 
     // ERADICATED, NOT LEFT BESIDE (Andy, "eradicate what you replace"): the shell hears owned puppets itself now.
-    test.subHeading('3. deskUnslothRemote no longer names its puppets to the shell; its target check stays');
+    test.subHeading('3. deskAgentRemote no longer names its puppets to the shell; its target check stays');
     const remote = fs.readFileSync(REMOTE, 'utf8').replace(/\r\n/g, '\n');
-    if (!/deskUnslothRemotePuppetKeys/.test(remote) && !/'deskUnsloth', \{ from:/.test(remote)) test.check('the naming-its-puppets fallback is gone from deskUnslothRemote');
-    else test.fail(OWED + 'deskUnslothRemote still names its puppets to the shell');
-    if (/function deskUnslothRemoteTakesPublished\(target, meta\)/.test(remote) && /deskUnslothRemoteTakesPublished\(deskUnslothRemoteTarget, meta/.test(remote)) test.check('and it still takes only the chosen target\'s stream');
-    else test.fail('deskUnslothRemote lost its target check');
+    if (!/deskAgentRemotePuppetKeys/.test(remote) && !/'deskAgent', \{ from:/.test(remote)) test.check('the naming-its-puppets fallback is gone from deskAgentRemote');
+    else test.fail(OWED + 'deskAgentRemote still names its puppets to the shell');
+    if (/function deskAgentRemoteTakesPublished\(target, meta\)/.test(remote) && /deskAgentRemoteTakesPublished\(deskAgentRemoteTarget, meta/.test(remote)) test.check('and it still takes only the chosen target\'s stream');
+    else test.fail('deskAgentRemote lost its target check');
 
     test.subHeading('4. the node: the card names the owner, ownerBadge decides, the contact row carries it');
     await nodeSide();

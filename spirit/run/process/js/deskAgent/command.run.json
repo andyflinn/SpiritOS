@@ -1,0 +1,7 @@
+{
+  "description": "Run a command line in your clone's root, through bash where it is installed (else the platform's shell). timeoutMs stops it when it runs too long (0 for 120000, at most 600000); its own processes are killed and timedOut is true. The answer is {id, running, exit, output, cut, timedOut}: output is stdout and stderr as they came, its last whole lines that fit one answer, cut true when the start was dropped. A command still running after about ten seconds answers running true with its id: call deskAgent_command_result with that id until running is false. Your clone is the checkout your node runs from: a command can stop or break that node.",
+  "request": {
+    "command": "",
+    "timeoutMs": 0
+  }
+}

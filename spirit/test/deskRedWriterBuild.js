@@ -31,7 +31,7 @@ const OWED = 'OWED by goal/G5.9: ';
 const REPO = path.join(__dirname, '..', '..');
 const DESK_DIR = path.join(REPO, 'spirit', 'run', 'process', 'js', 'desk');
 const DESK = path.join(DESK_DIR, 'desk.js');
-const EAR = path.join(DESK_DIR, 'deskEar.js');
+const EAR = path.join(DESK_DIR, 'deskAgentEar.js');
 const ONBOARD = path.join(DESK_DIR, 'onboard.js');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskRedWriterTestCWAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const UBI = { key: 'MCowBQYDK2VwAyEAdeskRedWriterTestUbiAAAAAAAAAAAAAAAAAAAA=', label: 'claude-ubuntu' };

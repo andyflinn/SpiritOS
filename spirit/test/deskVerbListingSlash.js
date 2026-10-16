@@ -17,7 +17,7 @@
 //   1. a scratch folder: AGENTS.md and three verb files, two of whose descriptions hold a "/": AGENTS.introspect lists
 //      all three, and `more` is false.
 //   2. the real desk folder, as the desk serves it: AGENTS.introspect lists item.get.
-//   3. deskUnsloth's tools.js, describing the desk through a route answered by that family (as deskAgentVerbFiles.js
+//   3. deskAgent's tools.js, describing the desk through a route answered by that family (as deskAgentVerbFiles.js
 //      does), offers desk_item_get.
 //   4. the census: every folder that has an AGENTS.md (process/js/<server>/, served by appServer's withAgents, and
 //      js/<namespace>/, claimed on the node), every verb file in it is listed by its AGENTS.introspect.
@@ -31,7 +31,7 @@ const test = require('./testSupport.js');
 const OWED = 'OWED by goal/G24.5: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK_DIR = path.join(RUN, 'process', 'js', 'desk');
-const TOOLS = path.join(RUN, 'process', 'js', 'deskUnsloth', 'tools.js');
+const TOOLS = path.join(RUN, 'process', 'js', 'deskAgent', 'tools.js');
 const introSpector = require('../run/js/introSpector.js');
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }

@@ -155,7 +155,7 @@ async function main() {
   }
   // RULE 1 (process/js/desk/AGENTS.md): "Agents will NOT speak to each other behind the users back."
   say(others.length + ' other agent(s) blocked on this node' + (others.length ? ': ' + others.map(function (k) { return writers[k] || k.slice(0, 16); }).join(', ') : ''));
-  end(0, 'onboard: joined. Listen with: node spirit/run/process/js/desk/deskEar.js ' + port);
+  end(0, 'onboard: joined. Listen with: node spirit/run/process/js/desk/deskAgentEar.js ' + port);
 }
 
 main().catch(function (e) { end(1, 'onboard: ' + ((e && e.stack) || e)); });

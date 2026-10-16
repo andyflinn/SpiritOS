@@ -75,7 +75,7 @@ live or by mutating the build; each red was tightened the same day.
   runStandsAlone): asked, not yet answered.
 - **G4.18's list**: the List's search hides closed items; Done and Close in
   one go hid an item while it was being fixed, and Reopen should retract Done
-  too; deskEar reads near the desk's room fail on size (option a or b to pick);
+  too; deskAgentEar reads near the desk's room fail on size (option a or b to pick);
   a new agent hears nothing until Andy's node is its contact; the commit check
   records a hash from before a rebase; stars for agent-only talk.
 - **Not proven between two people**: chatter was tried on Andy's own node; a

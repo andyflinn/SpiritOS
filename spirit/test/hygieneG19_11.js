@@ -7,7 +7,7 @@
 // Each section is one point of the box:
 //   1 the scratch files at the repo root are gone
 //   2 the localEar leftovers are gone
-//   3 deskUnsloth's configuration.json is untracked (the file may stay on disk; .gitignore lists it)
+//   3 deskAgent's configuration.json is untracked (the file may stay on disk; .gitignore lists it)
 //   4 the fileServer refuses a chunk-request over its chunk size, with a why, before it allocates anything
 //   5 the dead verbs are gone: relay.who, hub's handleMatches / handleWho / withRelay, and deskVerify's verbs that only
 //     tests called (mode, suites, loop.once, idle, chore.once, goal.check, records.search, claim.check)
@@ -85,8 +85,8 @@ function localEar() {
 }
 
 function unslothConfiguration() {
-  test.subHeading('3. deskUnsloth\'s configuration.json is not tracked');
-  const rel = 'spirit/run/process/js/deskUnsloth/configuration.json';
+  test.subHeading('3. deskAgent\'s configuration.json is not tracked');
+  const rel = 'spirit/run/process/js/deskAgent/configuration.json';
   const r = spawnSync('git', ['ls-files', '--', rel], { cwd: REPO, encoding: 'utf8' });
   if (r.status === 0 && !String(r.stdout).trim()) test.check('git ls-files does not list it');
   else test.fail(OWED + 'git still tracks ' + rel + (r.status === 0 ? '' : ' (git said ' + short(r.stderr) + ')'));

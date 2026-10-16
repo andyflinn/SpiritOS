@@ -22,7 +22,7 @@ Confidence
 C1
 Critical
 net.fetch can reach the node's own door, so one fetch runs any command as the node's user
-js/server.js:585-654, js/proxyList.js:50, 227-244, js/jobs.js:416-432, process/js/deskUnsloth/deskUnsloth.js:241
+js/server.js:585-654, js/proxyList.js:50, 227-244, js/jobs.js:416-432, process/js/deskAgent/deskAgent.js:241
 The proxy list defaults to open and only checks secret keys, never the address. A net.fetch to http://127.0.0.1:65432/api/spirit with jobs.create {command:"/bin/sh", args:["-c",...]} spawns it; refuseUnlisted only inspects args[0]. net is offered to the local model as a tool, so model output or content it reads can drive this
 Refuse loopback, link-local, RFC1918 and metadata targets in handleGenericProxy unless a proxy entry opens that host. Separately, make jobs.create accept only process.execPath with an included process/js script
 Reproduced (file written as root)
@@ -219,7 +219,7 @@ Cap each line and the total log bytes
 M25
 Jobs
 The local model's tool list is "any verb with a description file", run as the owner
-process/js/deskUnsloth/tools.js:95-157, deskUnsloth.js:241-318
+process/js/deskAgent/tools.js:95-157, deskAgent.js:241-318
 Keep an explicit allowlist of model-callable verbs
 M26
 Ops
@@ -249,7 +249,7 @@ bash/face-install:174-181
 M31
 Ops
 An sk- API key for the local Unsloth endpoint is committed, and ships in the install zips
-process/js/deskUnsloth/connection.json
+process/js/deskAgent/connection.json
 Rotate it, git rm, ignore **/connection.json
 Also medium, ops: systemd units run as root with only NoNewPrivileges and PrivateTmp (bash/systemd/*.service; add ProtectSystem=strict, ReadWritePaths, empty CapabilityBoundingSet); the Windows backup skips every subfolder of relay-state, including desk.db (install/backup-windows/backup.js:67-70); start.ps1 downloads node.exe from latest-v22.x with no hash check; bash/firewall never sets default-deny and assumes SSH on 22.
 Low
@@ -275,7 +275,7 @@ Worth fixing when you are in the file anyway.
 • Packet handlers are called without try/catch (js/client/shell.js:2201, 2221), so one app's throw stops delivery to others.
 • Media names containing # or ? do not display (index.html:1642, encodeURI).
 • device.html stores an extractable private key in sessionStorage and never uses it (device.html:230, 257).
-• create-localEar.js generates a file that does not parse (use strict; unquoted). deskEar.js already does its job; delete it.
+• create-localEar.js generates a file that does not parse (use strict; unquoted). deskAgentEar.js already does its job; delete it.
 • package.json is out of step: main points at install.js, which runs on load; licence says ISC but LICENSE is AGPL-3.0; glob is a dependency nothing requires.
 • Stray files committed at the root: seven temp_loop*.js copies, a UTF-16 temp-desk-reply.js, .vscode/tasks.json.mine, conf/settings.json, and three JavaScript fragments pasted into .gitignore:239-241.
 • Personal Google account path as a default in install/backup-windows/backup.js:43.
@@ -292,7 +292,7 @@ Comments now assert properties the code does not have. Examples: "a registered h
 Agent instructions are spread across eight root files (AGENT.md, ANDYS_RULES_FOR_AGENTS.md at 70 KB, CLAUDE.md and CLINE.md byte-identical, GROK.md, GPT-OSS.md, RULES.md, AGENT_ONBOARDING.md) plus .cursor/, .github/agents/ and agents/. One canonical file with short pointers would stop them drifting.
 There are no tests against a hostile relay or peer. Every suite uses honest loopback relays, which is why H3, M8, M10 and the SSE items went unnoticed. A small fake-relay harness (forge a reply, send retry: 0, stream without blank lines) would cover them.
 Test suite and what held up
-The full run on a Linux cloud container ended with 362 suites, 5,034 green, 34 red, 23 unhappy, 6 awaiting, exit code 1. Some reds are this environment (four say fetch failed reaching a local node, and deskUnsloth needs a hand-written config), but the committed agents/*/harness.json records show red runs on all three of your own boxes too (8 on Linux, 19 on Windows, 21 on WSL at 3ce4152).
+The full run on a Linux cloud container ended with 362 suites, 5,034 green, 34 red, 23 unhappy, 6 awaiting, exit code 1. Some reds are this environment (four say fetch failed reaching a local node, and deskAgent needs a hand-written config), but the committed agents/*/harness.json records show red runs on all three of your own boxes too (8 on Linux, 19 on Windows, 21 on WSL at 3ce4152).
 That means npm test cannot work as a gate today. Three changes would fix it: quarantine known reds so a clean run exits 0; stop runAll.js writing the tracked DONE.md on every run (spirit/test/runAll.js:412-476); and add a minimal GitHub Actions workflow for Linux, since .github/ holds no CI.
 Checked and found sound:
 • Sealing: fresh X25519 key per message, HKDF salt binding both keys, AES-256-GCM with random nonces.

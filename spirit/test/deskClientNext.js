@@ -3,7 +3,7 @@
 // goal/G3.4: deskClient keeps the place and holds what is meant for its agent. Red on today's tree: deskClient
 // (goal/G3.3) passes an ask and counts it, and has no verb next.
 //   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
-//   deskEar does, and statistics are kept somewhere you can access them easily.", and of the polls that bring
+//   deskAgentEar does, and statistics are kept somewhere you can access them easily.", and of the polls that bring
 //   nothing: "empty polls can contribute statistically and discarded." His Go on this item is his press in Desk.
 // The contract the builder follows (the box of goal/G3.4; the names are the agents', as he left them to us):
 //   1. deskClient.json declares two args, as backup.json declares quietMs: pollMs, default 60000, and historyMax,
@@ -16,7 +16,7 @@
 //      meant for its agent it answers at once; with nothing it answers {lines: []} within 10 s (a node gives a
 //      server 12 s, appClient.js DOOR_WAIT_MS).
 //   4. A first run, with no saved place, starts at now: what the desk already holds is not handed over.
-//   5. What is meant for its agent, exactly as today's deskEar selects and words it: Andy's records but his seen
+//   5. What is meant for its agent, exactly as today's deskAgentEar selects and words it: Andy's records but his seen
 //      presses ('DESK andy <verb> <body>'), another agent's chat.add ('DESK <by> chat.add <body>'), and the
 //      lines Desk keeps from Andy or an agent ('LINE <from> <kind>: <text>'); never its own records (known by
 //      their key, whatever label the desk shows for it: Andy may relabel an agent) or its own lines,
@@ -214,7 +214,7 @@ async function main() {
   if (wordsSoFar[0] === 'listening' && wordsSoFar.indexOf('working') === -1 && wordsAtHandOver.indexOf('working') !== -1) test.check('it said listening as the wait began, and working as it handed a line over');
   else test.fail(OWED + 'agent.state went ' + JSON.stringify(wordsSoFar) + ' during the empty wait and ' + JSON.stringify(wordsAtHandOver) + ' at the hand-over');
 
-  test.subHeading('5. what is meant for its agent, as today\'s deskEar words it');
+  test.subHeading('5. what is meant for its agent, as today\'s deskAgentEar words it');
   if (one.lines && one.lines.length === 1 && one.lines[0].indexOf('DESK andy chat.add ') === 0 && said('new chat one')(one.lines[0]) && one.ms < 5000) {
     test.check('Andy\'s chat came out of next after ' + one.ms + ' ms: ' + one.lines[0].slice(0, 60));
   } else test.fail(OWED + 'after Andy\'s chat next answered ' + JSON.stringify(one.body).slice(0, 240) + ' after ' + one.ms + ' ms');

@@ -215,10 +215,10 @@ function pointAt(home, url, key) { require('../run/js/relayKeys.js').list(home, 
   // ── 4. THE TRIGGER (Q13, Andy: "publish"; Q14, N: "that's a fine number", 20) ──
   // His group-chat line that is exactly "publish" makes the agent's deskClient start publishData.js as a job of type
   // publishData on its own node, with removeWhenDone (goal/G4.34). Any other line starts nothing. The agent listens as
-  // a real one does (deskEar running), and the job, once seen, is cancelled here: a whole publish runs the harness,
+  // a real one does (deskAgentEar running), and the job, once seen, is cancelled here: a whole publish runs the harness,
   // which cannot run inside the harness.
   test.subHeading('4. his "publish" in the group chat starts it, nothing else does');
-  const ear = spawn(process.execPath, [path.join(DESK_DIR, 'deskEar.js'), String(agentPort)], { cwd: clone, stdio: ['ignore', 'ignore', 'ignore'] });
+  const ear = spawn(process.execPath, [path.join(DESK_DIR, 'deskAgentEar.js'), String(agentPort)], { cwd: clone, stdio: ['ignore', 'ignore', 'ignore'] });
   kids.push(ear);
   await sleep(2000);
   const publishJob = function () {

@@ -2,15 +2,15 @@
 
 // goal/G3.2: the agents app is gone, and nothing in spirit/ still loads, runs or reads it. Red on today's tree.
 //   RULE (Andy, 2026-10-02, verbatim, the box of goal/G3): "the agents APP is no longer permitted in this REPO"
-//   In the tree: Andy deleted spirit/run/process/js/agents/ himself (agents.js and deskEar.js, commit ef85bc1f).
+//   In the tree: Andy deleted spirit/run/process/js/agents/ himself (agents.js and deskAgentEar.js, commit ef85bc1f).
 //   What still names it in code: the suites that tested it (agentsApp, agentsDesk, agentsOutbox, agentsPatience,
 //   agentsRecord, agentsSeal, agentsVerb), the suites that load or read it on the way to something else
 //   (boardPostSuite, boardRankSuite, deskBucket, deskWriterKey, fileCore, oneDoor, sealedLayering, tools/say.js),
-//   the two that run its listener (deskChanges, deskEarState), and process/js/monitorDrill/monitorDrill.js.
+//   the two that run its listener (deskChanges, deskAgentEarState), and process/js/monitorDrill/monitorDrill.js.
 // The contract the builder follows (the box of goal/G3.2):
 //   1. spirit/run/process/js/agents/ does not exist.
 //   2. No .js file under spirit/run or spirit/test names the app's files in code: not as a path
-//      ('process/js/agents', 'agents/agents.js', 'agents/deskEar.js'), and not as path.join segments
+//      ('process/js/agents', 'agents/agents.js', 'agents/deskAgentEar.js'), and not as path.join segments
 //      ('js', 'agents' or 'agents', 'agents.js'). A suite whose only subject was the app is deleted; one that
 //      used it on the way to something else loses that use.
 //   3. Comments are history and may keep the name: a line that is only a comment is not read.
@@ -29,9 +29,9 @@ const SKIP = ['node_modules', 'brains', 'relay-state', 'app-state', '.git'];
 const NAMES = [
   /process[\\/]+js[\\/]+agents\b/,
   /agents[\\/]+agents\.js/,
-  /agents[\\/]+deskEar\.js/,
+  /agents[\\/]+deskAgentEar\.js/,
   /['"]js['"]\s*,\s*['"]agents['"]/,
-  /['"]agents['"]\s*,\s*['"](agents|deskEar)\.js['"]/,
+  /['"]agents['"]\s*,\s*['"](agents|deskAgentEar)\.js['"]/,
 ];
 
 function walk(dir, out) {

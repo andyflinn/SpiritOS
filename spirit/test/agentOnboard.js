@@ -61,7 +61,7 @@ const DESK_DIR = path.join(__dirname, '..', 'run', 'process', 'js', 'desk');
 const SCRIPT = path.join(DESK_DIR, 'onboard.js');
 const OFFBOARD = path.join(DESK_DIR, 'offboard.js');
 const REMOVE = path.join(DESK_DIR, 'removeAgent.js');
-const EAR = path.join(DESK_DIR, 'deskEar.js');
+const EAR = path.join(DESK_DIR, 'deskAgentEar.js');
 const OTHER = { key: 'MCowBQYDK2VwAyEAagentOnboardTestOtherAgentAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAagentOnboardTestOwnerAAAAAAAAAAAAAAAAA=', label: 'andy' };
 
@@ -286,7 +286,7 @@ function pointAt(home, relayUrl, relayKey) {
   else test.fail(OWED + 'the other agent on the agent\'s node: ' + blocked.status + ' ' + short(blocked.body));
   const read = run(EAR, [String(agentPort), 'items.search', JSON.stringify({ text: 'Work', currentGoalOnly: false, goalsOnly: false, includeClosed: false })], clone);
   if (read.code === 0 && /o\/G1\.1/.test(read.said)) test.check('the agent reads the desk through its own node: o/G1.1 is found');
-  else test.fail(OWED + 'deskEar on the agent\'s node exited ' + read.code + ', saying ' + short(read.said));
+  else test.fail(OWED + 'deskAgentEar on the agent\'s node exited ' + read.code + ', saying ' + short(read.said));
 
   test.subHeading('3. the agent\'s removal script undoes its own side');
   if (!fs.existsSync(OFFBOARD)) { test.fail(OWED + 'there is no ' + path.basename(OFFBOARD) + ' beside onboard.js'); }

@@ -20,7 +20,7 @@
 //   2. none of the excluded verbs has a file.
 //   3. the family of the desk's folder (introSpector.family, as the desk serves it) lists each of the seventeen in
 //      AGENTS.introspect and answers AGENTS.<verb> with its request.
-//   4. deskUnsloth's tools.js, describing the desk through a route answered by that family, offers desk_<verb> for
+//   4. deskAgent's tools.js, describing the desk through a route answered by that family, offers desk_<verb> for
 //      each of the seventeen.
 // rule/11: through testSupport only; reads files, starts nothing.
 
@@ -32,7 +32,7 @@ const OWED = 'OWED by goal/G24.1: ';
 const ROOT = path.join(__dirname, '..', '..');
 const DESK_DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'desk');
 const DESK_JS = path.join(DESK_DIR, 'desk.js');
-const TOOLS = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskUnsloth', 'tools.js');
+const TOOLS = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'tools.js');
 
 const SEVENTEEN = ['line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may', 'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get'];
 const EXCLUDED = ['session.set', 'rule.add', 'item.delete', 'profile.set', 'verify.pass', 'verify.reject', 'verify.regress', 'log.add', 'agent.state', 'signoff', 'rule.draft', 'rule.version', 'rule.history'];
@@ -90,7 +90,7 @@ async function suite() {
   if (!unanswered.length) test.check('AGENTS.<verb> answers each with its request');
   else test.fail(OWED + 'AGENTS.<verb> answers no matching request for ' + unanswered.join(', '));
 
-  test.subHeading('4. deskUnsloth offers each as a desk tool');
+  test.subHeading('4. deskAgent offers each as a desk tool');
   const deskRoute = {
     ask: function (verb) {
       const h = family.verbs[verb];

@@ -46,7 +46,7 @@ else test.fail(OWED + 'equal strings answered ' + JSON.stringify([psm('Levant', 
 // Andy, 2026-10-12: "and empty string against a non-empty string should return 0".
 if (psm('', 'x') === 0 && psm('Levant', '') === 0) test.check('an empty string against a non-empty one: 0.0');
 else test.fail(OWED + 'empty against non-empty answered ' + JSON.stringify([psm('', 'x'), psm('Levant', '')]));
-const pairs = [['ann', 'annabel'], ['annabel', 'ann'], ['one two three four', 'six twelve four one'], ['abc', 'xyz'], ['Zürich', 'zurich'], ['a', 'banana'], ['deskUnsloth', 'deskUnslothRemote'], ['x', ''], ['', 'x']];
+const pairs = [['ann', 'annabel'], ['annabel', 'ann'], ['one two three four', 'six twelve four one'], ['abc', 'xyz'], ['Zürich', 'zurich'], ['a', 'banana'], ['deskAgent', 'deskAgentRemote'], ['x', ''], ['', 'x']];
 const out = pairs.map(function (p) { return psm(p[0], p[1]); });
 if (out.every(function (v) { return typeof v === 'number' && v >= 0 && v <= 1 && !isNaN(v); })) test.check('every answer is a number from 0 to 1: ' + out.map(function (v) { return v.toFixed(3); }).join(' '));
 else test.fail(OWED + 'answers ' + JSON.stringify(out));

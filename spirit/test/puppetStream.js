@@ -84,25 +84,25 @@ test.startTest('goal/G14.5: a puppet streams what its servers publish to its mas
     const w = world();
     if (!w.stream) { test.fail(OWED + 'no spirit/run/js/puppetStream.js with createPuppetStream'); }
     else {
-      w.stream.onJob(w.job('process/js/deskUnsloth', { connected: true, model: 'm1' }));
+      w.stream.onJob(w.job('process/js/deskAgent', { connected: true, model: 'm1' }));
       await sleep(20);
       const p = w.posted[0];
-      if (w.posted.length === 1 && p.to === OWNER && p.relayUrl === 'https://relay.test' && p.app === 'published' && p.body && p.body.module === 'process/js/deskUnsloth' && p.body.app && p.body.app.model === 'm1') {
+      if (w.posted.length === 1 && p.to === OWNER && p.relayUrl === 'https://relay.test' && p.app === 'published' && p.body && p.body.module === 'process/js/deskAgent' && p.body.app && p.body.app.model === 'm1') {
         test.check('a job-updated with an app object posts {module, app} to the owner, over the chosen relay, as a packet named published');
       } else test.fail(OWED + 'posted ' + JSON.stringify(w.posted).slice(0, 300));
-      w.stream.onJob(w.job('process/js/deskUnsloth', { connected: true, model: 'm1' }));
-      w.stream.onJob(w.job('process/js/deskUnsloth', { connected: true, model: 'm1' }, { data: { logMessage: 'a line' } }));
-      w.stream.onJob(w.job('process/js/deskUnsloth', undefined));
+      w.stream.onJob(w.job('process/js/deskAgent', { connected: true, model: 'm1' }));
+      w.stream.onJob(w.job('process/js/deskAgent', { connected: true, model: 'm1' }, { data: { logMessage: 'a line' } }));
+      w.stream.onJob(w.job('process/js/deskAgent', undefined));
       w.stream.onJob(w.job('shell/desk', { x: 1 }));
       await sleep(20);
       if (w.posted.length === 1) test.check('the same object again, a log line beside it, a job without an app and a module not under process/js post nothing');
       else test.fail(OWED + 'extra posts: ' + JSON.stringify(w.posted.slice(1)).slice(0, 300));
-      w.stream.onJob(w.job('process/js/deskUnsloth', { connected: false, model: 'm1' }));
+      w.stream.onJob(w.job('process/js/deskAgent', { connected: false, model: 'm1' }));
       await sleep(20);
       if (w.posted.length === 2 && w.posted[1].body.app.connected === false) test.check('a changed object posts again');
       else test.fail(OWED + 'a change posted ' + w.posted.length + ' in all');
       w.setPuppet({ puppet: false, owner: '' });
-      w.stream.onJob(w.job('process/js/deskUnsloth', { connected: true, model: 'm2' }));
+      w.stream.onJob(w.job('process/js/deskAgent', { connected: true, model: 'm2' }));
       await sleep(20);
       if (w.posted.length === 2) test.check('a node that is not a puppet posts nothing');
       else test.fail(OWED + 'a non-puppet posted');
@@ -115,7 +115,7 @@ test.startTest('goal/G14.5: a puppet streams what its servers publish to its mas
     const w = world();
     if (w.stream) {
       w.setRoute({ unreachable: true });
-      w.stream.onJob(w.job('process/js/deskUnsloth', { connected: true, model: 'm1' }));
+      w.stream.onJob(w.job('process/js/deskAgent', { connected: true, model: 'm1' }));
       w.stream.onJob(w.job('process/js/pushOrigin', { pushed: 3 }));
       await sleep(20);
       if (!w.posted.length && !w.logged.length) test.check('with the route unreachable two changes post nothing and log nothing');
@@ -124,7 +124,7 @@ test.startTest('goal/G14.5: a puppet streams what its servers publish to its mas
       await sleep(20);
       if (!w.posted.length) test.check('nothing was queued for later: the route coming back posts nothing by itself');
       else test.fail(OWED + 'queued posts went out when the route came back: ' + w.posted.length);
-      w.stream.onJob(w.job('process/js/deskUnsloth', { connected: true, model: 'm3' }));
+      w.stream.onJob(w.job('process/js/deskAgent', { connected: true, model: 'm3' }));
       await sleep(20);
       if (w.posted.length === 1 && w.posted[0].body.app.model === 'm3') test.check('the next change tries the route again and goes');
       else test.fail(OWED + 'after the route came back: ' + JSON.stringify(w.posted).slice(0, 200));
@@ -137,7 +137,7 @@ test.startTest('goal/G14.5: a puppet streams what its servers publish to its mas
     const w = world();
     if (w.stream) {
       const release = w.holdPosts();
-      for (let n = 1; n <= 5; n++) w.stream.onJob(w.job('process/js/deskUnsloth', { n: n }));
+      for (let n = 1; n <= 5; n++) w.stream.onJob(w.job('process/js/deskAgent', { n: n }));
       w.stream.onJob(w.job('process/js/pushOrigin', { pushed: 1 }));
       w.stream.onJob(w.job('process/js/pushOrigin', { pushed: 2 }));
       await sleep(20);
@@ -145,15 +145,15 @@ test.startTest('goal/G14.5: a puppet streams what its servers publish to its mas
       release();
       await sleep(50);
       const seq = w.posted.map(function (p) { return p.body.module.replace('process/js/', '') + ':' + JSON.stringify(p.body.app); });
-      if (before === 1 && seq.join(' ') === 'deskUnsloth:{"n":1} deskUnsloth:{"n":5} pushOrigin:{"pushed":2}') {
+      if (before === 1 && seq.join(' ') === 'deskAgent:{"n":1} deskAgent:{"n":5} pushOrigin:{"pushed":2}') {
         test.check('while the first post was out only it had gone; released, the newest of each module followed, one at a time, modules in order: ' + seq.join(' '));
       } else test.fail(OWED + 'before release ' + before + ' post(s); sequence ' + seq.join(' '));
       w.setAnswer({ ok: false, status: 503, error: 'relay busy' });
-      w.stream.onJob(w.job('process/js/deskUnsloth', { n: 6 }));
+      w.stream.onJob(w.job('process/js/deskAgent', { n: 6 }));
       await sleep(30);
       w.setAnswer({ ok: true, hash: 'h' });
       await sleep(30);
-      const refused = w.logged.filter(function (l) { return /deskUnsloth/.test(l) && /busy|not posted|refused/.test(l); }).length;
+      const refused = w.logged.filter(function (l) { return /deskAgent/.test(l) && /busy|not posted|refused/.test(l); }).length;
       if (w.posted.length === 4 && refused === 1) test.check('a post the relay refuses is said once in the log and not posted again');
       else test.fail(OWED + 'after a refusal: ' + w.posted.length + ' posts, log ' + JSON.stringify(w.logged));
     }
