@@ -7,8 +7,7 @@ able to act on this without re-deriving it, and without mistaking a
 recommendation for a ruling.*
 
 The vocabulary this builds on is `DICTIONARY.md`, "The show" —
-master, puppet, app, show, audience, strings. The deployment shape it
-serves is `DEVICES-AND-PORTS.md`. **This document is about what a puppet
+master, puppet, app, show, audience, strings. **This document is about what a puppet
 IS to the system**: what it can reach, who may use it, and who may
 change that.
 

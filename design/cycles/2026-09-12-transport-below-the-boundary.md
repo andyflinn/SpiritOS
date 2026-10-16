@@ -371,7 +371,7 @@ Those are namespace rules and have nothing to do with the console.
 confinement ([relay.js:645](../../spirit/run/js/relay.js#L645)) goes with
 it, leaving that rule as plainly *a device may only reach its own
 identity* — one clause shorter. R7 of
-[the device cycle](2026-09-12-device-and-node-defence.md) must still pass
+the device cycle must still pass
 afterwards.
 
 **One thing the deletion exposed, and it needed fixing rather than
@@ -526,7 +526,7 @@ waiting: undelivered mail has no clock, whatever the receipt promised".
 unbundles it — see the closing note below.
 
 The same requirement as R14 in
-[the device cycle](2026-09-12-device-and-node-defence.md), which is where
+the device cycle, which is where
 it was first agreed; kept there and costed here.
 
 `relay.js`: `send()` 159 lines, `inbox()` 53, the `messages` ring 19

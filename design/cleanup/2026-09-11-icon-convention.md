@@ -7,8 +7,7 @@ call sites everywhere and should be its own sitting.
 
 ## What was already done
 
-Found while specifying the device panel
-([design/relay/DEVICE-PANEL.md](../relay/DEVICE-PANEL.md)):
+Found while specifying the device panel:
 
 **`ICON.STOP` was declared twice** — `'⏹️'` and then `'🟠'`. An object literal
 keeps the last value, so the stop symbol was unreachable and every caller

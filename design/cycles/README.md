@@ -2,7 +2,7 @@
 
 **Why this exists, in one incident.**
 
-On 2026-09-12 Grok reviewed `design/relay/DEVICE.md` and returned six
+On 2026-09-12 Grok reviewed the device design and returned six
 findings as a numbered list. In the same conversation Andy and Claude
 worked out, in detail, that the relay must confine a device's posts to its
 owner's node — the mechanics, the addressing, the pairing. Both were
@@ -10,7 +10,7 @@ agreed. Only one of them was a numbered list.
 
 The six got built and reported as *"53 suites, 1426 green"*. Andy then
 asked whether the confinement was implemented. It was not. It had been
-written into `DEVICE.md` as a note — *"these two must land in the same
+written into the device design as a note — *"these two must land in the same
 cycle"* — which is reading material, not a worklist.
 
 Andy:

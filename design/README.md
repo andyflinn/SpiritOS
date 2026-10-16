@@ -15,13 +15,6 @@ This directory contains the vision, principles, and architecture decisions for *
 
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)
-- [Devices and ports — how you run a public HTML face on the internet](principles/DEVICES-AND-PORTS.md)
-  — **the model**, 2026-09-24: everything the master owns is a device, a
-  device has ports its master wires, the app runs on the owner's node and
-  the public box holds a face. **The relay is not a precedent for it —
-  the relay IS the implementation.** Vocabulary in `DICTIONARY.md` under
-  *The show*; open questions and the security conditions are in the
-  document.
 - [Puppets — what an app is, who may use it, and who may change that](principles/PUPPETS.md)
   — **the rules**, 2026-09-25, from the sitting that built the first two:
   a puppet is a node owned by another node, with contacts of its own that
@@ -132,8 +125,7 @@ This directory contains the vision, principles, and architecture decisions for *
   it is made, and a requirement is not done until something verifies it. Written
   after a confinement Andy and Claude had settled in detail was reported as part
   of a green sitting it was not in.
-- [2026-09-12 — the device, and a node defending itself](cycles/2026-09-12-device-and-node-defence.md)
-  — **OPEN.** 16 requirements: 10 done, 2 deferred, 4 still open.
+
 - [2026-09-12 — app-building removed](cycles/2026-09-12-app-building-removed.md)
   — **CLOSED.** Implements 0008. Both `/api/fs/` doors gone, the refusal they
   were exceptions to now absolute, three test specimens re-pointed before their
@@ -350,123 +342,6 @@ This directory contains the vision, principles, and architecture decisions for *
   method to re-derive it.
 
 ## Relay
-- [Peer Devices](relay/PEER-DEVICES.md) — every identity attaching its own
-  browsers. Designed, not built; the owner-only version shipped as device
-  cycles 1–5.
-- [What a device is](relay/DEVICE.md) — a node-shaped thing with a temporary key
-  instead of an identity, no disk, and exactly one correspondent: its own node,
-  which acts on its behalf and hands back the result. The relay holds the pairing
-  in RAM and may never publish it. Design only, and it supersedes the device model
-  in the two documents below. §6 is the red button, which this architecture
-  reduces to a local write; **§7 is future layer and depends on nothing above it.**
-- [The "Add one of my own devices" panel](relay/DEVICE-PANEL.md) — the surface
-  in Natter for attaching a browser. **§1–7 superseded on 2026-09-12** and kept
-  as the record: a switch, a poll, four states and a rendezvous rule, every one
-  of them a consequence of the poll rather than of the feature. §8 is what
-  stands — a copy button, a shortened link, and a paragraph.
-- [The transport, and what it has been shown to do](relay/TRANSPORT.md) — one
-  mechanism now carrying peer-to-peer, relay-to-node and browser-to-node alike:
-  the measurements, and an explicit list of what has *not* been proven.
-- [Everything is a post](relay/SURFACE.md) — the case that 0010's three granted
-  GET exceptions can all go: the key arrives with the row, `version` is a file,
-  and the stream becomes `stream.initialize()` / `stream.close()` — an ordinary
-  peerPost whose reply is the channel it created. Leaves the protocol statable
-  without naming a transport, which is the point. Design, nothing built.
-- [The relay as a router](relay/ROUTER.md) — a peer drops a packet on a peer
-  and gets a signed receipt. Decision 0006 implemented, plus the receipt.
-- [Partner relays](relay/PARTNERS.md) — **obsolete since 2026-10-13
-  (goal/G22.6).** Partnering as a permission is gone: a relay carries posts to
-  its members from any relay, a member's slot is counted per sender, and the
-  partner roll and budget are removed. The page is the dated record of that;
-  the old design is in git at `d403629b`.
-- [A member's request budget — announced, and honoured](relay/REQUEST-BUDGET.md)
-  — a relay tells its members nothing about what they are allowed, so a
-  node learns its limits by being refused; and `peerPost` has no queue, so
-  a refusal is a failure rather than a wait. The bound that matters is not
-  even configurable: `DEFAULT_PER_REQUESTER = 16` with
-  `createRouter()` called with no options. Concurrency x bytes x duration
-  is the RAM a router costs — 4 MB at the table cap, reachable by sixteen
-  members — which makes requests-in-flight a lever beside `connections1`
-  and `requestTimeout1`, on the same axis and multiplying.
-
-- [The Relay Monitor](relay/RELAY-MONITOR.md) — **APPROVED 2026-09-23,
-  screen work only, nothing built.** What an owner watches and what he may not touch: the two bounds
-  with `binding` saying which is nearer and the 70% warning against that
-  one; the member curve from the node's own record; a live traffic console
-  filtered at the relay, in the shape of the jobs app's log panel; the
-  configuration readable but not settable. Supersedes §4 of NODE-AND-RELAY,
-  which cycles 8 and 9 made false in four places — recorded there rather
-  than deleted.
-- [A relay governs itself by what it can observe](relay/CAPACITY.md) —
-  **first cut, nothing built.** Andy: *"a relay's capacity is primarily
-  governed by its own RAM and by its network bandwidth."* If that is true a
-  relay can *measure* its capacity, and a measured limit beats a typed one.
-  Two units are two limits (RAM is a stock, bandwidth a flow); the ceiling is
-  discovered from throughput-against-latency rather than declared; the floor
-  is a requirement in units of work rather than a number; the value is
-  streamed and in force until superseded. Records the measurement that
-  prompted it: **`routePost` has no rate limit at all** — `rateOk` has two
-  call sites, and neither is posting.
-- [The shadow peer list — its structure, and what feeds it](relay/SHADOW-PEER-LIST.md)
-  — **designed, nothing built.** The companion to WHAT-A-NODE-KNOWS: what
-  shape the row is, and which relay events earn a broadcast. Extracts
-  **rank first, recency second** — the shadow keeps the last thing said
-  rather than the best-sourced thing, so a second-hand search answer
-  overwrites a rename from the peer's own relay. Finds the eighth discard,
-  the largest by volume: `presenceNode.js:181` drops a presence event about
-  a stranger and the URL it arrived on with it — the highest-authority
-  route in the system, arriving free, for every member of every relay this
-  node is on. And finds that `peer-renamed` and `claim` already fire and go
-  to the **owner alone**, though 0012 as corrected licensed them for every
-  member in Andy's own words. Carries the arithmetic that bounds the
-  instinct: a broadcast is O(members) per event, so the events that earn one
-  are the rare, durable ones — which is the set currently not broadcast.
-- [Collaborative route discovery, on demand](relay/ROUTE-DISCOVERY.md) —
-  **designed, nothing built.** Andy: *"as fundamental as proper tunnelling, with
-  a higher cost impact"* — the tunnel decides whether a packet crosses; this
-  decides what every discovery costs for as long as the network runs. A node
-  asks only relays it is bound to, sending the keys it lacks routes for **and
-  the tuples it already holds**, so the relay answers its own members locally,
-  culls tuples for relays it does not partner with, and fans out only the
-  remainder. Collaborative because neither end has the answer and both keep it —
-  and because a rebooted relay is re-primed by its members rather than by a
-  disk. Carries the arithmetic that forces a by-reference reply (nine keys per
-  call by value, ~330 by reference), and names the load-bearing open ones: a
-  partner that lies about holding a key can harvest one packet per lie, and
-  negative results need a lifetime or every post to an unroutable contact is a
-  fan-out for ever.
-- [What a node knows about a peer, and where it keeps it](relay/WHAT-A-NODE-KNOWS.md)
-  — **planning, and most of it built at `7806b3d`.** One rule: *"a node
-  learns a route at every opportunity, and policy never gates the
-  learning."* Andy: *"Any peer a node could possibly connect to, the route
-  to it can be known to the node."* Seven places were holding the answer
-  and discarding it — a search kept the URL and dropped the key, an
-  arriving packet learned nothing, siblings on one relay announced
-  nothing to either end. It lands in a **shadow** keyed by peer
-  (`seenPeers.js`): not the contact book, not a duplicate of a member
-  roll, *"like a browser's cache… it tracks the node's traffic with the
-  contacts IT knows"* — it may guess, may never assert, and has no reader
-  outside the node. Carries `0018` (the route cache belongs to the
-  machine, so `routes` leaves the contact row with the store), and keeps
-  open: label-key tuplets on the wire, cache-first search, and
-  `MAX_AGE_MS`. **Read before ROUTE-DISCOVERY.md below**, which it
-  reorders rather than contradicts.
-- [One object, three densities](shell/OBJECT-PRESENTATION.md) — the UI half of
-  the same sitting. Dropdown, selector surface and tooltip as three densities
-  of one object; label is what it calls itself, description is what you say
-  about it. Source material for a future `UI_DESIGN_STYLE.md` §11, which is
-  Andy's to write.
-- [The data architecture behind a verified ping](relay/ROUTER-PACKETS.md) —
-  the same thing as a reference: every field on the wire, in plain English,
-  with real bytes generated by the running code.
-- [Presence](relay/PRESENCE.md) — the first cut of that wire, carrying who is
-  reachable and nothing else. Staged, and the precondition for decision 0006.
-- [Proving the relay cannot read it](relay/PROVING-IT-CANNOT-READ.md) — *"prove
-  the relay cannot read it, by trying to read it"*: DEBUG makes the monitor row
-  carry the bytes the relay holds, and a suite reads them as the owner. One
-  door for every relay assertion, so the flag cannot become fifty.
-- [The relay doorbell](relay/EVENT-STREAM.md) — one held connection per identity
-  instead of polling. The destination; PRESENCE.md is the route to it.
 
 ## Reviews
 - Periodic point-in-time assessments of status against vision. See [reviews/](reviews/).

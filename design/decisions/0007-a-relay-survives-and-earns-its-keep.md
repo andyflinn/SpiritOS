@@ -88,7 +88,7 @@ Each of these was open before that sentence and is closed by it:
   one, because they defend different things.** The relay limits to protect
   itself from its callers; the node limits to protect itself from its
   relays. Neither is redundant.
-- **The floor on unknown senders** ([DEVICE.md](../relay/DEVICE.md) §1c).
+- **The floor on unknown senders** (the device model, §1c).
   A node that leaves its front door to whichever guest lists its relays'
   owners keep has delegated its own survival to people it did not choose.
 - **`listenSet` on the router path.** Same reason. The relay decides who
@@ -231,7 +231,7 @@ waiting; the same change made as part of a split is structural.
 
 **Buy.** The relay build stops being a flag and becomes a build — *"a
 relay loads no app code"* turns from a test into a fact. The trust root in
-[DEVICE.md](../relay/DEVICE.md) §7 becomes auditable by construction
+The device model §7 becomes auditable by construction
 rather than by discipline, because the apps are not in the repository to
 ship. And the components' dependencies become visible instead of
 conventional.
@@ -321,7 +321,7 @@ remembering.**
   time, and today it is not: `answerRelay.js` pins a relay's
   `mailboxPublicKey` **in RAM for one process** and `relays.json` records
   no key at all, so a substituted relay is silent. Worked through in
-  [DEVICE.md](../relay/DEVICE.md) §7; it applies to every relay
+  the device model §7; it applies to every relay
   interaction, not only to devices.
 
 ## Status

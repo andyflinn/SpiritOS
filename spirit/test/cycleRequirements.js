@@ -12,7 +12,7 @@
 //
 // The six were built and reported as "53 suites, 1426 green". Andy then
 // asked whether the confinement was implemented. It was not. It had been
-// written into DEVICE.md as a note — "these two must land in the same
+// written into the device design as a note — "these two must land in the same
 // cycle" — which is reading material rather than a worklist.
 //
 //   Andy: "we need to have a working method where that stuff doesn't get

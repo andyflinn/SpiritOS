@@ -264,7 +264,7 @@ requirements that were right.
 his uptime ruling retires it: *"a re-start row documents the downtime?"*,
 *"... the end-of-a-downtime"*, *"and the stopped row can't be guaranteed."*,
 *"... but should be part of "graceful shutdown""*. It does not conflict
-with *"Uptime issues are out of scope"* (DEVICES-AND-PORTS.md:173), because
+with *"Uptime issues are out of scope"*, because
 it keeps nothing running. It only makes the record honest afterwards.
 - **`started` marks the END of a downtime.** Written at boot, it is the one
   row that can always be written.

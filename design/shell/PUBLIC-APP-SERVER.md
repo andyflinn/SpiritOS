@@ -61,7 +61,7 @@ only needs an appShellApp"*. So:
   by the member-to-subdomain mapping, which lives on the OWNER's node (the
   grant table, *"only on the owners node"*, appFaceApp.js). The lookup
   therefore needs the owner's node up. That is the owner's to keep, under
-  the uptime ruling (DEVICES-AND-PORTS.md:154-174).
+  the uptime ruling.
 - **A member who wants more than one app puts a shell on their subdomain.**
   Andy, 2026-09-26: *"so members utlimately will have to use a shell on
   their subdomain, if they want to fan out further"*. One subdomain reaches
@@ -490,7 +490,7 @@ groups servers that share a fingerprint and compares their allotments with
 the box total. The owner opens that view when he wants it. An over-committed
 box shows a warning. It is not an error, and nothing is refused or stopped
 because of it: allotting is the owner's, just as uptime is (Andy,
-2026-09-25, *DEVICES-AND-PORTS.md*). The interface itself is still
+2026-09-25). The interface itself is still
 deferred. This records its shape so that building it later does not
 reopen the question.
 

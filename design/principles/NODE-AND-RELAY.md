@@ -875,7 +875,7 @@ different number.
 **This is already the assumption everywhere and has never been a decision.**
 *"On a 1 GB box"* appears in [PARTNERS.md](../relay/PARTNERS.md),
 [ROUTE-DISCOVERY.md](../relay/ROUTE-DISCOVERY.md),
-[DEVICE-PANEL.md](../relay/DEVICE-PANEL.md) and twice in
+and twice in
 [relay.js](../../spirit/run/js/relay.js) — re-derived at each site rather
 than referenced, which is how a later reader designs against something
 larger without noticing they have moved.
