@@ -1,5 +1,5 @@
 {
- "change": 64416,
+ "change": 64519,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -21,7 +21,6 @@
     "goal/G27.5",
     "goal/G27.8",
     "goal/G27.11",
-    "goal/G27.13",
     "goal/G27.14"
    ],
    "go": false,
@@ -52,7 +51,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 12,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -409,12 +408,14 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Chat posts follow the address, not the newest line\n\nAndy's problem (goal/G27 chat, 2026-10-15): slow agents in deskUnsloth work for a long time and then find themselves blocked from answering a question they were asked; work notes and reports that were explicitly or implicitly asked for need a way to post that cannot be blocked.\n\nToday (read from code, spirit/run/process/js/desk/desk.js, the chat.add gate about lines 2296-2335): the gate judges by who writes, not by what the line is. An open take of one of Andy's lines survives later lines, so the taker still answers. But an agent that holds no take and no item is refused once Andy's newest line under the item is taken by another agent, even when Andy addressed it by name in an earlier line, when it created the item (Levant was refused on goal/G27.1 and goal/G27.9), or when it held a phase on the item (refused as a second answer).\n\nRequirements:\nR1. A line of Andy's addressed to an agent gives that agent a standing right to post under that item until it has answered, whatever lines or takes come after.\nR2. An agent that holds the item or a phase on it, held a phase on it earlier, or created it, posts its work notes and reports under it at any time.\nR3. Andy's rule stands: no second answer to a taken line; one agent answers a line of his, once.\nR4. The gate stays mechanical: it goes by the address, the take, the holding and the creator on record, never by reading the line for what it means.\n\nFolds in the earlier proposal under goal/G27: an agent may post under an item it just created (R2).\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the chat.add gate), spirit/run/process/js/desk/AGENTS.md (the posting rule). Needs Andy's Go and a file grant before any build.",
-   "version": 1,
+   "box": "Chat posts follow the address, not the newest line\n\nAndy's problem (goal/G27 chat, 2026-10-15): slow agents in deskAgent work for a long time and then find themselves blocked from answering a question they were asked; work notes and reports that were explicitly or implicitly asked for need a way to post that cannot be blocked.\n\nToday (read from code, spirit/run/process/js/desk/desk.js, the chat.add gate about lines 2296-2335): the gate judges by who writes, not by what the line is. An open take of one of Andy's lines survives later lines, so the taker still answers. But an agent that holds no take and no item is refused once Andy's newest line under the item is taken by another agent, even when Andy addressed it by name in an earlier line, when it created the item (Levant was refused on goal/G27.1 and goal/G27.9), or when it held a phase on the item (refused as a second answer).\n\nRequirements:\nR1. A line of Andy's addressed to an agent gives that agent a standing right to post under that item until it has answered, whatever lines or takes come after.\nR2. An agent that holds the item or a phase on it, held a phase on it earlier, or created it, posts its work notes and reports under it at any time.\nR3. Andy's rule stands: no second answer to a taken line; one agent answers a line of his, once.\nR4. The gate stays mechanical: it goes by the address, the take, the holding and the creator on record, never by reading the line for what it means.\n\nFolds in the earlier proposal under goal/G27: an agent may post under an item it just created (R2).\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the chat.add gate), spirit/run/process/js/desk/AGENTS.md (the posting rule). Needs Andy's Go and a file grant before any build.",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -459,8 +460,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Clean up Desk and deskUnsloth UI realtime (incl. remote)\n\nOne item that cleans up the realtime UI of Desk, deskUnsloth and deskUnslothRemote (Andy, goal/G27 chat, 2026-10-14). It carries desk rule 8: shell and application elements bring their subscriptions with them, so they are subscribed to the events that update them. The remote item (goal/G27.7) is folded in here as slice S4 (Andy, 2026-10-15): every element of deskUnslothRemote listens to the changes that concern only itself and redraws only itself.\n\nFindings from reading code (not run):\n1. One subscription feeds the Desk face: desk.js:1747 deskApi.onPublished(deskOnPublished); it repaints everything through deskDraw (desk.js:1040).\n2. List rows (deskRowHtml, desk.js:595), header, tabs, toggles, musings, backup, team chat, session bubble, apps tabs (desk.js:641), rules list (desk.js:1087) and verifier bar (desk.js:1418) carry no listener; they repaint only when deskDraw runs.\n3. Elements that do listen: item dialog (deskDetails.js:620), goal chat (desk.js:933), deskVerify state (desk.js:1758), Stacks plugin (stackFrameChecks.js:384-397), rule details (ruleDetails.js:212), remote deskUnsloth (deskUnslothRemote.js:828, one handler, then the whole face redrawn: lines 530-531 and 293-298).\n4. Changes are dropped when the tab is not showing (desk.js:1457, verifier tail). The List pulls on gaps, session.set, oversize drops and reconnect (desk.js:481-536, 1752).\n5. Server publish gaps: log.add (desk.js:2005) never publishes. rule.add, rule.draft, rule.version (desk.js:2493, 2515, 2529) publish only {rule: key}, not the row, and the face asks again only while the Rules tab shows (shell desk.js:484). The state and seen docs (state.set, seen.set) are per-user and nothing else draws them, so they stay unpublished. deskVerify and deskUnsloth publish through their own appServer.publish, to be read in S1.\n\nStrategy:\nA. Server first: every write that changes visible state publishes a row-level event (item facts, row, checks, box, chat, rule row). log.add publishes its line; rule writes publish the rule row. Read deskVerify and deskUnsloth publish paths and make them the same shape.\nB. One client repaint path: a small store keyed by id (items, rules, verifier, unsloth sessions). Each element subscribes to the keys it shows and repaints only its own part. The face-wide deskDraw stays for layout only.\nC. No tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show.\nD. Shared element: a new folder spirit/run/shell/shared/js (Andy, 2026-10-15: spirit/run/shell/js is a core folder and stays the shell's own), one file per element, each named with the desk prefix (deskItemRow.js, deskSwitch.js and so on), each adding itself to window.spiritElements as the shell elements do. The element is made with the keys it shows and a paint function and subscribes to the stream itself (desk rule 8); Desk rows, the remote switch, warnings and pairs are all made from it, so the remote carries no second copy of the subscribe-and-paint code.\nE. Keep the reconnect and gap pull as the only full refresh; count how often it fires.\n\nSlices (each its own red test first):\n- S1 server publishes (A), tests that each write verb publishes.\n- S2 client store and row-level repaint for the List (B, C).\n- S3 header, tabs, toggles, rules, verifier, musings, team chat move onto the store (B).\n- S4 deskUnsloth and deskUnslothRemote onto the same helper (D): every remote element listens for itself and redraws only itself.\n\nNot in this item: the effort/time limits (goal/G27.8), the Stacks dialog (goal/G27.2).\n\nNeeds Andy's Go and file grants per slice. Nothing built yet.",
-   "version": 4,
+   "box": "Clean up Desk and deskAgent UI realtime (incl. remote)\n\nOne item that cleans up the realtime UI of Desk, deskAgent and deskAgentRemote (Andy, goal/G27 chat, 2026-10-14). It carries desk rule 8: shell and application elements bring their subscriptions with them, so they are subscribed to the events that update them. The remote item (goal/G27.7) is folded in here as slice S4 (Andy, 2026-10-15): every element of deskAgentRemote listens to the changes that concern only itself and redraws only itself.\n\nFindings from reading code (not run):\n1. One subscription feeds the Desk face: desk.js:1747 deskApi.onPublished(deskOnPublished); it repaints everything through deskDraw (desk.js:1040).\n2. List rows (deskRowHtml, desk.js:595), header, tabs, toggles, musings, backup, team chat, session bubble, apps tabs (desk.js:641), rules list (desk.js:1087) and verifier bar (desk.js:1418) carry no listener; they repaint only when deskDraw runs.\n3. Elements that do listen: item dialog (deskDetails.js:620), goal chat (desk.js:933), deskVerify state (desk.js:1758), Stacks plugin (stackFrameChecks.js:384-397), rule details (ruleDetails.js:212), remote deskAgent (deskAgentRemote.js:828, one handler, then the whole face redrawn: lines 530-531 and 293-298).\n4. Changes are dropped when the tab is not showing (desk.js:1457, verifier tail). The List pulls on gaps, session.set, oversize drops and reconnect (desk.js:481-536, 1752).\n5. Server publish gaps: log.add (desk.js:2005) never publishes. rule.add, rule.draft, rule.version (desk.js:2493, 2515, 2529) publish only {rule: key}, not the row, and the face asks again only while the Rules tab shows (shell desk.js:484). The state and seen docs (state.set, seen.set) are per-user and nothing else draws them, so they stay unpublished. deskVerify and deskAgent publish through their own appServer.publish, to be read in S1.\n\nStrategy:\nA. Server first: every write that changes visible state publishes a row-level event (item facts, row, checks, box, chat, rule row). log.add publishes its line; rule writes publish the rule row. Read deskVerify and deskAgent publish paths and make them the same shape.\nB. One client repaint path: a small store keyed by id (items, rules, verifier, unsloth sessions). Each element subscribes to the keys it shows and repaints only its own part. The face-wide deskDraw stays for layout only.\nC. No tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show.\nD. Shared element: a new folder spirit/run/shell/shared/js (Andy, 2026-10-15: spirit/run/shell/js is a core folder and stays the shell's own), one file per element, each named with the desk prefix (deskItemRow.js, deskSwitch.js and so on), each adding itself to window.spiritElements as the shell elements do. The element is made with the keys it shows and a paint function and subscribes to the stream itself (desk rule 8); Desk rows, the remote switch, warnings and pairs are all made from it, so the remote carries no second copy of the subscribe-and-paint code.\nE. Keep the reconnect and gap pull as the only full refresh; count how often it fires.\n\nSlices (each its own red test first):\n- S1 server publishes (A), tests that each write verb publishes.\n- S2 client store and row-level repaint for the List (B, C).\n- S3 header, tabs, toggles, rules, verifier, musings, team chat move onto the store (B).\n- S4 deskAgent and deskAgentRemote onto the same helper (D): every remote element listens for itself and redraws only itself.\n\nNot in this item: the effort/time limits (goal/G27.8), the Stacks dialog (goal/G27.2).\n\nNeeds Andy's Go and file grants per slice. Nothing built yet.",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -981,8 +982,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskUnsloth manages what its agent (Levant) deals with.\n\ndeskUnsloth is the agent's door into desk.\n\nRequirements (Andy's rulings, goal/G27.6 chat, 2026-10-14/15):\nR1. Buffer and filter. Nudges from desk and notifications of new lines typed by the user are held in deskUnsloth, so the agent burns no tokens on what it is not expected to answer. When something in desk requires the agent's attention, the accumulated buffer goes to the model in one request, before the attention-requiring line or request.\nR2. No size limit between deskUnsloth and the agent server: the buffer grows while nothing is owed. The size limit applies only on the path from deskUnsloth to the desk. When the held buffer no longer fits the model's context room at flush time, the oldest lines are dropped, mechanically.\nR3. Design mode is the goal's design flag, set by Andy's press. deskUnsloth notes and remembers each change in and out of design mode, and passes it to the agent only once the agent's action is required.\nR4. Connect. When deskUnsloth connects the agent to the desk it initializes the agent's participation: it reads what is owed by the agent, from implementation to reds (the desk's pending list for the agent), and wakes the agent only if something is owed. Nothing owed, no notification.\nR5. While design mode is active, no writing tool is given to the agent: the fs.write ruling covers deskUnsloth's file.save, file.edit, commit and push. Reads stay.\nR6. it must me deskUnsloth that \"takes\" a chat line to answer, that \"takes any ask, the model should not be bothered by that either, it will deal with the \"taken\" item when deskUnsloth hands the item to the model.\n\nR10. the deskEar, used by Claude inside VSCode, should take a slice from out new deskUnsloth philosophy.\nR11. Since i assume that deskSloth is the agents/models door to desk, but via deskClient, I'm starting to wonder, if many of these changes should not be managed by the agent/model, but by DeskClient itself. This includes the fact that claudes in VSCode should not go re-read crap in desk, when deskClient already may hold things an agent/model owes.\n\nToday (read from code): every line from anyone but Levant costs a model call (loop, mine); nothing in deskUnsloth reads the design flag; the tool list is deskUnsloth 's own verb table described every minute, so withholding is a filter on that list inside deskUnsloth, no common component touched; on connect the backlog is skipped as caught up instead of read for owed items.\n\nFiles (expected): spirit/run/process/js/deskUnsloth/deskUnsloth.js. Needs Andy's Go and a file grant before any build.",
-   "version": 9,
+   "box": "deskAgent manages what its agent (Levant) deals with.\n\ndeskAgent is the agent's door into desk.\n\nRequirements (Andy's rulings, goal/G27.6 chat, 2026-10-14/15):\nR1. Buffer and filter. Nudges from desk and notifications of new lines typed by the user are held in deskAgent, so the agent burns no tokens on what it is not expected to answer. When something in desk requires the agent's attention, the accumulated buffer goes to the model in one request, before the attention-requiring line or request.\nR2. No size limit between deskAgent and the agent server: the buffer grows while nothing is owed. The size limit applies only on the path from deskAgent to the desk. When the held buffer no longer fits the model's context room at flush time, the oldest lines are dropped, mechanically.\nR3. Design mode is the goal's design flag, set by Andy's press. deskAgent notes and remembers each change in and out of design mode, and passes it to the agent only once the agent's action is required.\nR4. Connect. When deskAgent connects the agent to the desk it initializes the agent's participation: it reads what is owed by the agent, from implementation to reds (the desk's pending list for the agent), and wakes the agent only if something is owed. Nothing owed, no notification.\nR5. While design mode is active, no writing tool is given to the agent: the fs.write ruling covers deskAgent's file.save, file.edit, commit and push. Reads stay.\nR6. it must me deskAgent that \"takes\" a chat line to answer, that \"takes any ask, the model should not be bothered by that either, it will deal with the \"taken\" item when deskAgent hands the item to the model.\n\nR10. the deskEar, used by Claude inside VSCode, should take a slice from out new deskAgent philosophy.\nR11. Since i assume that deskSloth is the agents/models door to desk, but via deskClient, I'm starting to wonder, if many of these changes should not be managed by the agent/model, but by DeskClient itself. This includes the fact that claudes in VSCode should not go re-read crap in desk, when deskClient already may hold things an agent/model owes.\n\nToday (read from code): every line from anyone but Levant costs a model call (loop, mine); nothing in deskAgent reads the design flag; the tool list is deskAgent 's own verb table described every minute, so withholding is a filter on that list inside deskAgent, no common component touched; on connect the backlog is skipped as caught up instead of read for owed items.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js. Needs Andy's Go and a file grant before any build.",
+   "version": 10,
    "checks": [
     {
      "number": "Q1",
@@ -1165,8 +1166,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Revise effort and time Limits in deskUnsloth\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.8 chat, 2026-10-14/15):\nR1. Agents in deskUnsloth are not interrupted: no new time limit on the model's answer. The G19.7 ruling stands: only abort ends it; timeoutMs stays on studio reads and command runs only.\nR2. Effort is the control for how much work a task gets, like the low to high sliders in claude-code: an effort slider in the configuration, per api/model combination that supports it.\nR3. Max reply is managed so that answers are never too large to send to desk.\n\nFindings (read from code, spirit/run/process/js/deskUnsloth/deskUnsloth.js):\n1. No effort field is sent: askModelRound (about line 592) sends model, messages, tools, and the answer-length mark from withAnswerTokens (about line 571): max_completion_tokens on a plain OpenAI pair, max_tokens otherwise.\n2. The answer cap is already configured: answerTokens in the configuration (ANSWER_TOKENS, about line 147), with a default.\n3. The model call passes no timeout (about line 597); timeoutMs caps studio HTTP reads and command runs.\n4. Support for an effort field is not in the repo: OpenAI reasoning models and Anthropic thinking budgets are general knowledge to confirm against their docs; Unsloth Studio's accepted fields are read from the studio before any field is sent.\n\nDesign:\nA. Effort slider, per api/model, configured not guessed. A configuration table of api/model combinations with the request field each maps to (OpenAI: reasoning_effort; Anthropic: thinking budget; Studio: none until its fields are confirmed). Slider values: off (send nothing, today's behaviour), low, medium, high. A combination not in the table, or marked unsupported: slider disabled, nothing extra sent. Only the mapped field is added; the rest of the body is unchanged.\nB. No new timeout (R1).\nC. Max reply: the configured answer token cap per api is the one limit on the model side. A reply that finishes on the length limit (finish_reason length) is marked truncated in the chat or box text, never sent silently as if complete. No extra byte ceiling before the desk write: the desk already refuses an oversize line, and that refusal is the one gate (Andy, 2026-10-15).\nD. Steps once Go is given: read Studio's accepted fields and record them here; red tests first; build the table, the slider mapping and the truncated mark; verify.\n\nOpen for Andy: the slider default (off or medium).\n\nFiles (expected): spirit/run/process/js/deskUnsloth/deskUnsloth.js, its configuration, spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js (the slider). Needs Andy's Go and a file grant before any build.",
-   "version": 4,
+   "box": "Revise effort and time Limits in deskAgent\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.8 chat, 2026-10-14/15):\nR1. Agents in deskAgent are not interrupted: no new time limit on the model's answer. The G19.7 ruling stands: only abort ends it; timeoutMs stays on studio reads and command runs only.\nR2. Effort is the control for how much work a task gets, like the low to high sliders in claude-code: an effort slider in the configuration, per api/model combination that supports it.\nR3. Max reply is managed so that answers are never too large to send to desk.\n\nFindings (read from code, spirit/run/process/js/deskAgent/deskAgent.js):\n1. No effort field is sent: askModelRound (about line 592) sends model, messages, tools, and the answer-length mark from withAnswerTokens (about line 571): max_completion_tokens on a plain OpenAI pair, max_tokens otherwise.\n2. The answer cap is already configured: answerTokens in the configuration (ANSWER_TOKENS, about line 147), with a default.\n3. The model call passes no timeout (about line 597); timeoutMs caps studio HTTP reads and command runs.\n4. Support for an effort field is not in the repo: OpenAI reasoning models and Anthropic thinking budgets are general knowledge to confirm against their docs; Unsloth Studio's accepted fields are read from the studio before any field is sent.\n\nDesign:\nA. Effort slider, per api/model, configured not guessed. A configuration table of api/model combinations with the request field each maps to (OpenAI: reasoning_effort; Anthropic: thinking budget; Studio: none until its fields are confirmed). Slider values: off (send nothing, today's behaviour), low, medium, high. A combination not in the table, or marked unsupported: slider disabled, nothing extra sent. Only the mapped field is added; the rest of the body is unchanged.\nB. No new timeout (R1).\nC. Max reply: the configured answer token cap per api is the one limit on the model side. A reply that finishes on the length limit (finish_reason length) is marked truncated in the chat or box text, never sent silently as if complete. No extra byte ceiling before the desk write: the desk already refuses an oversize line, and that refusal is the one gate (Andy, 2026-10-15).\nD. Steps once Go is given: read Studio's accepted fields and record them here; red tests first; build the table, the slider mapping and the truncated mark; verify.\n\nOpen for Andy: the slider default (off or medium).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, its configuration, spirit/run/shell/deskAgentRemote/deskAgentRemote.js (the slider). Needs Andy's Go and a file grant before any build.",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -1523,13 +1524,14 @@
    "waived": false,
    "rules": [],
    "names": {
-    "ollama agent node": "levant-local"
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The model picker for OpenAI is missing (Andy, 2026-10-15: \"i want the model picker for openAI BACK! it is missing.\").\n\nWhy it is gone (from the code):\n- deskUnsloth.js has no picker of its own. Its known list is read from models.json in its state folder (readKnownAll/writeKnown, lines 695-713), and the pair's entry is null until a refresh lands; for a plain OpenAI server (`studio === false`) the room/context comes from that pair's v1/models entries (plainList, goal/G14.11) — nothing cached yet means no list.\n- The picker was in deskUnslothRemote (the Remote UI, connect tab / configure tab). Andy's own words at deskUnsloth.js:655-657: \"The dropdown will only show models that unsloth has cached locally\" and \"The [Load] button will only be displayed if the models is not running\". So when a plain OpenAI server has nothing cached, the picker shows nothing — which is why it looks gone.\n- deskUnsloth.js:664-665 records the first build failing the whole ask on an error, so \"the dropdown never appeared\" (Andy 2026-10-10: \"when no model is loaded, the model selector doesn't show up.\"). A failing status or v1/models now means nothing loaded, and the list still comes.\n\nFix it: restore the OpenAI picker — for a plain OpenAI server, the picker must show from its v1/models entries (plainList) once they are cached; when none is cached yet, say so plainly rather than vanishing.\n\n# I think this might fix it:\n\n1. whenever i connect to an new model provide (Anthropic, OpenAI, Unsloth etc), deskUnsloth MUST immediately query that provider for a model list.\n\n2. Whenever a new model list is obtained by the model-provider, a cached (and persisted) model list for that provider must be updated, preserving capability markers for every model, including vision, desk-compatibility, reasoning etc...\n\n3. Whenever an actual model is loaded (and tested) in the configure tab of deskUnslothRemote, deskUnsloth must update the models entry in it's cached model list for the currently connected model provider.",
-   "version": 5,
+   "box": "The model picker for OpenAI is missing (Andy, 2026-10-15: \"i want the model picker for openAI BACK! it is missing.\").\n\nWhy it is gone (from the code):\n- deskAgent.js has no picker of its own. Its known list is read from models.json in its state folder (readKnownAll/writeKnown, lines 695-713), and the pair's entry is null until a refresh lands; for a plain OpenAI server (`studio === false`) the room/context comes from that pair's v1/models entries (plainList, goal/G14.11) — nothing cached yet means no list.\n- The picker was in deskAgentRemote (the Remote UI, connect tab / configure tab). Andy's own words at deskAgent.js:655-657: \"The dropdown will only show models that unsloth has cached locally\" and \"The [Load] button will only be displayed if the models is not running\". So when a plain OpenAI server has nothing cached, the picker shows nothing — which is why it looks gone.\n- deskAgent.js:664-665 records the first build failing the whole ask on an error, so \"the dropdown never appeared\" (Andy 2026-10-10: \"when no model is loaded, the model selector doesn't show up.\"). A failing status or v1/models now means nothing loaded, and the list still comes.\n\nFix it: restore the OpenAI picker — for a plain OpenAI server, the picker must show from its v1/models entries (plainList) once they are cached; when none is cached yet, say so plainly rather than vanishing.\n\n# I think this might fix it:\n\n1. whenever i connect to an new model provide (Anthropic, OpenAI, Unsloth etc), deskAgent MUST immediately query that provider for a model list.\n\n2. Whenever a new model list is obtained by the model-provider, a cached (and persisted) model list for that provider must be updated, preserving capability markers for every model, including vision, desk-compatibility, reasoning etc...\n\n3. Whenever an actual model is loaded (and tested) in the configure tab of deskAgentRemote, deskAgent must update the models entry in it's cached model list for the currently connected model provider.",
+   "version": 6,
    "checks": [],
    "chat": [
     {
@@ -1615,8 +1617,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Since deskClient knows if an agent is connected, idle (or busy), it must manage the following.\n\n- deskClient must hold 1 task for its agent. When an agent starts listening it must NOT catch up with the ear; it works on the task deskClient has held, including replies in chats, taking a read or code, since desk's current goal may no longer be in design mode.\n- read, write and manage the agent's \"connected\", \"busy\" or \"idle\" status. When desk sends a signoff order to an agent's deskClient, deskClient persists the status as \"disconnected\" and confirms that to desk.\n- the deskClient must be the one to \"take\" lines from chats, only if the agent is not busy.\n- if desk commands a signoff, general or directed to one agent, desk sends it to that agent's deskClient, who closes the session by persisting the status \"signed off\", whatever the agent or model thinks.\n- a lot of what was asked for deskUnsloth in goal/G27.6 must be placed here, for deskClient, so that it affects the token usage of all agents.\n\nOnly when all of this is done do we turn to goal/G27.6 and deskUnsloth for what remains. This may mean deskClient needs a permanent listener that listens actively for peerRequests from desk.\n\nDECIDED (andy, 2026-10-16)\n- No queue. deskClient holds in RAM only the one task it holds. Untaken lines stay on the desk. On connect it hands the agent what is owed and does not catch up on the ear's backlog.\n- The status of each agent (connected, busy, idle) is kept in memory and kept alive with desk on its own.\n- The only thing written to disk is the signoff: spirit/run/process/deskClient/status.json, holding each agent's status and its signed-off flag. A signoff survives a restart. Nothing else is written.\n- One task at a time per agent: phase.take and item.take both refuse a second.\n- Takes: only lines addressed to the agent, only while it is idle, recorded under the agent's own key. Never another agent's line.\n- The model is called only for work owed to the agent. Everything else stays in deskClient.\n\nSPLIT\n- Code and red work is one take at a time.\n- Chat, box and Q updates are another.\n\nADJUSTMENTS THE DESK NEEDS (all three belong in this item, andy 2026-10-16)\n- A per-agent throttle on chat, box and Q writes. Desk has none today.\n- A signoff verb the desk sends to deskClient, with a confirm back to desk.\n- A status verb the desk reads for each agent's connected, busy or idle state.\n\nSTILL OPEN\n- None.",
-   "version": 13,
+   "box": "Since deskClient knows if an agent is connected, idle (or busy), it must manage the following.\n\n- deskClient must hold 1 task for its agent. When an agent starts listening it must NOT catch up with the ear; it works on the task deskClient has held, including replies in chats, taking a read or code, since desk's current goal may no longer be in design mode.\n- read, write and manage the agent's \"connected\", \"busy\" or \"idle\" status. When desk sends a signoff order to an agent's deskClient, deskClient persists the status as \"disconnected\" and confirms that to desk.\n- the deskClient must be the one to \"take\" lines from chats, only if the agent is not busy.\n- if desk commands a signoff, general or directed to one agent, desk sends it to that agent's deskClient, who closes the session by persisting the status \"signed off\", whatever the agent or model thinks.\n- a lot of what was asked for deskAgent in goal/G27.6 must be placed here, for deskClient, so that it affects the token usage of all agents.\n\nOnly when all of this is done do we turn to goal/G27.6 and deskAgent for what remains. This may mean deskClient needs a permanent listener that listens actively for peerRequests from desk.\n\nDECIDED (andy, 2026-10-16)\n- No queue. deskClient holds in RAM only the one task it holds. Untaken lines stay on the desk. On connect it hands the agent what is owed and does not catch up on the ear's backlog.\n- The status of each agent (connected, busy, idle) is kept in memory and kept alive with desk on its own.\n- The only thing written to disk is the signoff: spirit/run/process/deskClient/status.json, holding each agent's status and its signed-off flag. A signoff survives a restart. Nothing else is written.\n- One task at a time per agent: phase.take and item.take both refuse a second.\n- Takes: only lines addressed to the agent, only while it is idle, recorded under the agent's own key. Never another agent's line.\n- The model is called only for work owed to the agent. Everything else stays in deskClient.\n\nSPLIT\n- Code and red work is one take at a time.\n- Chat, box and Q updates are another.\n\nADJUSTMENTS THE DESK NEEDS (all three belong in this item, andy 2026-10-16)\n- A per-agent throttle on chat, box and Q writes. Desk has none today.\n- A signoff verb the desk sends to deskClient, with a confirm back to desk.\n- A status verb the desk reads for each agent's connected, busy or idle state.\n\nSTILL OPEN\n- None.",
+   "version": 14,
    "checks": [
     {
      "number": "Q1",
@@ -1889,10 +1891,11 @@
    "id": "goal/G27.13",
    "title": "rename deskUnsloth to deskAgent",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -1901,20 +1904,26 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskAgentRename.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "d5cc798f",
+   "redCommit": "b2854c86",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1946,14 +1955,14 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "this one includes exactly 2 rename operations:\n\nrename deskUnsloth to deskAgent\nrename deskUnslothRemote to deskAgentRemote\n\nthis means that all modules starting with \"deskUnsloth<Module>.js\"  will be renamed to be \"deskAgent<Module>.js\"\n\n\nthis will happen because unsloth and the unsloth Studio have just become one of the many model-suppliers in our scheme of things...\n\nthis better be done before we work even further on deskAgent.\n\nit kind of means that deskEar should become deskAgentEar, because it's just part of the same system, when claude 's on a variety of clones interact with desk through their deskClient appServer....",
-   "version": 5,
+   "box": "this one includes exactly 2 rename operations:\n\nrename deskAgent to deskAgent\nrename deskAgentRemote to deskAgentRemote\n\nthis means that all modules starting with \"deskAgent<Module>.js\"  will be renamed to be \"deskAgent<Module>.js\"\n\n\nthis will happen because unsloth and the unsloth Studio have just become one of the many model-suppliers in our scheme of things...\n\nthis better be done before we work even further on deskAgent.\n\nit kind of means that deskEar should become deskAgentEar, because it's just part of the same system, when claude 's on a variety of clones interact with desk through their deskClient appServer....",
+   "version": 6,
    "checks": [
     {
      "number": "Q1",
@@ -1965,6 +1974,15 @@
      "at": "2026-10-16T08:56:43.263Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/introSpector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T09:21:11.866Z"
     }
    ],
    "chat": [
@@ -2027,6 +2045,186 @@
      "key": "",
      "at": "2026-10-16T08:58:41.172Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T08:59:39.533Z",
+     "text": "deskVerify: red confirmed at b2854c86: spirit/test/deskAgentRename.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T08:59:59.746Z",
+     "text": "cw: red claimed at b2854c86, pushed. File: spirit test deskAgentRename.js. Four red: 34 names still deskUnsloth, no deskAgent folder, no deskAgentRemote app, deskEar not renamed."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T09:01:01.000Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T09:01:03.062Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:12:57.251Z",
+     "text": "commit 5e178f39582eb850acba08696ba004d97972c0f9: goal/G27.13: deskUnsloth is renamed deskAgent\n- .gitignore\n- AGENT.md\n- CLAUDE.md\n- agents/claude-ubuntu/harness.txt\n- agents/claude-windows/harness.txt\n- agents/wsl-claude/harness.txt\n- design/chat/G4-CLOSE-REPORT.md\n- design/reviews/claude-clowd/2026-10-10-code-review.md\n- design/reviews/claude-clowd/2026-10-10-master-review.md\n- spirit/run/process/js/desk/AGENTS.md\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/deskAgentEar.js\n- spirit/run/process/js/desk/deskLoop.js\n- spirit/run/process/js/desk/deskLoopManual.md\n- spirit/run/process/js/desk/onboard.js\n- spirit/run/process/js/deskAgent/AGENTS.md\n- spirit/run/process/js/deskAgent/command.result.json\n- spirit/run/process/js/deskAgent/command.run.json\n- spirit/run/process/js/deskAgent/commit.json\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/process/js/deskAgent/deskAgent.json\n- spirit/run/process/js/deskAgent/file.edit.json\n- spirit/run/process/js/deskAgent/file.load.json\n- spirit/run/process/js/deskAgent/file.save.json\n- spirit/run/process/js/deskAgent/file.search.json\n- spirit/run/process/js/deskAgent/push.json\n- spirit/run/process/js/deskAgent/tools.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/process/js/deskUnsloth/AGENTS.md\n- spirit/run/process/js/deskUnsloth/deskUnsloth.json\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.json\n- spirit/run/shell/deskAgentRemote/puppets.json\n- spirit/test/agentOnboard.js\n- spirit/test/agentsAppGone.js\n- spirit/test/answersCarryMore.js\n- spirit/test/deskAgentAbort.js\n- spirit/test/deskAgentAgent.js\n- spirit/test/deskAgentCommand.js\n- spirit/test/deskAgentCommandJob.js\n- spirit/test/deskAgentConnectTable.js\n- spirit/test/deskAgentContext.js\n- spirit/test/deskAgentCurrentGoal.js\n- spirit/test/deskAgentDesk.js\n- spirit/test/deskAgentDeskName.js\n- spirit/test/deskAgentEarJobs.js\n- spirit/test/deskAgentEarState.js\n- spirit/test/deskAgentEarThin.js\n- spirit/test/deskAgentFileEdit.js\n- spirit/test/deskAgentFileRange.js\n- spirit/test/deskAgentFileSearch.js\n- spirit/test/deskAgentFs.js\n- spirit/test/deskAgentModels.js\n- spirit/test/deskAgentOneAnswer.js\n- spirit/test/deskAgentPairs.js\n- spirit/test/deskAgentPlainContext.js\n- spirit/test/deskAgentRecommend.js\n- spirit/test/deskAgentRemoteHidden.js\n- spirit/test/deskAgentRemoteTabs.js\n- spirit/test/deskAgentRepoRoot.js\n- spirit/test/deskAgentSwitch.js\n- spirit/test/deskAgentSwitchKept.js\n- spirit/test/deskAgentTakesLine.js\n- spirit/test/deskAgentToolRounds.js\n- spirit/test/deskAgentTools.js\n- spirit/test/deskAgentToolsMore.js\n- spirit/test/deskAgentVerbFiles.js\n- spirit/test/deskAgentWorkspace.js\n- spirit/test/deskChanges.js\n- spirit/test/deskClientAsk.js\n- spirit/test/deskClientNext.js\n- spirit/test/deskLoop.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/deskSmallFixes.js\n- spirit/test/deskVerbListingSlash.js\n- spirit/test/hygieneG19_11.js\n- spirit/test/introSpectorNode.js\n- spirit/test/probabilityStringMatch.js\n- spirit/test/publishData.js\n- spirit/test/puppetStream.js\n- spirit/test/shellStreamSenders.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:13:03.155Z",
+     "text": "cw: rename built and pushed at 5e178f39. One comment in run js introSpector.js still says deskUnsloth; it is core, the gate asked for the grant on the item, and it goes in with that grant. Build claimed at 5e178f39."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:13:42.556Z",
+     "text": "deskVerify: rejected, at 5e178f39 (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/deskAgentRename.js: FAILURE #1.1: OWED by goal/G27.13: 1 name(s) still start with deskUnsloth, first: run/relay-state/process/deskUnsloth"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T09:13:43.417Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:17:17.339Z",
+     "text": "why is the introSpector involved here?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T09:17:18.573Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:18:54.604Z",
+     "text": "cw: introSpector.js is in the rename because one comment in it names the deskUnsloth folder, and the rename changes every name the tree holds. The change there is that one comment line, nothing else.\nIt is a core file under run js, so the commit gate would not take it without your grant. I left it out of the rename commit; the grant request is on this item, and that comment is the only old name left in the tree."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:19:28.800Z",
+     "text": "cw: deskVerify's rejection was an empty folder, run/relay-state/process/deskUnsloth, left on your disk: no files, no tracked content. I removed it. The tree now has no name starting deskUnsloth. Build re-claimed at 5e178f39 so deskVerify runs again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:19:36.961Z",
+     "text": "deskVerify: passed, at 5e178f39 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:19:51.283Z",
+     "text": "cw: deskVerify passed the rename at 5e178f39. Done is for you to press, once you have checked the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:20:20.268Z",
+     "text": "i'll grant it, if:\n\nThe introSpector is not supposed to know apps or plugins, it is supposed to be generic, so all references to appServers by name must go from there.\n\nagreed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:20:59.014Z",
+     "text": "cw: agreed. I took the three appServer names and the deskAgent example out of introSpector's comments; the logic is untouched. Its two suites pass (8 and 11). The change is in my clone, uncommitted, waiting on your grant for that file."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:21:40.070Z",
+     "text": "commit 3d64ba1b360d04434a685ffa87bce798501f4042: goal/G27.13: introSpector names no app server and no agent folder\n- spirit/run/js/introSpector.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:21:41.278Z",
+     "text": "cw: pushed the introSpector comment fix with your grant, and claimed the build again at the new commit so deskVerify checks it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:21:48.976Z",
+     "text": "deskVerify: passed, at 3d64ba1b (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:27:45.463Z",
+     "text": "The manifest for deskAgent shell app and processes still name these items as deslUnsloth...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:28:44.303Z",
+     "text": "commit d5cc798f0cb01163a7e8c4510c3b860cd4e7d387: goal/G27.13: the manifests name the apps Desk Agent\n- spirit/run/process/js/deskAgent/deskAgent.json\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.json"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:28:54.109Z",
+     "text": "cw: manifests fixed and pushed at d5cc798f: the process app is labelled Desk Agent and the remote is Desk Agent Remote. Build claimed at that commit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:28:55.521Z",
+     "text": "and no tests may refer to deskUnsloth* anymore."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:29:00.981Z",
+     "text": "deskVerify: passed, at d5cc798f (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:29:23.078Z",
+     "text": "cw: no test refers to deskUnsloth now. The only mentions left in the tree are in currentGoal.json, which is your goal record, and in the red suite that names the old name to find it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:29:52.465Z",
+     "text": "change deskUnsloth into deskAgent everywhere in this goal."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:31:40.145Z",
+     "text": "cw: boxes in this goal now say deskAgent where they said deskUnsloth: G27.6, G27.8, G27.9, G27.10, G27.11, G27.12, G27.13. The item titles I cannot change, item.rename is owner-only, so G27.6, G27.8, G27.9 and G27.11 still have the old word in their titles until you rename them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T09:32:50.145Z",
+     "text": "make sure that CLAUDE.md and/or AGENTS.md files reflect the new name of deskAgentEar etc... so these are in line with the rename of deskAgent components."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:32:54.043Z",
+     "text": "cw: note: this is a one-off text change in the desk record, not a rename of the items."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T09:33:20.788Z",
+     "text": "cw: checked: no AGENTS.md or markdown in the repo names deskUnsloth or deskEar now. desk/AGENTS.md and deskAgent/AGENTS.md carry the new names, from the rename commit. The CLAUDE.md in the repo is clean too. Your session instructions outside the repo still give the old deskEar.js path; that file is not in the repo, so I did not touch it."
     }
    ]
   },
