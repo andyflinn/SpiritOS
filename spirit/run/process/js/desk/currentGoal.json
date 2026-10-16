@@ -1,5 +1,5 @@
 {
- "change": 65055,
+ "change": 65064,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -51,7 +51,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 9,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -946,10 +946,9 @@
    "id": "goal/G27.6",
    "title": "deskAgent manages what its agent (Levant) deals with.",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -1918,6 +1917,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T12:06:39.282Z",
      "text": "cw: you are right: deskClient forwarded every profile change of yours, including Levant's. Pushed e24cdfaa: a profile change is handed on only when it concerns this agent. A restart is needed on your node to load it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T12:08:59.570Z",
+     "text": "cw: Done recorded. Nothing else open on this item."
     }
    ]
   },
