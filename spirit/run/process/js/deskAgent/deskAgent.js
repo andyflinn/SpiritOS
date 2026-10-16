@@ -1607,12 +1607,14 @@ function setConnected(on) {
     waiting.length = 0;
     publishState();
     say(PERSONA + ' leaves the desk: signing off');
+    askNode({ deskClient: { signoff: { agent: PERSONA } } }).catch(function (e) { say('deskClient could not sign off: ' + ((e && e.message) || e)); });
     return deskWrite('switch', 'signoff', {}).then(function () { return { connected: false }; }, function (e) {
       say('the signoff could not be said: ' + e.message);
       return { connected: false };
     });
   }
   connected = true;
+  askNode({ deskClient: { clearSignoff: { agent: PERSONA } } }).catch(function (e) { say('deskClient could not clear the signoff: ' + ((e && e.message) || e)); });
   keepSwitch(true);
   caughtUp = false;
   publishState();

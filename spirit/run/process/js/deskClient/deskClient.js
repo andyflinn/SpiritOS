@@ -479,6 +479,8 @@ appServer.serve({
     request: { verb: '', json: '' }, reply: {},
     handler: function (a, caller) {
       ownerOnly(caller);
+      // A SIGNED-OFF AGENT WRITES NOTHING (goal/G27.12): the desk's signoff holds here too, not only on the desk's list (Andy 2026-10-16).
+      if (agentState === 'signed off') throw refused('signed-off', { why: 'this agent is signed off' });
       const to = deskKey();
       let args = null;
       try { args = JSON.parse(a.json || '{}'); } catch (e) { args = null; }
