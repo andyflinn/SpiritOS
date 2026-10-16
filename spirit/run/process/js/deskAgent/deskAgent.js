@@ -107,7 +107,8 @@ function writeConnections() {
 // a call without it, so the configure tab had no dropdown; OpenAI and the studio ignore it. A fixed value.
 const ANTHROPIC_VERSION = '2023-06-01';
 function pairHeaders(pair) {
-  const headers = { Authorization: 'Bearer ' + String((pair && pair.key) || ''), 'anthropic-version': ANTHROPIC_VERSION };
+  // x-api-key too (goal/G27.6, Andy 2026-10-16): Anthropic authenticates with it, not the bearer; other servers ignore it.
+  const headers = { Authorization: 'Bearer ' + String((pair && pair.key) || ''), 'x-api-key': String((pair && pair.key) || ''), 'anthropic-version': ANTHROPIC_VERSION };
   if (pair && pair.workspace) headers['anthropic-workspace-id'] = String(pair.workspace);
   return headers;
 }
