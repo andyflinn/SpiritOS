@@ -513,9 +513,22 @@ function argumentsOf(call) {
   try { const a = JSON.parse(String((call && call.function && call.function.arguments) || '{}')); return a && typeof a === 'object' ? a : {}; } catch (e) { return {}; }
 }
 
+// DESIGN MODE WITHHOLDS THE WRITE TOOLS (goal/G27.6 R3, R5; Andy 2026-10-16). The goal's design flag is read from the
+// desk's goal rows when the answer is made, so the tool set follows the goal's state, not a push. A write tool is
+// file.save, file.edit, commit and push; while any current goal is in design, or the desk cannot say, none of them is given.
+const WRITE_TOOLS = ['deskAgent_file_save', 'deskAgent_file_edit', 'deskAgent_commit', 'deskAgent_push'];
+function designNow() {
+  return askNode({ deskClient: { desk: { verb: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) } } })
+    .then(function (r) {
+      const items = (r && r.items) || [];
+      return items.some(function (p) { try { return JSON.parse(p.label).design === true; } catch (e) { return false; } });
+    }, function () { return true; });
+}
+
 // `flight` is the answer in the making (takeOff), so abort reaches every round of it and the log names whom it is for.
 function askModel(messages, flight, onTool) {
-  return describeAll().then(function (list) {
+  return Promise.all([describeAll(), designNow()]).then(function (both) {
+    const list = both[1] ? both[0].filter(function (t) { return WRITE_TOOLS.indexOf(t && t.function && t.function.name) === -1; }) : both[0];
     const all = messages.slice();
     // The note rides with the rules, in the system message, only when there is a tool to speak of.
     if (list.length && all.length && all[0].role === 'system') all[0] = { role: 'system', content: String(all[0].content || '') + '\n\n' + TOOLS_NOTE };
