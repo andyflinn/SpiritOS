@@ -1,5 +1,5 @@
 {
- "change": 63980,
+ "change": 64083,
  "line": 8510,
  "goal": "goal/G28",
  "items": [
@@ -15,7 +15,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G28.1",
     "goal/G28.2"
    ],
    "go": false,
@@ -46,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -110,10 +109,11 @@
    "id": "goal/G28.1",
    "title": "Natter is fucked up",
    "goal": "goal/G28",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G28"
@@ -122,20 +122,26 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/relayAdd.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "bc1d190b",
+   "redCommit": "1271d14a",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -172,8 +178,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Natter: adding a relay\n\nDECIDED (Andy, 2026-10-16)\n- A relay shows in Natter's list whether or not this node is a member; the green dot shows the connection status.\n- Add adds a row and opens nothing. Details, claim and invite redeem open from a row click, as before goal/G16.3.\n- Natter may refuse an add only for: no card answered by the relay, an invalid or empty private label, or a bad answer to the card call. A good card over peerPost adds the relay.\n- The goal/G16.3 change to Add (claim is what lists a relay) was not authorized; there is no earlier ruling on this.\n- relay.add {url, label} is approved as the new node verb (Q1), no peer review.\n\nTREE (cw, at 4a655fef)\n- Natter reads no json file; the list is the node's, read through relay.search, which answers only relays peerPost holds a seat or a stream on. A typed url never reaches the list.\n- Add today opens natterDetails on the typed url instead of adding. Before d35aa3e6 Add wrote {label, url} into Natter's own relays.json with no card check and no verb.\n\nSHAPE\n- Node verb relay.add {url, label}: fetches the relay's card over peerPost; a good card lists the relay as not joined, dot off until it connects; otherwise refused with the reason.\n- Natter's Add calls relay.add, the row appears, the private label stays Natter's caption, no dialog.\n\nRED\n- relay.add with a relay answering its card lists it (relay.search shows it, not joined).\n- No card, empty label or bad answer adds nothing and says why.\n- Natter's Add opens no dialog.",
-   "version": 11,
+   "box": "Natter: adding a relay\n\nDECIDED (Andy, 2026-10-16)\n- A relay shows in Natter's list whether or not this node is a member; the green dot shows the connection status.\n- Add adds a row and opens nothing. Details, claim and invite redeem open from a row click, as before goal/G16.3.\n- Natter may refuse an add only for: no card answered by the relay, an invalid or empty private label, or a bad answer to the card call. A good card over peerPost adds the relay.\n- The goal/G16.3 change to Add (claim is what lists a relay) was not authorized; there is no earlier ruling on this.\n- relay.add {url, label} is approved as the new node verb (Q1), no peer review.\n\nTREE (cw, at 4a655fef)\n- Natter reads no json file; the list is the node's, read through relay.search, which answers only relays peerPost holds a seat or a stream on. A typed url never reaches the list.\n- Add today opens natterDetails on the typed url instead of adding. Before d35aa3e6 Add wrote {label, url} into Natter's own relays.json with no card check and no verb.\n\nSHAPE\n- Node verb relay.add {url, label}: fetches the relay's card over peerPost; a good card lists the relay as not joined, dot off until it connects; otherwise refused with the reason.\n- Natter's Add calls relay.add, the row appears, the private label stays Natter's caption, no dialog.\n\nRED\n- relay.add with a relay answering its card lists it (relay.search shows it, not joined).\n- No card, empty label or bad answer adds nothing and says why.\n- Natter's Add opens no dialog.\n\nRULING (andy, 2026-10-16): \"a stream can only be had with a seat, so if a natter detail knows there is no seat, it MUST offer the redeem-invite interface. simple. that how it always worked until somebody ruined all that logic without authorization.\"",
+   "version": 12,
    "checks": [
     {
      "number": "Q1",
@@ -185,6 +191,42 @@
      "at": "2026-10-16T06:28:43.101Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T07:04:43.698Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/hub.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T07:04:45.850Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: shell/natter/natter.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T07:04:47.949Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-16T07:19:44.963Z"
     }
    ],
    "chat": [
@@ -325,6 +367,210 @@
      "key": "",
      "at": "2026-10-16T07:02:04.764Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:03:08.347Z",
+     "text": "commit 1271d14a8ef90a0aece0a2fae75f7f26f60d15b1: goal/G28.1: red, relay.add\n- spirit/test/relayAdd.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:03:12.303Z",
+     "text": "cw: red claimed at 1271d14a, pushed. File: spirit test relayAdd.js. Four red: no relay.add verb, no empty-label refusal, Add does not call relay.add, Add still opens natterDetails through natterOpenRelay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:03:18.219Z",
+     "text": "deskVerify: red not confirmed at 1271d14a: the item lists no test file"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:03:32.304Z",
+     "text": "cw: the suite is now listed on the item (relayAdd.js) and the red is claimed again at 1271d14a."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:03:38.428Z",
+     "text": "deskVerify: red confirmed at 1271d14a: spirit/test/relayAdd.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T07:03:49.413Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T07:03:51.538Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:03:54.982Z",
+     "text": "cw: red confirmed at 1271d14a, and the red phase is done. Build is next, and it waits on an agent to take it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:04:12.816Z",
+     "text": "cw: the build of relay.add needs three core grants I have not been given: js/server.js (the verb), js/hub.js (the handler), shell/natter/natter.js (Add). Grants are asked on the item; nothing is built until you grant them."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T07:04:48.625Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:05:18.657Z",
+     "text": "go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:07:24.895Z",
+     "text": "commit ddfe32cd7de7ca12782e16cc72b2b328aa2b0f2f: goal/G28.1: relay.add, and Natter's Add adds a row\n- spirit/run/js/hub.js\n- spirit/run/js/server.js\n- spirit/run/shell/natter/natter.js\n- spirit/test/relayAdd.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:07:29.087Z",
+     "text": "cw: build claimed at ddfe32cd, pushed. Files: run js hub.js (relayAdd: card over peerPost, refusals), run js server.js (relay.add verb), shell natter natter.js (Add calls relay.add, opens nothing), test relayAdd.js (4 green). The relayAdd.js Add check now ends at the row-click handler, because that handler may open details; the old window ran into it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:07:37.804Z",
+     "text": "deskVerify: passed, at ddfe32cd (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-16T07:07:38.600Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:07:58.183Z",
+     "text": "cw: build phase and verify passed at ddfe32cd; the item offers Done. Done is yours to press."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:08:19.233Z",
+     "text": "deskVerify: passed, at ddfe32cd (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:10:52.740Z",
+     "text": "on 11111 WHY on fucking earth does the natterDetail not offer the invite redeem interface anymore?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:11:15.573Z",
+     "text": "cw: the redeem form lives in the Claim panel, and that panel is drawn only for a relay that answered this node just now and where the node holds no seat (natterDetails ndClaimHtml, lines 613-620). It is hidden for an owned or claimed relay, and for a relay that gave no status.\nI did not change natterDetails in ddfe32cd, so this gate predates the build.\nWhich relay URL is on the screen, and does it show as claimed or as not answering?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:11:21.755Z",
+     "text": "WHO THE FUCK DELETED THAT?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:11:50.184Z",
+     "text": "cw: I cannot find a deletion. The redeem form (nd-claim-invite) is in natterDetails.js at HEAD, three matches, same as before the last change to that file (113d1327, G22.6), which removed only the partner picker.\nThe form is drawn only in the Claim panel, which is hidden for a relay you own, a relay you are already seated on, or one that is not answering now.\nWhich relay is on screen, and is it owned, seated or silent?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:12:45.207Z",
+     "text": "the problem is the relay blocks a repeat caller of the card function, if it doesn't know the caller."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:13:21.205Z",
+     "text": "cw: agreed, that is the mechanism. relay.js lines 318 to 334: a stranger address that asks again inside its ban gets 429, and the ban doubles each time. Each open of natterDetails asks the relay card again, so repeat opens get refused.\nWhen that ask fails, ownerBadge reads no status (ownerBadge.js line 386, status 0), and natterDetails hides the Claim panel that holds the redeem form (ndClaimHtml, natterDetails.js lines 613 to 620).\nOptions, not built: the node reads the card it already pinned and asks again only on a new relay, or the Claim panel shows for a silent relay. Which do you want?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:13:41.536Z",
+     "text": "thing is why did you have to repeat the fucking call? when that relay should now be in the shadow roll?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:14:04.565Z",
+     "text": "cw: you are right, and my last line was wrong. The list does not ask the relay: relaySummary (hub.js lines 2613 to 2616) gives status 200 only when a stream to that relay is held, else 0. So no repeat card call is made on open.\nThe real gate is natterDetails ndClaimHtml (lines 613 to 620): the Claim panel with the redeem form shows only when the relay answers status above 0, which means a live stream. A relay that is listed but has no stream now hides it.\nShould the Claim panel show for a listed relay that has no stream, or should the redeem form move elsewhere?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:14:48.086Z",
+     "text": "how could you fucking redeem an invite when you already have a fucking stream?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:15:04.071Z",
+     "text": "cw: I may have it backwards, so I will check against the code before I answer. Reading ndClaimHtml again: the Claim panel with the redeem form shows when the relay is not owned or claimed and it has status above 0, meaning a stream is held. So a stream is what shows the form, not what hides it.\nWhich relay, and what does its row say: a stream, a seat, or neither? Then I can point at the line that hides it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:17:52.708Z",
+     "text": "a stream can only be had with a seat, so if a natter detail knows there is no seat, it MUST offer the redeem-invite interface. simple. that how it always worked until somebody ruined all that logic without authorization."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:18:13.447Z",
+     "text": "cw: ruling in the box verbatim. The gate I read (ndClaimHtml, natterDetails lines 613 to 620) hides the redeem form when no stream is held, which is the wrong test for a seat. natterDetails is an intrinsic app, so the fix needs your grant on shell/natterDetails/natterDetails.js, and a red first. Grant it, and I write the red?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:18:43.544Z",
+     "text": "fix it. now. no reds nothing. just fix it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:19:46.067Z",
+     "text": "cw: fixed in my clone and green: the redeem form shows for a relay with no seat, answering or not. The commit gate refused it: natterDetails.js is core and has no grant on this item. The grant request is on the item now. Grant it and I commit and push at once."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:20:11.771Z",
+     "text": "commit bc1d190b0b0b0436fe5c367e4cf7d645381d8e7a: goal/G28.1: the redeem form is offered where there is no seat\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/natterDetails.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T07:20:16.074Z",
+     "text": "cw: pushed bc1d190b: the redeem form shows where there is no seat, answering or not (natterDetails.js, and its suite). Build claimed at that commit; the one suite that asserted the old rule now asserts yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T07:20:21.845Z",
+     "text": "deskVerify: passed, at bc1d190b (pulled). 1 suite ran green."
     }
    ]
   },
