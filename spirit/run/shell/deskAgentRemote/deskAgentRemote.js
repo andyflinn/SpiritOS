@@ -366,7 +366,17 @@ function deskAgentRemoteDrawModels() {
     return;
   }
   var models = got.models;
-  if (!models.length) { box.innerHTML = '<div class="job-manifest-note">the studio has no model cached</div>'; return; }
+  // THE PICKER ALWAYS SHOWS (goal/G27.6, Andy 2026-10-16): with a provider set and no list yet, the select is drawn with
+  // one placeholder and the refresh stays beside it, so the picker appears as soon as the list is fetched.
+  if (!models.length) {
+    box.innerHTML = '<div class="start-job-form card">' +
+      '<button type="button" id="dur-refresh" title="ask the model list again">' + deskAgentRemoteIcon('REFRESH') + '</button>' +
+      '<label class="field-label grow">Model<select id="dur-model" disabled><option value="">no models listed yet: refresh</option></select></label>' +
+      '</div><div class="job-manifest-note">the studio has no model cached</div>';
+    var emptyRefresh = document.getElementById('dur-refresh');
+    if (emptyRefresh) emptyRefresh.addEventListener('click', function () { deskAgentRemoteLoadModels(); });
+    return;
+  }
   var loadedOne = models.filter(function (m) { return m.loaded; })[0];
   var chosen = models.some(function (m) { return deskAgentRemoteKey(m) === deskAgentRemoteChosen; }) ? deskAgentRemoteChosen
     : deskAgentRemoteKey(loadedOne || models[0]);
