@@ -480,8 +480,11 @@ function deskAgentRemoteLoadModels() {
     deskAgentRemoteDrawAll();
     return said;
   }, function (e) {
+    // THE REFRESH SAYS WHY IT FAILED (goal/G27.6, Andy 2026-10-16: the refresh 'does nothing'): the reason is shown, not thrown away.
     deskAgentRemoteModelsInFlight = false;
-    throw e;
+    deskAgentRemoteSay('the model list could not be read: ' + String((e && e.message) || 'no answer'), true);
+    deskAgentRemoteDrawModels();
+    return null;
   });
 }
 
