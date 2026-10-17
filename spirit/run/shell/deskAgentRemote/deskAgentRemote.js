@@ -360,10 +360,23 @@ function deskAgentRemoteDrawModels() {
   if (!box) return;
   var escape = deskAgentRemoteApi && deskAgentRemoteApi.escapeHtml ? deskAgentRemoteApi.escapeHtml : function (s) { return String(s); };
   var got = deskAgentRemoteModels;
+  // THE SEARCH SHOWS WHATEVER THE ANSWER (goal/G27.17). Andy, 2026-10-17: "why would the search be conditional on
+  // model-provider?" It never was: it was drawn only with a list, so a provider not answering (Unsloth Studio down) or
+  // nothing cached yet left the picker with no search box. Now the box and the refresh are drawn in every case.
+  var bare = '<div class="start-job-form card">' +
+    '<button type="button" id="dur-refresh" title="ask the model list again">' + deskAgentRemoteIcon('REFRESH') + '</button>' +
+    '<input type="search" id="dur-model-search" class="grow" placeholder="search models" value="' + escape(deskAgentRemoteSearch) + '">' +
+    '</div>';
+  var wireBare = function () {
+    var r = document.getElementById('dur-refresh');
+    if (r) r.addEventListener('click', function () { deskAgentRemoteLoadModels(); });
+    deskAgentRemoteWireSearch();
+  };
   if (!got || got.ok === false || !Array.isArray(got.models)) {
-    box.innerHTML = got && got.ok === false
-      ? '<div class="job-start-error">the studio could not be read: ' + escape(deskAgentRemoteWhy(got, 'no answer')) + '</div>'
-      : '';
+    box.innerHTML = bare + (got && got.ok === false
+      ? '<div class="job-start-error">the model list could not be read: ' + escape(deskAgentRemoteWhy(got, 'no answer')) + '</div>'
+      : '');
+    wireBare();
     return;
   }
   var models = got.models;
@@ -371,12 +384,10 @@ function deskAgentRemoteDrawModels() {
   // THE PICKER ALWAYS SHOWS (goal/G27.6, Andy 2026-10-16): with a provider set and no list yet, the select is drawn with
   // one placeholder and the refresh stays beside it, so the picker appears as soon as the list is fetched.
   if (!models.length && !searching) {
-    box.innerHTML = '<div class="start-job-form card">' +
-      '<button type="button" id="dur-refresh" title="ask the model list again">' + deskAgentRemoteIcon('REFRESH') + '</button>' +
+    box.innerHTML = bare + '<div class="start-job-form card">' +
       '<label class="field-label grow">Model<select id="dur-model" disabled><option value="">no models listed yet: refresh</option></select></label>' +
-      '</div><div class="job-manifest-note">the studio has no model cached</div>';
-    var emptyRefresh = document.getElementById('dur-refresh');
-    if (emptyRefresh) emptyRefresh.addEventListener('click', function () { deskAgentRemoteLoadModels(); });
+      '</div><div class="job-manifest-note">the provider has no model listed yet</div>';
+    wireBare();
     return;
   }
   // THE SEARCH AND THE FILTERS (goal/G27.8, R4). Andy, 2026-10-17: "a model search above the picker, with filter icons
