@@ -111,7 +111,7 @@
     return answer;
   }
   // DRAWN FROM THE CACHE (Andy, 2026-10-17: "and the UI still doesn't cache every search result, and then display what
-  // matches the search term among all cached rows...."): every cached line the words and the ✅/❌ filter match, and
+  // matches the search term among all cached rows...."): every cached line the ✅/❌ filter lets through, and
   // the lines the last answer brought (answer), ranked by THE SAME SEARCH CODE AS THE SERVERS (Andy: "why down't the UI
   // run the exact same search code in the shell? ... it's a pattern...."): probabilityStringMatch, the very one
   // deskVerify ranks with, the lines seated in a probabilityBucket, best first; with no words, newest first. The
@@ -129,10 +129,13 @@
       if (outcome === 'red' && !g.red) return -1;
       if (outcome === 'green' && g.red) return -1;
       if (!text) return 0;
-      if (bySuite) return g.suite === text ? 1 : -1;
+      // ALL ROWS, BEST ON TOP (Andy, 2026-10-17: "that way you can display ALL rows since the best maches will always
+      // be on top.."): the words rank, never hide; a line they do not match scores 0 and sits below. Only the ✅/❌
+      // filter above leaves lines out.
+      if (bySuite) return g.suite === text ? 1 : 0;
       var hay = g.suite + ' ' + g.what;
-      if (typeof P.probabilityStringMatch === 'function') { var p = P.probabilityStringMatch(text, hay); return p > 0 ? p : -1; }
-      return words.every(function (w) { return hay.toLowerCase().indexOf(w) !== -1; }) ? 0.5 : -1;
+      if (typeof P.probabilityStringMatch === 'function') { var p = P.probabilityStringMatch(text, hay); return p > 0 ? p : 0; }
+      return words.every(function (w) { return hay.toLowerCase().indexOf(w) !== -1; }) ? 0.5 : 0;
     };
     var newestFirst = Object.keys(cache).map(function (k) { return { k: k, g: cache[k] }; })
       .sort(function (a, b) { return String(b.g.at).localeCompare(String(a.g.at)); });
@@ -148,8 +151,9 @@
     // THE SEARCH'S COUNT, said as such (Andy, 2026-10-17: "what I want to know is TOTAL OF ALL FAILURES. period"): the
     // size of the problem is the Now line above; this counts only what matches the search.
     var count = document.getElementById('fallout-count');
-    var n = Math.max(Number(total) || 0, groups.length);
-    if (count) count.textContent = n + ' ' + (outcome === 'red' ? '❌' : outcome === 'green' ? '✅' : '') + ' match this search' + (n > groups.length ? ', the ' + groups.length + ' best shown' : '');
+    var matched = text ? seated.filter(function (x) { return x.p > 0; }).length : groups.length;
+    var n = Math.max(Number(total) || 0, matched);
+    if (count) count.textContent = n + ' ' + (outcome === 'red' ? '❌' : outcome === 'green' ? '✅' : '') + ' match this search' + (n > matched ? ', the ' + matched + ' best on top' : '') + (groups.length > matched ? '; ' + groups.length + ' lines shown in all' : '');
     var el = document.getElementById('fallout-reds');
     if (!el) return;
     el.innerHTML = groups.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
