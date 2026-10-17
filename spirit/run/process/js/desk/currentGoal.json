@@ -1,5 +1,5 @@
 {
- "change": 66709,
+ "change": 66730,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -14,7 +14,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G27.14"
+    "goal/G27.14",
+    "goal/G27.19"
    ],
    "go": false,
    "alone": false,
@@ -50,9 +51,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1035,7 +1034,7 @@
    "title": "Desk Stacks pane: open the door in a Dialog, not inline",
    "goal": "goal/G27",
    "status": "deskVerify passed",
-   "with": "claude-windows",
+   "with": "",
    "buttons": [
     "done",
     "delete"
@@ -1515,6 +1514,36 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-17T05:17:07.327Z",
      "text": "Reopen only undid Done: the item is back at deskVerify passed with no phase, and phase.take red is still refused.\nThe desk has no way to start a new red cycle on a verified item; that is a desk gap.\nSo D8 and D9 need a new item, which only you can add; I will not add one."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:18:15.666Z",
+     "text": "After close and reopen it is still deskVerify passed with no phase, so red is still not offered to me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T05:20:02.012Z",
+     "text": "shit. the desk should allow any restart of phases as long as 'done' is not pressed. how on earth can my complaints about the item find a solution without creating a shitload of new items? Just because 'Done' is offered doesn't mean it's fucking done...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:20:28.663Z",
+     "text": "Agreed: today mayTake in process desk.js offers red only while the phase is red or verify, so a verify pass ends the cycle before Done.\nThe fix: while Done is not pressed, red is offered again on a verified item, and G27.2 then takes D8 and D9 without a new item.\nNo open G27 item fits, so it needs one; proposed title: \"Desk: phases restart until Done is pressed\". Only on your add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T05:20:52.416Z",
+     "text": "create a new item in this goal: phases remain re-takable until done is pressed by the user."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:21:22.930Z",
+     "text": "Added as goal/G27.19, its box states the rule; it waits for your Go."
     }
    ]
   },
@@ -6453,6 +6482,93 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-17T05:10:23.260Z",
      "text": "You are right: I read your yes to option b as consent to add, and it was not. My mistake.\nFrom now on an item is added only on your literal add it.\nI released this item; it is yours to delete."
+    }
+   ]
+  },
+  {
+   "id": "goal/G27.19",
+   "title": "phases remain re-takable until done is pressed by the user",
+   "goal": "goal/G27",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "An item phases remain re-takable until the user presses Done: a verify pass does not end the cycle, and while Done is not pressed red is offered again, so a complaint about an item is answered inside that item, not with new items.\n- Today mayTake in spirit/run/process/js/desk/desk.js offers red only while the phase is red or verify; after a verify pass the phase is empty and every phase.take is refused as not offered, even after Reopen or close and reopen.\n- A new red on a verified item starts a fresh red, build, verify cycle under the same item, its Go standing.\n- First use: goal/G27.2 takes its D8 and D9 this way.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T05:21:31.694Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
