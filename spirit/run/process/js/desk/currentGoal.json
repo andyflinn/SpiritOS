@@ -1,5 +1,5 @@
 {
- "change": 67176,
+ "change": 67195,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -10,7 +10,6 @@
    "status": "reviewing",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,14 +46,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5870,11 +5867,9 @@
    "id": "goal/G27.14",
    "title": "new desk app plugin: \"Fallout\"",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -5882,17 +5877,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -5900,15 +5895,77 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
-   "names": {},
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Fallout is a new desk plugin application.\n\nthat new, permanent goal/plugin combination servers to deal with the fallout resulting for this: Goals only run the verifier in a goal-related scope for a goal to pass implementation, which is a good thing. It's a good thing because it will discard out-of-scope adjustments that need to be made because of a new world the achieved goal brings with it. This fallout may only become apparent/documented when a full run of the Verifier ends...\n\n- the Fallout goal is NEVER in design mode, and all its new items are \"code\" by default. \"Fallout\" items are code (by default) items without red \"phase\", because it is failing tests that cause their existence. when they pass a verifier test, and are 'Done' and 'Closed' they disappear from the\n\n- The \"Fallout\" tab will appear along it's siblings \"Team\" and \"Stacks\", it will display at the top a line showing the \"create blocking item\" form, for creating \"Fallout\" items.\n- The second row will break down \"Fallout\" into two \"Fallout\" tabs:\n- First tab: \"Reds\", it allows the searching of the verifier database 's failed tests. Searched with our new \"probability\" search modules.\n- The second tab \"Items\" displays a list of open Fallout items;\n- both tabs display the same \"Fallout\"-chat at the bottom\"\n\nThe working method is: find a group of reds in the verifier database, manually create an item to address a few, usually grouped by the suite(s) that failed them, so which tests to run for verification is implicit.\nanother way to work of is an item to adjust or remove the suite(s) that fail. or remove/modify the test that fails, this also will produce a code item.",
-   "version": 7,
+   "box": "NOW, THE REDUCED SCOPE (Andy, 2026-10-17: a Fallout app that searches reds in the verifier and shows a table of the tests that match the search term):\nF1. Fallout is a standard desk plugin with its own goal, plugin/fallout, and a Fallout tab under Apps beside Team, Stacks and Vision.\nF2. Its tab holds two inner tabs, Reds and Items. Reds holds one search box and one table: the text is searched over the verifier records of tests that are red now (deskVerify search, outcome red), and each match is a row: suite, test, the commit and time it went red, and its failure line.\nF3. The search goes through the plugin own verb, which asks this node deskVerify; the page reads no database of its own.\nF4. Items stays empty for now, saying so. Nothing else of the design below is built now: no items, no item form, no chat.\n\nLATER, THE FULL DESIGN (kept as it was):\nFallout is a new desk plugin application.\n\nthat new, permanent goal/plugin combination servers to deal with the fallout resulting for this: Goals only run the verifier in a goal-related scope for a goal to pass implementation, which is a good thing. It's a good thing because it will discard out-of-scope adjustments that need to be made because of a new world the achieved goal brings with it. This fallout may only become apparent/documented when a full run of the Verifier ends...\n\n- the Fallout goal is NEVER in design mode, and all its new items are \"code\" by default. \"Fallout\" items are code (by default) items without red \"phase\", because it is failing tests that cause their existence. when they pass a verifier test, and are 'Done' and 'Closed' they disappear from the\n\n- The \"Fallout\" tab will appear along it's siblings \"Team\" and \"Stacks\", it will display at the top a line showing the \"create blocking item\" form, for creating \"Fallout\" items.\n- The second row will break down \"Fallout\" into two \"Fallout\" tabs:\n- First tab: \"Reds\", it allows the searching of the verifier database 's failed tests. Searched with our new \"probability\" search modules.\n- The second tab \"Items\" displays a list of open Fallout items;\n- both tabs display the same \"Fallout\"-chat at the bottom\"\n\nThe working method is: find a group of reds in the verifier database, manually create an item to address a few, usually grouped by the suite(s) that failed them, so which tests to run for verification is implicit.\nanother way to work of is an item to adjust or remove the suite(s) that fail. or remove/modify the test that fails, this also will produce a code item.",
+   "version": 9,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:28:42.547Z",
+     "text": "can we reduce this one for now. I just want a Fallout app, that searches \"reds\" in verifier, and shows me a table of test items that match the search term. \n\ncan we temporarily reduce teh scope of this item info a verifier-search?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:29:25.267Z",
+     "text": "Yes. deskVerify already has a search over test records, filterable to reds by suite and test name, so the reduced app is small: a plugin verb asking deskVerify, and a tab with one search box and a table.\nThe box now starts with F1 to F4 for that, and keeps the full design below as later.\nOn your Go I build it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:31:23.416Z",
+     "text": "understood: \"deskVerify already has a search over test records\"\n\nthing is: i can't see it.....\n\nwe can leave the tabs inside this desk-app, we just don't fill the second tab yet.?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:31:52.968Z",
+     "text": "Right: the search lives in deskVerify with no screen yet; this app is that screen.\nYes to the tabs: F2 now has Reds and Items inside Fallout, and F4 keeps Items empty for now.\nOn your Go I build it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:32:20.075Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G27.15",
