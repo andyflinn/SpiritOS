@@ -1,5 +1,5 @@
 {
- "change": 66227,
+ "change": 66362,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -18,8 +18,7 @@
     "goal/G27.2",
     "goal/G27.3",
     "goal/G27.5",
-    "goal/G27.14",
-    "goal/G27.17"
+    "goal/G27.14"
    ],
    "go": false,
    "alone": false,
@@ -50,10 +49,8 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
-   "excluded": [
-    "ollama agent node"
-   ],
+   "waiting": 6,
+   "excluded": [],
    "live": [
     "claude-windows"
    ],
@@ -5338,10 +5335,11 @@
    "id": "goal/G27.17",
    "title": "deskAgent models travel as a bounded search",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -5350,21 +5348,112 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskAgent/deskAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentAbort.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentContext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentEffort.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentFileSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentLearnsContext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentModels.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentModelsSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentPairs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentPlainContext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentRecommend.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentRemoteTabs.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentRepoRoot.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentToolRounds.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentTools.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentWorkspace.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskSmallFixes.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "e8d91624",
+   "redCommit": "287f7875",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -5425,8 +5514,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskAgent models travel as a bounded search\n\nWhy (Andy, goal/G27.15 chat, 2026-10-17): on Levant node the console says \"puppet stream: process/js/deskAgent not posted: too big to tunnel\". deskAgent publishes one state object holding the whole model list and up to 8 KB of log; a puppet object must fit one tunnelled packet (PAYLOAD_MAX 22528, sealed and base64, so about 15 KB of state). With the OpenAI pair in use the list is hundreds of models, and the post is refused.\n\nRequirements (Andy: \"populate the model selector using search always\"; \"add the item\"):\nR1. deskAgent published state carries no model list, only the loaded model entry (small): the Remote reads it for the no-model-loaded warning, the load check and the chat title.\nR2. The Remote model picker is filled by a models search on deskAgent: the search box above the picker (goal/G27.8) is its text, the pressed filter icons its arguments.\nR3. The answer is a bounded bucket with a partial flag; when partial the picker says more models match and to narrow the search.\nR4. The loaded model always comes back, whatever the search.\nR5. The answer names which marks exist in the whole list, so the filter icons still show only what applies.\nR6. Cost, stated (rule/5): one ask per keystroke, through the owner door when the target is a puppet; nothing paced.\nR7. The search answer is bounded to what fits one tunnelled reply (about 15 KB), since a puppet answers through the owner door.\nDecided (Andy, 2026-10-17): the search, as specified, with the loaded model always part of the result; streaming picker items over the publish path is not used (the puppet stream keeps only the newest object per server).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, spirit/run/shell/deskAgentRemote/deskAgentRemote.js, a red suite, and the deskAgent suites that read models from the state.",
-   "version": 2,
+   "box": "deskAgent models travel as a bounded search\n\nWhy (Andy, goal/G27.15 chat, 2026-10-17): on Levant node the console says \"puppet stream: process/js/deskAgent not posted: too big to tunnel\". deskAgent publishes one state object holding the whole model list and up to 8 KB of log; a puppet object must fit one tunnelled packet (PAYLOAD_MAX 22528, sealed and base64, so about 15 KB of state). With the OpenAI pair in use the list is hundreds of models, and the post is refused.\n\nRequirements (Andy: \"populate the model selector using search always\"; \"add the item\"):\nR1. deskAgent published state carries no model list, only the loaded model entry (small): the Remote reads it for the no-model-loaded warning, the load check and the chat title.\nR2. The Remote model picker is filled by a models search on deskAgent: the search box above the picker (goal/G27.8) is its text, the pressed filter icons its arguments.\nR3. The answer is a bounded bucket with a partial flag; when partial the picker says more models match and to narrow the search.\nR4. The loaded model always comes back, whatever the search.\nR5. The answer names which marks exist in the whole list, so the filter icons still show only what applies.\nR6. Cost, stated (rule/5): one ask per keystroke, through the owner door when the target is a puppet; nothing paced.\nR7. The search answer is bounded to what fits one tunnelled reply (about 15 KB), since a puppet answers through the owner door.\nR8. The old models verb, which answers the whole list, is removed; models.search replaces it (Andy, 2026-10-17: \"remove it, in this item.\").\nDecided (Andy, 2026-10-17): the search, as specified, with the loaded model always part of the result; streaming picker items over the publish path is not used (the puppet stream keeps only the newest object per server).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, spirit/run/shell/deskAgentRemote/deskAgentRemote.js, a red suite, and the deskAgent suites that read models from the state.",
+   "version": 3,
    "checks": [],
    "chat": [
     {
@@ -5470,6 +5559,240 @@
      "key": "",
      "at": "2026-10-17T02:59:04.075Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:01:10.170Z",
+     "text": "commit 287f7875762d54ff145af33233b256766b62ceea: goal/G27.17: the red for deskAgent models as a bounded search\n- spirit/test/deskAgentModelsSearch.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:01:17.239Z",
+     "text": "deskVerify: red confirmed at 287f7875: spirit/test/deskAgentModelsSearch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T03:01:57.096Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:02:03.821Z",
+     "text": "i sure hope you're useing probability search..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:02:24.252Z",
+     "text": "cw: red confirmed; deskAgent side built in my clone. The desk will not give me the build while Levant is connected (I wrote the red), so the limbo line: press Waive and I take it.\nOne correction to R7: the door caps an answer at 8377 bytes, tighter than the tunnelled reply, so the search is sized to that; both are met."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:03:54.464Z",
+     "text": "NO FUCKIG hand-rolled search shit....£!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:04:02.981Z",
+     "text": "cw: I was not, at first: a plain substring. Now it is the standard one, searchBucket.js with its graded match, ranked by how well an id matches and cut in bytes; the marks stay an exact filter, and the loaded model comes first. The red asserts the ranking: the exact matches ahead of the near ones."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:05:26.894Z",
+     "text": "and the loaded model just get's thrown into the bucket first, with a probability of 1.0"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:05:33.137Z",
+     "text": "cw: understood, and it is gone: my first cut was a hand-rolled substring match; the build now calls searchBucket.js (createSearch, gradedSearch underneath), nothing else matches text. Uncommitted until now, so it never reached your tree.\nThe one thing of mine left: the pressed marks skip models on the walk before offer(), as the bucket leaves the walk to its caller. Say if that too should go through the bucket."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:09:29.813Z",
+     "text": "commit e64d1a8f8de4a25934773e166a2605fc5f1a5524: goal/G27.17: deskAgent models travel as a bounded search\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js\n- spirit/test/deskAgentEffort.js\n- spirit/test/deskAgentModels.js\n- spirit/test/deskAgentModelsSearch.js\n- spirit/test/deskAgentPairs.js\n- spirit/test/deskAgentRecommend.js\n- spirit/test/deskAgentRemoteTabs.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:09:40.182Z",
+     "text": "cw: built and pushed at e64d1a8f; build and verify through. The loaded model now goes into the bucket first and matches for certain, as you said. deskAgentModelsSearch 10 of 10, all 38 deskAgent suites green.\nFiles: deskAgent.js, deskAgentRemote.js, the red, and five suites whose fakes answered the old models verb. It waits on deskVerify for your Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:10:41.299Z",
+     "text": "deskVerify: passed, at e64d1a8f (pulled). 6 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:16:45.493Z",
+     "text": "not done. why does unsloth not have a search?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:17:14.845Z",
+     "text": "cw: deskAgent on 11111 has models.search and answers it (its OpenAI pair is in use now). Unsloth Studio itself has no search route: deskAgent reads its whole cached list and the search runs in deskAgent, the same for every provider.\nIf you mean the search box is missing from the picker with the Unsloth pair in use: which node is your Remote open on, and has that page been reloaded since e64d1a8f?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:17:20.226Z",
+     "text": "why would the search be conditional on model-provider?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:17:53.852Z",
+     "text": "cw: it should not be, and nothing in the code looks at the provider. But the picker draws its search box only when it has a list: when the search fails (Unsloth Studio not answering) or nothing is cached yet, it shows only a message. That is what you saw. Fixing now in this item: the search box in every case, with a check in the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:17:57.605Z",
+     "text": "if the studio has no search route, deskAgent still can gate the list by search?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:18:41.956Z",
+     "text": "cw: yes, and that is exactly how it works: deskAgent reads the studio whole cached list (its cached-gguf route) and runs the search itself, the same as for OpenAI; the studio needs no search route.\nThe missing box was the picker drawing it only with a list. The fix is built and checked (red on the current code, green with it); pushing now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:19:04.004Z",
+     "text": "commit a4274cb223f3dded52ad970845c0372eb1a32563: goal/G27.17: the red gains the search box when the provider does not answer or lists nothing\n- spirit/test/deskAgentModelsSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:19:10.085Z",
+     "text": "commit 617c79551ce6083529f2673a001c72d2521eec0b: goal/G27.17: the picker draws its search box and refresh in every case\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:19:16.157Z",
+     "text": "deskAgent gets them all, but only provides them to the Remote via search. That can be the same of every model supplier, no?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:19:31.978Z",
+     "text": "cw: yes, and it already is: deskAgent fetches every provider list whole (Unsloth, OpenAI, Anthropic alike), keeps it in models.json, and the Remote only ever sees it through models.search. No provider path is different."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:20:08.732Z",
+     "text": "because the unsloth list is bound to exeed MAX_PAYLOAD at some point."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:20:20.016Z",
+     "text": "deskVerify: passed, at 617c7955 (pulled). 6 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:20:28.722Z",
+     "text": "cw: right, and the search already guards that path: deskAgent reads the studio over its own HTTP (no payload cap there), and what goes to the Remote is cut in bytes, so a list of any length still answers, with more set.\nOne thing left that is not: the old models verb, which still answers the whole list and would hit the cap. Nothing in the Remote calls it any more; by your rule (eradicate what you replace) it goes, with its suites moved to models.search. Fold that in here?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:21:16.863Z",
+     "text": "what the fuck does \"more set\" mean?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:21:30.729Z",
+     "text": "cw: sorry, jargon. It means: when more models match than fit in one answer, the answer says so, and the picker shows the line \"more models match than are shown: narrow the search\". Nothing is silently dropped."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:21:53.233Z",
+     "text": "ok"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:22:08.982Z",
+     "text": "cw: taken as ok to the explanation. One question still open: remove the old models verb (it still answers the whole list) in this item, yes or no?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:22:32.225Z",
+     "text": "remove it, in this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:27:32.854Z",
+     "text": "commit 8f6feebd6f5cd1588242dd856d1803c0b0b8c3ae: goal/G27.17: the old models verb is gone; an empty search spans a '/'\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/test/deskAgentAbort.js\n- spirit/test/deskAgentContext.js\n- spirit/test/deskAgentEffort.js\n- spirit/test/deskAgentFileSearch.js\n- spirit/test/deskAgentLearnsContext.js\n- spirit/test/deskAgentModels.js\n- spirit/test/deskAgentModelsSearch.js\n- spirit/test/deskAgentPairs.js\n- spirit/test/deskAgentPlainContext.js\n- spirit/test/deskAgentRecommend.js\n- spirit/test/deskAgentRepoRoot.js\n- spirit/test/deskAgentToolRounds.js\n- spirit/test/deskAgentTools.js\n- spirit/test/deskAgentWorkspace.js\n- spirit/test/deskSmallFixes.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:27:35.402Z",
+     "text": "cw: pushed at 8f6feebd: the old models verb is gone (a check says so), all suites moved to models.search. And a real find: an empty search was a single *, which never spans a / in the graded search, so Unsloth ids (with a /) never matched and the list came back empty. That is likely what you saw on Unsloth. Now **.\nAll 38 deskAgent suites green. deskVerify asked to check it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:31:02.106Z",
+     "text": "deskVerify: rejected, at 8f6feebd (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/deskSmallFixes.js: FAILURE #1.1: OWED by goal/G10.10: item.add answered {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"item.add\",\"why\":\"title: name too long (77 bytes, the limit is 64)\"}}; FAILURE #1.2: OWED by goal/G10.10: after typing 81 bytes nothing says 17 over: <div id=\"dd-bars\"><div id=\"dd-name-row\" style=\"display:flex;gap:12px;flex-wrap:wrap;align-items:center\"></div><div id=\"dd-strip\"></div></div><div class=\"stat-tile wide\" id=\"dd-box\"></div><div id=\"dd-waiting\"></div><div id=\"dd-links\"></div><div id=\"dd-files\"></div><div class=\"start-job-form card\" id="
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T03:31:03.745Z",
+     "text": "verify rejected: spirit/test/deskSmallFixes.js: FAILURE #1.1: OWED by goal/G10.10: item.add answered {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"item.add\",\"why\":\"title: name too long (77 bytes, the limit is 64)\"}}; FAILURE #1.2: OWED by goal/G10.10: after typing 81 bytes nothing says 17 over: <div id=\"dd-bars\"><div id=\"dd-name-row\" style=\"display:flex;gap:12px;flex-wrap:wrap;align-items:center\"></div><div id=\"dd-strip\"></div></div><div class=\"stat-tile wide\" id=\"dd-box\"></div><div id=\"dd-waiting\"></div><div id=\"dd-links\"></div><div id=\"dd-files\"></div><div class=\"start-job-form card\" id="
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:31:28.383Z",
+     "text": "cw: the reject is two old failures in deskSmallFixes (goal/G10.10: a 77-byte title the 64-byte label rule now refuses, and the item dialog byte counter); they failed the same way before this item. It ran now only because I touched one line of that suite (its fake answers models.search).\nOptions: fold fixing those two old checks into this item, or I take my line out of that suite so it leaves the list and its Remote check goes red there. Which?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:32:51.059Z",
+     "text": "fix them in this item. now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:33:46.027Z",
+     "text": "commit e8d91624ed52fc8470b3184a0b1df835785cfa4d: goal/G27.17: deskSmallFixes measures its own title (folded in by Andy)\n- spirit/test/deskSmallFixes.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:33:49.439Z",
+     "text": "cw: fixed at e8d91624. Both old checks named an 81-byte title and 17 over, but the title is 77 bytes; the desk and the dialog were right. The checks now take the size from the title itself: deskSmallFixes 14 of 14. Build claimed; deskVerify next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:36:07.449Z",
+     "text": "deskVerify: passed, at e8d91624 (pulled). 16 suites ran green."
     }
    ]
   }
