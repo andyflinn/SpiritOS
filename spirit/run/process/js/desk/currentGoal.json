@@ -1,5 +1,5 @@
 {
- "change": 69695,
+ "change": 69699,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -54,9 +53,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2084,14 +2081,15 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29.7"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.9"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -2302,11 +2300,11 @@
    "id": "goal/G29.9",
    "title": "the shared list's dropdown mode, contactSelector on it",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "close",
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G29.8"
@@ -2316,7 +2314,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -2425,7 +2423,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Nothing in it is specific to contacts: it makes the search list's pane and its dropdown one system, and puts the features common to lists into the shared element, for one look and feel.\n\nWHAT EXISTS (shellCreateListSearch, shell/shared/js/listSearch.js, today)\n- Rows 1 to 3 in one pane: the filter row (filters declared, each shown only when its when(rows) says so), the search row (box, its clear button inside on the right, the search button), a count line, the list.\n- One keyed cache, an unbounded probabilityBucket; each keystroke ranks it in the page (probabilityStringObjectMatch times every filter's test), all rows shown, the best on top.\n- The server asked through api, server, verb and args: serialized, one request on the wire, no typing pause; the slot lent to the app (list.ask); a publish on its stream asks again.\n- paint(row), press(row), empty; refresh() and redraw().\n- contactSelector holds a dropdown of its own (a button opening the list) and marks its chosen row with a bold name.\n\nWHAT IS NEW\n- Two modes, pane and dropdown. Rows 1 and 2 always stand where they are; only row 3 differs: a pane below them, or a dropdown that opens under the search row when the box is focused or typed into, and closes on a pick or a click outside. In dropdown mode the chosen row's name stands in the search box while closed, or a placeholder.\n- Two tiers, set in the create function: rows the page already holds (a function answering them: the shell's file mirror, a monitor's stream, a caller's own contacts), ranked in the page and never asking the server; and the optional server hook as today, its rows joining the same cache. Most lists use both; Files and the monitors, the page alone.\n- A press on a row: in dropdown mode a pick; in pane mode the optional details(row) hook, which opens the row's dialog (a file's contents, a contact's details); with no hook, a pick there too.\n- Keys: up and down move the current row, home and end go to the top or bottom, enter presses it, escape closes an open dropdown; while the search box has the focus home and end stay the text cursor's.\n- The current row drawn by the list itself, the same everywhere: a slightly brighter background across the whole row.\n- The matched parts marked: the list hands paint a mark(text) that wraps each matched word, so every search gets it.\n- contactSelector drops its own dropdown and its bold name and passes the mode; chatter's new-chat picker and grants follow with no change of their own.\n",
