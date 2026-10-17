@@ -1,5 +1,5 @@
 {
- "change": 66844,
+ "change": 66965,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -10,6 +10,7 @@
    "status": "reviewing",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -1034,9 +1035,12 @@
    "id": "goal/G27.2",
    "title": "Desk Stacks pane: open the door in a Dialog, not inline",
    "goal": "goal/G27",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G27.3",
     "goal/G27.14"
@@ -1051,30 +1055,20 @@
    "subGoal": false,
    "files": [
     {
-     "path": "spirit/test/deskVerifyDoorRun.js",
-     "by": "claude-windows",
-     "core": false
-    },
-    {
-     "path": "spirit/test/notASuite.js",
-     "by": "claude-windows",
-     "core": false
-    },
-    {
-     "path": "spirit/test/stackFrameViolators.js",
+     "path": "spirit/test/deskPhaseRestart.js",
      "by": "claude-windows",
      "core": false
     }
    ],
-   "green": false,
+   "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "ollama agent node",
-   "claimCommit": "5aad0e1d",
-   "redCommit": "1ae1e964",
+   "claimCommit": "70309bb7",
+   "redCommit": "d9bafb47",
    "waived": true,
    "rules": [
     {
@@ -1134,11 +1128,11 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 1,
-   "half": false,
+   "asks": 0,
+   "half": true,
    "full": false,
-   "box": "Desk Stacks pane: the door opens in a Dialog, not inline\n\nProblem: in Apps > Stacks, opening a door puts its detail inline at the bottom of the pane (the plugin fills a div, sfc-dialog), because the plugin ctx in the Desk face hands it no callDialog.\n\nDECIDED (Andy, 2026-10-14 to 17)\nD1. The door detail is a standard shell dialog: spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js with its manifest (type dialog, hidden), opened with callDialog(\"shell/stackFrameCheckDetail\", {id}) through a callDialog passthrough in the plugin ctx. The inline sfc-dialog is removed.\nD2. Door data stays with the plugin: the dialog reads and writes doors only through the plugin verbs (stackFrameChecks.runState, update, remove, run).\nD3. The dialog chat is the chat of the desk item that added the door (each door records it in its item field), the inherited chat component as in deskDetails; every insert is discussed there.\nD4. The stacks goal owns its door items: it adds one with each door (as today) and deletes it when the door is removed (new). While the door exists the plugin refuses close, done and delete of that item, as it already does for its rerun item.\nD5. Every door can be run by itself, at once, while it is designed: the dialog Run starts oneDoorStacks.js for that one door (SPIRIT_STACKS_DOOR) from the plugin itself, without waiting in the deskVerify queue, shows the verdict as it lands, then hands the verdict to deskVerify as a record only. This replaces the goal/G22.3 ruling that door runs go through the deskVerify queue. Accepted cost: a door run may overlap a deskVerify run on the same tree.\nD6. Plugin goals (Team, Stacks and any later one) are standing scopes, never the current goal: make-current is not offered on one and is refused if asked, and only a press on the current goal or its items writes and pushes currentGoal.json (today any go, done, close or reopen press on any goal does, and each is a new commit since the file carries the change number). This lives in the desk common code (process/js/desk/desk.js), never inside a plugin.\nD7. A door is deleted only from its own dialog, where its deletion is discussed: the delete button lives in the door dialog alone, not on the pane list.\nD8. Every door has its own Stacks item: each door in the list that has none in the Stacks goal gets one, made as the plugin makes an item for a new door, and the list points at it. Doors d1 to d4, which point at goal/G19.14 and goal/G22.2, are the ones today; no two doors share an item. The step runs when the plugin mounts and touches only doors whose item the desk holds, so a suite desk on the tree list never rewrites it.\nD9. The Stacks subsystem stands alone: the Stacks plugin drives the stack checks exclusively, and deskVerify runs none of them. deskVerify door.run and door.state verbs, left from goal/G22.3, go with their suite; the plugin rerun item and its verify.again rerun go; oneDoorStacks.js leaves the verifier runs and the full harness. deskVerify keeps door.record, a record only. This resolves the overlap D5 accepted.\nD10. deskVerify does not refuse work: a file on an item list that is missing from the checkout, or already green at the red commit, is said in its report and the rest is checked; it never ends a check as rejected or not confirmed on that alone.\n\nFiles (expected): spirit/run/shell/desk/desk.js (the passthrough), spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js (open the dialog, drop the inline one), spirit/run/shell/stackFrameCheckDetail/ (the dialog and its manifest), spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js (the door item gate, remove deleting the item, the direct run), spirit/run/process/js/desk/desk.js (D6), and a red suite. None is core: no file grant, Andy Go only.",
-   "version": 17,
+   "box": "Desk Stacks pane: the door opens in a Dialog, not inline\n\nProblem: in Apps > Stacks, opening a door puts its detail inline at the bottom of the pane (the plugin fills a div, sfc-dialog), because the plugin ctx in the Desk face hands it no callDialog.\n\nDECIDED (Andy, 2026-10-14 to 17)\nD1. The door detail is a standard shell dialog: spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js with its manifest (type dialog, hidden), opened with callDialog(\"shell/stackFrameCheckDetail\", {id}) through a callDialog passthrough in the plugin ctx. The inline sfc-dialog is removed.\nD2. Door data stays with the plugin: the dialog reads and writes doors only through the plugin verbs (stackFrameChecks.runState, update, remove, run).\nD3. The dialog chat is the chat of the desk item that added the door (each door records it in its item field), the inherited chat component as in deskDetails; every insert is discussed there.\nD4. The stacks goal owns its door items: it adds one with each door (as today) and deletes it when the door is removed (new). While the door exists the plugin refuses close, done and delete of that item, as it already does for its rerun item.\nD5. Every door can be run by itself, at once, while it is designed: the dialog Run starts oneDoorStacks.js for that one door (SPIRIT_STACKS_DOOR) from the plugin itself, without waiting in the deskVerify queue, shows the verdict as it lands, then hands the verdict to deskVerify as a record only. This replaces the goal/G22.3 ruling that door runs go through the deskVerify queue. Accepted cost: a door run may overlap a deskVerify run on the same tree.\nD6. Plugin goals (Team, Stacks and any later one) are standing scopes, never the current goal: make-current is not offered on one and is refused if asked, and only a press on the current goal or its items writes and pushes currentGoal.json (today any go, done, close or reopen press on any goal does, and each is a new commit since the file carries the change number). This lives in the desk common code (process/js/desk/desk.js), never inside a plugin.\nD7. A door is deleted only from its own dialog, where its deletion is discussed: the delete button lives in the door dialog alone, not on the pane list.\nD8. Every door has its own Stacks item: each door in the list that has none in the Stacks goal gets one, made as the plugin makes an item for a new door, and the list points at it. Doors d1 to d4, which point at goal/G19.14 and goal/G22.2, are the ones today; no two doors share an item. The step runs when the plugin mounts and touches only doors whose item the desk holds, so a suite desk on the tree list never rewrites it.\nD9. The Stacks subsystem stands alone: the Stacks plugin drives the stack checks exclusively, and deskVerify runs none of them. deskVerify door.run and door.state verbs, left from goal/G22.3, go with their suite; the plugin rerun item and its verify.again rerun go; oneDoorStacks.js leaves the verifier runs and the full harness. deskVerify keeps door.record, a record only. This resolves the overlap D5 accepted.\nD10. deskVerify does not refuse runs the agents require: it cannot judge whether a run is needed. Every run asked runs; a file on an item list that is missing from the checkout, or already green at the red commit, is reported and the rest is checked, and neither alone rejects or leaves a red unconfirmed; a second goal emptied for a goal already run is run again. Only an identical run already waiting is not queued twice.\nD11. An agent verify pass (phase.done verify, pass) queues a deskVerify run of the item, bound to its claimed commit, so an item set to waiting for deskVerify is never left waiting for a run nobody queued. Bound to the commit, it keeps goal/G19.13 reason: no check of a tree older than the claim.\n\nFiles (expected): spirit/run/shell/desk/desk.js (the passthrough), spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js (open the dialog, drop the inline one), spirit/run/shell/stackFrameCheckDetail/ (the dialog and its manifest), spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js (the door item gate, remove deleting the item, the direct run), spirit/run/process/js/desk/desk.js (D6), and a red suite. None is core: no file grant, Andy Go only.",
+   "version": 19,
    "checks": [
     {
      "number": "Q1",
@@ -1156,9 +1150,9 @@
      "kind": "Q",
      "words": "deskVerifyDoorRun.js, deleted by D9, is still on the file list and no verb removes it: how should it come off?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-17T06:02:26.626Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
     }
@@ -1655,6 +1649,180 @@
      "key": "",
      "at": "2026-10-17T05:46:33.641Z",
      "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:47:18.501Z",
+     "text": "Yes. Today alone: it rejected a green build at 5aad0e1d over a deleted listed file, and twice said red not confirmed over deskPluginsGg.js, which was never the red.\nIt also drops runs silently: a second goal emptied for the same goal does nothing (deskVerify.js, one pass per goal).\nD10 then: every run asked runs, missing or already-green files are reported, not judged; only an identical run already waiting is not queued twice."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T05:48:53.635Z",
+     "text": "another question: is deskVerifyDoorRun.js now what has moved from the suites into desk? and that functionality is no longer held in the suites?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:49:10.023Z",
+     "text": "No, nothing moved: deskVerifyDoorRun.js tested deskVerify own door.run and door.state verbs, which D9 removes, so its tests went with them.\nRunning one door now lives only in the Stacks plugin (D5), and deskStacksDialog.js and deskPluginsGg.js test it there.\noneDoorStacks.js, the door check itself, stays in the suites folder; only the plugin runs it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T05:50:17.908Z",
+     "text": "that's fine for now.\n\nLet's make sure that deskVerify doesn't block us anymore, then take a break."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:53:48.974Z",
+     "text": "commit d53a2af2cfccbe13e9636c0e1af36e15c302620e: goal/G27.2: the red for D10, deskVerify refuses no run its agents ask for\n- spirit/test/deskClaimCommit.js\n- spirit/test/deskVerifyGoalRun.js\n- spirit/test/deskVerifyWatch.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T05:55:50.485Z",
+     "text": "Q2: deskVerifyDoorRun.js, deleted by D9, is still on the file list and no verb removes it: how should it come off?\n\nexplain?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T05:55:51.346Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:58:26.262Z",
+     "text": "commit 3b8187597658c49669665148bf87adbea8e4bc22: goal/G27.2: D10, deskVerify refuses no run its agents ask for\n- spirit/run/process/js/deskVerify/deskVerify.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T05:59:37.687Z",
+     "text": "deskVerify: passed, at 3b818759 (pulled). 3 suites ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T05:59:38.476Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T05:59:57.950Z",
+     "text": "D10 built at 3b818759: one red suite confirms a red; missing or green listed files are reported beside, never a reject; nothing run is not checked; every goal emptied runs.\nFiles: deskVerify.js; reds in deskVerifyGoalRun.js, deskClaimCommit.js, deskVerifyWatch.js.\nGreen: those three, deskStacksDialog 27 of 27, fifteen deskVerify suites. Your deskVerify needs a restart to run it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:00:22.139Z",
+     "text": "It was this: deskVerify ran every file on the item list, D9 deleted deskVerifyDoorRun.js, and a missing listed file meant reject; the desk has no verb to take a file off a list.\nD10 settled it: a missing file is now only reported and the rest runs, which is why it just passed.\nThe question is moot; you can clear it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:01:49.693Z",
+     "text": "what about Q2?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:02:30.110Z",
+     "text": "Q2 is passed now: your D10 is its answer and it is in the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:03:14.339Z",
+     "text": "deskVerify still is on its one hour idle and does NOT process your verify request."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:04:36.231Z",
+     "text": "It was not the idle hour: its queue was empty. deskVerify had passed 3b818759, then my verify phase.done set the item back to waiting for deskVerify, and nothing asked it to run again.\nI sent verify.again: it is running goal/G27.2 now.\nThe gap stays: a verify phase.done after the pass waits for a run nobody queues; I can make that press queue it, on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:05:12.572Z",
+     "text": "make that press queue it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:05:30.864Z",
+     "text": "deskVerify: passed, at 3b818759 (pulled). 3 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:05:57.922Z",
+     "text": "One flag: goal/G19.13 took the verify pass out as a trigger, because it came without a commit and checked the old tree.\nSo the press will queue a run bound to the item claimed commit, which keeps that reason intact; D11 in the box says so.\nBuilding it now under G27.2."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:08:14.949Z",
+     "text": "commit d9bafb475d98cc7832e0103f17d03e93a317b547: goal/G27.2: the red for D11, a verify pass queues deskVerify's check at the claimed commit\n- spirit/test/deskClaimCommit.js\n- spirit/test/deskPhaseRestart.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:08:21.589Z",
+     "text": "deskVerify: red confirmed at d9bafb47: spirit/test/deskPhaseRestart.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T06:08:22.455Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:11:46.490Z",
+     "text": "commit 70309bb7720682b8a678ce2a8a7024e151a6fcd4: goal/G27.2: D11, a verify pass queues deskVerify's check at the item's claimed commit\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:11:55.144Z",
+     "text": "deskVerify: passed, at 70309bb7 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T06:11:55.942Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:12:31.155Z",
+     "text": "D11 built at 70309bb7: a verify pass now carries the item claimed commit, and deskVerify queues its check at that commit; no commit, no check, as G19.13 wanted.\nFiles: process desk.js (phase.done), deskVerify.js (watcher); reds in deskPhaseRestart.js and deskClaimCommit.js.\nGreen: both, plus fourteen watcher, phase and Done suites. Takes effect once desk and deskVerify restart on your node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:14:05.265Z",
+     "text": "I'm running the newest code, and deskVerify still is fucking idling and not checking this item"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T06:14:33.942Z",
+     "text": "deskVerify: passed, at 70309bb7 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T06:14:41.933Z",
+     "text": "My verify pass was written while your desk still ran the old code, so it carries no commit, and a restarted deskVerify reads older records as history and runs nothing from them.\nI sent verify.again: it is running goal/G27.2 now, on deskPhaseRestart.js.\nFrom here on a verify pass queues its own check; this one predates the restart."
     }
    ]
   },
@@ -1665,15 +1833,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27.14"
    ],
-   "blocked": [
-    "goal/G27.2"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -5341,7 +5508,6 @@
     "goal/G27"
    ],
    "blocked": [
-    "goal/G27.2",
     "goal/G27.3"
    ],
    "go": false,
