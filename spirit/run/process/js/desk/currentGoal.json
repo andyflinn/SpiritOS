@@ -1,5 +1,5 @@
 {
- "change": 66695,
+ "change": 66696,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -10,7 +10,6 @@
    "status": "reviewing",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -1033,11 +1032,11 @@
    "id": "goal/G27.2",
    "title": "Desk Stacks pane: open the door in a Dialog, not inline",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "deskVerify passed",
    "with": "claude-windows",
    "buttons": [
-    "close",
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G27.3",
@@ -1047,7 +1046,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -1136,7 +1135,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Desk Stacks pane: the door opens in a Dialog, not inline\n\nProblem: in Apps > Stacks, opening a door puts its detail inline at the bottom of the pane (the plugin fills a div, sfc-dialog), because the plugin ctx in the Desk face hands it no callDialog.\n\nDECIDED (Andy, 2026-10-14 to 17)\nD1. The door detail is a standard shell dialog: spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js with its manifest (type dialog, hidden), opened with callDialog(\"shell/stackFrameCheckDetail\", {id}) through a callDialog passthrough in the plugin ctx. The inline sfc-dialog is removed.\nD2. Door data stays with the plugin: the dialog reads and writes doors only through the plugin verbs (stackFrameChecks.runState, update, remove, run).\nD3. The dialog chat is the chat of the desk item that added the door (each door records it in its item field), the inherited chat component as in deskDetails; every insert is discussed there.\nD4. The stacks goal owns its door items: it adds one with each door (as today) and deletes it when the door is removed (new). While the door exists the plugin refuses close, done and delete of that item, as it already does for its rerun item.\nD5. Every door can be run by itself, at once, while it is designed: the dialog Run starts oneDoorStacks.js for that one door (SPIRIT_STACKS_DOOR) from the plugin itself, without waiting in the deskVerify queue, shows the verdict as it lands, then hands the verdict to deskVerify as a record only. This replaces the goal/G22.3 ruling that door runs go through the deskVerify queue. Accepted cost: a door run may overlap a deskVerify run on the same tree.\nD6. Plugin goals (Team, Stacks and any later one) are standing scopes, never the current goal: make-current is not offered on one and is refused if asked, and only a press on the current goal or its items writes and pushes currentGoal.json (today any go, done, close or reopen press on any goal does, and each is a new commit since the file carries the change number). This lives in the desk common code (process/js/desk/desk.js), never inside a plugin.\nD7. A door is deleted only from its own dialog, where its deletion is discussed: the delete button lives in the door dialog alone, not on the pane list.\nD8. Every door has its own Stacks item: each door in the list that has none in the Stacks goal gets one, made as the plugin makes an item for a new door, and the list points at it. Doors d1 to d4, which point at goal/G19.14 and goal/G22.2, are the ones today; no two doors share an item.\nD9. The Stacks subsystem stands alone: the Stacks plugin drives the stack checks exclusively, and deskVerify runs none of them. deskVerify door.run and door.state verbs, left from goal/G22.3, go with their suite; the plugin rerun item and its verify.again rerun go; oneDoorStacks.js leaves the verifier runs and the full harness. deskVerify keeps door.record, a record only. This resolves the overlap D5 accepted.\n\nFiles (expected): spirit/run/shell/desk/desk.js (the passthrough), spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js (open the dialog, drop the inline one), spirit/run/shell/stackFrameCheckDetail/ (the dialog and its manifest), spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js (the door item gate, remove deleting the item, the direct run), spirit/run/process/js/desk/desk.js (D6), and a red suite. None is core: no file grant, Andy Go only.",
@@ -1512,14 +1511,15 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27.14"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G27.2"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -5187,6 +5187,7 @@
     "goal/G27"
    ],
    "blocked": [
+    "goal/G27.2",
     "goal/G27.3"
    ],
    "go": false,
