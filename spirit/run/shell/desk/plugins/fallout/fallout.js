@@ -67,7 +67,9 @@
       // HOW MANY (Andy: "how many red?"): every match, beside the rows one answer carries.
       var count = document.getElementById('fallout-count');
       var total = Number(r && r.total) || rows.length;
-      if (count) count.textContent = total + ' ' + (outcome === 'red' ? '❌ red' : outcome === 'green' ? '✅ green' : 'tests') + ' now' + (total > rows.length ? ', the ' + rows.length + ' best shown' : '');
+      // THE SEARCH'S COUNT, said as such (Andy, 2026-10-17: "what I want to know is TOTAL OF ALL FAILURES. period"):
+      // the size of the problem is the Now line above; this counts only what matches the search.
+      if (count) count.textContent = total + ' ' + (outcome === 'red' ? '❌' : outcome === 'green' ? '✅' : '') + ' match this search' + (total > rows.length ? ', the ' + rows.length + ' best shown' : '');
       var el = document.getElementById('fallout-reds');
       if (el) {
         // ONE NICE LINE PER TEST (Andy, 2026-10-17: "one nice line per failure / test-file-name | failure-description |
@@ -118,7 +120,7 @@
             '<select id="fallout-outcome" style="margin-right:1em"><option value="red" selected>❌ red</option><option value="green">✅ green</option><option value="">both</option></select>' +
             '<button type="button" id="fallout-search" style="margin-right:1em">Search</button></div>' +
           '<div id="fallout-note" class="job-start-error" style="margin-top:1em"></div>' +
-          '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Tests as they stand now: <span id="fallout-count"></span></div><div id="fallout-reds">' +
+          '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Search results: <span id="fallout-count"></span></div><div id="fallout-reds">' +
             '<div class="job-manifest-note">Search to see the reds; an empty search lists the newest.</div></div></div>' +
         '</div>' +
         '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>' +
