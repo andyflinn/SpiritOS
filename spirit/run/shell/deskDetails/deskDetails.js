@@ -283,15 +283,38 @@ function ddQuote(number) {
 }
 
 // Each id a way there (Andy: "the blocked and blocks lists link to the respective items").
+// THE BLOCK BUBBLE (goal/G27.5, R7). Andy, 2026-10-17: "the UI should offer only blocking relation ships per item for add
+// or delete, the blocked-by section would be implicit, a drop-down for Adding blockages that only offers valid items",
+// and of the delete: "i agree" to: one on each block the item states, none on the goal fallback. Foldable. The
+// drop-down holds what the desk's block.targets answered: only what block would take.
+var ddBlockTargets = [];
+var ddBlocksFolded = false;
+function ddLoadTargets() {
+  var id = ddId;
+  if (!id) return Promise.resolve();
+  return ddAsk('block.targets', { id: id }).then(function (r) {
+    if (ddId !== id) return;
+    ddBlockTargets = Array.isArray(r && r.items) ? r.items : [];
+    ddPaint();
+  }, function () { ddBlockTargets = []; });
+}
 function ddLinksHtml() {
   var f = ddFacts || {};
+  if (!f.id || f.goal === '') return '';
   var line = function (id) { return '<a href="#" data-open="' + ddEsc(id) + '" style="color:#cfe2ff">' + ddEsc(id) + '</a>'; };
   var by = (f.blocked || []).map(line).join(', ');
-  var blocking = (f.blocking || []).map(line).join(', ');
-  if (!by && !blocking) return '';
-  return '<div class="stat-tile wide">' +
+  var states = (f.blocking || []).filter(function (x) { return x !== f.goal; });
+  var blocking = states.length
+    ? states.map(function (x) { return line(x) + ' <button type="button" data-unblock="' + ddEsc(x) + '" title="unblock">✕</button>'; }).join(', ')
+    : (f.blocking || []).map(line).join(', ');
+  var toggle = '<button type="button" data-fold="blocks" title="' + (ddBlocksFolded ? 'Unfold' : 'Fold') + '">' + (ddBlocksFolded ? '▸' : '▾') + '</button> ';
+  if (ddBlocksFolded) return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocks</span></div>';
+  var add = '<div class="start-job-form"><label class="field-label grow">Also blocks<select id="dd-block-add">' +
+    (ddBlockTargets.length ? ddBlockTargets.map(function (p) { return '<option value="' + ddEsc(p.key) + '">' + ddEsc(p.key) + ' ' + ddEsc(p.label) + '</option>'; }).join('') : '<option value="">nothing it could block</option>') +
+    '</select></label><button type="button" id="dd-block-go"' + (ddBlockTargets.length ? '' : ' disabled') + '>Add block</button></div>';
+  return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocks</span>' +
     (by ? '<div><span class="label">Blocked by</span> ' + by + '</div>' : '') +
-    (blocking ? '<div><span class="label">Blocking</span> ' + blocking + '</div>' : '') + '</div>';
+    (blocking ? '<div><span class="label">Blocking</span> ' + blocking + '</div>' : '') + add + '</div>';
 }
 
 // THE FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "that file list should be visible in desk ui per item, core files
@@ -515,6 +538,7 @@ function ddLoad() {
     ddLastChange = Number(got.change) || ddLastChange;
     ddPaint();
     return Promise.all([
+      ddLoadTargets(),
       ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddBoxLoaded = true; ddPaint(); }),
       ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
@@ -531,9 +555,20 @@ spirit.shell.activateApp({
     container.innerHTML = '<div id="dd-body" class="stack"></div>';
     document.getElementById('dd-body').addEventListener('click', function (event) {
       var t = event.target;
+      // THE BLOCK BUBBLE (goal/G27.5): a delete on a stated block, the add, its fold.
+      var unblockEl = t && t.closest ? t.closest('[data-unblock]') : null;
+      var unblockOf = unblockEl && unblockEl.getAttribute ? unblockEl.getAttribute('data-unblock') : null;
+      if (unblockOf) { ddWrite('unblock', { id: ddId, blocks: unblockOf }).then(ddLoadTargets); return; }
+      if (t && t.id === 'dd-block-go') {
+        var pick = document.getElementById('dd-block-add');
+        var to = pick ? String(pick.value || '') : '';
+        if (to) ddWrite('block', { id: ddId, blocks: to }).then(ddLoadTargets);
+        return;
+      }
+      if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }
       // Leaving for another item: Desk opens it once this one is closed.
       var link = t && t.closest && t.closest('[data-open]');
-      if (link) {
+      if (link && link.getAttribute && link.getAttribute('data-open')) {
         if (event.preventDefault) event.preventDefault();
         ddApi.closeDialog({ open: link.getAttribute('data-open') });
         return;

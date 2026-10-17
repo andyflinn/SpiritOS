@@ -1,0 +1,6 @@
+{
+  "description": "The items item id could block now: same goal, not itself, not already blocked by it, no circle, not running (goal/G27.5); a bounded search.",
+  "request": {
+    "id": ""
+  }
+}

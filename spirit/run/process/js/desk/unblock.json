@@ -1,0 +1,7 @@
+{
+  "description": "Unlink a block item id states on item blocks (goal/G27.5). The goal fallback of an item blocking nothing else is not unblocked.",
+  "request": {
+    "id": "",
+    "blocks": ""
+  }
+}

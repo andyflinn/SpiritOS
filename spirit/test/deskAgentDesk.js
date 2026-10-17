@@ -160,7 +160,9 @@ async function suite() {
   // Since goal/G24.1 THIRTY-THREE: the seventeen desk verbs cw uses daily got their files (deskAgentVerbFiles.js).
   const ALL = TEN.concat(['box.write', 'press', 'check.set', 'item.files.add', 'verify.again', 'claim',
     'line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may',
-    'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get']);
+    'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get',
+    // goal/G27.5, R9: agents arrange dependencies, so block, unblock and block.targets are described to them too.
+    'block', 'unblock', 'block.targets']);
   let family = null;
   try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: ALL, manifest: 'desk.json' }); } catch (e) { family = null; }
   const listed = family ? Object.keys(family.verbs).filter(function (n) { return n.indexOf('AGENTS.') === 0 && n !== 'AGENTS.introspect'; }).map(function (n) { return n.slice(7); }).sort() : [];

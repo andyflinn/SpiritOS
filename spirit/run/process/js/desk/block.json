@@ -1,0 +1,7 @@
+{
+  "description": "Make item id block item blocks, both of one goal (goal/G27.5). Refused, with why, when it would close a circle, is already implied through others, or blocks an item already running. Insert new items with sensible dependencies.",
+  "request": {
+    "id": "",
+    "blocks": ""
+  }
+}

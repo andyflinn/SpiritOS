@@ -629,6 +629,56 @@ function blank(id, title, goalId) {
 
 // One record applied to the state. A record that no longer fits (an item gone
 // from its session) changes nothing; the refusals happen before it is written.
+// ── THE BLOCKS OF A GOAL (goal/G27.5) ─────────────────────────────────
+//
+//   Andy, 2026-10-14 to 17, in the item's box: block(A, B) and unblock(A, B); a circular block refused "error:
+//   circular blocking was asked"; the blockageCompiler "is a grammatical gate": it refuses a block that would be
+//   circular or is already implied, rewrites nothing stated, and only repairs what a delete or close leaves; a block
+//   onto a running item is refused "error: too late! this is already happening"; an item blocking nothing else blocks
+//   the goal. Decided by Andy, not by this file.
+//
+// Whether `from` reaches `to` through blocks, `from` itself excluded unless a path comes back to it.
+function blockReaches(s, from, to) {
+  const seen = Object.create(null);
+  const stack = ((s.items[from] || {}).blocks || []).slice();
+  while (stack.length) {
+    const id = stack.pop();
+    if (id === to) return true;
+    if (seen[id]) continue;
+    seen[id] = true;
+    const x = s.items[id];
+    if (x && !x.goal && !x.leftOut) (x.blocks || []).forEach(function (n) { stack.push(n); });
+  }
+  return false;
+}
+// Running: its Go is on record and it is neither done nor closed (R10).
+function runningItem(it) { return !!(it && it.go === true && !it.done && !it.closed); }
+// Why A may not block B, or '' when it may: the gate (R3, R5, R10).
+function blockWhy(s, from, to) {
+  const a = s.items[from];
+  const b = s.items[to];
+  if (!a || a.goal || !b || b.goal) return 'block links two items, not a goal';
+  if (a.goalId !== b.goalId) return 'block links two items of one goal; ' + from + ' and ' + to + ' are in different goals';
+  if (from === to) return 'an item does not block itself';
+  if (a.closed || a.leftOut || b.closed || b.leftOut) return 'block links open items';
+  if (runningItem(b)) return 'error: too late! this is already happening';
+  if (blockReaches(s, to, from)) return 'error: circular blocking was asked';
+  if (blockReaches(s, from, to)) return from + ' already blocks ' + to + ', directly or through others: the block is implied';
+  return '';
+}
+// THE REPAIR (R5): when B goes, every item that blocked B blocks what B blocked, instead; one left blocking nothing
+// blocks the goal (R4). Nothing else is rewritten.
+function repairBlocks(s, gone) {
+  const onward = (gone.blocks || []).filter(function (x) { return x !== gone.goalId && x !== gone.id; });
+  Object.keys(s.items).forEach(function (id) {
+    const x = s.items[id];
+    if (!x || x.goal || x.id === gone.id || (x.blocks || []).indexOf(gone.id) === -1) return;
+    let next = x.blocks.filter(function (n) { return n !== gone.id; });
+    onward.forEach(function (n) { if (next.indexOf(n) === -1 && n !== x.id) next.push(n); });
+    const real = next.filter(function (n) { return n !== x.goalId; });
+    x.blocks = real.length ? real : [x.goalId];
+  });
+}
 function apply(s, r, b, item, goalOf) {
   const it = b.id ? item(String(b.id)) : null;
   if (it) it.at = r.at;
@@ -932,6 +982,24 @@ function apply(s, r, b, item, goalOf) {
       if (!it || it.goal) return;
       it.closed = true;
       it.leftOut = true;
+      repairBlocks(s, it);
+      return;
+    }
+    // BLOCK AND UNBLOCK (goal/G27.5, R1 and R2): A blocks B, between items of one goal. The gate (blockWhy) refused what
+    // is wrong before the record was written, so the walk only links: the goal fallback goes once the item blocks
+    // something else (R4: it is then implied), and comes back when it blocks nothing.
+    case 'block': {
+      if (!it || it.goal) return;
+      const to = String(b.blocks);
+      it.blocks = it.blocks.filter(function (x) { return x !== it.goalId; });
+      if (it.blocks.indexOf(to) === -1) it.blocks.push(to);
+      return;
+    }
+    case 'unblock': {
+      if (!it || it.goal) return;
+      const to = String(b.blocks);
+      it.blocks = it.blocks.filter(function (x) { return x !== to; });
+      if (!it.blocks.length) it.blocks = [it.goalId];
       return;
     }
     // FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent and the
@@ -1074,7 +1142,7 @@ function press(s, it, what, r, goalOf, b) {
     // writes a new goal.emptied when every item is still done or closed, and that is the fresh run.
     if (it.goal) { it.checked = false; if (g) g.emptied = false; }
   }
-  else if (what === 'close') it.closed = true;
+  else if (what === 'close') { it.closed = true; if (!it.goal) repairBlocks(s, it); }
   // A BROUGHT-BACK ITEM DRAWS HIS EYE (goal/G2.1 note 6). Andy: "the row should immediately pop back into
   // visibility, with the attention-grabbing error icon, to draw my attention." The alert stands until his seen.
   else if (what === 'bring-back') { it.closed = false; it.alert = true; }
@@ -2228,6 +2296,57 @@ appServer.serve(withPlugins({
         args.minted = nextItemId(st, gid);
       });
       return { id: args.minted, change: r.change };
+    },
+  },
+  // BLOCK, UNBLOCK AND THEIR TARGETS (goal/G27.5). The gate refuses, saying why, before anything is written.
+  'block': {
+    request: { id: '', blocks: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const from = String(a.id || '');
+      const to = String(a.blocks || '');
+      const r = write('block', { id: from, blocks: to, by: w.by, key: w.key }, function (st) {
+        mayWrite(st, w);
+        const why = blockWhy(st, from, to);
+        if (why) throw refusedWhy('bad-request', why);
+      });
+      return { change: r.change };
+    },
+  },
+  'unblock': {
+    request: { id: '', blocks: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const from = String(a.id || '');
+      const to = String(a.blocks || '');
+      const r = write('unblock', { id: from, blocks: to, by: w.by, key: w.key }, function (st, it) {
+        mayWrite(st, w);
+        if (!it || it.goal) throw refused('no-such-item');
+        if (it.blocks.indexOf(to) === -1) throw refusedWhy('bad-request', from + ' does not block ' + to);
+        if (to === it.goalId) throw refusedWhy('bad-request', 'blocking the goal is the fallback of an item blocking nothing else, and is not unblocked');
+      });
+      return { change: r.change };
+    },
+  },
+  // What an item may block: the add drop-down's list (R7, R10), the gate's own rule, through the bucket.
+  'block.targets': {
+    request: { id: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      const st = walkState();
+      const from = String(a.id || '');
+      const it = st.items[from];
+      if (!it || it.goal) throw refused('no-such-item');
+      const g = st.goals[it.goalId];
+      const bucket = require('../../../js/searchBucket.js').createSearch({
+        query: '**',
+        getLabelStringFromIncomingObject: function (x) { return String(x.title || '') + ' ' + x.id; },
+        extractKeyAndLabelFromRow: function (x) { return { key: x.id, label: String(x.title || '') }; },
+      });
+      ((g && g.members) || []).forEach(function (id) {
+        if (blockWhy(st, from, id)) return;
+        bucket.offer(st.items[id]);
+      });
+      return bucket.getResult();
     },
   },
   // Andy: "the FIRST text wins, all subsequent actions are alterations and
