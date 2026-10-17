@@ -3,6 +3,7 @@
   "description": "The remote control of the local agent at the desk: on this node, or on a puppet through the owner door. Its hello world is the switch that connects or disconnects Levant (goal/G14.2).",
   "icon": "RUN",
   "hidden": false,
+  "server": "deskAgent",
   "intrinsic": false,
   "owner": "system"
 }

@@ -669,11 +669,43 @@
   // correct whenever the user navigates home. Cheap enough to call after
   // every registration and every successful override save; the icon grid
   // is small and each icon is a plain DOM element with no state to lose.
+  // AN APP SHOWS ONLY WHILE ITS SERVER RUNS (goal/G27.16). Andy, 2026-10-17: "is it possible for the desk app to not
+  // show up at all in the shell, if no desk appServer is running", and of the link: the shell app manifest names the
+  // server it needs; it shows only while that server is installed and running; an app naming none always shows. The
+  // shell names no app and no server: it reads the app's own field against the jobs it already holds. Running is a
+  // server job of that module, running or pending (a node-operated server between restarts, which comes back by
+  // itself); failed, completed, or no such job is not.
+  function serverUp(app) {
+    if (!app || !app.server) return true;
+    var module = 'process/js/' + app.server;
+    var up = false;
+    jobsById.forEach(function (job) {
+      if (job && job.type === 'server' && job.module === module && (job.status === 'running' || job.status === 'pending')) up = true;
+    });
+    return up;
+  }
+  // The servers up now, as one string, so a job change repaints the desktop only when it changes what is offered.
+  var serversShown = '';
+  function serversUpKey() {
+    var up = [];
+    jobsById.forEach(function (job) {
+      if (job && job.type === 'server' && (job.status === 'running' || job.status === 'pending')) up.push(String(job.module));
+    });
+    return up.sort().join('\n');
+  }
+  function renderDesktopIfServersChanged() {
+    var now = serversUpKey();
+    if (now === serversShown) return;
+    serversShown = now;
+    renderDesktop();
+  }
   function renderDesktop() {
+    serversShown = serversUpKey();
     desktopEl.innerHTML = '';
     Object.keys(apps).forEach(function (id) {
       var app = apps[id];
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
+      if (!serverUp(app)) return; // its server is not running (goal/G27.16)
       if (hiddenByFirstRun(id)) return; // an unbound node has one thing to do
       if (!shownByInclusion(id)) return; // not included on this node (slim/G1.7)
       // An intrinsic app is excluded here like any other grouped app —
@@ -749,6 +781,8 @@
       // parent underneath, which is precisely the case that invariant
       // says cannot arise.
       if (apps[id].hidden) return;
+      // Nor while the server it needs is not running (goal/G27.16).
+      if (!serverUp(apps[id])) return;
       drawn[id] = true;
       container.appendChild(buildAppIcon(id));
     });
@@ -2839,6 +2873,9 @@
       // (Andy). Nothing already shipped changes — every manifest in the
       // tree says hidden:false.
       hidden: !!manifest.hidden,
+      // THE SERVER IT NEEDS (goal/G27.16): the folder name of a server under process/js, read off the app's own
+      // manifest; '' for an app that needs none. See serverUp.
+      server: typeof manifest.server === 'string' ? manifest.server : '',
       // 'app' | 'launcher' | 'dialog'. What it decides is what may be
       // launched FROM here — see buildApiFor. A launcher finishes with
       // the file it was showing and steps out of its own way; a dialog
@@ -3035,6 +3072,7 @@
       }
       notifyJobSubscribers(null);
       renderActive();
+      renderDesktopIfServersChanged();
     },
     onUpdate: function (job) {
       if (job && job.type === 'fs-watcher' && job.data) {
@@ -3055,12 +3093,14 @@
       notifyFileSubscribers();
       notifyJobSubscribers(job);
       renderActive();
+      renderDesktopIfServersChanged();
     },
     onDelete: function (id) {
       jobsById.delete(id);
       notifyFileSubscribers();
       notifyJobSubscribers(null);
       renderActive();
+      renderDesktopIfServersChanged();
     },
     // One packet, pushed the moment it landed. deliverPackets still takes
     // a batch — it did because the ring delivered batches, and it keeps

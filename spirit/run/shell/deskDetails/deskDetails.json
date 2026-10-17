@@ -3,6 +3,7 @@
   "description": "One row of Andy's desk: what it is, its thread, and the inputs that fit its kind.",
   "icon": "THREAD",
   "hidden": true,
+  "server": "desk",
   "type": "dialog",
   "intrinsic": false,
   "owner": "system"

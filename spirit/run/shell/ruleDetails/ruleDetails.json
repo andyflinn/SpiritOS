@@ -3,6 +3,7 @@
   "description": "One rule of the desk: its text, his draft and version buttons, and its chat.",
   "icon": "BOOK",
   "hidden": true,
+  "server": "desk",
   "type": "dialog",
   "intrinsic": false,
   "owner": "system"
