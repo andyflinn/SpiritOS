@@ -60,26 +60,26 @@
       if (el) {
         // ONE NICE LINE PER TEST (Andy, 2026-10-17: "one nice line per failure / test-file-name | failure-description |
         // success or fail | since"). The description is the sentence of what is tested, the test's sub-heading (its key
-        // without the number); what the suite printed on failing is for a debugging agent, so it is no row text, only
-        // the line's hover title.
+        // without the number); what the suite printed on failing is for a debugging agent, so it is not on screen.
         // ONLY THE LATEST, ONE LINE PER TESTED THING (Andy, 2026-10-17: "i only want to see the latest, if you want to
         // show the history of one test, use a dialog."). A test file and its sub-heading are one tested thing: its
-        // checks fold into one line, ❌ fail while any of them is red, its newest time; the failures it printed are
-        // the line's hover title.
+        // checks fold into one line, ❌ fail while any of them is red, its newest time.
         var groups = [];
         var byKey = Object.create(null);
         rows.forEach(function (x) {
           var what = String(x.title || '').replace(/\s+#\d+$/, '');
           var k = x.suite + '\n' + what;
           var g = byKey[k];
-          if (!g) { g = byKey[k] = { suite: x.suite, what: what, red: false, at: '', failures: [] }; groups.push(g); }
-          if (x.outcome === 'red') { g.red = true; if (x.failure) g.failures.push(String(x.failure)); }
+          if (!g) { g = byKey[k] = { suite: x.suite, what: what, red: false, at: '' }; groups.push(g); }
+          if (x.outcome === 'red') g.red = true;
           if (String(x.at || '') > g.at) g.at = String(x.at || '');
         });
         el.innerHTML = groups.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
           groups.map(function (g) {
             // F6: the line opens its history (data-suite, data-heading).
-            return '<tr title="' + esc(g.failures.join('\n')) + '" data-suite="' + esc(g.suite) + '" data-heading="' + esc(g.what) + '" style="cursor:pointer">' +
+            // NO DETAIL ON SCREEN, NOT EVEN ON HOVER (Andy, 2026-10-17: "I know you can read those details, so it
+            // doesn't need to be on-screen."): the failures stay in deskVerify for the agents.
+            return '<tr data-suite="' + esc(g.suite) + '" data-heading="' + esc(g.what) + '" style="cursor:pointer">' +
               '<td>' + esc(g.suite) + '</td><td>' + esc(g.what) + '</td>' +
               '<td>' + (g.red ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(g.at)) + '</td></tr>';
           }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';

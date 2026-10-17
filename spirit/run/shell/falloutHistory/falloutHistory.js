@@ -7,7 +7,7 @@
 // Opened from a line of the Fallout tab with { suite, heading }: the test file and the sub-heading its checks stand
 // under (since goal/G27.14 a check's key is "<heading> #<n>"). It reads every flip through the Fallout plugin's verb
 // fallout.history, which asks this node's deskVerify, and draws one line per flip, newest first: the check's number,
-// ❌ fail or ✅ success, when, and at which commit; a fail's printed failure is the line's hover title.
+// ❌ fail or ✅ success, and when; the commit and the printed failure stay in deskVerify, off the screen.
 
 var fhApi = null;
 var fhBody = null;
@@ -46,11 +46,13 @@ spirit.shell.activateApp({
       var note = document.getElementById('fh-note');
       if (note) note.textContent = rows.length ? rows.length + ' flip(s)' + (r && r.more ? ', the newest ' + rows.length + ' of ' + (Number(r.total) || rows.length) : '') + ', newest first.' : 'No flips recorded yet.';
       if (el) {
-        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Check</th><th>Status</th><th>When</th><th>Commit</th></tr></thead><tbody>' +
+        // NO COMMIT AND NO FAILURE TEXT ON SCREEN (Andy, 2026-10-17: "I know you can read those details, so it doesn't
+        // need to be on-screen."), the ❌/✅ kept ("Keep the fucking fail/success icons").
+        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Check</th><th>Status</th><th>When</th></tr></thead><tbody>' +
           rows.map(function (x) {
             var n = (String(x.title || '').match(/#(\d+)$/) || ['', ''])[1];
-            return '<tr title="' + fhEsc(x.failure || '') + '"><td>#' + fhEsc(n) + '</td><td>' + (x.outcome === 'red' ? '❌ fail' : '✅ success') + '</td>' +
-              '<td>' + fhEsc(fhWhen(x.at)) + '</td><td>' + fhEsc(String(x.commit || '').slice(0, 8)) + '</td></tr>';
+            return '<tr><td>#' + fhEsc(n) + '</td><td>' + (x.outcome === 'red' ? '❌ fail' : '✅ success') + '</td>' +
+              '<td>' + fhEsc(fhWhen(x.at)) + '</td></tr>';
           }).join('') + '</tbody></table>' : '';
       }
     }, function (e) {
