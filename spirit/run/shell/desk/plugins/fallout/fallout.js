@@ -39,6 +39,17 @@
       items.hidden = inner !== 'items';
     }
   }
+  // THE SIZE OF THE PROBLEM: how many tests are red now, of all, read on opening and after each search.
+  function summary() {
+    if (!ctx) return;
+    Promise.resolve(ctx.ask('fallout.summary', {})).then(function (r) {
+      var el = document.getElementById('fallout-summary');
+      if (!el) return;
+      var red = Number(r && r.red) || 0;
+      var all = red + (Number(r && r.green) || 0);
+      el.textContent = '❌ ' + red + ' red of ' + all + ' tests now' + (all ? ' (' + Math.round(red * 100 / all) + '%)' : '') + '.';
+    }, function () { /* the line stays as it was */ });
+  }
   // F2: the reds that match, one row each.
   function search() {
     if (!ctx || searching) return;
@@ -51,6 +62,7 @@
     say('Searching the verifier.');
     Promise.resolve(ctx.ask('fallout.reds', { text: text, outcome: outcome })).then(function (r) {
       searching = false;
+      summary();
       var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
       // HOW MANY (Andy: "how many red?"): every match, beside the rows one answer carries.
       var count = document.getElementById('fallout-count');
@@ -96,6 +108,8 @@
         '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Fallout</div>' +
           '<div class="job-manifest-note">What a goal leaves red beyond its own scope. Reds searches the verifier\'s tests that are red now; ' +
           'Items will hold the work they cause.</div></div>' +
+        // THE SIZE OF THE PROBLEM (Andy, 2026-10-17: "how many red in total"), whatever the search, above the tabs.
+        '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Now</div><div id="fallout-summary" class="job-manifest-note">Counting.</div></div>' +
         '<div id="fallout-tabs" style="margin-top:1em"></div>' +
         '<div id="fallout-pane-reds">' +
           '<div class="start-job-form card" style="margin-top:1em"><label class="field-label grow">Search the reds' +
@@ -127,6 +141,7 @@
         container.addEventListener('keydown', function (e) { var t = e && e.target; if (t && t.id === 'fallout-text' && e.key === 'Enter' && !e.repeat) search(); });
       }
       drawTabs();
+      summary();
       if (typeof given.chat === 'function') given.chat(document.getElementById('fallout-chat'));
     },
   };

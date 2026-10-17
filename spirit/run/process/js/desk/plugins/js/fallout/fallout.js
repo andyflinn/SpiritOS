@@ -42,8 +42,18 @@ module.exports = function (desk) {
         more: !!(r && r.more), total: Number(r && r.total) || 0 };
     });
   }
+  // THE SIZE OF THE PROBLEM (Andy, 2026-10-17: "i would like to know much more: how many red in total
+  // (size-of-problem-info)"): how many tests are red now and how many green, whatever the search, from deskVerify's
+  // totals of the current tests.
+  function summary() {
+    if (typeof desk.verify !== 'function') throw desk.refused('bad-request', 'this desk hands its plugins no deskVerify to search');
+    return Promise.all(['red', 'green'].map(function (outcome) {
+      return desk.verify('search', { over: 'tests', current: 'yes', outcome: outcome }).then(function (r) { return Number(r && r.total) || 0; });
+    })).then(function (n) { return { red: n[0], green: n[1] }; });
+  }
   return {
     verbs: {
+      'fallout.summary': { request: {}, reply: { red: 0, green: 0 }, handler: summary },
       'fallout.history': { request: { suite: '', heading: '' }, reply: { items: [{ key: '', label: '' }], more: false, total: 0 }, handler: history },
       // goal/G27.14, F3: the verifier's tests that stand now and match the text, as deskVerify ranks them.
       'fallout.reds': { request: { text: '', outcome: '' }, reply: { items: [{ key: '', label: '' }], more: false, total: 0 }, handler: reds,
