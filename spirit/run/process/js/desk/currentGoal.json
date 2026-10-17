@@ -1,5 +1,5 @@
 {
- "change": 66843,
+ "change": 66844,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -6600,10 +6600,9 @@
    "id": "goal/G27.19",
    "title": "phases remain re-takable until done is pressed by the user",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
