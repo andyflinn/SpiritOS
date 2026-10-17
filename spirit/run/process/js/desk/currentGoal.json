@@ -1,5 +1,5 @@
 {
- "change": 66101,
+ "change": 66114,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -51,14 +51,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3626,10 +3628,9 @@
    "id": "goal/G27.12",
    "title": "deskClient needs to manage more for agents/models",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -4592,11 +4593,9 @@
    "id": "goal/G27.15",
    "title": "deskAgent learns a model context from a refusal",
    "goal": "goal/G27",
-   "status": "running",
-   "with": "",
-   "buttons": [
-    "delete"
-   ],
+   "status": "red",
+   "with": "claude-windows",
+   "buttons": [],
    "blocking": [
     "goal/G27"
    ],
@@ -4606,13 +4605,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
-   "phase": "",
-   "red": "",
+   "code": true,
+   "phase": "red",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "creator": "claude-windows",
@@ -4665,7 +4664,19 @@
    "full": false,
    "box": "deskAgent learns a model context from a refusal\n\nRequirements (Andy, goal/G27.8 and goal/G27.15 chat, 2026-10-17):\nR1. Every call to the model is sized to 95% of its limit, always: a safety margin so that most refusals never happen.\nR2. When the host refuses a call with a 400 whose text names two numbers (the limit, and the size supplied that exceeds it), deskAgent learns two things for that model on that pair: its limit, the lower number; and its bytes per token, the bytes it sent divided by the higher number. Both are kept on the model entry in that pair list (models.json) and used for every later call; where the studio reports its own context_length on a refresh, the smaller of reported and learned is the limit.\nR3. That same call is asked again once, with the oldest chat lines and the oldest tool results cut until it fits the learned size. A second refusal fails the turn as today.\nR4. Any other 400, or one that names fewer than two numbers, fails the turn as today: nothing learned, nothing cut, nothing retried.\n\nFrom the code (deskAgent.js at 5c127aa1): the room is the context the studio reports for the loaded model (api/inference/status, context_length), or a plain pair entry context, else 8192; the prompt is sized in bytes at bytesPerToken from the configuration (4 by default); a refused call ends the turn as \"the answer failed\" in the test tab log.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js and a red suite.",
    "version": 2,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "This item is not marked as code, so your Go opened no red phase: press Code on it?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-17T02:42:47.650Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -4767,6 +4778,12 @@
      "by": "desk",
      "key": "",
      "at": "2026-10-17T02:36:16.532Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T02:42:48.491Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
@@ -5167,7 +5184,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
