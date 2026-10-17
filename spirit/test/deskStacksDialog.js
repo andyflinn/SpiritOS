@@ -15,6 +15,11 @@
 //   D6. a plugin goal is never made current (make-current not offered, refused if asked), and only a press on the
 //       current goal or its items writes and pushes currentGoal.json.
 //   D7. a door is deleted from its dialog alone.
+//   D8. every door has its own item in the Stacks goal: an old door naming an item outside it, or sharing one, gets a
+//       fresh one, and the list points at it.
+//   D9. the Stacks subsystem stands alone: deskVerify declares no door.run or door.state (their suite gone), keeps
+//       door.record; oneDoorStacks.js is off the list runAll and deskVerify's full run read as suites; the plugin makes no
+//       rerun item, and deletes one left from before when it mounts.
 //
 // THE SHAPES THIS RED NAMES: the record verb deskVerify door.record {id, verdict}; the dialog's ids sfcd-run,
 // sfcd-remove, sfcd-chat. The world is deskPluginsGg.js's: a real desk with the plugin, a scratch list in a scratch work
@@ -103,6 +108,14 @@ async function serverHalf() {
   gitIn(work, ['remote', 'add', 'origin', remote]);
   gitIn(work, ['push', '-q', 'origin', 'master:master']);
   const listFile = path.join(work, 'stackFrameList.json');
+  // D8's WORLD: two old doors from before the plugin, both naming one item outside the Stacks goal, as d1 and d2 name
+  // goal/G19.14 on his tree.
+  const OLD = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'or/G9.1' },
+    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'or/G9.1' }];
+  fs.writeFileSync(listFile, JSON.stringify(OLD, null, 2) + '\n');
+  gitIn(work, ['add', 'stackFrameList.json']);
+  gitIn(work, ['commit', '-q', '--no-verify', '-m', 'two old doors']);
+  gitIn(work, ['push', '-q', 'origin', 'master:master']);
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.mkdirSync(state, { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
@@ -110,11 +123,14 @@ async function serverHalf() {
   client = appClient.createAppClient({ rootDir: root });
   client.register('desk', pipe);
   // The goal share on (goalRepo): its job is what D6 counts.
-  kid = spawn(process.execPath, [DESK, JSON.stringify({ stackFrameList: listFile, goalRepo: work }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-    env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
-  let up = false;
-  for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
-  if (!up) { test.fail('the world: the desk did not start'); return; }
+  const startDesk = async function () {
+    kid = spawn(process.execPath, [DESK, JSON.stringify({ stackFrameList: listFile, goalRepo: work }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + node.port + '/api/spirit' }) });
+    let up = false;
+    for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
+    return up;
+  };
+  if (!await startDesk()) { test.fail('the world: the desk did not start'); return; }
   await sleep(500);
   const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'or/G1', title: 'Ordinary' }, items: [{ id: 'or/G1.1', title: 'one', blocks: ['or/G1'] }] }) });
   const set2 = await call('goal.add', { title: 'Another ordinary goal' });
@@ -179,6 +195,49 @@ async function serverHalf() {
   else test.fail(OWED + (s1 - s0) + ' goal share(s) started by presses outside the current goal');
   if (s2 > s1) test.check('a press on the current goal\'s item still shares it (guard)');
   else test.fail('the world: a press on the current goal shared nothing (current is ' + short(other) + ')');
+
+  test.subHeading('D8. every door has its own item in the Stacks goal');
+  const allDoors = ((await call('stackFrameChecks.doors', {})).doors || []);
+  const olds = allDoors.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
+  const oldItems = olds.map(function (d) { return d.item; });
+  const oldFacts = [];
+  for (const id of oldItems) oldFacts.push(await factsOf(id));
+  if (olds.length === 2 && oldItems.every(function (id) { return String(id).indexOf(GOAL + '.') === 0; }) && oldItems[0] !== oldItems[1] &&
+      oldFacts.every(function (f) { return f && f.goal === GOAL && f.status !== 'closed'; })) test.check('the two old doors got a fresh item each in ' + GOAL + ': ' + oldItems.join(', '));
+  else test.fail(OWED + 'the old doors read back ' + short(olds.map(function (d) { return d.id + '->' + d.item; })));
+  const items = allDoors.map(function (d) { return d.item; });
+  if (items.every(function (id, i) { return items.indexOf(id) === i; })) test.check('no two doors share an item');
+  else test.fail(OWED + 'doors share items: ' + short(items));
+  let listNow = [];
+  try { listNow = JSON.parse(fs.readFileSync(listFile, 'utf8')); } catch (e) { listNow = []; }
+  if (listNow.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; }).every(function (d) { return String(d.item).indexOf(GOAL + '.') === 0; })) test.check('the list itself points the old doors at their new items');
+  else test.fail(OWED + 'the list reads ' + short(listNow.map(function (d) { return d.id + '->' + d.item; })));
+
+  test.subHeading('D9. the Stacks subsystem stands alone: deskVerify runs no stack check');
+  const verifySrc = fs.readFileSync(VERIFY, 'utf8');
+  if (!/'door\.run'\s*:/.test(verifySrc) && !/'door\.state'\s*:/.test(verifySrc) && /'door\.record'\s*:/.test(verifySrc)) test.check('deskVerify declares door.record and no door.run or door.state');
+  else test.fail(OWED + 'deskVerify.js still declares door.run or door.state');
+  if (!fs.existsSync(path.join(__dirname, 'deskVerifyDoorRun.js'))) test.check('deskVerifyDoorRun.js, the suite of those two verbs, is gone');
+  else test.fail(OWED + 'deskVerifyDoorRun.js is still there');
+  let notSuites = [];
+  try { delete require.cache[require.resolve('./notASuite.js')]; notSuites = require('./notASuite.js'); } catch (e) { notSuites = []; }
+  if (notSuites.indexOf('oneDoorStacks.js') !== -1) test.check('oneDoorStacks.js is off the list runAll and deskVerify\'s full run read as suites');
+  else test.fail(OWED + 'oneDoorStacks.js is still run by runAll and deskVerify');
+  const members = async function () {
+    const r = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false });
+    return (r.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(function (x) { return x && x.goal === GOAL; });
+  };
+  const RERUN = 'Rerun the stack-frame test';
+  if (!(await members()).some(function (x) { return x.title === RERUN; })) test.check('a fresh desk makes no rerun item in ' + GOAL);
+  else test.fail(OWED + GOAL + ' holds a rerun item: ' + short((await members()).map(function (x) { return x.id + ' ' + x.title; })));
+  // One left from before D9, as on his desk: the plugin deletes it when it mounts.
+  const left = await call('item.add', { goal: GOAL, title: RERUN, blocks: '' });
+  try { kid.kill(); } catch (e) { /* gone */ }
+  await sleep(800);
+  if (!left.id || !await startDesk()) { test.fail('the world: the left rerun item ' + short(left) + ', or the restart'); return; }
+  const leftAfter = await factsOf(left.id);
+  if (!(await members()).some(function (x) { return x.title === RERUN; })) test.check('a rerun item left from before is deleted when the plugin mounts: ' + left.id + ' reads ' + short(leftAfter && leftAfter.status));
+  else test.fail(OWED + 'after the restart ' + GOAL + ' still holds ' + left.id + ', ' + RERUN);
 }
 
 // ── THE FACE ────────────────────────────────────────────────────────────
