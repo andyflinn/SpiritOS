@@ -155,9 +155,13 @@ async function faceHalf() {
   const box = fakeElement('pane');
   ui.open(box, {
     goal: GOAL,
+    // THE LIST COMES FROM ITS GOAL, NOT A SEARCH (goal/G27.3, Andy, 2026-10-17: "where is my list of vision items?"):
+    // a search answers one bucket, here full of other goals' items, while the goal's own facts name its open items.
     ask: function (verb, a) {
       asked.push([verb, a]);
-      if (verb === 'items.search') return Promise.resolve({ items: [{ key: ITEM.id, label: JSON.stringify(ITEM) }], more: false });
+      if (verb === 'items.search') return Promise.resolve({ items: [{ key: 'goal/G9.1', label: JSON.stringify({ id: 'goal/G9.1', title: 'Another goal\'s item', goal: 'goal/G9' }) }], more: true });
+      if (verb === 'item.get' && a && a.id === GOAL) return Promise.resolve({ item: JSON.stringify({ id: GOAL, title: 'Vision', goal: '', blocked: [ITEM.id], blocking: [] }), version: 1, change: 9 });
+      if (verb === 'item.get' && a && a.id === ITEM.id) return Promise.resolve({ item: JSON.stringify(ITEM), version: 1, change: 9 });
       return Promise.resolve({ id: GOAL + '.2', change: 9 });
     },
     onPublished: function () { return function () {}; },
