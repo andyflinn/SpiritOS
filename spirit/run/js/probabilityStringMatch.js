@@ -121,7 +121,19 @@ function rank(label, query) {
   return anyTokenFound(tokens(query), label) ? 3 : -1;
 }
 
-// THE FOUR SIGNALS AND THEIR WEIGHTS, gradedSearch's TEXT_SIGNALS as they stand.
+// HOW CLOSE THE MATCHED WORDS SIT (goal/G29.1): the matched words over the words spanned from the first match to the
+// last; side by side 1.0, two words 500 apart 2/500.
+function proximity(order) {
+  if (order.length < 2) return 1;
+  var lo = Math.min.apply(null, order);
+  var hi = Math.max.apply(null, order);
+  return order.length / (hi - lo + 1);
+}
+
+// THE SIGNALS AND THEIR WEIGHTS: gradedSearch's TEXT_SIGNALS, with distance added and order lowered by goal/G29.1. Its
+// box: "Distance counts, and more than order: a fifth signal, proximity ... People type words in any order, but words
+// far apart usually belong to different thoughts, so proximity weighs 0.35 and order drops from 0.25 to 0.15. That
+// ratio is a guess." The weights are set by hand until they are learned from what makes a user happier.
 var SIGNALS = [
   { name: 'match', weight: 1.0, quality: function (s) {
     if (s.rank === 0) return 1.0;
@@ -139,13 +151,59 @@ var SIGNALS = [
     if (!s.queryTokens.length || !s.typed) return 0;
     return matchTokens(s.queryTokens, s.textTokens).chars / s.typed;
   } },
-  { name: 'sequence', weight: 0.25, quality: function (s) {
+  { name: 'sequence', weight: 0.15, quality: function (s) {
     if (s.queryTokens.length < 2) return 1;
     var mt = matchTokens(s.queryTokens, s.textTokens);
     if (!mt.order.length) return 0;
     return sequenceRun(mt.order) / mt.order.length;
   } },
+  { name: 'proximity', weight: 0.35, quality: function (s) {
+    if (s.queryTokens.length < 2) return 1;
+    var mt = matchTokens(s.queryTokens, s.textTokens);
+    if (!mt.order.length) return 0;
+    return proximity(mt.order);
+  } },
 ];
+
+// CASE COUNTS, BY A HAIR (goal/G29.1). Its box: "Case counts: "Relay" matches "Relay" better than "relay" or "reLay"
+// does. 0.000001 is subtracted from the probability for every character whose case differs, counted over the
+// characters that matched ignoring case; it only orders better matches ahead of worse ones and moves nothing else."
+var CASE_MISS = 0.000001;
+function caseDiffers(a, b) { return a !== b && a.toLowerCase() === b.toLowerCase(); }
+function casesMissed(x, y) {
+  var n = 0;
+  for (var i = 0; i < x.length && i < y.length; i++) if (caseDiffers(x[i], y[i])) n += 1;
+  return n;
+}
+// Where the shorter is found whole in the longer, the fewest misses over its places; otherwise over its words matched
+// whole, each to the free word of the longer it best agrees with. A character matched only as part of a word is left
+// out: where it sits is not known.
+function caseMisses(longer, shorter) {
+  var ll = longer.toLowerCase();
+  var sl = shorter.toLowerCase();
+  if (ll.length !== longer.length || sl.length !== shorter.length) return 0;
+  var best = -1;
+  for (var at = ll.indexOf(sl); at !== -1; at = ll.indexOf(sl, at + 1)) {
+    var n = casesMissed(shorter, longer.substr(at, shorter.length));
+    if (best === -1 || n < best) best = n;
+    if (best === 0) break;
+  }
+  if (best !== -1) return best;
+  var words = tokens(longer);
+  var taken = new Array(words.length).fill(false);
+  var misses = 0;
+  tokens(shorter).forEach(function (q) {
+    var pick = -1;
+    var pickMiss = 0;
+    for (var j = 0; j < words.length; j++) {
+      if (taken[j] || words[j].toLowerCase() !== q.toLowerCase()) continue;
+      var m = casesMissed(q, words[j]);
+      if (pick === -1 || m < pickMiss) { pick = j; pickMiss = m; }
+    }
+    if (pick !== -1) { taken[pick] = true; misses += pickMiss; }
+  });
+  return misses;
+}
 
 // THE LONGER GRADED AGAINST THE SHORTER: the weighted mean of the signals, 0 to 1.
 function graded(longer, shorter) {
@@ -179,7 +237,9 @@ function probabilityStringMatch(A, B) {
   // The shorter is graded as the query; of two the same length, A ("shorterString = A, longerString = B").
   var shorter = A.length <= B.length ? A : B;
   var longer = shorter === A ? B : A;
-  return graded(longer, shorter);
+  var p = graded(longer, shorter);
+  if (!(p > 0)) return p;
+  return Math.max(0, p - CASE_MISS * caseMisses(longer, shorter));
 }
 
 // IN NODE AND IN A PAGE ALIKE (goal/G27.14). Andy, 2026-10-17: "why down't the UI run the exact same search code in
