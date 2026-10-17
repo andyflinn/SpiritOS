@@ -14,7 +14,7 @@
 // process/js/<server> and whose status is running, or pending (a node-operated server between restarts, which comes
 // back by itself); failed, completed or no such job is not running.
 // WHAT IS ASSERTED
-//   1. the manifests: Desk, its two dialogs and the Remote name their servers; Text Editor names none.
+//   1. the manifests: Desk, its two dialogs, the Remote and Chatter name their servers; Text Editor names none.
 //   2. with no desk server running Desk is not on the desktop; Text Editor is (R3).
 //   3. once a desk server job runs, Desk shows; the Remote, needing deskAgent, still does not.
 //   4. a server restarting (pending) keeps its app; a failed one, or one gone from the jobs, takes it away.
@@ -92,9 +92,11 @@ test.subHeading('1. the manifests name their servers');
 const named = {
   'shell/desk/desk.json': 'desk', 'shell/deskDetails/deskDetails.json': 'desk', 'shell/ruleDetails/ruleDetails.json': 'desk',
   'shell/deskAgentRemote/deskAgentRemote.json': 'deskAgent',
+  // Folded in by Andy, 2026-10-17: Chatter is the face of chatClerver.
+  'shell/chatter/chatter.json': 'chatClerver',
 };
 const wrong = Object.keys(named).filter(function (rel) { return manifest(rel).server !== named[rel]; });
-if (!wrong.length) test.check('Desk, its two dialogs and the Remote name their servers');
+if (!wrong.length) test.check('Desk, its two dialogs, the Remote and Chatter name their servers');
 else test.fail(OWED + 'these manifests do not name their server: ' + wrong.map(function (r) { return r + ' reads ' + JSON.stringify(manifest(r).server); }).join('; '));
 if (manifest('shell/textEditor/textEditor.json').server === undefined) test.check('Text Editor names none');
 else test.fail(OWED + 'textEditor.json names a server: ' + short(manifest('shell/textEditor/textEditor.json').server));
