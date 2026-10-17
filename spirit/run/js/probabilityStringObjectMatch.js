@@ -1,5 +1,8 @@
 'use strict';
 
+// ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
+(function () {
+
 // spirit/run/js/probabilityStringObjectMatch.js
 // HOW LIKELY A STRING IS WHAT AN OBJECT HOLDS, AS A PROBABILITY — goal/G18.3, the second of the probabilit* modules.
 //
@@ -20,7 +23,10 @@
 //
 // NO I/O, NO CLOCK, NO STATE.
 
-var probabilityStringMatch = require('./probabilityStringMatch').probabilityStringMatch;
+// In node the module beside it; in a page the shell's own, loaded first by index.html (goal/G27.14).
+var probabilityStringMatch = typeof require === 'function' && typeof module !== 'undefined' && module
+  ? require('./probabilityStringMatch').probabilityStringMatch
+  : window.spiritProbability.probabilityStringMatch;
 
 function isPlainObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
@@ -59,4 +65,10 @@ function probabilityStringObjectMatch(string, object) {
   return table.reduce(function (sum, row) { return sum + probabilityStringMatch(string, row.objectString) * row.weight; }, 0);
 }
 
-module.exports = { probabilityStringObjectMatch: probabilityStringObjectMatch };
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14): a page finds it on window.spiritProbability.
+if (typeof module !== 'undefined' && module && module.exports) module.exports = { probabilityStringObjectMatch: probabilityStringObjectMatch };
+if (typeof window !== 'undefined' && window) {
+  window.spiritProbability = window.spiritProbability || {};
+  window.spiritProbability.probabilityStringObjectMatch = probabilityStringObjectMatch;
+}
+}());

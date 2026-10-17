@@ -1,5 +1,8 @@
 'use strict';
 
+// ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
+(function () {
+
 // spirit/run/js/probabilityStringMatch.js
 // HOW LIKELY TWO STRINGS MEAN THE SAME THING, AS A PROBABILITY — goal/G18.2, the first of the probabilit* modules.
 //
@@ -179,4 +182,12 @@ function probabilityStringMatch(A, B) {
   return graded(longer, shorter);
 }
 
-module.exports = { probabilityStringMatch: probabilityStringMatch };
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14). Andy, 2026-10-17: "why down't the UI run the exact same search code in
+// the shell? ... any search can then easiliy accumulate a cache that can be expanded with every search? it's a
+// pattern....". A page loads this file as it is and finds it on window.spiritProbability.
+if (typeof module !== 'undefined' && module && module.exports) module.exports = { probabilityStringMatch: probabilityStringMatch };
+if (typeof window !== 'undefined' && window) {
+  window.spiritProbability = window.spiritProbability || {};
+  window.spiritProbability.probabilityStringMatch = probabilityStringMatch;
+}
+}());

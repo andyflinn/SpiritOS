@@ -1,5 +1,8 @@
 'use strict';
 
+// ONE SCOPE OF ITS OWN (goal/G27.14): loaded into a page as a plain script, its names stay its own.
+(function () {
+
 // spirit/run/js/probabilityBucket.js
 // THE BEST OBJECTS BY PROBABILITY, SEATED AS THEY COME AND SERIALIZED TO A CEILING — goal/G18.4, the third of the
 // probabilit* modules.
@@ -62,4 +65,10 @@ function createProbabilityBucket(capacity) {
   };
 }
 
-module.exports = { createProbabilityBucket: createProbabilityBucket };
+// IN NODE AND IN A PAGE ALIKE (goal/G27.14), as probabilityStringMatch.js: a page finds it on window.spiritProbability.
+if (typeof module !== 'undefined' && module && module.exports) module.exports = { createProbabilityBucket: createProbabilityBucket };
+if (typeof window !== 'undefined' && window) {
+  window.spiritProbability = window.spiritProbability || {};
+  window.spiritProbability.createProbabilityBucket = createProbabilityBucket;
+}
+}());

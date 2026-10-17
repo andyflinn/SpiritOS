@@ -17,6 +17,7 @@
   var inner = 'reds';
   var searching = false;
   var cache = Object.create(null);   // every line any search brought, by test file and sub-heading
+  // THE PROBABILITY MODULES are the shell's (index.html loads them, goal/G27.14): window.spiritProbability.
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -93,17 +94,32 @@
         // newest answer winning for a line; what shows is this answer's lines and every cached line the words and the
         // ✅/❌ filter match, newest first. No paging: the cache is only what searches brought.
         Object.keys(answer).forEach(function (k) { cache[k] = answer[k]; });
+        // THE SAME SEARCH CODE AS THE SERVERS (Andy, 2026-10-17: "why down't the UI run the exact same search code in
+        // the shell? ... it's a pattern...."): a cached line's probability is probabilityStringMatch's, the very one
+        // deskVerify ranks with, and the lines are seated in a probabilityBucket, best first; with no words, newest
+        // first. Until the two modules have loaded, a plain word match stands in.
+        var P = win.spiritProbability || {};
         var words = text.toLowerCase().split(/\s+/).filter(Boolean);
         var bySuite = /^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/.test(text);
-        var fits = function (g) {
-          if (outcome === 'red' && !g.red) return false;
-          if (outcome === 'green' && g.red) return false;
-          if (bySuite) return g.suite === text;
-          var hay = (g.suite + ' ' + g.what).toLowerCase();
-          return words.every(function (w) { return hay.indexOf(w) !== -1; });
+        var probability = function (g) {
+          if (outcome === 'red' && !g.red) return -1;
+          if (outcome === 'green' && g.red) return -1;
+          if (!text) return 0;
+          if (bySuite) return g.suite === text ? 1 : -1;
+          var hay = g.suite + ' ' + g.what;
+          if (typeof P.probabilityStringMatch === 'function') { var p = P.probabilityStringMatch(text, hay); return p > 0 ? p : -1; }
+          return words.every(function (w) { return hay.toLowerCase().indexOf(w) !== -1; }) ? 0.5 : -1;
         };
-        var groups = Object.keys(cache).filter(function (k) { return answer[k] || fits(cache[k]); }).map(function (k) { return cache[k]; })
-          .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+        var newestFirst = Object.keys(cache).map(function (k) { return { k: k, g: cache[k] }; })
+          .sort(function (a, b) { return String(b.g.at).localeCompare(String(a.g.at)); });
+        var seated = newestFirst.map(function (x) { return { g: x.g, p: answer[x.k] ? Math.max(probability(x.g), 0) : probability(x.g) }; })
+          .filter(function (x) { return x.p >= 0; });
+        var groups;
+        if (text && typeof P.createProbabilityBucket === 'function') {
+          var bucket = P.createProbabilityBucket(seated.length || 1);
+          seated.forEach(function (x) { bucket.seatFor(x.p, x.g); });
+          groups = bucket.serialize(null, 0).items;
+        } else groups = seated.map(function (x) { return x.g; });
         if (count) count.textContent = Math.max(total, groups.length) + ' ' + (outcome === 'red' ? '❌' : outcome === 'green' ? '✅' : '') + ' match this search' + (Math.max(total, groups.length) > groups.length ? ', the ' + groups.length + ' best shown' : '');
         el.innerHTML = groups.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
           groups.map(function (g) {

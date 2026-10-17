@@ -247,7 +247,7 @@ async function paneHalf() {
   // ... any search can then easiliy accumulate a cache that can be expanded with every search? it's a pattern...."):
   // the probability modules load into a page's window as they load into node; a fake page cannot load a script, so
   // the world puts them there, and counts the matches the pane asks of them.
-  const PROB = ['probabilityStringMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'js', f); });
+  const PROB = ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'js', f); });
   PROB.forEach(function (f) { if (fs.existsSync(f)) { try { new Function('window', 'module', fs.readFileSync(f, 'utf8'))(win, undefined); } catch (e) { /* node-only: the red below says so */ } } });
   let probCalls = 0;
   if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function') {
@@ -354,7 +354,17 @@ async function paneHalf() {
   box.fire('click', { target: { id: 'fallout-search', getAttribute: function () { return null; } } });
   await sleep(20);
   const cachedTable = doc.getElementById('fallout-reds').innerHTML;
-  if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function' && typeof win.spiritProbability.createProbabilityBucket === 'function') test.check('the probability modules load into a page\'s window');
+  // SHELL-SIDE FOR EVERY ELEMENT (Andy, 2026-10-17: "they all can count on the probability stuff being available,
+  // shell-side...."): the shell's page loads both modules itself.
+  const indexHtml = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  // All three (Andy: "what about probabilityObject or whatever it's called?"), the object match after the string match
+  // it needs.
+  const atS = indexHtml.indexOf('<script src="/js/probabilityStringMatch.js"></script>');
+  const atO = indexHtml.indexOf('<script src="/js/probabilityStringObjectMatch.js"></script>');
+  const atB = indexHtml.indexOf('<script src="/js/probabilityBucket.js"></script>');
+  if (atS !== -1 && atO > atS && atB !== -1) test.check('index.html loads the three probability modules, the object match after the string match, so every element can count on them');
+  else test.fail(OWED + 'index.html loads string ' + atS + ', object ' + atO + ', bucket ' + atB);
+  if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function' && typeof win.spiritProbability.probabilityStringObjectMatch === 'function' && typeof win.spiritProbability.createProbabilityBucket === 'function') test.check('the three probability modules load into a page\'s window');
   else test.fail(OWED + 'js/probabilityStringMatch.js and js/probabilityBucket.js give a page nothing: ' + short(win.spiritProbability && Object.keys(win.spiritProbability)));
   if (probCalls > 0) test.check('the pane ranks its cache with the same probabilityStringMatch the servers search with (' + probCalls + ' calls)');
   else test.fail(OWED + 'the pane matched its cache without probabilityStringMatch');
