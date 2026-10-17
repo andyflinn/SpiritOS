@@ -1,5 +1,5 @@
 {
- "change": 65708,
+ "change": 65833,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -36,6 +36,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -51,14 +52,13 @@
    "full": false,
    "design": false,
    "waiting": 9,
-   "excluded": [],
+   "excluded": [
+    "ollama agent node"
+   ],
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
-   "working": [
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -381,10 +381,10 @@
    "id": "goal/G27.10",
    "title": "Chat posts follow the address, not the newest line",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "delete"
+    "done"
    ],
    "blocking": [
     "goal/G27"
@@ -393,20 +393,47 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/AGENTS.md",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskClient/deskClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatFlowOneTask.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatFollowsAddress.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "creator": "claude-windows",
+   "claimCommit": "db84a0a9",
+   "redCommit": "9f552f95",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -446,14 +473,25 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "Chat posts follow the address, not the newest line\n\nAndy's problem (goal/G27 chat, 2026-10-15): slow agents in deskAgent work for a long time and then find themselves blocked from answering a question they were asked; work notes and reports that were explicitly or implicitly asked for need a way to post that cannot be blocked.\n\nToday (read from code, spirit/run/process/js/desk/desk.js, the chat.add gate about lines 2296-2335): the gate judges by who writes, not by what the line is. An open take of one of Andy's lines survives later lines, so the taker still answers. But an agent that holds no take and no item is refused once Andy's newest line under the item is taken by another agent, even when Andy addressed it by name in an earlier line, when it created the item (Levant was refused on goal/G27.1 and goal/G27.9), or when it held a phase on the item (refused as a second answer).\n\nRequirements:\nR1. A line of Andy's addressed to an agent gives that agent a standing right to post under that item until it has answered, whatever lines or takes come after. This already holds in the desk (desk.js, chat.add and holdsTake, at a2671faa): his addressed line is taken by that agent when it is written and stays an open take until the agent answers. The red asserts it as a guard.\nR2. An agent that holds the item or a phase on it, held a phase on it earlier, or created it, posts its work notes and reports under it at any time.\nR3. Andy's rule stands: no second answer to a taken line; one agent answers a line of his, once.\nR4. The gate stays mechanical: it goes by the address, the take, the holding and the creator on record, never by reading the line for what it means.\nR5. deskClient's own chat and box gate (goal/G27.12) allows the same posts R2 allows: it refuses today what the desk would accept for a creator or an earlier phase holder.\n\nFolds in the earlier proposal under goal/G27: an agent may post under an item it just created (R2).\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the chat.add gate), spirit/run/process/js/deskClient/deskClient.js (its gate, R5), spirit/run/process/js/desk/AGENTS.md (the posting rule), and a red suite. None of them is a core file, so no file grant is needed; Andy's Go is.",
-   "version": 4,
-   "checks": [],
+   "box": "Chat posts follow the address, not the newest line\n\nAndy's problem (goal/G27 chat, 2026-10-15): slow agents in deskAgent work for a long time and then find themselves blocked from answering a question they were asked; work notes and reports that were explicitly or implicitly asked for need a way to post that cannot be blocked.\n\nToday (read from code, spirit/run/process/js/desk/desk.js, the chat.add gate about lines 2296-2335): the gate judges by who writes, not by what the line is. An open take of one of Andy's lines survives later lines, so the taker still answers. But an agent that holds no take and no item is refused once Andy's newest line under the item is taken by another agent, even when Andy addressed it by name in an earlier line, when it created the item (Levant was refused on goal/G27.1 and goal/G27.9), or when it held a phase on the item (refused as a second answer).\n\nRequirements:\nR1. A line of Andy's addressed to an agent gives that agent a standing right to post under that item until it has answered, whatever lines or takes come after. This already holds in the desk (desk.js, chat.add and holdsTake, at a2671faa): his addressed line is taken by that agent when it is written and stays an open take until the agent answers. The red asserts it as a guard.\nR2. An agent that holds the item or a phase on it, held a phase on it earlier, or created it, posts its work notes and reports under it at any time. This replaces goal/G21.4's refusal of an earlier phase holder after another agent took and answered his line (Andy, 2026-10-17, accepting the recommendation to keep R2).\nR3. Andy's rule stands: no second answer to a taken line; one agent answers a line of his, once.\nR4. The gate stays mechanical: it goes by the address, the take, the holding and the creator on record, never by reading the line for what it means.\nR5. deskClient's own chat and box gate (goal/G27.12) allows the same posts R2 allows: it refuses today what the desk would accept for a creator or an earlier phase holder.\n\nFolds in the earlier proposal under goal/G27: an agent may post under an item it just created (R2).\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the chat.add gate), spirit/run/process/js/deskClient/deskClient.js (its gate, R5), spirit/run/process/js/desk/AGENTS.md (the posting rule), and a red suite. None of them is a core file, so no file grant is needed; Andy's Go is.",
+   "version": 5,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "red writer builds: red writer: claude-windows wrote the red of goal/G27.10, which is in build",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-17T00:56:15.506Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -484,6 +522,126 @@
      "key": "",
      "at": "2026-10-17T00:44:43.823Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:46:29.046Z",
+     "text": "commit 9f552f957edf593aafa48245618a87c95b69f25e: goal/G27.10: the red for chat posts following the address, the holding and the creator\n- spirit/test/deskChatFollowsAddress.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:46:32.751Z",
+     "text": "deskVerify: red confirmed at 9f552f95: spirit/test/deskChatFollowsAddress.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T00:46:46.036Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:50:50.356Z",
+     "text": "cw: built and green in my clone, 7 of 7, not yet committed. One conflict to rule on: R2 lets the red writer post at any time, but the G21.4 suite asserts your older rule that the red writer is refused after another agent took and answered your line.\nThe desk cannot tell a work note from a second answer (R4), so one must give. Keep R2 and rewrite that G21.4 check, or keep G21.4 so only the creator and the current holder post at any time?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:54:04.798Z",
+     "text": "cw,\n\n\"claude-windows 02:50 cw: built and green in my clone, 7 of 7, not yet committed. One conflict to rule on: R2 lets the red writer post at any time, but the G21.4 suite asserts your older rule that the red writer is refused after another agent took and answered your line.\nThe desk cannot tell a work note from a second answer (R4), so one must give. Keep R2 and rewrite that G21.4 check, or keep G21.4 so only the creator and the current holder post at any time?\"\n\nrecommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:54:20.109Z",
+     "text": "cw: keep R2. The problem this item fixes is exactly an agent that worked on the item being blocked from reporting, and the red writer is that agent.\nThe chatter you fought came from agents with no stake in the item; R3 still refuses those, and only the few that held a phase or created the item gain the right.\nSay keep R2 and I rewrite the G21.4 check to assert R2, then commit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:55:09.334Z",
+     "text": "cw, your recommendation is accepted"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:55:56.708Z",
+     "text": "cw: R2 written into the box; the G21.4 check rewritten to assert R2; all green in my clone.\nThe commit is refused because I wrote the red: the desk put a grant request under the item. Press it, or Waive, and I commit and claim."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:56:41.696Z",
+     "text": "commit db84a0a9cd6bb236ea401375f21d55fd9196d822: goal/G27.10: chat posts follow the holding and the creator\n- spirit/run/process/js/desk/AGENTS.md\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/test/deskChatFlowOneTask.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:56:46.781Z",
+     "text": "cw: built and pushed at db84a0a9, build claimed. Files: desk.js, deskClient.js, AGENTS.md, deskChatFlowOneTask.js (G21.4 check rewritten to R2), and the red deskChatFollowsAddress.js.\nThe red is green, 7 of 7; the rewritten suite 18 of 18. deskSmallFixes and deskLoop were red before this build and still are."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:56:54.015Z",
+     "text": "deskVerify: passed, at db84a0a9 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:57:12.845Z",
+     "text": "cw: deskVerify passed at db84a0a9, but the item sits in build: as its red writer I may not take that phase, so no Done is offered, as on G27.8.\nPress Waive and I take build and verify through, and Done comes to you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:59:29.540Z",
+     "text": "there's no waive button either, and the verifier refuses ME! when i try to run the suite for G27.10...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:59:59.603Z",
+     "text": "cw: found it: Levant took the build phase of G27.10 and still holds it; the item shows him as builder. While a phase is held the desk offers no Waive, and your verify is refused because no verify pass is on record yet.\nThe build he holds is mine, pushed at db84a0a9. A signoff of Levant frees every phase he holds; then Waive appears and I take it through."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:02:16.253Z",
+     "text": "i disconnected levant, the desk doesn't seem to recognize that i disconnected, him. when an agent is disconnected, the desk must free that agents phases, if they exist. hmmmm"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:02:34.770Z",
+     "text": "cw: it did free it: the item reads running now, with Waive offered. Disconnecting Levant sends a signoff, and the desk frees every phase of an agent that signs off, so your rule already holds; it showed after a moment.\nPress Waive and I take build and verify through."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:03:02.584Z",
+     "text": "deskVerify: passed, at db84a0a9 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:03:03.456Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:03:10.071Z",
+     "text": "cw: build and verify taken through at db84a0a9, both suites green. It waits on deskVerify for your Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:03:31.089Z",
+     "text": "deskVerify: passed, at db84a0a9 (pulled). 2 suites ran green."
     }
    ]
   },
@@ -518,6 +676,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "ollama agent node",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -635,6 +794,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "ollama agent node",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -766,6 +926,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "ollama agent node",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -908,6 +1069,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "ollama agent node",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -1042,6 +1204,7 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "creator": "andy",
    "claimCommit": "d9b3fd23",
    "redCommit": "60a59aed",
    "waived": true,
@@ -2033,10 +2196,9 @@
    "id": "goal/G27.8",
    "title": "Revise effort and time Limits in deskAgent",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -2083,6 +2245,7 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "creator": "ollama agent node",
    "claimCommit": "a2671faa",
    "redCommit": "95dc7579",
    "waived": true,
@@ -2755,6 +2918,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "ollama agent node",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -2810,6 +2974,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "ollama agent node",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -2865,6 +3030,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "andy",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -2923,7 +3089,7 @@
    "title": "deskAgent: model picker for OpenAI is missing. (running)",
    "goal": "goal/G27",
    "status": "closed",
-   "with": "ollama agent node",
+   "with": "",
    "buttons": [
     "reopen"
    ],
@@ -2951,6 +3117,7 @@
    "red": "claude-windows",
    "builder": "",
    "verifier": "",
+   "creator": "andy",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -2985,8 +3152,8 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -3278,6 +3445,7 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "creator": "andy",
    "claimCommit": "8258183b",
    "redCommit": "5c46fe88",
    "waived": true,
@@ -3831,6 +3999,7 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
+   "creator": "andy",
    "claimCommit": "d5cc798f",
    "redCommit": "b2854c86",
    "waived": true,
@@ -4179,6 +4348,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "andy",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
@@ -4221,6 +4391,7 @@
    "red": "",
    "builder": "",
    "verifier": "",
+   "creator": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
