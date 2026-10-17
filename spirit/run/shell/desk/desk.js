@@ -481,7 +481,13 @@ var deskLastChange = 0;
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
   // A RULE CHANGED (goal/G6.5): the desk server publishes {rule: key}; the Rules tab, if shown, asks again.
-  if (obj.rule && !obj.item && !obj.verb) { if (deskTab === 'rules') deskRulesSearch(); return; }
+  // goal/G27.9 (S1): the rule's row travels with it, so the list takes it without asking again; the rule list's own
+  // element repaints it. A search typed in the Rules box still asks, since the server ranks by text.
+  if (obj.rule && !obj.item && !obj.verb) {
+    if (obj.row && deskRuleTake(obj.row)) { if (!deskRulesElement) deskDrawRules(); return; }
+    if (deskTab === 'rules') deskRulesSearch();
+    return;
+  }
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: ask again for what is shown.
   if (obj.dropped) { deskSearchItems(); return; }
   var change = Number(obj.change) || 0;
@@ -497,7 +503,8 @@ function deskOnPublished(obj) {
   if (typeof said === 'string') { try { said = JSON.parse(said); } catch (e) { said = null; } }
   if (!gap && obj.verb === 'chat.add' && said && said.id === DESK_GROUP && obj.chat) {
     if (deskGroup && !deskGroup.some(function (l) { return deskSameLine(l, obj.chat); })) deskGroup.push(obj.chat);
-    deskDraw();
+    // goal/G27.9: the team chat's own element repaints it; without the element the whole face is drawn, as before.
+    if (deskTeamElement) deskDrawTabs(); else deskDraw();
     return;
   }
   if (gap || obj.verb === 'session.set') { deskSearchItems(); return; }
@@ -510,6 +517,7 @@ function deskOnPublished(obj) {
     rows = [Object.assign({}, it, { listed: obj.listed !== false })];
   }
   var unknown = false;
+  var moved = false;
   // goal/G22.3: a plugin goal's row seen first on the stream gives it its tab under Apps.
   deskNotePlugins(rows);
   // THE LIST TAKES ADDITIONS FROM THE STREAM (goal/G24.6). Andy: "no pulling". A row the List does not hold is drawn
@@ -525,14 +533,90 @@ function deskOnPublished(obj) {
     var at = deskRowAt(row.id);
     // A CLOSED ROW FOLLOWS INCLUDE CLOSED (goal/G24.6): listed false leaves the List only while Include Closed is off;
     // with it on the row stays, redrawn closed, as items.search would still list it.
-    if (row.listed === false && !deskFilter.includeClosed) { if (at !== -1) deskItems.splice(at, 1); return; }
+    if (row.listed === false && !deskFilter.includeClosed) { if (at !== -1) { deskItems.splice(at, 1); moved = true; } return; }
     if (at !== -1) { deskItems[at] = row; return; }
     if (searching) { unknown = true; return; }
     if (!deskRowShown(row, rows)) return;
     deskItems.splice(deskRowPlace(row), 0, row);
+    moved = true;
   });
   if (unknown) { deskSearchItems(); return; }
-  deskDraw();
+  // ONE ROW CHANGED, ONE ROW REPAINTED (goal/G27.9, B): a row that stays where it was is repainted by its own element,
+  // which heard this same publish after this store took it; the face is drawn only when rows came or went. What sits
+  // outside the List and reads the rows (the tabs' count, Go-All, the session bubble) is redrawn, never the List.
+  if (moved || !deskRowElements.length) { deskDraw(); return; }
+  deskDrawTabs();
+  deskDrawGoAll();
+  var bubble = document.getElementById('desk-session');
+  if (bubble) bubble.innerHTML = deskSessionBubble();
+}
+
+// ── THE ELEMENTS THAT CARRY THEIR STREAM (goal/G27.9) ─────────────────
+//
+//   Desk rule 8 (Andy): "Shell and application elements, should bring their subscriptions with them, so that they're
+//   automatically subscribed to the events that update them." Each is made with the shared createDeskElement
+//   (shell/shared/js/deskElement.js): it subscribes itself and repaints only what it shows, from what this page holds.
+//   Without the shared element (a page that did not load it) none is made and the face is drawn whole, as before.
+var deskRowElements = [];
+var deskTeamElement = null;
+var deskRulesElement = null;
+// THE SHARED ELEMENT, LOADED ON DEMAND (goal/G27.9). Andy, 2026-10-17, denying a line in index.html for it ("a core
+// element has to know about specific apps"), and choosing that the app loads it itself at mount: "it is ok for apps to
+// know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
+var DESK_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
+function deskLoadSharedElement(done) {
+  var have = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  if (typeof have === 'function') { done(); return; }
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
+  var script = document.createElement('script');
+  script.src = DESK_SHARED_ELEMENT;
+  script.onload = done;
+  document.body.appendChild(script);
+}
+function deskMakeElement(o) {
+  var make = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  if (typeof make !== 'function' || !deskApi || typeof deskApi.onPublished !== 'function') return null;
+  return make(Object.assign({ subscribe: function (fn) { return deskApi.onPublished(fn); } }, o));
+}
+// The ids a publish changes rows of.
+function deskRowIdsOf(obj) {
+  if (!obj || typeof obj !== 'object') return [];
+  if (Array.isArray(obj.rows) && obj.rows.length) return obj.rows.map(function (r) { return r && r.id; });
+  var it = obj.item;
+  if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
+  return it && it.id ? [it.id] : [];
+}
+// One element per row on the List, made again whenever the List is drawn.
+function deskMountRowElements() {
+  deskRowElements.forEach(function (e) { e.destroy(); });
+  deskRowElements = [];
+  deskItems.forEach(function (row) {
+    var id = row.id;
+    var e = deskMakeElement({
+      wants: function (obj) { return deskRowIdsOf(obj).indexOf(id) !== -1; },
+      paint: function () {
+        var el = document.getElementById('desk-row-' + id);
+        var at = deskRowAt(id);
+        if (el && at !== -1) el.innerHTML = deskRowCells(deskItems[at]);
+      },
+    });
+    if (e) deskRowElements.push(e);
+  });
+}
+// The team chat and the rule list, made once at mount.
+function deskMountElements() {
+  deskTeamElement = deskMakeElement({
+    wants: function (obj) { return !!(obj && obj.verb === 'chat.add' && deskRowIdsOf(obj)[0] === DESK_GROUP); },
+    paint: function () {
+      var team = document.getElementById('desk-team');
+      if (team) team.innerHTML = deskGroupChat();
+      if (deskTab === 'team') deskMarkTeamSeen();
+    },
+  });
+  deskRulesElement = deskMakeElement({
+    wants: function (obj) { return !!(obj && obj.rule && obj.row && !obj.item && !obj.verb); },
+    paint: function () { deskDrawRules(); },
+  });
 }
 function deskRowAt(id) {
   var at = -1;
@@ -594,7 +678,13 @@ function deskInRow(row, what) {
 }
 function deskRowHtml(row) {
   var goal = row.goal === '';
-  var presses = (row.buttons || []).filter(function (what) { return deskInRow(row, what); }).map(function (what) {
+  var presses = deskRowPresses(row);
+  return '<tr data-row="' + deskEsc(row.id) + '" id="desk-row-' + deskEsc(row.id) + '" style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + '">' +
+    deskRowCells(row, presses) + '</tr>';
+}
+function deskRowPresses(row) {
+  var goal = row.goal === '';
+  return (row.buttons || []).filter(function (what) { return deskInRow(row, what); }).map(function (what) {
     // goal/G6.6: the Close on a goal row with open items is armed with "are you sure? N open"; the shell paints
     // data-armed red. A click on the armed button sends the press.
     var armed = goal && what === 'close' && deskArmed === 'desk-goal-close-' + row.id;
@@ -603,7 +693,12 @@ function deskRowHtml(row) {
     return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
       (armed ? ' data-armed="1"' : '') + '>' + deskEsc(label) + '</button>';
   }).join(' ');
-  return '<tr data-row="' + deskEsc(row.id) + '" style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + '">' +
+}
+// THE CELLS OF A ROW, apart from its <tr>, so the row's own element repaints them alone (goal/G27.9).
+function deskRowCells(row, presses) {
+  var goal = row.goal === '';
+  if (presses === undefined) presses = deskRowPresses(row);
+  return (
     // THE BROUGHT-BACK MARK, THEN THE TYPE (desk/G1.12): the server says both. ICON.ERROR EXACTLY WHILE SOMETHING
     // WAITS ON HIM (goal/G4.20 points 10-11). Andy: "if those two things would match at all times, id know exactly
     // where i need to navigate to."
@@ -614,8 +709,7 @@ function deskRowHtml(row) {
     '<td>' + presses + '</td>' +
     '<td>' + deskLinks(row.blocking) + '</td>' +
     '<td>' + deskLinks(row.blocked) + '</td>' +
-    '<td style="width:16em">' + deskStatusCell(row) + '</td>' +
-  '</tr>';
+    '<td style="width:16em">' + deskStatusCell(row) + '</td>');
 }
 // ── APPS: THE SPECIAL GOALS, EACH ITS INNER TAB (goal/G22.3) ─────────
 //
@@ -1054,6 +1148,7 @@ function deskDraw() {
   deskDrawTabs();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
+  deskMountRowElements();
 }
 
 // ── THE RULES TAB (goal/G6.5) ─────────────────────────────────────────
@@ -1083,6 +1178,21 @@ function deskRulesSearch() {
     deskRulesNote = r.more ? 'More rules match than are shown: narrow the search.' : '';
     deskDrawRules();
   }, function (e) { deskRulesNote = 'Not searched: ' + e.message; deskDrawRules(); });
+}
+// A rule's published row into the list as rules.search would hold it (goal/G27.9): replaced in place, added first when
+// the toggles let it in, taken out when they no longer do. With text in the search box it answers false: the server
+// ranks by text, so the list asks again.
+function deskRuleTake(r) {
+  var f = deskRuleFilter;
+  if (String(f.text || '').trim() !== '') return false;
+  var row = { key: String(r.key), label: String(r.label || ''), type: String(r.type || ''), status: String(r.status || '') };
+  var fits = (!f.types.length || f.types.indexOf(row.type) !== -1) && (!f.statuses.length || f.statuses.indexOf(row.status) !== -1);
+  var at = -1;
+  deskRules.forEach(function (x, i) { if (x.key === row.key) at = i; });
+  if (at !== -1 && fits) deskRules[at] = row;
+  else if (at !== -1) deskRules.splice(at, 1);
+  else if (fits) deskRules.unshift(row);
+  return true;
 }
 function deskDrawRules() {
   var toggles = document.getElementById('desk-rule-toggles');
@@ -1745,6 +1855,9 @@ spirit.shell.activateApp({
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes.
     deskApi.onPublished(deskOnPublished);
+    // goal/G27.9: the elements subscribe after the store, so each repaints from what the store has just taken; once
+    // the shared element is loaded, the List is drawn again so its rows are made as elements too.
+    deskLoadSharedElement(function () { deskMountElements(); deskDraw(); });
     // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
     // published or said while the stream was down was never heard, so the
     // List and the chats are asked for again. Lines already held are not taken twice.

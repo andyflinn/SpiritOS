@@ -629,8 +629,58 @@ function deskAgentRemoteApplyPublished(obj) {
     deskAgentRemoteTranscript.push({ role: 'assistant', text: String(obj.chat.text || '') });
     deskAgentRemoteChatBusy = false;
   }
+  // goal/G27.9, S4: each element repaints itself from this, when its own part changed; without the shared element the
+  // whole face is drawn, as before.
+  if (deskAgentRemoteElements.length) return;
   deskAgentRemoteDrawModels();
   deskAgentRemoteDrawAll();
+}
+
+// ── THE ELEMENTS THAT CARRY THEIR STREAM (goal/G27.9, S4) ─────────────
+//
+//   The item's box: "every element of deskAgentRemote listens to the changes that concern only itself and redraws
+//   only itself." Each is made with the shared createDeskElement (shell/shared/js/deskElement.js), subscribed to
+//   deskAgent's stream after the store above, and repaints when the part it shows differs from what it last painted.
+var deskAgentRemoteElements = [];
+// THE SHARED ELEMENT, LOADED ON DEMAND (goal/G27.9). Andy, 2026-10-17, denying a line in index.html for it ("a core
+// element has to know about specific apps"), and choosing that the app loads it itself at mount: "it is ok for apps to
+// know about other apps and their shared elements. i like this solution." Once per page: a second app finds it there.
+var DESK_AGENT_REMOTE_SHARED_ELEMENT = '/shell/shared/js/deskElement.js';
+function deskAgentRemoteLoadSharedElement(done) {
+  var have = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  if (typeof have === 'function') { done(); return; }
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
+  var script = document.createElement('script');
+  script.src = DESK_AGENT_REMOTE_SHARED_ELEMENT;
+  script.onload = done;
+  document.body.appendChild(script);
+}
+function deskAgentRemoteMakeElements(api) {
+  var make = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskElement;
+  if (typeof make !== 'function' || !api || typeof api.onPublished !== 'function') return;
+  function part(name, of, paint) {
+    var last = null;
+    deskAgentRemoteElements.push(make({
+      subscribe: function (fn) { return api.onPublished(fn, 'deskAgent'); },
+      wants: function (obj, meta) {
+        if (!obj || typeof obj.connected !== 'boolean') return false;
+        if (!deskAgentRemoteTakesPublished(deskAgentRemoteTarget, meta || { from: '' })) return false;
+        var now = JSON.stringify(of(obj));
+        if (now === last) return false;
+        last = now;
+        return true;
+      },
+      paint: function () { paint(); },
+    }));
+  }
+  // The pairs in the connect tab.
+  part('pairs', function (o) { return o.connections || []; }, deskAgentRemoteDrawPairs);
+  // The model line in the configure tab: the list, the loaded one, the load, the test, the effort.
+  part('models', function (o) { return [o.active, o.activeQuant, o.cached, o.load, o.test, o.models, o.effort, o.model]; }, deskAgentRemoteDrawModels);
+  // The switch, the warnings and the chat: the state they read.
+  part('switch', function (o) {
+    return [o.connected, o.persona, o.model, o.server, o.working, o.load && o.load.state, (o.models || []).some(function (m) { return m && m.loaded; }), o.chat, (o.log || []).length];
+  }, function () { deskAgentRemoteDraw(); deskAgentRemoteDrawWarnings(); deskAgentRemoteDrawChat(); });
 }
 
 // IS THE LOAD OVER, from one models answer: loaded, or failed with the studio's words, or the studio unreadable.
@@ -945,6 +995,8 @@ spirit.shell.activateApp({
         if (!deskAgentRemoteTakesPublished(deskAgentRemoteTarget, meta || { from: '' })) return;
         deskAgentRemoteApplyPublished(obj);
       }, 'deskAgent');
+      // goal/G27.9, S4: the elements subscribe after the store, so each repaints from what it has just taken.
+      deskAgentRemoteLoadSharedElement(function () { deskAgentRemoteMakeElements(api); });
     }
     deskAgentRemoteDrawAll();
     deskAgentRemoteChooseTarget().then(function (i) {

@@ -632,7 +632,8 @@ function clickTab(el, tab) {
     // Stacks loads the plugin's private UI from shell/desk/plugins/<name>/, into its own pane, and hands it the stream.
     clickTab(doc.getElementById('desk-app-tabs'), 'app:stackFrameChecks');
     await sleep(20);
-    const script = doc.appended.filter(function (e) { return e && e.tagName === 'SCRIPT'; })[0];
+    // goal/G27.9: Desk also loads the shared element on demand, so the plugin's script is found by its folder.
+    const script = doc.appended.filter(function (e) { return e && e.tagName === 'SCRIPT' && String(e.src || '').indexOf('/shell/desk/plugins/') !== -1; })[0];
     if (script && script.src === '/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js') test.check('the Stacks tab loads ' + script.src);
     else test.fail(OWED + 'the Stacks tab appended no script from shell/desk/plugins/stackFrameChecks/: ' + short(doc.appended.map(function (e) { return e && (e.src || e.id || e.tagName); })));
     const subsBefore = doc.published.length;
@@ -704,7 +705,7 @@ function clickTab(el, tab) {
     else test.fail(OWED + 'the Stacks goal\'s published line reached #desk-team');
     clickTab(doc.getElementById('desk-app-tabs'), 'app:stackFrameChecks');
     await sleep(20);
-    if (doc.appended.filter(function (e) { return e && e.tagName === 'SCRIPT'; }).length === 1) test.check('opening Stacks again loads nothing again');
+    if (doc.appended.filter(function (e) { return e && e.tagName === 'SCRIPT' && String(e.src || '').indexOf('/shell/desk/plugins/') !== -1; }).length === 1) test.check('opening Stacks again loads nothing again');
     else test.fail(OWED + 'the plugin\'s script was appended more than once');
 
     // The List's plugin-goal title is plain text again, and the label button's mechanism is gone.

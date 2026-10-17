@@ -1736,6 +1736,14 @@ function newGoal(w) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
+// A RULE AS rule.get ANSWERS IT, and as its writes publish it (goal/G27.9, S1: "rule writes publish the rule row"); null
+// when there is none.
+function ruleRow(key) {
+  const r = newestRule.get(String(key));
+  if (!r) return null;
+  const d = getDraft.get(r.key);
+  return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by };
+}
 const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
@@ -2008,6 +2016,8 @@ appServer.serve(withPlugins({
       if (!fitsOneAnswer(l.key, a.json)) throw tooLarge(oneAnswerBytes(l.key, a.json), ANSWER_ROOM);
       const r = addLine.run(l.key, String(l.at || ''), String(l.todo || ''), String(l.from || ''), String(l.kind || ''), String(l.text || ''), a.json);
       // A line of Andy's nudges the agent it was for, and nobody else (goal/G3.5).
+      // THE LINE TRAVELS (goal/G27.9, S1): "log.add publishes its line", so a page shows it without asking again.
+      if (r.changes === 1) appServer.publish({ log: { key: String(l.key), at: String(l.at || ''), todo: String(l.todo || ''), from: String(l.from || ''), kind: String(l.kind || ''), peer: String(l.peer || ''), text: String(l.text || '') } });
       if (r.changes === 1 && l.from === 'andy' && l.peer) {
         nudge(nudgeKeys(walkState()).filter(function (k) { return k === String(l.peer); }));
       }
@@ -2490,7 +2500,7 @@ appServer.serve(withPlugins({
       if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
       addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text));
-      appServer.publish({ rule: key });
+      appServer.publish({ rule: key, row: ruleRow(key) });
       rulesChanged(key, 'added, proposed');
       return { key: key };
     },
@@ -2498,10 +2508,9 @@ appServer.serve(withPlugins({
   'rule.get': {
     request: { key: '' }, reply: { key: '', label: '', type: '', status: '', text: '', draft: '', at: '', by: '' },
     handler: function (a) {
-      const r = newestRule.get(String(a.key));
-      if (!r) throw refused('no-such-item');
-      const d = getDraft.get(r.key);
-      return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by };
+      const row = ruleRow(String(a.key));
+      if (!row) throw refused('no-such-item');
+      return row;
     },
   },
   'rule.draft': {
@@ -2512,7 +2521,7 @@ appServer.serve(withPlugins({
       if (!newestRule.get(String(a.key))) throw refused('no-such-item');
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       putDraft.run(String(a.key), new Date().toISOString(), fr.normalizeParagraph(a.text));
-      appServer.publish({ rule: String(a.key) });
+      appServer.publish({ rule: String(a.key), row: ruleRow(String(a.key)) });
       return { key: String(a.key) };
     },
   },
@@ -2526,7 +2535,7 @@ appServer.serve(withPlugins({
       if (RULE_STATUSES.indexOf(a.status) === -1) throw refusedWhy('bad-request', 'a rule status is one of ' + RULE_STATUSES.join(', '));
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text));
-      appServer.publish({ rule: r.key });
+      appServer.publish({ rule: r.key, row: ruleRow(r.key) });
       rulesChanged(r.key, 'versioned, ' + a.status);
       return { key: r.key };
     },
