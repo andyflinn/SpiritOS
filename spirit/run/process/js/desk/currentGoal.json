@@ -1,5 +1,5 @@
 {
- "change": 68358,
+ "change": 68422,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,12 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -140,10 +143,11 @@
    "id": "goal/G29.1",
    "title": "improve the string match itself.",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.4"
@@ -153,21 +157,32 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/probabilityStringMatch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/probabilityStringMatch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "d4138142",
+   "redCommit": "048f0512",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -206,7 +221,17 @@
    "full": false,
    "box": "WHAT IS: probabilityStringMatch(A, B)\n- A exactly equal to B: 1.0. Not a string, or one side empty: 0.\n- Otherwise the shorter string is graded against the longer, both lowercased and accents folded, as the weighted mean of four signals:\n  - match (1.0): whole 1.0, starts with 0.7, found inside 0.35, only some of its words 0.15; no word found at all: 0.\n  - coverage (0.2): the shorter's length over the longer's.\n  - words (0.3): the share of the shorter's characters found in the longer's words, whole words first, then the best part of a word.\n  - order (0.25): the longest run of matched words in the same order.\n- Upper and lower case cost nothing: relay against Relay scores 1.0.\n- Distance costs nothing: matched words side by side and 498 words apart score alike on every signal but match.\n\nHOW WE MAKE IT BETTER\n1. Case counts: 0.000001 is subtracted for every character whose case differs, counted over the characters that matched ignoring case. Relay ranks above relay and reLay for Relay; it orders ties and moves nothing else.\n2. Distance counts, and more than order: a fifth signal, proximity = matched words / words spanned from the first match to the last (side by side 1.0). People type words in any order, but words far apart usually belong to different thoughts, so proximity weighs 0.35 and order drops from 0.25 to 0.15. That ratio is a guess.\n3. The weights are set by hand for now, and are meant to be learned later from what makes a user happier.\n",
    "version": 7,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/probabilityStringMatch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-17T12:55:34.458Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -345,6 +370,60 @@
      "key": "",
      "at": "2026-10-17T12:52:20.352Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:53:56.135Z",
+     "text": "commit 048f05124e3a842bed2f8a3781e08e0b15a96d7a: goal/G29.1: the red for case counting by 0.000001 a character, and distance counting more than order\n- spirit/test/probabilityStringMatch.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:54:03.588Z",
+     "text": "deskVerify: red confirmed at 048f0512: spirit/test/probabilityStringMatch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T12:54:04.687Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T12:55:09.833Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:55:12.584Z",
+     "text": "Built and green here (14/14, neighbours green), but the commit is refused: run/js/probabilityStringMatch.js is a core file not yet granted under G29.1.\nThe grant request is under the item; I commit and claim the moment you grant it."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T12:55:35.197Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:56:02.499Z",
+     "text": "commit d4138142c1a02567bdc568dcb112ffa18f311381: goal/G29.1: the string match counts case by 0.000001 a character and distance by a proximity signal at 0.35, order lowered to 0.15\n- spirit/run/js/probabilityStringMatch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:56:12.184Z",
+     "text": "Built at d4138142: relay vs Relay 0.999999, reLay 0.999998; close words beat far ones, side by side reversed beats in order 300 words apart.\nFiles: run/js/probabilityStringMatch.js and its test; the old gradedSearch-equality check is retired, the order check kept."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:56:13.459Z",
+     "text": "deskVerify: passed, at d4138142 (pulled). 1 suite ran green."
     }
    ]
   },
@@ -439,15 +518,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29.5"
    ],
-   "blocked": [
-    "goal/G29.1"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
