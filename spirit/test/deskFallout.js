@@ -325,6 +325,12 @@ async function paneHalf() {
   const sentGreen = asked.filter(function (x) { return x[0] === 'fallout.reds'; }).pop();
   if (sentGreen && sentGreen[1].outcome === 'green') test.check('the filter goes with the search');
   else test.fail(OWED + 'the search with the filter asked ' + short(sentGreen));
+  // THE SEARCH'S COUNT SAYS IT IS THE SEARCH'S (Andy, 2026-10-17: "what I want to know is TOTAL OF ALL FAILURES.
+  // period, THAT's size of the problem, NOT searching for "zyx" and getting a size-of-problem from that."): the size of
+  // the problem is the Now line; the count under the search says it counts what matches the search.
+  const countText = doc.getElementById('fallout-count').textContent;
+  if (/match/i.test(countText) && !/\bnow\b/i.test(countText)) test.check('the search count says it counts what matches the search: ' + countText);
+  else test.fail(OWED + 'the search count reads ' + short(countText));
   if (/\b3\b/.test(doc.getElementById('fallout-count').textContent)) test.check('the tab says how many matched: ' + doc.getElementById('fallout-count').textContent);
   else test.fail(OWED + 'the count reads ' + short(doc.getElementById('fallout-count').textContent));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
