@@ -101,7 +101,10 @@
     container.innerHTML = dropdown
       ? '<div style="position:relative">' +
           '<button id="' + pre + 'field" type="button" style="width:100%;text-align:left"></button>' +
-          '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;right:0;z-index:10" hidden>' + paneHtml + '</div>' +
+          // SOLID (seen in grants: the tile's see-through background let the page under it show): the tile's tint over
+          // the page's own colour, a shadow, and room for its rows even under a narrow field.
+          '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;min-width:24em;z-index:10;' +
+            'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
         '</div>'
       : paneHtml;
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
