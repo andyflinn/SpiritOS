@@ -1,5 +1,5 @@
 {
- "change": 68472,
+ "change": 68494,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,14 +46,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -852,11 +849,9 @@
    "id": "goal/G29.5",
    "title": "update \"Fallout-search\" using our new list search element",
    "goal": "goal/G29",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -864,17 +859,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -882,17 +877,89 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "PRELIMINARY DRAFT, to refine.\n\nThe Fallout pane's Reds list is built with shellCreateListSearch (G29.4), and its own search machinery is deleted.\n- Configuration: server deskVerify through the plugin verb fallout.reds; args from the words and the ✅/❌ filter; one filter, outcome (❌ fail, ✅ success, both), whose test passes a row whose outcome matches; paint draws test file | what is tested | status | since; press opens shell/falloutHistory for that test; empty says no test matches.\n- deskVerify's search keys each answer row by the test's identity (its file and its key), not its database record, and answers more and total.\n- Deleted from the pane: its own cache, its wire slot, its typing timer and its local ranking; a test shows they are gone.\n- Unchanged: the summary line (how many red of how many tests now), the history dialog, the Items tab and the goal chat.\n",
-   "version": 1,
+   "box": "Fallout talks to deskVerify only. Its Reds list is built with shellCreateListSearch (G29.4), and its own search machinery is deleted.\n\nCONFIGURATION\n- server deskVerify, verb search, its stream deskVerify's; args from the words and the ✅/❌ filter: {over: tests, current: yes, slim: yes, outcome, and suite when the words name a .js file, else test}.\n- api: built by the pane from what Desk hands it (ctx), so the container asks deskVerify and hears it; no core change.\n- one filter, outcome (❌ fail, ✅ success, both), whose test passes a row whose outcome matches.\n- paint draws test file | what is tested | status | since; press opens shell/falloutHistory for that test; empty says no test matches.\n\nDESKVERIFY\n- Its search keys each test row by the test's identity, its file and its key, not its database record; it answers more and total.\n\nONE REQUEST ON THE WIRE, THE SUMMARY INCLUDED\n- The container lends its one slot to the app: list.ask(verb, args) goes through the same serialized slot. The summary line (how many red of how many tests now) is two deskVerify searches, the red and the green totals, asked that way.\n- The history dialog reads a test's flips with deskVerify's search directly (history: yes).\n\nDELETED, each with a test that it is gone\n- The pane's own cache, wire slot, typing timer and local ranking.\n- The desk-side wrapper verbs fallout.reds, fallout.summary and fallout.history.\n\nUNCHANGED\n- The Items tab and the goal chat.\n",
+   "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:09:29.866Z",
+     "text": "are you up to this one, or does this box need updating?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:09:55.533Z",
+     "text": "Box needs 3 updates: the pane gets ctx.ask, not an api, so it builds the container's api from ctx.ask and ctx.onPublished (no core change).\nThe summary call would be a second request on the wire: proposal, the container lends its one slot to the app (list.ask(verb, args)) and the summary goes through it.\nThe search verb lives on desk but the reds change on deskVerify: proposal, a stream key apart from server, else every desk write re-asks Fallout."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:13:08.454Z",
+     "text": "HUH?\n\nDoes deskVerify not have its own search verb?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:13:28.625Z",
+     "text": "It does: search, and the page reaches it directly (Desk asks deskVerify the same way). So the container should call deskVerify's search itself, its stream deskVerify's: my point 3 goes away.\nThen fallout.reds and fallout.summary, the desk-side wrappers, are deleted; the summary is two deskVerify searches (red and green totals), through the container's one slot (point 2)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:14:15.860Z",
+     "text": "correct. fallout talks to deskVerify only."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:14:47.960Z",
+     "text": "Box updated: Fallout talks to deskVerify only; the three desk-side wrapper verbs deleted; the summary through the container's one slot; deskVerify keys test rows by identity. Ready for its Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:15:13.115Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G29.6",
