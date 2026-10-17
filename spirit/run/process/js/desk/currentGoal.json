@@ -1,5 +1,5 @@
 {
- "change": 69327,
+ "change": 69345,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -7,13 +7,16 @@
    "id": "goal/G29",
    "title": "FIX: search in general then everywhere",
    "goal": "",
-   "status": "",
+   "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.7"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -49,9 +52,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -133,6 +134,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-17T12:51:53.024Z",
      "text": "Yes from my side: G29.5 and G29.6 hold drafts, G29.6 now retires the old search files, and its one open point (hub and relay now or later) can wait for its Go like the G29.4 answer rule.\nThe List bug stays outside G29 unless you say add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T16:29:11.430Z",
+     "text": "goal run on 4 suites: all green (at 5f80e46e, pulled)"
     }
    ]
   },
@@ -856,7 +863,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G29.6"
+    "goal/G29"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -1208,10 +1215,9 @@
    "id": "goal/G29.6",
    "title": "update peer search box, for use in contacts, chatter etc.",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -1896,6 +1902,50 @@
      "text": "Noted for your return: apps, files, groups, jobs monitor and selector, natter, grants and relay monitor lists onto the shared list, with the seven old node searches behind them. Enjoy the break."
     }
    ]
+  },
+  {
+   "id": "goal/G29.7",
+   "title": "fs.search",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
