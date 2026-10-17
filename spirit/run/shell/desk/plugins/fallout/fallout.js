@@ -91,7 +91,10 @@
           '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Tests as they stand now: <span id="fallout-count"></span></div><div id="fallout-reds">' +
             '<div class="job-manifest-note">Search to see the reds; an empty search lists the newest.</div></div></div>' +
         '</div>' +
-        '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>';
+        '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>' +
+        // THE GOAL CHAT AT THE BOTTOM (Andy, 2026-10-17: "add the goal chat at the bottom."), below both inner tabs,
+        // the face's own chat of this goal (ctx.chat).
+        '<div id="fallout-chat"></div>';
       if (!container.falloutWired) {
         container.falloutWired = true;
         container.addEventListener('click', function (e) {
@@ -104,6 +107,7 @@
         container.addEventListener('keydown', function (e) { var t = e && e.target; if (t && t.id === 'fallout-text' && e.key === 'Enter' && !e.repeat) search(); });
       }
       drawTabs();
+      if (typeof given.chat === 'function') given.chat(document.getElementById('fallout-chat'));
     },
   };
 }());
