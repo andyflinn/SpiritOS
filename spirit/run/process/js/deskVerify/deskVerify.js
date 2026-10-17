@@ -648,8 +648,14 @@ function watched(r) {
   // the old tree (goal/G19.12).
   if (r.verb === 'claim' && String(b.phase) === 'build') return { kind: 'item', id: String(b.id), commit: String(b.commit || '') };
   if (r.verb === 'claim' && String(b.phase) === 'red') return { kind: 'red', id: String(b.id), commit: String(b.commit || '') };
-  // THE VERIFY-PHASE PASS STARTS NOTHING ANY MORE (goal/G19.13, decided in the item). It came without a commit, a moment
-  // before the claim, so it checked the old tree; the claim that follows it is the trigger now. Do not put it back.
+  // THE VERIFY-PHASE PASS STARTS NOTHING WITHOUT A COMMIT (goal/G19.13, decided in the item). It came without a commit,
+  // a moment before the claim, so it checked the old tree; the claim that follows it is the trigger. Do not put that back.
+  // WITH THE CLAIMED COMMIT IT QUEUES THE CHECK (goal/G27.2, D11). Andy, 2026-10-17: "make that press queue it.": the pass
+  // sets the item back to waiting for deskVerify, and since D11 the desk writes the item's claimed commit on it, so the
+  // check waits for that commit as a claim's does and never measures an older tree.
+  if (r.verb === 'phase.done' && String(b.phase) === 'verify' && b.pass === true && /^[0-9a-f]{7,40}$/.test(String(b.commit || ''))) {
+    return { kind: 'item', id: String(b.id), commit: String(b.commit) };
+  }
   // A CLAIM IS A TRIGGER (goal/G16.13). It was not, so a plain item — which has no
   // verify phase to pass — was never checked at all, and the Done it offered had been
   // through nothing. Andy, 2026-10-11: "only the verifier should give me a done button,

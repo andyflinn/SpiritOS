@@ -2565,7 +2565,13 @@ appServer.serve(withPlugins({
     },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      const change = write('phase.done', { id: a.id, phase: String(a.phase), pass: a.pass === true, by: w.by, key: w.key }, function (st, it) {
+      const body = { id: a.id, phase: String(a.phase), pass: a.pass === true, by: w.by, key: w.key };
+      // A VERIFY PASS CARRIES THE ITEM'S CLAIMED COMMIT (goal/G27.2, D11). Andy, 2026-10-17: "make that press queue it.":
+      // the pass sets the item back to waiting for deskVerify, so deskVerify's watcher queues a check at this commit,
+      // never at whatever its tree holds (goal/G19.13's reason for dropping the pass as a trigger).
+      const claimed = a.phase === 'verify' && a.pass === true ? String(((walkState().items[String(a.id)]) || {}).claimCommit || '') : '';
+      if (claimed) body.commit = claimed;
+      const change = write('phase.done', body, function (st, it) {
         if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
       }).change;
       if (a.phase === 'verify' && a.pass !== true && a.why) write('chat.add', { id: a.id, text: 'verify failed (' + w.by + '): ' + String(a.why), by: 'desk', key: '' });
