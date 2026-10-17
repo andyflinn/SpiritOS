@@ -406,7 +406,7 @@ async function suite() {
   // event-delivery to deskAgent". The state is what state, models and chat.answer answer, in one object.
   const lastPub = function () { return published[published.length - 1] || null; };
   const p0 = lastPub();
-  if (p0 && typeof p0.connected === 'boolean' && p0.persona === CONFIGURATION.persona && Array.isArray(p0.models) && p0.models.length === 3 && typeof p0.active === 'string' && p0.load && typeof p0.load.state === 'string' && typeof p0.cached === 'boolean') test.check('an object has been published already, with connected, persona, model, active, cached, load and the models');
+  if (p0 && typeof p0.connected === 'boolean' && p0.persona === CONFIGURATION.persona && !Array.isArray(p0.models) && p0.loaded !== undefined && typeof p0.active === 'string' && p0.load && typeof p0.load.state === 'string' && typeof p0.cached === 'boolean') test.check('an object has been published already, with connected, persona, model, active, cached, load and the loaded entry (goal/G27.17: no model list in the state)');
   else test.fail(OWED + 'the last published object is ' + short(p0));
   const nBefore = published.length;
   await ask('connect', { on: false });

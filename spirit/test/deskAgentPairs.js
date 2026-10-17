@@ -310,7 +310,7 @@ async function faceHalf() {
       if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: { desk: {}, deskAgent: {} } });
       const v = a ? Object.keys(a)[0] : '';
       if (v) calls.push({ verb: v, args: a[v] });
-      const said = v === 'state' ? STATE : v === 'models' ? MODELS : v === 'connection.set' ? { url: 'http://n/v1', answers: true, error: '' } : { change: 1 };
+      const said = v === 'state' ? STATE : (v === 'models' || v === 'models.search') ? MODELS : v === 'connection.set' ? { url: 'http://n/v1', answers: true, error: '' } : { change: 1 };
       return Promise.resolve({ status: 200, body: said });
     },
   });

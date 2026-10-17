@@ -299,7 +299,15 @@ async function mountRemote(effort) {
       if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: { desk: {}, deskAgent: {} } });
       const v = a ? Object.keys(a)[0] : '';
       if (v) calls.push({ verb: v, args: a[v] });
-      const said = v === 'state' ? STATE : v === 'models' ? MODELS : { change: 1 };
+      // goal/G27.17: the picker asks models.search, and deskAgent does the matching; this fake answers as it would, by
+      // text and by the marks pressed, naming the marks its whole list carries.
+      const MARK = { 'desk-tested': 'recommended', vision: 'vision', reasoning: 'reasoning', audio: 'audio' };
+      const searched = function (q) {
+        const text = String((q && q.text) || ''); const marks = (q && q.marks) || [];
+        const list = MODELS.models.filter(function (m) { return (!text || m.id.indexOf(text) !== -1) && marks.every(function (k) { return m[MARK[k]] === true; }); });
+        return Object.assign({}, MODELS, { models: list, more: false, marks: Object.keys(MARK).filter(function (k) { return MODELS.models.some(function (m) { return m[MARK[k]] === true; }); }) });
+      };
+      const said = v === 'state' ? STATE : v === 'models' ? MODELS : v === 'models.search' ? searched(a[v]) : { change: 1 };
       return Promise.resolve({ status: 200, body: said });
     },
   });

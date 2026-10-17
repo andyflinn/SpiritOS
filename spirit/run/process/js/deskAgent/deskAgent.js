@@ -1010,7 +1010,10 @@ function stateObject() {
     test: testNow(),
     // The effort for the model in use (goal/G27.8): whether a row applies, and its level.
     effort: effortNow(),
-    models: Array.isArray(have.models) ? have.models : [],
+    // NO MODEL LIST IN THE STATE (goal/G27.17, R1): with OpenAI's list it outgrew one publish and one tunnelled packet
+    // ("puppet stream: process/js/deskAgent not posted: too big to tunnel"). Only the loaded entry travels here; the
+    // picker asks models.search.
+    loaded: loadedEntryOf(have),
     // The tool in flight, if any (goal/G14.6), so the chat box can show the fetch.
     chat: chatObject(),
     // Whether the model is answering anything now, so the Remote's Abort is alive (goal/G19.7).
@@ -1018,6 +1021,59 @@ function stateObject() {
     // The newest entries of the test tab's log (goal/G19.7).
     log: logRing.slice(),
   };
+}
+// The loaded model's entry, or null: the one marked loaded, else the active one.
+function loadedEntryOf(have) {
+  const list = have && Array.isArray(have.models) ? have.models : [];
+  return list.filter(function (m) { return m && m.loaded; })[0] || list.filter(function (m) { return m && m.id === have.active; })[0] || null;
+}
+
+// ── THE MODELS, AS A BOUNDED SEARCH (goal/G27.17) ─────────────────────
+//
+//   Andy, 2026-10-17: "populate the model selector using search always", and "lets stick to the search as you specified
+//   it, with the loaded model always being part of the result." The box: a bounded bucket with a partial flag (more);
+//   the loaded model always in it; the marks present in the whole list named, so the Remote offers only the filters
+//   that apply; and the answer fits one tunnelled reply. The cost, stated (rule/5): one ask per keystroke.
+// What one answer of this door may carry (appClient ANSWER_MAX), less room for its envelope: tighter than a tunnelled
+// reply, so it fits both.
+const SEARCH_ROOM = require('../../../js/appClient').ANSWER_MAX - 1024;
+const MARKS = {
+  'desk-tested': function (m) { return m.recommended === true; },
+  vision: function (m) { return m.vision === true; },
+  reasoning: function (m) { return m.reasoning === true; },
+  audio: function (m) { return m.audio === true; },
+};
+// THE STANDARD SEARCH (Andy, 2026-10-17: "i sure hope you're useing probability search..."): searchBucket.js, the
+// graded match every list verb uses, ranked by how well an id matches the text and cut in bytes. The marks pressed are
+// an exact filter on the walk. THE LOADED MODEL GOES INTO THE BUCKET FIRST, MATCHING FOR CERTAIN (Andy, 2026-10-17: "the
+// loaded model just get's thrown into the bucket first, with a probability of 1.0"): its matched text is the query itself.
+function modelsSearch(text, marks) {
+  const wanted = (Array.isArray(marks) ? marks : []).map(String).filter(function (k) { return MARKS[k]; });
+  return Promise.resolve(models()).then(function (m) {
+    const all = Array.isArray(m.models) ? m.models : [];
+    const present = Object.keys(MARKS).filter(function (k) { return all.some(MARKS[k]); });
+    const loaded = all.filter(function (x) { return x && x.loaded; });
+    const answer = { models: [], more: false, marks: present, active: m.active, activeQuant: m.activeQuant, cached: m.cached, load: m.load, test: m.test };
+    const query = String(text || '');
+    const room = SEARCH_ROOM - Buffer.byteLength(JSON.stringify(answer), 'utf8');
+    const bucket = require('../../../js/searchBucket.js').createSearch({
+      query: query,
+      maxBytes: room > 0 ? room : 0,
+      getLabelStringFromIncomingObject: function (x) { return x.loaded && query.trim() ? query : String(x.id || ''); },
+      extractKeyAndLabelFromRow: function (x) { return { key: String(x.id) + '|' + String(x.quant || ''), label: JSON.stringify(x) }; },
+    });
+    loaded.forEach(function (x) { bucket.offer(x); });
+    for (let i = 0; i < all.length; i++) {
+      const x = all[i];
+      if (!x || x.loaded || !x.id) continue;
+      if (!wanted.every(function (k) { return MARKS[k](x); })) continue;
+      if (!bucket.offer(x)) break;
+    }
+    const got = bucket.getResult();
+    got.items.forEach(function (p) { try { answer.models.push(JSON.parse(p.label)); } catch (e) { /* a label is always JSON here */ } });
+    answer.more = !!got.more;
+    return answer;
+  });
 }
 function publishState() {
   appServer.publish(stateObject());
@@ -1795,8 +1851,8 @@ appServer.serve({
     handler: function (a) { return setConnected(a.on === true); },
   },
   state: {
-    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }], working: true, effort: { supported: true, level: '' } },
-    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow(), working: flights.size > 0, effort: effortNow() }; },
+    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }], working: true, effort: { supported: true, level: '' }, loaded: {} },
+    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow(), working: flights.size > 0, effort: effortNow(), loaded: loadedEntryOf(readKnown()) || {} }; },
   },
   // CLEAR SIGNOFF (goal/G27.6, approved by Andy 2026-10-16): the Remote's button lifts a signoff the desk gave. The
   // node asks its deskClient, which clears the state and answers with it.
@@ -1841,6 +1897,11 @@ appServer.serve({
     handler: function (a) { return removePair(String(a.name)); },
   },
   // THE MODEL LINE AND THE CHAT BOX (goal/G14.4): what deskAgentRemote reads and presses.
+  // THE PICKER'S SEARCH (goal/G27.17).
+  'models.search': {
+    request: { text: '', marks: [''] }, reply: { models: [{ id: '', loaded: true }], more: true, marks: [''], active: '' },
+    handler: function (a) { return modelsSearch(a.text, a.marks); },
+  },
   models: {
     request: {}, reply: { active: '', cached: true, load: { model: '', state: '', error: '' }, models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
     handler: function () { return models(); },

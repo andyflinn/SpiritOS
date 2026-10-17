@@ -284,7 +284,8 @@ async function faceHalf() {
       const a = body && body.ask && body.ask.deskAgent;
       const v = a ? Object.keys(a)[0] : '';
       if (v === 'state') return Promise.resolve({ status: 200, body: STATE });
-      if (v === 'models') return Promise.resolve({ status: 200, body: MODELS });
+      // goal/G27.17: the picker asks models.search; it answers as models did.
+      if (v === 'models' || v === 'models.search') return Promise.resolve({ status: 200, body: MODELS });
       return Promise.resolve({ status: 200, body: {} });
     },
   });

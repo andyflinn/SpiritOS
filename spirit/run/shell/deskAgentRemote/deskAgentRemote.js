@@ -152,7 +152,8 @@ function deskAgentRemoteWarnings(state, models) {
   }
   var load = (models && models.load) || {};
   if (load.state === 'loading') return [w + ' Be patient, a model (' + String(load.model || '') + ') is currently loading.'];
-  var loaded = models && Array.isArray(models.models) && models.models.some(function (m) { return m && m.loaded; });
+  // goal/G27.17: the state names the loaded entry; the search's list may not hold it while a search narrows it away.
+  var loaded = !!(state.loaded && state.loaded.id) || (models && Array.isArray(models.models) && models.models.some(function (m) { return m && m.loaded; }));
   if (!loaded) return [w + ' No model is loaded: use the model selector in the [configure] tab to select and load a model.'];
   return [];
 }
@@ -366,9 +367,10 @@ function deskAgentRemoteDrawModels() {
     return;
   }
   var models = got.models;
+  var searching = !!deskAgentRemoteSearch || Object.keys(deskAgentRemoteFilters).length > 0;
   // THE PICKER ALWAYS SHOWS (goal/G27.6, Andy 2026-10-16): with a provider set and no list yet, the select is drawn with
   // one placeholder and the refresh stays beside it, so the picker appears as soon as the list is fetched.
-  if (!models.length) {
+  if (!models.length && !searching) {
     box.innerHTML = '<div class="start-job-form card">' +
       '<button type="button" id="dur-refresh" title="ask the model list again">' + deskAgentRemoteIcon('REFRESH') + '</button>' +
       '<label class="field-label grow">Model<select id="dur-model" disabled><option value="">no models listed yet: refresh</option></select></label>' +
@@ -381,13 +383,12 @@ function deskAgentRemoteDrawModels() {
   // for desk-tested, vision etc..", and "each list offers only filters that apply to the list". The picker shows the
   // models whose id holds the search and that carry every pressed mark; a filter is offered only when a model of the
   // list carries its mark.
-  var offered = DESK_AGENT_REMOTE_FILTERS.filter(function (f) { return models.some(f.has); });
+  // goal/G27.17: deskAgent did the searching; the filters offered are the marks its whole list carries (the answer's
+  // marks), else, from an older deskAgent, those of the models shown.
+  var present = Array.isArray(got.marks) ? got.marks : null;
+  var offered = DESK_AGENT_REMOTE_FILTERS.filter(function (f) { return present ? present.indexOf(f.key) !== -1 : models.some(f.has); });
   Object.keys(deskAgentRemoteFilters).forEach(function (k) { if (!offered.some(function (f) { return f.key === k; })) delete deskAgentRemoteFilters[k]; });
-  var needle = deskAgentRemoteSearch.toLowerCase();
-  models = models.filter(function (m) {
-    if (needle && String(m.id || '').toLowerCase().indexOf(needle) === -1) return false;
-    return offered.every(function (f) { return !deskAgentRemoteFilters[f.key] || f.has(m); });
-  });
+  var moreNote = got.more ? '<div class="job-manifest-note" id="dur-more">more models match than are shown: narrow the search</div>' : '';
   var searchRow = '<div class="start-job-form card">' +
     '<input type="search" id="dur-model-search" class="grow" placeholder="search models" value="' + escape(deskAgentRemoteSearch) + '">' +
     offered.map(function (f) {
@@ -405,6 +406,7 @@ function deskAgentRemoteDrawModels() {
       if (deskAgentRemoteFilters[key]) delete deskAgentRemoteFilters[key];
       else deskAgentRemoteFilters[key] = true;
       deskAgentRemoteDrawModels();
+      deskAgentRemoteLoadModels();
     });
   }
   if (!models.length) {
@@ -422,7 +424,7 @@ function deskAgentRemoteDrawModels() {
   var testingThis = test.state === 'running' && test.id === model.id && String(test.quant || '') === String(model.quant || '');
   var line = deskAgentRemoteLineFor(model);
   var loading = deskAgentRemoteLoadTimer && !model.loaded;
-  box.innerHTML = searchRow +
+  box.innerHTML = searchRow + moreNote +
     '<div class="start-job-form card">' +
       // THE REFRESH (goal/G10.10). Andy, 2026-10-12: "we need a button to the left of the model-picker that allows me
       // to refresh the model list, so i don't have to re-start the Remote or 11111".
@@ -477,11 +479,20 @@ var DESK_AGENT_REMOTE_FILTERS = [
 var deskAgentRemoteSearch = '';    // the search typed above the picker
 var deskAgentRemoteFilters = {};   // the filters pressed, by key
 // The search redraws the picker as it is typed; the redraw replaces the field, so the caret is put back in it.
+function deskAgentRemoteRefocusSearch() {
+  var again = document.getElementById('dur-model-search');
+  if (again && again.focus) {
+    again.focus();
+    if (again.setSelectionRange) again.setSelectionRange(deskAgentRemoteSearch.length, deskAgentRemoteSearch.length);
+  }
+}
 function deskAgentRemoteWireSearch() {
   var search = document.getElementById('dur-model-search');
   if (!search) return;
   search.addEventListener('input', function (e) {
     deskAgentRemoteSearch = String((e && e.target && e.target.value) || '');
+    // goal/G27.17: each keystroke asks deskAgent; the answer redraws the picker.
+    deskAgentRemoteLoadModels().then(function () { deskAgentRemoteRefocusSearch(); });
     deskAgentRemoteDrawModels();
     var again = document.getElementById('dur-model-search');
     if (again && again.focus) {
@@ -554,17 +565,26 @@ function deskAgentRemoteTest() {
 var deskAgentRemoteModelsInFlight = false;
 var deskAgentRemoteContainer = null;
 
+// THE PICKER ASKS A SEARCH (goal/G27.17). Andy, 2026-10-17: "populate the model selector using search always". The text
+// typed above the picker and the filters pressed are its arguments; deskAgent answers a bounded list, the loaded model
+// always in it, with more when more match and the marks present in its whole list. A search asked while one is out
+// is asked again when that one returns, so no keystroke is lost.
+var deskAgentRemoteModelsAgain = false;
+function deskAgentRemoteSearchArgs() { return { text: deskAgentRemoteSearch, marks: Object.keys(deskAgentRemoteFilters) }; }
 function deskAgentRemoteLoadModels() {
-  if (!deskAgentRemoteTarget || deskAgentRemoteModelsInFlight) return Promise.resolve(deskAgentRemoteModels);
+  if (!deskAgentRemoteTarget) return Promise.resolve(deskAgentRemoteModels);
+  if (deskAgentRemoteModelsInFlight) { deskAgentRemoteModelsAgain = true; return Promise.resolve(deskAgentRemoteModels); }
   var target = deskAgentRemoteTarget;
+  var asked = deskAgentRemoteSearchArgs();
   deskAgentRemoteModelsInFlight = true;
-  return deskAgentRemoteAsk(target, 'models', {}).then(function (said) {
+  return deskAgentRemoteAsk(target, 'models.search', asked).then(function (said) {
     deskAgentRemoteModelsInFlight = false;
+    if (deskAgentRemoteModelsAgain) { deskAgentRemoteModelsAgain = false; deskAgentRemoteLoadModels(); }
     if (target !== deskAgentRemoteTarget) return said;
     deskAgentRemoteModels = said;
     // AN EMPTY ANSWER SAYS SO (goal/G27.6): a refresh that finds no models must not look like one that did nothing.
     var listed = said && Array.isArray(said.models) ? said.models.length : 0;
-    if (!listed) deskAgentRemoteSay('the refresh ran, and the provider listed no models for this key', true);
+    if (!listed && !asked.text && !asked.marks.length) deskAgentRemoteSay('the refresh ran, and the provider listed no models for this key', true);
     deskAgentRemoteDrawModels();
     deskAgentRemoteDrawAll();
     return said;
@@ -616,9 +636,15 @@ function deskAgentRemoteTakeLog(log) {
 
 function deskAgentRemoteApplyPublished(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.connected !== 'boolean') return;
-  deskAgentRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' }, connections: Array.isArray(obj.connections) ? obj.connections : [], working: obj.working === true, effort: obj.effort || { supported: false, level: 'medium' } };
+  deskAgentRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' }, connections: Array.isArray(obj.connections) ? obj.connections : [], working: obj.working === true, effort: obj.effort || { supported: false, level: 'medium' }, loaded: obj.loaded || null };
   // The switch's busy flag is the flip's own (goal/G19.7): a state published mid-flip no longer re-enables it.
-  deskAgentRemoteModels = { active: obj.active || '', activeQuant: obj.activeQuant || '', cached: !!obj.cached, load: obj.load || {}, test: obj.test || {}, models: Array.isArray(obj.models) ? obj.models : [] };
+  // goal/G27.17: the state carries the loaded entry, not the list; the list is the last search's, asked again when the
+  // loaded model changed. An older deskAgent that still sends its list is taken as before.
+  var before = deskAgentRemoteModels || {};
+  var wasLoaded = (before.models || []).filter(function (m) { return m && m.loaded; })[0];
+  deskAgentRemoteModels = { active: obj.active || '', activeQuant: obj.activeQuant || '', cached: !!obj.cached, load: obj.load || {}, test: obj.test || {},
+    models: Array.isArray(obj.models) ? obj.models : (before.models || []), more: Array.isArray(obj.models) ? false : !!before.more, marks: Array.isArray(obj.models) ? null : (before.marks || null) };
+  if (!Array.isArray(obj.models) && obj.loaded && (!wasLoaded || wasLoaded.id !== obj.loaded.id)) deskAgentRemoteLoadModels();
   deskAgentRemoteTakeLog(obj.log);
   if (deskAgentRemoteLoadTimer) {
     var over = deskAgentRemoteLoadOver(deskAgentRemoteModels, deskAgentRemoteChosen);
@@ -676,10 +702,10 @@ function deskAgentRemoteMakeElements(api) {
   // The pairs in the connect tab.
   part('pairs', function (o) { return o.connections || []; }, deskAgentRemoteDrawPairs);
   // The model line in the configure tab: the list, the loaded one, the load, the test, the effort.
-  part('models', function (o) { return [o.active, o.activeQuant, o.cached, o.load, o.test, o.models, o.effort, o.model]; }, deskAgentRemoteDrawModels);
+  part('models', function (o) { return [o.active, o.activeQuant, o.cached, o.load, o.test, o.models, o.effort, o.model, o.loaded]; }, deskAgentRemoteDrawModels);
   // The switch, the warnings and the chat: the state they read.
   part('switch', function (o) {
-    return [o.connected, o.persona, o.model, o.server, o.working, o.load && o.load.state, (o.models || []).some(function (m) { return m && m.loaded; }), o.chat, (o.log || []).length];
+    return [o.connected, o.persona, o.model, o.server, o.working, o.load && o.load.state, (o.models || []).some(function (m) { return m && m.loaded; }), o.loaded && o.loaded.id, o.chat, (o.log || []).length];
   }, function () { deskAgentRemoteDraw(); deskAgentRemoteDrawWarnings(); deskAgentRemoteDrawChat(); });
 }
 

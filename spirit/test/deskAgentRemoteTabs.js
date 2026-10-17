@@ -219,7 +219,8 @@ async function mount(opts) {
     const one = who === 'local' ? opts.local : (opts.puppets || {})[who];
     if (!one) return null;
     if (verb === 'state') return one.state;
-    if (verb === 'models') return one.models;
+    // goal/G27.17: the picker asks models.search; it answers as models did.
+    if (verb === 'models' || verb === 'models.search') return one.models;
     return { ok: true };
   };
   const api = {

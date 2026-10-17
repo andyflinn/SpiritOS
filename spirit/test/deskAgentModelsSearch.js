@@ -9,7 +9,7 @@
 //   R3. the answer is a bounded bucket with a partial flag; when partial the picker says more match.
 //   R4. the loaded model always comes back, whatever the search.
 //   R5. the answer names the marks present in the whole list, so the icons show only what applies.
-//   R7. the answer fits one tunnelled reply (about 15 KB).
+//   R7. the answer fits one tunnelled reply (about 15 KB); the door caps an answer tighter still (appClient ANSWER_MAX).
 //
 // THE SHAPES THIS RED NAMES: the state's `loaded` (the loaded entry, or null) in place of `models`; the verb
 // models.search {text, marks} -> {models, more, marks, active, activeQuant, cached, load, test}; marks are
@@ -135,12 +135,15 @@ async function serverHalf() {
   test.subHeading('R3, R4, R7. a bounded search, the loaded model always in it');
   const all = await ask('models.search', { text: '', marks: [] });
   const ids = (all.models || []).map(function (m) { return m.id; });
-  if (Array.isArray(all.models) && all.more === true && bytesOf(all) < TUNNEL_STATE && ids.indexOf(LOADED) !== -1) test.check('an empty search answers ' + ids.length + ' of ' + COUNT + ' with more true, ' + bytesOf(all) + ' bytes, ' + LOADED + ' among them');
+  if (Array.isArray(all.models) && all.more === true && bytesOf(all) <= appClient.ANSWER_MAX && ids.indexOf(LOADED) !== -1) test.check('an empty search answers ' + ids.length + ' of ' + COUNT + ' with more true, ' + bytesOf(all) + ' bytes, ' + LOADED + ' among them');
   else test.fail(OWED + 'models.search {} answered ' + short({ count: ids.length, more: all.more, bytes: bytesOf(all), loaded: ids.indexOf(LOADED) !== -1, why: all.extra }));
-  const some = await ask('models.search', { text: 'gpt-03', marks: [] });
+  const some = await ask('models.search', { text: 'gpt-030', marks: [] });
   const someIds = (some.models || []).map(function (m) { return m.id; });
-  if (some.more === false && someIds.filter(function (x) { return x !== LOADED; }).every(function (x) { return x.indexOf('gpt-03') === 0; }) && someIds.length === 101 && someIds.indexOf(LOADED) !== -1) test.check('text gpt-03 answers its 100 models and the loaded one, more false');
-  else test.fail(OWED + 'models.search gpt-03 answered ' + someIds.length + ' models, more ' + some.more);
+  // The standard probability search (Andy: "i sure hope you're useing probability search...") ranks near matches after the
+  // exact ones: the loaded model first, then the ten gpt-030x, then whatever else matches less well.
+  const ranked = someIds.slice(1, 11);
+  if (someIds[0] === LOADED && ranked.length === 10 && ranked.every(function (x) { return x.indexOf('gpt-030') === 0; })) test.check('text gpt-030 answers the loaded model first, then its 10 exact matches ahead of the rest');
+  else test.fail(OWED + 'models.search gpt-030 answered, in order, ' + short(someIds.slice(0, 14)));
 
   test.subHeading('R2, R5. the marks: filtering, and which exist');
   const tested = await ask('models.search', { text: '', marks: ['desk-tested'] });
