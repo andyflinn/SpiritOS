@@ -1,5 +1,5 @@
 {
- "change": 66156,
+ "change": 66161,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -50,7 +50,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -4590,10 +4590,9 @@
    "id": "goal/G27.15",
    "title": "deskAgent learns a model context from a refusal",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
