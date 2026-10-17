@@ -1,5 +1,5 @@
 {
- "change": 66479,
+ "change": 66586,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -10,7 +10,6 @@
    "status": "reviewing",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,14 +45,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1035,11 +1032,9 @@
    "id": "goal/G27.2",
    "title": "Desk Stacks pane: open the door in a Dialog, not inline",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -1047,17 +1042,17 @@
     "goal/G27.14"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1065,7 +1060,60 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "ollama agent node": "levant-local",
     "claude-windows": "claude-windows"
@@ -1073,8 +1121,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Desk Stacks pane: open the door in a Dialog, not inline.\n\nAndy's report: in the apps-Stack tab, clicking an item in its list makes the stack plugin place the per-item UI at the bottom of the goals list, instead of opening a Dialog for it.\n\nCause (read from code): spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js. The \"Open\" button on each door row (about line 187) sets data-open; the pane click handler (about line 373) calls openDialog(id); openDialog (about line 247) fills a div id=\"sfc-dialog\" that the pane creates (about line 352), between \"The doors\" and \"Its items\". The plugin ctx (spirit/run/shell/desk/desk.js about lines 689-690) passes goal, ask, onPublished and chat, but no callDialog, so the plugin cannot open a shell Dialog. Desk rows do it via deskApi.callDialog('shell/deskDetails', {id}) (desk.js about line 1136). callDialog opens only a registered dialog app (spirit/run/js/client/shell.js about line 1217), so the detail must be one.\n\nRuling (Andy): the door detail is a standard shell dialog, in the shell folder:\n  spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js with its manifest stackFrameCheckDetail.json (type dialog, hidden).\nThe suite-test data stays with the plugin: the dialog reads and writes doors only through the plugin's own verbs (stackFrameChecks.runState, update, remove, run). The item chat at the bottom is the inherited component, as in deskDetails.\n\nFix:\n- desk.js: add a callDialog passthrough to the plugin ctx (next to line 689).\n- stackFrameCheckDetail.js + .json (new, under spirit/run/shell/): the door detail dialog, opened with callDialog('shell/stackFrameCheckDetail', {id}).\n- stackFrameChecks.js: openDialog opens that dialog through the passthrough instead of filling the inline sfc-dialog; the inline sfc-dialog is removed.\n\nFiles: spirit/run/shell/desk/desk.js, spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js, spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js, spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.json. Needs Andy's Go and a file grant before any build.",
-   "version": 3,
+   "box": "Desk Stacks pane: the door opens in a Dialog, not inline\n\nProblem: in Apps > Stacks, opening a door puts its detail inline at the bottom of the pane (the plugin fills a div, sfc-dialog), because the plugin ctx in the Desk face hands it no callDialog.\n\nDECIDED (Andy, 2026-10-14 to 17)\nD1. The door detail is a standard shell dialog: spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js with its manifest (type dialog, hidden), opened with callDialog(\"shell/stackFrameCheckDetail\", {id}) through a callDialog passthrough in the plugin ctx. The inline sfc-dialog is removed.\nD2. Door data stays with the plugin: the dialog reads and writes doors only through the plugin verbs (stackFrameChecks.runState, update, remove, run).\nD3. The dialog chat is the chat of the desk item that added the door (each door records it in its item field), the inherited chat component as in deskDetails; every insert is discussed there.\nD4. The stacks goal owns its door items: it adds one with each door (as today) and deletes it when the door is removed (new). While the door exists the plugin refuses close, done and delete of that item, as it already does for its rerun item.\nD5. Every door can be run by itself, at once, while it is designed: the dialog Run starts oneDoorStacks.js for that one door (SPIRIT_STACKS_DOOR) from the plugin itself, without waiting in the deskVerify queue, shows the verdict as it lands, then hands the verdict to deskVerify as a record only. This replaces the goal/G22.3 ruling that door runs go through the deskVerify queue. Accepted cost: a door run may overlap a deskVerify run on the same tree.\nD6. Plugin goals (Team, Stacks and any later one) are standing scopes, never the current goal: make-current is not offered on one and is refused if asked, and only a press on the current goal or its items writes and pushes currentGoal.json (today any go, done, close or reopen press on any goal does, and each is a new commit since the file carries the change number). This lives in the desk common code (process/js/desk/desk.js), never inside a plugin.\nD7. A door is deleted only from its own dialog, where its deletion is discussed: the delete button lives in the door dialog alone, not on the pane list.\n\nFiles (expected): spirit/run/shell/desk/desk.js (the passthrough), spirit/run/shell/desk/plugins/stackFrameChecks/stackFrameChecks.js (open the dialog, drop the inline one), spirit/run/shell/stackFrameCheckDetail/ (the dialog and its manifest), spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.js (the door item gate, remove deleting the item, the direct run), spirit/run/process/js/desk/desk.js (D6), and a red suite. None is core: no file grant, Andy Go only.",
+   "version": 12,
    "checks": [
     {
      "number": "Q1",
@@ -1160,6 +1208,174 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-15T00:18:27.632Z",
      "text": "cw: ruling in the box: a standard shell dialog under the shell folder, with its manifest, reaching doors only through the plugin verbs. Q1 cleared.\nNext question is on the vision item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:07:01.422Z",
+     "text": "this item coherent? self-contradictory?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:07:34.509Z",
+     "text": "cw: coherent, not self-contradictory: cause, ruling and fix agree, and none of the four files is core, so no file grant is needed (the box says one is). One point is unclear: \"the item chat at the bottom, as in deskDetails\": a door is not a desk item and has no chat of its own; the pane today shows its goal chat (plugin/stackFrameChecks).\nShould the door dialog show that goal chat, or should each door get its own chat?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:09:51.195Z",
+     "text": "every door already corresponds to an item (the item that added the door to the stacks system) that is the item that will hold the door chat, because ever insert will be subject to discussion.\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:10:21.449Z",
+     "text": "cw: yes, and the code agrees: every door already records the item that asked for it (its item field). Written into the box: the door dialog shows that item chat; and the box no longer asks for a file grant.\nOne caveat: when that item is closed, its chat can still be read but the desk may refuse new lines under it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:11:58.598Z",
+     "text": "then we make sure that item never closes unless deleted from the stacks plugin directly."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:12:27.278Z",
+     "text": "cw: written into the box: the plugin refuses close, done and delete of a door item while its door exists, the same gate it already has for its rerun item; removing the door through the plugin is the only way out.\nShould removing the door also close its item itself, or leave it open for you to close?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:13:11.854Z",
+     "text": "the stacks goal handles it's item addition and deletion, (add is already supported). The only new thing will be my demand that every door can be run by itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:13:47.137Z",
+     "text": "cw: good news on the new demand: the server already runs one door by itself (stackFrameChecks.run {id}, through deskVerify, one door at a time); what is missing is a Run button in the door dialog, with that door runState. Written into the box, with: removing a door through the plugin deletes its item too (remove leaves the item open today).\nNothing else open that I see."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:14:38.937Z",
+     "text": "That run button is already there, it just runs every door, every time...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:15:14.833Z",
+     "text": "cw: by the code, Run sends stackFrameChecks.run with that one door id; deskVerify passes it to oneDoorStacks.js as SPIRIT_STACKS_DOOR, and the suite judges only that door. But judging one door runs every suite that drives it (its suites list), which can be long and print a lot.\nWhat do you see that says every door ran: several doors in the Verifier console, or verdicts changing on doors you did not run?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:18:37.161Z",
+     "text": "why involve deskVerify in this? what i remember is: every door was run, it makes sense, the verifier runs the \"suite\" but the suite runs every door and sends the results to verifier separately. what i want: is the stacks item (the door) calls thee suite with the the door arguments so that the suite only runs that door...\n\nAm i seeing this correctly?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:18:55.787Z",
+     "text": "cw: what you want is what the code does today: the door Run passes the door id as an argument (SPIRIT_STACKS_DOOR) and the suite then judges only that door. deskVerify is in it by your own ruling on goal/G22.3: \"every run here should report to deskVerify\".\nThe all-doors run you remember is the other path: a re-verify of the stacks goal rerun item runs the same suite with no door, which judges the whole list. If a door Run of yours judged them all, that is a bug I will chase; did it come from a door dialog Run, or from Re-verify?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:21:38.452Z",
+     "text": "i also don't want to wait for the verifier to be willing to run that one door test for me. in stacks, we're actually \"designing\" the door, not running it for the verifiers benefit, i don't mind if our test sends the verifier a result, i don't want verifier to block the design-a-door process...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:22:09.777Z",
+     "text": "cw: understood, and written into the box: the dialog Run starts that one door suite from the plugin at once, shows the verdict as it lands, then hands it to deskVerify as a record only; the verifier queue never holds a door you are designing.\nMarked plainly as replacing your goal/G22.3 ruling (door runs through the verifier queue). Cost: a door run can now overlap a verifier run on the same tree."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:27:08.324Z",
+     "text": "the possible conflict with the verifier running the suite at the same time is understood. thing is: when i muck about the stacks app, my agents will likely be summoned to participate in the design of a door. also, stacks isn't really the current goal, same as team never is the current goal. so they are different 'scopes' within desk, all ever-present, we don't want a new currentGoal to be pushed to gitHub just because we muck about stacks...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:27:43.126Z",
+     "text": "cw: you are right to worry: today a go, done, close or reopen press on any item of any goal, stacks included, makes the desk rewrite and push currentGoal.json, and since the file carries the change number every such press is a new commit. Written into the box as part of this item: only a press on the current goal or its items writes it. Recorded your acceptance of the overlap too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:28:34.083Z",
+     "text": "that current goal change must be stopped for ALL plugin-goals...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:29:01.363Z",
+     "text": "cw: written for all plugin goals: only a press on the current goal or its items writes currentGoal.json, and no plugin goal (Team, Stacks, any later one) can be made current: make-current is not offered on one and refused if asked."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:29:04.249Z",
+     "text": "in code that is common to plugins, not inside the plugin."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:29:28.784Z",
+     "text": "cw: written: it lives in the desk common code (process/js/desk/desk.js, where every plugin goal is known), never inside a plugin."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:29:50.325Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:30:07.694Z",
+     "text": "cw: taking the cap."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:30:31.780Z",
+     "text": "cw: capped (v11): problem, six decided points, files. Nothing dropped; the quotes went, the rulings stayed, and D5 still says what it replaces."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:33:05.959Z",
+     "text": "the delete button for the stack item should probably only live in the stacksDetail dialog, that's where it's deletion will likely be discussed as well."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:33:31.224Z",
+     "text": "cw: agreed, it fits D3 (the chat is there) and D4 (removing the door deletes its item). Written as D7: the delete lives in the door dialog alone, not on the pane list."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:34:00.583Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:34:20.402Z",
+     "text": "cw: green: settled, nothing open, box current (v12), marked as code, nothing blocks it. Ready for your Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T04:34:29.460Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
