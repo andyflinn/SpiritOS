@@ -1,5 +1,5 @@
 {
- "change": 68092,
+ "change": 68358,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -13,7 +13,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.6"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -43,8 +45,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 1,
+   "design": false,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -58,6 +60,685 @@
    },
    "box": "",
    "version": 0,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:38:03.596Z",
+     "text": "FUCK, the last item didn't automatically show up in the desk list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:38:36.918Z",
+     "text": "Likely cause, not yet proven: a List search still in flight from the add before answered after G29.4 was drawn from the stream, and replaced the List without it.\nI can add it to G29 as an item: a new item shows in the List at once, whatever search is in flight. Say add it and I write its red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:43:18.479Z",
+     "text": "are the first two items that need doing green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:43:43.438Z",
+     "text": "G29.1 green: settled, open none, box v7. G29.4 has one thing left: the rule every server search answers {items: [{key = the identity of the row, label}], more, total}, which the container depends on.\nToday deskVerify keys by record, so Fallout (G29.5) needs it too. Put that rule into G29.4's box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:45:43.529Z",
+     "text": "about this: \"Today deskVerify keys by record, so Fallout (G29.5) needs it too. Put that rule into G29.4's box?\"\n\nwe'll do it before it gets its 'Go' by then we probable know more things to adjust."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:46:00.955Z",
+     "text": "Understood: the search answer rule waits until G29.4 is up for its Go, with whatever else we learn by then."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:46:55.565Z",
+     "text": "ready to end design mode?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:47:25.868Z",
+     "text": "Not yet, three gaps: G29.5 and G29.6 have empty boxes (I can draft G29.5; G29.6 is contacts' peer search, run on the old stack).\nThe old stack, bucket.js, gradedSearch.js, searchBucket.js, peerSearch.js (used by contacts, hub, relay), duplicates the probability modules: which item retires it?\nThe List bug (a new item not shown at once) is proposed, not added."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:48:04.877Z",
+     "text": "just put a quick preliminary draft in both those items. we'll refine later."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:48:38.306Z",
+     "text": "Preliminary drafts are in G29.5 (Fallout on the container, deskVerify keyed by test) and G29.6 (peer search on the container, the old search files retired).\nG29.6 leaves one point open: whether hub and relay, which are core, move in it or later."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:51:33.821Z",
+     "text": "ready to exit design mode?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:51:53.024Z",
+     "text": "Yes from my side: G29.5 and G29.6 hold drafts, G29.6 now retires the old search files, and its one open point (hub and relay now or later) can wait for its Go like the G29.4 answer rule.\nThe List bug stays outside G29 unless you say add it."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.1",
+   "title": "improve the string match itself.",
+   "goal": "goal/G29",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT IS: probabilityStringMatch(A, B)\n- A exactly equal to B: 1.0. Not a string, or one side empty: 0.\n- Otherwise the shorter string is graded against the longer, both lowercased and accents folded, as the weighted mean of four signals:\n  - match (1.0): whole 1.0, starts with 0.7, found inside 0.35, only some of its words 0.15; no word found at all: 0.\n  - coverage (0.2): the shorter's length over the longer's.\n  - words (0.3): the share of the shorter's characters found in the longer's words, whole words first, then the best part of a word.\n  - order (0.25): the longest run of matched words in the same order.\n- Upper and lower case cost nothing: relay against Relay scores 1.0.\n- Distance costs nothing: matched words side by side and 498 words apart score alike on every signal but match.\n\nHOW WE MAKE IT BETTER\n1. Case counts: 0.000001 is subtracted for every character whose case differs, counted over the characters that matched ignoring case. Relay ranks above relay and reLay for Relay; it orders ties and moves nothing else.\n2. Distance counts, and more than order: a fifth signal, proximity = matched words / words spanned from the first match to the last (side by side 1.0). People type words in any order, but words far apart usually belong to different thoughts, so proximity weighs 0.35 and order drops from 0.25 to 0.15. That ratio is a guess.\n3. The weights are set by hand for now, and are meant to be learned later from what makes a user happier.\n",
+   "version": 7,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:46:00.750Z",
+     "text": "what is there right now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:46:21.715Z",
+     "text": "Today: both strings lowercased and accents folded, so case costs nothing (Relay vs relay = 1.0); then 4 weighted signals: exact/starts-with/contains/some-words (1.0), length coverage (0.2), word match (0.3), word order (0.25).\nOrder counts, distance does not: relay key with 498 words between scores 0.40, side by side at the start 0.71.\nStarts-with outweighs length: relay key at the start of 500 words (0.71) beats the relay key answers (0.56)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:48:44.484Z",
+     "text": "But \"Relay\" matches \"Relay\" better than \"relay\" matches \"Relay\", true or false? subtract 0.001 from probability for every character that is a case-missmatch."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:48:58.519Z",
+     "text": "True as you mean it, false today: Relay vs Relay and relay vs Relay both score 1.0.\nWith 0.001 per case-mismatched character, relay vs Relay becomes 0.999, and any other match drops the same way, never below 0."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:51:02.631Z",
+     "text": "Se the coal is sequencing the better matches ahead of worse matches, so if we just subtract 0.000001 per mismatched character-case, after 1000 characters with wrong case we still only used 0.001 of the 1.0 budget, but sequencing is achieved."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:51:20.337Z",
+     "text": "Agreed: 0.000001 per case-mismatched character only breaks ties, so Relay ranks above relay for Relay and nothing else moves.\nThe count is over the characters that matched ignoring case (the exact, prefix or found part, and matched words); unmatched characters have no case to compare."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:52:10.914Z",
+     "text": "absolutely. any human will tell you that Relay is not exactly the same as relay, or reLay"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:52:21.897Z",
+     "text": "even visually"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:53:05.536Z",
+     "text": "Recorded in the box: your Relay question line now reads as the rule, 0.000001 per case-mismatched character; the rest of your draft is untouched."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:53:22.329Z",
+     "text": "Yes: the case penalty orders what the eye sees as closer first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:53:23.404Z",
+     "text": "and distance between matching tokens is definitely an indicator of a worse match."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:53:40.724Z",
+     "text": "Agreed, and today nothing measures it. Proposal: a proximity signal = matched words / words spanned from the first match to the last, so side by side is 1.0 and relay ... 498 words ... key is 2/500.\nShould it weigh like word order (0.25), a real signal rather than a tie-breaker?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:57:46.181Z",
+     "text": "it should have mabe the same weight as word order... hard to say: i didn't think it through yet. this is where i'd have a machine learn what makes a user happier......"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:58:10.160Z",
+     "text": "Recorded in the box: proximity weighted like word order (0.25) for now, the weights to be learned later from what makes a user happier."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:59:11.327Z",
+     "text": "agreed.\n\ncan you replace the text in the box with a concise summary of what is, and how we make it better?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:59:41.393Z",
+     "text": "The box now holds the summary: what the match does today, then the three changes (case, distance, weights learned later)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:00:48.548Z",
+     "text": "honest answer please. is distance more important than sequence? your guess? (i have a guess now)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:01:04.687Z",
+     "text": "My guess: distance matters more. People type words in any order (key relay for relay key), but two words 500 apart usually belong to different thoughts.\nIn short labels both barely matter; in long text distance separates a hit from a coincidence."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:03:58.192Z",
+     "text": "agreed. pub in box like that with a guessed weight ratio for now, and saying it is a guess."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:04:21.953Z",
+     "text": "In the box: proximity 0.35, order down to 0.15, marked as a guess."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:04:51.255Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:05:09.100Z",
+     "text": "Green: settled, open none, box current (v7); the weights stand as a marked guess."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T12:52:20.352Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.2",
+   "title": "shell element: search input string",
+   "goal": "goal/G29",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G29.4"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G29.3",
+   "title": "infrastructure for making searches and lists easy.",
+   "goal": "goal/G29",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G29.4",
+   "title": "shell element list-search-container.",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.5"
+   ],
+   "blocked": [
+    "goal/G29.1"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "A shell element: a list with its search, looking the same everywhere it is used.\n\nLAYOUT\n[set of filters: icons, or word + icon, checked]\n[search string input, its clear button inside it on the right] [search button]\n[count line]\n[list]\n\nCONFIGURATION (what each use sets): one plain object given at creation, callbacks in it, no registry. The shape:\n\nshellCreateListSearch(container, {\n  server: 'deskVerify',                 // the server searched (its stream too)\n  verb: 'fallout.reds',                 // the search verb invoked\n  args: function (text, filters) {},    // the verb's arguments from the words and the filter values\n  filters: [{                           // declared, drawn by the container, the same everywhere\n    name: 'outcome',\n    choices: [{ value: 'red', icon: '❌', word: 'fail' }, { value: 'green', icon: '✅', word: 'success' }, { value: '', word: 'both' }],\n    test: function (row, value) {}      // a probability, 0 to 1: 0 leaves the row out, 1 keeps it as it is, between lowers it; never raises it\n  }],\n  paint: function (row) {},             // one row's html\n  press: function (row) {},             // a press on a row (Fallout: its history dialog)\n  empty: 'No test matches.'             // the empty-list sentence\n})\n\nA row is the object an answer item's label carries; paint, press and test all take that same object. The words are matched against the whole row (probabilityStringObjectMatch), so nothing configures which text is searched.\n\nBEHAVIOUR (the same for every use)\n- The bucket knows nothing of string matching; the container scores every cached row with probabilityStringObjectMatch per keystroke multiplied by every filter's test, and hands the numbers to bucket.sort. A filter only lowers: the words decide the order among the rows the filters let through.\n- Rows are keyed by the key the search answer carries; that key is the identity of what the row shows, so a row a later search brings again replaces the older one.\n- Every row any search brought is kept in a cache, a probabilityBucket, unbounded.\n- Each character typed or erased redraws the list from the cache at once, ranked by probabilityStringMatch: best matches on top, every row the filters let through shown.\n- The server calls MUST be serialized: at most one request of the element on the wire at a time, every verb it calls included. No typing pause: each character typed or erased asks the server at once when nothing is on the wire; while a request is out, the latest words go the moment its answer returns. The round trip paces the server, the cache paces the screen.\n- The count line says how many match, and that the answer was partial when the server capped it.\n",
+   "version": 7,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:10:26.467Z",
+     "text": "I'm continuing with this one. it might eliminate the remaining item.\n\nin the shell, a list with a search combined should look as similar as possible every where,\n\n[set of filters] [ideally]  [icons] or [word+icon-checked]\n[sear string input] [search-button]\n[list]\n\nit must configure the server-search-path and/or verb (which server search is invoked)\nit must configure a row-painter\n\nwhat else?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:10:46.668Z",
+     "text": "From Fallout: a row key (so a row a later search brings replaces the old) and the row text matched locally; a cache (the bucket) redrawn per keystroke, the server asked when typing pauses, one request on the wire.\nThe filters mapped to the verb's args; a count line (matched of total, partial when the answer was capped); an empty-list sentence.\nA row press handler (Fallout opens its history dialog), and the stream it subscribes to so changed rows repaint themselves."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:12:23.981Z",
+     "text": "i see, we must configure the unique row identifier in the database or json table.....?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:12:41.577Z",
+     "text": "Not configured in the container if every search answer already carries it: each item is {key, label}, and the key can be the row's identity.\nToday it is not everywhere: deskVerify sends its database row number, one per record, while a test's identity is its file plus its key; the desk sends the item id, which is right.\nProposal: a search's key is the identity of what the row shows, so the container keys its cache by it and configures nothing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:13:51.186Z",
+     "text": "let's separate, configuration from behavior, we just learned a lot about behavior,\n\nthese two should be separate blocks in our box.\n\narrange it like that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:14:19.763Z",
+     "text": "Arranged: the box holds the layout, then CONFIGURATION (what each use sets), then BEHAVIOUR (the same for every use)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:14:47.450Z",
+     "text": "then we decide if our configuration requirements can support the desired behavior"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:15:08.795Z",
+     "text": "Missing in configuration: how each filter tests a cached row, since the cache is redrawn locally per keystroke (Fallout tests red or green).\nCovered without config: the text matched locally can be the whole row through probabilityStringObjectMatch, which exists.\nNot configurable, a rule for every server search: answer {items: [{key = identity, label}], more, total}; deskVerify keys by record today, and stream rows must carry the same key and shape."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:15:56.932Z",
+     "text": "add to the behavior the the server calls MUST be serialized, this is VERY important."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:16:20.102Z",
+     "text": "In BEHAVIOUR: the server calls MUST be serialized, one request of the element on the wire at a time, every verb included."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:18:20.861Z",
+     "text": "if deskAgentRemote searches via a public relay, the response time is MUCH longer than a search on the local node, so every round-trip must block a new search call, so the user may type 6 characters before the next search goes to a server, but the cached/displayed list can be updated with every key stroke."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:18:38.932Z",
+     "text": "Agreed, and that is the serialized behaviour in the box: the round trip paces the server, the cache paces the screen.\nIt makes the typing pause unneeded: send at once when nothing is out, else the latest words go when the answer returns. Drop the pause?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:19:21.779Z",
+     "text": "no pause in typing, that's extremely irritating."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:19:42.880Z",
+     "text": "In the box: no typing pause; the server is asked at once when nothing is out, else with the latest words when the answer returns."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:23:46.635Z",
+     "text": "so this container obiously container a set of probability objects, to we configure filters, filter rendering , row rendering with callbacks or registered function that need a specific format?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:24:05.023Z",
+     "text": "Callbacks in one plain object given at creation, no registry: createListSearch(el, {verb, server, args(text, filters), filters, paint(row), press(row), empty}).\nFilters are declared, not painted by the app: [{name, choices: [{value, icon, word}], test(row, value)}], and the container draws them, so they look the same everywhere.\nA row is the object the answer label carries; paint, press and test all take that same object."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:26:56.952Z",
+     "text": "right, good pattern, an object, i agree.\n\nplease put a proposed shape for \n\nshellCreateProbabilityBucket({\nfoo1(args1),\netc...\n})\n\nor something like that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:27:30.519Z",
+     "text": "Proposed shape is in the box under CONFIGURATION: shellCreateListSearch(container, {server, verb, args, filters, paint, press, empty}), filters declared with a test per row.\nThe name is a proposal: it is a list with its search, the bucket being one of its insides."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:30:30.779Z",
+     "text": "Ah so the shellProbabilityBucket knows nothing about stringMatching either?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:30:47.634Z",
+     "text": "Right: the bucket stays blind, it only seats and sorts by the numbers it is handed (sort(compare)).\nThe list-search container does the matching: per keystroke it calls bucket.sort(row => probabilityStringObjectMatch(words, row)), so the app configures no matching either."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:33:38.296Z",
+     "text": "cool. i like it.\n\nBTW: one of my favorite things about the test search is: how the search-clear icon-button is on the right inside of the search string box.... very modern!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:34:03.793Z",
+     "text": "In the box: the clear button inside the search box on the right, the shape as agreed, and the container (not the bucket) doing the matching."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:35:47.209Z",
+     "text": "so i assume that the test:function() returns a probability?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:36:14.844Z",
+     "text": "I had it as yes/no; a probability is better and now in the box: 0 leaves the row out, 1 keeps it as is, between lowers it.\nA row's score is its string match times every filter's test, one number for the bucket to sort by."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:37:26.541Z",
+     "text": "so filter can modify the probability any-which-way, from 0.0 all the way to 1.0 ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:37:43.762Z",
+     "text": "Down only, as written: it multiplies, so a filter can drop a row to 0 or keep it, never lift a 0.4 match above a 0.9 one.\nLifting would need test(row, value, p) returning the new probability; I would keep down-only, so the words always decide the order among what the filters let through."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T12:38:07.363Z",
+     "text": "understood. i agree."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T12:38:32.794Z",
+     "text": "In the box: a filter only lowers, never raises; the words decide the order among what the filters let through."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.5",
+   "title": "update \"Fallout-search\" using our new list search element",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.6"
+   ],
+   "blocked": [
+    "goal/G29.4"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "PRELIMINARY DRAFT, to refine.\n\nThe Fallout pane's Reds list is built with shellCreateListSearch (G29.4), and its own search machinery is deleted.\n- Configuration: server deskVerify through the plugin verb fallout.reds; args from the words and the ✅/❌ filter; one filter, outcome (❌ fail, ✅ success, both), whose test passes a row whose outcome matches; paint draws test file | what is tested | status | since; press opens shell/falloutHistory for that test; empty says no test matches.\n- deskVerify's search keys each answer row by the test's identity (its file and its key), not its database record, and answers more and total.\n- Deleted from the pane: its own cache, its wire slot, its typing timer and its local ranking; a test shows they are gone.\n- Unchanged: the summary line (how many red of how many tests now), the history dialog, the Items tab and the goal chat.\n",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G29.6",
+   "title": "update peer search box, for use in contacts, chatter etc.",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [
+    "goal/G29.5"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "PRELIMINARY DRAFT, to refine.\n\nThe peer search box (Contacts' search of the book and of the network, and any other place a peer is picked, chatter included) is built with shellCreateListSearch (G29.4).\n- Configuration: the server and verb behind contact.search; a row is a peer, {publicKey, label}, keyed by its public key; paint draws the peer; press does what the using app asks (add to the book, open a chat).\n- The ranking moves to the probability modules: peerSearch.js, gradedSearch.js, bucket.js and searchBucket.js are retired wherever the probability modules and the container replace them (hub.js and relay.js rank peers with them today), each removal with a test that it is gone.\n- Open: whether hub and relay move in this item or a later one, since they are core.\n",
+   "version": 1,
    "checks": [],
    "chat": []
   }
