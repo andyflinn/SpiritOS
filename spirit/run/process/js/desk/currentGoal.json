@@ -1,5 +1,5 @@
 {
- "change": 68423,
+ "change": 68440,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,14 +46,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -514,11 +511,9 @@
    "id": "goal/G29.4",
    "title": "shell element list-search-container.",
    "goal": "goal/G29",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -526,17 +521,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -544,15 +539,44 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "A shell element: a list with its search, looking the same everywhere it is used.\n\nLAYOUT\n[set of filters: icons, or word + icon, checked]\n[search string input, its clear button inside it on the right] [search button]\n[count line]\n[list]\n\nCONFIGURATION (what each use sets): one plain object given at creation, callbacks in it, no registry. The shape:\n\nshellCreateListSearch(container, {\n  server: 'deskVerify',                 // the server searched (its stream too)\n  verb: 'fallout.reds',                 // the search verb invoked\n  args: function (text, filters) {},    // the verb's arguments from the words and the filter values\n  filters: [{                           // declared, drawn by the container, the same everywhere\n    name: 'outcome',\n    choices: [{ value: 'red', icon: '❌', word: 'fail' }, { value: 'green', icon: '✅', word: 'success' }, { value: '', word: 'both' }],\n    test: function (row, value) {}      // a probability, 0 to 1: 0 leaves the row out, 1 keeps it as it is, between lowers it; never raises it\n  }],\n  paint: function (row) {},             // one row's html\n  press: function (row) {},             // a press on a row (Fallout: its history dialog)\n  empty: 'No test matches.'             // the empty-list sentence\n})\n\nA row is the object an answer item's label carries; paint, press and test all take that same object. The words are matched against the whole row (probabilityStringObjectMatch), so nothing configures which text is searched.\n\nBEHAVIOUR (the same for every use)\n- The bucket knows nothing of string matching; the container scores every cached row with probabilityStringObjectMatch per keystroke multiplied by every filter's test, and hands the numbers to bucket.sort. A filter only lowers: the words decide the order among the rows the filters let through.\n- Rows are keyed by the key the search answer carries; that key is the identity of what the row shows, so a row a later search brings again replaces the older one.\n- Every row any search brought is kept in a cache, a probabilityBucket, unbounded.\n- Each character typed or erased redraws the list from the cache at once, ranked by probabilityStringMatch: best matches on top, every row the filters let through shown.\n- The server calls MUST be serialized: at most one request of the element on the wire at a time, every verb it calls included. No typing pause: each character typed or erased asks the server at once when nothing is on the wire; while a request is out, the latest words go the moment its answer returns. The round trip paces the server, the cache paces the screen.\n- The count line says how many match, and that the answer was partial when the server capped it.\n",
-   "version": 7,
+   "box": "A shell element: a list with its search, looking the same everywhere it is used.\n\nLAYOUT\n[set of filters: icons, or word + icon, checked]\n[search string input, its clear button inside it on the right] [search button]\n[count line]\n[list]\n\nCONFIGURATION (what each use sets): one plain object given at creation, callbacks in it, no registry. The shape:\n\nshellCreateListSearch(container, {\n  server: 'deskVerify',                 // the server searched (its stream too)\n  verb: 'fallout.reds',                 // the search verb invoked\n  args: function (text, filters) {},    // the verb's arguments from the words and the filter values\n  filters: [{                           // declared, drawn by the container, the same everywhere\n    name: 'outcome',\n    choices: [{ value: 'red', icon: '❌', word: 'fail' }, { value: 'green', icon: '✅', word: 'success' }, { value: '', word: 'both' }],\n    test: function (row, value) {}      // a probability, 0 to 1: 0 leaves the row out, 1 keeps it as it is, between lowers it; never raises it\n  }],\n  paint: function (row) {},             // one row's html\n  press: function (row) {},             // a press on a row (Fallout: its history dialog)\n  empty: 'No test matches.'             // the empty-list sentence\n})\n\nA row is the object an answer item's label carries; paint, press and test all take that same object. The words are matched against the whole row (probabilityStringObjectMatch), so nothing configures which text is searched.\n\nWHERE IT LIVES\nshell/shared/js/listSearch.js, loaded by an app on demand, as deskElement.js is.\n\nWHAT EVERY SEARCH IT CALLS ANSWERS\n{items: [{key, label}], more, total}: key is the identity of what the row shows (one per test, per peer, per item), label the row as json, more true when the answer was capped, total how many matched in all. deskVerify is brought to this in G29.5.\n\nBEHAVIOUR (the same for every use)\n- The bucket knows nothing of string matching; the container scores every cached row with probabilityStringObjectMatch per keystroke multiplied by every filter's test, and hands the numbers to bucket.sort. A filter only lowers: the words decide the order among the rows the filters let through.\n- Rows are keyed by the key the search answer carries; that key is the identity of what the row shows, so a row a later search brings again replaces the older one.\n- Every row any search brought is kept in a cache, a probabilityBucket, unbounded.\n- Each character typed or erased redraws the list from the cache at once, ranked by probabilityStringMatch: best matches on top, every row the filters let through shown.\n- The server calls MUST be serialized: at most one request of the element on the wire at a time, every verb it calls included. No typing pause: each character typed or erased asks the server at once when nothing is on the wire; while a request is out, the latest words go the moment its answer returns. The round trip paces the server, the cache paces the screen.\n- The count line says how many match, and that the answer was partial when the server capped it.\n",
+   "version": 8,
    "checks": [],
    "chat": [
     {
@@ -722,6 +746,36 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-17T12:38:32.794Z",
      "text": "In the box: a filter only lowers, never raises; the words decide the order among what the filters let through."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:02:12.127Z",
+     "text": "still good to go on this?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:02:30.674Z",
+     "text": "Yes, after two lines into the box: every server search the container calls answers {items: [{key = the identity of the row, label}], more, total} (deskVerify's change to that is G29.5's).\nThe element lives in shell/shared/js/listSearch.js, loaded by an app on demand as deskElement.js is. Shall I write both in?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:03:34.948Z",
+     "text": "tell me when you're done fixing boxes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:04:01.232Z",
+     "text": "Done fixing the box: WHERE IT LIVES and WHAT EVERY SEARCH IT CALLS ANSWERS are in; G29.4 is ready for its Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:04:15.198Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
