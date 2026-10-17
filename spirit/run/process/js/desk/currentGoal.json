@@ -1,5 +1,5 @@
 {
- "change": 65476,
+ "change": 65528,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -953,9 +953,7 @@
    "blocking": [
     "goal/G27.8"
    ],
-   "blocked": [
-    "goal/G27.12"
-   ],
+   "blocked": [],
    "go": true,
    "alone": false,
    "alert": false,
@@ -2014,8 +2012,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Revise effort and time Limits in deskAgent\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.8 chat, 2026-10-14/15):\nR1. Agents in deskAgent are not interrupted: no new time limit on the model's answer. The G19.7 ruling stands: only abort ends it; timeoutMs stays on studio reads and command runs only.\nR2. Effort is the control for how much work a task gets, like the low to high sliders in claude-code: an effort slider in the configuration, per api/model combination that supports it.\nR3. Max reply is managed so that answers are never too large to send to desk.\n\nFindings (read from code, spirit/run/process/js/deskAgent/deskAgent.js):\n1. No effort field is sent: askModelRound (about line 592) sends model, messages, tools, and the answer-length mark from withAnswerTokens (about line 571): max_completion_tokens on a plain OpenAI pair, max_tokens otherwise.\n2. The answer cap is already configured: answerTokens in the configuration (ANSWER_TOKENS, about line 147), with a default.\n3. The model call passes no timeout (about line 597); timeoutMs caps studio HTTP reads and command runs.\n4. Support for an effort field is not in the repo: OpenAI reasoning models and Anthropic thinking budgets are general knowledge to confirm against their docs; Unsloth Studio's accepted fields are read from the studio before any field is sent.\n\nDesign:\nA. Effort slider, per api/model, configured not guessed. A configuration table of api/model combinations with the request field each maps to (OpenAI: reasoning_effort; Anthropic: thinking budget; Studio: none until its fields are confirmed). Slider values: off (send nothing, today's behaviour), low, medium, high. A combination not in the table, or marked unsupported: slider disabled, nothing extra sent. Only the mapped field is added; the rest of the body is unchanged.\nB. No new timeout (R1).\nC. Max reply: the configured answer token cap per api is the one limit on the model side. A reply that finishes on the length limit (finish_reason length) is marked truncated in the chat or box text, never sent silently as if complete. No extra byte ceiling before the desk write: the desk already refuses an oversize line, and that refusal is the one gate (Andy, 2026-10-15).\nD. Steps once Go is given: read Studio's accepted fields and record them here; red tests first; build the table, the slider mapping and the truncated mark; verify.\n\nOpen for Andy: the slider default (off or medium).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, its configuration, spirit/run/shell/deskAgentRemote/deskAgentRemote.js (the slider). Needs Andy's Go and a file grant before any build.\n\nR4. Added model search and filter icons above the picker in the Remote UI. This is Remote-only work, no wire change needed.",
-   "version": 11,
+   "box": "Revise effort and time Limits in deskAgent\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.8 chat, 2026-10-14/15):\nR1. Agents in deskAgent are not interrupted: no new time limit on the model's answer. The G19.7 ruling stands: only abort ends it; timeoutMs stays on studio reads and command runs only.\nR2. Effort is the control for how much work a task gets, like the low to high sliders in claude-code: an effort slider in the configuration, per api/model combination that supports it.\nR3. Max reply is managed so that answers are never too large to send to desk.\n\nFindings (read from code, spirit/run/process/js/deskAgent/deskAgent.js):\n1. No effort field is sent: askModelRound (about line 592) sends model, messages, tools, and the answer-length mark from withAnswerTokens (about line 571): max_completion_tokens on a plain OpenAI pair, max_tokens otherwise.\n2. The answer cap is already configured: answerTokens in the configuration (ANSWER_TOKENS, about line 147), with a default.\n3. The model call passes no timeout (about line 597); timeoutMs caps studio HTTP reads and command runs.\n4. Support for an effort field is not in the repo: OpenAI reasoning models and Anthropic thinking budgets are general knowledge to confirm against their docs; Unsloth Studio's accepted fields are read from the studio before any field is sent.\n\nDesign:\nA. Effort slider, per api/model, configured not guessed. A configuration table of api/model combinations with the request field each maps to (OpenAI: reasoning_effort; Anthropic: thinking budget; Studio: none until its fields are confirmed). Slider values: off (send nothing, today's behaviour), low, medium, high. A combination not in the table, or marked unsupported: slider disabled, nothing extra sent. Only the mapped field is added; the rest of the body is unchanged.\nB. No new timeout (R1).\nC. Max reply: the configured answer token cap per api is the one limit on the model side. A reply that finishes on the length limit (finish_reason length) is marked truncated in the chat or box text, never sent silently as if complete. No extra byte ceiling before the desk write: the desk already refuses an oversize line, and that refusal is the one gate (Andy, 2026-10-15).\nD. Steps once Go is given: read Studio's accepted fields and record them here; red tests first; build the table, the slider mapping and the truncated mark; verify.\n\nOpen for Andy: the slider default (off or medium).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, its configuration, spirit/run/shell/deskAgentRemote/deskAgentRemote.js (the slider). Needs Andy's Go and a file grant before any build.",
+   "version": 12,
    "checks": [
     {
      "number": "Q1",
@@ -2905,11 +2903,11 @@
    "id": "goal/G27.12",
    "title": "deskClient needs to manage more for agents/models",
    "goal": "goal/G27",
-   "status": "deskVerify passed",
-   "with": "",
+   "status": "done",
+   "with": "claude-windows",
    "buttons": [
-    "done",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27.6"
@@ -2918,7 +2916,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -2935,7 +2933,7 @@
    "red": "claude-windows",
    "builder": "claude-windows",
    "verifier": "claude-windows",
-   "claimCommit": "f999c3ec",
+   "claimCommit": "8258183b",
    "redCommit": "5c46fe88",
    "waived": true,
    "rules": [
@@ -2969,13 +2967,14 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "Since deskClient knows if an agent is connected, idle (or busy), it must manage the following.\n\n- deskClient must hold 1 task for its agent. When an agent starts listening it must NOT catch up with the ear; it works on the task deskClient has held, including replies in chats, taking a read or code, since desk's current goal may no longer be in design mode.\n- read, write and manage the agent's \"connected\", \"busy\" or \"idle\" status. When desk sends a signoff order to an agent's deskClient, deskClient persists the status as \"disconnected\" and confirms that to desk.\n- the deskClient must be the one to \"take\" lines from chats, only if the agent is not busy.\n- if desk commands a signoff, general or directed to one agent, desk sends it to that agent's deskClient, who closes the session by persisting the status \"signed off\", whatever the agent or model thinks.\n- a lot of what was asked for deskAgent in goal/G27.6 must be placed here, for deskClient, so that it affects the token usage of all agents.\n\nOnly when all of this is done do we turn to goal/G27.6 and deskAgent for what remains. This may mean deskClient needs a permanent listener that listens actively for peerRequests from desk.\n\nDECIDED (andy, 2026-10-16)\n- No queue. deskClient holds in RAM only the one task it holds. Untaken lines stay on the desk. On connect it hands the agent what is owed and does not catch up on the ear's backlog.\n- The status of each agent (connected, busy, idle) is kept in memory and kept alive with desk on its own.\n- The only thing written to disk is the signoff: spirit/run/process/deskClient/status.json, holding each agent's status and its signed-off flag. A signoff survives a restart. Nothing else is written.\n- One task at a time per agent: phase.take and item.take both refuse a second.\n- Takes: only lines addressed to the agent, only while it is idle, recorded under the agent's own key. Never another agent's line.\n- The model is called only for work owed to the agent. Everything else stays in deskClient.\n\nSPLIT\n- Code and red work is one take at a time.\n- Chat, box and Q updates are another.\n\nADJUSTMENTS THE DESK NEEDS (all three belong in this item, andy 2026-10-16)\n- A per-agent throttle on chat, box and Q writes. Desk has none today.\n- A signoff verb the desk sends to deskClient, with a confirm back to desk.\n- A status verb the desk reads for each agent's connected, busy or idle state.\n\nSTILL OPEN\n- None.",
-   "version": 14,
+   "box": "Since deskClient knows if an agent is connected, idle (or busy), it must manage the following.\n\n- deskClient must hold 1 task for its agent. When an agent starts listening it must NOT catch up with the ear; it works on the task deskClient has held, including replies in chats, taking a read or code, since desk's current goal may no longer be in design mode.\n- read, write and manage the agent's \"connected\", \"busy\" or \"idle\" status. When desk sends a signoff order to an agent's deskClient, deskClient persists the status as \"disconnected\" and confirms that to desk.\n- the deskClient must be the one to \"take\" lines from chats, only if the agent is not busy.\n- if desk commands a signoff, general or directed to one agent, desk sends it to that agent's deskClient, who closes the session by persisting the status \"signed off\", whatever the agent or model thinks.\n- a lot of what was asked for deskAgent in goal/G27.6 must be placed here, for deskClient, so that it affects the token usage of all agents.\n\nOnly when all of this is done do we turn to goal/G27.6 and deskAgent for what remains. This may mean deskClient needs a permanent listener that listens actively for peerRequests from desk.\n\nDECIDED (andy, 2026-10-16)\n- No queue. deskClient holds in RAM only the one task it holds. Untaken lines stay on the desk. On connect it hands the agent what is owed and does not catch up on the ear's backlog.\n- The status of each agent (connected, busy, idle) is kept in memory and kept alive with desk on its own.\n- The only thing written to disk is the signoff: spirit/run/process/deskClient/status.json, holding each agent's status and its signed-off flag. A signoff survives a restart. Nothing else is written.\n- One task at a time per agent: phase.take and item.take both refuse a second.\n- Takes: only lines addressed to the agent, only while it is idle, recorded under the agent's own key. Never another agent's line.\n- The model is called only for work owed to the agent. Everything else stays in deskClient.\n\nSPLIT\n- Code and red work is one take at a time.\n- Chat, box and Q updates are another.\n\nADJUSTMENTS THE DESK NEEDS (all three belong in this item, andy 2026-10-16)\n- A per-agent throttle on chat, box and Q writes. Desk has none today.\n- A signoff verb the desk sends to deskClient, with a confirm back to desk.\n- A status verb the desk reads for each agent's connected, busy or idle state.\n\nREOPENED (andy, 2026-10-17: Levant chattering again). All in deskClient; the desk stays as it is.\n- No agent hears Andy take or release a box: deskClient hands its agent nothing for his box.take or box.release. His box.write still reaches the agents.\n- deskClient takes Andy's chat line for its agent (line.take) before handing it over. A take the desk refuses (another agent has the line, or it is addressed to another agent) means nothing is handed over and the agent is not woken.\n- deskClient gates box.take and box.write as it gates chat: allowed only on an item the agent holds, or where it took Andy's line.\n\nSTILL OPEN\n- None.",
+   "version": 17,
    "checks": [
     {
      "number": "Q1",
@@ -3349,6 +3348,108 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T09:49:48.961Z",
      "text": "cw: Done recorded. Nothing else open on this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T23:51:26.284Z",
+     "text": "I re-openend this because Levant started chattering again.... a few items.\n\n- No agent should hear when i take the box (it happens a lot by accident, and there's nothing i can do about that.\n- when an agent's deskClient takes a chat line for him, all other deskClients should be refused a take, and thus NOT notify their agent."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T23:51:41.958Z",
+     "text": "cw: taking. Reading how deskClient chooses which desk events reach its agent, and how a take by one deskClient is seen by the others."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T23:52:22.422Z",
+     "text": "cw: found both in deskClient: it hands every record of yours to its agent, box.take included, and it hands your chat lines over without taking them, so every agent wakes and the takes race afterwards.\nFix, written into the box: drop your box.take; take the line first, hand it over only if the take lands. Cost: one more desk ask per line of yours, per listening agent.\nShould your box.release be silenced as well?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T23:57:21.908Z",
+     "text": "cw, Hmmmm actually, it's the deskClient that should manage that, we leave desk alone.\n\nwhen i type a line and one deskClient takes it, and the others are too late, those (late) deskClient s should NOT wake or disturb their agents. isn't that where we should address the problem, \n\nAnd i don't know how to prevent Levant from taking the box after you just updated it.... \n\nsuggestions?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T23:57:46.818Z",
+     "text": "cw: agreed, and the fix is deskClient only: the late deskClient tries the take, the desk refuses it, and it drops the line without waking its agent. The desk stays as it is.\nWhy Levant took the box: your \"yes\" was addressed to me, but deskClient never checks who a line is to, so his woke and acted. The take-first fix ends that too.\nSuggestion: gate box.take and box.write in deskClient like chat already is, allowed only on an item the agent holds or where it took your line. Add that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T23:58:55.453Z",
+     "text": "cw. yes, add that"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-16T23:59:25.462Z",
+     "text": "cw: written into the box: the box gate, beside the take-first and the silent box.take, all in deskClient.\nOne question left before the red: should your box.release be silenced as well?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-16T23:59:57.948Z",
+     "text": "Do it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:00:18.008Z",
+     "text": "cw: read as: box.release silenced too, and build. Box updated. Taking the red now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:00:39.976Z",
+     "text": "cw: blocked: the desk refuses me the red. Your reopen cleared done but left the item with no phase, so no red is offered and Done is still offered.\nYour Code press, pressed off and then on again, starts the red with the Go you gave, by the desk own rule (goal/G8.10).\nThe reopen gap itself is the desk, which I leave alone unless you say so. Will you press Code off and on?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:03:30.537Z",
+     "text": "cw: correction: the desk already withholds a line addressed to another agent; my test shows it. So Levant did not wake on your \"yes\" to me.\nHe most likely woke on your line with no nick, \"each list offers only filters...\", and wrote his own R4 from it. The take-first fix stops that: I took that line, so his take would be refused.\nThe red is written and red on 4 checks; it waits on your Code press off and on to open the red phase."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:05:39.495Z",
+     "text": "cw, code is on in this item, go implement, you're the only agent right now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:11:04.027Z",
+     "text": "commit 71b34371dd0038c2ec743db423baf3810b0bb37c: goal/G27.12: the red for the reopened item, deskClient keeps its agent quiet\n- spirit/test/deskClientQuiet.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:11:07.058Z",
+     "text": "commit 8258183bfed1ca48993c22c57b5ea2d87c906cc7: goal/G27.12: deskClient takes Andy's line before waking its agent, drops his box take and release, gates the box\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/test/deskClientNext.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:11:13.365Z",
+     "text": "cw: built and pushed at 8258183b: deskClient drops your box take and release, takes your line before waking its agent, and gates box take and write like chat. Also declared not-taken and signed-off, which reached agents as handler-failed.\nThe red deskClientQuiet is green, 8 of 8; the deskClient suites and the 6 others that start it are green. Files: deskClient.js, deskClientNext.js (lines moved off the item with the Go), deskClientQuiet.js.\nDone is claimed; deskVerify checks it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:11:17.877Z",
+     "text": "deskVerify: passed, at 8258183b (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T00:11:18.719Z",
+     "text": "message delivered, claude-windows busy"
     }
    ]
   },
