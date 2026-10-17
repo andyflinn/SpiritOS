@@ -1,5 +1,5 @@
 {
- "change": 65840,
+ "change": 65919,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -19,7 +19,8 @@
     "goal/G27.3",
     "goal/G27.5",
     "goal/G27.14",
-    "goal/G27.15"
+    "goal/G27.15",
+    "goal/G27.16"
    ],
    "go": false,
    "alone": false,
@@ -50,16 +51,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 9,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -650,10 +649,11 @@
    "id": "goal/G27.9",
    "title": "Clean up Desk and deskAgent UI realtime (incl. remote)",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27.2",
@@ -664,21 +664,57 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/shared/js/deskElement.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPluginsGg.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRealtimeFace.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRealtimeServer.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "ollama agent node",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "5c127aa1",
+   "redCommit": "c351959e",
+   "waived": true,
    "rules": [
     {
      "key": "rule/12",
@@ -731,8 +767,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Clean up Desk and deskAgent UI realtime (incl. remote)\n\nOne item that cleans up the realtime UI of Desk, deskAgent and deskAgentRemote (Andy, goal/G27 chat, 2026-10-14). It carries desk rule 8: shell and application elements bring their subscriptions with them, so they are subscribed to the events that update them. The remote item (goal/G27.7) is folded in here as slice S4 (Andy, 2026-10-15): every element of deskAgentRemote listens to the changes that concern only itself and redraws only itself.\n\nFindings from reading code (not run):\n1. One subscription feeds the Desk face: desk.js:1747 deskApi.onPublished(deskOnPublished); it repaints everything through deskDraw (desk.js:1040).\n2. List rows (deskRowHtml, desk.js:595), header, tabs, toggles, musings, backup, team chat, session bubble, apps tabs (desk.js:641), rules list (desk.js:1087) and verifier bar (desk.js:1418) carry no listener; they repaint only when deskDraw runs.\n3. Elements that do listen: item dialog (deskDetails.js:620), goal chat (desk.js:933), deskVerify state (desk.js:1758), Stacks plugin (stackFrameChecks.js:384-397), rule details (ruleDetails.js:212), remote deskAgent (deskAgentRemote.js:828, one handler, then the whole face redrawn: lines 530-531 and 293-298).\n4. Changes are dropped when the tab is not showing (desk.js:1457, verifier tail). The List pulls on gaps, session.set, oversize drops and reconnect (desk.js:481-536, 1752).\n5. Server publish gaps: log.add (desk.js:2005) never publishes. rule.add, rule.draft, rule.version (desk.js:2493, 2515, 2529) publish only {rule: key}, not the row, and the face asks again only while the Rules tab shows (shell desk.js:484). The state and seen docs (state.set, seen.set) are per-user and nothing else draws them, so they stay unpublished. deskVerify and deskAgent publish through their own appServer.publish, to be read in S1.\n\nStrategy:\nA. Server first: every write that changes visible state publishes a row-level event (item facts, row, checks, box, chat, rule row). log.add publishes its line; rule writes publish the rule row. Read deskVerify and deskAgent publish paths and make them the same shape.\nB. One client repaint path: a small store keyed by id (items, rules, verifier, unsloth sessions). Each element subscribes to the keys it shows and repaints only its own part. The face-wide deskDraw stays for layout only.\nC. No tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show.\nD. Shared element: a new folder spirit/run/shell/shared/js (Andy, 2026-10-15: spirit/run/shell/js is a core folder and stays the shell's own), one file per element, each named with the desk prefix (deskItemRow.js, deskSwitch.js and so on), each adding itself to window.spiritElements as the shell elements do. The element is made with the keys it shows and a paint function and subscribes to the stream itself (desk rule 8); Desk rows, the remote switch, warnings and pairs are all made from it, so the remote carries no second copy of the subscribe-and-paint code.\nE. Keep the reconnect and gap pull as the only full refresh; count how often it fires.\n\nSlices (each its own red test first):\n- S1 server publishes (A), tests that each write verb publishes.\n- S2 client store and row-level repaint for the List (B, C).\n- S3 header, tabs, toggles, rules, verifier, musings, team chat move onto the store (B).\n- S4 deskAgent and deskAgentRemote onto the same helper (D): every remote element listens for itself and redraws only itself.\n\nNot in this item: the effort/time limits (goal/G27.8), the Stacks dialog (goal/G27.2).\n\nNeeds Andy's Go and file grants per slice. Nothing built yet.",
-   "version": 5,
+   "box": "Clean up Desk and deskAgent UI realtime (incl. remote)\n\nOne item that cleans up the realtime UI of Desk, deskAgent and deskAgentRemote (Andy, goal/G27 chat, 2026-10-14). It carries desk rule 8: shell and application elements bring their subscriptions with them, so they are subscribed to the events that update them. The remote item (goal/G27.7) is folded in here as slice S4 (Andy, 2026-10-15): every element of deskAgentRemote listens to the changes that concern only itself and redraws only itself.\n\nFindings from reading code (not run):\n1. One subscription feeds the Desk face: desk.js:1747 deskApi.onPublished(deskOnPublished); it repaints everything through deskDraw (desk.js:1040).\n2. List rows (deskRowHtml, desk.js:595), header, tabs, toggles, musings, backup, team chat, session bubble, apps tabs (desk.js:641), rules list (desk.js:1087) and verifier bar (desk.js:1418) carry no listener; they repaint only when deskDraw runs.\n3. Elements that do listen: item dialog (deskDetails.js:620), goal chat (desk.js:933), deskVerify state (desk.js:1758), Stacks plugin (stackFrameChecks.js:384-397), rule details (ruleDetails.js:212), remote deskAgent (deskAgentRemote.js:828, one handler, then the whole face redrawn: lines 530-531 and 293-298).\n4. Changes are dropped when the tab is not showing (desk.js:1457, verifier tail). The List pulls on gaps, session.set, oversize drops and reconnect (desk.js:481-536, 1752).\n5. Server publish gaps: log.add (desk.js:2005) never publishes. rule.add, rule.draft, rule.version (desk.js:2493, 2515, 2529) publish only {rule: key}, not the row, and the face asks again only while the Rules tab shows (shell desk.js:484). The state and seen docs (state.set, seen.set) are per-user and nothing else draws them, so they stay unpublished. deskVerify and deskAgent publish through their own appServer.publish, to be read in S1.\n\nStrategy:\nA. Server first: every write that changes visible state publishes a row-level event (item facts, row, checks, box, chat, rule row). log.add publishes its line; rule writes publish the rule row. Read deskVerify and deskAgent publish paths and make them the same shape.\nB. One client repaint path: a small store keyed by id (items, rules, verifier, unsloth sessions). Each element subscribes to the keys it shows and repaints only its own part. The face-wide deskDraw stays for layout only.\nC. No tab gate: changes are applied to the store whether or not the tab shows; the tab repaints on show.\nD. Shared element: a new folder spirit/run/shell/shared/js (Andy, 2026-10-15: spirit/run/shell/js is a core folder and stays the shell's own), one file per element, each named with the desk prefix (deskItemRow.js, deskSwitch.js and so on), each adding itself to window.spiritElements as the shell elements do. The element is made with the keys it shows and a paint function and subscribes to the stream itself (desk rule 8); Desk rows, the remote switch, warnings and pairs are all made from it, so the remote carries no second copy of the subscribe-and-paint code. Each app loads the shared elements it uses itself, at mount, on demand; no core file names an app or a shared element (Andy, 2026-10-17: \"it is ok for apps to know about other apps and their shared elements\").\nE. Keep the reconnect and gap pull as the only full refresh; count how often it fires.\n\nSlices (each its own red test first):\n- S1 server publishes (A), tests that each write verb publishes.\n- S2 client store and row-level repaint for the List (B, C).\n- S3 header, tabs, toggles, rules, verifier, musings, team chat move onto the store (B).\n- S4 deskAgent and deskAgentRemote onto the same helper (D): every remote element listens for itself and redraws only itself.\n\nNot in this item: the effort/time limits (goal/G27.8), the Stacks dialog (goal/G27.2).\n\nNeeds Andy's Go and file grants per slice. Nothing built yet.",
+   "version": 6,
    "checks": [
     {
      "number": "Q1",
@@ -811,6 +847,150 @@
      "key": "",
      "at": "2026-10-17T01:06:27.638Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:08:27.244Z",
+     "text": "cw: taking the red. One red for all four slices: S1 log.add and rule writes publish their row; a shared element, spirit/run/shell/shared/js/deskElement.js, that subscribes itself and repaints only what it shows; Desk rows and the team chat repainted alone; the Remote pairs and models each repainted only on their own change.\nLoading the shared file needs one script line in index.html, a core file, so the commit will raise one grant for you."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:10:44.401Z",
+     "text": "commit c351959e4cf27541ac9afc226960c5383cb73cd7: goal/G27.9: the red for the realtime UI, server rows and element-by-element repaint\n- spirit/test/deskRealtimeFace.js\n- spirit/test/deskRealtimeServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:10:48.978Z",
+     "text": "cw: red pushed at c351959e and claimed: deskRealtimeServer (S1, 4 owed) and deskRealtimeFace (S2 to S4, 10 owed; one guard green). Building next.\nThe one core grant, index.html for the shared element script, is up as G1 under the item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:11:01.941Z",
+     "text": "deskVerify: red confirmed at c351959e: spirit/test/deskRealtimeFace.js, spirit/test/deskRealtimeServer.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:11:22.130Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:18:03.954Z",
+     "text": "cw: built in my clone, all green: deskRealtimeServer 5 of 5, deskRealtimeFace 13 of 13, and the 173 suites that touch these files the same as before the build. Rows, team chat, rules and the Remote parts each repaint alone.\nThe commit waits on one grant: G1, index.html, the single script line that loads the shared element. Press it and I commit, push and claim."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:20:19.119Z",
+     "text": "does that script line load all shared elements?\nor can the desk-shell-app not load it on demand?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:20:37.476Z",
+     "text": "cw: the line loads deskElement.js alone; each new shared element would need its own line. And yes, the app can load it on demand: Desk and the Remote each add the script at mount, once, and make their elements when it has loaded; until then the face draws whole, as it does without it today.\nOn demand needs no core change and no grant, and an app loads only the elements it uses. I recommend it; shall I switch to that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:21:56.728Z",
+     "text": "i don't like that approach, it means a core element has to know about specific apps. denied. we need a better solution."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:22:15.103Z",
+     "text": "cw: agreed, the index.html line is out. Two ways where no core file names an app or an element:\n1. On demand: the app loads the shared element itself at mount (no core change at all). 2. A generic loader: the shell loads every file in shell/shared/js, naming none (one core change, once).\nWhich one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:23:32.669Z",
+     "text": "1. On demand: the app loads the shared element itself at mount (no core change at all).\n\nthat's it. it is ok for apps to know about other apps and their shared elements. i like this solution. go for it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:27:46.279Z",
+     "text": "there is one more thing:\n\nis it possible for the desk app to not show up at all in the shell, if no desk appServer is running, sor of like when the Server is installed, it enables the corresponding shell app? that way the shell doesn't get cluttered with useless shell apps....\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:29:28.430Z",
+     "text": "commit 5c127aa1a260b393a40b71b2cb86126b9b8a208e: goal/G27.9: the realtime UI, server rows and element-by-element repaint\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js\n- spirit/run/shell/shared/js/deskElement.js\n- spirit/test/deskPluginsGg.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:29:41.362Z",
+     "text": "ie, when an appServer is mounted it ensures that its shell counterpart becomes mountable, when an appServer is un-installed it's shell counterpart gets disabled?\n\nit would work if the shell-counterpart has the same name?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:29:46.579Z",
+     "text": "cw: yes, possible. Today an app manifest has only a fixed hidden flag; the shell already knows which servers run (its job list). An app could name in its own manifest the server it needs, and the shell shows it only while that server runs.\nThat is one generic change in the shell (core, one grant) that names no app. It is outside this item, so as a new item: \"the shell shows an app only while the server it needs runs\". Add it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:29:59.813Z",
+     "text": "deskVerify: passed, at 5c127aa1 (pulled). 3 suites ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:30:00.678Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:30:13.133Z",
+     "text": "cw: yes, and the shell already pairs them by name: its stream ties shell/desk to the process/js/desk server. So: a shell app with a same-named server shows only while that server runs; an app with no such server (contacts, files) always shows.\nCaveat: deskAgentRemote pairs with deskAgent, not a same name, so it would need its manifest to name deskAgent or be renamed. Add the item with the same-name rule plus that one manifest field?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:31:39.683Z",
+     "text": "ah, you're suggesting that an appServer manifest carries the shell apps that go with it, so an (un)install could always handle the shell counterparts, regardless of name-match?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:31:56.516Z",
+     "text": "cw: I had it the other way round, the shell app naming its server, but yours is better: the server manifest lists its shell apps, so one server with several faces (desk: Desk, deskDetails, ruleDetails) brings all of them and no name has to match. A shell app no server lists always shows.\nShall I add the item with that rule: \"a server manifest lists its shell apps; they show only while it is installed and running\"?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:34:39.776Z",
+     "text": "Shall I add the item with that rule: \"a server manifest lists its shell apps; they show only while it is installed and running\"?\n\nmaybe shell-apps need a manifest string that names the appServer it needs, so the shell has a clear idea of the dependency as well?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:34:57.833Z",
+     "text": "cw: good point, and it decides it: once a server is uninstalled its manifest is gone, so a list in it cannot tell the shell what to hide. Only the shell app naming its server works in that case.\nSo one link, on the app side only, not both (two copies can disagree): the shell app manifest names the server it needs; it shows only while that server is installed and running; an app naming none always shows.\nAdd the item with that rule?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:36:04.355Z",
+     "text": "So one link, on the app side only, not both (two copies can disagree): the shell app manifest names the server it needs; it shows only while that server is installed and running; an app naming none always shows.\nAdd the item with that rule?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:36:32.984Z",
+     "text": "cw: added as goal/G27.16, A shell app shows only while its server runs, with its box written. It waits on your Go."
     }
    ]
   },
@@ -821,15 +1001,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
-   "blocked": [
-    "goal/G27.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -953,15 +1132,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
-   "blocked": [
-    "goal/G27.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1096,15 +1274,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
-   "blocked": [
-    "goal/G27.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -4453,6 +4630,51 @@
    "half": false,
    "full": false,
    "box": "deskAgent learns a model context from a refusal\n\nRequirements (Andy, goal/G27.8 chat, 2026-10-17):\nR1. When the host refuses a call with a 400 whose text names the context or its length, deskAgent remembers the smaller size for that model on that pair, and every later call to it is sized to it.\nR2. That same call is asked again once, with the oldest chat lines and the oldest tool results cut until it fits the smaller size. A second refusal fails the turn as today.\nR3. Any other 400 fails the turn as today: nothing cut, nothing retried.\n\nFrom the code (deskAgent.js at a2671faa): the room is the context the studio reports for the loaded model, or a plain pair entry context, else 8192; a refused call ends the turn as \"the answer failed\" in the test tab log.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js and a red suite.",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G27.16",
+   "title": "A shell app shows only while its server runs",
+   "goal": "goal/G27",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "A shell app shows only while its server runs\n\nRequirements (Andy, goal/G27.9 chat, 2026-10-17):\nR1. A shell app manifest may name the server it needs. The shell shows that app only while that server is installed and running; when the server is uninstalled or stopped, the app is not offered.\nR2. The link lives on the app side only: no server manifest lists its shell apps, so the link cannot disagree with itself, and it still works once the server and its manifest are gone.\nR3. An app that names no server always shows, as today (contacts, files and the rest).\nR4. The shell names no app and no server: it reads the field from each manifest.\n\nFrom the code (at 5c127aa1): an app manifest has only a fixed hidden flag (shell/desk/desk.json); the shell already knows the running servers from its job list and ties shell/<name> to process/js/<name> for the stream (js/client/shell.js, onPublishedFor). deskAgentRemote needs deskAgent, so it names it in its manifest.\n\nFiles (expected): spirit/run/js/client/shell.js (core: one grant), the manifests of the shell apps that need a server (desk, deskDetails, ruleDetails, deskAgentRemote), and a red suite.",
    "version": 1,
    "checks": [],
    "chat": []
