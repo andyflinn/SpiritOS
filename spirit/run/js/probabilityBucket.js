@@ -49,8 +49,11 @@ function createProbabilityBucket(capacity) {
 
     // THE OBJECTS ALONE, BEST FIRST, through map, measured in bytes against the ceiling; stopping at the first that
     // will not fit, never skipping it for a smaller one further down (the order is the probability's). `more` when
-    // something was turned away or cut; `truncated` when cut.
-    serialize: function (map, maxBytes) {
+    // something was turned away or cut; `truncated` when cut. UNBOUNDED BY DEFAULT (goal/G27.14, Andy, 2026-10-17: "in
+    // probabilityBucket.js use serialize: function (map, maxBytes = 0) where 0 means unbounded."): a caller that sends
+    // nothing over the wire, as a page ranking its own cache, leaves maxBytes out; with a bucket made with Infinity it
+    // gets every object seated.
+    serialize: function (map, maxBytes = 0) {
       var toWire = typeof map === 'function' ? map : function (x) { return x; };
       var ceiling = typeof maxBytes === 'number' && maxBytes > 0 ? maxBytes : 0;
       var out = [];
@@ -62,12 +65,6 @@ function createProbabilityBucket(capacity) {
       }
       return { items: out, bytes: utf8Bytes(JSON.stringify(out)), more: turnedAway > 0 || cut, truncated: cut };
     },
-
-    // UNBOUNDED (Andy, 2026-10-17: "the bucket needs a mode that returns the result un-bounded." and "... or a
-    // function"): every seated object, best first, with no byte ceiling: for a caller that sends nothing over the wire,
-    // as a page ranking its own cache. A bucket made with Infinity seats everything it is given; serialize stays the
-    // bounded way an answer leaves a server.
-    all: function () { return table.map(function (x) { return x.object; }); },
   };
 }
 

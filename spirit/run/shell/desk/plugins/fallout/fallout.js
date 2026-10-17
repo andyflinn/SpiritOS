@@ -143,7 +143,7 @@
       // UNBOUNDED: nothing here crosses the wire, so every cached match is seated and read back whole.
       var bucket = P.createProbabilityBucket(Infinity);
       seated.forEach(function (x) { bucket.seatFor(x.p, x.g); });
-      groups = bucket.all();
+      groups = bucket.serialize().items;
     } else groups = seated.map(function (x) { return x.g; });
     // THE SEARCH'S COUNT, said as such (Andy, 2026-10-17: "what I want to know is TOTAL OF ALL FAILURES. period"): the
     // size of the problem is the Now line above; this counts only what matches the search.
