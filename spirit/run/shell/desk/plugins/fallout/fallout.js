@@ -58,15 +58,15 @@
       if (count) count.textContent = total + ' ' + (outcome === 'red' ? '❌ red' : outcome === 'green' ? '✅ green' : 'tests') + ' now' + (total > rows.length ? ', the ' + rows.length + ' best shown' : '');
       var el = document.getElementById('fallout-reds');
       if (el) {
-        // THE ORDER (Andy, 2026-10-17: "the search results better list that file, then the failure description, then the
-        // current status..."): the suite, what failed (a green has no failure text, so its test's place stands there),
-        // the status, then since when.
-        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Suite</th><th>Failure</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
+        // ONE NICE LINE PER TEST (Andy, 2026-10-17: "one nice line per failure / test-file-name | failure-description |
+        // success or fail | since"). The description is the sentence of what is tested, the test's sub-heading (its key
+        // without the number); what the suite printed on failing is for a debugging agent, so it is no row text, only
+        // the line's hover title.
+        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
           rows.map(function (x) {
-            var what = x.failure ? esc(x.failure) : '<span class="job-manifest-note">' + esc(x.title) + '</span>';
-            return '<tr><td>' + esc(x.suite) + '</td><td>' + what + ' <span class="job-manifest-note">(' + esc(x.title) + ')</span></td>' +
-              '<td>' + (x.outcome === 'red' ? '❌ red' : '✅ green') + '</td><td>' + esc(String(x.commit || '').slice(0, 8)) + ' ' +
-              '<span class="job-manifest-note">' + esc(when(x.at)) + '</span></td></tr>';
+            var what = String(x.title || '').replace(/\s+#\d+$/, '');
+            return '<tr title="' + esc(x.failure || '') + '"><td>' + esc(x.suite) + '</td><td>' + esc(what) + '</td>' +
+              '<td>' + (x.outcome === 'red' ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(x.at)) + '</td></tr>';
           }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
       }
       say(r && r.more ? 'More match than one answer holds: narrow the search.' : '');

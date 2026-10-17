@@ -242,7 +242,7 @@ async function paneHalf() {
   else test.fail(OWED + 'the row order: file ' + atSuite + ', description ' + atWhat + ', status ' + atStatus + ', since ' + atSince + ' in ' + short(shown));
   if (!/boom: no answer/.test(shown) && !/#\d/.test(shown)) test.check('no raw failure text and no key number in the row');
   else test.fail(OWED + 'the row still shows ' + short(shown));
-  if ((shown.match(/<tr>/g) || []).length === 2) test.check('one line per test, below one header line');
+  if ((shown.match(/<tr[\s>]/g) || []).length === 2) test.check('one line per test, below one header line');
   else test.fail(OWED + 'the rows: ' + short(shown));
   // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
   if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
