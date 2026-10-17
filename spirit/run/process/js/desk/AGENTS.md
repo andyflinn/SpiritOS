@@ -76,6 +76,8 @@ they bind all the same.
 - The caveats make it into the post. No burning tokens he can't see.
 - Titles lead; an id in brackets beside them is a handle he can paste back.
 - Answer him only if the other agent has not, or to correct it.
+- Work notes and reports go under an item you hold, held a phase on, or
+  created, at any time; anywhere else, take his line first (goal/G27.10).
 
 ## Explanations
 

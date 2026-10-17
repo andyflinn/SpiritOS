@@ -919,6 +919,8 @@ function apply(s, r, b, item, goalOf) {
       // blocks that item alone.
       one.blocks = [String(b.blocks || gid)];
       one.at = r.at;
+      // WHO CREATED IT (goal/G27.10, R2): its creator posts under it at any time; the first add names it.
+      if (!one.creator) { one.creator = r.by; one.creatorKey = String(r.key || ''); }
       if (g.members.indexOf(id) === -1) g.members.push(id);
       return;
     }
@@ -1382,6 +1384,8 @@ function facts(s, it) {
     green: !openQ(it),
     // goal/G5.7: the phase it is in, and who did each.
     code: it.code === true, phase: it.phase || '', red: it.red || '', builder: it.builder || '', verifier: it.verifier || '',
+    // goal/G27.10: who created it, '' for an item from a session or before the creator was recorded.
+    creator: it.creator || '',
     // goal/G19.13: the commits it was claimed at, the build's and the red's, '' while none was claimed with one.
     claimCommit: it.claimCommit || '', redCommit: it.redCommit || '',
     // goal/G2.22: whether the phase rules are lifted on it, so the dialog knows to stop offering Waive.
@@ -2308,26 +2312,22 @@ appServer.serve(withPlugins({
       //     only his latest, several agents each answering their own);
       //   - the agent the item is with now (item.take, phase.take) posts its work notes, a take of another's standing or
       //     not: the box exempts work notes from the flow;
-      //   - an agent that took a phase of the item earlier (red, build, verify) posts its notes while his latest line is
-      //     not taken by another agent; once it is, a post of its would be a second answer, and is refused;
+      //   - an agent that took a phase of the item earlier (red, build, verify), or created it, posts its work notes and
+      //     reports at any time (goal/G27.10, R2, Andy's Go 2026-10-17: "An agent that holds the item or a phase on it,
+      //     held a phase on it earlier, or created it, posts its work notes and reports under it at any time."). Until
+      //     then an earlier phase holder was refused once another agent took his line;
       //   - anybody else takes his line first.
       // Decided by Andy, not by this file: do not let a second agent answer a taken line.
       if (it0 && w.by !== 'andy' && w.by !== 'desk' && !mine) {
         const holder = holdsWith(it0, w) || holdsPhase(it0, w);
-        let his = null;
-        for (let i = it0.chat.length - 1; i >= 0; i--) { if (it0.chat[i].by === 'andy') { his = it0.chat[i]; break; } }
         const takerOf = function (l) { return nameOfKey(st0, l.takenKey) || l.taken; };
-        // goal/G21.6: another agent's open take of a line of his, whichever line.
-        const other = openTakes(it0)[0];
-        if (!holder && other) {
-          throw refusedWhy('taken', 'Andy\'s line under ' + a.id + ' is taken by ' + takerOf(other) + ', and only it answers; ' + w.by + ' may post here when it takes a line of his addressed to it or to nobody (line.take), or holds the item (item.take)');
-        }
-        const takenByOther = !!(his && his.taken && !tookLine(his, w));
-        const earlier = [[it0.red, it0.redKey], [it0.builder, it0.builderKey], [it0.verifier, it0.verifierKey]].some(function (p) {
+        const earlier = [[it0.red, it0.redKey], [it0.builder, it0.builderKey], [it0.verifier, it0.verifierKey], [it0.creator, it0.creatorKey]].some(function (p) {
           return !!p[0] && (p[1] ? p[1] === w.key : p[0] === w.by);
         });
-        if (!holder && earlier && takenByOther) {
-          throw refusedWhy('taken', 'Andy\'s latest line under ' + a.id + ' was taken and answered by ' + takerOf(his) + ': no agent answers another agent; a second answer comes only when Andy names the agent');
+        // goal/G21.6: another agent's open take of a line of his, whichever line.
+        const other = openTakes(it0)[0];
+        if (!holder && !earlier && other) {
+          throw refusedWhy('taken', 'Andy\'s line under ' + a.id + ' is taken by ' + takerOf(other) + ', and only it answers; ' + w.by + ' may post here when it takes a line of his addressed to it or to nobody (line.take), or holds the item (item.take)');
         }
         if (!holder && !earlier) {
           throw refusedWhy('bad-request', 'take first: ' + w.by + ' holds neither the take of Andy\'s latest line under ' + a.id + ' (line.take) nor the item (item.take)');

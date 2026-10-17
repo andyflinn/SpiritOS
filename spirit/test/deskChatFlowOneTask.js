@@ -115,7 +115,10 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     if (landed(answer)) test.check('the taker answers his line');
     else test.fail(OWED + 'the taker\'s answer answered ' + short(answer));
 
-    test.subHeading('2. an earlier phase holder does not chime in on a taken line');
+    // SUPERSEDED IN PART BY goal/G27.10, R2 (Andy, 2026-10-17, accepting the recommendation to keep R2): an agent that held
+    // a phase of the item earlier posts its work notes and reports at any time, so the red writer is no longer refused
+    // after another agent took and answered his line. The rest of this section stands.
+    test.subHeading('2. an earlier phase holder posts its notes, before and after a take (goal/G27.10)');
     const red = await call('phase.take', { id: 'cf/G1.2', phase: 'red' }, CW);
     const redDone = await call('phase.done', { id: 'cf/G1.2', phase: 'red' }, CW);
     if (!landed(red) || !landed(redDone)) test.fail('the world: the red of cf/G1.2 answered ' + short([red, redDone]));
@@ -127,8 +130,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
     const levAnswer = await say('cf/G1.2', 'the red is done, build is open', LEV);
     if (!landed(levTake) || !landed(levAnswer)) test.fail('the world: the ollama agent\'s take and answer answered ' + short([levTake, levAnswer]));
     const chime = await say('cf/G1.2', 'to add to that: the red has four sections', CW);
-    if (why(chime)) test.check('after the ollama agent took and answered his line, the red\'s writer is refused: ' + why(chime));
-    else test.fail(OWED + 'the red writer chimed in on an answered line: ' + short(chime));
+    if (landed(chime)) test.check('after the ollama agent took and answered his line, the red\'s writer still posts its note (goal/G27.10, R2)');
+    else test.fail('OWED by goal/G27.10: the red writer was refused its note after the take: ' + short(chime));
     const whileTaken = await say('cf/G1.1', 'an answer of mine too', CW);
     if (why(whileTaken)) test.check('an agent holding nothing on the item is refused there');
     else test.fail(OWED + 'a stranger to the item answered ' + short(whileTaken));

@@ -518,6 +518,9 @@ function mayChat(to, verb, args) {
     const names = it.names || {};
     const nameOf = function (label) { return names[label] || label; };
     if (it.with && nameOf(it.with) === SELF) return true;
+    // AN EARLIER PHASE HOLDER, OR ITS CREATOR (goal/G27.10, R2 and R5): the desk lets them post at any time, so this gate
+    // does too.
+    if ([it.red, it.builder, it.verifier, it.creator].some(function (l) { return l && nameOf(l) === SELF; })) return true;
     return askDesk(to, 'item.chat', { id: id }).then(function (c) {
       const lines = (c && Array.isArray(c.chat)) ? c.chat : [];
       return lines.some(function (l) { return l && l.taken && nameOf(l.taken) === SELF; });
