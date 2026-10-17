@@ -257,6 +257,8 @@ async function paneHalf() {
       asked.push([verb, a]);
       if (verb === 'fallout.summary') return Promise.resolve({ red: 12, green: 340 });
       if (verb !== 'fallout.reds') return Promise.resolve({});
+      // A search whose answer brings nothing new: what shows comes from the cache.
+      if (a && a.text === 'door') return Promise.resolve({ items: [], more: false, total: 0 });
       const more = [
         { suite: 'zzFalloutA.js', title: 'the relay answers its key #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T08:00:00.000Z', failure: '' },
         { suite: 'zzFalloutA.js', title: 'the relay answers its key #2', outcome: 'red', commit: 'abc1234', at: '2026-10-17T08:30:00.000Z', failure: 'older' },
@@ -333,6 +335,16 @@ async function paneHalf() {
   else test.fail(OWED + 'the search count reads ' + short(countText));
   if (/\b3\b/.test(doc.getElementById('fallout-count').textContent)) test.check('the tab says how many matched: ' + doc.getElementById('fallout-count').textContent);
   else test.fail(OWED + 'the count reads ' + short(doc.getElementById('fallout-count').textContent));
+  // EVERY SEARCH RESULT CACHED, AND THE TERM MATCHED AMONG ALL OF IT (Andy, 2026-10-17: "and the UI still doesn't cache
+  // every search result, and then display what matches the search term among all cached rows...."): a later search
+  // whose answer brings nothing still shows the cached line its words match, and none other.
+  doc.getElementById('fallout-outcome').value = '';
+  doc.getElementById('fallout-text').value = 'door';
+  box.fire('click', { target: { id: 'fallout-search', getAttribute: function () { return null; } } });
+  await sleep(20);
+  const cachedTable = doc.getElementById('fallout-reds').innerHTML;
+  if (/a door stays shut/.test(cachedTable) && !/the relay answers its key/.test(cachedTable)) test.check('a search shows what matches its term among every line any search brought');
+  else test.fail(OWED + 'after searching door the table reads ' + short(cachedTable));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
   await sleep(10);
   const items = doc.getElementById('fallout-items');
