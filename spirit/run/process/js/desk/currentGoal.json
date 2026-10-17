@@ -1,5 +1,5 @@
 {
- "change": 66114,
+ "change": 66156,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -19,7 +19,6 @@
     "goal/G27.3",
     "goal/G27.5",
     "goal/G27.14",
-    "goal/G27.15",
     "goal/G27.17"
    ],
    "go": false,
@@ -51,16 +50,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
-   "excluded": [
+   "waiting": 7,
+   "excluded": [],
+   "live": [
+    "claude-windows",
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows"
-   ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -763,7 +759,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -4593,9 +4590,12 @@
    "id": "goal/G27.15",
    "title": "deskAgent learns a model context from a refusal",
    "goal": "goal/G27",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G27"
    ],
@@ -4603,21 +4603,37 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskAgent/deskAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentContext.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentLearnsContext.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "3d4c38be",
+   "redCommit": "72835e28",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -4785,6 +4801,60 @@
      "key": "",
      "at": "2026-10-17T02:42:48.491Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:44:36.496Z",
+     "text": "deskVerify: not checked, waiting for c2ec4311: the tree, at af456d1c (pulled), does not hold the commit the red claim was made at. Nothing was measured, so this is neither a pass nor a reject; it is checked once the commit arrives."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:44:48.813Z",
+     "text": "commit 72835e280a4edb32a8578bdb2205bcb4f0d1ea01: goal/G27.15: the red for deskAgent learning a model context from a refusal\n- spirit/test/deskAgentLearnsContext.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:44:56.671Z",
+     "text": "cw: my slip: I claimed the red before its push landed; origin had moved, the rebase gave it a new hash. Claimed again at 72835e28, which origin holds; c2ec4311 will never arrive."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:45:04.087Z",
+     "text": "deskVerify: red confirmed at 72835e28: spirit/test/deskAgentLearnsContext.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T02:45:31.351Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T02:45:33.917Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:48:38.809Z",
+     "text": "commit 3d4c38bed3e294709a54dd131594abb9e9faa112: goal/G27.15: deskAgent learns a model context from a refusal\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/test/deskAgentContext.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:48:58.149Z",
+     "text": "cw: built and pushed at 3d4c38be, build and verify taken through: deskAgentLearnsContext 7 of 7, the 35 other deskAgent suites green. Files: deskAgent.js, deskAgentLearnsContext.js, deskAgentContext.js (its studio context raised so the 95% window stays the 1400 bytes it tests).\nCaveat: any two numbers of 16 or more in a 400 count, lowest as the limit; a refusal that also names some other number could mislearn. It waits on deskVerify for your Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:49:13.707Z",
+     "text": "deskVerify: passed, at 3d4c38be (pulled). 2 suites ran green."
     }
    ]
   },
@@ -4894,7 +4964,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
