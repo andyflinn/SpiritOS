@@ -620,7 +620,7 @@ function blank(id, title, goalId) {
     boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
     // goal/G21.4: the keys beside with and phaseWith, so "one task per agent" and its release go by key.
     withKey: '', phaseWithKey: '',
-    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false,
+    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false, heldAt: '',
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
     // another's: { '<agent>': ['<path>', ...] }.
@@ -845,7 +845,8 @@ function apply(s, r, b, item, goalOf) {
       it.checked = false;
       if (b.phase === 'red') it.phase = 'build';
       else if (b.phase === 'build') it.phase = 'verify';
-      else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
+      // goal/G27.20: when the pass lands is when the item starts waiting for his Done, held for him (mayTake).
+      else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; it.heldAt = String(r.at || ''); } else it.phase = 'build'; }
       // THE DESK WRITES THE STATUS WORD ITSELF (goal/G8.12). Andy, 2026-10-09: "the desk should update status in every
       // change it manages....", and "yes" to its being the word on the List rows. An agent's verify pass does not
       // finish a code item: it waits for deskVerify, and the row says so instead of reading like any running item.
@@ -1341,7 +1342,17 @@ function mayTake(s, it, phase, who) {
     // phases as long as 'done' is not pressed", "Just because 'Done' is offered doesn't mean it's fucking done....". A
     // verify pass leaves the phase empty; while the item is not done (checked above) red opens a fresh cycle under the
     // same item, its Go standing, never to the builder unless waived, as the verifier's extension of the red below.
-    if (!it.phase) return w || who !== it.builder ? '' : 'not-offered';
+    // AND ONLY ON HIS WORD (goal/G27.20). Andy, 2026-10-17: "is the 'Done' claim ('Done' waiting for my press) not
+    // enough to indicate that the item now responds only to my chatted instructions, before i press 'Done'.. this is
+    // kind of vital in UI modifications, because i want to hold the item until I'm happy...". An item waiting for his
+    // Done is held for him: its red is offered (work.open) and taken only by an agent that took a line of his in its
+    // chat since its verify pass; without one it is no open work at all.
+    if (!it.phase) {
+      const since = String(it.heldAt || '');
+      const word = it.chat.some(function (l) { return l.by === 'andy' && l.taken === who && String(l.at || '') > since; });
+      if (!word) return 'not-offered';
+      return w || who !== it.builder ? '' : 'not-offered';
+    }
     if (it.phase === 'verify' && it.verifier && who === it.verifier) return w || who !== it.builder ? '' : 'not-offered';
     return 'not-offered';
   }

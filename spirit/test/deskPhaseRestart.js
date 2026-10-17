@@ -106,6 +106,8 @@ async function cycle(redTaken) {
   const word = await call('chat.add', { id: ID, text: 'the button should be blue, not grey' }, ANDY);
   const took = await call('line.take', { id: ID }, CW);
   if (!ok(word) || !ok(took)) { test.fail('the world: his line answered ' + word.status + ', its take ' + took.status); return; }
+  // The agent answers what it took, as every agent does: an open take stands until it is answered (goal/G21.1).
+  await call('chat.add', { id: ID, text: 'taking it: the button goes blue' }, CW);
 
   test.subHeading('1. after a verify pass, before Done, red is offered and taken again on his word');
   const offered = await open(CW);
