@@ -1,5 +1,5 @@
 {
- "change": 65561,
+ "change": 65681,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -19,8 +19,8 @@
     "goal/G27.2",
     "goal/G27.3",
     "goal/G27.5",
-    "goal/G27.8",
-    "goal/G27.14"
+    "goal/G27.14",
+    "goal/G27.15"
    ],
    "go": false,
    "alone": false,
@@ -50,13 +50,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 10,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1965,10 +1967,11 @@
    "id": "goal/G27.8",
    "title": "Revise effort and time Limits in deskAgent",
    "goal": "goal/G27",
-   "status": "running",
-   "with": "ollama agent node",
+   "status": "done",
+   "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -1977,11 +1980,16 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "spirit/run/process/js/deskAgent/deskAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
     {
      "path": "spirit/run/process/js/deskAgent/deskAgent.js",
      "by": "ollama agent node",
@@ -1989,19 +1997,29 @@
     },
     {
      "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.js",
      "by": "ollama agent node",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentEffort.js",
+     "by": "claude-windows",
      "core": false
     }
    ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "claimCommit": "a2671faa",
+   "redCommit": "95dc7579",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -2057,8 +2075,8 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -2485,6 +2503,156 @@
      "key": "",
      "at": "2026-10-17T00:17:01.827Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:20:16.756Z",
+     "text": "commit 95dc757926de3162aa4778a11ab4e2c54de964b4: goal/G27.8: the red for effort per api and model, the truncated mark, the model search\n- spirit/test/deskAgentEffort.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:20:24.051Z",
+     "text": "cw: red pushed at 95dc7579, deskAgentEffort: 18 owed checks red, 3 guards green. It names the shapes the box left open: an effort table in configuration.json, effort.set {model, level} on deskAgent, the level kept per pair and model, Anthropic sent a thinking budget.\nThe old T2 to T11 checks point at a test file that does not exist; mine is on the file list. Red claimed; building next."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:20:31.009Z",
+     "text": "deskVerify: red confirmed at 95dc7579: spirit/test/deskAgentEffort.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T00:20:31.692Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:20:40.895Z",
+     "text": "cw: the desk keeps the build from the red writer on this item: it is not waived, as G27.12 was.\nI am the only agent working; will you waive it so I can build?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:21:55.614Z",
+     "text": "cw, the desk should have waived automatically, since you're the only agent again. just do the code."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:22:21.833Z",
+     "text": "cw: building now. The desk did not waive because it counts every agent written within its live window, Levant included, not just the ones at work. If my commit is refused as red writer, the desk raises a grant on the item for you to press."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:22:47.027Z",
+     "text": "levant is disconnected right now"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:25:03.676Z",
+     "text": "commit a2671faa7e992e57e6559f469048b2062f1ec730: goal/G27.8: effort per api and model, the truncated mark, the model search\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:25:11.639Z",
+     "text": "cw: built and pushed at a2671faa. Effort table with built-in OpenAI and Anthropic rows, medium by default, kept per pair and model; effort.set; the truncated mark; the search, the filters and the slider in the Remote.\nThe red deskAgentEffort is green, 21 of 21, and the 35 other deskAgent suites are green. Files: deskAgent.js, deskAgentRemote.js, deskAgentEffort.js.\nCaveat: the Anthropic row sends a thinking budget through its OpenAI-compatible door, untried against the live API. Build claimed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:25:14.476Z",
+     "text": "deskVerify: passed, at a2671faa (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:34:24.828Z",
+     "text": "pretty nice work with the search filter and the effort slider!\n\nquestion: does the deskAgent learn when it passes too large of a context to an agent (like sometimes happens with unsloth models), and then adjust the size of what it passes to the model?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:34:45.879Z",
+     "text": "cw: thanks. No, it does not learn: the room it fills comes from the context the studio reports for the loaded model, or 8192 when none is reported, and a server that refuses for size just fails that answer.\nIt could: on a refusal that names the limit, remember the smaller size for that model and ask again once with less.\nShall I propose that as an item, \"deskAgent learns a model context from a refusal\"?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:35:59.880Z",
+     "text": "when it gets a 400 from the host (it gets those from unsloth sometimes), will it re-try with some of the context cut, like oldest chat line etc?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:36:18.091Z",
+     "text": "cw: no. A 400 from the host rejects the call, and the turn ends as \"the answer failed\" in the test tab log; nothing is cut and nothing is retried.\nA retry would drop the oldest chat lines and the oldest tool results first, once, then give up. A 400 can also mean a bad field rather than size, so it would retry only when the error text names the context or the length.\nShall it go into the same proposed item as the learned context size?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:37:48.224Z",
+     "text": "cw, yes put it with the learned context size. I'll try to get this item marked as 'Done'"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:38:02.599Z",
+     "text": "cw: proposed item, both together: \"deskAgent learns a model context from a refusal\". On a 400 whose text names the context or its length, it remembers the smaller size for that model and retries once with the oldest chat lines and tool results cut; any other 400 fails as today.\nSay \"add it\" and I add it to the current goal."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:38:42.211Z",
+     "text": "cw, add it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:39:20.433Z",
+     "text": "cw: added as goal/G27.15, deskAgent learns a model context from a refusal, with its box written. It waits on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:40:14.308Z",
+     "text": "i can't seem to get a Done button on this item,"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T00:40:15.226Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:40:50.415Z",
+     "text": "cw: the missing Done was my fault: I never finished the red phase on the desk, so the item sat in red. Finished now; it is in build, with the build already claimed at a2671faa.\nThe desk offers Waive. Press it and I take the build, claim a2671faa again, and deskVerify can hand you Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:41:16.037Z",
+     "text": "deskVerify: passed, at a2671faa (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:41:44.087Z",
+     "text": "deskVerify: passed, at a2671faa (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:41:47.621Z",
+     "text": "cw: your waive took; I finished build and verify on the desk, the red green at a2671faa. It waits on one more deskVerify pass for your Done; I asked it to check again."
     }
    ]
   },
@@ -3949,6 +4117,50 @@
    "full": false,
    "box": "Fallout is a new desk plugin application.\n\nthat new, permanent goal/plugin combination servers to deal with the fallout resulting for this: Goals only run the verifier in a goal-related scope for a goal to pass implementation, which is a good thing. It's a good thing because it will discard out-of-scope adjustments that need to be made because of a new world the achieved goal brings with it. This fallout may only become apparent/documented when a full run of the Verifier ends...\n\n- the Fallout goal is NEVER in design mode, and all its new items are \"code\" by default. \"Fallout\" items are code (by default) items without red \"phase\", because it is failing tests that cause their existence. when they pass a verifier test, and are 'Done' and 'Closed' they disappear from the\n\n- The \"Fallout\" tab will appear along it's siblings \"Team\" and \"Stacks\", it will display at the top a line showing the \"create blocking item\" form, for creating \"Fallout\" items.\n- The second row will break down \"Fallout\" into two \"Fallout\" tabs:\n- First tab: \"Reds\", it allows the searching of the verifier database 's failed tests. Searched with our new \"probability\" search modules.\n- The second tab \"Items\" displays a list of open Fallout items;\n- both tabs display the same \"Fallout\"-chat at the bottom\"\n\nThe working method is: find a group of reds in the verifier database, manually create an item to address a few, usually grouped by the suite(s) that failed them, so which tests to run for verification is implicit.\nanother way to work of is an item to adjust or remove the suite(s) that fail. or remove/modify the test that fails, this also will produce a code item.",
    "version": 7,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G27.15",
+   "title": "deskAgent learns a model context from a refusal",
+   "goal": "goal/G27",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskAgent learns a model context from a refusal\n\nRequirements (Andy, goal/G27.8 chat, 2026-10-17):\nR1. When the host refuses a call with a 400 whose text names the context or its length, deskAgent remembers the smaller size for that model on that pair, and every later call to it is sized to it.\nR2. That same call is asked again once, with the oldest chat lines and the oldest tool results cut until it fits the smaller size. A second refusal fails the turn as today.\nR3. Any other 400 fails the turn as today: nothing cut, nothing retried.\n\nFrom the code (deskAgent.js at a2671faa): the room is the context the studio reports for the loaded model, or a plain pair entry context, else 8192; a refused call ends the turn as \"the answer failed\" in the test tab log.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js and a red suite.",
+   "version": 1,
    "checks": [],
    "chat": []
   }
