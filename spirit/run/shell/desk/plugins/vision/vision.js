@@ -36,13 +36,20 @@
     return w;
   }
 
-  // Its goal's items, from the desk server's own search; read again when the stream names one of them.
+  // ITS GOAL'S ITEMS, FROM THE GOAL ITSELF (goal/G27.3). Andy, 2026-10-17: "where is my list of vision items?": a search
+  // of every item answers one bucket, which held none of his. The goal's own facts name its open items (blocked), and
+  // each is read with item.get, so the list is exact and nothing is cut off. Read again when the stream names one.
+  function factsOf(id) {
+    return Promise.resolve(ctx.ask('item.get', { id: id })).then(function (r) { try { return JSON.parse(r.item); } catch (e) { return null; } }, function () { return null; });
+  }
   function readItems() {
     if (!ctx) return;
     var goal = ctx.goal;
-    Promise.resolve(ctx.ask('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false })).then(function (r) {
-      var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } })
-        .filter(function (x) { return x && x.goal === goal; });
+    factsOf(goal).then(function (g) {
+      var ids = g && Array.isArray(g.blocked) ? g.blocked : [];
+      return Promise.all(ids.map(factsOf));
+    }).then(function (all) {
+      var rows = (all || []).filter(function (x) { return x && x.goal === goal; });
       var el = document.getElementById('vision-items');
       if (!el) return;
       el.innerHTML = rows.length ? '<table class="jobs-table"><tbody>' + rows.map(function (x) {
