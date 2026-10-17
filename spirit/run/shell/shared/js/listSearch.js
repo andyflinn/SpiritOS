@@ -81,25 +81,30 @@
         }).join('') + '</span>';
       }).join('');
     }
-    container.innerHTML =
+    // THE PANE: row 1 the filters, row 2 the search row, row 3 the count and the list.
+    var paneHtml =
       '<div id="' + pre + 'filters" style="margin-top:1em">' + filterHtml() + '</div>' +
       '<div style="margin-top:1em;display:flex;gap:1em;align-items:center">' +
         '<span style="position:relative;display:inline-block;flex:1">' +
-          '<input id="' + pre + 'text" type="text" autocomplete="off"' + (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') + ' style="width:100%;padding-right:2em;box-sizing:border-box">' +
+          '<input id="' + pre + 'text" type="text" autocomplete="off" style="width:100%;padding-right:2em;box-sizing:border-box">' +
           '<button id="' + pre + 'clear" type="button" title="Clear" style="position:absolute;right:0.3em;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer">✕</button>' +
         '</span>' +
         '<button id="' + pre + 'search" type="button">Search</button>' +
       '</div>' +
-      // ROW 3, THE ONLY ONE THAT DIFFERS (goal/G29.9): a pane below rows 1 and 2, or a dropdown under the search row.
-      '<div style="position:relative">' +
-        '<div id="' + pre + 'count" class="job-manifest-note" style="margin-top:1em"' + (dropdown ? ' hidden' : '') + '></div>' +
-        // FOCUSABLE (Andy, 2026-10-18: "in the contacts app the up-down keys etc... don't work."): the list takes the
-        // keys itself once a press gives it the focus.
-        '<div id="' + pre + 'list" tabindex="0"' + (dropdown
-          ? ' class="stat-tile wide" style="margin-top:1em;position:absolute;left:0;right:0;z-index:10;max-height:20em;overflow:auto" hidden'
-          : ' style="margin-top:1em"') + '></div>' +
-      '</div>';
-    if (dropdown) { var l0 = el('list'); if (l0) l0.hidden = true; var c0 = el('count'); if (c0) c0.hidden = true; }
+      '<div id="' + pre + 'count" class="job-manifest-note" style="margin-top:1em"></div>' +
+      // FOCUSABLE (Andy, 2026-10-18: "in the contacts app the up-down keys etc... don't work."): the list takes the
+      // keys itself once a press gives it the focus.
+      '<div id="' + pre + 'list" tabindex="0" style="margin-top:1em' + (dropdown ? ';max-height:20em;overflow:auto' : '') + '"></div>';
+    // THE DROPDOWN IS JUST A POP-UP PANE (goal/G29.9; Andy, 2026-10-18: "the dropdown is just a pop-up pane.", and "why
+    // does the dropdown not just show a \"pane\" exactly like the pane would look?"): closed, a field with the chosen
+    // name or a placeholder; a click on it pops the very same pane up under it.
+    container.innerHTML = dropdown
+      ? '<div style="position:relative">' +
+          '<button id="' + pre + 'field" type="button" style="width:100%;text-align:left"></button>' +
+          '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;right:0;z-index:10" hidden>' + paneHtml + '</div>' +
+        '</div>'
+      : paneHtml;
+    if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
 
     // SCORED AND DRAWN FROM THE CACHE: the words' match times every filter's test; a filter at 0 leaves the row out.
     // A TIE KEEPS THE ORDER ROWS FIRST CAME IN, so clearing the words gives the first order back.
@@ -234,24 +239,26 @@
       return key != null && byKey[key] ? byKey[key] : null;
     }
     function nameOf(row) { return typeof o.name === 'function' ? String(o.name(row)) : String((row && (row.name || row.key)) || ''); }
-    // ROW 3 OPENED AND SHUT (goal/G29.9), in dropdown mode only, its count line with it. Shut, the chosen name stands
-    // in the search box; opened, the box is emptied of it so the words are the person's own.
+    // THE FIELD (dropdown mode): the chosen row's name, or the placeholder.
+    function paintField() {
+      var f = el('field');
+      if (!f) return;
+      f.innerHTML = esc(self.row ? nameOf(self.row) : (o.placeholder || 'choose…')) + ' ▾';
+    }
+    // THE POPUP OPENED AND SHUT (goal/G29.9), in dropdown mode only; opened, its search box takes the focus.
     function setOpen(want) {
       if (!dropdown || open === want) return;
       open = want;
-      var l = el('list'); if (l) l.hidden = !open;
-      var c = el('count'); if (c) c.hidden = !open;
-      var box = el('text');
-      if (!box || !self.row) return;
-      if (open && box.value === nameOf(self.row)) box.value = '';
-      else if (!open && !String(box.value || '').trim()) box.value = nameOf(self.row);
+      var pop = el('popup');
+      if (pop) pop.hidden = !open;
+      if (open) { draw(); var box = el('text'); if (box && typeof box.focus === 'function') box.focus(); }
     }
     // A PRESS (goal/G29.9): in dropdown mode a pick; in pane mode details(row) when the list was given one, else a pick.
     function pick(w) {
       self.value = w.key;
       self.row = w.row;
       currentKey = w.key;
-      if (dropdown) { setOpen(false); var box = el('text'); if (box) box.value = nameOf(w.row); }
+      if (dropdown) { setOpen(false); paintField(); }
       draw();
       if (typeof o.pick === 'function') o.pick(w.row, w.key);
     }
@@ -287,15 +294,13 @@
         if (inBox) ask();
       }
     });
-    var opening = function (e) { var t = e && e.target; if (t && t.id === pre + 'text' && !open) { setOpen(true); draw(); } };
-    container.addEventListener('focus', opening, true);
-    container.addEventListener('focusin', opening);
     if (dropdown && typeof document.addEventListener === 'function') document.addEventListener('click', function (e) {
       if (open && e && e.target && typeof container.contains === 'function' && !container.contains(e.target)) setOpen(false);
     });
     container.addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
+      if (t.id === pre + 'field') { setOpen(!open); return; }
       if (t.id === pre + 'clear') { var box = el('text'); if (box) box.value = ''; typed(); return; }
       if (t.id === pre + 'search') { ask(); return; }
       var name = typeof t.getAttribute === 'function' ? t.getAttribute('data-filter') : null;
@@ -320,6 +325,7 @@
     // nothing of the app's is ever two on the wire; it answers the server's body.
     self.ask = function (verb, args) { return lend(verb, args); };
     self.destroy = function () { live = false; if (typeof off === 'function') off(); off = null; };
+    paintField();
     if (typeof o.rows === 'function') draw();
     return self;
   }

@@ -133,7 +133,8 @@ function rowsOf(root) {
   const p = paneOf(root);
   const list = partOf(root, 'list');
   // goal/G29.9: in dropdown mode the list itself is shut (hidden) until the box is focused or typed into.
-  if (!p || !visible(p, root) || !list || list.hidden) return [];
+  const popup = partOf(root, 'popup');
+  if (!p || !visible(p, root) || !list || list.hidden || (popup && popup.hidden)) return [];
   const out = [];
   const re = /<tr[^>]*\bdata-key="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g;
   let m;
@@ -258,46 +259,46 @@ async function main() {
     // goal/G29.6: "that row alone is drawn current" is dropped; the shared list draws no current row by design.
   } else test.fail(OWED + 'no row k2 to click');
 
-  // goal/G29.9: THE DROPDOWN IS THE SHARED LIST'S DROPDOWN MODE. Andy, 2026-10-18: "1 Filter row / 2 search input row /
-  // 3 PANE or Dropdown?" — rows 1 and 2 stand, only the list drops down under the search row when the box is focused
-  // or typed into, and shuts on a pick; there is no button any more.
-  test.subHeading('5. the dropdown: the search row stands, the list drops down under it');
+  // goal/G29.9: THE DROPDOWN IS A POP-UP PANE. Andy, 2026-10-18: "the dropdown is just a pop-up pane." Closed, a field
+  // with the chosen name or the prompt; a click on it pops the very same pane up, rows and all; a pick shuts it.
+  test.subHeading('5. the dropdown: a field, and the pane popping up on a click');
   const drop = m.make({ search: search, statuses: STATUSES });
   await settle();
-  const box1 = inputOf(drop);
-  if (box1 && rowsOf(drop).length === 0 && !buttonOf(drop)) test.check('the default face shows its search box, no row until the box is focused, and no button');
-  else test.fail(OWED + 'the dropdown: search box ' + !!box1 + ', rows shown before focus ' + rowsOf(drop).length + ', a button ' + !!buttonOf(drop));
-  if (box1) {
-    fire(paneOf(drop), 'focus', { target: box1 });
+  const field1 = partOf(drop, 'field');
+  if (field1 && rowsOf(drop).length === 0) test.check('the default face is a field, no row shown until it is clicked');
+  else test.fail(OWED + 'the dropdown: field ' + !!field1 + ', rows shown before a click ' + rowsOf(drop).length);
+  if (field1) {
+    fire(paneOf(drop), 'click', { target: field1 });
     await settle();
     const opened = keysOf(drop);
-    if (opened === 'k1,k2,k3') test.check('focusing the box drops the list down: its rows');
-    else test.fail(OWED + 'after focus: rows ' + JSON.stringify(opened));
+    if (opened === 'k1,k2,k3' && partOf(drop, 'text')) test.check('a click on the field pops the pane up: its search box and its rows');
+    else test.fail(OWED + 'after the field: rows ' + JSON.stringify(opened));
     let dchanges = 0;
     drop.addEventListener('change', function () { dchanges += 1; });
     if (rowFor(drop, 'k3')) { press(drop, 'k3'); await settle(); }
-    if (drop.value === 'k3' && dchanges === 1 && rowsOf(drop).length === 0) test.check('a pick sets root.value, fires one change, and shuts the list');
+    if (drop.value === 'k3' && dchanges === 1 && rowsOf(drop).length === 0) test.check('a pick sets root.value, fires one change, and shuts the popup');
     else test.fail(OWED + 'after a pick: value ' + JSON.stringify(drop.value) + ', changes ' + dchanges + ', rows still shown ' + rowsOf(drop).length);
   }
 
   // ── goal/G4.10, reopened: Andy, 2026-10-03, trying chatter live: "the choose a peer from the dropdown shouldn't be
   // seen when the dropdown turn into a pane"; "the presence is always a column" (G4.14); "same green and white dots i
   // see in contacts"; "my line said, \"like in contacts\" where i only see green and white...". Since goal/G29.9 the
-  // prompt is the search box's placeholder, and the chosen name stands in the box once picked.
-  test.subHeading('6. (goal/G4.10, G29.9) the prompt in the box, the chosen name after a pick');
+  // prompt is the field's, and the chosen name stands in the field once picked.
+  test.subHeading('6. (goal/G4.10, G29.9) the prompt in the field, the chosen name after a pick');
   const drop2 = m.make({ search: search, statuses: STATUSES, placeholder: 'choose a peer' });
   await settle();
-  const b2 = inputOf(drop2);
-  if (b2) {
-    const prompt = /placeholder="choose a peer"/.test(paneOf(drop2).innerHTML);
-    fire(paneOf(drop2), 'focus', { target: b2 });
+  const f2 = partOf(drop2, 'field');
+  if (f2) {
+    const prompt = /choose a peer/.test(String(f2.innerHTML || f2.textContent || ''));
+    fire(paneOf(drop2), 'click', { target: f2 });
     await settle();
     const openRows = rowsOf(drop2).length;
     if (rowFor(drop2, 'k1')) { press(drop2, 'k1'); await settle(); }
-    const named = drop2.row && b2.value === (drop2.row.name || drop2.row.key);
-    if (prompt && openRows === 3 && named && rowsOf(drop2).length === 0) test.check('closed: the prompt in the box; open: the list under it; picked: the chosen name in the box');
-    else test.fail(OWED10 + 'the dropdown: prompt ' + prompt + ', rows open ' + openRows + ', name in the box ' + named + ' ("' + b2.value + '")');
-  } else test.fail(OWED10 + 'no search box in the dropdown');
+    const named = drop2.row && String(f2.innerHTML || '').indexOf(drop2.row.name || drop2.row.key) !== -1;
+    if (prompt && openRows === 3 && named && rowsOf(drop2).length === 0) test.check('closed: the prompt in the field; open: the pane; picked: the chosen name in the field');
+    else test.fail(OWED10 + 'the dropdown: prompt ' + prompt + ', rows open ' + openRows + ', name in the field ' + named + ' (' + JSON.stringify(f2.innerHTML) + ')');
+  } else test.fail(OWED10 + 'no field in the dropdown');
+
 
   test.subHeading('7. (goal/G4.10) presence, always a column: green when present, white otherwise');
   const pres = m.make({ face: 'pane', search: search, statuses: STATUSES });
