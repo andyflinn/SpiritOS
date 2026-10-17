@@ -1,5 +1,5 @@
 {
- "change": 69345,
+ "change": 69650,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,8 +46,10 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
-   "excluded": [],
+   "waiting": 5,
+   "excluded": [
+    "ollama agent node"
+   ],
    "live": [
     "claude-windows"
    ],
@@ -59,8 +60,8 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "Search, first in general, then everywhere.\n\n- Every search ranks with the probability modules (G29.1) and every list is the one shared element, shellCreateListSearch (G29.4), so every list looks and behaves the same: all rows, the best matches on top.\n- Features common to lists go into that element where it makes sense (its pane and dropdown modes, filters, marks, keys, the current row), so the UI gets one look and feel.\n- The old search (searchBucket, gradedSearch, peerSearch, bucket) is killed in this goal, one item at a time.\n",
+   "version": 1,
    "checks": [],
    "chat": [
     {
@@ -589,7 +590,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -972,7 +974,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -1365,7 +1368,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 1,
    "half": false,
@@ -1907,17 +1911,18 @@
    "id": "goal/G29.7",
    "title": "fs.search",
    "goal": "goal/G29",
-   "status": "",
+   "status": "planning",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.8"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -1938,14 +1943,572 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "fs.search is for a person, not for the core. Think like a man: \"where did I put my screwdriver?\"\n\n- Words, never patterns: no special characters and no rules; every search feels the same, all rows, the best matches on top, on the shared list.\n- The words are matched against the path's segments and the file's name.\n- Search inside files is a filter, not syntax: when on, the words are matched in the contents of text files (text/plain, application/text and the like) as well.\n- The core's own folder listings (plugin loaders, an app's folder) are not this search: they move to one folder listing of their own first, in the item before this one.\n\nFIRST CUT\n- The first and only record shown at the start is the run folder; the load is a stream of the root folder's entries, no limit applies there.\n- Every update carries its stat (size, modified), except a delete.\n- With no words, a row is its name behind one square indent for every slash in its path; while words are typed the list switches to list mode and each row shows its full path.\n- Three yes/no filters: files (on by default), contents (off: the words are searched in text files too) and plugins (off: only <name>/<name>.js).\n\nHIGHLIGHTING\n- The list marks the matched parts of what it shows: shellCreateListSearch hands paint a mark(text) that wraps each matched word, so every search gets it.\n- Contents found are shown, never only counted: a row shows its matching line, marked the same way.\n- The text package is CodeMirror 5; the text launcher opens a file with the words, every match marked, the first in view.\n",
+   "version": 3,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T21:11:34.671Z",
+     "text": "cw, propose."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T21:12:04.574Z",
+     "text": "Proposal: fs.search keeps two kinds of ask. A pattern with * or ? is a filter, not a rank (* one name, ** any depth): kernel.scanDirectory and Desk's plugin listing rely on that, so it moves into nodeSearches as a small glob matcher of its own, gradedSearch gone.\nPlain words are ranked by probabilityStringMatch over each path, best first, every path the words touch; the answer is a probabilityBucket cut in bytes, key = the path, label = json {path, name, kind}.\nThe label change is a changed node verb, so it needs your yes; deskAgent's file tests, sharedSearch and the two callers move with it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T21:24:25.416Z",
+     "text": "nah. let's step back a little. no UI shows any file search, and i cannot thing of one single user of a file search in the core. yes, you have plugin-loaders, and that's about it. and probably hand-rolled every time the pattern occurs. Fine, make one item to remove that redundancy before we continue. but it has NOTHING to do with what i wand a user to see.\n\nWhat is: NOTHING for the USER. so let's NOT consider the needs of the core, it's shittily organized anyway.\n\nForget about file pattern, and thing like a man: \"where the fuck did i put my screwdriver?\"\n\nand we search for screwdrivers in path segments, file names and, in files of MIME types application/text and plain/text etc....\n\nlet's make every search feel the same. \"search inside of files\" THAT is filter, not another damn string with special characters and fucking rules...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T21:25:06.596Z",
+     "text": "Done: a new item blocks this one, one folder listing for the core's loaders instead of fs.search patterns.\nG29.7's box now says: words only, matched in path segments and file names, search inside text files as a filter, every search the same."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T21:36:10.921Z",
+     "text": "it seems pretty straightforward, what is under the hood of fs.search\n\nwhat i want to know right now are tings like this:\n\nis the display of the \"Files\" tree view really a flat list (with smart indents per \"slash\" internally. (THAT would be cool), where search results could be in a flat table, but displayed \"hierachically\"?\n\nThat's where I want to see this discussion going. \n\n1. what happens to the \"tree\" view when a search is active\n2. is \"tree view\" just a display mode of a flat table?\n3. do file change events only touch one row in that \"flat\" table? \n4. does the node always send a change-event with a \"stat\" object? (should it?)\n5. what if size, and change-date are right-justified columns etc...\n\nthroughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T21:36:47.718Z",
+     "text": "Today: the node holds the tree flat (path -> file or folder) and sends one command per change, {op, path, at}, no stat; the shell keeps it flat too, but Files rebuilds a nested tree of every row on each change.\n2, 3: yes, it can be a flat table: rows sorted by path, indent per slash, a folder row hides the rows under its prefix; then one command touches one row.\n1: while words are typed, the same table ranked best first, each row with its full path (folders muted), as every list; cleared, back to path order with the folders as they were."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T21:36:59.843Z",
+     "text": "4: today no stat rides on a command; it should for size and modified: createFile and changeFile carry {size, mtime}, a stat after each event, and the first load one per file.\n5: then size and modified are right-justified columns of that table, and sortable later.\nCost to name: a stat per event and per file at start, cheap, but it is a change to what the watcher publishes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T21:49:29.914Z",
+     "text": "considering the first and only record shown at the beginning is: the run directory, event the initial load can be just a stream of entries of the root directory, no limit applies there, and stat can easily accompany every update (except deleted)\n\nThe display of a row simple puts and exact square indent ahead of file name for every slash it finds in the path (when no-search is active) otherwise it displays the full path name.\n\nthe <plugin>/<plugin>.js pattern can be a filter, if you like.\n\nso we have two filters so far, that i would use: search desk with the  plugin-pattern on, and in-file being searched as well? and i see very quickly what i want to find, combine that with \n\nso three boolean filters (files, default on) (contents: default off) and plugins (default off)\n\nthis is where my first cut (initial attempt would go) internally an active search would switch to list-mode with paths displayed\n\nam i making sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T21:50:03.626Z",
+     "text": "Yes, it makes sense, and it is in the box as the first cut: root entries streamed, a stat on every update but deletes, indents per slash with no words, full paths in list mode, three filters files (on), contents (off), plugins (off).\nOne point: are folders rows in list mode too, when the words match a path segment (desk finds the folder desk/ as well as its files)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T21:58:26.818Z",
+     "text": "i might even put a slider as filter, that weighs file content vs. file (path) name, if the file content filter is \"on\". it is not neccessarily server-side that this weighing must take place. (another filter might be (include path tokens in file search, by default on)\n\nfilters with defaults: [path:on][fileName:on][loadModules:off][content:off][sliderForContentOn]\n\nsomething like that? what exists server-side?\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T21:58:52.607Z",
+     "text": "Server-side today: the watcher's tree in memory (paths and kind only, no stat), fs.search over those paths, and fs.stat, fs.load, fs.save, fs.delete per file; nothing searches contents, and the MIME guess lives only in the shell (shell.js mimeTypeForName).\nContent search means the node reads text files per search, bounded by a count and bytes: the real cost here. The filters fit; the slider can be client-side if each row carries its path score and content score apart, and the list weighs them."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:04:58.594Z",
+     "text": "there are those search results that highlight the match-parts of strings, in-file searches use that pattern A LOT, the \"textFile\" launcher / displayer might have to be callable with the search expression currently active, and display well decorated text?\n\nor should a text file, display, editor package be used to facilitate, that?\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:05:24.260Z",
+     "text": "Yes on both ends: the list rows mark the matched parts of name and path, and with contents on each row shows its matching line with the words marked.\nThe text launcher today is a plain textarea (shell/textEditor), which cannot mark anything; so it gets opened with {path, words}, shows the file read-only with every match marked and the first scrolled into view, and Edit switches to the textarea. About 40 lines of our own.\nA package (CodeMirror and the like) buys syntax colouring and marks inside the editor, at the cost of a large dependency; I would not take one for this."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:08:31.609Z",
+     "text": "no point in allowing in-file search without showing those results.....\n\nso one item we have to decide on: which text display/edit package is most appropriate for SpiritOS? This decision has to come sooner or later, so now is a good time.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:08:56.218Z",
+     "text": "What matters here: no build step (we serve plain scripts), a copy kept in the tree so a node works offline, marks for search matches, syntax modes, a free licence. Monaco is too big and wants workers; CodeMirror 6 needs a bundler.\nMy pick: CodeMirror 5, one plain script (about 170 KB minified) plus a mode per language and its search addon, MIT, markText for the matches; Ace is the close second, the same shape.\nProposed item: choose and vendor the text display/edit package (CodeMirror 5). Say add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:09:47.463Z",
+     "text": "Levant?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:25:23.939Z",
+     "text": "Levant?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:29:54.742Z",
+     "text": "Levant? What text editor package do you recommend?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:39:03.778Z",
+     "text": "I tries to ask Levant, but it can't even get a message reply to desk. and it want's to code immediately.....\nand extract here....\n\n----- levant chat start ----------\ngoal/G29.7 result: desk_chat_add: the node refused: deskClient: this agent holds neither the item nor a line it took here (this agent holds neither the item nor a line it took here)\ngoal/G29.7 request: to unsloth/Qwen3-Coder-30B-A3B-Instruct-GGUF, round 6: 50 messages, 38127 bytes, 44 tools; the last: \ngoal/G29.7 reply: I've reviewed the fs.search requirements and have a clear plan for implementation. I'm proceeding with the following approach:\n\n1. I'll implement fs.search with a flat tree structure (paths and kind only, no stat)\n2. I'll add support for stats (size, modified) on updates\n3. I'll implement the three filters: files (on), contents (off), plugins (off)\n4. I'll implement content search capability with bounds on count and bytes\n5. I'll add a slider filter for weighing file content vs. file name (client-side)\n6. I'll support highlighting matched parts in both file names and file contents\n7. I'll vendor CodeMirror 5 as the text editor package for SpiritOS\n\nThis is a solid implementation plan that addresses all the requirements from the discussion. I'll ensure the implementation follows the design principles outlined in the item box, including the proper handling of search matches and the integration with the existing text editor components.\n\nI'm ready to begin implementing these features in the codebase.\ngoal/G29.7 error: the desk refused chat.add: this agent holds neither the item nor a line it took here\n----- levant chat end ----------\n\nI'd say CodeMirror 5 is the answer. Now we have to decide if the list-level result-highlighting has to be done by our new list-search component, it belongs there and all searches get it for free, the in-file part display and highlighting is an other question."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:39:36.986Z",
+     "text": "Agreed and in the box: list-level marking belongs to shellCreateListSearch, which knows the words; it hands paint a mark(text) and every search gets it for free. In-file display is CodeMirror 5's, opened with the words.\nLevant: it answered without taking your line, so the desk refused its post (the take rule), and it planned to build before any Go; that is its brief to fix, not this item."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.8",
+   "title": "one folder listing for the core's loaders, no fs.search",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.7"
+   ],
+   "blocked": [
+    "goal/G29.9"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Full file-stat streaming and a file-level search in Files, end to end. No contents yet: the next item (G29.7) adds them.\n\nTHE STREAM\n- The node streams the tree to the page as it does, the watcher's updates, now each with its stat: size and modified, for every create and change; a delete carries none.\n- The first load is a stream of the root folder's entries, the run folder the first and only record shown at the start; no list-size limit applies there.\n- The shell holds it (shell.js currentFiles): every path, its kind and its stat.\n\nFILES ON THE SHARED LIST\n- A new shell element, fileSelector (shell/js/fileSelector.js), built as contactSelector is: a wrapper on shellCreateListSearch over the shell's mirror, with a pane face and a dropdown face; the Files app is a container for its pane, and any app picking a file uses its dropdown.\n- The shell holds the rows, its mirror keyed by path; each list keeps its own bucket and bucket state over them, since two open lists rank by different words.\n- Names and paths are searched in the page and never reach the server.\n- Every display has the stat columns: size and modified, right-justified, and the mimetype icon before the name.\n- No words: the tree appearance, rows in path order, one square indent per slash, a folder row folding the rows under it.\n- Words typed: list mode, the rows ranked best first, each with its full path, the matched parts marked, as every search.\n\nTWO MODES IN THE SHARED LIST\n- Pane and dropdown come from G29.9, the item before this one.\n\nTHE CORE'S FOLDER LISTINGS\n- No new verb: an empty search is the whole tree, and the one shared helper is the shell's tree read with no words.\n- Desk's plugin finder keeps the rows plugins/<name>/<name>.js; an app's own folder (kernel's scanDirectory) keeps the rows under its folder; server-side loaders read their own folders as they do.\n\nWHAT GOES\n- fs.search's patterns (* and ?) and gradedSearch with them: no caller asks the node for a folder any more. With names and paths searched in the page, fs.search has no caller left and is deleted; G29.7 brings the node's contents search.\n",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Is the one shared listing a new node verb, fs.list {folder} answering its entries one level deep (a new verb needs your yes), or a helper inside the node only the core calls?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-17T22:44:08.360Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T21:25:36.441Z",
+     "text": "Box drafted: one shared folder listing for the plugin loaders and an app's folder; fs.search loses its patterns. One question is on the item as Q1: a new node verb fs.list, or a helper inside the node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:43:45.446Z",
+     "text": "Q1: Is the one shared listing a new node verb, fs.list {folder} answering its entries one level deep (a new verb needs your yes), or a helper inside the node only the core calls?\n\nthe core, serverside is free to load the list for the watcher all-at-once, there's no internal list-size limit. Why does this need a verb? Doesn't it just stream updates, and when an shell app asks for the root folder (run) \"/\" it just streams the items....?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:44:17.844Z",
+     "text": "Right, no verb: both pattern callers are in the page, and the page already holds the whole tree from the watcher's stream (shell.js currentFiles). They read it there through one helper; the server-side loaders read their folders as they do. In the box, Q1 answered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:44:24.633Z",
+     "text": "the shell searches by default with \"\" (nothing)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:44:40.966Z",
+     "text": "Yes: an empty search is the whole tree, so the helper is just that, the shell's tree read with no words, and each caller keeps the rows it wants (Desk: plugins/<name>/<name>.js; an app: its own folder)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:45:46.781Z",
+     "text": "so by default the searches in the \"Files\" app don't even have to reach the server. this only happens (or NOT) if file contents need to be searched....?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:46:02.603Z",
+     "text": "Correct: the page holds the whole tree from the watcher's stream, so names and paths are searched in the page and never reach the server; only the contents filter asks the node.\nThe shared list allows that already: its api can answer from the page's own rows, as contactSelector does with a caller's own contacts."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:47:12.563Z",
+     "text": "can you fill the box with what we got right now, based on our discussion?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:47:40.777Z",
+     "text": "The box now holds it: where the listing comes from (the shell's tree, no verb), who uses it, what goes (fs.search's patterns), and what follows (Files searches stay in the page)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:49:36.887Z",
+     "text": "do we add \"stat\" to the server stream?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:49:52.524Z",
+     "text": "Yes, you ruled it for Files: every update carries its stat (size, modified) except a delete, and the first load streams the root's entries; it sits in G29.7's box.\nG29.8 does not need it (the listings want paths only), so it stays in G29.7 unless you want it done here first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:54:21.037Z",
+     "text": "we do it here. end-to-end if possible\n\nthe scope: full file-stat streaming and File Level Search, no content yet. the next item will add that? so this version will have \"tree\" appearance when search string is empty (but with stat columns size and mod-date, an appropriate mimetype icon) and a file level search.... all displays have the stat columns.\n\nthat work as a scope for this item?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:54:55.642Z",
+     "text": "Yes, that works, and the box now holds it: stat on every update but deletes, the root streamed first, Files on the shared list with size, modified and the mimetype icon in every display, the tree with no words, ranked full paths with them.\nOne consequence I wrote in, say if not: with names searched in the page fs.search has no caller left, so it is deleted here and G29.7 brings the node's contents search."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:56:43.371Z",
+     "text": "so the shell holds an auto-synched mirror of the fs content. and the initial \"Files\" version just works with that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:56:58.372Z",
+     "text": "Yes: the shell holds an auto-synced mirror of the run folder's tree, paths and kinds today, with this item their stat too, kept by the watcher's stream; Files and the core's listings work from that mirror alone, and only contents (G29.7) will ever ask the node.\nOne caveat: it mirrors the tree, not the files' contents; opening a file still loads it from the node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T22:59:30.098Z",
+     "text": "whould it make sense that the shell is the bucket-holder? since other apps might use a drop-down version of the files element. other question: is the \"Files\" app just a container for a new shell-element?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T22:59:49.678Z",
+     "text": "Yes to both. The shell holds the rows, its mirror keyed by path; but each list keeps its own order over them, because two open lists ranked by different words would fight over one sorted bucket.\nAnd Files becomes a container for a new shell element, fileSelector (shell/js/fileSelector.js), built like contactSelector: a wrapper on the shared list over the shell's mirror, with a pane face (Files) and a dropdown face (any app picking a file). Into the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:00:32.314Z",
+     "text": "ah! correct, each app has it's own bucket and bucket-state...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:00:58.565Z",
+     "text": "In the box: the shell holds the rows, each app its own bucket and bucket state; Files is the container for a new fileSelector element, pane face there, dropdown face for any app picking a file."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:02:23.395Z",
+     "text": "so the drop-down version comes free with the list-search element?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:02:38.875Z",
+     "text": "Not yet: today the dropdown face (a button that opens the list and closes on a pick) is written inside contactSelector.\nIt should come free: move it into shellCreateListSearch as face: dropdown, so contactSelector and fileSelector only pass the face. Into this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:05:10.215Z",
+     "text": "it should be in shellCreateListSearch, which has two modes: dropdown and pane. the advantage, all the filters etc come for free and look consistent.\n\nWe might already have to retro-fit contacts or chatter?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:05:36.925Z",
+     "text": "In the box: shellCreateListSearch gets the two modes, pane and dropdown. The retrofit is small: only contactSelector holds a dropdown of its own today; it passes the mode instead, and chatter's new-chat picker and grants, which use it, follow without change of their own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:06:30.179Z",
+     "text": "but the integration of dropdowns in the shellCreateListSearch must come now, before it requires too many retrofits."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:06:45.073Z",
+     "text": "Agreed. To do it first, I propose its own item ahead of G29.8 and blocking it: the shared list's dropdown mode, contactSelector retrofitted onto it. G29.8 then builds fileSelector on both modes. Say add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:07:16.216Z",
+     "text": "add it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:08:00.456Z",
+     "text": "Added: G29.9, the shared list's dropdown mode with contactSelector on it, blocking this one; its box is written, and G29.8's now points at it."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.9",
+   "title": "the shared list's dropdown mode, contactSelector on it",
+   "goal": "goal/G29",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.8"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Nothing in it is specific to contacts: it makes the search list's pane and its dropdown one system, and puts the features common to lists into the shared element, for one look and feel.\n\nWHAT EXISTS (shellCreateListSearch, shell/shared/js/listSearch.js, today)\n- Rows 1 to 3 in one pane: the filter row (filters declared, each shown only when its when(rows) says so), the search row (box, its clear button inside on the right, the search button), a count line, the list.\n- One keyed cache, an unbounded probabilityBucket; each keystroke ranks it in the page (probabilityStringObjectMatch times every filter's test), all rows shown, the best on top.\n- The server asked through api, server, verb and args: serialized, one request on the wire, no typing pause; the slot lent to the app (list.ask); a publish on its stream asks again.\n- paint(row), press(row), empty; refresh() and redraw().\n- contactSelector holds a dropdown of its own (a button opening the list) and marks its chosen row with a bold name.\n\nWHAT IS NEW\n- Two modes, pane and dropdown. Rows 1 and 2 always stand where they are; only row 3 differs: a pane below them, or a dropdown that opens under the search row when the box is focused or typed into, and closes on a pick or a click outside. In dropdown mode the chosen row's name stands in the search box while closed, or a placeholder.\n- Two tiers, set in the create function: rows the page already holds (a function answering them: the shell's file mirror, a monitor's stream, a caller's own contacts), ranked in the page and never asking the server; and the optional server hook as today, its rows joining the same cache. Most lists use both; Files and the monitors, the page alone.\n- A press on a row: in dropdown mode a pick; in pane mode the optional details(row) hook, which opens the row's dialog (a file's contents, a contact's details); with no hook, a pick there too.\n- Keys: up and down move the current row, home and end go to the top or bottom, enter presses it, escape closes an open dropdown; while the search box has the focus home and end stay the text cursor's.\n- The current row drawn by the list itself, the same everywhere: a slightly brighter background across the whole row.\n- The matched parts marked: the list hands paint a mark(text) that wraps each matched word, so every search gets it.\n- contactSelector drops its own dropdown and its bold name and passes the mode; chatter's new-chat picker and grants follow with no change of their own.\n",
+   "version": 8,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:12:08.501Z",
+     "text": "this thing has NOTHING specific to contacts in it, it just makes the search list pane and the dropdown version part of the same system, bot topped with the filter row, so these dropdowns will now have two rows (three actually, the only difference: the list occupies a pane or that pane is the dropdown list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:12:36.260Z",
+     "text": "Exactly, and the box now says so: one element, the same three rows (filters, search, list) in both modes; the only difference is whether the list fills a pane or the pane is the dropdown's list. contactSelector only passes the mode."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:13:00.336Z",
+     "text": "1 Filter row\n2 search input`row\n3 PANE or Dropdown?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:13:29.281Z",
+     "text": "Yes: rows 1 and 2 always stand; row 3 is either a pane below them, or a dropdown that opens under the search row when the box is focused or typed into and closes on a pick or a click outside. In dropdown mode the chosen name stands in the box when closed. In the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:14:48.130Z",
+     "text": "and for PANE mode, there's an optional dialog-hook in the create function that allows users to inspect details (like file contents, or contactDetails?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:15:14.797Z",
+     "text": "Yes, in the box: an optional details(row) hook in the create function; in pane mode a press calls it and it opens the row's dialog (file contents, contact details); in dropdown mode a press picks. It is today's press, named for what it does in each mode."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:16:42.651Z",
+     "text": "and in pane mode up/down keys move \"the current selection\" and home/end keys move to the top or bottom of the list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:17:09.011Z",
+     "text": "Yes, in the box: up/down move the current row, home/end to top and bottom, enter presses it, escape closes a dropdown.\nOne detail I added: while the search box has the focus, home and end stay the text cursor's; up and down still move the current row."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:17:37.245Z",
+     "text": "in the pane, the selection is highlighted in a uniform manner (slightly brighter background color?)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:18:02.469Z",
+     "text": "In the box: the shared list draws the current row itself, a slightly brighter background across the whole row, the same in every list; contactSelector's bold name goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:18:29.960Z",
+     "text": "agreed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:18:43.913Z",
+     "text": "Noted. G29.9's box is complete as far as I see; it waits for its Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:19:10.686Z",
+     "text": "we'll just have to place common feature into this element where it makes sense, so we get a uniform look-and-feel for the UI."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:19:45.111Z",
+     "text": "Agreed, and written into G29's own box as the goal's rule: common list features go into the shared element where it makes sense, one look and feel."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:20:38.779Z",
+     "text": "so this will support two tear search of the bat? shell only for fast responses, and server-backed with serialized requests optional hook?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:21:04.078Z",
+     "text": "Yes, two tiers from the start, in the box: rows the page holds, ranked in the page at every keystroke and never asking the server; and an optional server hook, its asks serialized one on the wire, its rows joining the same cache. A list uses either or both (Files: page only; Fallout: server only; Contacts could be both)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:22:44.146Z",
+     "text": "most would be both, \"Files\" is the only exception to that i can think of right now, BUT monitor streams might be similar to \"Files\"...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:22:58.824Z",
+     "text": "Agreed: both is the usual case; page-only fits what the shell already holds from a stream, Files' mirror today and the monitors' streams (jobs, relays) the same way, their rows kept up by the stream with no search asked."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:25:07.530Z",
+     "text": "can you break down the box into sections: what exists, what is new?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:25:42.303Z",
+     "text": "Done: the box is now WHAT EXISTS (the shared list as it stands, and contactSelector's own dropdown) and WHAT IS NEW (two modes, two tiers, details hook, keys, the current row, marks, contactSelector's retrofit)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:26:14.191Z",
+     "text": "ready to go? green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:26:29.556Z",
+     "text": "Green: settled, open none, box current (v8). One consequence the build carries: Fallout's press becomes its details hook (the history dialog), no change in what you see."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:26:40.284Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
