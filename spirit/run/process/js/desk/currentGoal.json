@@ -1,5 +1,5 @@
 {
- "change": 68647,
+ "change": 68766,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,14 +46,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1211,11 +1208,9 @@
    "id": "goal/G29.6",
    "title": "update peer search box, for use in contacts, chatter etc.",
    "goal": "goal/G29",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -1223,17 +1218,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1241,17 +1236,299 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "PRELIMINARY DRAFT, to refine.\n\nThe peer search box (Contacts' search of the book and of the network, and any other place a peer is picked, chatter included) is built with shellCreateListSearch (G29.4).\n- Configuration: the server and verb behind contact.search; a row is a peer, {publicKey, label}, keyed by its public key; paint draws the peer; press does what the using app asks (add to the book, open a chat).\n- The ranking moves to the probability modules: peerSearch.js, gradedSearch.js, bucket.js and searchBucket.js are retired wherever the probability modules and the container replace them (hub.js and relay.js rank peers with them today), each removal with a test that it is gone.\n- Open: whether hub and relay move in this item or a later one, since they are core.\n",
-   "version": 1,
-   "checks": [],
-   "chat": []
+   "box": "The peer picker, contactSelector, becomes a thin wrapper around shellCreateListSearch (G29.4), for Contacts, chatter and every place a peer is picked.\n\nCOLUMNS\n- Fixed, always: ★ (the contact is my puppet: an owned contact, its signed card naming this node its owner, goal/G19.8), presence (green or white), the name.\n- Configurable: one status column, its icons from a little list [{status, iconKey}], the first the default.\n- A star says it all: the word \" — owned\" leaves the label. More is said by a tooltip on the star: this contact is your puppet, its card naming this node its owner.\n\nFILTERS\n- One filter per state, owned (★), blocked and held, each shown only when the list holds any contact in that state; each narrows the list to that state.\n\nWHAT THE ROWS CARRY\n- contact.search, a node verb, changes by Andy's grant of the changed verb: it answers each peer as {key: its public key, label: json {name, owned, blocked, held}}, so the star is drawn from the row.\n\nBEHAVIOUR BEYOND THE SHARED LIST\n- The app repaints one row when a peer's presence or status changes, without asking the server.\n\nONE BY ONE, STARTING WITH CONTACTS\n- This item is Contacts: the peer picker and hub's contact.search, ranked with the probability modules instead of the old search.\n- Everything else of the old search (relay's peer search, peerSearch.js, gradedSearch.js, bucket.js, searchBucket.js and its other server searches) is killed in this goal, one item each, after this one.\n\nOUT OF SCOPE FOR NOW\n- A puppet link in its row that opens a new window with a shell pointed at that puppet.\n\n",
+   "version": 9,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do hub and relay, which are core and rank peers with the old search files, move to the probability modules in this item or a later one?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-17T13:58:18.151Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:44:20.035Z",
+     "text": "no-go on this one yet.\n\ndoesn't the peer-picker element show two icon columns?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:44:45.956Z",
+     "text": "Yes: contactSelector (shell/js/contactSelector.js) always shows two icon columns, presence (green or white dot) and a status icon set by a little list [{status, iconKey}], marked per key by the app (mark(key, status)).\nSo on the shared list G29.6 needs paint to draw both, and a way for the app to repaint one row when its presence or status changes, without asking the server. Shall I put that in the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:50:34.556Z",
+     "text": "There has to be another fixed column: the ICON.STAR column. same as in natters relay-list, i want to know which contacts are my puppets..\n\nalways, and to a point where i can click on a puppet-link in it's row t open a new windows with a shell pointed at my puppet. (oos for now), but i want them marked by a star.\n\nnow i want the contactSelector to be just a wrapper around our new list-selector, what allows an extra (status) column to be added...\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:51:06.838Z",
+     "text": "Agreed: contactSelector becomes a thin wrapper on the shared list, its fixed columns star (★ = my puppet), presence and name, then the configurable status column; the wrapper owns paint, the list does the rest.\nGap: contact.search rows carry only key and label today, so the node must say per row whether a contact is your puppet (like Natter's owned badge per relay); where it learns that is the open question.\nAlso owed: a way for the app to repaint one row when presence or status changes, without asking the server."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:52:50.088Z",
+     "text": "how does deskAgentRemote find Levant's puppet node?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:53:16.990Z",
+     "text": "It does not find it: deskAgentRemote reads puppets.json in its own app folder, {puppets: [{name, key}]}, written by hand (its header says for now), and asks each key through owner.command.\nSo there is no node-wide list of your puppets today; for the star, contact.search would need one the node keeps, which deskAgentRemote could then read too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:54:17.021Z",
+     "text": "if a node gives out it's card and it is the owner, that asks for the card, then the cards contains the owner-ID as well?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:54:47.527Z",
+     "text": "Yes, since G19.8: a node's signed card names its owner, and the book marks that contact owned: true; so your node already knows its puppets, the owned contacts.\ncontact.search shows it only as the word \" — owned\" in a plain-text label; for the star column the row should carry it as a field, label as json {name, owned, ...}, which the shared list expects anyway.\nSo deskAgentRemote could read the owned contacts too, instead of its hand-written puppets.json."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:55:55.939Z",
+     "text": "no, just a star in the one column, that says it all."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:56:18.837Z",
+     "text": "if you want more info, put a tooltip on the star"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:56:29.956Z",
+     "text": "Agreed and in the box: a star alone marks a puppet, the word owned leaves the label; the row still carries owned so the star can be drawn.\nThe box now holds the columns, the rows, the one-row repaint, what retires, the puppet link as out of scope, and one open point (hub and relay now or later)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:57:10.412Z",
+     "text": "In the box: a tooltip on the star says more (your puppet, its card naming this node its owner).\nThe one open point is now a Q check: hub and relay in this item or a later one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:57:57.619Z",
+     "text": "in this item. how else can this item be done end-to-end?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:58:29.913Z",
+     "text": "so hub and relay will use probability search from now on."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:58:31.114Z",
+     "text": "Right: hub and relay move in this item, and the four old search files are deleted end to end; in the box, Q1 answered.\nIt touches core files (hub.js, relay.js), so the build will ask you for their grant."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:58:48.171Z",
+     "text": "Yes: contact.search, relay.search and the relay's stranger search rank with probabilityStringMatch and a probabilityBucket, as desk and deskVerify already do; the old stack goes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:58:52.455Z",
+     "text": "this goal won't stop until the old search is killed. completely."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:59:22.813Z",
+     "text": "Inventory: peerSearch in hub and relay; gradedSearch and bucket only under them; but searchBucket answers 12 server searches: server, nodeSearches (fs.search, jobs.search), apiAuth, boxes, hub, includeList, introSpector, proxyList, chatClerver, desk, deskAgent, deskClient.\nKilling it completely means all 12 rank with the probability modules, plus their 6 test suites; too big for one red.\nProposal: G29.6 keeps the peer picker, hub and relay; one more item per group of the rest (node searches; desk, deskAgent, deskClient; the remaining servers). Add them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:00:24.661Z",
+     "text": "we won't kill them all in this item. we'll kill them in this goal. big difference."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:00:55.037Z",
+     "text": "Understood, and in the box: G29.6 retires peerSearch.js (peer picker, hub, relay); the rest dies in this goal, item by item.\nThe three items I proposed (node searches; desk, deskAgent, deskClient; the remaining servers) wait for your add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:01:52.349Z",
+     "text": "you want to do them in this item already?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:02:07.774Z",
+     "text": "No: G29.6 stays the peer picker with hub and relay, and kills peerSearch.js; the other three are separate items after it, each with its own red, so each is verified on its own."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:02:22.322Z",
+     "text": "and what is \"node searches\" something that searches for nodes/peers?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:02:37.482Z",
+     "text": "No, bad name: js/nodeSearches.js is the node's own searches of what it runs and holds, fs.search (files and folders, the one Desk now lists plugins with) and jobs.search (the running jobs).\nBetter title for that item: the node's file and job searches."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:04:08.975Z",
+     "text": "you want to do them all in this item? that's sounds crazy, it rather do them one by one, starting with contacts."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:04:39.137Z",
+     "text": "We agree: one by one. G29.6 is now Contacts only, the peer picker and hub's contact.search; relay and the rest come after, one item each. In the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:05:44.083Z",
+     "text": "why is there two now? the peerPicker AND hubs contact.search? i don't get it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:06:00.936Z",
+     "text": "One thing, two ends: the peer picker is what you see in the page; contact.search is the verb in your node (hub.js) it asks, which ranks the book and answers the rows.\nBoth change in this item: the picker moves onto the shared list, and contact.search ranks with the probability modules and sends owned as a field for the star."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:06:35.372Z",
+     "text": "relieved! thank god not another mess. this one green now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:06:54.191Z",
+     "text": "Green but for one thing: contact.search is a node verb, and its label changes from plain text to json {name, owned, ...}; by your rule a changed node verb needs your yes on the verb itself.\nYes to contact.search answering {key: the public key, label: json {name, owned, ...}}?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:08:58.924Z",
+     "text": "the changed verb is granted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:09:25.530Z",
+     "text": "In the box: contact.search changes by your grant of the changed verb. G29.6 is green, ready for its Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:10:16.641Z",
+     "text": "and the search filters of course include the ICON.STAR if any of my contacts are owned by me."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:10:42.716Z",
+     "text": "In the box: a ★ filter (all, or my puppets only), shown whenever any of your contacts is owned by you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:10:47.668Z",
+     "text": "owned, blocked, held, (if our list has any)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:11:14.844Z",
+     "text": "In the box: filters owned (★), blocked and held, each shown only when the list holds any; contact.search's label carries {name, owned, blocked, held}."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:15:09.809Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:15:25.396Z",
+     "text": "Green: settled, open none, box current (v9)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:15:33.699Z",
+     "text": "grants will be forthcoming...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T14:15:37.105Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
