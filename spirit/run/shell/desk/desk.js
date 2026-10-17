@@ -777,11 +777,13 @@ function deskOpenPlugin(app) {
   var open = function () {
     var ui = held[name];
     if (!ui || typeof ui.open !== 'function') { el.textContent = 'The ' + name + ' plugin has no private UI at ' + DESK_PLUGIN_UI + name + '/.'; return; }
-    // goal/G22.3: chat(container) mounts its goal's chat there (deskMountChat), the face's own, as Team's.
-    // goal/G22.3: onPublished(fn, server) takes another server's stream too: the Stacks UI hears deskVerify, which runs
-    // its doors ("every run here should report to deskVerify.").
+    // goal/G22.3: chat(container) mounts its goal's chat there (deskMountChat), the shared chat element.
+    // goal/G22.3: onPublished(fn, server) takes another server's stream too.
+    // goal/G27.2 (D1): callDialog(app, params) is the shell's dialog, passed through, so a plugin opens its own detail
+    // (Stacks: shell/stackFrameCheckDetail) as Desk opens deskDetails.
     ui.open(el, { goal: app.goal, ask: deskAsk, onPublished: function (fn, server) { return server ? deskApi.onPublished(fn, server) : deskApi.onPublished(fn); },
-      chat: function (container) { deskMountChat(container, app.goal); } });
+      chat: function (container) { deskMountChat(container, app.goal); },
+      callDialog: function (dialog, params) { return deskApi.callDialog(dialog, params); } });
   };
   if (held[name]) { open(); return; }
   el.textContent = 'Loading the ' + name + ' plugin…';
@@ -997,50 +999,27 @@ function deskChatSay(goal, boxId, errId) {
 //
 //   Andy, 2026-10-13: "in Stack: the chat is missing, below the inputs, after what will be the list".
 //
-// Team's chat, for any goal: the say box and Send on top (newest first, input on top, as every chat in Desk), then the
-// log, read once with item.chat and drawn from what the server publishes, as Team's. It brings its own subscription to
-// the stream (the desk's UI rule: every shell element subscribes itself); a gap in the changes reads it again. Handed to
-// a plugin's private UI as ctx.chat(container): the plugin says where, the face draws and sends.
+// Handed to a plugin's private UI as ctx.chat(container): the plugin says where, the face mounts the chat there. Since
+// goal/G27.2 the chat is the shared element (shell/shared/js/deskChat.js), which the Stacks door dialog mounts for a
+// door's item too: the say box and Send on top, then the log, read once with item.chat and drawn from what the server
+// publishes, its own subscription to the stream. Loaded on demand, as the shared row element (goal/G27.9).
+var DESK_SHARED_CHAT = '/shell/shared/js/deskChat.js';
 function deskMountChat(el, goal) {
   if (!el) return;
-  var id = 'desk-chat-' + String(goal).replace(/[^A-Za-z0-9_-]/g, '-');
-  var lines = null;
-  var last = 0;
-  // Every block a leading 1em; Send 1em after itself (the desk's UI rules). Chat text is under no field rule
-  // (fieldRules.js names none; the server measures a line against its chat room), so the box carries no data-field.
-  el.innerHTML =
-    '<div class="start-job-form card" style="margin-top:1em"><label class="field-label grow">Say' +
-      '<textarea id="' + id + '-say" rows="3" placeholder="to every agent, under ' + deskEsc(goal) + '"></textarea></label>' +
-      '<button type="button" id="' + id + '-send" style="margin-right:1em">Send</button></div>' +
-    '<div id="' + id + '-error" class="job-start-error"></div>' +
-    '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Chat of ' + deskEsc(goal) + ', newest first</div>' +
-      '<div id="' + id + '-log"></div></div>';
-  var draw = function () {
-    var log = document.getElementById(id + '-log');
-    if (log) log.innerHTML = deskChatLogHtml(lines, 'This chat has not been read yet.', 'Nothing said yet under ' + goal + '.');
+  var mount = function () {
+    var make = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskChat;
+    if (typeof make !== 'function') return;
+    make(el, { id: goal, ask: deskAsk, escape: deskEsc, time: deskTime, title: 'Chat of ' + goal, placeholder: 'to every agent, under ' + goal,
+      lineHtml: function (text) { return deskLineHtml({ text: text }); },
+      onPublished: function (fn) { return deskApi && typeof deskApi.onPublished === 'function' ? deskApi.onPublished(fn) : null; } });
   };
-  var read = function () {
-    return deskAsk('item.chat', { id: goal }).then(function (r) { lines = Array.isArray(r.chat) ? r.chat : []; draw(); }, function () { /* shown as it stands */ });
-  };
-  var send = document.getElementById(id + '-send');
-  if (send) send.addEventListener('click', function () { deskChatSay(goal, id + '-say', id + '-error'); });
-  if (deskApi && typeof deskApi.onPublished === 'function') {
-    deskApi.onPublished(function (obj) {
-      if (!obj || typeof obj !== 'object') return;
-      var change = Number(obj.change) || 0;
-      if (change && last && change < last) return;
-      var gap = (last && change > last + 1) || obj.dropped;
-      if (change) last = change;
-      if (gap) { read(); return; }
-      var said = obj.item;
-      if (typeof said === 'string') { try { said = JSON.parse(said); } catch (e) { said = null; } }
-      if (obj.verb !== 'chat.add' || !said || said.id !== goal || !obj.chat || lines === null) return;
-      if (!lines.some(function (l) { return deskSameLine(l, obj.chat); })) lines.push(obj.chat);
-      draw();
-    });
-  }
-  draw();
-  read();
+  var have = typeof window !== 'undefined' && window.spiritElements && window.spiritElements.createDeskChat;
+  if (typeof have === 'function') { mount(); return; }
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function' || !document.body) return;
+  var script = document.createElement('script');
+  script.src = DESK_SHARED_CHAT;
+  script.onload = mount;
+  document.body.appendChild(script);
 }
 
 // Ending design mode is his decision, said in Team: an `answer` with the

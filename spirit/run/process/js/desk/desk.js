@@ -1269,7 +1269,10 @@ function buttonsOf(s, it) {
   // MAKE CURRENT (goal/G2.19): on an open goal that is not the current one, so the dialog draws it as it draws every
   // button. Never on an item, which has no List of its own, and never on an abandoned goal, which is invisible. A
   // closed goal returns above with Reopen alone, which is the order his words give: "re-open and ... make current goal".
-  if (it.goal && g && !g.abandoned && s.current !== it.id) out.push('make-current');
+  // A PLUGIN GOAL IS NEVER THE CURRENT GOAL (goal/G27.2, D6). Andy, 2026-10-17: Stacks, like Team, is a standing scope of
+  // the desk, never the current goal, and "that current goal change must be stopped for ALL plugin-goals", in the code
+  // common to plugins, not inside one.
+  if (it.goal && g && !g.abandoned && s.current !== it.id && !PLUGIN_GOAL[it.id]) out.push('make-current');
   // DELETE, IN DESIGN MODE OR OUT OF IT (goal/G24.9; it was design mode only under goal/G9.7). Andy, 2026-10-14: "i have
   // no delete option for this item". So any item that is not a goal offers it whatever the goal's design mode, with two
   // exceptions: none while an agent holds a phase on it (red, build or verify), and none on an item claimed done and
@@ -1600,6 +1603,7 @@ function whyNotOffered(st, it, what, offered) {
     if (!it.goal && Object.keys(it.claims).length) return it.id + ' is claimed, so it offers Done, not Go';
   }
   if (what === 'make-current' && it.closed) return it.id + ' is closed; Reopen comes first';
+  if (what === 'make-current' && PLUGIN_GOAL[it.id]) return it.id + ' is a plugin goal, a standing scope of the desk, and is never made the current goal';
   return what + ' is not among the buttons of ' + it.id + ' now (' + (offered.length ? offered.join(', ') : 'none') + ')';
 }
 
@@ -1748,6 +1752,10 @@ function writeGoalFile(s, verb, a, change) {
   // switch that did not rewrite it would leave every reader, the agents and the brain, on the goal he just left.
   const his = verb === 'press' && ['go', 'go-all', 'done', 'reopen', 'close', 'make-current'].indexOf(a.what) !== -1;
   if (!his && verb !== 'session.set') return;
+  // ONLY THE CURRENT GOAL'S PRESSES (goal/G27.2, D6): a press on another goal or its items, a plugin goal's above all,
+  // leaves the file alone, so mucking about Stacks pushes no new currentGoal.json. A make-current is the switch itself.
+  const pressed = his ? s.items[String(a.id)] : null;
+  if (pressed && a.what !== 'make-current' && pressed.id !== s.current && pressed.goalId !== s.current) return;
   const g = s.goals[s.current];
   const items = [s.current].concat(g.members).map(function (id) { return s.items[id]; }).filter(Boolean).map(function (it) {
     return Object.assign(facts(s, it), { box: it.box, version: it.version, checks: it.checks,

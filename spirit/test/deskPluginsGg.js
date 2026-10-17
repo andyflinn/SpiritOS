@@ -60,13 +60,14 @@
 //      crappy if arranged in a block, that itself act's like an inline element": each input, in the form and in the
 //      dialog, sits in its own inline-block framed block, its name and what goes in it in words above the input; a
 //      filled field's words read what its value means, updated as typed.
-//   h, i SINCE ANDY'S RULINGS OF 2026-10-13 in goal/G22.3's box: "every run here should report to deskVerify.", and of
-//      the Verifier tab's console: "it means this app here should launch the run through deskVerify." So run asks the
-//      node's deskVerify door.run {id} and answers at once {queued}; runState and each door's last verdict are read
-//      from deskVerify's door.state; the plugin spawns no runner, kills nothing, keeps no runs.json, and has no stop
-//      verb (deskVerify's Stop, in the Verifier tab, ends the run as any run); the dialog's Run says the run went to
-//      deskVerify and points to the Verifier tab's console, and the UI listens to deskVerify's stream. Here a fake
-//      deskVerify on the fake node answers door.run and door.state.
+//   h, i SINCE goal/G27.2 (Andy, 2026-10-17, in its box), replacing goal/G22.3's runs through deskVerify: "i don't want
+//      verifier to block the design-a-door process", "i don't mind if our test sends the verifier a result". So run
+//      {id} starts the one-door suite in the plugin at once and answers {started}; it never asks deskVerify door.run;
+//      runState and each door's last verdict are the plugin's own, kept under the desk's --state (runs/), surviving a
+//      restart; the verdict is handed to deskVerify as door.record only. The door's detail is the shell dialog
+//      shell/stackFrameCheckDetail, which Open on a row opens through ctx.callDialog: it holds the door's values in the
+//      shared door fields, Save, Run (its note says the run is here), the verdict, and Remove, armed. The pane listens
+//      to the plugin's own publishes, not deskVerify's stream. deskStacksDialog.js asserts the rest of goal/G27.2.
 //   j. THE PLUGIN COMMITS ITS OWN LIST. Andy, 2026-10-13: "the commit function has to be there. it belongs to committing
 //      reds." After make, update or remove writes stackFrameList.json, the plugin commits that one file in the repo it
 //      lives in, "plugin/stackFrameChecks: <what changed>", and pushes; with other changes staged it refuses to commit
@@ -90,6 +91,11 @@ const FACE = path.join(RUN, 'shell', 'desk', 'desk.js');
 const PLUGIN_JS = path.join(RUN, 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks', 'stackFrameChecks.js');
 const PLUGIN_JSON = path.join(RUN, 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks', 'stackFrameChecks.json');
 const PLUGIN_UI = path.join(RUN, 'shell', 'desk', 'plugins', 'stackFrameChecks', 'stackFrameChecks.js');
+const DIALOG = path.join(RUN, 'shell', 'stackFrameCheckDetail', 'stackFrameCheckDetail.js');
+// The shared elements the face, the pane and the dialog load on demand (goal/G27.2); a fake page cannot load a script,
+// so the world puts them on its window first, as a page that loaded them holds them.
+const SHARED = ['deskDoorFields.js', 'deskChat.js'].map(function (f) { return path.join(RUN, 'shell', 'shared', 'js', f); });
+function withShared(doc, win) { SHARED.forEach(function (f) { if (fs.existsSync(f)) new Function('document', 'window', fs.readFileSync(f, 'utf8'))(doc, win); }); return win; }
 const GOAL = 'plugin/stackFrameChecks';
 const FAKE_GOAL = 'plugin/ggEcho';
 const A = { key: 'MCowBQYDK2VwAyEAdeskPluginsGgAgentAAAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
@@ -155,7 +161,7 @@ function fakeDocument() {
 // The face mounted with a window it shares with a plugin's UI, every desk ask kept, every stream subscriber kept.
 function mountFace(answers) {
   const doc = fakeDocument();
-  const win = { spiritFieldRules: require('../run/js/fieldRules.js') };
+  const win = withShared(doc, { spiritFieldRules: require('../run/js/fieldRules.js') });
   const asked = [];
   const published = [];
   const servers = [];
@@ -212,6 +218,7 @@ function clickTab(el, tab) {
           verifyAsks.push([verb, a]);
           if (verb === 'door.run') { if (!fakeDoors[a.id] || doorState(a.id).ran) fakeDoors[a.id] = { at: Date.now() }; out = { queued: true, already: false }; }
           else if (verb === 'door.state') out = doorState(String(a.id));
+          else if (verb === 'door.record') out = { recorded: true };
           else out = { ok: false, code: 'no-such-verb', error: 'no such verb' };
         }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
@@ -418,9 +425,9 @@ function clickTab(el, tab) {
     if (!tree['stackFrameChecks.stop']) test.check('the plugin has no stop verb of its own any more: deskVerify\'s Stop ends the run');
     else test.fail(OWED + 'desk still declares stackFrameChecks.stop');
     const pluginSrc = fs.readFileSync(PLUGIN_JS, 'utf8');
-    const spawnLeft = ['SPIRIT_STACKS_DOOR', 'SPIRIT_STACKS_VERDICT', 'SPIRIT_STACKS_LIST', 'stackFrameRunner', 'runs.json', 'RUNNER'].filter(function (w) { return pluginSrc.indexOf(w) !== -1; });
-    if (!spawnLeft.length) test.check('the plugin no longer spawns the runner: its source names no runner, no SPIRIT_STACKS_ value and no runs.json');
-    else test.fail(OWED + 'the plugin\'s source still holds ' + short(spawnLeft));
+    // goal/G27.2: the plugin runs the one-door suite itself again, and asks deskVerify only to record the verdict.
+    if (pluginSrc.indexOf("'door.run'") === -1 && pluginSrc.indexOf("'door.state'") === -1 && pluginSrc.indexOf("'door.record'") !== -1) test.check('the plugin asks deskVerify no door.run or door.state, only door.record');
+    else test.fail(OWED + 'the plugin\'s source still asks deskVerify to run or read its doors');
     const idA = door && typeof door.id === 'string' && door.id ? door.id : '';
     if (idA) test.check('the made door carries a stable id in the list: ' + idA);
     else test.fail(OWED + 'the made door carries no id: ' + short(door));
@@ -460,50 +467,49 @@ function clickTab(el, tab) {
     if (why(upSuite) && /nopeSuite/.test(why(upSuite))) test.check('update with a suite that is not there is refused: ' + why(upSuite));
     else test.fail(OWED + 'update with a missing suite answered ' + short(upSuite));
 
-    // run: asks deskVerify door.run and answers at once; runState and the verdict come from deskVerify's door.state.
+    // run (goal/G27.2, D5): the plugin starts the door's run itself and answers at once; deskVerify gets the verdict as a
+    // record only. Door A has no suites, so its verdict lands at once: an empty run, said so.
     const t0 = Date.now();
     const run1 = await call('stackFrameChecks.run', { id: idA }, ANDY);
     const took = Date.now() - t0;
-    if (run1.queued === true && took < 1200) test.check('run answers at once (' + took + ' ms): queued with deskVerify');
+    if (run1.started === true && took < 1200) test.check('run answers at once (' + took + ' ms): started here');
     else test.fail(OWED + 'run answered ' + short(run1) + ' in ' + took + ' ms');
-    if (verifyAsks.some(function (x) { return x[0] === 'door.run' && x[1] && x[1].id === idA; })) test.check('the run went to the node\'s deskVerify as door.run {id: ' + idA + '}');
-    else test.fail(OWED + 'deskVerify was asked ' + short(verifyAsks));
-    if (/deskVerify/.test(String(run1.said || '')) && /Verifier/.test(String(run1.said || ''))) test.check('its reply says the run went to deskVerify and points to the Verifier tab: ' + run1.said);
-    else test.fail(OWED + 'run\'s reply says nothing of deskVerify and its tab: ' + short(run1));
-    const st1 = await call('stackFrameChecks.runState', { id: idA }, A);
-    if (st1.running === true && st1.startedAt && !st1.endedAt) test.check('runState, read from deskVerify, reports it running since ' + st1.startedAt);
-    else test.fail(OWED + 'runState while running answered ' + short(st1));
-    if (verifyAsks.some(function (x) { return x[0] === 'door.state' && x[1] && x[1].id === idA; })) test.check('runState asked deskVerify door.state');
-    else test.fail(OWED + 'runState asked deskVerify nothing: ' + short(verifyAsks));
-    const upRunning = await call('stackFrameChecks.update', Object.assign({ id: idA, gate: GATE, endpoint: END, paths: [], suites: ['deskServer.js'] }), ANDY);
-    if (why(upRunning) && /deskVerify|running|under way/.test(why(upRunning))) test.check('a door whose run is under way in deskVerify is not changed: ' + why(upRunning));
-    else test.fail(OWED + 'update during the run answered ' + short(upRunning));
+    if (!/Verifier/.test(String(run1.said || ''))) test.check('its reply sends nobody to the Verifier tab: ' + run1.said);
+    else test.fail(OWED + 'run\'s reply still points to the Verifier tab: ' + short(run1));
     let st2 = {};
-    for (let i = 0; i < 40; i++) { await sleep(250); st2 = await call('stackFrameChecks.runState', { id: idA }, A); if (st2.running === false && st2.endedAt) break; }
+    for (let i = 0; i < 60; i++) { st2 = await call('stackFrameChecks.runState', { id: idA }, A); if (st2.running === false && st2.endedAt) break; await sleep(250); }
     const v = st2.verdict || {};
-    if (st2.running === false && st2.endedAt && v.ran === true && v.green === false && v.around === 2 && v.of === 5 && Array.isArray(v.paths) && v.paths.length === 2) {
-      test.check('runState then reports deskVerify\'s verdict: red, 2 path(s) around the gate of 5, each path given');
-    } else test.fail(OWED + 'runState after the run answered ' + short(st2));
-    if (Array.isArray(v.violators)) test.check('with the violator lines the plugin formats from deskVerify\'s paths');
+    if (st2.running === false && st2.endedAt && /no suites/i.test(String(v.why || ''))) test.check('runState then reports the plugin\'s own verdict: ' + v.why);
+    else test.fail(OWED + 'runState after the run answered ' + short(st2));
+    if (Array.isArray(v.violators)) test.check('with the violator lines the plugin formats');
     else test.fail(OWED + 'the verdict carries no violator lines: ' + short(v));
-    const kept = path.join(state, 'plugins', 'stackFrameChecks');
-    let keptFiles = [];
-    try { keptFiles = fs.readdirSync(kept); } catch (e) { keptFiles = []; }
-    if (!keptFiles.some(function (f) { return /^runs\.json$|^verdict-/.test(f); })) test.check('the plugin keeps no run of its own under the desk\'s --state: the run is deskVerify\'s');
-    else test.fail(OWED + 'the plugin still keeps runs: ' + short(keptFiles));
+    if (!verifyAsks.some(function (x) { return x[0] === 'door.run' || x[0] === 'door.state'; })) test.check('deskVerify was asked neither door.run nor door.state');
+    else test.fail(OWED + 'deskVerify was asked ' + short(verifyAsks.map(function (x) { return x[0]; })));
+    if (verifyAsks.some(function (x) { return x[0] === 'door.record' && x[1] && x[1].id === idA && x[1].verdict && x[1].verdict.endedAt; })) test.check('the verdict went to deskVerify as door.record {id: ' + idA + ', verdict}');
+    else test.fail(OWED + 'deskVerify was asked ' + short(verifyAsks));
+    const kept = path.join(state, 'plugins', 'stackFrameChecks', 'runs');
+    if (fs.existsSync(path.join(kept, idA + '.json'))) test.check('the plugin keeps the run under the desk\'s --state: runs/' + idA + '.json');
+    else test.fail(OWED + 'no runs/' + idA + '.json under ' + kept);
     const dA = ((await call('stackFrameChecks.doors', {}, A)).doors || []).filter(function (x) { return x.id === idA; })[0];
-    if (dA && dA.last && dA.last.ran === true && dA.last.around === 2 && dA.last.of === 5 && dA.last.green === false) test.check('the door list carries deskVerify\'s last verdict');
+    if (dA && dA.last && dA.last.endedAt === st2.endedAt && dA.last.running === false) test.check('the door list carries that last run');
     else test.fail(OWED + 'the door read back after its run: ' + short(dA));
 
-    // The other door runs too, through deskVerify; an unknown door is refused before deskVerify is asked.
+    // The other door runs too, driven by a real suite; while its run is under way it is not changed, and a second run of
+    // it is said to be running already.
     const run3 = await call('stackFrameChecks.run', { id: idB }, ANDY);
+    const again3 = await call('stackFrameChecks.run', { id: idB }, ANDY);
+    const upRunning = await call('stackFrameChecks.update', Object.assign({ id: idB }, RELAY), ANDY);
+    if (run3.started === true && again3.already === true && again3.started === false) test.check('a second run of ' + idB + ' while one runs is not started: ' + again3.said);
+    else test.fail(OWED + 'run of ' + idB + ' answered ' + short(run3) + ', again ' + short(again3));
+    if (why(upRunning) && /under way/.test(why(upRunning))) test.check('a door whose run is under way is not changed: ' + why(upRunning));
+    else test.fail(OWED + 'update during the run answered ' + short(upRunning));
     let st3 = {};
-    for (let i = 0; i < 40; i++) { await sleep(250); st3 = await call('stackFrameChecks.runState', { id: idB }, A); if (st3.running === false && st3.endedAt) break; }
-    if (run3.queued === true && st3.verdict && st3.verdict.ran === true) test.check('door ' + idB + ' ran through deskVerify too');
-    else test.fail(OWED + 'run of ' + idB + ' answered ' + short(run3) + ', then runState ' + short(st3));
+    for (let i = 0; i < 240; i++) { await sleep(250); st3 = await call('stackFrameChecks.runState', { id: idB }, A); if (st3.running === false && st3.endedAt) break; }
+    if (st3.endedAt && st3.verdict && typeof st3.verdict.ran === 'boolean') test.check('door ' + idB + ' ran here too: ' + short(st3.verdict.why || (st3.verdict.green ? 'green' : 'red')));
+    else test.fail(OWED + 'runState of ' + idB + ' answered ' + short(st3));
     const asksBefore = verifyAsks.length;
     const runUnknown = await call('stackFrameChecks.run', { id: 'noSuchDoor' }, ANDY);
-    if (!runUnknown.queued && why(runUnknown) && !verifyAsks.slice(asksBefore).some(function (x) { return x[0] === 'door.run'; })) test.check('run of an unknown door is refused, and deskVerify is not asked: ' + why(runUnknown));
+    if (!runUnknown.started && why(runUnknown) && verifyAsks.length === asksBefore) test.check('run of an unknown door is refused, and deskVerify is not asked: ' + why(runUnknown));
     else test.fail(OWED + 'run of an unknown door answered ' + short(runUnknown));
 
     // update lands and clears the door's last verdict; the other door keeps its own.
@@ -563,7 +569,7 @@ function clickTab(el, tab) {
       test.check('after the restart: the one goal ' + GOAL + ' and the same items, nothing minted again');
     } else test.fail(OWED + 'after the restart the goals ' + short(goals2.map(function (x) { return x.id; })) + ', the items ' + short(after) + ' against ' + short(expected));
     const stR = await call('stackFrameChecks.runState', { id: idA }, A);
-    if (stR.running === false && stR.verdict && stR.verdict.ran === true && stR.verdict.around === 2) test.check('h. the last verdict of ' + idA + ' survives the restart');
+    if (stR.running === false && stR.endedAt === st2.endedAt && stR.verdict && /no suites/i.test(String(stR.verdict.why || ''))) test.check('h. the last verdict of ' + idA + ' survives the restart');
     else test.fail(OWED + 'after the restart runState of ' + idA + ' answered ' + short(stR));
   } finally {
     try { kid.kill(); } catch (e) { /* gone */ }
@@ -645,9 +651,9 @@ function clickTab(el, tab) {
     const pane = doc.all['desk-app-stackFrameChecks'];
     if (pane && /id="sfc-gate"/.test(pane.innerHTML) && /id="sfc-make"/.test(pane.innerHTML)) test.check('its private UI is opened in its own pane, #desk-app-stackFrameChecks');
     else test.fail(OWED + 'no #desk-app-stackFrameChecks holding the plugin\'s UI: ' + short(pane && pane.innerHTML));
-    // goal/G22.3: the run is deskVerify's, so the Stacks UI listens to deskVerify's stream too, through the face's ctx.
-    if (doc.servers.slice(subsBefore).indexOf('deskVerify') !== -1) test.check('the Stacks UI subscribes to deskVerify\'s stream through the face, so a door\'s run shows as it ends');
-    else test.fail(OWED + 'the Stacks UI subscribed to ' + short(doc.servers.slice(subsBefore)) + ', not deskVerify');
+    // goal/G27.2: the run is the plugin's own, so the Stacks UI listens to the desk's stream alone.
+    if (doc.servers.slice(subsBefore).indexOf('deskVerify') === -1) test.check('the Stacks UI does not subscribe to deskVerify\'s stream: the run is the plugin\'s');
+    else test.fail(OWED + 'the Stacks UI still subscribes to deskVerify\'s stream');
     if (doc.published.length > subsBefore) {
       doc.asked.length = 0;
       doc.published.slice(subsBefore).forEach(function (fn) { fn({ change: 7001, verb: 'stackFrameChecks.make', rows: [{ id: GOAL + '.2', goal: GOAL, title: 'x' }] }); });
@@ -718,7 +724,7 @@ function clickTab(el, tab) {
   try {
     if (!fs.existsSync(PLUGIN_UI)) throw new Error('no ' + path.relative(RUN, PLUGIN_UI));
     const doc = fakeDocument();
-    const win = { spiritFieldRules: require('../run/js/fieldRules.js') };
+    const win = withShared(doc, { spiritFieldRules: require('../run/js/fieldRules.js') });
     new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
     const ui = win.spiritDeskPlugins && win.spiritDeskPlugins.stackFrameChecks;
     if (!ui || typeof ui.open !== 'function') throw new Error('the UI registers no window.spiritDeskPlugins.stackFrameChecks.open');
@@ -732,13 +738,15 @@ function clickTab(el, tab) {
     let runState = { id: 'd2', running: true, startedAt: new Date(Date.now() - 3000).toISOString(), endedAt: '', stopped: false, tail: '',
       verdict: { ran: false, green: false, around: 0, of: 0, paths: [], why: '' } };
     const uiPublished = [];
+    const dialogs = [];
     ui.open(box, { goal: GOAL, ask: function (verb, a) {
       asked.push([verb, a]);
       if (verb === 'stackFrameChecks.doors') return Promise.resolve({ doors: DOORS });
       if (verb === 'stackFrameChecks.run') return Promise.resolve({ queued: true, said: 'queued with deskVerify; its output is in the Verifier tab\'s console' });
       if (verb === 'stackFrameChecks.runState') return Promise.resolve(runState);
       return Promise.resolve({ id: GOAL + '.2', change: 9, items: [], more: false });
-    }, onPublished: function (fn, server) { uiPublished.push({ fn: fn, server: String(server || '') }); return function () {}; } });
+    }, onPublished: function (fn, server) { uiPublished.push({ fn: fn, server: String(server || '') }); return function () {}; },
+      callDialog: function (app, params) { dialogs.push([app, params]); return new Promise(function () {}); } });
     await sleep(20);
     const html = box.innerHTML;
     const inputs = html.match(/<input[^>]*>/g) || [];
@@ -850,82 +858,123 @@ function clickTab(el, tab) {
     if (add && add[1].endpoint === 'node:http+https' && JSON.stringify(add[1].paths) === '["/api/relay/"]' && JSON.stringify(add[1].suites) === '["serverSurface.js","everyVerb.js"]') test.check('Add sends make with the paths and the suites as lists');
     else test.fail(OWED + 'Add asked ' + short(asked));
 
-    // The door's dialog: Open on a row.
-    asked.length = 0;
+    // THE DOOR'S DIALOG (goal/G27.2, D1): Open on a row opens the shell dialog shell/stackFrameCheckDetail with its id.
     click('', { 'data-open': 'd2' });
     await sleep(20);
-    const dlg = doc.getElementById('sfc-dialog');
-    const dHtml = dlg.innerHTML;
+    if (dialogs.some(function (d) { return d[0] === 'shell/stackFrameCheckDetail' && d[1] && d[1].id === 'd2'; })) test.check('Open on a row opens shell/stackFrameCheckDetail for d2');
+    else test.fail(OWED + 'Open opened ' + short(dialogs));
+    // The dialog app, mounted as the shell mounts it, its verbs answered as the plugin answers them.
+    const ddoc = fakeDocument();
+    const dwin = withShared(ddoc, { spiritFieldRules: require('../run/js/fieldRules.js') });
+    let dApp = null;
+    new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { dApp = x; } }, core: kernel.core }, ddoc, dwin);
+    const dAsked = [];
+    const dPub = [];
+    let closed = null;
+    const dbox = fakeElement('dlg');
+    dApp.mount(dbox, {
+      escapeHtml: kernel.core.util.escapeHtml,
+      verb: function (name, body) {
+        const q = body && body.ask && body.ask.desk;
+        const v = q && Object.keys(q)[0];
+        dAsked.push([v, q && q[v]]);
+        let out = { change: 1 };
+        if (v === 'stackFrameChecks.doors') out = { doors: DOORS };
+        if (v === 'stackFrameChecks.run') out = { started: true, already: false, said: 'Door d2 is running now, here; its verdict shows when it lands, and goes to deskVerify as a record.' };
+        if (v === 'stackFrameChecks.runState') out = runState;
+        if (v === 'item.chat') out = { chat: [], chatMore: false };
+        return Promise.resolve({ status: 200, body: out });
+      },
+      onPublished: function (fn, server) { dPub.push({ fn: fn, server: String(server || '') }); return function () {}; },
+      closeDialog: function (r) { closed = r || {}; }, armUntilElsewhere: function () {}, setDialogResult: function () {}, setScreenTitle: function () {},
+    });
+    await dApp.open({ id: 'd2' });
+    await sleep(20);
+    const dclick = function (id) { dbox.fire('click', { target: { id: id, getAttribute: function () { return null; } } }); };
+    const dTyped = function (id, field, v) {
+      ddoc.getElementById(id).value = v;
+      dbox.fire('input', { target: { id: id, getAttribute: function (n) { return n === 'data-field' ? field : null; } } });
+      return ddoc.getElementById(id + '-left').textContent;
+    };
+    const dHtml = dbox.innerHTML;
     const dInputs = dHtml.match(/<input[^>]*>/g) || [];
-    const val = function (id) { return doc.getElementById(id).value; };
-    if (dlg.hidden === false && /data-field="gate"/.test(dInputs.join('')) && /data-field="suites"/.test(dInputs.join('')) && val('sfc-d-gate') === DOORS[1].gate && val('sfc-d-endpoint') === DOORS[1].endpoint && val('sfc-d-paths') === '/api/relay/') {
-      test.check('Open shows the door\'s dialog with its values in inputs carrying data-field');
-    } else test.fail(OWED + 'the dialog after Open: hidden ' + dlg.hidden + ', ' + short(dHtml) + ', gate ' + short(val('sfc-d-gate')));
-    const dWrong = blocksRight(dHtml, 'sfc-d-');
+    const val = function (id) { return ddoc.getElementById(id).value; };
+    if (/data-field="gate"/.test(dInputs.join('')) && /data-field="suites"/.test(dInputs.join('')) && val('sfcd-gate') === DOORS[1].gate && val('sfcd-endpoint') === DOORS[1].endpoint && val('sfcd-paths') === '/api/relay/') {
+      test.check('the dialog holds the door\'s values in inputs carrying data-field');
+    } else test.fail(OWED + 'the dialog after open: ' + short(dHtml) + ', gate ' + short(val('sfcd-gate')));
+    const dWrong = blocksRight(dHtml, 'sfcd-');
     if (!dWrong.length) test.check('the dialog holds each of its four inputs in its own inline-block framed block: its name, what goes in it, then the input');
     else test.fail(OWED + 'the dialog\'s blocks are not right for ' + short(dWrong) + ': ' + short(dHtml));
-    const dSays = function (f) { return doc.getElementById('sfc-d-' + f + '-says').textContent; };
+    const dSays = function (f) { return ddoc.getElementById('sfcd-' + f + '-says').textContent; };
     if (dSays('endpoint') === 'Node\'s own network calls: http, https, fetch') test.check('the dialog\'s filled endpoint reads what it means: ' + dSays('endpoint'));
     else test.fail(OWED + 'the dialog\'s endpoint node:http+https+fetch reads ' + short(dSays('endpoint')));
-    typedAs('sfc-d-gate', 'gate', 'spirit/run/js/peerPost.js::createPeerPost');
+    dTyped('sfcd-gate', 'gate', 'spirit/run/js/peerPost.js::createPeerPost');
     if (dSays('gate') === 'one function, createPeerPost, in spirit/run/js/peerPost.js') test.check('the dialog\'s gate block reads what its value means, as typed: ' + dSays('gate'));
     else test.fail(OWED + 'the dialog\'s gate spirit/run/js/peerPost.js::createPeerPost reads ' + short(dSays('gate')));
-    typedAs('sfc-d-gate', 'gate', DOORS[1].gate);
-    const dButtons = ['sfc-d-run', 'sfc-d-save', 'sfc-d-remove', 'sfc-d-close'].map(function (id) { return (new RegExp('<button[^>]*id="' + id + '"[^>]*>').exec(dHtml) || [''])[0]; });
-    if (dButtons.every(function (b) { return b && /margin-right:1em/.test(b); }) && /margin-top:1em/.test((/<div[^>]*id="sfc-dialog-body"[^>]*>/.exec(dHtml) || /<div[^>]*>/.exec(dHtml) || [''])[0])) test.check('the dialog has Run, Save, Remove and Close, each 1em after itself, in a block with its leading 1em');
+    dTyped('sfcd-gate', 'gate', DOORS[1].gate);
+    const dButtons = ['sfcd-run', 'sfcd-save', 'sfcd-remove'].map(function (id) { return (new RegExp('<button[^>]*id="' + id + '"[^>]*>').exec(dHtml) || [''])[0]; });
+    if (dButtons.every(function (b) { return b && /margin-right:1em/.test(b); }) && /margin-top:1em/.test((/<div[^>]*>/.exec(dHtml) || [''])[0])) test.check('the dialog has Run, Save and Remove, each 1em after itself, in a block with its leading 1em');
     else test.fail(OWED + 'the dialog\'s buttons: ' + short(dButtons));
-    if (!/id="sfc-d-stop"/.test(dHtml)) test.check('and no Stop of its own: the run is deskVerify\'s, stopped from the Verifier tab');
-    else test.fail(OWED + 'the dialog still has its own Stop');
-    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.runState' && x[1].id === 'd2'; })) test.check('opening it reads the door\'s runState');
-    else test.fail(OWED + 'Open asked ' + short(asked));
+    if (!/id="sfcd-stop"/.test(dHtml)) test.check('and no Stop of its own');
+    else test.fail(OWED + 'the dialog has a Stop');
+    if (dAsked.some(function (x) { return x[0] === 'stackFrameChecks.runState' && x[1].id === 'd2'; })) test.check('opening it reads the door\'s runState');
+    else test.fail(OWED + 'open asked ' + short(dAsked));
+    if (dAsked.some(function (x) { return x[0] === 'item.chat' && x[1].id === DOORS[1].item; })) test.check('its chat reads the chat of the door\'s item, ' + DOORS[1].item);
+    else test.fail(OWED + 'its chat asked ' + short(dAsked.filter(function (x) { return x[0] === 'item.chat'; })));
 
     // Edit in the dialog, said as typed, saved through update.
-    let dl = typedAs('sfc-d-gate', 'gate', 'spirit/run/js/peerPost.js');
-    if (/cheating/.test(dl) && doc.getElementById('sfc-d-save').disabled === true) test.check('the dialog\'s gate is checked as typed (' + dl + ') and Save is off');
-    else test.fail(OWED + 'typed a whole module in the dialog: ' + short(dl) + ', Save disabled ' + doc.getElementById('sfc-d-save').disabled);
-    typedAs('sfc-d-gate', 'gate', 'spirit/run/js/peerPost.js::onRequest');
-    typedAs('sfc-d-suites', 'suites', 'agentOnboard.js,serverSurface.js');
-    asked.length = 0;
-    click('sfc-d-save');
+    let dl = dTyped('sfcd-gate', 'gate', 'spirit/run/js/peerPost.js');
+    if (/cheating/.test(dl) && ddoc.getElementById('sfcd-save').disabled === true) test.check('the dialog\'s gate is checked as typed (' + dl + ') and Save is off');
+    else test.fail(OWED + 'typed a whole module in the dialog: ' + short(dl) + ', Save disabled ' + ddoc.getElementById('sfcd-save').disabled);
+    dTyped('sfcd-gate', 'gate', 'spirit/run/js/peerPost.js::onRequest');
+    dTyped('sfcd-suites', 'suites', 'agentOnboard.js,serverSurface.js');
+    dAsked.length = 0;
+    dclick('sfcd-save');
     await sleep(20);
-    const up = asked.filter(function (x) { return x[0] === 'stackFrameChecks.update'; })[0];
+    const up = dAsked.filter(function (x) { return x[0] === 'stackFrameChecks.update'; })[0];
     if (up && up[1].id === 'd2' && up[1].gate === 'spirit/run/js/peerPost.js::onRequest' && up[1].endpoint === 'node:http+https+fetch' && JSON.stringify(up[1].paths) === '["/api/relay/"]' && JSON.stringify(up[1].suites) === '["agentOnboard.js","serverSurface.js"]') test.check('Save sends update {id, gate, endpoint, paths, suites}');
-    else test.fail(OWED + 'Save asked ' + short(asked));
+    else test.fail(OWED + 'Save asked ' + short(dAsked));
 
-    // Run: sent to deskVerify, said so with the way to its console; running and elapsed, then the verdict and each path.
-    asked.length = 0;
-    click('sfc-d-run');
+    // Run: started here, said so; running and elapsed, then the verdict and each path, on the plugin's publish.
+    dAsked.length = 0;
+    dclick('sfcd-run');
     await sleep(30);
-    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.run' && x[1].id === 'd2'; })) test.check('Run sends run {id}');
-    else test.fail(OWED + 'Run asked ' + short(asked));
-    const runNote = doc.getElementById('sfc-d-note').textContent;
-    if (/deskVerify/.test(runNote) && /Verifier/.test(runNote) && /console/.test(runNote)) test.check('the dialog says the run went to deskVerify and points to the Verifier tab\'s console: ' + runNote);
+    if (dAsked.some(function (x) { return x[0] === 'stackFrameChecks.run' && x[1].id === 'd2'; })) test.check('Run sends run {id}');
+    else test.fail(OWED + 'Run asked ' + short(dAsked));
+    const runNote = ddoc.getElementById('sfcd-note').textContent;
+    if (/running now/.test(runNote) && !/Verifier/.test(runNote)) test.check('the dialog says the run is under way here: ' + runNote);
     else test.fail(OWED + 'after Run the dialog\'s note reads ' + short(runNote));
-    const runEl = doc.getElementById('sfc-d-state');
+    const runEl = ddoc.getElementById('sfcd-state');
     if (/running/.test(runEl.innerHTML) && /\d+ s/.test(runEl.innerHTML)) test.check('the dialog shows the run under way and its elapsed time: ' + short(runEl.innerHTML));
     else test.fail(OWED + 'while running the dialog shows ' + short(runEl.innerHTML));
     runState = { id: 'd2', running: false, startedAt: new Date(Date.now() - 9000).toISOString(), endedAt: new Date().toISOString(), stopped: false,
       verdict: { ran: true, green: false, around: 2, of: 7, paths: ['POST /api/relay/post from spirit/run/js/hub.js:5:post', 'GET /api/relay/key from spirit/run/js/offboard.js:9:main'], why: '' } };
-    // The end is heard on deskVerify's stream: its run goes idle.
-    const fromVerify = uiPublished.filter(function (s) { return s.server === 'deskVerify'; });
-    if (fromVerify.length) test.check('the UI subscribed to deskVerify\'s stream itself');
-    else test.fail(OWED + 'the UI subscribed only to ' + short(uiPublished.map(function (s) { return s.server; })));
-    asked.length = 0;
-    fromVerify.forEach(function (s) { s.fn({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle, nothing running', since: new Date().toISOString(), stopAsked: false }); });
+    const fromDesk = dPub.filter(function (x) { return x.server === 'desk'; });
+    fromDesk.forEach(function (x) { x.fn({ plugin: 'stackFrameChecks', data: { what: 'run', id: 'd2' } }); });
     await sleep(30);
     const vHtml = runEl.innerHTML;
     const pathLines = vHtml.match(/<div class="sfc-path"[^>]*>[^<]*<\/div>/g) || [];
-    if (/2 path\(s\) around the gate, of 7/.test(vHtml) && pathLines.length === 2 && /hub\.js:5:post/.test(pathLines[0]) && /offboard\.js:9:main/.test(pathLines[1])) test.check('a published end shows the verdict and each path around the gate on its own line');
+    if (fromDesk.length && /2 path\(s\) around the gate, of 7/.test(vHtml) && pathLines.length === 2 && /hub\.js:5:post/.test(pathLines[0]) && /offboard\.js:9:main/.test(pathLines[1])) test.check('the plugin\'s publish of the run\'s end shows the verdict and each path around the gate on its own line');
     else test.fail(OWED + 'after the run the dialog shows ' + short(vHtml));
-    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.doors'; })) test.check('and the door list is read again, so its row shows the new verdict');
-    else test.fail(OWED + 'a published run did not read the doors again');
-
-    // Remove, from the dialog.
     asked.length = 0;
-    click('sfc-d-remove');
+    uiPublished.forEach(function (x) { x.fn({ plugin: 'stackFrameChecks', data: { what: 'run', id: 'd2' } }); });
     await sleep(20);
-    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.remove' && x[1].id === 'd2'; })) test.check('Remove sends remove {id}');
-    else test.fail(OWED + 'Remove asked ' + short(asked));
+    if (asked.some(function (x) { return x[0] === 'stackFrameChecks.doors'; })) test.check('and the pane reads the door list again, so its row shows the new verdict');
+    else test.fail(OWED + 'a published run did not read the doors again');
+    if (uiPublished.every(function (x) { return x.server !== 'deskVerify'; })) test.check('the pane subscribes to no deskVerify stream');
+    else test.fail(OWED + 'the pane subscribed to ' + short(uiPublished.map(function (x) { return x.server; })));
+
+    // Remove, from the dialog alone (D7): armed by the first press, sent by the second, and the dialog closes.
+    dAsked.length = 0;
+    dclick('sfcd-remove');
+    await sleep(20);
+    const armedText = ddoc.getElementById('sfcd-remove').textContent;
+    if (!dAsked.some(function (x) { return x[0] === 'stackFrameChecks.remove'; }) && /sure/.test(armedText)) test.check('Remove\'s first press only arms it: ' + armedText);
+    else test.fail(OWED + 'Remove\'s first press asked ' + short(dAsked) + ', the button reads ' + short(armedText));
+    dclick('sfcd-remove');
+    await sleep(20);
+    if (dAsked.some(function (x) { return x[0] === 'stackFrameChecks.remove' && x[1].id === 'd2'; }) && closed) test.check('its second press sends remove {id}, and the dialog closes');
+    else test.fail(OWED + 'Remove asked ' + short(dAsked) + ', closed ' + short(closed));
   } catch (e) { test.fail(OWED + 'the private UI: ' + (e && e.message)); }
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await sleep(300);

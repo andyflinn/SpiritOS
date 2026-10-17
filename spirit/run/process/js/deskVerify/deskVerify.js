@@ -1495,6 +1495,27 @@ appServer.serve({
       return { queued: true, already: already };
     },
   },
+  // A DOOR RUN BY THE PLUGIN ITSELF, RECORDED (goal/G27.2, D5). Andy, 2026-10-17: "i don't want verifier to block the
+  // design-a-door process", and "i don't mind if our test sends the verifier a result". The plugin runs a door being
+  // designed at once, outside this queue, and hands the verdict here as a record only: kept under doors/<id>.json as a
+  // run of this server's own would be, and its line said in the console. Nothing is run or queued.
+  'door.record': {
+    request: { id: '', verdict: {} }, reply: { recorded: true },
+    handler: function (a) {
+      const id = doorIdOf(a.id);
+      const v = a.verdict && typeof a.verdict === 'object' ? a.verdict : {};
+      const kept = { door: id, ran: v.ran === true, green: v.green === true, around: Number(v.around) || 0, of: Number(v.of) || 0,
+        paths: (Array.isArray(v.paths) ? v.paths : []).slice(0, DOOR_PATHS_KEPT).map(String), why: String(v.why || ''),
+        startedAt: String(v.startedAt || ''), endedAt: String(v.endedAt || ''), stopped: v.stopped === true, commit: String(v.commit || ''), by: 'plugin' };
+      fs.mkdirSync(DOORS_DIR, { recursive: true });
+      const out = path.join(DOORS_DIR, id + '.json');
+      fs.writeFileSync(out + '.tmp', JSON.stringify(kept));
+      fs.renameSync(out + '.tmp', out);
+      consoleAdd('\n=== door ' + id + ', run by the plugin: ' + (kept.ran ? (kept.green ? 'green, ' + kept.of + ' production call(s), every one through the gate'
+        : 'red, ' + kept.around + ' path(s) around the gate, of ' + kept.of + ' production call(s)') : 'no verdict, ' + kept.why) + ' ===\n');
+      return { recorded: true };
+    },
+  },
   // ITS NEWEST VERDICT, as kept under doors/<id>.json, with whether it runs or waits now. The paths come as many as fit
   // one answer, the rest counted in pathsLeft; the kept file holds up to DOOR_PATHS_KEPT.
   'door.state': {

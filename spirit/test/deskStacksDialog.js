@@ -38,6 +38,10 @@ const PLUGIN_UI = path.join(RUN, 'shell', 'desk', 'plugins', 'stackFrameChecks',
 const DIALOG = path.join(RUN, 'shell', 'stackFrameCheckDetail', 'stackFrameCheckDetail.js');
 const DIALOG_JSON = path.join(RUN, 'shell', 'stackFrameCheckDetail', 'stackFrameCheckDetail.json');
 const VERIFY = path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js');
+// The shared elements the pane and the dialog load on demand; a fake page cannot load a script, so the world puts them
+// on its window first, as a page that loaded them holds them.
+const SHARED = ['deskDoorFields.js', 'deskChat.js'].map(function (f) { return path.join(RUN, 'shell', 'shared', 'js', f); });
+function withShared(doc, win) { SHARED.forEach(function (f) { if (fs.existsSync(f)) new Function('document', 'window', fs.readFileSync(f, 'utf8'))(doc, win); }); return win; }
 const GOAL = 'plugin/stackFrameChecks';
 const GATE = 'spirit/run/js/peerPost.js::post';
 const END = 'spirit/run/js/presenceNode.js';
@@ -199,7 +203,7 @@ async function paneHalf() {
   test.subHeading('D1. the pane opens a door with callDialog, and draws no inline detail');
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
-  const win = { spiritFieldRules: require('../run/js/fieldRules.js'), spiritDeskPlugins: {} };
+  const win = withShared(doc, { spiritFieldRules: require('../run/js/fieldRules.js'), spiritDeskPlugins: {} });
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
   const ui = win.spiritDeskPlugins.stackFrameChecks;
   const dialogs = [];
@@ -237,7 +241,7 @@ async function dialogHalf() {
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   const calls = [];
   let app = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: kernel.core }, doc, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') });
+  new Function('spirit', 'document', 'window', fs.readFileSync(DIALOG, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: kernel.core }, doc, withShared(doc, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') }));
   const box = fakeElement('dlg');
   app.mount(box, {
     escapeHtml: kernel.core.util.escapeHtml,
