@@ -1,5 +1,5 @@
 {
- "change": 66364,
+ "change": 66430,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -49,14 +49,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1312,28 +1310,26 @@
    "id": "goal/G27.5",
    "title": "Blocking/Blocked-by relationships in desk",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1341,7 +1337,60 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "ollama agent node": "levant-local",
     "claude-windows": "claude-windows"
@@ -1349,8 +1398,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Blocking/Blocked by relationships in desk\n\nRequirements (Andy's rulings, goal/G27.5 chat, 2026-10-14/15):\nR1. A desk verb sets up a blocking relationship between two existing items of one goal: block(A, B), A blocks B.\nR2. A complementing verb unblock(A, B) unlinks any blockage between A and B.\nR3. Before linking, block checks whether the asked-for relationship would create a circular dependency; if so the request is instantly refused with \"error: circular blocking was asked\".\nR4. An item created blocks by default the item it was created from; if that item is unknown it blocks the goal. No user intervention is required. When no other blockage is stated or found, an item blocks the goal explicitly.\nR5. The blockageCompiler is a desk-internal function, triggered after every transaction that changes the tree: item add, item close, item delete, block and unblock. It ensures that only explicit blocks are stated and that blocking is coherent within the goal.\nR6. The compiler does not order the items: a build sequence, and possible parallelization, is implicit in a properly formed dependency tree. The desk already offers Go only to an item nothing open blocks, so the order falls out of the tree.\nR7. Blocks are maintainable by the user: the block bubble in deskDetails becomes foldable and holds a UI to maintain the blocking relationships of the current item.\nR8. The purpose: when designing a goal, the optimal implementation path is designed implicitly through the tree. This has been lacking.\n\nToday (read from code): a block is named only at item creation (item.add, blocks, within one goal) or by a session; nothing links or unlinks existing items, and no cycle check exists, since a new item cannot be blocked by anything yet.\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the two verbs, the compiler, the cycle check), spirit/run/shell/deskDetails/deskDetails.js (the foldable block bubble). Needs Andy's Go and a file grant before any build.",
-   "version": 6,
+   "box": "Blocking/Blocked by relationships in desk\n\nRequirements (Andy's rulings, goal/G27.5 chat, 2026-10-14/15):\nR1. A desk verb sets up a blocking relationship between two existing items of one goal: block(A, B), A blocks B.\nR2. A complementing verb unblock(A, B) unlinks any blockage between A and B.\nR3. Before linking, block checks whether the asked-for relationship would create a circular dependency; if so the request is instantly refused with \"error: circular blocking was asked\".\nR4. An item created blocks by default the item it was created from; if that item is unknown it blocks the goal. No user intervention is required. When no other blockage is stated or found, an item blocks the goal explicitly.\nR5. The blockageCompiler is a desk-internal grammatical gate, run on every transaction that changes the tree: item add, item close, item delete, block and unblock. It refuses, saying why, a block that would be circular or is already implied through others; it rewrites nothing the user or an agent stated. It only repairs what a delete or close leaves behind: when B goes and A blocked B while B blocked C, A blocks C; an item left blocking nothing falls back to blocking the goal (R4). (Andy, 2026-10-17: \"agree.\")\nR6. The compiler does not order the items: a build sequence, and possible parallelization, is implicit in a properly formed dependency tree. The desk already offers Go only to an item nothing open blocks, so the order falls out of the tree.\nR7. Blocks are maintainable by the user, per item, in its dialog: the foldable block bubble lists the blocks this item states, each with a delete, and an add drop-down; what blocks this item is shown read-only, as it follows from the others. The drop-down offers only valid targets: an item of the same goal, not itself, not one it already blocks (directly or implicitly), and nothing that would close a circle; the desk computes that list as a bounded search, so the UI never offers what block would refuse. A delete is offered on each block the item states; implied blocks are not listed and have none; when the item only blocks the goal (the R4 fallback) there is no delete, since the compiler would put it straight back. Removing a block can never make a circle. (Andy, 2026-10-17: \"i agree.\")\nR8. The purpose: when designing a goal, the optimal implementation path is designed implicitly through the tree. This has been lacking.\nR9. An agent told to add an item inserts it with sensible dependencies: agents are the most capable arrangers of dependencies, and the compiler is a grammatical gate (Andy, 2026-10-17).\nR10. A block onto an item already running (its Go on record, not done or closed) is refused by the gate: \"error: too late! this is already happening\" (Andy, 2026-10-17). A Go is never taken back by a block. Its add drop-down does not offer running items.\n\nToday (read from code): a block is named only at item creation (item.add, blocks, within one goal) or by a session; nothing links or unlinks existing items, and no cycle check exists, since a new item cannot be blocked by anything yet.\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the two verbs, the compiler, the cycle check), spirit/run/shell/deskDetails/deskDetails.js (the foldable block bubble). Needs Andy's Go and a file grant before any build.",
+   "version": 10,
    "checks": [
     {
      "number": "Q1",
@@ -1436,6 +1485,120 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-15T00:23:52.841Z",
      "text": "cw: yes. The compiler keeps the tree coherent and acyclic; the sequence and the parallel lanes fall out of it, and the desk already offers Go only to an item nothing open blocks.\nBox capped to requirements as statements, Q1 cleared.\nNext question is on the deskUnsloth filter item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:37:37.524Z",
+     "text": "does this one make sense? is it coherent?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:38:12.645Z",
+     "text": "cw: mostly yes: verbs, cycle refusal, the goal as default blocker, and order falling out of the tree all fit together and with rule/6. Two gaps:\n1. R5 says \"only explicit blocks\" but not what the compiler removes: I read it as dropping an edge already implied through others (A blocks B, B blocks goal: A blocks goal is dropped). 2. Deleting or closing a middle item (A blocks B, B blocks C, B deleted): does A then block C, or fall back to the goal?\nWrite 1 as read, and settle 2 as \"A inherits C\"?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:41:38.942Z",
+     "text": "the UI should offer only blocking relation ships per item for add or delete, the blocked-by section would be implicit,\na drop-down for Adding blockages that only offers valid items that this item could block?\n\nwould this allow manual maintenance of the dependency tree?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:41:58.131Z",
+     "text": "cw: yes, fully: any edge A blocks B is added and removed from A dialog alone, so every edge of the tree is reachable; blocked-by is shown read-only as what follows from the others.\nThe drop-down offers only valid targets: same goal, not itself, not already blocked, and nothing that would close a circle; the desk computes that list (a bounded search, by your rule), so the UI never offers what block would refuse.\nShall I write that into R7, together with my two points above as proposed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:44:28.600Z",
+     "text": "The drop-down offers only valid targets: same goal, not itself, not already blocked (implicitly), by this item.\n\ni agree. and the delete blockage option, what are the rules for it to be even offered, ???"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:44:47.287Z",
+     "text": "cw: proposal: a delete is offered on each block the item states explicitly, the ones listed in its dialog; implied blocks are not listed, so they have no delete. One exception: when the item only blocks the goal (the R4 fallback), no delete, since the compiler would put it straight back. Removing a block can never make a circle, so nothing else needs checking.\nAgree?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:45:29.998Z",
+     "text": "i agree.\n\nother issues?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:45:58.107Z",
+     "text": "cw: written into R7. Open issues, in order: 1. my two points above (the compiler drops implied blocks; when a middle item goes, A inherits C). 2. who may block and unblock: you only, or agents too (rule/7 says agents modify items only when authorized). 3. a block on an item already running: does it lose its Go until its blocker is done?\nFirst: accept 1 as proposed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:47:46.438Z",
+     "text": "when i instruct an agent to add an item, it is implied that the agent inserts the new item with sensible dependencies, agents are the most capabled arrangers of dependencies, the compiler is just a grammatical gate...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:48:13.076Z",
+     "text": "cw: written as R9. It changes my point 1: a gate refuses what is wrong, it does not rewrite. So proposal: the compiler refuses a block that would be circular or already implied (saying why), and only repairs what a delete or close leaves behind (A inherits C; an item left blocking nothing falls back to the goal).\nAgree?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:48:38.696Z",
+     "text": "agree."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:49:02.833Z",
+     "text": "cw: R5 rewritten as agreed. One issue left: a block placed on an item already running (Go given, phase held): does it lose its Go until its new blocker is done, or does the running work go on?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:49:34.894Z",
+     "text": "R5 recommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:49:52.720Z",
+     "text": "cw: recommendation: the running work goes on. A Go is yours, and a block, which an agent may now place too (R9), should never take it back on its own; the new block only shows the order and holds back items not yet given a Go. If the running work really must wait, you stop it yourself.\nWrite that as R10?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:50:53.402Z",
+     "text": "so the block should be refused for running items (error: too late! this is already happening?)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:51:20.104Z",
+     "text": "cw: better than mine: it keeps the compiler a pure gate and never takes a Go back silently. Written as R10, running meaning Go on record and not done or closed; the drop-down leaves running items out too.\nNothing else open that I see; the box reads coherent now (v10)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:51:36.745Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:51:52.308Z",
+     "text": "cw: green: settled, nothing open, box current (v10). Ready for your Go; it is marked as code."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T03:51:58.520Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
