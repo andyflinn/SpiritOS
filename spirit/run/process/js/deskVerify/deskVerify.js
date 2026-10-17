@@ -1178,7 +1178,7 @@ function deskVia(m, verb, args) {
 // file list; it writes nothing. A filter that does not belong to `over` is ignored, as the verb file says.
 const SEARCH_ROOM = appClient.ANSWER_MAX - 512;
 const SEARCH_SCANNED = 1000;
-const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since', 'current'];
+const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since', 'current', 'heading', 'history'];
 function searchBytes(key, label) { return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(label) }], more: false }), 'utf8'); }
 function searchBucket(walk) {
   const bucket = createProbabilityBucket(SEARCH_SCANNED);
@@ -1239,8 +1239,14 @@ async function search(a) {
     where.push('suite IN (' + suites.map(function () { return '?'; }).join(', ') + ')');
     suites.forEach(function (s) { params.push(s); });
   }
-  const sql = 'SELECT rowid, suite, title, outcome, "commit" AS commitAt, at, failure FROM results WHERE rowid IN' +
-    ' (SELECT MAX(rowid) FROM results GROUP BY suite, title)' + (where.length ? ' AND ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
+  // A TESTED THING'S CHECKS (goal/G27.14, F6): heading is a sub-heading, and keeps the keys "<heading> #<n>" only.
+  const heading = String(a.heading || '');
+  if (heading) { where.push('title LIKE ? ESCAPE \'\\\''); params.push(heading.replace(/[\\%_]/g, '\\$&') + ' #%'); }
+  // ITS HISTORY (Andy, 2026-10-17: "so we'll add a dialog for test-history, that shows us the flips."): history: yes
+  // answers every row, each a flip, not only each test's newest.
+  const history = String(a.history || '') === 'yes';
+  const sql = 'SELECT rowid, suite, title, outcome, "commit" AS commitAt, at, failure FROM results WHERE ' +
+    (history ? '1 = 1' : 'rowid IN (SELECT MAX(rowid) FROM results GROUP BY suite, title)') + (where.length ? ' AND ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
   const words = String(a.test || '').trim();
   // WHAT IS RED NOW (goal/G27.14, current: yes): only tests reported in their suite's latest run, that is within one
   // suite's time limit of the suite's newest report. A test no run reports any more (an old key, a removed assertion)

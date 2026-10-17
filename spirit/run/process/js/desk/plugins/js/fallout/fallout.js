@@ -29,8 +29,22 @@ module.exports = function (desk) {
         more: !!(r && r.more), total: Number(r && r.total) || 0 };
     });
   }
+  // F6, A TESTED THING'S HISTORY (Andy, 2026-10-17: "so we'll add a dialog for test-history, that shows us the flips."):
+  // every flip of every check under one sub-heading of one suite, newest first, for the dialog shell/falloutHistory.
+  function history(a) {
+    const suite = String(a.suite || '').trim();
+    const heading = String(a.heading || '').trim();
+    if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/.test(suite)) throw desk.refused('bad-request', 'a suite is its file name, <name>.js');
+    if (!heading) throw desk.refused('bad-request', 'a heading is needed: the sub-heading the checks stand under');
+    if (typeof desk.verify !== 'function') throw desk.refused('bad-request', 'this desk hands its plugins no deskVerify to search');
+    return desk.verify('search', { over: 'tests', suite: suite, heading: heading, history: 'yes' }).then(function (r) {
+      return { items: (r && Array.isArray(r.items) ? r.items : []).map(function (i) { return { key: String(i.key || ''), label: String(i.label || '') }; }),
+        more: !!(r && r.more), total: Number(r && r.total) || 0 };
+    });
+  }
   return {
     verbs: {
+      'fallout.history': { request: { suite: '', heading: '' }, reply: { items: [{ key: '', label: '' }], more: false, total: 0 }, handler: history },
       // goal/G27.14, F3: the verifier's tests that stand now and match the text, as deskVerify ranks them.
       'fallout.reds': { request: { text: '', outcome: '' }, reply: { items: [{ key: '', label: '' }], more: false, total: 0 }, handler: reds,
         // text and outcome are each optional; nothing else is taken.

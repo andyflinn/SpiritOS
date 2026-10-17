@@ -1,0 +1,62 @@
+// spirit/run/shell/falloutHistory/falloutHistory.js
+// THE HISTORY OF ONE TESTED THING, AS A DIALOG (goal/G27.14, F6).
+//
+//   Andy, 2026-10-17: "i only want to see the latest, if you want to show the history of one test, use a dialog.", then
+//   "so we'll add a dialog for test-history, that shows us the flips."
+//
+// Opened from a line of the Fallout tab with { suite, heading }: the test file and the sub-heading its checks stand
+// under (since goal/G27.14 a check's key is "<heading> #<n>"). It reads every flip through the Fallout plugin's verb
+// fallout.history, which asks this node's deskVerify, and draws one line per flip, newest first: the check's number,
+// ❌ fail or ✅ success, when, and at which commit; a fail's printed failure is the line's hover title.
+
+var fhApi = null;
+var fhBody = null;
+var fhKey = '';
+
+function fhEsc(s) { return fhApi && fhApi.escapeHtml ? fhApi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function fhWhen(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
+function fhAsk(verb, args) {
+  var desk = {};
+  desk[verb] = args;
+  return Promise.resolve(fhApi.verb('jobs.api', { ask: { desk: desk } })).then(function (r) {
+    var body = (r && r.body) || {};
+    if (body.ok === false) throw new Error((body.extra && body.extra.why) || body.code || 'refused');
+    return body;
+  });
+}
+
+spirit.shell.activateApp({
+  mount: function (container, api) {
+    fhApi = api;
+    fhBody = container;
+  },
+  open: function (params) {
+    var suite = String((params && params.suite) || '');
+    var heading = String((params && params.heading) || '');
+    var key = suite + '\n' + heading;
+    fhKey = key;
+    // Every block a leading 1em (the desk's UI rules).
+    fhBody.innerHTML = '<div class="stat-tile wide" style="margin-top:1em"><div class="label">' + fhEsc(suite) + ': ' + fhEsc(heading) + '</div>' +
+      '<div id="fh-note" class="job-manifest-note">Reading its flips.</div><div id="fh-rows" style="margin-top:1em"></div></div>';
+    return fhAsk('fallout.history', { suite: suite, heading: heading }).then(function (r) {
+      if (fhKey !== key) return;
+      var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean)
+        .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+      var el = document.getElementById('fh-rows');
+      var note = document.getElementById('fh-note');
+      if (note) note.textContent = rows.length ? rows.length + ' flip(s)' + (r && r.more ? ', the newest ' + rows.length + ' of ' + (Number(r.total) || rows.length) : '') + ', newest first.' : 'No flips recorded yet.';
+      if (el) {
+        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Check</th><th>Status</th><th>When</th><th>Commit</th></tr></thead><tbody>' +
+          rows.map(function (x) {
+            var n = (String(x.title || '').match(/#(\d+)$/) || ['', ''])[1];
+            return '<tr title="' + fhEsc(x.failure || '') + '"><td>#' + fhEsc(n) + '</td><td>' + (x.outcome === 'red' ? '❌ fail' : '✅ success') + '</td>' +
+              '<td>' + fhEsc(fhWhen(x.at)) + '</td><td>' + fhEsc(String(x.commit || '').slice(0, 8)) + '</td></tr>';
+          }).join('') + '</tbody></table>' : '';
+      }
+    }, function (e) {
+      if (fhKey !== key) return;
+      var note = document.getElementById('fh-note');
+      if (note) note.textContent = 'Its flips could not be read: ' + ((e && e.message) || e);
+    });
+  },
+});

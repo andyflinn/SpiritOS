@@ -78,7 +78,9 @@
         });
         el.innerHTML = groups.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
           groups.map(function (g) {
-            return '<tr title="' + esc(g.failures.join('\n')) + '"><td>' + esc(g.suite) + '</td><td>' + esc(g.what) + '</td>' +
+            // F6: the line opens its history (data-suite, data-heading).
+            return '<tr title="' + esc(g.failures.join('\n')) + '" data-suite="' + esc(g.suite) + '" data-heading="' + esc(g.what) + '" style="cursor:pointer">' +
+              '<td>' + esc(g.suite) + '</td><td>' + esc(g.what) + '</td>' +
               '<td>' + (g.red ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(g.at)) + '</td></tr>';
           }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
       }
@@ -115,6 +117,11 @@
           if (!t) return;
           var tab = t.getAttribute ? t.getAttribute('data-fallout-tab') : null;
           if (tab === 'reds' || tab === 'items') { inner = tab; drawTabs(); return; }
+          // F6: a line opens the history dialog of its tested thing.
+          var line = t.closest ? t.closest('[data-suite]') : null;
+          var suite = (line && line.getAttribute('data-suite')) || (t.getAttribute ? t.getAttribute('data-suite') : null);
+          var heading = (line && line.getAttribute('data-heading')) || (t.getAttribute ? t.getAttribute('data-heading') : null);
+          if (suite && heading && ctx && typeof ctx.callDialog === 'function') { ctx.callDialog('shell/falloutHistory', { suite: suite, heading: heading }); return; }
           if (t.id === 'fallout-search') search();
         });
         container.addEventListener('keydown', function (e) { var t = e && e.target; if (t && t.id === 'fallout-text' && e.key === 'Enter' && !e.repeat) search(); });
