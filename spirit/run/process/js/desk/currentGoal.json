@@ -1,5 +1,5 @@
 {
- "change": 67545,
+ "change": 67546,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -13,7 +13,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G27.14"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -5879,11 +5881,11 @@
    "id": "goal/G27.14",
    "title": "new desk app plugin: \"Fallout\"",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "deskVerify passed",
    "with": "claude-windows",
    "buttons": [
-    "close",
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G27"
@@ -5893,7 +5895,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -5997,7 +5999,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "NOW, THE REDUCED SCOPE (Andy, 2026-10-17: a Fallout app that searches reds in the verifier and shows a table of the tests that match the search term):\nF1. Fallout is a standard desk plugin with its own goal, plugin/fallout, and a Fallout tab under Apps beside Team, Stacks and Vision.\nF2. Its tab holds two inner tabs, Reds and Items. Reds holds one search box and one table: the text is searched over the verifier records of tests that are red now (deskVerify search, outcome red), and each match is a row: suite, test, the commit and time it went red, and its failure line.\nF5. Each tested thing is one line, its latest state only: test file | what is tested (its sub-heading) | success or fail | since; no failure column, the raw failure only on hover.\nF6. A line opens a dialog with that test history: every flip of each check under it, red or green, with its time and commit, newest first (Andy, 2026-10-17).\nF3. The search goes through the plugin own verb, which asks this node deskVerify; the page reads no database of its own.\nF4. Items stays empty for now, saying so. The goal chat sits at the bottom of the Fallout tab (Andy, 2026-10-17). Nothing else of the design below is built now: no items, no item form.\n\nLATER, THE FULL DESIGN (kept as it was):\nFallout is a new desk plugin application.\n\nthat new, permanent goal/plugin combination servers to deal with the fallout resulting for this: Goals only run the verifier in a goal-related scope for a goal to pass implementation, which is a good thing. It's a good thing because it will discard out-of-scope adjustments that need to be made because of a new world the achieved goal brings with it. This fallout may only become apparent/documented when a full run of the Verifier ends...\n\n- the Fallout goal is NEVER in design mode, and all its new items are \"code\" by default. \"Fallout\" items are code (by default) items without red \"phase\", because it is failing tests that cause their existence. when they pass a verifier test, and are 'Done' and 'Closed' they disappear from the\n\n- The \"Fallout\" tab will appear along it's siblings \"Team\" and \"Stacks\", it will display at the top a line showing the \"create blocking item\" form, for creating \"Fallout\" items.\n- The second row will break down \"Fallout\" into two \"Fallout\" tabs:\n- First tab: \"Reds\", it allows the searching of the verifier database 's failed tests. Searched with our new \"probability\" search modules.\n- The second tab \"Items\" displays a list of open Fallout items;\n- both tabs display the same \"Fallout\"-chat at the bottom\"\n\nThe working method is: find a group of reds in the verifier database, manually create an item to address a few, usually grouped by the suite(s) that failed them, so which tests to run for verification is implicit.\nanother way to work of is an item to adjust or remove the suite(s) that fail. or remove/modify the test that fails, this also will produce a code item.",
