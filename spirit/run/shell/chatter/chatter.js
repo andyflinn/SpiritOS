@@ -24,7 +24,6 @@
 
 var chApi = null;
 var chPane = null;        // the peer pane (contactSelector, face pane)
-var chPick = null;        // the new-chat dropdown (contactSelector)
 var chPeer = '';          // the key of the chat shown
 var chSelf = '';          // this node's key, for a reply to one of its own lines
 var chLines = {};         // 'sent:seq' -> {line, el}
@@ -70,31 +69,40 @@ function chSay(text) {
 // TYPED TEXT FINDS NAMES, NOT KEYS (Andy, goal/G4.10: "the search on top or the pane seem to search keys instead of
 // labels..."). The chatClerver knows keys only (G4.3), so a name is looked up in the node's book first
 // (contact.search), and the peers with a chat are kept to those keys.
-// THE ROWS CARRY THEIR NAMES (goal/G29.6): the pane is the shared list, which ranks what it holds by its words, so each
-// peer row carries the book's label for its key, json {name, owned, blocked, held}, from the same contact.search.
-function chPeersSearch(text) {
-  var typed = String(text || '').trim();
-  var named = spirit.core.ask('contact.search', { q: typed }).then(function (a) {
-    var labels = {};
-    ((a && a.body && a.body.items) || []).forEach(function (it) { if (it && it.key) labels[it.key] = it.label; });
-    return labels;
-  }, function () { return {}; });
-  return named.then(function (labels) {
+// ONE PANE, THE BOOK AND THE CHATS (goal/G29.9). Andy, 2026-10-18: "in chatter, why does the contact pane look
+// different from contacts? It fails to show proper columns for contacts, it should be all-pane mode there, that would
+// be enough." So the pane lists the node's book, json labels {name, owned, blocked, held} from contact.search, less
+// this node and every blocked contact (P5: never offered); a new chat starts from any of them. The chats (peers.search,
+// the record {peer, at, sent, seq, unanswered}) only decide the ⌛ mark, and a chat with a key the book does not hold
+// is listed by its key while no words are typed. The two asks go one after the other, never two on the wire.
+function chPeersSearch(text, ask) {
+  var args = ask || { q: String(text || '') };
+  var typed = String(args.q || '').trim();
+  var book = {};
+  return spirit.core.ask('contact.search', args).then(function (a) { book = (a && a.body) || {}; }, function () { book = {}; })
     // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
-    return chAsk('peers.search', { text: '', since: '', before: '' }).then(function (body) {
-      if (typed) body.items = (body.items || []).filter(function (it) { return it && labels[it.key]; });
-      return { body: body, labels: labels };
+    .then(function () { return chAsk('peers.search', { text: '', since: '', before: '' }).then(function (b) { return b || {}; }, function () { return {}; }); })
+    .then(function (chats) {
+      var out = [];
+      var listed = {};
+      (book.items || []).forEach(function (it) {
+        if (!it || !it.key || it.key === chSelf) return;
+        var label = {};
+        try { label = JSON.parse(it.label || '{}'); } catch (e) { label = {}; }
+        if (label.blocked) return;
+        listed[it.key] = true;
+        out.push({ key: it.key, label: it.label });
+      });
+      (chats.items || []).forEach(function (it) {
+        if (!it || !it.key) return;
+        var row = {};
+        try { row = JSON.parse(it.label || '{}'); } catch (e) { row = {}; }
+        chRows[it.key] = row;
+        if (!listed[it.key] && !typed && it.key !== chSelf) { listed[it.key] = true; out.push({ key: it.key }); }
+        if (chPane) chPane.mark(it.key, chWaiting(it.key) ? 'unanswered' : 'none');
+      });
+      return { items: out, more: !!book.more || !!chats.more };
     });
-  }).then(function (got) {
-    var items = (got.body.items || []).map(function (it) {
-      var row = {};
-      try { row = JSON.parse(it.label || '{}'); } catch (e) { row = {}; }
-      chRows[it.key] = row;
-      if (chPane) chPane.mark(it.key, chWaiting(it.key) ? 'unanswered' : 'none');
-      return got.labels[it.key] ? { key: it.key, label: got.labels[it.key] } : { key: it.key };
-    });
-    return { items: items, more: !!got.body.more };
-  });
 }
 
 // READING RESETS THE COUNT (Andy, goal/G4.10: "it's the fact that they're now reading that should reset the counter,
@@ -118,23 +126,6 @@ function chShowCount(n) {
   var el = chEl('ch-title-count');
   if (!el) return;
   el.textContent = n > 0 ? n + ' new message' + (n === 1 ? '' : 's') : '';
-}
-
-// The node's book, less every blocked contact: contact.search lists blocked rows, so each is asked of the book
-// (contact.get), as peers.search does; a contact the book cannot answer for is not offered either.
-function chContactsSearch(text) {
-  return spirit.core.ask('contact.search', { q: String(text || '') }).then(function (a) {
-    var body = (a && a.body) || {};
-    var items = (body.items || []).filter(function (it) { return it && it.key && it.key !== chSelf; });
-    return Promise.all(items.map(function (it) {
-      return spirit.core.ask('contact.get', { key: it.key }).then(function (g) {
-        var person = g && g.status === 200 && g.body && g.body.person;
-        return person && !person.blocked ? { key: it.key, label: it.label } : null;
-      }, function () { return null; });
-    })).then(function (rows) {
-      return { items: rows.filter(Boolean), more: !!body.more };
-    });
-  });
 }
 
 // ── ONE CHAT (G4.11) ─────────────────────────────────────────────────
@@ -528,9 +519,7 @@ spirit.shell.activateApp({
     drag('ch-divider-right', 'objects', -1);
 
     var left = chEl('ch-left');
-    chPick = api.ui.elements.createContactSelector({ search: chContactsSearch, placeholder: 'new chat with…' });
-    chPick.addEventListener('change', function () { if (chPick.value) chOpen(chPick.value); });
-    left.appendChild(chPick);
+    // goal/G29.9: one pane over the book and the chats; the new-chat dropdown that stood here is gone.
     chPane = api.ui.elements.createContactSelector({
       face: 'pane', search: chPeersSearch,
       // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
@@ -585,7 +574,7 @@ spirit.shell.activateApp({
         if (!table || !chPane) return;
         // Both lists show the same dots: the peer pane and the new-chat dropdown (Andy, goal/G4.10: "the color of
         // presence dots in the dropdown don't match the color of the presence dots in the pane").
-        var lists = [chPane, chPick].filter(function (l) { return l && typeof l.present === 'function'; });
+        var lists = [chPane].filter(function (l) { return l && typeof l.present === 'function'; });
         // A key the table no longer names goes white again, as in Contacts: unknown is never present.
         Object.keys(chPresent).forEach(function (key) {
           if (!table[key]) lists.forEach(function (l) { l.present(key, false); });

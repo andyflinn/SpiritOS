@@ -673,7 +673,9 @@ async function main() {
     // pane shows every chat it holds, the names the words match on top; it never hides a chat while words are typed.
     if (byName[0] === PEER && byName.indexOf(QUIET) !== -1 && byName2[0] === QUIET && byName2.indexOf(PEER) !== -1) test.check('"pet" puts Pete on top, "quin" puts Quinn on top, every chat still listed: names, not keys');
     else test.fail(OWED10 + 'typed "pet" lists ' + JSON.stringify(byName) + ', "quin" lists ' + JSON.stringify(byName2));
-    if (noChat.length === 2 && noChat.every(function (k) { return k === PEER || k === QUIET; })) test.check('a name in the book with no chat adds no row: the pane holds chats only, all still shown');
+    // goal/G29.9: the one pane holds the book, not only the chats ("it should be all-pane mode there"), so a contact
+    // with no chat is a row like any, ranked by the words; the blocked one never.
+    if (noChat[0] === STRANGER && noChat.indexOf(BLOCKED) === -1 && noChat.indexOf(PEER) !== -1) test.check('a book contact with no chat is found by its name, on top; every other contact still listed, the blocked one never');
     else test.fail(OWED10 + 'typed "stan" (no chat) lists ' + JSON.stringify(noChat));
     if (app5.asked.every(function (a) { return a.via !== 'refused'; })) test.check('and every ask of the chatClerver carried its exact keys');
     else test.fail(OWED10 + 'refused asks: ' + JSON.stringify(app5.asked.filter(function (a) { return a.via === 'refused'; })).slice(0, 200));

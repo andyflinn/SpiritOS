@@ -93,7 +93,9 @@
       // ROW 3, THE ONLY ONE THAT DIFFERS (goal/G29.9): a pane below rows 1 and 2, or a dropdown under the search row.
       '<div style="position:relative">' +
         '<div id="' + pre + 'count" class="job-manifest-note" style="margin-top:1em"' + (dropdown ? ' hidden' : '') + '></div>' +
-        '<div id="' + pre + 'list"' + (dropdown
+        // FOCUSABLE (Andy, 2026-10-18: "in the contacts app the up-down keys etc... don't work."): the list takes the
+        // keys itself once a press gives it the focus.
+        '<div id="' + pre + 'list" tabindex="0"' + (dropdown
           ? ' class="stat-tile wide" style="margin-top:1em;position:absolute;left:0;right:0;z-index:10;max-height:20em;overflow:auto" hidden'
           : ' style="margin-top:1em"') + '></div>' +
       '</div>';
@@ -256,6 +258,7 @@
     function pressRow(w) {
       if (!w) return;
       currentKey = w.key;
+      if (!dropdown) { var l = el('list'); if (l && typeof l.focus === 'function') l.focus(); }
       if (!dropdown && typeof o.details === 'function') { draw(); o.details(w.row, w.key); return; }
       pick(w);
     }
