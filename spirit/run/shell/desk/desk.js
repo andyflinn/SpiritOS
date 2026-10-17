@@ -762,15 +762,14 @@ function deskNotePlugins(rows) {
 }
 // THE PLUGINS, FOUND BY THEIR FOLDER (goal/G29.5). Andy, 2026-10-17: "just search the plugin folder for subfolders,
 // THAT's the way you find them all." A ranked search for plugin/ lost Fallout's goal off a capped answer once its chat
-// grew long. So the node lists shell/desk/plugins/ one level deep (fs.search, '*' stops at a folder); every subfolder is
-// a plugin, and its goal, plugin/<name>, is read for the tab's name (pluginTab). A folder whose goal the desk has not
-// mounted gets no tab.
+// grew long. So the node lists shell/desk/plugins/<name>/<name>.js (fs.search: a '*' matches one name, never a folder's
+// contents, so the pattern names the file every plugin folder holds); every such folder is a plugin, and its goal,
+// plugin/<name>, is read for the tab's name (pluginTab). A folder whose goal the desk has not mounted gets no tab.
 function deskFindPlugins() {
-  return Promise.resolve(deskApi.verb('fs.search', { q: DESK_PLUGIN_UI + '*' })).then(function (r) {
+  return Promise.resolve(deskApi.verb('fs.search', { q: DESK_PLUGIN_UI + '*/*.js' })).then(function (r) {
     var items = (r && r.body && r.body.items) || [];
     var names = items.map(function (i) { return String((i && i.key) || ''); })
-      .filter(function (k) { return k.indexOf(DESK_PLUGIN_UI) === 0 && k.charAt(k.length - 1) === '/'; })
-      .map(function (k) { return k.slice(DESK_PLUGIN_UI.length, -1); })
+      .map(function (k) { var m = /^shell\/desk\/plugins\/([^/]+)\/([^/]+)\.js$/.exec(k); return m && m[1] === m[2] ? m[1] : ''; })
       .filter(function (n) { return /^[A-Za-z][A-Za-z0-9_-]*$/.test(n) && !deskApps.some(function (a) { return a.name === n; }); });
     return Promise.all(names.map(function (n) {
       return deskAsk('item.get', { id: 'plugin/' + n }).then(function (g) {
