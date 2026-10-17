@@ -680,7 +680,7 @@
     var module = 'process/js/' + app.server;
     var up = false;
     jobsById.forEach(function (job) {
-      if (job && job.type === 'server' && job.module === module && (job.status === 'running' || job.status === 'pending')) up = true;
+      if (job && job.kind === 'server' && job.module === module && (job.status === 'running' || job.status === 'pending')) up = true;
     });
     return up;
   }
@@ -689,7 +689,7 @@
   function serversUpKey() {
     var up = [];
     jobsById.forEach(function (job) {
-      if (job && job.type === 'server' && (job.status === 'running' || job.status === 'pending')) up.push(String(job.module));
+      if (job && job.kind === 'server' && (job.status === 'running' || job.status === 'pending')) up.push(String(job.module));
     });
     return up.sort().join('\n');
   }
