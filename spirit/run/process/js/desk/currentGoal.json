@@ -1,5 +1,5 @@
 {
- "change": 68494,
+ "change": 68647,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,12 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -849,10 +852,11 @@
    "id": "goal/G29.5",
    "title": "update \"Fallout-search\" using our new list search element",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.6"
@@ -862,21 +866,77 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/plugins/js/fallout/fallout.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/plugins/js/fallout/fallout.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/search.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/plugins/fallout/fallout.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/falloutHistory/falloutHistory.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskFallout.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPluginsGg.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "95e8b74d",
+   "redCommit": "abb54777",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -913,8 +973,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Fallout talks to deskVerify only. Its Reds list is built with shellCreateListSearch (G29.4), and its own search machinery is deleted.\n\nCONFIGURATION\n- server deskVerify, verb search, its stream deskVerify's; args from the words and the ✅/❌ filter: {over: tests, current: yes, slim: yes, outcome, and suite when the words name a .js file, else test}.\n- api: built by the pane from what Desk hands it (ctx), so the container asks deskVerify and hears it; no core change.\n- one filter, outcome (❌ fail, ✅ success, both), whose test passes a row whose outcome matches.\n- paint draws test file | what is tested | status | since; press opens shell/falloutHistory for that test; empty says no test matches.\n\nDESKVERIFY\n- Its search keys each test row by the test's identity, its file and its key, not its database record; it answers more and total.\n\nONE REQUEST ON THE WIRE, THE SUMMARY INCLUDED\n- The container lends its one slot to the app: list.ask(verb, args) goes through the same serialized slot. The summary line (how many red of how many tests now) is two deskVerify searches, the red and the green totals, asked that way.\n- The history dialog reads a test's flips with deskVerify's search directly (history: yes).\n\nDELETED, each with a test that it is gone\n- The pane's own cache, wire slot, typing timer and local ranking.\n- The desk-side wrapper verbs fallout.reds, fallout.summary and fallout.history.\n\nUNCHANGED\n- The Items tab and the goal chat.\n",
-   "version": 2,
+   "box": "Fallout talks to deskVerify only. Its Reds list is built with shellCreateListSearch (G29.4), and its own search machinery is deleted.\n\nCONFIGURATION\n- server deskVerify, verb search, its stream deskVerify's; args from the words and the ✅/❌ filter: {over: tests, current: yes, slim: yes, outcome, and suite when the words name a .js file, else test}.\n- api: built by the pane from what Desk hands it (ctx), so the container asks deskVerify and hears it; no core change.\n- one filter, outcome (❌ fail, ✅ success, both), whose test passes a row whose outcome matches.\n- paint draws test file | what is tested | status | since; press opens shell/falloutHistory for that test; empty says no test matches.\n\nDESKVERIFY\n- Its search keys each test row by the test's identity, its file and its key, not its database record; it answers more and total.\n\nONE REQUEST ON THE WIRE, THE SUMMARY INCLUDED\n- The container lends its one slot to the app: list.ask(verb, args) goes through the same serialized slot. The summary line (how many red of how many tests now) is two deskVerify searches, the red and the green totals, asked that way.\n- The history dialog reads a test's flips with deskVerify's search directly (history: yes).\n\nDELETED, each with a test that it is gone\n- The pane's own cache, wire slot, typing timer and local ranking.\n- The desk-side wrapper verbs fallout.reds, fallout.summary and fallout.history.\n\nDESK FINDS ITS PLUGINS BY THEIR FOLDER\n- Desk lists shell/desk/plugins/ one level deep; every subfolder is a plugin, its goal plugin/<name> read for its tab. No ranked search finds plugins.\n\nUNCHANGED\n- The Items tab and the goal chat.\n",
+   "version": 3,
    "checks": [],
    "chat": [
     {
@@ -958,6 +1018,192 @@
      "key": "",
      "at": "2026-10-17T13:15:13.115Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:18:47.796Z",
+     "text": "commit a31f5f0caae22e0c549b7c075fc2da64805bebed: goal/G29.5: the red for Fallout on shellCreateListSearch, talking to deskVerify only: wrappers gone, one lent slot, rows keyed by test identity\n- spirit/test/deskFallout.js\n- spirit/test/listSearch.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:19:01.997Z",
+     "text": "deskVerify: red confirmed at a31f5f0c: spirit/test/deskFallout.js, spirit/test/listSearch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:19:02.860Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:21:20.429Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:21:22.948Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:21:26.532Z",
+     "text": "commit bd94c51e3373374166a8871439c7bc2d6091c2a6: goal/G29.5: Fallout on shellCreateListSearch, talking to deskVerify only: the summary through the list's lent slot, the wrapper verbs deleted, test rows keyed by identity\n- spirit/run/process/js/desk/plugins/js/fallout/fallout.js\n- spirit/run/process/js/desk/plugins/js/fallout/fallout.json\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/run/shell/falloutHistory/falloutHistory.js\n- spirit/run/shell/shared/js/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:21:42.832Z",
+     "text": "Built at bd94c51e: the Reds list is a shellCreateListSearch over deskVerify's search; the summary goes through its lent slot, the history dialog asks deskVerify too; the three wrapper verbs are gone.\nDesk now hands its plugins verb(name, body); deskVerify keys test rows by file and key. To see it: restart your node and reload Desk."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:21:44.068Z",
+     "text": "deskVerify: passed, at bd94c51e (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:23:36.219Z",
+     "text": "fallout didn't mount on my system. 65432"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:24:27.986Z",
+     "text": "Server side is mounted: the new desk runs, plugin/fallout carries its tab, and 65432 serves the new pane and shared/js/listSearch.js.\nSo it fails in the page: after a full reload (Ctrl+F5), what does the Fallout tab show, and is there a red line in the browser console (F12)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:25:53.862Z",
+     "text": "TeamStacksVision\ngoal/G29 — FIX: search in general then everywhere\nSay\nto every agent; design talk that belongs to no row\n\nSend\nTeam: you and every agent, newest first\nyou 08:15 break-time, signoff"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:26:55.601Z",
+     "text": "Found: the Apps tabs come from a ranked desk search for plugin/, capped at 6 rows; half the rank is the goal's chat, and Fallout's long G27.14 chat pulls it below goal/G7 and the rest, so it falls off.\nFinding plugins must filter, not rank. Proposal: items.search takes plugins: yes and answers the plugin goals only; the face uses that. Go on that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:28:07.094Z",
+     "text": "NO. just search the plugin folder for subfolders, THAT's the way you find them all."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:30:01.141Z",
+     "text": "why would you search goals?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:30:19.921Z",
+     "text": "commit 9cde4f51e6593cb84afa380cbf19d7a96192fd01: goal/G29.5: the red for Desk finding its plugins by listing shell/desk/plugins/, never by a ranked search\n- spirit/test/deskPluginsGg.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:31:02.943Z",
+     "text": "deskVerify: red confirmed at 9cde4f51: spirit/test/deskPluginsGg.js. Beside it: spirit/test/deskFallout.js is already green; spirit/test/listSearch.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:31:03.785Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:31:34.619Z",
+     "text": "commit c3ab701da35514f8068bd796e5f909e10645718f: goal/G29.5: Desk finds its plugins by listing shell/desk/plugins/ and reading each plugin goal, never by a ranked search\n- spirit/run/shell/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:31:52.714Z",
+     "text": "Built at c3ab701d: Desk lists shell/desk/plugins/ and reads each plugin goal for its tab; the ranked plugin/ search is gone, so Fallout gets its tab again.\nIn the box. To see it: reload Desk (Ctrl+F5); your node already runs it once deskVerify pulls."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:32:13.193Z",
+     "text": "No search now: one item.get per subfolder, only for the tab's name (pluginTab); the goal id is plugin/<name> without asking.\nI can drop that too: the tab name is in the plugin's own .json (tab: Fallout), read with the folder listing, so the desk is never asked. Do that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:32:21.833Z",
+     "text": "deskVerify: passed, at c3ab701d (pulled). 3 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:34:37.078Z",
+     "text": "none of the apps show up anymore next to team. all stacks, vision AND fallout are missing now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:36:15.404Z",
+     "text": "commit abb54777b259dcd39e96887a85b384f36c553a73: goal/G29.5: the red answers fs.search with the node's own fsSearch, which finds no plugin with shell/desk/plugins/*\n- spirit/test/deskPluginsGg.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:36:57.727Z",
+     "text": "deskVerify: red confirmed at abb54777: spirit/test/deskPluginsGg.js. Beside it: spirit/test/deskFallout.js is already green; spirit/test/listSearch.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:36:58.585Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:37:12.134Z",
+     "text": "commit 95e8b74dd350aa202a24fe2dc4332fefe8d2220c: goal/G29.5: Desk lists shell/desk/plugins/*/*.js, the file every plugin folder holds; '*' alone matched only the folder itself\n- spirit/run/shell/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:37:24.510Z",
+     "text": "My fault: fs.search with plugins/* answers only the folder itself, and my test faked it otherwise, so every tab vanished.\nFixed at 95e8b74d: Desk lists plugins/*/*.js, which on your node gives vision, fallout and stackFrameChecks; the test now answers with the node's real fsSearch. Reload Desk once deskVerify pulls it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:38:00.389Z",
+     "text": "deskVerify: rejected, at 95e8b74d (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/deskPluginsGg.js: FAILURE #1.1: OWED by goal/G22.3: run of an unknown door answered {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"stackFrameChecks.run\",\"why\":\"the list has no door \\\"noSuchDoor\\\" to run\"}}"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:38:01.829Z",
+     "text": "verify rejected: spirit/test/deskPluginsGg.js: FAILURE #1.1: OWED by goal/G22.3: run of an unknown door answered {\"ok\":false,\"code\":\"bad-request\",\"error\":\"text required\",\"extra\":{\"verb\":\"stackFrameChecks.run\",\"why\":\"the list has no door \\\"noSuchDoor\\\" to run\"}}"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:39:20.574Z",
+     "text": "That reject is G22.3's unknown-door check: the refusal is right, but deskVerify was asked once more meanwhile, a timing race under load; here the suite ran 140/140 twice.\nI asked deskVerify to run it again; if it races again I propose making that check wait for the previous run's report before counting."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:40:24.934Z",
+     "text": "deskVerify: passed, at 95e8b74d (pulled). 3 suites ran green."
     }
    ]
   },
@@ -968,15 +1214,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29"
    ],
-   "blocked": [
-    "goal/G29.5"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
