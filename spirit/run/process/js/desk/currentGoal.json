@@ -1,5 +1,5 @@
 {
- "change": 65528,
+ "change": 65561,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -50,7 +50,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 8,
    "excluded": [],
    "live": [
     "claude-windows",
@@ -1965,23 +1965,21 @@
    "id": "goal/G27.8",
    "title": "Revise effort and time Limits in deskAgent",
    "goal": "goal/G27",
-   "status": "writing the red",
+   "status": "running",
    "with": "ollama agent node",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [
     {
@@ -1997,14 +1995,67 @@
    ],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "ollama agent node": "levant-local",
     "claude-windows": "claude-windows"
@@ -2012,8 +2063,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Revise effort and time Limits in deskAgent\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.8 chat, 2026-10-14/15):\nR1. Agents in deskAgent are not interrupted: no new time limit on the model's answer. The G19.7 ruling stands: only abort ends it; timeoutMs stays on studio reads and command runs only.\nR2. Effort is the control for how much work a task gets, like the low to high sliders in claude-code: an effort slider in the configuration, per api/model combination that supports it.\nR3. Max reply is managed so that answers are never too large to send to desk.\n\nFindings (read from code, spirit/run/process/js/deskAgent/deskAgent.js):\n1. No effort field is sent: askModelRound (about line 592) sends model, messages, tools, and the answer-length mark from withAnswerTokens (about line 571): max_completion_tokens on a plain OpenAI pair, max_tokens otherwise.\n2. The answer cap is already configured: answerTokens in the configuration (ANSWER_TOKENS, about line 147), with a default.\n3. The model call passes no timeout (about line 597); timeoutMs caps studio HTTP reads and command runs.\n4. Support for an effort field is not in the repo: OpenAI reasoning models and Anthropic thinking budgets are general knowledge to confirm against their docs; Unsloth Studio's accepted fields are read from the studio before any field is sent.\n\nDesign:\nA. Effort slider, per api/model, configured not guessed. A configuration table of api/model combinations with the request field each maps to (OpenAI: reasoning_effort; Anthropic: thinking budget; Studio: none until its fields are confirmed). Slider values: off (send nothing, today's behaviour), low, medium, high. A combination not in the table, or marked unsupported: slider disabled, nothing extra sent. Only the mapped field is added; the rest of the body is unchanged.\nB. No new timeout (R1).\nC. Max reply: the configured answer token cap per api is the one limit on the model side. A reply that finishes on the length limit (finish_reason length) is marked truncated in the chat or box text, never sent silently as if complete. No extra byte ceiling before the desk write: the desk already refuses an oversize line, and that refusal is the one gate (Andy, 2026-10-15).\nD. Steps once Go is given: read Studio's accepted fields and record them here; red tests first; build the table, the slider mapping and the truncated mark; verify.\n\nOpen for Andy: the slider default (off or medium).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, its configuration, spirit/run/shell/deskAgentRemote/deskAgentRemote.js (the slider). Needs Andy's Go and a file grant before any build.",
-   "version": 12,
+   "box": "Revise effort and time Limits in deskAgent\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.8 chat, 2026-10-14/15):\nR1. Agents in deskAgent are not interrupted: no new time limit on the model's answer. The G19.7 ruling stands: only abort ends it; timeoutMs stays on studio reads and command runs only.\nR2. Effort is the control for how much work a task gets, like the low to high sliders in claude-code: an effort slider in the configuration, per api/model combination that supports it.\nR3. Max reply is managed so that answers are never too large to send to desk.\nR4. A model search above the picker in the configure tab, with filter icons for the marks a model carries (desk-tested, vision, reasoning, audio). Each list offers only the filters that apply to it: an icon shows only when at least one model in the current list carries that mark.\n\nFindings (read from code, spirit/run/process/js/deskAgent/deskAgent.js):\n1. No effort field is sent: askModelRound (about line 592) sends model, messages, tools, and the answer-length mark from withAnswerTokens (about line 571): max_completion_tokens on a plain OpenAI pair, max_tokens otherwise.\n2. The answer cap is already configured: answerTokens in the configuration (ANSWER_TOKENS, about line 147), with a default.\n3. The model call passes no timeout (about line 597); timeoutMs caps studio HTTP reads and command runs.\n4. Support for an effort field is not in the repo: OpenAI reasoning models and Anthropic thinking budgets are general knowledge to confirm against their docs; Unsloth Studio's accepted fields are read from the studio before any field is sent.\n\nDesign:\nA. Effort slider, per api/model, configured not guessed. A configuration table of api/model combinations with the request field each maps to (OpenAI: reasoning_effort; Anthropic: thinking budget; Studio: none until its fields are confirmed). Slider values: off (send nothing, today's behaviour), low, medium, high. A combination not in the table, or marked unsupported: slider disabled, nothing extra sent. Only the mapped field is added; the rest of the body is unchanged.\nB. No new timeout (R1).\nC. Max reply: the configured answer token cap per api is the one limit on the model side. A reply that finishes on the length limit (finish_reason length) is marked truncated in the chat or box text, never sent silently as if complete. No extra byte ceiling before the desk write: the desk already refuses an oversize line, and that refusal is the one gate (Andy, 2026-10-15).\nE. Model search (R4): Remote-only, drawn from the marks the models answer already carries; no change to what deskAgent sends.\nD. Steps once Go is given: read Studio's accepted fields and record them here; red tests first; build the table, the slider mapping and the truncated mark; verify.\n\nThe slider defaults to medium (Andy, 2026-10-17).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, its configuration, spirit/run/shell/deskAgentRemote/deskAgentRemote.js (the slider). Needs Andy's Go and a file grant before any build.",
+   "version": 14,
    "checks": [
     {
      "number": "Q1",
@@ -2132,6 +2183,15 @@
      "kind": "T",
      "words": "Red test for effort and time limits",
      "test": "spirit/run/test/deskAgent/red.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "T12",
+     "kind": "T",
+     "words": "Red test for effort and time limits",
+     "test": "spirit/run/process/js/deskAgent/test/effortTimeLimits.test.js",
      "state": "open",
      "by": "",
      "at": ""
@@ -2395,6 +2455,36 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T23:46:57.244Z",
      "text": "cw: written. The box now has R4, the model search with filters that show only when the list carries the mark, and design point E: Remote-only, no change to what deskAgent sends."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:14:24.935Z",
+     "text": "cw, this green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:15:08.595Z",
+     "text": "cw: not green. One thing left: the effort slider default, off or medium.\nAlso: your R4, the model search, had dropped out of the box; restored as v13.\nThe item shows ten open T checks, T2 to T11, all \"Red test for effort and time limits\", and status \"writing the red\" with no Go on record."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T00:15:47.878Z",
+     "text": "it defaults to medium"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T00:16:09.366Z",
+     "text": "cw: written: the slider defaults to medium. Nothing is open in the box now; the item waits on your Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T00:17:01.827Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -2904,7 +2994,7 @@
    "title": "deskClient needs to manage more for agents/models",
    "goal": "goal/G27",
    "status": "done",
-   "with": "claude-windows",
+   "with": "",
    "buttons": [
     "close",
     "reopen"
@@ -2921,6 +3011,21 @@
    "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "spirit/run/process/js/deskClient/deskClient.js",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskClientNext.js",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskClientQuiet.js",
+     "by": "ollama agent node",
+     "core": false
+    },
     {
      "path": "spirit/test/deskClientStatus.js",
      "by": "claude-windows",
