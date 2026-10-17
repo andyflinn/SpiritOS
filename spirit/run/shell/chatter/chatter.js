@@ -70,30 +70,30 @@ function chSay(text) {
 // TYPED TEXT FINDS NAMES, NOT KEYS (Andy, goal/G4.10: "the search on top or the pane seem to search keys instead of
 // labels..."). The chatClerver knows keys only (G4.3), so a name is looked up in the node's book first
 // (contact.search), and the peers with a chat are kept to those keys.
+// THE ROWS CARRY THEIR NAMES (goal/G29.6): the pane is the shared list, which ranks what it holds by its words, so each
+// peer row carries the book's label for its key, json {name, owned, blocked, held}, from the same contact.search.
 function chPeersSearch(text) {
   var typed = String(text || '').trim();
-  var named = typed
-    ? spirit.core.ask('contact.search', { q: typed }).then(function (a) {
-      var keys = {};
-      ((a && a.body && a.body.items) || []).forEach(function (it) { if (it && it.key) keys[it.key] = true; });
-      return keys;
-    }, function () { return {}; })
-    : Promise.resolve(null);
-  return named.then(function (keys) {
+  var named = spirit.core.ask('contact.search', { q: typed }).then(function (a) {
+    var labels = {};
+    ((a && a.body && a.body.items) || []).forEach(function (it) { if (it && it.key) labels[it.key] = it.label; });
+    return labels;
+  }, function () { return {}; });
+  return named.then(function (labels) {
     // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
     return chAsk('peers.search', { text: '', since: '', before: '' }).then(function (body) {
-      if (keys) body.items = (body.items || []).filter(function (it) { return it && keys[it.key]; });
-      return body;
+      if (typed) body.items = (body.items || []).filter(function (it) { return it && labels[it.key]; });
+      return { body: body, labels: labels };
     });
-  }).then(function (body) {
-    var items = (body.items || []).map(function (it) {
+  }).then(function (got) {
+    var items = (got.body.items || []).map(function (it) {
       var row = {};
       try { row = JSON.parse(it.label || '{}'); } catch (e) { row = {}; }
       chRows[it.key] = row;
       if (chPane) chPane.mark(it.key, chWaiting(it.key) ? 'unanswered' : 'none');
-      return { key: it.key };
+      return got.labels[it.key] ? { key: it.key, label: got.labels[it.key] } : { key: it.key };
     });
-    return { items: items, more: !!body.more };
+    return { items: items, more: !!got.body.more };
   });
 }
 

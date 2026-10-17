@@ -100,15 +100,27 @@ if (missing.length) {
   test.fail(OWED + 'not every element file exists — the behaviour is owed with them');
 } else {
   const window = { spiritIconIndex: { choices: function () { return []; }, keyFor: function () { return ''; } }, spiritApiTreeIndex: { servers: function () { return []; }, verbs: function () { return []; } } };
+  // goal/G29.6: the contact selector is a wrapper around the shared list, which finds its parts by id; the page hands
+  // the same fake element for an id every time.
+  const byId = {};
+  const getElementById = function (id) { if (!byId[id]) { byId[id] = fakeElement('div'); byId[id].id = id; } return byId[id]; };
   const ctx = {
-    window: window, document: { createElement: fakeElement, body: fakeElement('body'), addEventListener: function () {} }, Event: FakeEvent, console: console,
+    window: window, document: { createElement: fakeElement, getElementById: getElementById, body: fakeElement('body'), addEventListener: function () {} }, Event: FakeEvent, console: console,
     spirit: { core: { util: { escapeHtml: spirit.core.util.escapeHtml }, const: { ICON: spirit.core.const.ICON },
       ask: function () { return Promise.resolve({ status: 200, body: { items: [] } }); },
       jobs: { api: function () { return Promise.resolve({ ok: true }); } } } },
   };
   ctx.self = ctx.window;
   let tripped = null;
-  try { vm.createContext(ctx); ['createIconSelector', 'createContactSelector', 'createAppServerSelector', 'createApiBranchSelector'].forEach(function (n) { vm.runInContext(src[n], ctx); }); } catch (e) { tripped = e; }
+  // goal/G29.6: as index.html loads them, the probability modules and the shared list (shell/shared/js/listSearch.js)
+  // come before contactSelector.js, which builds on window.spiritElements.shellCreateListSearch.
+  const before = ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'js', f); })
+    .concat([path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js')]);
+  try {
+    vm.createContext(ctx);
+    before.forEach(function (f) { vm.runInContext(fs.readFileSync(f, 'utf8'), ctx); });
+    ['createIconSelector', 'createContactSelector', 'createAppServerSelector', 'createApiBranchSelector'].forEach(function (n) { vm.runInContext(src[n], ctx); });
+  } catch (e) { tripped = e; }
   const E = window.spiritElements;
   if (!tripped && E && FOUR.every(function (n) { return typeof E[n] === 'function'; })) test.check('the four files load on the shell\'s globals alone and expose four functions');
   else test.fail(OWED + (tripped ? 'an element file tripped on load: ' + tripped.message : 'spiritElements exposes ' + JSON.stringify(E && Object.keys(E))));
@@ -117,21 +129,28 @@ if (missing.length) {
     // contactSelectorPane.js); what this suite keeps is that it still works as a control on the shell's globals.
     let root = null; let err = null;
     try { root = E.createContactSelector({ contacts: [{ key: 'k1', label: 'Bert' }, { key: 'k2', label: 'Carol' }], placeholder: 'who?' }); } catch (e) { err = e; }
-    const everything = function (n) { return [n].concat((n.children || []).reduce(function (a, c) { return a.concat(everything(c)); }, [])); };
+    // goal/G29.6: the rows are the shared list's markup, <tr data-key> strings in its list part (listsearch-<n>-list),
+    // the name in its own cell; a press reaches the list's click handler on the pane, which finds the row by data-key.
+    const paneOf = function () { return root ? (root.children || []).filter(function (c) { return /\bcontact-selector-pane\b/.test(c.className); })[0] : null; };
     pending = Promise.resolve().then(function () { return new Promise(function (r) { setImmediate(r); }); }).then(function () {
-      const rowsFor = function (key) { return root ? everything(root).filter(function (n) { return n.getAttribute && n.getAttribute('data-key') === key; }) : []; };
-      const named = root && everything(root).some(function (n) { return n.textContent === 'Bert'; });
-      if (!err && root && /contact-selector/.test(root.className) && named && rowsFor('k1').length && root.value === '') {
+      const pane = paneOf();
+      const pre = pane && /id="(listsearch-\d+-)list"/.exec(pane.innerHTML);
+      const listHtml = pre ? getElementById(pre[1] + 'list').innerHTML : '';
+      const rowHtml = function (key) { return (listHtml.match(new RegExp('<tr[^>]*data-key="' + key + '"[^>]*>[\\s\\S]*?</tr>')) || [''])[0]; };
+      const named = /<td[^>]*>Bert<\/td>/.test(rowHtml('k1'));
+      if (!err && root && /contact-selector/.test(root.className) && named && root.value === '') {
         test.check('a contact selector from given rows paints them, and answers nothing until a pick');
       } else test.fail(OWED + 'contact selector: ' + (err ? 'threw ' + err.message : 'className ' + JSON.stringify(root && root.className) + ', Bert drawn ' + named + ', value ' + JSON.stringify(root && root.value)));
-      const row = rowsFor('k1')[0];
-      if (row) {
+      if (pane && rowHtml('k1')) {
         let bubbled = 0;
         root.addEventListener('change', function () { bubbled += 1; });
-        row.dispatchEvent(new FakeEvent('click', { bubbles: true }));
-        if (root.value === 'k1' && root.row && root.row.label === 'Bert' && bubbled === 1) test.check('a pick sets root.value to the key and fires one bubbling change on the root');
+        const ev = new FakeEvent('click', { bubbles: true });
+        ev.target = { getAttribute: function (k) { return k === 'data-key' ? 'k1' : null; }, closest: function () { return null; } };
+        pane.dispatchEvent(ev);
+        // goal/G29.6: root.row is the row's object, its name the row's (a label that is not json is the name).
+        if (root.value === 'k1' && root.row && root.row.name === 'Bert' && bubbled === 1) test.check('a pick sets root.value to the key and fires one bubbling change on the root');
         else test.fail(OWED + 'after a pick: value ' + JSON.stringify(root.value) + ', row ' + JSON.stringify(root.row) + ', changes on the root ' + bubbled);
-      }
+      } else test.fail(OWED + 'no row k1 drawn to pick');
     });
   }
 }

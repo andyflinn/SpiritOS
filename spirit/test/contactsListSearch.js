@@ -186,6 +186,12 @@ const listHtml = function (p, m) {
   m.cfg.press({ name: 'pup', owned: true, blocked: false, held: false, key: 'K-pup' });
   if (root.value === 'K-pup' && changes.length === 1 && changes[0].bubbles) test.check('a press on a row sets value to its key and fires one bubbling change');
   else test.fail(OWED + 'after a press value is ' + short(root.value) + ', ' + changes.length + ' change(s)');
+  // goal/G4.14 stands: "the pane usually has a \"current\" which is the equivalent of selected in the drop-box".
+  const chosen = listHtml(p, m).list;
+  const pupNow = (chosen.match(/<tr[^>]*data-key="K-pup"[^>]*>[\s\S]*?<\/tr>/) || [''])[0];
+  const bertNow = (chosen.match(/<tr[^>]*data-key="K-bert"[^>]*>[\s\S]*?<\/tr>/) || [''])[0];
+  if (/class="label-cell current"/.test(pupNow) && !/current/.test(bertNow)) test.check('the chosen row alone is drawn current');
+  else test.fail(OWED + 'after the pick the rows read ' + short([pupNow, bertNow]));
 
   test.subHeading('9. callers with their own rows still work');
   const asks3 = [];

@@ -22,6 +22,8 @@
 //      written by presenceNode (its caller noted the route already).
 //   5. Contacts paints the dot from the proof: present true green, false red, no proof white; its title names the
 //      state as before (the age may follow later — not asserted).
+//      SINCE goal/G29.6 the book is the peer picker (contactSelector on the shared list), which draws green or white:
+//      present true green, false white with the absent title, no proof white. Red for absent is gone by design.
 // Suites asserting the old shape (presence[key] === true: presenceNode, presenceReconcile, presenceFeeding,
 // presenceWire and friends) go red on the build and are flipped to the proof by the builder — the handover.
 
@@ -96,17 +98,19 @@ function mountContacts(people) {
   const byId = {};
   function fakeElement(id) {
     let html = '';
-    const el = { id: id, value: '', textContent: '', style: {}, dataset: {}, children: [], listeners: {}, hidden: false,
+    const el = { id: id || '', value: '', textContent: '', style: {}, dataset: {}, children: [], listeners: {}, hidden: false, className: '',
       addEventListener: function (ev, fn) { (el.listeners[ev] = el.listeners[ev] || []).push(fn); },
+      fire: function (ev, arg) { (el.listeners[ev] || []).forEach(function (fn) { fn(arg || {}); }); },
+      dispatchEvent: function (event) { el.fire(event.type, event); return true; }, contains: function () { return true; },
       appendChild: function (c) { el.children.push(c); return c; }, focus: function () {} };
     Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
     return el;
   }
-  const doc = { byId: byId, activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: fakeElement };
+  const doc = { byId: byId, activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); } };
   const fakeFetch = function (url, init) {
     const sent = (function () { try { return JSON.parse((init && init.body) || '{}'); } catch (e) { return {}; } })();
     let answer;
-    if (sent.verb === 'contact.search') { const r = hubModule.searchPeople(people, sent.q); answer = { ok: true, items: r.items, more: r.more, selfTail: null }; }
+    if (sent.verb === 'contact.search') { const r = hubModule.searchPeople(people, sent.q, sent); answer = { ok: true, items: r.items, more: r.more, selfTail: null }; }
     else if (sent.verb === 'contact.senders') answer = { ok: true, policy: 'silent' };
     else answer = { ok: true, people: people, selfTail: null, matches: [] };
     const t = JSON.stringify(answer);
@@ -123,8 +127,18 @@ function mountContacts(people) {
       jobs: { subscribe: function (s) { subscriber = s; return function () {}; } },
     },
   };
+  // THE PICKER AS THE SHELL GIVES IT (goal/G29.6): the book is a contactSelector pane on the shared list, so the page
+  // loads the probability modules, listSearch.js and contactSelector.js, and the app gets the selector as api.ui.elements.
+  const RUN = path.join(__dirname, '..', 'run');
+  const win = {};
+  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+  });
+  new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(doc, win);
+  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'))(shellSpirit, doc, win);
   new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, {}, fakeFetch);
   const api = {
+    ui: { elements: { createContactSelector: win.spiritElements.createContactSelector } },
     verb: function (name, args) {
       const payload = { verb: String(name) };
       if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
@@ -138,14 +152,16 @@ function mountContacts(people) {
   return { doc: doc, feed: function (job) { if (subscriber && subscriber.onUpdate) subscriber.onUpdate(job); } };
 }
 function person(key, label) { return { publicKey: key, publicLabel: label, caption: label, myLabel: '', choice: 'added', blocked: false, present: null }; }
-// The presence cell of one row: the first icon cell after the row's opening tag.
+// The presence cell of one row in the picker's list (goal/G29.6: <tr data-key>, cells ★, presence, name, status): the
+// second cell, its glyph and its title.
 function dotOf(doc, key) {
-  const html = doc.getElementById('contacts-tbody').innerHTML;
-  const i = html.indexOf('data-contact-row="' + key + '"');
+  const html = doc.getElementById('listsearch-1-list').innerHTML;
+  const i = html.indexOf('data-key="' + key + '"');
   if (i === -1) return '';
   const row = html.slice(i, html.indexOf('</tr>', i));
-  const m = row.match(/<td class="icon-cell" title="([^"]*)">([^<]*)<\/td>/);
-  return m ? m[2] + ' | ' + m[1] : '';
+  const cells = row.match(/<td[^>]*>[^<]*<\/td>/g) || [];
+  const m = /<td class="icon-cell"(?: title="([^"]*)")?>([^<]*)<\/td>/.exec(cells[1] || '');
+  return m ? m[2] + ' | ' + (m[1] || '') : '';
 }
 
 test.startTest('goal/G2.9: timestamped presence-proof per ID, sent to the browser and persisted alike');
@@ -216,8 +232,10 @@ test.startTest('goal/G2.9: timestamped presence-proof per ID, sent to the browse
   await settled();
   const ICON = spirit.core.const.ICON;
   const db = dotOf(page.doc, BERT), dc = dotOf(page.doc, CAROL), dd = dotOf(page.doc, DAVE);
-  if (db.indexOf(ICON.GREEN_CIRCLE) === 0 && dc.indexOf(ICON.RED_CIRCLE) === 0 && dd.indexOf(ICON.WHITE_CIRCLE) === 0) {
-    test.check('bert green, carol red, dave white — from proofs, not booleans');
+  // goal/G29.6: the picker draws green or white, so carol's absent proof is white; the red dot is gone by design, and
+  // what she was said to be rides on the title below.
+  if (db.indexOf(ICON.GREEN_CIRCLE) === 0 && dc.indexOf(ICON.WHITE_CIRCLE) === 0 && dd.indexOf(ICON.WHITE_CIRCLE) === 0) {
+    test.check('bert green, carol white (absent), dave white — from proofs, not booleans');
   } else test.fail(OWED + 'dots from proofs: bert ' + describe(db) + ', carol ' + describe(dc) + ', dave ' + describe(dd));
   if (/present/.test(db) && /absent/.test(dc)) test.check('and the titles still name the state');
   else test.fail(OWED + 'titles: bert ' + describe(db) + ', carol ' + describe(dc));

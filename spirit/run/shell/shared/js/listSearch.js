@@ -53,13 +53,20 @@
     var again = false;
     var off = null;
 
-    function el(name) { return document.getElementById(pre + name); }
+    // ITS PARTS FOUND INSIDE IT FIRST (goal/G29.6): an element made before the app places it on the page (the contact
+    // selector is) is not in the document yet, so the document cannot find what it holds.
+    function el(name) {
+      var inside = typeof container.querySelector === 'function' ? container.querySelector('#' + pre + name) : null;
+      return inside || document.getElementById(pre + name);
+    }
     function words() { var t = el('text'); return t ? String(t.value || '').trim() : ''; }
+    function cachedRows() { return Object.keys(byKey).map(function (k) { return byKey[k].row; }); }
 
     // THE LAYOUT, the same everywhere: filters, the search box with its clear button inside on the right, the search
-    // button, the count line, the list.
+    // button, the count line, the list. A FILTER SHOWS WHEN IT HAS SOMETHING TO SAY (goal/G29.6; Andy: "owned, blocked,
+    // held, (if our list has any)"): one with when(rows) is drawn only while that answers true for the rows held.
     function filterHtml() {
-      return filters.map(function (f) {
+      return filters.filter(function (f) { return typeof f.when !== 'function' || !!f.when(cachedRows()); }).map(function (f) {
         return '<span data-filter="' + esc(f.name) + '">' + (f.choices || []).map(function (c) {
           var on = values[f.name] === c.value;
           return '<button type="button" data-filter="' + esc(f.name) + '" data-value="' + esc(c.value) + '" style="margin-right:1em;' +
@@ -123,6 +130,8 @@
         bucket.seatFor(0, byKey[key]);
       });
       last = { total: Number(answer && answer.total) || 0, more: !!(answer && answer.more), error: '' };
+      var strip = el('filters');
+      if (strip && filters.some(function (f) { return typeof f.when === 'function'; })) strip.innerHTML = filterHtml();
     }
 
     // THE ONE SLOT ON THE WIRE: the list's search first, with the words as they stand when it goes; then what the app
@@ -191,6 +200,9 @@
 
     return {
       refresh: function () { ask(); },
+      // ONE ROW CHANGED BY THE APP, NOT THE SERVER (goal/G29.6: "The app repaints one row when a peer's presence or
+      // status changes, without asking the server."): the list drawn again from what it holds.
+      redraw: function () { draw(); },
       // THE SLOT LENT TO THE APP (goal/G29.5): another call of the app to the same server, through the same one slot, so
       // nothing of the app's is ever two on the wire; it answers the server's body.
       ask: function (verb, args) { return lend(verb, args); },

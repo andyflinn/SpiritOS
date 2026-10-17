@@ -2136,7 +2136,7 @@ contactBook.syncMarks(ROOT_DIR);
   introSpector.claim(loopbackVerbs, 'contact', 'hub.js', {
     // The book, searched: peer.list is gone (puppets/G2). Never asks a
     // relay; that is peer.search's job.
-    'contact.search': { request: { q: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, selfTail: '' }, handler: proxyVerb(function (b) { return hub.contactSearch(b); }) },
+    'contact.search': { request: { q: '', owned: '', blocked: '', held: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, selfTail: '' }, handler: proxyVerb(function (b) { return hub.contactSearch(b); }) },
     'contact.get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
     'contact.block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
     'contact.unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },

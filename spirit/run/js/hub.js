@@ -83,6 +83,10 @@ const peerStats = require('./peerStats');
 // them cannot drift.
 const nodeCard = require('./nodeCard');
 const limits = require('./limits');
+// goal/G29.6: contact.search ranks with the probability modules.
+const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+const MAX_SEARCHED_PEOPLE = 1000;
 // Every label checked at one point (Andy, 2026-10-03, goal/G4.16: "all
 // occurrences of label and description must validate at a central
 // point"). Empty is not a label here but its absence: clearing your own
@@ -260,33 +264,45 @@ function bytesHeldByPeer(rootDir) {
 // ── THE BOOK'S LABEL AND ITS SEARCH, PURE (contact.search, puppets/G2) ─
 //
 // Module level and exported so a suite's fake node answers with exactly
-// what the node would, not a copy of it. The label is what the Contacts
-// table showed: the name I gave them or theirs, the key's ending where
-// two read alike or there is no name, and the state as a word (Andy's
-// go: 'Bert — blocked').
-// ' — owned' (goal/G19.8): a node whose card names this one as its owner, so the shell finds them by searching the
-// word, as 'blocked' and 'waiting' are found.
-var CONTACT_STATE = { blocked: ' — blocked', held: ' — waiting', owned: ' — owned' };
+// what the node would, not a copy of it.
+//
+// THE LABEL IS JSON (goal/G29.6, contact.search changed by Andy's grant: "the changed verb is granted."): {name, owned,
+// blocked, held}. The name is the one the Contacts table always showed: the name I gave them or theirs, the key's
+// ending where two read alike or there is no name. The states are fields, never words in the name (Andy: "no, just a
+// star in the one column, that says it all."); owned is goal/G19.8's: a node whose signed card names this one its owner.
 function contactLabel(p) {
   var name = String(p.myLabel || '').trim() || String(p.publicLabel || '').trim();
   var tail = p.tail ? '…' + p.tail : '';
-  var label = name ? (p.ambiguous && tail ? name + ' ' + tail : name) : (tail || '(no name)');
-  if (p.blocked) label += CONTACT_STATE.blocked;
-  else if (p.held) label += CONTACT_STATE.held;
-  else if (p.owned) label += CONTACT_STATE.owned;
-  return label;
-}
-function searchPeople(people, q) {
-  var s = require('./searchBucket').createSearch({
-    query: q,
-    // The name as I wrote it and as they did, and the state word.
-    getLabelStringFromIncomingObject: function (p) {
-      return contactLabel(p) + ' ' + String(p.publicLabel || '') + ' ' + String(p.myLabel || '');
-    },
-    extractKeyAndLabelFromRow: function (p) { return { key: p.publicKey, label: contactLabel(p) }; },
+  return JSON.stringify({
+    name: name ? (p.ambiguous && tail ? name + ' ' + tail : name) : (tail || '(no name)'),
+    owned: p.owned === true, blocked: p.blocked === true, held: p.held === true,
   });
-  for (var i = 0; i < (people || []).length; i += 1) { if (!s.offer(people[i])) break; }
-  return s.getResult();
+}
+// RANKED WITH THE PROBABILITY MODULES (goal/G29.6; Andy: "so hub and relay will use probability search from now on."):
+// every person scored by probabilityStringObjectMatch against the words, over the names I wrote and they did; no words
+// (or '*') is everybody, in the book's order. owned, blocked and held are yes-filters beside q (Andy: "why would owned
+// not be a binary filter, owned or not?"). The answer is a probabilityBucket, cut in bytes to one plaintext.
+var CONTACT_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false, selfTail: '' }), 'utf8');
+function searchPeople(people, q, filters) {
+  var words = String(q == null ? '' : q).trim();
+  if (/^\*+$/.test(words)) words = '';
+  var f = filters || {};
+  var bucket = createProbabilityBucket(MAX_SEARCHED_PEOPLE);
+  var seen = 0;
+  var cut = false;
+  for (var i = 0; i < (people || []).length; i += 1) {
+    var p = people[i];
+    if (f.owned === 'yes' && p.owned !== true) continue;
+    if (f.blocked === 'yes' && p.blocked !== true) continue;
+    if (f.held === 'yes' && p.held !== true) continue;
+    if (seen >= MAX_SEARCHED_PEOPLE) { cut = true; break; }
+    seen += 1;
+    var score = words ? probabilityStringObjectMatch(words, { name: JSON.parse(contactLabel(p)).name, publicLabel: String(p.publicLabel || ''), myLabel: String(p.myLabel || '') }) : 0;
+    if (words && !(score > 0)) continue;
+    bucket.seatFor(score, { key: p.publicKey, label: contactLabel(p) });
+  }
+  var r = bucket.serialize(null, CONTACT_SEARCH_ROOM);
+  return { items: r.items, more: r.more || cut };
 }
 
 function buildPeople(rootDir) {
@@ -1409,12 +1425,12 @@ function createHub(rootDir) {
   //
   // peer.list answered the whole book at once. contact.search walks the
   // same book (buildPeople, sorted by caption, which is the scan order)
-  // and answers key/label pairs; it never asks a relay. The label is what
-  // the table showed: the name, the key's ending where two names read
-  // alike or there is no name, and the state as a word, so searching
-  // 'blocked' or 'waiting' finds exactly those people.
+  // and answers key/label pairs; it never asks a relay. Since goal/G29.6
+  // the label is json {name, owned, blocked, held} (contactLabel), the
+  // words are ranked by the probability modules, and owned, blocked and
+  // held are yes-filters beside q (searchPeople).
   function contactSearch(body) {
-    var r = searchPeople(buildPeople(rootDir), body && body.q);
+    var r = searchPeople(buildPeople(rootDir), body && body.q, body);
     var self = auth.loadIdentity(rootDir);
     return { ok: true, status: 200, items: r.items, more: r.more,
       // One fact beside the pairs, never a row: what to tell somebody

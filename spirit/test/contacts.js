@@ -32,16 +32,21 @@ const JOHN_B = 'MCowBQYDK2VwAyEAjohnjohnjohnjohnjohnjohnjohnbbbjoh=';
 function fakeElement(id) {
   let html = '';
   const el = {
-    id: id,
+    id: id || '',
     value: '',
     textContent: '',
     style: {},
     dataset: {},
     children: [],
     listeners: {},
+    hidden: false,
+    className: '',
     addEventListener: function (event, fn) { (el.listeners[event] = el.listeners[event] || []).push(fn); },
     appendChild: function (child) { el.children.push(child); return child; },
     fire: function (event, arg) { (el.listeners[event] || []).forEach(function (fn) { fn(arg || {}); }); },
+    // The picker's root says a pick with a real `change` Event (goal/G29.6), and asks contains() for an outside click.
+    dispatchEvent: function (event) { el.fire(event.type, event); return true; },
+    contains: function () { return true; },
     click: function () { el.fire('click'); },
   };
   Object.defineProperty(el, 'innerHTML', {
@@ -58,8 +63,44 @@ function fakeDocument() {
     byId: byId,
     activeElement: null,
     getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); },
-    createElement: fakeElement,
+    createElement: function () { return fakeElement(''); },
   };
+}
+
+// THE PICKER AS THE SHELL GIVES IT (goal/G29.6). The book is a contactSelector pane on the shared list
+// (shell/js/contactSelector.js on shell/shared/js/listSearch.js), so the page loads the probability modules, the list
+// and the selector, and the app is handed the selector as api.ui.elements — what shell.js does in a real page.
+function loadPicker(doc, shellSpirit) {
+  const win = {};
+  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
+    new Function('window', 'module', fs.readFileSync(path.join(RUN_DIR, 'js', f), 'utf8'))(win, undefined);
+  });
+  new Function('document', 'window', fs.readFileSync(path.join(RUN_DIR, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(doc, win);
+  const made = [];
+  const real = win.spiritElements.shellCreateListSearch;
+  win.spiritElements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
+  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN_DIR, 'shell', 'js', 'contactSelector.js'), 'utf8'))(shellSpirit, doc, win);
+  return { win: win, made: made };
+}
+
+// The book's rows as the picker drew them: the list of the newest picker this page made.
+function book(app) {
+  const m = app.made[app.made.length - 1];
+  const pre = m ? (/id="(listsearch-\d+-)text"/.exec(m.el.innerHTML) || [])[1] : '';
+  return pre ? app.doc.getElementById(pre + 'list').innerHTML : '';
+}
+// One person's <tr data-key> in the book, and its four cells: ★, presence, name, status.
+function bookRow(app, key) {
+  const html = book(app);
+  const i = html.indexOf('data-key="' + key + '"');
+  return i === -1 ? '' : html.slice(i, html.indexOf('</tr>', i));
+}
+function bookCells(app, key) { return bookRow(app, key).match(/<td[^>]*>[\s\S]*?<\/td>/g) || []; }
+// A press on a row, as the shared list hears it: a click its pane delegates, landing inside <tr data-key>.
+function pick(app, key) {
+  const m = app.made[app.made.length - 1];
+  const tr = { getAttribute: function (n) { return n === 'data-key' ? key : null; } };
+  m.el.fire('click', { target: { getAttribute: function () { return null; }, closest: function (s) { return s === '[data-key]' ? tr : null; } } });
 }
 
 // What a click hands a delegated listener: the element it landed on,
@@ -149,7 +190,8 @@ function mountApp(options) {
       const people = opts.people || [];
       let answer;
       if (verb === 'contact.search') {
-        const r = hubModule.searchPeople(people, sent.q);
+        // The filters ride beside q (goal/G29.6), and the fake hands them on as the node does.
+        const r = hubModule.searchPeople(people, sent.q, sent);
         answer = { ok: true, items: r.items, more: r.more, selfTail: opts.selfTail || null };
       } else {
         const person = people.filter(function (p) { return p.publicKey === sent.key; })[0];
@@ -232,6 +274,7 @@ function mountApp(options) {
     },
   };
 
+  const picker = loadPicker(doc, shellSpirit);
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   new Function('spirit', 'document', 'window', 'fetch', src)(shellSpirit, doc, {}, fakeFetch);
 
@@ -316,10 +359,12 @@ function mountApp(options) {
       },
       saveFile: function (name, content) { store[name] = content; return Promise.resolve(); },
     },
+    // The shell's elements (goal/G29.6): the book is the contact selector.
+    ui: { elements: { createContactSelector: picker.win.spiritElements.createContactSelector } },
   };
   behavior.mount(container, api, null);
   return {
-    doc: doc, log: log, container: container, behavior: behavior, store: store,
+    doc: doc, log: log, container: container, behavior: behavior, store: store, made: picker.made,
     launched: launched, called: called, posts: posts,
     answers: function (result) { answer = result; },
     // A SECOND MOUNT OF THE SAME LOADED SCRIPT, which is what walking
@@ -541,8 +586,9 @@ function listsTheBook() {
   });
 
   return settle().then(function () {
-    const rows = el(app, 'contacts-tbody').innerHTML;
-    if (/bert/.test(rows) && /carol/.test(rows) && /dave/.test(rows)) {
+    // goal/G29.6: the book is the picker's list, a <tr data-key> per person.
+    const rows = book(app);
+    if ([BERT, CAROL, DAVE].every(function (k) { return rows.indexOf('data-key="' + k + '"') !== -1; })) {
       test.check('contacts, somebody waiting and somebody refused are all listed');
     } else {
       test.fail('rows: ' + rows);
@@ -573,11 +619,16 @@ function listsTheBook() {
     // height") — the mark column is empty on most rows, and a
     // content-sized one would be a few pixels wide until somebody is
     // held, then shift every name in the table sideways.
-    // The state rides in the label as a word now (puppets/G2, Andy's go),
-    // drawn muted beside the name, and the mark still reads off it.
-    if (rows.indexOf('<td class="icon-cell">' + ICONS.NO + '</td><td class="label-cell">dave <span class="muted">— blocked</span></td>') !== -1 &&
-        rows.indexOf('<td class="icon-cell">' + ICONS.WAITING + '</td><td class="label-cell">carol <span class="muted">— waiting</span></td>') !== -1 &&
-        rows.indexOf(ICONS.ROLODEX) === -1) {
+    // SINCE goal/G29.6 the label is json {name, owned, blocked, held} and
+    // the mark is the picker's status column, the cell after the name
+    // (CONTACTS_STATUSES, contactsStatusOf); the state word beside the
+    // name is gone by design — "A star says it all". Dave is held AND
+    // blocked, and blocked is the one that shows.
+    const daveCells = bookCells(app, DAVE);
+    const carolCells = bookCells(app, CAROL);
+    if (daveCells[2] === '<td class="label-cell">dave</td>' && daveCells[3] === '<td class="icon-cell">' + ICONS.NO + '</td>' &&
+        carolCells[2] === '<td class="label-cell">carol</td>' && carolCells[3] === '<td class="icon-cell">' + ICONS.WAITING + '</td>' &&
+        rows.indexOf(ICONS.ROLODEX) === -1 && !/— blocked|— waiting/.test(rows)) {
       test.check('and refused wears the plain no here, where the rolodex would point at itself');
     } else {
       test.fail('marks: ' + rows);
@@ -610,12 +661,17 @@ function listsTheBook() {
     //
     // So: drop whitespace and the string joins, then look for the run of
     // cells. What survives is the markup as the browser receives it.
-    const flat = src.replace(/\s+/g, '').replace(/'\+'/g, '');
-    if (flat.indexOf('<thclass="icon-cell"></th><thclass="icon-cell"></th><th>Label</th>') !== -1 &&
-        flat.indexOf('<thclass="icon-cell"></th><thclass="icon-cell"></th><thclass="icon-cell"></th><th>Label</th>') === -1) {
-      test.check('the header is two fixed glyph columns and one name');
+    // SINCE goal/G29.6 THE BOOK HAS NO HEADER OF ITS OWN: its columns
+    // are the picker's, fixed ★ and presence, the name, then the status
+    // column — glyph columns still unheaded, still `icon-cell`. So this
+    // reads the rows as drawn rather than a <thead> in this file's source.
+    const shape = [BERT, CAROL, DAVE].map(function (k) {
+      return bookCells(app, k).map(function (c) { return /^<td class="([^"]*)"/.exec(c)[1]; }).join(',');
+    });
+    if (shape.every(function (s) { return s === 'icon-cell,icon-cell,label-cell,icon-cell'; }) && book(app).indexOf('<th') === -1) {
+      test.check('every row is ★, the dot, one name and the mark: three fixed glyph columns and one name, none headed');
     } else {
-      test.fail('header: ' + (/<tr>(<th[^>]*>[^<]*<\/th>)+<\/tr>/.exec(flat) || [''])[0]);
+      test.fail('row shapes: ' + JSON.stringify(shape));
     }
 
     // A column added is two numbers to keep in step: the header and every
@@ -658,8 +714,10 @@ function listsTheBook() {
     // `caption` is the node's own answer (contactBook.labelForKey): mine if I
     // set one, theirs otherwise. Bert has been renamed, so his cell shows
     // MINE; carol has not, so hers shows HERS — one column, neither blank.
+    // goal/G29.6: the name cell is row.name, the label json's, with no
+    // state word after it.
     if (rows.indexOf('<td class="label-cell">Bertie</td>') !== -1 &&
-        rows.indexOf('<td class="label-cell">carol <span class="muted">— waiting</span></td>') !== -1 &&
+        rows.indexOf('<td class="label-cell">carol</td>') !== -1 &&
         rows.indexOf('<td class="label-cell">bert</td>') === -1) {
       test.check('one name column: mine for them where I chose one, theirs where I did not');
     } else {
@@ -712,7 +770,9 @@ function aRowOpensThePerson() {
   });
 
   return settle().then(function () {
-    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', CAROL) });
+    // goal/G29.6: a press on the picker's row; the picker says `change`
+    // and its value is the key.
+    pick(app, CAROL);
 
     // The KEY alone. The dialog re-fetches its row, because the counters
     // move while the screen is open and a row captured at launch would
@@ -736,8 +796,8 @@ function aRowOpensThePerson() {
     // Nothing expands in place any more. The old panel put a six-fact
     // bubble and a form inside a colspan="4" — the widest thing on the
     // page inside the narrowest.
-    const rows = el(app, 'contacts-tbody').innerHTML;
-    if (rows.indexOf('job-log-row') === -1 && rows.indexOf('fact-row') === -1 &&
+    const rows = book(app);
+    if (rows && rows.indexOf('job-log-row') === -1 && rows.indexOf('fact-row') === -1 &&
         rows.indexOf('contacts-label-input') === -1) {
       test.check('and no row expands in place, so the table keeps its shape');
     } else {
@@ -755,7 +815,8 @@ function refreshesWhenTheDialogChangedSomething() {
   const app = mountApp({ people: people });
 
   return settle().then(function () {
-    const before = el(app, 'contacts-tbody').innerHTML;
+    // goal/G29.6: the mark is the picker's status cell, the fourth.
+    const before = bookCells(app, CAROL)[3] || '';
     if (before.indexOf(spirit.core.const.ICON.WAITING) !== -1) {
       test.check('carol is listed as waiting');
     } else {
@@ -768,14 +829,15 @@ function refreshesWhenTheDialogChangedSomething() {
     people[0].held = true;
     people[0].blocked = true;
     app.answers({ changed: true, key: CAROL });
-    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', CAROL) });
+    const asked = posted(app, 'contact.search').length;
+    pick(app, CAROL);
 
     return settle().then(function () {
-      const after = el(app, 'contacts-tbody').innerHTML;
-      if (after.indexOf(spirit.core.const.ICON.NO) !== -1) {
-        test.check('and an answer saying something changed re-reads the book, so the mark is right');
+      const after = bookCells(app, CAROL)[3] || '';
+      if (after.indexOf(spirit.core.const.ICON.NO) !== -1 && posted(app, 'contact.search').length > asked) {
+        test.check('and an answer saying something changed asks the book again, so the mark is right');
       } else {
-        test.fail('after: ' + after);
+        test.fail('after: ' + after + ', contact.search asked ' + (posted(app, 'contact.search').length - asked) + ' more time(s)');
       }
     });
   });
@@ -790,11 +852,14 @@ function saysNothingWhenNothingHappened() {
     dialogResult: null,
   });
   return settle().then(function () {
-    const reads = app.log.filter(function (c) { return /peer.list/.test(String(c.body || '')); }).length;
-    el(app, 'contacts-tbody').fire('click', { target: target('data-contact-row', CAROL) });
+    // goal/G29.6: the book is read by contact.search (peer.list, which
+    // this counted, is asked by nobody any more, so counting it passed
+    // whatever happened).
+    const reads = posted(app, 'contact.search').length;
+    pick(app, CAROL);
     return settle().then(function () {
-      const after = app.log.filter(function (c) { return /peer.list/.test(String(c.body || '')); }).length;
-      if (after === reads) {
+      const after = posted(app, 'contact.search').length;
+      if (reads > 0 && app.called.length === 1 && after === reads) {
         test.check('and a dialog answering null costs the table nothing');
       } else {
         test.fail('re-read on an empty result: ' + reads + ' then ' + after);
@@ -1283,22 +1348,22 @@ function aMemberSaysSoOnTheRow() {
   });
 
   return settle().then(function () {
-    const out = el(app, 'contacts-tbody').innerHTML;
+    const out = book(app);
     const rowFor = function (name) {
       return out.split('<tr').filter(function (r) { return r.indexOf(name) !== -1; })[0] || '';
     };
 
-    if (out.indexOf(spirit.core.const.ICON.LOCKED) === -1) {
+    if (/Cruella/.test(out) && out.indexOf(spirit.core.const.ICON.LOCKED) === -1) {
       test.check('no row carries a lock, even one older code left memberOf on');
     } else {
       test.fail('a lock was drawn: ' + rowFor('Cruella'));
     }
 
-    // Three cells a row: the status dot, the mark, the name — matching
-    // the header's two glyph columns and one name.
+    // Four cells a row since goal/G29.6, the picker's: ★, the dot, the
+    // name, the mark — and still no lock among them.
     const cells = rowFor('Cruella').split('<td').length - 1;
-    if (cells === 3 && !/hold a seat/.test(out)) {
-      test.check('three cells a row, and no seat is named anywhere');
+    if (cells === 4 && !/hold a seat/.test(out)) {
+      test.check('four cells a row, and no seat is named anywhere');
     } else {
       test.fail('cells=' + cells + ' row: ' + rowFor('Cruella'));
     }
@@ -1553,31 +1618,32 @@ function theHandleColumnStillIdentifies() {
   });
 
   return settle().then(function () {
-    const rows = el(app, 'contacts-tbody').innerHTML;
-    // The ending is muted now: it is the disambiguator, not part of the
-    // name, and in one column with no Handle beside it the eye needs the
-    // two told apart.
-    if (/john <span class="muted">…aaajoh=<\/span>/.test(rows) &&
-        /john <span class="muted">…bbbjoh=<\/span>/.test(rows)) {
+    const rows = book(app);
+    // SINCE goal/G29.6 the ending is part of the name the node sends
+    // (hub.contactLabel: "john …aaajoh=" for a row it called ambiguous),
+    // and the picker draws row.name as plain text: the muted span is gone
+    // by design, the ending that tells them apart is not.
+    if (bookCells(app, JOHN_A)[2] === '<td class="label-cell">john …aaajoh=</td>' &&
+        bookCells(app, JOHN_B)[2] === '<td class="label-cell">john …bbbjoh=</td>') {
       test.check('two people behind one word are told apart by the end of the key');
     } else {
       test.fail('ambiguous rows: ' + rows);
     }
 
-    // `caption` falls back to the whole key for somebody who claimed no
-    // handle, so the cell shows the ENDING rather than 44 characters —
-    // and it is muted, like every other ending.
-    if (/<td class="label-cell">[^<]*<span class="muted">…lcaro=<\/span><\/td>/.test(rows) ||
-        /<td class="label-cell"><span class="muted">\(no name\)<\/span><\/td>/.test(rows)) {
+    // Somebody who claimed no handle gets the ENDING rather than 44
+    // characters or a blank (hub.contactLabel), plain since goal/G29.6.
+    const nameless = bookCells(app, CAROL)[2] || '';
+    if (nameless === '<td class="label-cell">…lcaro=</td>' || nameless === '<td class="label-cell">(no name)</td>') {
       test.check('and a contact who never claimed a handle is not a blank cell');
     } else {
       test.fail('nameless row: ' + rows);
     }
 
     // The whole key is never in a cell — it is 44 characters and it was
-    // what the old caption fell back to. It stays in data-contact-row,
-    // because the row has to say whose panel it opens.
-    if (rows.indexOf('<td>' + CAROL) === -1 && rows.indexOf('data-contact-row="' + CAROL + '"') !== -1) {
+    // what the old caption fell back to. It stays on the row as data-key
+    // (goal/G29.6; data-contact-row before), because a pick has to say
+    // whose screen it opens.
+    if (!/<td[^>]*>[^<]*MCowBQYDK2VwAyEA/.test(rows) && rows.indexOf('data-key="' + CAROL + '"') !== -1) {
       test.check('and never the whole key, which is what the caption used to fall back to');
     } else {
       test.fail('whole key in a cell: ' + rows);
@@ -1608,13 +1674,17 @@ function theDotColumn() {
   });
   const ICONS = spirit.core.const.ICON;
 
-  function rows() { return el(app, 'contacts-tbody').innerHTML; }
+  function rows() { return book(app); }
   function dotFor(key) {
-    // The FIRST cell of that person's row, which is what "leftmost"
-    // means and is the only thing a person reading down the page sees.
-    const row = new RegExp('data-contact-row="' + key.replace(/[+/=]/g, '\\$&') +
-      '"><td[^>]*>([^<]*)</td>').exec(rows());
-    return row ? row[1] : '(no row)';
+    // SINCE goal/G29.6 the dot is the picker's presence cell, the second:
+    // the ★ column stands left of it (the picker's fixed columns).
+    const cell = bookCells(app, key)[1];
+    const m = cell && /^<td[^>]*>([^<]*)<\/td>$/.exec(cell);
+    return m ? m[1] : '(no row)';
+  }
+  function dotTitle(key) {
+    const m = /^<td[^>]* title="([^"]*)"/.exec(bookCells(app, key)[1] || '');
+    return m ? m[1] : '';
   }
 
   return settle().then(function () {
@@ -1633,16 +1703,20 @@ function theDotColumn() {
     table[BERT] = true;
     table[CAROL] = false;
     app.presence(table);
+    // Read now, while both are in the payload; asserted below.
+    const titles = { bert: dotTitle(BERT), carol: dotTitle(CAROL) };
 
     if (dotFor(BERT) === ICONS.GREEN_CIRCLE) {
       test.check('a key a relay says is present goes green');
     } else {
       test.fail('bert: ' + dotFor(BERT));
     }
-    if (dotFor(CAROL) === ICONS.RED_CIRCLE) {
-      test.check('a key a relay says is absent goes red');
+    // goal/G29.6: the picker draws green or white, so red for absent is
+    // gone by design; what the relay said rides on the cell's title.
+    if (dotFor(CAROL) === ICONS.WHITE_CIRCLE && /^absent/.test(dotTitle(CAROL))) {
+      test.check('a key a relay says is absent is white, its title saying absent');
     } else {
-      test.fail('carol: ' + dotFor(CAROL));
+      test.fail('carol: ' + dotFor(CAROL) + ' | ' + dotTitle(CAROL));
     }
     // THE ONE THAT MATTERS. Dave is in the book and in no payload. He is
     // not offline — he is unseen, and red here would be the column
@@ -1655,7 +1729,7 @@ function theDotColumn() {
 
     // Still listed. Whatever the dot says, the row is the address book's
     // and presence has no vote on who is in it.
-    if (rows().indexOf('dave') !== -1) {
+    if (rows().indexOf('>dave<') !== -1) {
       test.check('and they are still in the list, because presence does not decide membership');
     } else {
       test.fail('dave left the table');
@@ -1668,8 +1742,9 @@ function theDotColumn() {
     const after = {};
     after[CAROL] = false;
     app.presence(after);
-    if (dotFor(BERT) === ICONS.WHITE_CIRCLE && dotFor(CAROL) === ICONS.RED_CIRCLE) {
-      test.check('a key that DROPS OUT of the payload goes white, not red — that is removal');
+    // goal/G29.6: carol stays white (absent); red is gone by design.
+    if (dotFor(BERT) === ICONS.WHITE_CIRCLE && dotFor(CAROL) === ICONS.WHITE_CIRCLE) {
+      test.check('a key that DROPS OUT of the payload goes white — that is removal');
     } else {
       test.fail('after removal: bert=' + dotFor(BERT) + ' carol=' + dotFor(CAROL));
     }
@@ -1677,11 +1752,11 @@ function theDotColumn() {
     // Words as well as colour, on the cell rather than a heading.
     // `icon-cell` since the glyph columns were given a fixed width, so
     // the attribute is no longer the first thing on the cell.
-    const titled = /<td class="icon-cell" title="([^"]*)">/.exec(rows());
-    if (titled && /present|absent|not known/.test(titled[1])) {
-      test.check('and every dot carries the words too, so colour is never the only carrier');
+    // goal/G29.6: read on the presence cell itself, the picker's second.
+    if (/^present/.test(titles.bert) && /^absent/.test(titles.carol)) {
+      test.check('and the dots carry the words too, so colour is never the only carrier');
     } else {
-      test.fail('no title on the dot cell: ' + rows().slice(0, 120));
+      test.fail('titles on the dot cells: bert ' + titles.bert + ' | carol ' + titles.carol);
     }
 
     // Nothing else on that channel may move this column. server-stats
@@ -1704,10 +1779,10 @@ function theDotColumn() {
       const snap = {};
       snap[BERT] = true;
       late.presence(snap, 'snapshot');
-      if (el(late, 'contacts-tbody').innerHTML.indexOf(ICONS.GREEN_CIRCLE) !== -1) {
+      if (book(late).indexOf(ICONS.GREEN_CIRCLE) !== -1) {
         test.check('and the snapshot fills the column in, so a late mount is not blank forever');
       } else {
-        test.fail('snapshot ignored: ' + el(late, 'contacts-tbody').innerHTML);
+        test.fail('snapshot ignored: ' + book(late));
       }
 
       // ONE SOCKET PER PAGE, NOT ONE PER MOUNT. The shell has no unmount

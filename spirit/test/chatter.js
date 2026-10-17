@@ -207,18 +207,22 @@ function mount(opts) {
     addEventListener: function (t, fn) { (docListeners[t] = docListeners[t] || []).push(fn); },
     removeEventListener: function (t, fn) { docListeners[t] = (docListeners[t] || []).filter(function (f) { return f !== fn; }); },
     dispatchEvent: function (ev) { (docListeners[ev.type] || []).slice().forEach(function (fn) { fn(ev); }); return true; },
-    getElementById: function () { return null; },
+    // goal/G29.6: the shared list finds its parts by id; one stable element per id, as a page's document holds.
+    getElementById: function (id) { if (!byId[id]) { byId[id] = node(/-text$/.test(id) ? 'input' : 'div'); byId[id].id = id; } return byId[id]; },
   };
+  const byId = {};
   const asked = [];
   // The node's own verbs, as the elements ask them (spirit.core.ask).
   const coreAsk = function (verb, body) {
     asked.push({ via: 'core', verb: verb, body: body || {} });
     if (verb === 'contact.search') {
       // By name, as the node's book answers (hub.js searchPeople); with nothing typed, the two the picker offers.
+      // goal/G29.6: each label is the node's json {name, owned, blocked, held}, no words appended to the name.
       const book = [[PEER, 'Pete'], [QUIET, 'Quinn'], [NEWBIE, 'Newbie'], [BLOCKED, 'Blocky'], [STRANGER, 'Stan']];
+      const label = function (b) { return JSON.stringify({ name: b[1], owned: false, blocked: b[0] === BLOCKED, held: false }); };
       const q = String(body.q || '').toLowerCase();
-      const items = q ? book.filter(function (b) { return b[1].toLowerCase().indexOf(q) !== -1; }).map(function (b) { return { key: b[0], label: b[1] }; })
-        : [{ key: NEWBIE, label: 'Newbie' }, { key: BLOCKED, label: 'Blocky' }];
+      const items = (q ? book.filter(function (b) { return b[1].toLowerCase().indexOf(q) !== -1; })
+        : book.filter(function (b) { return b[0] === NEWBIE || b[0] === BLOCKED; })).map(function (b) { return { key: b[0], label: label(b) }; });
       return Promise.resolve({ status: 200, body: { ok: true, items: items, more: false } });
     }
     if (verb === 'contact.get') {
@@ -289,6 +293,12 @@ function mount(opts) {
   const load = function (file) {
     new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(file, 'utf8'))(sp, doc, win, Event, CustomEvent);
   };
+  // goal/G29.6: as index.html loads them, the probability modules and the shared list before the contact selector,
+  // which is now a thin wrapper around window.spiritElements.shellCreateListSearch.
+  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+  });
+  load(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'));
   load(path.join(RUN, 'shell', 'js', 'contactSelector.js'));
   load(path.join(RUN, 'shell', 'js', 'contactLabel.js'));
   // Watched, not replaced: what chatter builds with is recorded, and the real element answers.
@@ -296,7 +306,7 @@ function mount(opts) {
   const labels = [];
   const realSelector = win.spiritElements.createContactSelector;
   const realLabel = win.spiritElements.createContactLabel;
-  win.spiritElements.createContactSelector = function (o) { const r = realSelector(o); selectors.push({ options: o || {}, root: r }); return r; };
+  win.spiritElements.createContactSelector = function (o) { const r = realSelector(o); docOf.set(r, doc); selectors.push({ options: o || {}, root: r }); return r; };
   win.spiritElements.createContactLabel = function (o) { const r = realLabel(o); labels.push({ options: o || {}, root: r }); return r; };
   api.ui = { elements: win.spiritElements };
   let behavior = null;
@@ -322,7 +332,36 @@ function mount(opts) {
 
 function pane(app) { const s = app.selectors.filter(function (x) { return x.options.face === 'pane'; })[0]; return s || null; }
 function picker(app) { return app.selectors.filter(function (x) { return x.options.face !== 'pane'; })[0] || null; }
-function rowFor(root, key) { return all(root).filter(function (n) { return n.getAttribute && n.getAttribute('data-key') === key && visible(n, root); })[0] || null; }
+// THE SELECTOR'S LIST (goal/G29.6): shellCreateListSearch writes its parts as html into the selector's pane, ids
+// listsearch-<n>-filters|text|clear|search|count|list, and finds them by document.getElementById; its rows are
+// <tr data-key> strings in the list part. listParts finds that pane and its parts for a selector's root; a row is read
+// from the list's html as a node whose events bubble to the pane, where the list listens.
+const docOf = new WeakMap();
+function listParts(root) {
+  const doc = docOf.get(root);
+  const holder = doc && all(root).filter(function (n) { return /id="listsearch-\d+-list"/.test(n.innerHTML || ''); })[0];
+  if (!holder) return null;
+  const pre = /id="(listsearch-\d+-)list"/.exec(holder.innerHTML)[1];
+  const part = function (name) { const el = doc.getElementById(pre + name); el.parentNode = holder; return el; };
+  return { holder: holder, text: part('text'), list: part('list') };
+}
+function unescapeHtml(s) { return String(s).replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&'); }
+function listRows(root) {
+  const parts = listParts(root);
+  if (!parts || !visible(parts.holder, root)) return [];
+  const out = [];
+  const re = /<tr data-key="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g;
+  let m;
+  while ((m = re.exec(parts.list.innerHTML || ''))) {
+    const r = node('tr');
+    r.setAttribute('data-key', unescapeHtml(m[1]));
+    r.innerHTML = m[2];
+    r.parentNode = parts.list;
+    out.push(r);
+  }
+  return out;
+}
+function rowFor(root, key) { return listRows(root).filter(function (n) { return n.getAttribute('data-key') === key; })[0] || null; }
 function lines(app) {
   return all(app.container).filter(function (n) { return n.getAttribute && n.getAttribute('data-seq') !== null && n.getAttribute('data-sent') !== null; });
 }
@@ -615,8 +654,10 @@ async function main() {
   const app5 = mount();
   await settled();
   const p5 = pane(app5);
-  const box5 = p5 && all(p5.root).filter(function (n) { return n.tagName === 'INPUT'; })[0];
-  const listed = function () { return p5 ? all(p5.root).filter(function (n) { return n.getAttribute && n.getAttribute('data-key') !== null && visible(n, p5.root); }).map(function (n) { return n.getAttribute('data-key'); }) : []; };
+  // goal/G29.6: the search box and the rows are the shared list's (listParts, listRows above).
+  const parts5 = p5 && listParts(p5.root);
+  const box5 = parts5 && parts5.text;
+  const listed = function () { return p5 ? listRows(p5.root).map(function (n) { return n.getAttribute('data-key'); }) : []; };
   if (box5) {
     box5.value = 'pet';
     fire(box5, 'input');

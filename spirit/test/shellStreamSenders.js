@@ -11,8 +11,8 @@
 // view, a fake chat line names another peer. The shell now checks the sender ONCE, before any app sees it:
 //
 //   implicit   this node's own key (node.card), the key of every relay this node OWNS (relay rows with owned and
-//              roll.relayKey), and every contact marked owned (contact.search 'owned', then contact.get) - for
-//              every app;
+//              roll.relayKey), and every contact marked owned (contact.search with owned: 'yes', owned read
+//              from each row's json label, goal/G29.6) - for every app;
 //   explicit   a key an app names when it subscribes: api.onPublished(fn, server, { from: [key, ...] }) - for that
 //              handler only;
 //   anything else is dropped there, for every app, with one console line per dropped sender.
@@ -20,7 +20,8 @@
 // THE OWNED PUPPET (Andy, 2026-10-12): "puppet is just a flag in the contact list", "or even better, with your
 // damned ownerBadge", "so the relays owner code and the puppets owner code should be the same." A puppet's signed
 // card names its owner (nodeCard, from owner.json); contacts.setCard marks the row owned through ownerBadge.ownedBy,
-// the one comparison probe makes for a relay's answer; contact.get carries the mark. Section 4 is the node side.
+// the one comparison probe makes for a relay's answer; contact.search's json label carries the mark (goal/G29.6).
+// Section 4 is the node side.
 // deskAgentRemote named its puppets to the shell before this; that fallback is gone (section 3).
 //
 // Driven as listeningApp.js drives the real shell.js: small document, fs and jobs stubs, a fake ask.
@@ -84,8 +85,15 @@ function bootShell() {
     createDocumentFragment: function () { return fakeElement('fragment'); },
   };
   const asked = [];
+  const searches = [];            // the args of every contact.search the shell sent
   const book = { late: false };   // LATE's card arrives later in the test
   function answer(body) { return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body }); }
+  // The book as hub.js labels it since goal/G29.6: a JSON string {name, owned, blocked, held}, no words appended.
+  function label(name, owned) { return JSON.stringify({ name: name, owned: owned, blocked: false, held: false }); }
+  function rows() {
+    return [{ key: PUPPET, label: label('pup', true) }, { key: NOT_OWNED, label: label('owned-by-someone', false) }]
+      .concat(book.late ? [{ key: LATE, label: label('late', true) }] : []);
+  }
   const subscribers = [];
   const shellSpirit = {
     keyTail: kernel.keyTail,
@@ -93,17 +101,12 @@ function bootShell() {
       ask: function (verb, args) {
         asked.push(verb);
         if (verb === 'node.card') return answer({ ok: true, name: 'me', description: '', publicKey: OWN, descriptionMax: 0 });
-        // The book as searched: the word 'owned' finds the rows whose label says so, and a get says it per row.
+        // goal/G29.6: contact.search honours the owned: 'yes' filter beside q, as hub.searchPeople does; no word
+        // 'owned' to search for, and no contact.get to confirm a hit (this fake answers no contact.get at all).
         if (verb === 'contact.search') {
-          return answer({ ok: true, items: String(args && args.q) === 'owned'
-            ? [{ key: PUPPET, label: 'pup — owned' }, { key: NOT_OWNED, label: 'owned-by-someone' }].concat(book.late ? [{ key: LATE, label: 'late — owned' }] : []) : [], more: false });
-        }
-        if (verb === 'contact.get') {
-          const key = String(args && args.key);
-          if (key === LATE && book.late) return answer({ ok: true, key: key, person: { publicKey: key, owned: true } });
-          if (key === PUPPET) return answer({ ok: true, key: key, person: { publicKey: key, owned: true } });
-          if (key === NOT_OWNED) return answer({ ok: true, key: key, person: { publicKey: key, owned: false } });
-          return answer({ ok: false, status: 404, error: 'not in the book' });
+          searches.push(args || {});
+          const owned = args && args.owned === 'yes';
+          return answer({ ok: true, items: rows().filter(function (r) { return !owned || JSON.parse(r.label).owned === true; }), more: false });
         }
         return answer({ ok: false, code: 'no-such-verb' });
       },
@@ -148,6 +151,7 @@ function bootShell() {
   let n = 0;
   return {
     asked: asked,
+    searches: searches,
     book: book,
     scripts: scripts,
     // A puppet's stream as it reaches the page: a packet named published, {module, app}, from a key.
@@ -239,15 +243,19 @@ async function nodeSide() {
     if (kept2 && kept2.owned === true && again && again.ok === false) test.check('a refresh, a relabel and the same card offered again leave the mark as it is');
     else test.fail(OWED + 'after a refresh owned is ' + JSON.stringify(kept2 && kept2.owned) + ', re-offer ' + JSON.stringify(again));
 
-    // The contact as the page reads it: contact.search 'owned' finds it, contact.get carries the mark.
+    // The contact as the page reads it (goal/G29.6): contact.search with owned: 'yes' answers the puppet alone, its
+    // json label saying owned; the loose node is left out.
     const people = hub.buildPeople(master.dir);
     const pp = people.filter(function (p) { return p.publicKey === puppet.id.publicKey; })[0];
     const lp = people.filter(function (p) { return p.publicKey === loose.id.publicKey; })[0];
-    const found = hub.searchPeople(people, 'owned');
-    const foundKeys = (found.items || []).map(function (i) { return i.key; });
-    if (pp && pp.owned === true && lp && lp.owned === false && foundKeys.indexOf(puppet.id.publicKey) !== -1) {
-      test.check('buildPeople passes owned through (contact.get), and searching \'owned\' finds the puppet: ' + JSON.stringify(found.items.map(function (i) { return i.label; })));
-    } else test.fail(OWED + 'people: puppet ' + JSON.stringify(pp && pp.owned) + ', loose ' + JSON.stringify(lp && lp.owned) + ', search owned -> ' + JSON.stringify(found.items));
+    const found = hub.searchPeople(people, '', { owned: 'yes' });
+    const foundItems = found.items || [];
+    let foundLabel = null;
+    try { foundLabel = foundItems.length === 1 ? JSON.parse(foundItems[0].label) : null; } catch (e) { foundLabel = null; }
+    if (pp && pp.owned === true && lp && lp.owned === false && foundItems.length === 1 && foundItems[0].key === puppet.id.publicKey &&
+        foundLabel && foundLabel.owned === true) {
+      test.check('buildPeople passes owned through, and searchPeople(people, \'\', { owned: \'yes\' }) answers the puppet only: ' + foundItems[0].label);
+    } else test.fail('goal/G29.6: people: puppet ' + JSON.stringify(pp && pp.owned) + ', loose ' + JSON.stringify(lp && lp.owned) + ', owned: yes -> ' + JSON.stringify(foundItems));
 
     // A newer verified card naming a different owner clears it.
     auth.writeOwner(puppet.dir, other.id.publicKey);
@@ -306,17 +314,21 @@ test.startTest('goal/G19.8: the shell takes streamed objects only from senders i
     page.stream(PUPPET, 'process/js/desk', { items: 4 });
     page.stream(PUPPET, 'process/js/deskAgent', { server: { answers: true } });
     await settled();
-    if (names(got) === 'desk,deskDetails,deskAgentRemote,namer,ruleDetails') test.check('(b) a contact marked owned (its card names this node) reaches every app of each module, with no app naming it');
+    if (names(got) === 'desk,deskAgentRemote,deskDetails,namer,ruleDetails') test.check('(b) a contact marked owned (its card names this node) reaches every app of each module, with no app naming it');
     else test.fail(OWED + 'owned puppet: got ' + names(got));
 
-    // A contact the search found whose get says not owned is a stranger.
+    // A contact in the book whose card names another owner is a stranger.
     got.length = 0;
     page.stream(NOT_OWNED, 'process/js/desk', { change: 1e12 });
     await settled();
     if (!got.length) test.check('a contact whose card names another owner, or none, is dropped');
     else test.fail(OWED + 'a contact not owned reached ' + names(got));
-    if (page.asked.indexOf('contact.search') !== -1 && page.asked.indexOf('contact.get') !== -1) test.check('the owned contacts are read through contact.search and contact.get, no new verb');
-    else test.fail(OWED + 'asked ' + JSON.stringify(page.asked));
+    // goal/G29.6 (Andy: "why would owned not be a binary filter, owned or not?"): one contact.search with q '' and
+    // owned: 'yes', owned read from each row's json label; no search for the word 'owned', no contact.get per hit.
+    const ownedAsks = page.searches.filter(function (a) { return a.owned === 'yes' && String(a.q == null ? '' : a.q) === ''; });
+    const wordAsks = page.searches.filter(function (a) { return /owned/.test(String(a.q || '')); });
+    if (ownedAsks.length && !wordAsks.length && page.asked.indexOf('contact.get') === -1) test.check('the owned contacts are read through contact.search with owned: \'yes\', no word search, no contact.get, no new verb');
+    else test.fail('goal/G29.6: contact.search args ' + JSON.stringify(page.searches) + ', asked ' + JSON.stringify(page.asked));
 
     // (d) a key an app named: that handler only.
     got.length = 0;

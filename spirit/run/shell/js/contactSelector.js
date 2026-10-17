@@ -1,66 +1,55 @@
 // spirit/run/shell/js/contactSelector.js
-// ONE SHELL ELEMENT: the contact selector, a factory apps build their screens with.
+// ONE SHELL ELEMENT: the contact selector, the peer picker apps build their screens with.
 //
 //   Andy, 2026-10-02 (goal/G2.14): "i can guarantee you: there will be many" —
 //   so one file per element, each adding itself to window.spiritElements,
 //   which the shell hands to apps at mount as api.ui.elements.
 //
-// Loaded by index.html before the shell, on the globals every shell script
-// has (spirit, document, window.spiritIconIndex, window.spiritApiTreeIndex)
-// and nothing inside shell.js. Its root element is the control: it carries
-// .value and fires one bubbling `change` when the value is set.
+// A THIN WRAPPER AROUND THE SHARED LIST (goal/G29.6). Andy, 2026-10-17: "now i want the contactSelector to be just a
+// wrapper around our new list-selector, what allows an extra (status) column to be added...", and "no fucking
+// protecting old design." So the list with its search, its cache, its ranking and its one request on the wire are
+// shellCreateListSearch's (shell/shared/js/listSearch.js, goal/G29.4); this file says only what a peer row is.
+//
+// THE COLUMNS (the item's box): fixed, always, ★ (the contact is my puppet: an owned contact, its signed card naming
+// this node its owner, goal/G19.8; "just a star in the one column, that says it all", and "if you want more info, put a
+// tooltip on the star"), presence (green or white), the name; then the configurable status column, its icons from
+// options.statuses [{status, iconKey}], the first the default (goal/G4.14).
+// THE FILTERS: one per state, owned (★), blocked and held, each shown only when the list holds any ("owned, blocked,
+// held, (if our list has any)"), each sent to contact.search as a yes-filter.
+//
+// Rows come from the node's contact.search {q, owned, blocked, held}, its label json {name, owned, blocked, held}; or
+// from options.search(text, ask) -> {items: [{key, label}], more}, or options.contacts [{key, label}], a caller's own rows
+// (a label that is not json is a name). A row's name is the row's: a rename is published by the node (contact.rename,
+// shell.js) and the list asks again.
+//
+// THE ROOT, as before: .value the chosen key, .row the chosen row, one bubbling `change` on a pick; refresh() asks again;
+// present(key, state, title) and mark(key, status) repaint that row from what the list holds, never asking the node.
+// options.face 'pane' is the list itself; the default face is the same list under a button, closed by a pick.
+// options.status(row), when given, names a row's status from the row itself (Contacts: blocked, held).
 
 (function () {
   var escapeHtml = spirit.core.util.escapeHtml;
 
-  // ── THE CONTACT SELECTOR (apiAuth/G1.7), NOW TWO FACES (goal/G4.14) ──
-  //
-  //   Andy: "the other dropdown selector uses in the app will be the
-  //   shell-element called contactSelector", "these all will be
-  //   shell-elements invisible to the user on the shell surface."
-  //   Andy, 2026-10-03: "dropDown and pane element for the same object type
-  //   may share the same element file.js" / "The dropDowns should present
-  //   like the panes." / "the dropdown may even use a pane" / "the pane
-  //   usually has a \"current\" which is the equivalent of selected in the
-  //   drop-box".
-  //
-  // ONE LIST, TWO FACES. options.face 'pane' is the list itself, always
-  // shown; the default face is the same list under a button, shown when
-  // the button is pressed and closed by a pick, so the users from before
-  // (grants.js, natterDetails.js) change nothing.
-  //
-  // A contact is its KEY (contacts.js): root.value is the chosen key, and
-  // root.row the whole row chosen (a caller's own rows may carry more,
-  // natterDetails' relay URL among them). Rows come from a bounded search,
-  // never a list of everybody: options.search(text) -> {items: [{key,
-  // label}], more}, or the node's contact.search {q} when none is given;
-  // a caller that already holds its rows hands them in as options.contacts.
-  // Every list is a search with an empty query; nothing pages, a cut answer
-  // says so.
-  //
-  // THE STATUS COLUMN is always there, blank or not (Andy: "the presence
-  // is always a column and the status icon is configurable with a little
-  // list. [{status,iconKey}, status IconKey], where the first pair is the
-  // default and can have no icon."). root.mark(key, status) sets a row's
-  // status by name; the element counts nothing and knows no chats.
-  //
-  // A ROW IS NAMED BY THE CONTACT LABEL ELEMENT (goal/G4.13) when it is
-  // loaded, by its label text until then.
+  function parseRow(item) {
+    var key = String((item && item.key) || '');
+    var label = item && item.label;
+    var row = null;
+    if (typeof label === 'string') { try { row = JSON.parse(label); } catch (e) { row = null; } }
+    else if (label && typeof label === 'object') row = label;
+    if (!row || typeof row !== 'object') row = { name: typeof label === 'string' ? label : '' };
+    row.key = key;
+    return row;
+  }
+
   function createContactSelector(options) {
     options = options || {};
     var isPane = options.face === 'pane';
     var ICON = (spirit.core.const && spirit.core.const.ICON) || {};
-    var statuses = (Array.isArray(options.statuses) && options.statuses.length)
-      ? options.statuses : [{ status: 'none' }];
+    var statuses = (Array.isArray(options.statuses) && options.statuses.length) ? options.statuses : [{ status: 'none' }];
     var statusOf = {};
-    // PRESENCE, always a column (Andy, G4.14: "the presence is always a
-    // column"; goal/G4.10: "same green and white dots i see in contacts",
-    // "where i only see green and white"): white until a caller says a key
-    // is present. Never red, which is a status mark beside it.
     var presentOf = {};
-    var rows = [];
-    var cells = {};
-    var asked = 0;
+    var presentTitle = {};
+    var list = null;
 
     var root = document.createElement('div');
     root.className = 'contact-selector ' + (isPane ? 'contact-selector-face-pane' : 'contact-selector-face-dropdown') +
@@ -75,154 +64,119 @@
       field.className = 'contact-selector-field';
       root.appendChild(field);
     }
-
     var pane = document.createElement('div');
     pane.className = 'contact-selector-pane';
-    var box = document.createElement('input');
-    box.type = 'text';
-    box.className = 'contact-selector-search';
-    box.setAttribute('placeholder', options.searchPlaceholder || 'search…');
-    var list = document.createElement('div');
-    list.className = 'contact-selector-rows';
-    var more = document.createElement('div');
-    more.className = 'contact-selector-more';
-    pane.appendChild(box);
-    pane.appendChild(list);
-    pane.appendChild(more);
     root.appendChild(pane);
 
-    function glyphFor(key) {
-      var want = statusOf[key];
+    function statusGlyph(row) {
+      var want = Object.prototype.hasOwnProperty.call(statusOf, row.key) ? statusOf[row.key]
+        : (typeof options.status === 'function' ? options.status(row) : undefined);
       var pair = statuses.filter(function (s) { return s && s.status === want; })[0] || statuses[0];
       return (pair && pair.iconKey && ICON[pair.iconKey]) || '';
     }
+    function presenceGlyph(key) { return presentOf[key] === true ? (ICON.GREEN_CIRCLE || '●') : (ICON.WHITE_CIRCLE || '○'); }
 
-    function presenceGlyph(key) {
-      return presentOf[key] === true ? (ICON.GREEN_CIRCLE || '●') : (ICON.WHITE_CIRCLE || '○');
+    function paint(row) {
+      var star = row.owned ? '<span title="Your puppet: its card names this node as its owner.">' + (ICON.STAR || '★') + '</span>' : '';
+      var pt = presentTitle[row.key];
+      return '<td class="icon-cell">' + star + '</td>' +
+        '<td class="icon-cell"' + (pt ? ' title="' + escapeHtml(pt) + '"' : '') + '>' + presenceGlyph(row.key) + '</td>' +
+        // THE CURRENT ROW (goal/G4.14, Andy: "the pane usually has a \"current\" which is the equivalent of selected in
+        // the drop-box"): the chosen key's name drawn as chosen.
+        '<td class="label-cell' + (row.key === root.value ? ' current" style="font-weight:bold"' : '"') + '>' + escapeHtml(row.name || row.key) + '</td>' +
+        '<td class="icon-cell">' + statusGlyph(row) + '</td>';
     }
 
     function paintField() {
       if (!field) return;
-      var label = root.row ? ((typeof root.row.label === 'string' && root.row.label) || root.row.key) : (options.placeholder || 'choose a contact…');
-      field.innerHTML = '<span class="contact-selector-name">' + escapeHtml(label) + '</span>' +
-        '<span class="contact-selector-caret">▾</span>';
+      var label = root.row ? (root.row.name || root.row.key) : (options.placeholder || 'choose a contact…');
+      field.innerHTML = '<span class="contact-selector-name">' + escapeHtml(label) + '</span><span class="contact-selector-caret">▾</span>';
     }
-
     function setOpen(open) {
       if (isPane) return;
       pane.hidden = !open;
-      // Open, the pane stands alone; the button returns when it closes
-      // (Andy, goal/G4.10: "the choose a peer from the dropdown shouldn't be
-      // seen when the dropdown turn into a pane").
+      // Open, the pane stands alone; the button returns when it closes (Andy, goal/G4.10).
       if (field) field.hidden = !!open;
-      if (open) { box.value = ''; run(''); if (box.focus) box.focus(); }
+      if (open && list) list.refresh();
     }
-
     function pick(row) {
       root.value = row.key;
       root.row = row;
-      rows.forEach(function (r) {
-        if (cells[r.key]) cells[r.key].row.className = 'contact-selector-row' + (r.key === root.value ? ' current' : '');
-      });
+      list.redraw();
       paintField();
       setOpen(false);
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
-    function paint(answer) {
-      rows = ((answer && answer.items) || []).filter(function (r) { return r && r.key; });
-      cells = {};
-      list.innerHTML = '';
-      rows.forEach(function (r) {
-        var row = document.createElement('div');
-        row.className = 'contact-selector-row' + (r.key === root.value ? ' current' : '');
-        row.setAttribute('data-key', r.key);
-        // The configurable status first, presence second (Andy, goal/G4.10: "Make the configurable icons the first
-        // column, and the presence dots the second column").
-        var status = document.createElement('span');
-        status.className = 'contact-selector-status';
-        status.textContent = glyphFor(r.key);
-        row.appendChild(status);
-        var presence = document.createElement('span');
-        presence.className = 'contact-selector-presence';
-        presence.textContent = presenceGlyph(r.key);
-        row.appendChild(presence);
-        // Only a string is a name: chatter's peers.search hands a whole
-        // row as label, which is the caller's to mark, not to show.
-        var caption = typeof r.label === 'string' && r.label ? r.label : undefined;
-        var make = window.spiritElements && window.spiritElements.createContactLabel;
-        if (typeof make === 'function') {
-          row.appendChild(make({ key: r.key, caption: caption }));
-        } else {
-          var name = document.createElement('span');
-          name.className = 'contact-selector-label';
-          name.textContent = caption || r.key;
-          row.appendChild(name);
-        }
-        // On the row itself, so a click anywhere inside it, the label
-        // element included, is a pick of this row.
-        row.addEventListener('click', function () { pick(r); });
-        list.appendChild(row);
-        cells[r.key] = { row: row, status: status, presence: presence };
-      });
-      more.textContent = (answer && answer.more) ? 'more… type to narrow' : '';
-    }
-
-    function searchFor(text) {
-      if (typeof options.search === 'function') return Promise.resolve(options.search(text));
+    // THE ROWS' SOURCE, as the list's api: the node's contact.search, or the caller's own.
+    function rows(args) {
+      var text = String((args && args.q) || '');
+      // The caller's own search gets the words and the whole ask, so the filters reach it too (Contacts asks the node).
+      if (typeof options.search === 'function') return Promise.resolve(options.search(text, args || { q: text }));
       if (Array.isArray(options.contacts)) {
-        var t = String(text || '').toLowerCase();
-        return Promise.resolve({
-          items: options.contacts.filter(function (r) {
-            return r && r.key && (!t || String(r.label || '').toLowerCase().indexOf(t) !== -1 || String(r.key).toLowerCase().indexOf(t) !== -1);
-          }),
-          more: false,
-        });
+        var t = text.toLowerCase();
+        return Promise.resolve({ items: options.contacts.filter(function (r) {
+          return r && r.key && (!t || String(r.label || '').toLowerCase().indexOf(t) !== -1 || String(r.key).toLowerCase().indexOf(t) !== -1);
+        }), more: false });
       }
-      return spirit.core.ask('contact.search', { q: String(text || '') }).then(function (a) {
-        var body = (a && a.body) || {};
-        return { items: (body.items || []).map(function (it) { return { key: it.key, label: it.label }; }), more: !!body.more };
-      });
+      return spirit.core.ask('contact.search', args).then(function (a) { return (a && a.body) || {}; });
     }
+    var api = {
+      verb: function (name, body) {
+        var ask = (body && body.ask && body.ask.node) || {};
+        return rows(ask['contact.search'] || {}).then(function (answer) {
+          var items = ((answer && answer.items) || []).filter(function (i) { return i && i.key; }).map(function (i) {
+            return { key: String(i.key), label: JSON.stringify(parseRow(i)) };
+          });
+          return { status: 200, body: { items: items, more: !!(answer && answer.more), total: Number(answer && answer.total) || items.length } };
+        });
+      },
+      // A rename is the node's word on its stream (contact.rename, said once on document by shell.js).
+      onPublished: function (fn) {
+        if (typeof document.addEventListener !== 'function') return function () {};
+        document.addEventListener('contact.rename', fn);
+        return function () { if (typeof document.removeEventListener === 'function') document.removeEventListener('contact.rename', fn); };
+      },
+    };
+    var yes = function (name) { return function (row, value) { return !value || row[name] === true ? 1 : 0; }; };
+    var any = function (name) { return function (all) { return all.some(function (r) { return r && r[name] === true; }); }; };
+    list = window.spiritElements.shellCreateListSearch(pane, {
+      api: api,
+      server: 'node',
+      verb: 'contact.search',
+      args: function (text, filters) {
+        var a = { q: text };
+        ['owned', 'blocked', 'held'].forEach(function (n) { if (filters[n] === 'yes') a[n] = 'yes'; });
+        return a;
+      },
+      filters: [
+        { name: 'owned', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.STAR || '★', word: 'my puppets' }], test: yes('owned'), when: any('owned') },
+        { name: 'blocked', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.NO || '', word: 'blocked' }], test: yes('blocked'), when: any('blocked') },
+        { name: 'held', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.WAITING || '', word: 'held' }], test: yes('held'), when: any('held') },
+      ],
+      paint: paint,
+      press: function (row) { pick(row); },
+      empty: options.empty || 'Nobody matches.',
+    });
 
-    // The newest ask wins: an answer to text since retyped is dropped.
-    function run(text) {
-      var mine = ++asked;
-      searchFor(text).then(function (answer) { if (mine === asked) paint(answer); },
-        function () { /* the list stays as it was; the node says why elsewhere */ });
-    }
-
-    box.addEventListener('input', function () { run(box.value); });
-    // The root speaks for the element: the search box's own change is not
-    // a pick, so it goes no further than here.
-    box.addEventListener('change', function (event) { if (event.stopPropagation) event.stopPropagation(); });
+    root.refresh = function () { list.refresh(); };
+    // Whether a key is present now: true green, anything else white; kept by key, so it holds across a redraw.
+    root.present = function (key, state, title) {
+      presentOf[key] = state === true;
+      if (title != null) presentTitle[key] = String(title);
+      list.redraw();
+    };
+    root.mark = function (key, status) { statusOf[key] = status; list.redraw(); };
 
     if (field) {
       field.addEventListener('click', function () { setOpen(pane.hidden); });
-      document.addEventListener('click', function (event) {
+      if (typeof document.addEventListener === 'function') document.addEventListener('click', function (event) {
         if (!pane.hidden && event && event.target && root.contains && !root.contains(event.target)) setOpen(false);
       });
     }
-
-    // Ask the same search again, with what is typed: for a caller whose
-    // rows changed under it (chatter, when a line arrives).
-    root.refresh = function () { run(box.value); };
-
-    // Whether a key is present now: true green, anything else white. Kept by
-    // key, so it holds across a redraw and may come before the row does.
-    root.present = function (key, state) {
-      presentOf[key] = state === true;
-      if (cells[key]) cells[key].presence.textContent = presenceGlyph(key);
-    };
-
-    root.mark = function (key, status) {
-      statusOf[key] = status;
-      if (cells[key]) cells[key].status.textContent = glyphFor(key);
-    };
-
     paintField();
     if (!isPane) pane.hidden = true;
-    run(String(options.query || ''));
+    list.refresh();
     return root;
   }
 

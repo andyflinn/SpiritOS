@@ -82,38 +82,12 @@ var CONTACTS_UNKNOWN_LABELS = {
   },
 };
 
-// THE BOOK AS SEARCHED, NOT AS LISTED (puppets/G2). Andy: "all list
-// displays in the UI now must be topped by a search input bar, which will
-// add to the list and prime it with "*" at the beginning". So the table
-// shows the union of every book search run so far, in the order each key
-// first appeared, each row a {publicKey, label} pair from contact.search.
-// "*" is the first; each search he types adds its rows. The book is never
-// asked for whole: past the answer's cap, contactsBookMore says so.
-var contactsPeople = [];
-var contactsBookQueries = ['*'];
-// THE TERM FILTERS WHAT IS SHOWN (goal/G2.7). Andy: "i kind of expect for the
-// search term to remain in the search box, and while it remains, it also
-// filters the visible list. would help me find even contacts withing the
-// list." — and "those search boxes that leave the search term, with a little
-// closing button on the right that removes the input". The * priming and the
-// added searches above still decide what the table HOLDS; this decides what
-// of it is drawn, live as he types, until the × or Escape empties the box.
-var contactsBookTerm = '';
-function contactsShown() {
-  var term = contactsBookTerm.toLowerCase();
-  if (!term) return contactsPeople;
-  return contactsPeople.filter(function (p) {
-    return String(p.label || '').toLowerCase().indexOf(term) !== -1 ||
-      String(p.publicKey || '').toLowerCase().indexOf(term) !== -1;
-  });
-}
-function contactsSetTerm(term) {
-  contactsBookTerm = String(term || '').trim();
-  var box = document.getElementById('contacts-book-q');
-  if (box && box.value !== contactsBookTerm && !contactsBookTerm) box.value = '';
-  contactsRender();
-}
-var contactsBookMore = false;
+// THE BOOK IS THE PEER PICKER (goal/G29.6). Andy, 2026-10-17: "now i want the contactSelector to be just a wrapper
+// around our new list-selector", and "no fucking protecting old design." The book is a contactSelector pane
+// (shell/js/contactSelector.js) on the shared list with its search (goal/G29.4): its search box, its cache of every
+// search run, its ranking, its filters per state (★ my puppets, blocked, held) and its one request on the wire are the
+// list's; this app says what the status column shows and what a pick does.
+var contactsBook = null;
 // Search results — see contactsSearchSeen. Not a standing list: a
 // thousand-member relay makes that unreadable and expensive both.
 var contactsSeen = [];
@@ -351,90 +325,24 @@ function contactsSeenMarkTitle(c) {
 // reading `memberOf` off the row — a roster's word, gone 2026-09-19 (see
 // hub.js where reconcileMembers stood).
 
-// The state rides in the label as a word (Andy's go: "Bert — blocked"),
-// so the mark is read off the label's end.
-var CONTACTS_STATE_BLOCKED = ' — blocked';
-var CONTACTS_STATE_WAITING = ' — waiting';
-function contactsEndsWith(text, end) {
-  return text.length >= end.length && text.slice(text.length - end.length) === end;
-}
-function contactsRowHtml(person) {
-  var label = String(person.label || '');
-  var mark = '';
-  if (contactsEndsWith(label, CONTACTS_STATE_BLOCKED)) mark = contactsIcon.NO;
-  else if (contactsEndsWith(label, CONTACTS_STATE_WAITING)) mark = contactsIcon.WAITING;
+// THE STATE WORDS, THE ROW AND LABEL PAINTERS AND THE BOOK TABLE STOOD HERE: the label carried the state as a word
+// ("Bert — blocked") and this file read it back off the end. Since goal/G29.6 contact.search's label is json {name,
+// owned, blocked, held} and the picker draws the row; the status column below shows blocked and held.
+var CONTACTS_STATUSES = [{ status: 'none' }, { status: 'blocked', iconKey: 'NO' }, { status: 'held', iconKey: 'WAITING' }];
+function contactsStatusOf(row) { return row.blocked ? 'blocked' : row.held ? 'held' : 'none'; }
 
-  return '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
-    '<td class="icon-cell" title="' +
-      contactsEscapeHtml(contactsPresenceTitle(person.publicKey)) + '">' +
-      contactsPresenceMark(person.publicKey) + '</td>' +
-    // THE LOCK COLUMN STOOD HERE (ICON.LOCKED for a contact seated on a
-    // relay this node owns). The seats were a roster's and no relay returns
-    // one (2026-09-19), so the column went rather than stand empty for
-    // everyone (AGENT.md: no chrome that is not useful in this state).
-    '<td class="icon-cell">' + mark + '</td>' +
-    // THE COLUMN FITS THE LABEL, THE RELAY DOES NOT (2026-09-15).
-    //
-    // Labels are Unicode and permissive now — a real name, with spaces
-    // and punctuation, up to 64 bytes (js/fieldRules.js). The relay BOUNDS one so a
-    // peer cannot write ten kilobytes into somebody else's ledger, and
-    // has no opinion beyond that: how wide a table is belongs to the
-    // table. See .label-cell in index.html, and UI_DESIGN_STYLE.md.
-    //
-    // Both cells, because `myLabel` is the private caption; it is held to
-    // the same rule as any label (goal/G4.16), checked by the node.
-    // ONE NAME, and it is the node's own answer to what to call this key
-    // — mine for them if I set one, theirs otherwise (contactBook.labelForKey).
-    // The ending still rides on it where two rows read alike, which is
-    // the only thing that made two columns worth having.
-    // THE NAME IS THE NODE'S LABEL NOW: contact.search builds it the way
-    // contactsNameCell did here (name, the ending where two read alike or
-    // there is no name) plus the state word.
-    '<td class="label-cell">' + contactsLabelHtml(label) + '</td>' +
-    '</tr>';
-}
-
-// The label drawn the way the name cell always was: the name plain, and
-// what only tells rows apart (the key's ending, the state word) muted.
-function contactsLabelHtml(label) {
-  var state = '';
-  [CONTACTS_STATE_BLOCKED, CONTACTS_STATE_WAITING].forEach(function (end) {
-    if (!state && contactsEndsWith(label, end)) { state = end.trim(); label = label.slice(0, label.length - end.length); }
+// Presence as the relay-presence job last said it, handed to the picker per key with what the dot means.
+// A key the job no longer mentions is set back too, white and "not known", as the old table repainted every row.
+var contactsPresencePainted = Object.create(null);
+function contactsPaintPresence() {
+  if (!contactsBook) return;
+  Object.keys(contactsPresencePainted).forEach(function (key) {
+    if (!(key in contactsPresence)) { contactsBook.present(key, false, contactsPresenceTitle(key)); delete contactsPresencePainted[key]; }
   });
-  var name = label;
-  var tail = '';
-  var cut = label.lastIndexOf(' …');
-  if (label.charAt(0) === '…') { name = ''; tail = label; }
-  else if (cut !== -1) { name = label.slice(0, cut); tail = label.slice(cut + 1); }
-  var html = name === '(no name)' ? '<span class="muted">(no name)</span>' : contactsEscapeHtml(name);
-  if (tail) html += (html ? ' ' : '') + '<span class="muted">' + contactsEscapeHtml(tail) + '</span>';
-  if (state) html += ' <span class="muted">' + contactsEscapeHtml(state) + '</span>';
-  return html;
-}
-
-function contactsRender() {
-  var tbody = document.getElementById('contacts-tbody');
-  if (!tbody) return;
-  // The focus guard that stood here went with the field it guarded. It
-  // existed because a repaint arriving while somebody was typing a name
-  // would take the name — and the rename input is on the dialog now,
-  // inside a pane this table's repaints cannot reach.
-
-  if (!contactsPeople.length) {
-    tbody.innerHTML = '<tr><td colspan="5">(nobody found — search the network below to add someone)</td></tr>';
-    return;
-  }
-  // The term in the box narrows the drawing, never the holding (goal/G2.7).
-  var shown = contactsShown();
-  if (!shown.length) {
-    tbody.innerHTML = '<tr><td colspan="5">(nobody in your book matches ' + contactsEscapeHtml(contactsBookTerm) +
-      ' — press Search to look past the first answer, or × to see everyone)</td></tr>';
-    return;
-  }
-  tbody.innerHTML = shown.map(contactsRowHtml).join('') +
-    (contactsBookMore
-      ? '<tr><td colspan="5" class="muted">More in your book than fits one answer. Search above to add them.</td></tr>'
-      : '');
+  Object.keys(contactsPresence).forEach(function (key) {
+    contactsBook.present(key, contactsPresenceState(key) === true, contactsPresenceTitle(key));
+    contactsPresencePainted[key] = true;
+  });
 }
 
 function contactsPaintSelf() {
@@ -445,45 +353,16 @@ function contactsPaintSelf() {
     : '';
 }
 
-// Every book search run so far, again, merged by key in first-seen order,
-// so a block or an accept repaints what is on screen and nothing more.
+// The book asked again with what is typed: after an add, or a decision on a contact's own screen.
 function contactsRefresh() {
-  // A SEARCH TAKES A MOMENT, and says so. Andy: "searches may have to show
-  // some kind of spinners in the ui".
-  contactsStatus('Searching your contacts…');
-  return Promise.all(contactsBookQueries.map(function (q) { return contactsAsk('contact.search', { q: q }); }))
-    .then(function (answers) {
-      var seen = Object.create(null);
-      var rows = [];
-      var more = false;
-      answers.forEach(function (data) {
-        if (!data || !data.ok) return;
-        if (data.selfTail) contactsSelfTail = data.selfTail;
-        if (data.more) more = true;
-        (data.items || []).forEach(function (i) {
-          if (seen[i.key]) return;
-          seen[i.key] = true;
-          rows.push({ publicKey: i.key, label: i.label });
-        });
-      });
-      contactsPeople = rows;
-      contactsBookMore = more;
-      contactsStatus('');
-      contactsRender();
-      contactsPaintSelf();
-    })
-    .catch(function (e) { contactsStatus('could not read the book: ' + e.message); });
+  if (contactsBook) contactsBook.refresh();
 }
-
-// The bar on top: what he types is added to what is shown.
-function contactsSearchBook() {
-  var el = document.getElementById('contacts-book-q');
-  var q = el ? String(el.value || '').trim() : '';
-  if (!q) return;
-  if (contactsBookQueries.indexOf(q) === -1) contactsBookQueries.push(q);
-  // The term stays in the box and keeps filtering (goal/G2.7); it used to be emptied here.
-  contactsBookTerm = q;
-  contactsRefresh();
+// The picker's source: the node's contact.search with the list's own arguments, its selfTail read on the way.
+function contactsSearchBookFor(text, args) {
+  return contactsAsk('contact.search', args || { q: text }).then(function (data) {
+    if (data && data.selfTail) { contactsSelfTail = data.selfTail; contactsPaintSelf(); }
+    return data || { items: [], more: false };
+  });
 }
 
 // ── EVERYBODY VISIBLE AND NOT YET KNOWN ──────────────────────────────
@@ -987,7 +866,7 @@ function contactsWatchPresence() {
     if (!table) return;
     contactsPresence = table;
     contactsPresenceSeen = true;
-    contactsRender();
+    contactsPaintPresence();
   }
 
   spirit.core.jobs.subscribe({
@@ -1054,17 +933,7 @@ spirit.shell.activateApp({
       // THE BOOK'S OWN SEARCH, on top. Andy: "the search box below searches
       // all available relays. the box on top, should not." It searches only
       // this node's book, and what it finds is added to the table.
-      '<div class="start-job-form card"><label class="field-label grow">Search your contacts' +
-        '<input type="text" id="contacts-book-q" placeholder="a name, or blocked, or waiting"></label>' +
-        // The × at the right of the box empties it and the whole list is back (goal/G2.7).
-        '<button type="button" id="contacts-book-clear" title="clear the search">×</button>' +
-        '<button type="button" id="contacts-book-go">Search</button></div>' +
-      '<table class="jobs-table"><thead><tr>' +
-        '<th class="icon-cell"></th>' +
-        '<th class="icon-cell"></th>' +
-        '<th>Label</th>' +
-      '</tr></thead>' +
-        '<tbody id="contacts-tbody"></tbody></table>' +
+      '<div id="contacts-book" class="stat-tile wide"></div>' +
       // name= makes the two folds one exclusive group: opening either
       // closes the other, done by the browser with no JS and no state.
       // Named from this app's id prefix rather than its app id, because
@@ -1219,32 +1088,21 @@ spirit.shell.activateApp({
     // you, and the mark is the whole of what a row says about that
     // decision. A dialog that decided nothing answers null, and costs
     // this table nothing.
-    document.getElementById('contacts-tbody').addEventListener('click', function (event) {
-      var target = event.target;
-      if (!target || !target.closest) return;
-      var row = target.closest('[data-contact-row]');
-      if (!row) return;
-      contactsApi.callDialog('shell/contactsDetails', { key: row.dataset.contactRow })
+    contactsBook = contactsApi.ui.elements.createContactSelector({
+      face: 'pane', statuses: CONTACTS_STATUSES, status: contactsStatusOf, search: contactsSearchBookFor,
+      empty: 'Nobody in your book matches: search the network below to add someone.',
+    });
+    document.getElementById('contacts-book').appendChild(contactsBook);
+    contactsBook.addEventListener('change', function () {
+      contactsApi.callDialog('shell/contactsDetails', { key: contactsBook.value })
         .then(function (result) {
           if (result && result.changed) contactsRefresh();
         });
     });
-
-    document.getElementById('contacts-book-go').addEventListener('click', contactsSearchBook);
-    // Typing filters live; Enter still asks the book for more; Escape and the × empty the box (goal/G2.7).
-    document.getElementById('contacts-book-q').addEventListener('input', function () {
-      contactsSetTerm(document.getElementById('contacts-book-q').value);
-    });
-    document.getElementById('contacts-book-q').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); contactsSearchBook(); }
-      else if (e.key === 'Escape') { e.preventDefault(); contactsSetTerm(''); }
-    });
-    document.getElementById('contacts-book-clear').addEventListener('click', function () { contactsSetTerm(''); });
-    contactsRefresh();
     contactsWatchPresence();
   },
 
   render: function () {
-    contactsRender();
+    contactsPaintPresence();
   },
 });

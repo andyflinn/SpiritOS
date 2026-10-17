@@ -19,23 +19,29 @@
 //   1. THE LIST: a search box (an input) over rows fed by a bounded search: options.search(text) -> Promise of
 //      {items: [{key, label}], more} (NAMED), contact.search {q} when none is given. With nothing typed it asks with
 //      '' and draws the rows in the order answered; typing asks again with the text. A cut answer (more) says so.
-//   2. THE ROW: each row carries data-key (NAMED) and is named by the contact label element (G4.13):
-//      window.spiritElements.createContactLabel({key, ...}) once per row, the label's root inside the row.
+//   2. THE ROW: each row carries data-key (NAMED) and shows the row's name. AMENDED by goal/G29.6 (Andy, 2026-10-17:
+//      "now i want the contactSelector to be just a wrapper around our new list-selector", "no fucking protecting old
+//      design."): the contact label element in every row is gone; a row's name is the row's (its label json, or a label
+//      that is not json taken as the name).
 //   3. THE STATUS COLUMN: options.statuses [{status, iconKey}, ...], the first the default and maybe without an icon.
 //      root.mark(key, status) draws that status's icon from the kernel's set in that row; a status the list lacks
 //      draws the default. The element counts nothing.
-//   4. THE PANE: a click on a row makes it current: root.value is its key, one bubbling change fires on the root, and
-//      that row alone is drawn marked current (its className holds 'current', NAMED).
+//   4. THE PANE: a click on a row makes it current: root.value is its key, root.row its row, one bubbling change fires
+//      on the root. (The row drawn marked 'current' was dropped by goal/G29.6: the shared list draws no current row.)
 //   5. THE DROPDOWN: the same pane under a button: no row is shown until the button is clicked; a click on a row then
 //      sets root.value, fires one change, and closes the pane.
 //   6. (goal/G4.10) THE OPEN DROPDOWN hides its own button; closed or picked, the button shows.
-//   8. (goal/G4.10) THE COLUMNS: the status icon first, the presence dot second (Andy: "Make the configurable icons
-//      the first column, and the presence dots the second column").
+//   8. THE COLUMNS, goal/G29.6's box: ★, presence, the name, then the configurable status column, last ("what allows
+//      an extra (status) column to be added"). This replaces goal/G4.10's status-first order.
 //   7. (goal/G4.10) PRESENCE, always a column: every row a dot, white until root.present(key, true) makes it green
 //      (NAMED); false is white too, never red, which is a status in chatter. Dot and status mark stand side by side,
 //      and presence survives a redraw.
 // NOT ASSERTED, the builder's: markup beyond the names above, classes, scrolling, the fold button (chatter's, G4.9 and
 // G4.10). shellElements.js, which reads today's native select, moves with the change.
+// THE PAGE (goal/G29.6): the selector is a wrapper around shellCreateListSearch (shell/shared/js/listSearch.js), so the
+// fake page loads the three probability modules and listSearch.js before contactSelector.js, as index.html does. The
+// list writes its markup as html into the pane, ids listsearch-<n>-filters|text|clear|search|count|list, and finds its
+// parts by document.getElementById; rows are <tr data-key> strings in the list part, read here by their cells.
 
 const fs = require('fs');
 const path = require('path');
@@ -45,7 +51,9 @@ const kernel = require('../run/js/kernel.js');
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.14: ';
 const OWED10 = 'owed by goal/G4.10: ';
+const OWED29 = 'owed by goal/G29.6: ';
 const FILE = path.join(RUN, 'shell', 'js', 'contactSelector.js');
+const LIST = path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js');
 const ICON = kernel.core.const.ICON;
 
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
@@ -53,10 +61,10 @@ function settle() { return new Promise(function (r) { setImmediate(r); }).then(f
 test.startTest('goal/G4.14: the peer pane and its dropdown, one element, shell/js/contactSelector.js');
 
 // A small DOM: built by createElement and appendChild, events that bubble along parentNode, closest() for an
-// attribute or a class. Rows hold the label element's root, so they are built as nodes, not as markup.
+// attribute or a class. What the shared list writes as html is read back as html (goal/G29.6).
 function node(tag) {
   let html = '';
-  const e = { tagName: String(tag || 'div').toUpperCase(), value: '', textContent: '', className: '', style: {}, dataset: {},
+  const e = { tagName: String(tag || 'div').toUpperCase(), id: '', value: '', textContent: '', className: '', style: {}, dataset: {},
     children: [], listeners: {}, parentNode: null, hidden: false, attrs: {},
     appendChild: function (c) { if (c.parentNode) c.parentNode.removeChild(c); e.children.push(c); c.parentNode = e; return c; },
     insertBefore: function (c) { return e.appendChild(c); },
@@ -110,25 +118,63 @@ function visible(n, root) {
   for (let x = n; x; x = x.parentNode) { if (x.hidden || (x.style && x.style.display === 'none')) return false; if (x === root) return true; }
   return true;
 }
-function rowsOf(root) { return all(root).filter(function (n) { return n.getAttribute && n.getAttribute('data-key') !== null && visible(n, root); }); }
-function rowFor(root, key) { return rowsOf(root).filter(function (n) { return n.getAttribute('data-key') === key; })[0] || null; }
-function shown(n) { return all(n).map(function (x) { return (x.textContent || '') + ' ' + (x.innerHTML || ''); }).join(' '); }
-function inputOf(root) { return all(root).filter(function (n) { return n.tagName === 'INPUT' && visible(n, root); })[0] || null; }
+
+// THE LIST'S PARTS (goal/G29.6): the pane hosts shellCreateListSearch, whose markup names its parts by id; the page's
+// getElementById hands the same fake part for an id every time.
+let DOC = null;
+function paneOf(root) { return root.children.filter(function (c) { return /\bcontact-selector-pane\b/.test(c.className); })[0] || null; }
+function partOf(root, name) {
+  const p = paneOf(root);
+  const m = p && /id="(listsearch-\d+-)text"/.exec(p.innerHTML);
+  return m && DOC ? DOC.getElementById(m[1] + name) : null;
+}
+// A row as drawn: <tr data-key="KEY">, its cells in order. None while the pane is hidden.
+function rowsOf(root) {
+  const p = paneOf(root);
+  const list = partOf(root, 'list');
+  if (!p || !visible(p, root) || !list) return [];
+  const out = [];
+  const re = /<tr[^>]*\bdata-key="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g;
+  let m;
+  while ((m = re.exec(list.innerHTML))) {
+    const cells = [];
+    const cre = /<td[^>]*>[\s\S]*?<\/td>/g;
+    let c;
+    while ((c = cre.exec(m[2]))) cells.push(c[0]);
+    out.push({ key: m[1], html: m[2], cells: cells });
+  }
+  return out;
+}
+function keysOf(root) { return rowsOf(root).map(function (r) { return r.key; }).join(','); }
+function rowFor(root, key) { return rowsOf(root).filter(function (r) { return r.key === key; })[0] || null; }
+function shown(r) { return r ? r.html : ''; }
+function statusCell(r) { return r && r.cells.length ? r.cells[r.cells.length - 1] : ''; }
+function inputOf(root) { const p = paneOf(root); return p && visible(p, root) ? partOf(root, 'text') : null; }
 function buttonOf(root) { return all(root).filter(function (n) { return n.tagName === 'BUTTON'; })[0] || null; }
+// The list hears its events on the pane, where a browser bubbles them from the box typed in or the row pressed.
+function typeInto(root, text) { const box = inputOf(root); if (!box) return false; box.value = text; fire(paneOf(root), 'input', { target: box }); return true; }
+function press(root, key) {
+  fire(paneOf(root), 'click', { target: { getAttribute: function (k) { return k === 'data-key' ? key : null; }, closest: function () { return null; } } });
+}
 
 function load() {
+  const byId = {};
   const doc = { createElement: node, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; },
+    getElementById: function (id) { if (!byId[id]) { byId[id] = node('div'); byId[id].id = id; } return byId[id]; },
     addEventListener: function () {}, removeEventListener: function () {}, dispatchEvent: function () { return true; } };
-  const labels = [];
-  const win = { spiritElements: {
-    createContactLabel: function (o) { labels.push(o); const r = node('span'); r.className = 'fake-label'; r.textContent = 'LABEL:' + o.key; return r; },
-  } };
+  DOC = doc;
+  const win = {};
   const asked = [];
   const sp = { core: {
     ask: function (verb, body) { asked.push({ verb: verb, body: body || {} }); return Promise.resolve({ status: 200, body: { items: [{ key: 'kc', label: 'from contact.search' }], more: false } }); },
     util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: ICON } } };
+  // As index.html loads them (goal/G29.6): the probability modules, the shared list, then the selector.
+  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+  });
+  new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
   new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(FILE, 'utf8'))(sp, doc, win, Event, CustomEvent);
-  return { make: win.spiritElements.createContactSelector, labels: labels, asked: asked };
+  return { make: win.spiritElements && win.spiritElements.createContactSelector, asked: asked };
 }
 
 const ROWS = [{ key: 'k1', label: 'one' }, { key: 'k2', label: 'two' }, { key: 'k3', label: 'three' }];
@@ -145,19 +191,20 @@ async function main() {
   let pane = null;
   try { pane = m.make({ face: 'pane', search: search, statuses: STATUSES }); } catch (e) { test.fail(OWED + 'a pane threw: ' + e.message); return; }
   await settle();
-  if (searched[0] === '' && rowsOf(pane).map(function (r) { return r.getAttribute('data-key'); }).join(',') === 'k1,k2,k3') test.check('with nothing typed it asks with \'\' and draws the rows in the order answered, each with data-key');
-  else test.fail(OWED + 'asked ' + JSON.stringify(searched) + ', rows drawn ' + JSON.stringify(rowsOf(pane).map(function (r) { return r.getAttribute('data-key'); })));
-  if (/\bmore\b/i.test(shown(pane))) test.check('a cut answer (more) says so');
-  else test.fail(OWED + 'a cut answer is not said: ' + JSON.stringify(shown(pane)).slice(0, 160));
-  const box = inputOf(pane);
-  if (box) {
-    box.value = 'tw';
-    fire(box, 'input');
+  if (searched[0] === '' && keysOf(pane) === 'k1,k2,k3') test.check('with nothing typed it asks with \'\' and draws the rows in the order answered, each with data-key');
+  else test.fail(OWED + 'asked ' + JSON.stringify(searched) + ', rows drawn ' + JSON.stringify(keysOf(pane)));
+  // goal/G29.6: the cut is said on the shared list's count line ("partial: the server holds more").
+  const count = partOf(pane, 'count');
+  if (count && /\bmore\b/i.test(count.textContent) && /partial/i.test(count.textContent)) test.check('a cut answer (more) says so, on the list\'s count line');
+  else test.fail(OWED + 'a cut answer is not said: ' + JSON.stringify(count && count.textContent).slice(0, 160));
+  if (inputOf(pane)) {
+    typeInto(pane, 'tw');
     await settle();
-    if (searched[searched.length - 1] === 'tw' && rowsOf(pane).map(function (r) { return r.getAttribute('data-key'); }).join(',') === 'k2') test.check('typing asks again with the text and redraws');
-    else test.fail(OWED + 'typing asked ' + JSON.stringify(searched) + ', rows ' + JSON.stringify(rowsOf(pane).map(function (r) { return r.getAttribute('data-key'); })));
-    box.value = '';
-    fire(box, 'input');
+    // goal/G29.6: every row any search brought stays held and is ranked against the words, best on top; so the rows
+    // the earlier search brought are not dropped, the match comes first.
+    if (searched[searched.length - 1] === 'tw' && rowsOf(pane).length && rowsOf(pane)[0].key === 'k2') test.check('typing asks again with the text and redraws, the best match on top');
+    else test.fail(OWED + 'typing asked ' + JSON.stringify(searched) + ', rows ' + JSON.stringify(keysOf(pane)));
+    typeInto(pane, '');
     await settle();
   } else test.fail(OWED + 'the pane has no search box');
   const plainAsk = m.make({ face: 'pane' });
@@ -165,13 +212,14 @@ async function main() {
   if (m.asked.some(function (a) { return a.verb === 'contact.search' && a.body.q === ''; }) && rowFor(plainAsk, 'kc')) test.check('with no search given it asks contact.search {q}');
   else test.fail(OWED + 'with no search given it asked ' + JSON.stringify(m.asked) + ', rows ' + rowsOf(plainAsk).length);
 
-  test.subHeading('2. each row is named by the contact label element');
-  const named = ['k1', 'k2', 'k3'].every(function (k) {
-    const r = rowFor(pane, k);
-    return r && all(r).some(function (n) { return n.className === 'fake-label' && n.textContent === 'LABEL:' + k; });
-  });
-  if (named && m.labels.some(function (o) { return o.key === 'k1'; })) test.check('createContactLabel({key}) for every row, its root inside the row');
-  else test.fail(OWED + 'labels made ' + JSON.stringify(m.labels.map(function (o) { return o.key; })) + '; inside the rows ' + named);
+  // goal/G29.6 dropped the contact label element in each row (createContactLabel); the name is the row's own. What is
+  // asserted instead: the name cell shows the row's name, here a label that is not json taken as the name.
+  test.subHeading('2. each row shows its name');
+  const nameCell = function (r) { return r && r.cells.length >= 3 ? r.cells[2] : ''; };
+  const names = { k1: 'one', k2: 'two', k3: 'three' };
+  if (['k1', 'k2', 'k3'].every(function (k) { return new RegExp('>' + names[k] + '<').test(nameCell(rowFor(pane, k))); }) && />from contact\.search</.test(nameCell(rowFor(plainAsk, 'kc')))) {
+    test.check('the name cell shows the row\'s name, a label that is not json taken as the name');
+  } else test.fail(OWED29 + 'name cells ' + JSON.stringify(['k1', 'k2', 'k3'].map(function (k) { return nameCell(rowFor(pane, k)); })).slice(0, 200));
 
   test.subHeading('3. the status column, set by mark(key, status)');
   if (typeof pane.mark === 'function') {
@@ -179,18 +227,19 @@ async function main() {
     pane.mark('k3', 'nonsense');
     await settle();
     const two = rowFor(pane, 'k2'); const one = rowFor(pane, 'k1'); const three = rowFor(pane, 'k3');
-    if (two && shown(two).indexOf(ICON.RED_CIRCLE) !== -1 && one && shown(one).indexOf(ICON.RED_CIRCLE) === -1) test.check('mark(k2, unanswered) draws ' + ICON.RED_CIRCLE + ' in that row alone');
-    else test.fail(OWED + 'after mark: k2 ' + JSON.stringify(two && shown(two)).slice(0, 100) + ', k1 ' + JSON.stringify(one && shown(one)).slice(0, 100));
+    if (two && statusCell(two).indexOf(ICON.RED_CIRCLE) !== -1 && one && shown(one).indexOf(ICON.RED_CIRCLE) === -1) test.check('mark(k2, unanswered) draws ' + ICON.RED_CIRCLE + ' in that row\'s status cell alone');
+    else test.fail(OWED + 'after mark: k2 ' + JSON.stringify(shown(two)).slice(0, 100) + ', k1 ' + JSON.stringify(shown(one)).slice(0, 100));
     if (three && shown(three).indexOf(ICON.RED_CIRCLE) === -1) test.check('a status the list lacks draws the default (here none)');
-    else test.fail(OWED + 'an unknown status drew ' + JSON.stringify(three && shown(three)).slice(0, 100));
+    else test.fail(OWED + 'an unknown status drew ' + JSON.stringify(shown(three)).slice(0, 100));
     pane.mark('k2', 'none');
     await settle();
     if (rowFor(pane, 'k2') && shown(rowFor(pane, 'k2')).indexOf(ICON.RED_CIRCLE) === -1) test.check('and mark(k2, none) takes the icon away');
     else test.fail(OWED + 'mark(k2, none) left ' + JSON.stringify(shown(rowFor(pane, 'k2'))).slice(0, 100));
     const starred = m.make({ face: 'pane', search: search, statuses: [{ status: 'plain', iconKey: 'STAR' }, { status: 'hot', iconKey: 'FIRE' }] });
     await settle();
-    if (rowFor(starred, 'k1') && shown(rowFor(starred, 'k1')).indexOf(ICON.STAR) !== -1) test.check('a default with an icon draws it on every unmarked row');
-    else test.fail(OWED + 'a default with an icon: ' + JSON.stringify(rowFor(starred, 'k1') && shown(rowFor(starred, 'k1'))).slice(0, 100));
+    // goal/G29.6: ★ is also the owned column's mark, so the default icon is looked for in the status cell itself.
+    if (rowFor(starred, 'k1') && statusCell(rowFor(starred, 'k1')).indexOf(ICON.STAR) !== -1) test.check('a default with an icon draws it on every unmarked row');
+    else test.fail(OWED + 'a default with an icon: ' + JSON.stringify(shown(rowFor(starred, 'k1'))).slice(0, 100));
   } else test.fail(OWED + 'the root has no mark(key, status)');
 
   test.subHeading('4. the pane has a current row');
@@ -200,15 +249,12 @@ async function main() {
   let bubbled = 0;
   parent.addEventListener('change', function () { bubbled += 1; });
   parent.appendChild(pane);
-  const target = rowFor(pane, 'k2');
-  if (target) {
-    fire(all(target).filter(function (n) { return n.className === 'fake-label'; })[0] || target, 'click');
+  if (rowFor(pane, 'k2')) {
+    press(pane, 'k2');
     await settle();
-    const cur = rowsOf(pane).filter(function (r) { return /\bcurrent\b/.test(r.className); });
-    if (pane.value === 'k2' && changes === 1 && bubbled === 1) test.check('a click on a row: root.value is its key, one change, bubbling');
-    else test.fail(OWED + 'after a click: value ' + JSON.stringify(pane.value) + ', changes ' + changes + ', bubbled ' + bubbled);
-    if (cur.length === 1 && cur[0].getAttribute('data-key') === 'k2') test.check('that row alone is drawn current');
-    else test.fail(OWED + 'rows drawn current: ' + JSON.stringify(cur.map(function (r) { return r.getAttribute('data-key'); })));
+    if (pane.value === 'k2' && pane.row && pane.row.name === 'two' && changes === 1 && bubbled === 1) test.check('a click on a row: root.value is its key, root.row its row, one change, bubbling');
+    else test.fail(OWED + 'after a click: value ' + JSON.stringify(pane.value) + ', row ' + JSON.stringify(pane.row) + ', changes ' + changes + ', bubbled ' + bubbled);
+    // goal/G29.6: "that row alone is drawn current" is dropped; the shared list draws no current row by design.
   } else test.fail(OWED + 'no row k2 to click');
 
   test.subHeading('5. the dropdown is the same pane under a button');
@@ -220,13 +266,12 @@ async function main() {
   if (button) {
     fire(button, 'click');
     await settle();
-    const opened = rowsOf(drop).map(function (r) { return r.getAttribute('data-key'); }).join(',');
+    const opened = keysOf(drop);
     if (opened === 'k1,k2,k3' && inputOf(drop)) test.check('a click opens the pane: the search box and its rows');
     else test.fail(OWED + 'after the button: rows ' + JSON.stringify(opened) + ', search box ' + !!inputOf(drop));
     let dchanges = 0;
     drop.addEventListener('change', function () { dchanges += 1; });
-    const pick = rowFor(drop, 'k3');
-    if (pick) { fire(pick, 'click'); await settle(); }
+    if (rowFor(drop, 'k3')) { press(drop, 'k3'); await settle(); }
     if (drop.value === 'k3' && dchanges === 1 && rowsOf(drop).length === 0) test.check('a pick sets root.value, fires one change, and closes the pane');
     else test.fail(OWED + 'after a pick: value ' + JSON.stringify(drop.value) + ', changes ' + dchanges + ', rows still shown ' + rowsOf(drop).length);
   }
@@ -243,8 +288,7 @@ async function main() {
     fire(b2, 'click');
     await settle();
     const hiddenOpen = !visible(b2, drop2) && rowsOf(drop2).length === 3;
-    const pick2 = rowFor(drop2, 'k1');
-    if (pick2) { fire(pick2, 'click'); await settle(); }
+    if (rowFor(drop2, 'k1')) { press(drop2, 'k1'); await settle(); }
     if (shownClosed && hiddenOpen && visible(b2, drop2) && rowsOf(drop2).length === 0) test.check('closed: the button shows; open: the pane alone, the button hidden; picked: the button again');
     else test.fail(OWED10 + 'the button: shown closed ' + shownClosed + ', hidden while open ' + hiddenOpen + ', shown after a pick ' + visible(b2, drop2));
   } else test.fail(OWED10 + 'no dropdown button');
@@ -252,7 +296,7 @@ async function main() {
   test.subHeading('7. (goal/G4.10) presence, always a column: green when present, white otherwise');
   const pres = m.make({ face: 'pane', search: search, statuses: STATUSES });
   await settle();
-  const dot = function (k) { const r = rowFor(pres, k); return r ? shown(r) : ''; };
+  const dot = function (k) { return shown(rowFor(pres, k)); };
   const G = ICON.GREEN_CIRCLE; const W = ICON.WHITE_CIRCLE;
   if (['k1', 'k2', 'k3'].every(function (k) { return dot(k).indexOf(W) !== -1 && dot(k).indexOf(G) === -1; })) test.check('every row has its presence dot, white until told');
   else test.fail(OWED10 + 'rows before any presence: ' + JSON.stringify(['k1', 'k2', 'k3'].map(dot)).slice(0, 200));
@@ -266,25 +310,19 @@ async function main() {
     await settle();
     if (dot('k2').indexOf(G) !== -1 && dot('k2').indexOf(ICON.RED_CIRCLE) !== -1) test.check('the presence dot and the status mark stand side by side');
     else test.fail(OWED10 + 'k2 with presence and unanswered: ' + JSON.stringify(dot('k2')).slice(0, 120));
-    // Andy, 2026-10-03: "1. Make the configurable icons the first column, and the presence dots the second column".
+    // goal/G29.6 replaced goal/G4.10's "Make the configurable icons the first column, and the presence dots the second
+    // column": the columns are ★, presence, the name, then the status column last ("what allows an extra (status)
+    // column to be added").
     const r2 = rowFor(pres, 'k2');
-    const cellOf = function (glyph) { return r2 ? r2.children.findIndex(function (c) { return shown(c).indexOf(glyph) !== -1; }) : -1; };
-    const si = cellOf(ICON.RED_CIRCLE); const pi = cellOf(G);
-    if (si !== -1 && pi !== -1 && si < pi) test.check('the status icon is the first column, the presence dot the second');
-    else test.fail(OWED10 + 'in the row the status icon is cell ' + si + ', the presence dot cell ' + pi);
-    box2Search(pres);
+    const cellOf = function (glyph) { return r2 ? r2.cells.findIndex(function (c) { return c.indexOf(glyph) !== -1; }) : -1; };
+    const pi = cellOf(G); const ni = cellOf('>two<'); const si = cellOf(ICON.RED_CIRCLE);
+    if (r2 && r2.cells.length === 4 && pi === 1 && ni === 2 && si === 3) test.check('the columns are ★, presence, name, then the status icon last');
+    else test.fail(OWED29 + 'in the row: ' + (r2 ? r2.cells.length : 0) + ' cells, presence cell ' + pi + ', name cell ' + ni + ', status cell ' + si);
+    typeInto(pres, '');
     await settle();
     if (dot('k2').indexOf(G) !== -1) test.check('presence survives the rows being drawn again');
     else test.fail(OWED10 + 'after a redraw k2 shows ' + JSON.stringify(dot('k2')).slice(0, 100));
   } else test.fail(OWED10 + 'the root has no present(key, state)');
-}
-
-// Ask the pane's search again, as typing does: the rows are drawn anew.
-function box2Search(root) {
-  const box = inputOf(root);
-  if (!box) return;
-  box.value = '';
-  fire(box, 'input');
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {

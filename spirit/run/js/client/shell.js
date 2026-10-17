@@ -2067,21 +2067,20 @@
         if (row && row.owned && row.roll && row.roll.relayKey) found[String(row.roll.relayKey)] = true;
       });
     }, function () {});
-    // The owned contacts: the book searched for the word its label carries, each hit confirmed by its get. A search
-    // is bucket-bounded; past its cap the rest are not heard until the next ask, and the console says so once.
-    var owned = Promise.resolve().then(function () { return spirit.core.ask('contact.search', { q: 'owned' }); }).then(function (r) {
+    // The owned contacts, by contact.search's owned filter (goal/G29.6; Andy: "why would owned not be a binary filter,
+    // owned or not?"): the node answers those alone, owned read from each row's json label. A search is
+    // bucket-bounded; past its cap the rest are not heard until the next ask, and the console says so once.
+    var owned = Promise.resolve().then(function () { return spirit.core.ask('contact.search', { q: '', owned: 'yes' }); }).then(function (r) {
       var b = said(r);
       if (b && b.more && !askOwnSenders.partial) {
         askOwnSenders.partial = true;
         if (typeof console !== 'undefined' && console.warn) console.warn('shell: more owned contacts than one search answers; only the first are heard (goal/G19.8)');
       }
-      return Promise.all(((b && b.items) || []).map(function (item) {
-        if (!item || !item.key) return null;
-        return Promise.resolve().then(function () { return spirit.core.ask('contact.get', { key: item.key }); }).then(function (g) {
-          var p = said(g);
-          if (p && p.person && p.person.owned === true && p.person.publicKey === item.key) found[String(item.key)] = true;
-        }, function () {});
-      }));
+      ((b && b.items) || []).forEach(function (item) {
+        var label = null;
+        try { label = JSON.parse(item && item.label); } catch (e) { label = null; }
+        if (item && item.key && label && label.owned === true) found[String(item.key)] = true;
+      });
     }, function () {});
     ownSendersAsking = Promise.all([card, relays, owned]).then(function () {
       ownSenders = found;
