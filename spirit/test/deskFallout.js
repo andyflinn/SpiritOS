@@ -211,11 +211,12 @@ async function paneHalf() {
   const ui = win.spiritDeskPlugins.fallout;
   if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spiritDeskPlugins.fallout.open'); return; }
   const asked = [];
+  let chatAt = null;
   const box = fakeElement('pane');
   ui.open(box, {
     goal: GOAL,
     ask: function (verb, a) { asked.push([verb, a]); return Promise.resolve(verb === 'fallout.reds' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false, total: 3 } : {}); },
-    onPublished: function () { return function () {}; }, chat: function () {}, callDialog: function () { return new Promise(function () {}); },
+    onPublished: function () { return function () {}; }, chat: function (el) { chatAt = el; }, callDialog: function () { return new Promise(function () {}); },
   });
   await sleep(20);
   const all = function () { return box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); };
@@ -260,6 +261,13 @@ async function paneHalf() {
   const items = doc.getElementById('fallout-items');
   if (items.hidden === false && /not yet|nothing yet|later/i.test(items.innerHTML) && doc.getElementById('fallout-pane-reds').hidden === true) test.check('Items shows, empty for now, saying so; Reds hides');
   else test.fail(OWED + 'after Items: items hidden ' + items.hidden + ', says ' + short(items.innerHTML) + ', reds hidden ' + doc.getElementById('fallout-pane-reds').hidden);
+  // THE GOAL CHAT AT THE BOTTOM, NO FAILURE COLUMN (Andy, 2026-10-17: "drop the "Failure" column, it means nothing to
+  // me, and add the goal chat at the bottom.").
+  const markup = box.innerHTML;
+  if (chatAt && chatAt.id === 'fallout-chat' && markup.indexOf('id="fallout-chat"') > markup.indexOf('id="fallout-items"') && markup.indexOf('id="fallout-chat"') > markup.indexOf('id="fallout-pane-reds"')) test.check('the goal chat is mounted at the bottom, below both inner tabs');
+  else test.fail(OWED + 'the chat mounted in ' + short(chatAt && chatAt.id) + '; markup ' + short(markup.slice(-200)));
+  if (!/<th>Failure<\/th>/.test(all())) test.check('no Failure column');
+  else test.fail(OWED + 'a Failure column is still drawn');
 }
 
 (async function () { await serverHalf(); await paneHalf(); await keysHalf(); await currentHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
