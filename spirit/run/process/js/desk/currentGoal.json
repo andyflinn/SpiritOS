@@ -1,5 +1,5 @@
 {
- "change": 67022,
+ "change": 67023,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -6977,10 +6977,9 @@
    "id": "goal/G27.20",
    "title": "Desk: an item waiting for Done moves only on Andy chat",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
