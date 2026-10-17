@@ -231,6 +231,13 @@ async function paneHalf() {
   const table = doc.getElementById('fallout-reds').innerHTML;
   if (/zzFalloutA\.js/.test(table) && /the relay answers its key/.test(table) && /abc1234/.test(table) && /boom: no answer/.test(table)) test.check('each red is a table row: suite, test, commit, time and failure');
   else test.fail(OWED + 'the table reads ' + short(table));
+  // THE ORDER (Andy, 2026-10-17: "the search results better list that file, then the failure description, then the
+  // current status..."): suite first, the failure next, the status third.
+  const atSuite = table.indexOf('zzFalloutA.js');
+  const atFailure = table.indexOf('boom: no answer');
+  const atStatus = table.indexOf('❌', table.indexOf('<tbody>'));
+  if (atSuite !== -1 && atFailure > atSuite && atStatus > atFailure) test.check('each row reads the suite, then the failure, then the status');
+  else test.fail(OWED + 'the row order: suite at ' + atSuite + ', failure at ' + atFailure + ', status at ' + atStatus);
   // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
   if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
   else test.fail(OWED + 'no #fallout-outcome select with red, green and both in ' + short(all()));
