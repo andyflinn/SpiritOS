@@ -760,11 +760,26 @@ function deskNotePlugins(rows) {
   });
   if (added) deskDrawAppTabs();
 }
-// The plugin goals, by one search the List does not make: the List may be showing only the current goal.
+// THE PLUGINS, FOUND BY THEIR FOLDER (goal/G29.5). Andy, 2026-10-17: "just search the plugin folder for subfolders,
+// THAT's the way you find them all." A ranked search for plugin/ lost Fallout's goal off a capped answer once its chat
+// grew long. So the node lists shell/desk/plugins/ one level deep (fs.search, '*' stops at a folder); every subfolder is
+// a plugin, and its goal, plugin/<name>, is read for the tab's name (pluginTab). A folder whose goal the desk has not
+// mounted gets no tab.
 function deskFindPlugins() {
-  return deskAsk('items.search', { text: 'plugin/', currentGoalOnly: false, goalsOnly: true, includeClosed: true }).then(function (r) {
-    deskNotePlugins(deskLabels(r));
-  }, function () { /* the tabs stay as they are */ });
+  return Promise.resolve(deskApi.verb('fs.search', { q: DESK_PLUGIN_UI + '*' })).then(function (r) {
+    var items = (r && r.body && r.body.items) || [];
+    var names = items.map(function (i) { return String((i && i.key) || ''); })
+      .filter(function (k) { return k.indexOf(DESK_PLUGIN_UI) === 0 && k.charAt(k.length - 1) === '/'; })
+      .map(function (k) { return k.slice(DESK_PLUGIN_UI.length, -1); })
+      .filter(function (n) { return /^[A-Za-z][A-Za-z0-9_-]*$/.test(n) && !deskApps.some(function (a) { return a.name === n; }); });
+    return Promise.all(names.map(function (n) {
+      return deskAsk('item.get', { id: 'plugin/' + n }).then(function (g) {
+        var facts = null;
+        try { facts = typeof g.item === 'string' ? JSON.parse(g.item) : g.item; } catch (e) { facts = null; }
+        return facts && facts.plugin === n ? facts : null;
+      }, function () { return null; });
+    })).then(function (rows) { deskNotePlugins(rows.filter(Boolean)); });
+  }).then(null, function () { /* the tabs stay as they are */ });
 }
 // The first time a plugin's tab opens, its private UI is loaded and opened in its pane; later it is only shown.
 function deskOpenPlugin(app) {
