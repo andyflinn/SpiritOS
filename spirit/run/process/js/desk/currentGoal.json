@@ -1,5 +1,5 @@
 {
- "change": 65833,
+ "change": 65835,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -15,7 +15,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G27.10",
     "goal/G27.2",
     "goal/G27.3",
     "goal/G27.5",
@@ -58,7 +57,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -381,10 +382,11 @@
    "id": "goal/G27.10",
    "title": "Chat posts follow the address, not the newest line",
    "goal": "goal/G27",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -476,7 +478,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Chat posts follow the address, not the newest line\n\nAndy's problem (goal/G27 chat, 2026-10-15): slow agents in deskAgent work for a long time and then find themselves blocked from answering a question they were asked; work notes and reports that were explicitly or implicitly asked for need a way to post that cannot be blocked.\n\nToday (read from code, spirit/run/process/js/desk/desk.js, the chat.add gate about lines 2296-2335): the gate judges by who writes, not by what the line is. An open take of one of Andy's lines survives later lines, so the taker still answers. But an agent that holds no take and no item is refused once Andy's newest line under the item is taken by another agent, even when Andy addressed it by name in an earlier line, when it created the item (Levant was refused on goal/G27.1 and goal/G27.9), or when it held a phase on the item (refused as a second answer).\n\nRequirements:\nR1. A line of Andy's addressed to an agent gives that agent a standing right to post under that item until it has answered, whatever lines or takes come after. This already holds in the desk (desk.js, chat.add and holdsTake, at a2671faa): his addressed line is taken by that agent when it is written and stays an open take until the agent answers. The red asserts it as a guard.\nR2. An agent that holds the item or a phase on it, held a phase on it earlier, or created it, posts its work notes and reports under it at any time. This replaces goal/G21.4's refusal of an earlier phase holder after another agent took and answered his line (Andy, 2026-10-17, accepting the recommendation to keep R2).\nR3. Andy's rule stands: no second answer to a taken line; one agent answers a line of his, once.\nR4. The gate stays mechanical: it goes by the address, the take, the holding and the creator on record, never by reading the line for what it means.\nR5. deskClient's own chat and box gate (goal/G27.12) allows the same posts R2 allows: it refuses today what the desk would accept for a creator or an earlier phase holder.\n\nFolds in the earlier proposal under goal/G27: an agent may post under an item it just created (R2).\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the chat.add gate), spirit/run/process/js/deskClient/deskClient.js (its gate, R5), spirit/run/process/js/desk/AGENTS.md (the posting rule), and a red suite. None of them is a core file, so no file grant is needed; Andy's Go is.",
