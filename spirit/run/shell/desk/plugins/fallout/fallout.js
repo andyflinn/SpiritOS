@@ -16,6 +16,7 @@
   var ctx = null;
   var inner = 'reds';
   var searching = false;
+  var cache = Object.create(null);   // every line any search brought, by test file and sub-heading
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -78,17 +79,32 @@
         // ONLY THE LATEST, ONE LINE PER TESTED THING (Andy, 2026-10-17: "i only want to see the latest, if you want to
         // show the history of one test, use a dialog."). A test file and its sub-heading are one tested thing: its
         // checks fold into one line, ❌ fail while any of them is red, its newest time.
-        var groups = [];
-        var byKey = Object.create(null);
+        var answer = Object.create(null);
         rows.forEach(function (x) {
           // deskVerify folds the lines itself (fold: yes, {suite, what, red, at}); plain rows are folded here alike.
           var what = x.what !== undefined ? String(x.what) : String(x.title || '').replace(/\s+#\d+$/, '');
           var k = x.suite + '\n' + what;
-          var g = byKey[k];
-          if (!g) { g = byKey[k] = { suite: x.suite, what: what, red: false, at: '' }; groups.push(g); }
+          var g = answer[k] || (answer[k] = { suite: x.suite, what: what, red: false, at: '' });
           if (x.outcome === 'red' || x.red === true) g.red = true;
           if (String(x.at || '') > g.at) g.at = String(x.at || '');
         });
+        // EVERY SEARCH RESULT CACHED (Andy, 2026-10-17: "and the UI still doesn't cache every search result, and then
+        // display what matches the search term among all cached rows...."): each answer's lines join the cache, the
+        // newest answer winning for a line; what shows is this answer's lines and every cached line the words and the
+        // ✅/❌ filter match, newest first. No paging: the cache is only what searches brought.
+        Object.keys(answer).forEach(function (k) { cache[k] = answer[k]; });
+        var words = text.toLowerCase().split(/\s+/).filter(Boolean);
+        var bySuite = /^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/.test(text);
+        var fits = function (g) {
+          if (outcome === 'red' && !g.red) return false;
+          if (outcome === 'green' && g.red) return false;
+          if (bySuite) return g.suite === text;
+          var hay = (g.suite + ' ' + g.what).toLowerCase();
+          return words.every(function (w) { return hay.indexOf(w) !== -1; });
+        };
+        var groups = Object.keys(cache).filter(function (k) { return answer[k] || fits(cache[k]); }).map(function (k) { return cache[k]; })
+          .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });
+        if (count) count.textContent = Math.max(total, groups.length) + ' ' + (outcome === 'red' ? '❌' : outcome === 'green' ? '✅' : '') + ' match this search' + (Math.max(total, groups.length) > groups.length ? ', the ' + groups.length + ' best shown' : '');
         el.innerHTML = groups.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
           groups.map(function (g) {
             // F6: the line opens its history (data-suite, data-heading).
