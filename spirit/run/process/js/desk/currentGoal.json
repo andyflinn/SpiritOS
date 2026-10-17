@@ -1,5 +1,5 @@
 {
- "change": 66430,
+ "change": 66477,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -15,10 +15,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G27.2",
-    "goal/G27.3",
-    "goal/G27.5",
-    "goal/G27.14"
+    "goal/G27.3"
    ],
    "go": false,
    "alone": false,
@@ -49,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -1045,7 +1042,8 @@
     "delete"
    ],
    "blocking": [
-    "goal/G27"
+    "goal/G27.3",
+    "goal/G27.14"
    ],
    "blocked": [],
    "go": false,
@@ -1171,14 +1169,16 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G27.2",
+    "goal/G27.14"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1310,10 +1310,11 @@
    "id": "goal/G27.5",
    "title": "Blocking/Blocked-by relationships in desk",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -1322,21 +1323,62 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/block.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/block.targets.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/unblock.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentDesk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskBlocks.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskServer.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "ollama agent node",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "f688a30e",
+   "redCommit": "c962c75f",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -1392,8 +1434,8 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -1599,6 +1641,48 @@
      "key": "",
      "at": "2026-10-17T03:51:58.520Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T03:53:57.517Z",
+     "text": "commit c962c75f792a851cd46d522c52e9ee748267552c: goal/G27.5: the red for block and unblock, the gate, the repair and the dialog\n- spirit/test/deskBlocks.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T03:54:03.908Z",
+     "text": "deskVerify: red confirmed at c962c75f: spirit/test/deskBlocks.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T03:54:18.253Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T03:54:20.732Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:00:01.366Z",
+     "text": "commit f688a30ed4830b82ccd3fcc0c71efd360372494f: goal/G27.5: block, unblock, the gate, the repair and the block bubble\n- spirit/run/process/js/desk/block.json\n- spirit/run/process/js/desk/block.targets.json\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/unblock.json\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskAgentDesk.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T04:00:09.909Z",
+     "text": "cw: built and pushed at f688a30e, build and verify through: deskBlocks 16 of 16; the desk, dialog and deskAgent suites green (deskLoop red before, unchanged). Files: desk.js, deskDetails.js, three verb files (block, unblock, block.targets) so agents can arrange dependencies, deskBlocks.js, and deskServer and deskAgentDesk listing the new verbs.\nNote: the repair also runs on every close now, as R5 says. It waits on deskVerify for your Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T04:00:20.604Z",
+     "text": "deskVerify: passed, at f688a30e (pulled). 3 suites ran green."
     }
    ]
   },
@@ -1612,7 +1696,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G27.8"
+    "goal/G27"
    ],
    "blocked": [],
    "go": true,
@@ -3837,7 +3921,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G27.6"
+    "goal/G27"
    ],
    "blocked": [],
    "go": true,
@@ -4756,14 +4840,15 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
-    "goal/G27"
+    "goal/G27.3"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G27.2"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
