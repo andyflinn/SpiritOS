@@ -304,6 +304,9 @@ function meantForAgent(got, from) {
     if (r.key && !mine && r.by && r.by !== 'andy' && r.by !== 'desk') rememberOther(r.key, r.by);
     if (r.by === 'andy') {
       if (r.verb === 'press' && /"what":"seen"/.test(r.body)) return;
+      // HIS BOX TAKE AND RELEASE WAKE NO AGENT (goal/G27.12, reopened; Andy 2026-10-17: "No agent should hear when i take
+      // the box", and of the release: "Do it."). His box.write still reaches the agents.
+      if (r.verb === 'box.take' || r.verb === 'box.release') return;
       // A PROFILE CHANGE IS ABOUT ONE AGENT (goal/G27.6, Andy 2026-10-16: "your deskClient should not be forwarding that info"):
       // a profile.set for another agent is not handed to this one.
       if (r.verb === 'profile.set') {
@@ -312,7 +315,10 @@ function meantForAgent(got, from) {
         if (about !== SELF_KEY) return;
       }
       if (r.verb === 'chat.add') publishOn(r.body);
-      out.push({ text: 'DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
+      const x = { text: 'DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line };
+      // HIS CHAT LINE IS TAKEN BEFORE IT IS HANDED OVER (goal/G27.12, reopened): readOn asks line.take for the item first.
+      if (r.verb === 'chat.add') { try { x.take = String(JSON.parse(r.body).id || ''); } catch (e) { x.take = ''; } }
+      out.push(x);
     } else if (r.by && !mine && r.verb === 'chat.add') {
       // The desk's own busy replies are for Andy; they wake no agent (Andy: "it won't bother you"). Its other lines do
       // (goal/G5.8): an item entering limbo (goal/G5.4) and a rule change are written for the agents to hear.
@@ -420,19 +426,39 @@ function readOn(to) {
       // A poll the desk did not answer moves nothing: what it had read is read again next time.
       if (!r.ok) { record('changes', outcomeOf(r.got), ms, bytes, 1); return null; }
       raw += r.got.records.length + r.got.lines.length;
-      meantForAgent(r.got, at).forEach(function (x) { found.push(x); });
+      const meant = meantForAgent(r.got, at);
       at = { n: r.got.n, line: r.got.line };
-      if (r.got.more) return page();
-      fetched = at;
-      found.forEach(function (x) { waiting.push(x); });
-      // Nothing waits to be handed over, so nothing can be lost: the place moves at once.
-      if (!waiting.length) keepPlace(fetched);
-      if (raw === 0) recordEmptyPoll(ms, bytes);
-      else record('changes', 'answered', ms, bytes, 1);
-      return null;
+      return takeFirst(to, meant, found).then(function () { return r.got.more ? page() : done(); });
     });
   }
+  function done() {
+    fetched = at;
+    found.forEach(function (x) { waiting.push(x); });
+    // Nothing waits to be handed over, so nothing can be lost: the place moves at once.
+    if (!waiting.length) keepPlace(fetched);
+    if (raw === 0) recordEmptyPoll(ms, bytes);
+    else record('changes', 'answered', ms, bytes, 1);
+    return null;
+  }
   return page();
+}
+
+// TAKE FIRST, THEN WAKE (goal/G27.12, reopened). Andy, 2026-10-17: "when an agent's deskClient takes a chat line for
+// him, all other deskClients should be refused a take, and thus NOT notify their agent.", and "it's the deskClient that
+// should manage that, we leave desk alone." So each line of his chat is taken at the desk (line.take, the desk's own
+// rule of who may) before it is handed over, one after another in the order read; a take the desk refuses (another
+// agent took it, or it is addressed to another agent) drops the line, and its agent is not woken. A take that got no
+// answer hands the line over as before, so nothing is lost to a slow desk. The cost, stated (rule/5): one more desk
+// ask per line of his, per listening agent.
+function takeFirst(to, meant, found) {
+  return meant.reduce(function (chain, x) {
+    return chain.then(function () {
+      if (!x.take) { found.push(x); return null; }
+      return countedAsk(to, 'line.take', { id: x.take }).answer.then(function (got) {
+        if (outcomeOf(got) !== 'refused') found.push(x);
+      }, function () { found.push(x); });
+    });
+  }, Promise.resolve());
 }
 
 // The one poll under way, or a new one. Never two at once: two would read the same things twice.
@@ -479,8 +505,11 @@ function handOver(to, t0) {
 
 // THE CHAT GATE (goal/G27.6): a chat write is allowed on an item the agent holds, or where it took a line. The desk's
 // answer decides; no answer refuses.
+// THE BOX IS GATED THE SAME WAY (goal/G27.12, reopened): Andy, 2026-10-17, to gating box.take and box.write in deskClient
+// as chat is gated: "yes, add that". An agent that neither holds the item nor took his line there leaves its box alone.
+const GATED = ['chat.add', 'box.take', 'box.write'];
 function mayChat(to, verb, args) {
-  if (verb !== 'chat.add' || !args || !args.id) return Promise.resolve(true);
+  if (GATED.indexOf(verb) === -1 || !args || !args.id) return Promise.resolve(true);
   const id = String(args.id);
   return askDesk(to, 'item.get', { id: id }).then(function (r) {
     let it = {};
@@ -662,4 +691,8 @@ appServer.serve({
 }, { dependencies: ['deskClient.changed'], codes: {
   // Rule 1 at this node (goal/G3.9): the agent's wait is refused while another agent's key is not blocked here.
   'unblocked': { status: 409, text: 'another agent is not blocked on this node' },
+  // The chat and box gate (goal/G27.6, goal/G27.12): undeclared, both reached the agent as handler-failed.
+  'not-taken': { status: 409, text: 'this agent holds neither the item nor a line it took here' },
+  // A signed-off agent (goal/G27.12): deskAgentEar reads this code to say so.
+  'signed-off': { status: 409, text: 'this agent is signed off' },
 } });

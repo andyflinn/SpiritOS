@@ -146,7 +146,7 @@ async function next(caller) {
   return { status: r.status, code: (r.body || {}).code, lines: lines, ms: Date.now() - t0, body: r.body };
 }
 const said = function (text) { return function (l) { return String(l).indexOf(text) !== -1; }; };
-const andySays = function (text) { return call('desk', 'chat.add', { id: 'a/G1.1', text: text }, ANDY); };
+const andySays = function (text, id) { return call('desk', 'chat.add', { id: id || 'a/G1.1', text: text }, ANDY); };
 const keeps = function (key, from, peer, text) {
   return call('desk', 'log.add', { json: JSON.stringify({ key: key, at: new Date().toISOString(), from: from, kind: 'note', peer: peer, text: text }) }, ANDY);
 };
@@ -206,7 +206,8 @@ async function main() {
 
   test.subHeading('7. listening when its agent waits, working when it hands lines over');
   const wordsSoFar = posts.filter(function (p) { return p.verb === 'agent.state'; }).map(function (p) { return p.args && p.args.word; });
-  await andySays('new chat one');
+  // Under a/G1.2 (goal/G27.12, reopened): deskClient takes it, and a taker of a/G1.1 would bring its limbo line back.
+  await andySays('new chat one', 'a/G1.2');
   await sleep(POLL_MS + 100);
   posts.length = 0;
   const one = await next();
@@ -252,11 +253,14 @@ async function main() {
   test.subHeading('6. once, across a restart: nothing missed, nothing repeated');
   kid.kill();
   await sleep(500);
-  await andySays('chat while it was down');
+  // UNDER a/G1.2, WHICH HAS NO GO (goal/G27.12, reopened): deskClient now takes each line of his before handing it over,
+  // and a take on a/G1.1, which has his Go and no phase, brings the desk's limbo line back whenever this agent's word
+  // flips (the desk's own rule, left alone). Under a/G1.2 the restart is asserted exactly as before.
+  await andySays('chat while it was down', 'a/G1.2');
   kid = startClient(nodeUrl);
   await up('deskClient');
   const back = await next();
-  await andySays('chat after the restart');
+  await andySays('chat after the restart', 'a/G1.2');
   await sleep(POLL_MS + 100);
   const later = await next();
   if (back.lines && back.lines.length === 1 && said('chat while it was down')(back.lines[0]) && later.lines && later.lines.length === 1 && said('chat after the restart')(later.lines[0])) {
