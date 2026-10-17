@@ -12,20 +12,31 @@
 // The full design (the Items tab, the item form, items code by default, the chat) stays in the box, for later.
 
 module.exports = function (desk) {
+  // WHAT STANDS NOW, AND HOW MANY (goal/G27.14). Andy, 2026-10-17: "is this really showing just reds? how many red? it's
+  // shows items that we just closed? do i get a filter for ✅ or ❌?". So deskVerify is asked for current tests only (the
+  // suite's latest run), its total comes back with the bucket, and outcome is red (the default), green, or '' for both.
   function reds(a) {
     const text = String(a.text || '').trim();
     if (typeof desk.verify !== 'function') throw desk.refused('bad-request', 'this desk hands its plugins no deskVerify to search');
-    const ask = { over: 'tests', outcome: 'red' };
+    const outcome = a.outcome === undefined ? 'red' : String(a.outcome);
+    if (outcome && outcome !== 'red' && outcome !== 'green') throw desk.refused('bad-request', 'an outcome is red, green, or empty for both');
+    const ask = { over: 'tests', current: 'yes' };
+    if (outcome) ask.outcome = outcome;
     if (/^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/.test(text)) ask.suite = text;
     else if (text) ask.test = text;
     return desk.verify('search', ask).then(function (r) {
-      return { items: (r && Array.isArray(r.items) ? r.items : []).map(function (i) { return { key: String(i.key || ''), label: String(i.label || '') }; }), more: !!(r && r.more) };
+      return { items: (r && Array.isArray(r.items) ? r.items : []).map(function (i) { return { key: String(i.key || ''), label: String(i.label || '') }; }),
+        more: !!(r && r.more), total: Number(r && r.total) || 0 };
     });
   }
   return {
     verbs: {
-      // goal/G27.14, F3: the verifier's red tests matching the text, as deskVerify ranks them.
-      'fallout.reds': { request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false }, handler: reds },
+      // goal/G27.14, F3: the verifier's tests that stand now and match the text, as deskVerify ranks them.
+      'fallout.reds': { request: { text: '', outcome: '' }, reply: { items: [{ key: '', label: '' }], more: false, total: 0 }, handler: reds,
+        // text and outcome are each optional; nothing else is taken.
+        accepts: function (x) {
+          return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).every(function (k) { return (k === 'text' || k === 'outcome') && typeof x[k] === 'string'; });
+        } },
     },
   };
 };

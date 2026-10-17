@@ -192,13 +192,14 @@ const test = {
     },
       
     startTest: function(title) {
-        this.counter++; this.successCount = this.failureCount = 0; 
+        this.counter++; this.successCount = this.failureCount = 0; this.section = String(title || ''); this.slot = 0;
         console.log('\n' + STARS);
         this.titleLine('#' + this.counter + ' ' + title);
         console.log(STARS + '\n');
     },
     
     subHeading: function(title) {
+        this.section = String(title || ''); this.slot = 0;
         console.log('\n' + PAD_STARS);
         this.titleLine(title);
         console.log(PAD_STARS + '\n');
@@ -310,17 +311,30 @@ const test = {
     // should identify tests uniquely?", and "every test just has to output a detailed record."
     // A failing assertion used to carry its runtime values inside the one sentence it printed, so the red and the
     // green of one assertion shared no key and no history of flips was possible. So both take an optional second
-    // argument: the title alone identifies the test, the detail is printed after it and never recorded.
+    // argument: the detail is printed after the title. Few suites took it up, so since goal/G27.14 the key is the place,
+    // below, and the words of both are what is printed.
+    // ONE TEST, ONE KEY, WHICHEVER WAY IT TIPS (goal/G27.14). Andy, 2026-10-17: "a passing test MUST BE stored under the
+    // same fucking name as a failing test, how the fuck are we supposed to keep track of a tests tipping either way?",
+    // and "that was the POINT when we conceived the fucking verifier?!?!??!". The suites mostly say a check in one
+    // sentence when it passes and the failure in another when it fails, so their words were two keys and a test never
+    // flipped (goal/G8.1 left their retitling, some 9,000 sites, undone). So the key is the assertion's PLACE: its
+    // sub-heading (the suite's title before the first) and its number under it, the same for its check and its fail;
+    // the words go beside it, a red's as its failure text. What is printed is unchanged.
+    key: function () {
+        this.slot = (this.slot || 0) + 1;
+        return (this.section || 'untitled') + ' #' + this.slot;
+    },
+
     check: function(str, detail){
         this.successCount++;
         this.comment('SUCCESS #' + this.counter + '.' + this.successCount + ': ' + str + (detail ? ' — ' + detail : '') + ' ' + ICON.SUCCESS);
-        record(str, 'green');
+        record(this.key(), 'green');
     },
 
     fail: function(str, detail){
         this.failureCount++;
         this.comment('FAILURE #' + this.counter + '.' + this.failureCount + ': ' + str + (detail ? ' — ' + detail : '') + ' ' + ICON.ERROR);
-        record(str, 'red', String(str) + (detail ? ' — ' + detail : ''));
+        record(this.key(), 'red', String(str) + (detail ? ' — ' + detail : ''));
     },
 
     // ── DECLARED, AND NOT BUILT YET ──────────────────────────────────

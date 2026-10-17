@@ -71,6 +71,11 @@ db.exec('CREATE TABLE IF NOT EXISTS runs (rowid INTEGER PRIMARY KEY AUTOINCREMEN
 if (!db.prepare('PRAGMA table_info(runs)').all().some(function (c) { return c.name === 'commit'; })) {
   db.exec('ALTER TABLE runs ADD COLUMN "commit" TEXT NOT NULL DEFAULT \'\'');
 }
+// WHEN EACH TEST WAS LAST REPORTED (goal/G27.14), on every record, a repeat too, where results keeps flips only: what
+// a search for what is red NOW reads (current: yes). Andy, 2026-10-17: "is this really showing just reds? ... it's shows
+// items that we just closed?". A table of its own, so the rows results holds are untouched.
+db.exec('CREATE TABLE IF NOT EXISTS seen (suite TEXT NOT NULL, title TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (suite, title));');
+const seenAt = db.prepare('INSERT INTO seen (suite, title, at) VALUES (?, ?, ?) ON CONFLICT (suite, title) DO UPDATE SET at = excluded.at');
 const runQueued = db.prepare('INSERT INTO runs (kind, id, state, outcome, queuedAt, startedAt, endedAt, "commit") VALUES (?, ?, \'queued\', \'\', ?, \'\', \'\', ?)');
 const runStarted = db.prepare('UPDATE runs SET state = \'running\', startedAt = ? WHERE rowid = ?');
 const runEnded = db.prepare('UPDATE runs SET state = \'ended\', outcome = ?, endedAt = ? WHERE rowid = ?');
@@ -1136,6 +1141,7 @@ async function keep(suite, title, outcome, failure) {
   // The tree first, then the read and the write with no wait between them, so a record sent twice at once (verifyPost
   // resends what had not come back) still writes one row.
   const t = await tree();
+  seenAt.run(suite, title, new Date().toISOString());
   const last = newestRow.get(suite, title);
   if (last && last.outcome === outcome) {
     if (outcome === 'red' && why && why !== last.failure) setFailure.run(why, last.rowid);
@@ -1172,7 +1178,7 @@ function deskVia(m, verb, args) {
 // file list; it writes nothing. A filter that does not belong to `over` is ignored, as the verb file says.
 const SEARCH_ROOM = appClient.ANSWER_MAX - 512;
 const SEARCH_SCANNED = 1000;
-const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since'];
+const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since', 'current'];
 function searchBytes(key, label) { return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(label) }], more: false }), 'utf8'); }
 function searchBucket(walk) {
   const bucket = createProbabilityBucket(SEARCH_SCANNED);
@@ -1207,13 +1213,15 @@ async function search(a) {
     if (since) { where.push('queuedAt >= ?'); params.push(since); }
     const sql = 'SELECT rowid, kind, id, state, outcome, queuedAt, startedAt, endedAt, "commit" AS commitAt, line FROM runs' +
       (where.length ? ' WHERE ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
-    const walk = (function* () {
-      for (const r of rowsOf(sql, params)) {
-        yield { probability: 0, pair: { key: String(r.rowid), label: JSON.stringify({ kind: r.kind, id: r.id, state: r.state, commit: r.commitAt || '',
-          queued: r.queuedAt, started: r.startedAt, ended: r.endedAt, outcome: r.outcome, line: r.line || '' }) } };
-      }
-    }());
-    return searchBucket(walk);
+    const runRows = [];
+    for (const r of rowsOf(sql, params)) {
+      runRows.push({ probability: 0, pair: { key: String(r.rowid), label: JSON.stringify({ kind: r.kind, id: r.id, state: r.state, commit: r.commitAt || '',
+        queued: r.queuedAt, started: r.startedAt, ended: r.endedAt, outcome: r.outcome, line: r.line || '' }) } });
+    }
+    // HOW MANY (goal/G27.14): every match counted, beside the bucket.
+    const outRuns = searchBucket(runRows[Symbol.iterator]());
+    outRuns.total = runRows.length;
+    return outRuns;
   }
   // TESTS: the newest row of each test is its official latest state.
   if (a.suite) { where.push('suite = ?'); params.push(path.basename(String(a.suite))); }
@@ -1234,15 +1242,35 @@ async function search(a) {
   const sql = 'SELECT rowid, suite, title, outcome, "commit" AS commitAt, at, failure FROM results WHERE rowid IN' +
     ' (SELECT MAX(rowid) FROM results GROUP BY suite, title)' + (where.length ? ' AND ' + where.join(' AND ') : '') + ' ORDER BY rowid DESC';
   const words = String(a.test || '').trim();
-  const walk = (function* () {
-    for (const r of rowsOf(sql, params)) {
-      const p = words ? probabilityStringMatch(words, String(r.title)) : 0;
-      if (words && !(p > 0)) continue;
-      yield { probability: p, pair: { key: String(r.rowid), label: JSON.stringify({ suite: r.suite, title: r.title, outcome: r.outcome,
-        commit: r.commitAt, at: r.at, failure: r.failure || '' }) } };
+  // WHAT IS RED NOW (goal/G27.14, current: yes): only tests reported in their suite's latest run, that is within one
+  // suite's time limit of the suite's newest report. A test no run reports any more (an old key, a removed assertion)
+  // is history, kept and found without it, never counted as standing now.
+  let inLatest = null;
+  if (String(a.current || '') === 'yes') {
+    const newest = Object.create(null);
+    const at = Object.create(null);
+    for (const s of rowsOf('SELECT suite, title, at FROM seen', [])) {
+      at[s.suite + '\n' + s.title] = String(s.at);
+      if (!newest[s.suite] || String(s.at) > newest[s.suite]) newest[s.suite] = String(s.at);
     }
-  }());
-  return searchBucket(walk);
+    inLatest = function (r) {
+      const t = at[r.suite + '\n' + r.title];
+      return !!t && Date.parse(newest[r.suite]) - Date.parse(t) <= SUITE_MS;
+    };
+  }
+  // The words match a test's key and its failure text, where a red's words are since goal/G27.14.
+  const found = [];
+  for (const r of rowsOf(sql, params)) {
+    if (inLatest && !inLatest(r)) continue;
+    const p = words ? Math.max(probabilityStringMatch(words, String(r.title)), probabilityStringMatch(words, String(r.failure || ''))) : 0;
+    if (words && !(p > 0)) continue;
+    found.push({ probability: p, pair: { key: String(r.rowid), label: JSON.stringify({ suite: r.suite, title: r.title, outcome: r.outcome,
+      commit: r.commitAt, at: r.at, failure: r.failure || '' }) } });
+  }
+  // HOW MANY (goal/G27.14, Andy: "how many red?"): every match counted, beside the bucket that carries the best of them.
+  const out = searchBucket(found[Symbol.iterator]());
+  out.total = found.length;
+  return out;
 }
 
 // ── THE IDLE HOUR AND ITS CHORES (goal/G8.4, built at last by goal/G21.3) ─
@@ -1491,7 +1519,7 @@ appServer.serve({
   // is required. The verb file beside this server (search.json) makes it an agent tool.
   search: {
     request: { over: '', suite: '', test: '', outcome: '', commit: '', item: '', kind: '', since: '' },
-    reply: { items: [{ key: '', label: '' }], more: false },
+    reply: { items: [{ key: '', label: '' }], more: false, total: 0 },
     accepts: function (a) {
       if (!a || typeof a !== 'object' || Array.isArray(a)) return false;
       return Object.keys(a).every(function (k) { return SEARCH_KEYS.indexOf(k) !== -1 && typeof a[k] === 'string'; });

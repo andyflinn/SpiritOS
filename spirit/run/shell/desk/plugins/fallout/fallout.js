@@ -44,20 +44,27 @@
     if (!ctx || searching) return;
     var box = document.getElementById('fallout-text');
     var text = box ? String(box.value || '').trim() : '';
+    // THE ✅/❌ FILTER (Andy, 2026-10-17: "do i get a filter for ✅ or ❌?"): red, green, or '' for both.
+    var pick = document.getElementById('fallout-outcome');
+    var outcome = pick ? String(pick.value == null ? 'red' : pick.value) : 'red';
     searching = true;
     say('Searching the verifier.');
-    Promise.resolve(ctx.ask('fallout.reds', { text: text })).then(function (r) {
+    Promise.resolve(ctx.ask('fallout.reds', { text: text, outcome: outcome })).then(function (r) {
       searching = false;
       var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
+      // HOW MANY (Andy: "how many red?"): every match, beside the rows one answer carries.
+      var count = document.getElementById('fallout-count');
+      var total = Number(r && r.total) || rows.length;
+      if (count) count.textContent = total + ' ' + (outcome === 'red' ? '❌ red' : outcome === 'green' ? '✅ green' : 'tests') + ' now' + (total > rows.length ? ', the ' + rows.length + ' best shown' : '');
       var el = document.getElementById('fallout-reds');
       if (el) {
-        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Suite</th><th>Test</th><th>Red since</th><th>Failure</th></tr></thead><tbody>' +
+        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th></th><th>Suite</th><th>Test</th><th>Since</th><th>Failure</th></tr></thead><tbody>' +
           rows.map(function (x) {
-            return '<tr><td>' + esc(x.suite) + '</td><td>' + esc(x.title) + '</td><td>' + esc(String(x.commit || '').slice(0, 8)) + ' ' +
+            return '<tr><td>' + (x.outcome === 'red' ? '❌' : '✅') + '</td><td>' + esc(x.suite) + '</td><td>' + esc(x.title) + '</td><td>' + esc(String(x.commit || '').slice(0, 8)) + ' ' +
               '<span class="job-manifest-note">' + esc(when(x.at)) + '</span></td><td>' + esc(x.failure) + '</td></tr>';
-          }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No red test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
+          }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
       }
-      say(r && r.more ? 'More reds match than one answer holds: narrow the search.' : '');
+      say(r && r.more ? 'More match than one answer holds: narrow the search.' : '');
     }, function (e) { searching = false; say('The verifier could not be searched: ' + ((e && e.message) || e)); });
   }
 
@@ -73,9 +80,10 @@
         '<div id="fallout-pane-reds">' +
           '<div class="start-job-form card" style="margin-top:1em"><label class="field-label grow">Search the reds' +
             '<input type="search" id="fallout-text" data-field="label" placeholder="words of a test\'s name, or a suite like deskServer.js"></label>' +
+            '<select id="fallout-outcome" style="margin-right:1em"><option value="red" selected>❌ red</option><option value="green">✅ green</option><option value="">both</option></select>' +
             '<button type="button" id="fallout-search" style="margin-right:1em">Search</button></div>' +
           '<div id="fallout-note" class="job-start-error" style="margin-top:1em"></div>' +
-          '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Red tests</div><div id="fallout-reds">' +
+          '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Tests as they stand now: <span id="fallout-count"></span></div><div id="fallout-reds">' +
             '<div class="job-manifest-note">Search to see the reds; an empty search lists the newest.</div></div></div>' +
         '</div>' +
         '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>';

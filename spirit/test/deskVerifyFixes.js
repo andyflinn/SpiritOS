@@ -248,8 +248,9 @@ async function serverHalf() {
     await sleep(800);
     const reds = await v.call('search', { over: 'tests', suite: 'zzRed.js', test: '', outcome: 'red', commit: '', item: '', kind: '', since: '' });
     const rows = labels(reds);
-    const longRow = rows.filter(function (r) { return r.title === 'long red'; })[0];
-    const shortRow = rows.filter(function (r) { return r.title === 'short red'; })[0];
+    // SINCE goal/G27.14 a test's key is its place; its words are in a red's failure text, so the rows are found by them.
+    const longRow = rows.filter(function (r) { return /^long red/.test(String(r.failure)); })[0];
+    const shortRow = rows.filter(function (r) { return /^short red/.test(String(r.failure)); })[0];
     if (took(reds) && rows.length === 2 && rows.every(function (r) { return r.suite === 'zzRed.js' && r.outcome === 'red'; })) test.check('search over tests, suite and outcome red: the two reds of zzRed.js');
     else test.fail(OWED + 'search over zzRed.js reds answered ' + short(reds.body));
     if (shortRow && /because of y/.test(String(shortRow.failure))) test.check('a red keeps its failure text: "' + shortRow.failure + '"');
@@ -263,10 +264,10 @@ async function serverHalf() {
     // 6. THE FILTERS.
     const q = function (a) { return v.call('search', Object.assign({ over: 'tests', suite: '', test: '', outcome: '', commit: '', item: '', kind: '', since: '' }, a)); };
     const greenA = labels(await q({ suite: 'zzA.js', outcome: 'green' }));
-    if (greenA.length === 1 && greenA[0].title === 'probe A green' && greenA[0].failure === '') test.check('filter suite + outcome green: the one green of zzA.js, no failure text');
+    if (greenA.length === 1 && greenA[0].suite === 'zzA.js' && greenA[0].failure === '') test.check('filter suite + outcome green: the one green of zzA.js, no failure text');
     else test.fail(OWED + 'zzA.js greens: ' + short(greenA));
     const byWords = labels(await q({ test: 'short red' }));
-    if (byWords.length && byWords[0].title === 'short red') test.check('filter test words: the matching test comes first');
+    if (byWords.length && /^short red/.test(String(byWords[0].failure))) test.check('filter test words: the matching test comes first');
     else test.fail(OWED + 'by words: ' + short(byWords));
     const byItem = labels(await q({ item: 'fx/G1.3' }));
     if (byItem.length === 3 && byItem.every(function (r) { return r.suite === 'zzRed.js'; })) test.check('filter item: every test of the item\'s suites, and nothing else');

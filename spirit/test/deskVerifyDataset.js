@@ -160,13 +160,14 @@ function recordsIn(bodies) {
 }
 
 async function sender() {
-  test.subHeading('4. a suite started with --verify-port posts one record per assertion, the title alone as key');
+  test.subHeading('4. a suite started with --verify-port posts one record per assertion, keyed by its place (goal/G27.14)');
   const node = await fakeNode();
   try {
     const printed = await runMini(['--verify-port', String(node.port)]);
     await sleep(300);
     const recs = recordsIn(node.bodies);
-    const want = [{ suite: 'mini.js', title: 'alpha holds', outcome: 'green' }, { suite: 'mini.js', title: 'beta holds', outcome: 'red' }];
+    // SINCE goal/G27.14 a test's key is its place: its sub-heading (the suite's title before the first) and its number.
+    const want = [{ suite: 'mini.js', title: 'mini #1', outcome: 'green' }, { suite: 'mini.js', title: 'mini #2', outcome: 'red' }];
     const got = recs.map(function (r) { return { suite: r.suite, title: r.title, outcome: r.outcome }; });
     if (JSON.stringify(got) === JSON.stringify(want)) test.check('two posts, {suite, title, outcome}, landing though the suite exits right after its report');
     else test.fail(OWED + 'the fake node received ' + short(node.bodies.slice(0, 3)));
@@ -174,10 +175,10 @@ async function sender() {
     else test.fail(OWED + node.bodies.length + ' posts for two assertions');
     // Since goal/G21.3 the red's record carries what was printed for it as its failure text, beside the key and never
     // in it (Andy's box: "deskVerify keeps, beside each failing test's outcome, its failure text"); a green carries none.
-    const beta = recs.filter(function (r) { return r.title === 'beta holds'; })[0] || {};
-    const alpha = recs.filter(function (r) { return r.title === 'alpha holds'; })[0] || {};
-    if (/beta holds/.test(printed) && /detail 42/.test(printed) && beta.title === 'beta holds' && /detail 42/.test(String(beta.failure)) && alpha.failure === undefined) {
-      test.check('the detail is printed beside the title, and a red\'s record carries it as its failure text, the title alone the key');
+    const beta = recs.filter(function (r) { return r.title === 'mini #2'; })[0] || {};
+    const alpha = recs.filter(function (r) { return r.title === 'mini #1'; })[0] || {};
+    if (/beta holds/.test(printed) && /detail 42/.test(printed) && beta.title === 'mini #2' && /beta holds/.test(String(beta.failure)) && /detail 42/.test(String(beta.failure)) && alpha.failure === undefined) {
+      test.check('the detail is printed beside the title, and a red\'s record carries title and detail as its failure text, the place the key');
     } else test.fail(OWED + 'printed ' + short(printed.replace(/[*✅❌]+/g, '').replace(/[\r\n]+/g, ' | ').replace(/ {2,}/g, ' ')) + '; records ' + short(recs));
 
     // GROWN IN THE VERIFY (claude-windows): the quick suite above exits before its own posts land, so only the
@@ -188,7 +189,7 @@ async function sender() {
       await runMini(['--verify-port', String(lingerNode.port)], true);
       await sleep(300);
       const got2 = recordsIn(lingerNode.bodies).map(function (r) { return r.title + ':' + r.outcome; });
-      if (lingerNode.bodies.length >= 2 && JSON.stringify(got2.slice(0, 2)) === JSON.stringify(['alpha holds:green', 'beta holds:red'])) test.check('its two posts arrive while it runs, with verb jobs.api');
+      if (lingerNode.bodies.length >= 2 && JSON.stringify(got2.slice(0, 2)) === JSON.stringify(['mini #1:green', 'mini #2:red'])) test.check('its two posts arrive while it runs, with verb jobs.api');
       else test.fail(OWED + 'a lingering suite\'s posts read ' + short(lingerNode.bodies.slice(0, 3)));
     } finally { lingerNode.close(); }
 
