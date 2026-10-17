@@ -1,5 +1,5 @@
 {
- "change": 68422,
+ "change": 68423,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -143,10 +143,9 @@
    "id": "goal/G29.1",
    "title": "improve the string match itself.",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
