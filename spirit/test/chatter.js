@@ -533,16 +533,19 @@ async function main() {
     }
   } else test.fail(OWED11 + 'the chat pane has no SELECT offering plain and bubbles');
 
-  test.subHeading('G4.10 P4-P5: a new chat with a contact from the book, never a blocked one');
+  // goal/G29.9: ONE PANE, NO DROPDOWN. Andy, 2026-10-18: "in chatter, why does the contact pane look different from
+  // contacts? It fails to show proper columns for contacts, it should be all-pane mode there, that would be enough."
+  // The pane lists the book (a new chat starts from any contact in it) and the chats, the blocked never offered.
+  test.subHeading('G4.10 P4-P5, G29.9: a new chat with a contact from the book, in the one pane, never a blocked one');
   const app2 = mount();
   await settled();
-  const pick = picker(app2);
+  const pickers = (app2.selectors || []).length;
+  const pick = pane(app2);
+  if (pickers === 1 && pick && !picker(app2)) test.check('chatter holds one contact list, a pane, and no new-chat dropdown');
+  else test.fail('OWED by goal/G29.9: chatter made ' + pickers + ' contact list(s), a dropdown ' + !!picker(app2));
   if (pick) {
-    const button = all(pick.root).filter(function (n) { return n.tagName === 'BUTTON'; })[0];
-    if (button) fire(button, 'click');
-    await settled();
-    if (app2.asked.some(function (a) { return a.verb === 'contact.search'; })) test.check('a contact dropdown over the node\'s contact.search');
-    else test.fail(OWED10 + 'the new-chat dropdown never asked contact.search');
+    if (app2.asked.some(function (a) { return a.verb === 'contact.search'; })) test.check('the pane lists the node\'s book through contact.search');
+    else test.fail(OWED10 + 'the pane never asked contact.search');
     const newRow = rowFor(pick.root, NEWBIE);
     if (newRow && !rowFor(pick.root, BLOCKED)) test.check('the book\'s contacts offered, the blocked one not');
     else test.fail(OWED10 + 'offered: Newbie ' + !!newRow + ', Blocky ' + !!rowFor(pick.root, BLOCKED));
@@ -561,7 +564,7 @@ async function main() {
     const first = app2.clerverAsks('line.write')[0];
     if (first && first.body.to === NEWBIE && first.body.text === 'first words') test.check('the first line goes line.write {to: the picked contact}');
     else test.fail(OWED10 + 'the first line went ' + JSON.stringify(first));
-  } else test.fail(OWED10 + 'there is no new-chat contact dropdown');
+  } else test.fail(OWED10 + 'there is no contact pane');
   const before = app2.clerverAsks('peers.search').length;
   app2.publish({ line: Object.assign({ peer: STRANGER }, line({ sent: 0, seq: 1, at: T(9), text: 'hello from nowhere' })) });
   await settled();
@@ -586,19 +589,14 @@ async function main() {
   else test.fail(OWED10 + 'after the presence job: ' + JSON.stringify([r3(PEER), r3(QUIET)]).slice(0, 220));
   if (r3(PEER).indexOf(ICON.WAITING) !== -1) test.check('and its ⌛ for unanswered stands beside the green');
   else test.fail(OWED10 + 'PEER lost its unanswered mark: ' + JSON.stringify(r3(PEER)).slice(0, 160));
-  // Andy, 2026-10-03: "2. the color of presence dots in the dropdown don't match the color of the presence dots in the pane..."
-  const pk3 = picker(app3);
+  // Andy, 2026-10-03: "2. the color of presence dots in the dropdown don't match the color of the presence dots in the
+  // pane..." Since goal/G29.9 there is the pane alone, and a book contact with no chat yet is in it, with its presence.
   const presTable2 = {}; presTable2[PEER] = { present: true, at: T(9) }; presTable2[NEWBIE] = { present: true, at: T(9) };
   app3.presence(presTable2);
   await settled();
-  if (pk3) {
-    const pkButton = all(pk3.root).filter(function (n) { return n.tagName === 'BUTTON'; })[0];
-    if (pkButton) fire(pkButton, 'click');
-    await settled();
-    const nb = rowFor(pk3.root, NEWBIE);
-    if (nb && shown(nb).indexOf(ICON.GREEN_CIRCLE) !== -1) test.check('the new-chat dropdown shows the same presence: a present contact green there too');
-    else test.fail(OWED10 + 'in the dropdown a present contact shows ' + JSON.stringify(nb && shown(nb)).slice(0, 120));
-  } else test.fail(OWED10 + 'no new-chat dropdown');
+  const nb = p3 && rowFor(p3.root, NEWBIE);
+  if (nb && shown(nb).indexOf(ICON.GREEN_CIRCLE) !== -1) test.check('a book contact with no chat yet is in the pane, a present one green');
+  else test.fail(OWED10 + 'in the pane a present contact with no chat shows ' + JSON.stringify(nb && shown(nb)).slice(0, 120));
 
   test.subHeading('G4.10 P7: three panes, the right one empty, each side pane folding toward its edge');
   const paneEl = function (app, name) { return all(app.container).filter(function (n) { return n.getAttribute && n.getAttribute('data-pane') === name; })[0] || null; };

@@ -129,6 +129,14 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   if (details[details.length - 1] === 'b') test.check('up, then enter presses the current row');
   else test.fail(OWED + 'enter pressed ' + short(details));
 
+  // Andy, 2026-10-18: "in the contacts app the up-down keys etc... don't work." A press leaves the focus on the page, so
+  // the list itself takes the keys: it is focusable, and a press gives it the focus.
+  let focused = 0;
+  el.list.focus = function () { focused += 1; };
+  press(box, 'a');
+  if (/<div id="[^"]+list"[^>]*tabindex="0"/.test(box.innerHTML) && focused === 1) test.check('the list is focusable, and a press on a row gives it the focus, so the keys reach it');
+  else test.fail(OWED + 'list tabindex ' + /tabindex="0"/.test(box.innerHTML) + ', focused on a press ' + focused);
+
   test.subHeading('5. the dropdown mode');
   const box2 = fakeElement('drop');
   const picked = [];
