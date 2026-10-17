@@ -140,9 +140,10 @@
       .filter(function (x) { return x.p >= 0; });
     var groups;
     if (text && typeof P.createProbabilityBucket === 'function') {
-      var bucket = P.createProbabilityBucket(seated.length || 1);
+      // UNBOUNDED: nothing here crosses the wire, so every cached match is seated and read back whole.
+      var bucket = P.createProbabilityBucket(Infinity);
       seated.forEach(function (x) { bucket.seatFor(x.p, x.g); });
-      groups = bucket.serialize(null, 0).items;
+      groups = bucket.all();
     } else groups = seated.map(function (x) { return x.g; });
     // THE SEARCH'S COUNT, said as such (Andy, 2026-10-17: "what I want to know is TOTAL OF ALL FAILURES. period"): the
     // size of the problem is the Now line above; this counts only what matches the search.

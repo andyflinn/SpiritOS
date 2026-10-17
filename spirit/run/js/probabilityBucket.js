@@ -62,6 +62,12 @@ function createProbabilityBucket(capacity) {
       }
       return { items: out, bytes: utf8Bytes(JSON.stringify(out)), more: turnedAway > 0 || cut, truncated: cut };
     },
+
+    // UNBOUNDED (Andy, 2026-10-17: "the bucket needs a mode that returns the result un-bounded." and "... or a
+    // function"): every seated object, best first, with no byte ceiling: for a caller that sends nothing over the wire,
+    // as a page ranking its own cache. A bucket made with Infinity seats everything it is given; serialize stays the
+    // bounded way an answer leaves a server.
+    all: function () { return table.map(function (x) { return x.object; }); },
   };
 }
 
