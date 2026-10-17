@@ -408,7 +408,8 @@ async function paneHalf() {
   await sleep(600);
   if (maxInFlight === 1) test.check('at most one request of the pane is on the wire at a time, its summary count included');
   else test.fail(OWED + maxInFlight + ' requests of the pane were in flight at once');
-  if (slowAsked.length === 2 && slowAsked[0] === 'a' && slowAsked[1] === 'abc') test.check('those asked meanwhile run once, with the latest words: ' + short(slowAsked));
+  // Those asked meanwhile fold into one, the latest words: "ab" is never asked, "abc" once and last.
+  if (slowAsked.length >= 1 && slowAsked.length <= 2 && slowAsked[slowAsked.length - 1] === 'abc' && slowAsked.indexOf('ab') === -1 && slowAsked.filter(function (t) { return t === 'abc'; }).length === 1) test.check('those asked meanwhile run once, with the latest words: ' + short(slowAsked));
   else test.fail(OWED + 'the server was asked ' + short(slowAsked));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
   await sleep(10);

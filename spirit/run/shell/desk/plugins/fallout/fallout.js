@@ -15,8 +15,40 @@
   var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
   var ctx = null;
   var inner = 'reds';
-  var searching = false;
   var cache = Object.create(null);   // every line any search brought, by test file and sub-heading
+  // MAX ONE REQUEST ON THE WIRE (goal/G27.14). Andy, 2026-10-17: "and make sure that only one typing update is in
+  // flight at the time....", and "make SURE there's MAX one search in flight over the wire.... IMPORTANT.". Every
+  // request of this pane goes through this one slot: while one is out, each kind (the search, the summary) keeps only
+  // its latest call waiting, and when the one out returns the next goes, the search before the summary. A call folded
+  // into a later one gets that later one's answer.
+  var wireBusy = false;
+  var wireWaiting = Object.create(null);   // verb -> { args, waiters: [{ resolve, reject }] }
+  var WIRE_ORDER = ['fallout.reds', 'fallout.summary'];
+  function wire(verb, args) {
+    return new Promise(function (resolve, reject) {
+      var w = wireWaiting[verb] || (wireWaiting[verb] = { args: args, waiters: [] });
+      w.args = args;
+      w.waiters.push({ resolve: resolve, reject: reject });
+      pump();
+    });
+  }
+  function pump() {
+    if (wireBusy || !ctx) return;
+    var verb = WIRE_ORDER.filter(function (v) { return wireWaiting[v]; })[0];
+    if (!verb) return;
+    var w = wireWaiting[verb];
+    delete wireWaiting[verb];
+    wireBusy = true;
+    Promise.resolve(ctx.ask(verb, w.args)).then(function (r) {
+      wireBusy = false;
+      w.waiters.forEach(function (x) { x.resolve(r); });
+      pump();
+    }, function (e) {
+      wireBusy = false;
+      w.waiters.forEach(function (x) { x.reject(e); });
+      pump();
+    });
+  }
   // THE PROBABILITY MODULES are the shell's (index.html loads them, goal/G27.14): window.spiritProbability.
 
   function esc(s) {
@@ -44,7 +76,7 @@
   // THE SIZE OF THE PROBLEM: how many tests are red now, of all, read on opening and after each search.
   function summary() {
     if (!ctx) return;
-    Promise.resolve(ctx.ask('fallout.summary', {})).then(function (r) {
+    wire('fallout.summary', {}).then(function (r) {
       var el = document.getElementById('fallout-summary');
       if (!el) return;
       var red = Number(r && r.red) || 0;
@@ -129,29 +161,23 @@
           '<td>' + (g.red ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(g.at)) + '</td></tr>';
       }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
   }
-  // THE SERVER ASKED: its answer joins the cache (the newest answer winning for a line), then the list is drawn.
-  // ONE IN FLIGHT (Andy, 2026-10-17: "and make sure that only one typing update is in flight at the time...."): a
-  // search asked while one is out is remembered, and runs once, with the form as it stands then, when the first returns.
-  var searchAgain = false;
-  function settled() {
-    searching = false;
-    if (searchAgain) { searchAgain = false; search(); }
-  }
+  // THE SERVER ASKED, through the one wire slot (wire, above): a search asked while one is out folds into the latest,
+  // which goes when the one out returns. Its answer joins the cache (the newest answer winning for a line), then the
+  // list is drawn.
   function search() {
     if (!ctx) return;
-    if (searching) { searchAgain = true; return; }
+    // A search asked outright takes the place of one the typing still owes: it asks with the latest words already.
+    if (typedTimer) { clearTimeout(typedTimer); typedTimer = null; }
     var f = form();
-    searching = true;
     say('Searching the verifier.');
-    Promise.resolve(ctx.ask('fallout.reds', { text: f.text, outcome: f.outcome })).then(function (r) {
-      settled();
+    wire('fallout.reds', { text: f.text, outcome: f.outcome }).then(function (r) {
       summary();
       var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
       var answer = foldRows(rows);
       Object.keys(answer).forEach(function (k) { cache[k] = answer[k]; });
       draw(answer, Number(r && r.total) || rows.length);
       say(r && r.more ? 'More match than one answer holds: narrow the search.' : '');
-    }, function (e) { say('The verifier could not be searched: ' + ((e && e.message) || e)); settled(); });
+    }, function (e) { say('The verifier could not be searched: ' + ((e && e.message) || e)); });
   }
   // AS TYPED (Andy, 2026-10-17: "so why doesn't the fallout list update with each character typed or erased in the
   // search box?"): every character typed or erased redraws the list from the cache at once; once the typing pauses,
@@ -167,6 +193,7 @@
   held.fallout = {
     open: function (container, given) {
       ctx = given;
+      if (typedTimer) { clearTimeout(typedTimer); typedTimer = null; }
       // Every block a leading 1em; each button 1em after itself (the desk's UI rules).
       container.innerHTML =
         '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Fallout</div>' +
