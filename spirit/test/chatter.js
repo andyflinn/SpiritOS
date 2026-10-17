@@ -671,9 +671,11 @@ async function main() {
     fire(box5, 'input');
     await settled();
     const noChat = listed();
-    if (byName.join() === PEER && byName2.join() === QUIET) test.check('"pet" finds Pete, "quin" finds Quinn: names, not keys');
-    else test.fail(OWED10 + 'typed "pet" lists ' + byName.length + ' rows (' + (byName.indexOf(PEER) !== -1 ? 'Pete among them' : 'not Pete') + '), "quin" lists ' + byName2.length);
-    if (noChat.length === 0) test.check('a name in the book with no chat lists nobody (the pane holds chats only)');
+    // EVERY LIST BEHAVES THE SAME (goal/G29.6; Andy, 2026-10-17: "yep. every list behaves the same, that's NICE!"): the
+    // pane shows every chat it holds, the names the words match on top; it never hides a chat while words are typed.
+    if (byName[0] === PEER && byName.indexOf(QUIET) !== -1 && byName2[0] === QUIET && byName2.indexOf(PEER) !== -1) test.check('"pet" puts Pete on top, "quin" puts Quinn on top, every chat still listed: names, not keys');
+    else test.fail(OWED10 + 'typed "pet" lists ' + JSON.stringify(byName) + ', "quin" lists ' + JSON.stringify(byName2));
+    if (noChat.length === 2 && noChat.every(function (k) { return k === PEER || k === QUIET; })) test.check('a name in the book with no chat adds no row: the pane holds chats only, all still shown');
     else test.fail(OWED10 + 'typed "stan" (no chat) lists ' + JSON.stringify(noChat));
     if (app5.asked.every(function (a) { return a.via !== 'refused'; })) test.check('and every ask of the chatClerver carried its exact keys');
     else test.fail(OWED10 + 'refused asks: ' + JSON.stringify(app5.asked.filter(function (a) { return a.via === 'refused'; })).slice(0, 200));
