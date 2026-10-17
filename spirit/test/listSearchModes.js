@@ -137,32 +137,36 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   if (/<div id="[^"]+list"[^>]*tabindex="0"/.test(box.innerHTML) && focused === 1) test.check('the list is focusable, and a press on a row gives it the focus, so the keys reach it');
   else test.fail(OWED + 'list tabindex ' + /tabindex="0"/.test(box.innerHTML) + ', focused on a press ' + focused);
 
-  test.subHeading('5. the dropdown mode');
+  // THE DROPDOWN IS A POP-UP PANE (Andy, 2026-10-18: "the dropdown is just a pop-up pane.", and "why does the dropdown
+  // not just show a \"pane\" exactly like the pane would look?"): closed, a field with the chosen name or a placeholder;
+  // a click on it pops the whole pane up, rows 1 to 3 as a pane has them; a pick, escape or a click outside shuts it.
+  test.subHeading('5. the dropdown: a field, and the whole pane popping up under it');
   const box2 = fakeElement('drop');
   const picked = [];
   const drop = make(box2, { mode: 'dropdown', rows: function () { return ROWS; }, paint: function (row) { return '<td>' + row.name + '</td>'; }, pick: function (row) { picked.push(row.key); }, placeholder: 'choose…' });
   const el2 = parts(p, box2);
   await sleep(20);
-  const shut = el2.list && el2.list.hidden === true;
-  const ph = el2.text && (el2.text.placeholder === 'choose…' || /placeholder="choose…"/.test(box2.innerHTML));
-  fire(box2, 'focus', el2.text);
-  const openOnFocus = el2.list && el2.list.hidden === false;
-  if (shut && ph && openOnFocus) test.check('the dropdown\'s list is shut until the search box is focused, its placeholder in the box');
-  else test.fail(OWED + 'dropdown: shut ' + shut + ', placeholder ' + ph + ', open on focus ' + openOnFocus);
+  const ids2 = (box2.innerHTML.match(/id="([^"]+)"/g) || []).map(function (s) { return s.slice(4, -1); });
+  const field = p.doc.getElementById(ids2.filter(function (i) { return /field$/.test(i); })[0] || 'none');
+  const popup = p.doc.getElementById(ids2.filter(function (i) { return /popup$/.test(i); })[0] || 'none');
+  const fieldText = function () { return String(field.textContent || field.innerHTML || ''); };
+  const html2 = box2.innerHTML;
+  const inside = html2.indexOf('id="' + popup.id + '"');
+  const sameRows = inside !== -1 && html2.indexOf(el2.filters.id) > inside && html2.indexOf(el2.text.id) > html2.indexOf(el2.filters.id) && html2.indexOf(el2.list.id) > html2.indexOf(el2.text.id);
+  if (/choose…/.test(fieldText()) && popup.hidden === true && sameRows) test.check('closed: a field with the placeholder; the popup, shut, holds the filters, the search row and the list, as a pane');
+  else test.fail(OWED + 'dropdown: field "' + fieldText() + '", popup hidden ' + popup.hidden + ', the pane\'s rows inside ' + sameRows);
+  box2.fire('click', { target: { id: field.id, getAttribute: function () { return null; } } });
+  const openOnClick = popup.hidden === false && el2.list.hidden !== true;
   press(box2, 'b');
-  if (picked.join() === 'b' && el2.list.hidden === true && el2.text.value === 'beta door' && drop && drop.value === 'b') test.check('a press picks: the list shuts, the chosen name stands in the box, value is its key');
-  else test.fail(OWED + 'after a pick: picked ' + short(picked) + ', hidden ' + el2.list.hidden + ', box "' + el2.text.value + '", value ' + short(drop && drop.value));
-  fire(box2, 'input', el2.text);
-  const openOnType = el2.list.hidden === false;
+  if (openOnClick && picked.join() === 'b' && popup.hidden === true && /beta door/.test(fieldText()) && drop && drop.value === 'b') test.check('a click on the field pops the pane up; a pick shuts it, the field shows the chosen name, value is its key');
+  else test.fail(OWED + 'open on click ' + openOnClick + ', picked ' + short(picked) + ', popup hidden ' + popup.hidden + ', field "' + fieldText() + '", value ' + short(drop && drop.value));
+  box2.fire('click', { target: { id: field.id, getAttribute: function () { return null; } } });
   fire(box2, 'keydown', el2.text, { key: 'Escape' });
-  const escShut = el2.list.hidden === true;
-  fire(box2, 'focus', el2.text);
+  const escShut = popup.hidden === true;
+  box2.fire('click', { target: { id: field.id, getAttribute: function () { return null; } } });
   p.doc.fire('click', { target: { inside: false } });
-  if (openOnType && escShut && el2.list.hidden === true) test.check('typing opens it; escape and a click outside shut it');
-  else test.fail(OWED + 'open on typing ' + openOnType + ', shut on escape ' + escShut + ', shut on outside click ' + el2.list.hidden);
-  const filtersStand = el2.filters && box2.innerHTML.indexOf(el2.filters.id) < box2.innerHTML.indexOf(el2.text.id) && box2.innerHTML.indexOf(el2.text.id) < box2.innerHTML.indexOf(el2.list.id);
-  if (filtersStand && el2.filters.hidden !== true && el2.text.hidden !== true) test.check('rows 1 and 2 stand in both modes; only row 3 drops down');
-  else test.fail(OWED + 'the dropdown\'s rows read ' + short(box2.innerHTML.slice(0, 300)));
+  if (escShut && popup.hidden === true) test.check('escape and a click outside shut the popup');
+  else test.fail(OWED + 'shut on escape ' + escShut + ', shut on outside click ' + popup.hidden);
 
   test.subHeading('6. press is gone, contactSelector passes the mode');
   const src = fs.readFileSync(FILE, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
