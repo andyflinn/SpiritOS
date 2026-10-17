@@ -106,6 +106,11 @@ async function serverHalf() {
   const a4 = verifyAsks[verifyAsks.length - 1] || [];
   if (a3[1] && a3[1].outcome === 'green' && a4[1] && !a4[1].outcome) test.check('the outcome asked is green, red, or both');
   else test.fail(OWED + 'outcome filter asked ' + short([a3, a4]));
+  // F6: the history of one tested thing, through the plugin's verb.
+  const h = await call('fallout.history', { suite: 'zzFalloutA.js', heading: 'the relay answers its key' });
+  const a5 = verifyAsks[verifyAsks.length - 1] || [];
+  if (tree['fallout.history'] && a5[0] === 'search' && a5[1].over === 'tests' && a5[1].suite === 'zzFalloutA.js' && a5[1].heading === 'the relay answers its key' && a5[1].history === 'yes' && Array.isArray(h.items)) test.check('fallout.history asks deskVerify for every flip under that heading');
+  else test.fail(OWED + 'fallout.history answered ' + short(h) + ', asking ' + short(a5));
 }
 
 // ── ONE TEST, ONE KEY, WHICHEVER WAY IT TIPS (goal/G27.14) ───────────────
@@ -183,6 +188,16 @@ async function currentHalf() {
     else test.fail(OWED + 'current reds read ' + short(titles(now)) + ' (all reds ' + short(titles(all)) + ')');
     if (now.total === 1 && all.total === 2) test.check('each answer carries its total: 1 current, 2 in all');
     else test.fail(OWED + 'totals read ' + short([now.total, all.total]));
+    // F6, A TEST'S HISTORY (Andy, 2026-10-17: "so we'll add a dialog for test-history, that shows us the flips."):
+    // every flip of every check under one sub-heading, not only the newest.
+    await ask('record', { suite: 'zzHist.js', title: 'H #1', outcome: 'red', failure: 'first' });
+    await ask('record', { suite: 'zzHist.js', title: 'H #1', outcome: 'green' });
+    await ask('record', { suite: 'zzHist.js', title: 'H #2', outcome: 'red', failure: 'second' });
+    await ask('record', { suite: 'zzHist.js', title: 'HX #1', outcome: 'red', failure: 'another heading' });
+    const hist = await ask('search', { over: 'tests', suite: 'zzHist.js', heading: 'H', history: 'yes' });
+    const ht = ((hist && hist.items) || []).map(function (i) { try { const x = JSON.parse(i.label); return x.title + ':' + x.outcome; } catch (e) { return ''; } });
+    if (JSON.stringify(ht.slice().sort()) === JSON.stringify(['H #1:green', 'H #1:red', 'H #2:red'])) test.check('history: yes answers every flip under the heading H, and nothing of HX');
+    else test.fail(OWED + 'the history of H reads ' + short(ht));
   } finally {
     await new Promise(function (r) { vk.once('exit', r); vk.kill(); setTimeout(r, 3000); });
     deskNode.close();
@@ -212,6 +227,7 @@ async function paneHalf() {
   if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spiritDeskPlugins.fallout.open'); return; }
   const asked = [];
   let chatAt = null;
+  const dialogs = [];
   const box = fakeElement('pane');
   ui.open(box, {
     goal: GOAL,
@@ -226,7 +242,7 @@ async function paneHalf() {
       ];
       return Promise.resolve({ items: [RED].concat(more).map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: false, total: 3 });
     },
-    onPublished: function () { return function () {}; }, chat: function (el) { chatAt = el; }, callDialog: function () { return new Promise(function () {}); },
+    onPublished: function () { return function () {}; }, chat: function (el) { chatAt = el; }, callDialog: function (app, params) { dialogs.push([app, params]); return new Promise(function () {}); },
   });
   await sleep(20);
   const all = function () { return box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); };
@@ -262,6 +278,13 @@ async function paneHalf() {
   else test.fail(OWED + lines + ' lines in ' + short(shown));
   if (/❌/.test(relayLine) && /2026-10-17 09:00:00/.test(relayLine)) test.check('a line is ❌ while any check under it is red, and shows its newest time');
   else test.fail(OWED + 'the relay line reads ' + short(relayLine));
+  // F6: a line opens the history dialog of its tested thing.
+  box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-suite' ? 'zzFalloutA.js' : n === 'data-heading' ? 'the relay answers its key' : null; }, closest: function () { return null; } } });
+  await sleep(20);
+  if (dialogs.some(function (d) { return d[0] === 'shell/falloutHistory' && d[1] && d[1].suite === 'zzFalloutA.js' && d[1].heading === 'the relay answers its key'; })) test.check('a line opens shell/falloutHistory with its suite and heading');
+  else test.fail(OWED + 'a click on a line opened ' + short(dialogs));
+  if (/data-suite="zzFalloutA\.js"/.test(table) && /data-heading="the relay answers its key"/.test(table)) test.check('each line carries its suite and heading to open with');
+  else test.fail(OWED + 'the lines carry no data-suite and data-heading: ' + short(table));
   // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
   if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
   else test.fail(OWED + 'no #fallout-outcome select with red, green and both in ' + short(all()));
@@ -287,7 +310,44 @@ async function paneHalf() {
   else test.fail(OWED + 'a Failure column is still drawn');
 }
 
-(async function () { await serverHalf(); await paneHalf(); await keysHalf(); await currentHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
+// F6: THE HISTORY DIALOG, a hidden shell dialog that reads the flips through the plugin's verb.
+async function historyHalf() {
+  test.subHeading('F6. the history dialog of one tested thing');
+  const DIR = path.join(RUN, 'shell', 'falloutHistory');
+  let manifest = null;
+  try { manifest = JSON.parse(fs.readFileSync(path.join(DIR, 'falloutHistory.json'), 'utf8')); } catch (e) { manifest = null; }
+  if (manifest && manifest.type === 'dialog' && manifest.hidden === true) test.check('shell/falloutHistory is a hidden dialog app');
+  else { test.fail(OWED + 'no shell/falloutHistory manifest of type dialog, hidden: ' + short(manifest)); return; }
+  const byId = {};
+  const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
+  let app = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(DIR, 'falloutHistory.js'), 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, doc, { addEventListener: function () {} });
+  const calls = [];
+  const FLIPS = [
+    { suite: 'zzFalloutA.js', title: 'the relay answers its key #2', outcome: 'red', commit: 'bbb2222', at: '2026-10-17T09:00:00.000Z', failure: 'boom again' },
+    { suite: 'zzFalloutA.js', title: 'the relay answers its key #2', outcome: 'green', commit: 'aaa1111', at: '2026-10-16T09:00:00.000Z', failure: '' },
+  ];
+  const box = fakeElement('dlg');
+  app.mount(box, {
+    escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
+    verb: function (name, body) {
+      const q = body && body.ask && body.ask.desk;
+      const v = q && Object.keys(q)[0];
+      calls.push([v, q && q[v]]);
+      return Promise.resolve({ status: 200, body: v === 'fallout.history' ? { items: FLIPS.map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: false, total: 2 } : {} });
+    },
+    onPublished: function () { return function () {}; }, closeDialog: function () {}, setScreenTitle: function () {}, setDialogResult: function () {},
+  });
+  await app.open({ suite: 'zzFalloutA.js', heading: 'the relay answers its key' });
+  await sleep(20);
+  const page = box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
+  if (calls.some(function (c) { return c[0] === 'fallout.history' && c[1] && c[1].suite === 'zzFalloutA.js' && c[1].heading === 'the relay answers its key'; })) test.check('it reads the flips with fallout.history');
+  else test.fail(OWED + 'the dialog asked ' + short(calls));
+  if (/#2/.test(page) && /❌/.test(page) && /✅/.test(page) && /bbb2222/.test(page) && /aaa1111/.test(page) && page.indexOf('bbb2222') < page.indexOf('aaa1111')) test.check('it shows each flip: the check, ❌ or ✅, its time and commit, newest first');
+  else test.fail(OWED + 'the dialog shows ' + short(page));
+}
+
+(async function () { await serverHalf(); await paneHalf(); await keysHalf(); await currentHalf(); await historyHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   try { kid && kid.kill(); } catch (e) { /* gone */ }
   try { node && node.close(); } catch (e) { /* closed */ }
   setTimeout(function () {
