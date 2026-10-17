@@ -130,20 +130,28 @@
       }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
   }
   // THE SERVER ASKED: its answer joins the cache (the newest answer winning for a line), then the list is drawn.
+  // ONE IN FLIGHT (Andy, 2026-10-17: "and make sure that only one typing update is in flight at the time...."): a
+  // search asked while one is out is remembered, and runs once, with the form as it stands then, when the first returns.
+  var searchAgain = false;
+  function settled() {
+    searching = false;
+    if (searchAgain) { searchAgain = false; search(); }
+  }
   function search() {
-    if (!ctx || searching) return;
+    if (!ctx) return;
+    if (searching) { searchAgain = true; return; }
     var f = form();
     searching = true;
     say('Searching the verifier.');
     Promise.resolve(ctx.ask('fallout.reds', { text: f.text, outcome: f.outcome })).then(function (r) {
-      searching = false;
+      settled();
       summary();
       var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
       var answer = foldRows(rows);
       Object.keys(answer).forEach(function (k) { cache[k] = answer[k]; });
       draw(answer, Number(r && r.total) || rows.length);
       say(r && r.more ? 'More match than one answer holds: narrow the search.' : '');
-    }, function (e) { searching = false; say('The verifier could not be searched: ' + ((e && e.message) || e)); });
+    }, function (e) { say('The verifier could not be searched: ' + ((e && e.message) || e)); settled(); });
   }
   // AS TYPED (Andy, 2026-10-17: "so why doesn't the fallout list update with each character typed or erased in the
   // search box?"): every character typed or erased redraws the list from the cache at once; once the typing pauses,
