@@ -121,16 +121,25 @@ async function serverHalf() {
     else test.fail(OWED + 'goal chat ' + short(lines()) + ', passes ' + said('verify.pass', 'fe/G1').length);
     if (!said('check.add').length) test.check('no tolerated-reds grant: every suite it ran is the goal\'s own');
     else test.fail(OWED + 'check.add asked ' + short(said('check.add')));
+    // A SECOND goal.emptied RUNS AGAIN (goal/G27.2, D10). Andy, 2026-10-17: "i don't want deskVerify to refuse runs
+    // required by my agents. deskVerify is dumb, and cannot decide if a new run is neccessary or not." The desk writes
+    // goal.emptied once per emptying, so a second one is a run asked for, and deskVerify no longer drops it.
+    rec('goal.emptied', { id: 'fe/G1' });
+    await waitFor(function () { return said('verify.pass', 'fe/G1').length > 1; }, 20000);
+    if (said('verify.pass', 'fe/G1').length === 2 && lines().length === 2) test.check('a second goal.emptied for the same goal runs it again: a second line, a second verify.pass');
+    else test.fail('OWED by goal/G27.2: a second goal.emptied gave ' + said('verify.pass', 'fe/G1').length + ' pass(es), lines ' + short(lines()));
+    const passesBeforeFull = said('verify.pass', 'fe/G1').length;
+    const linesBeforeFull = lines().length;
 
     // HIS BUTTON (box point 2): the full harness, by hand only, bringing no Done.
     const full = await call('full.run', { id: 'fe/G1' });
     if (took(full)) test.check('full.run is a verb of deskVerify\'s and takes the run');
     else test.fail(OWED + 'full.run answered ' + full.status + ' ' + short(full.body));
-    await waitFor(function () { return lines().length >= 2; }, 30000);
-    const report = lines()[1] || '';
+    await waitFor(function () { return lines().length > linesBeforeFull; }, 30000);
+    const report = lines()[linesBeforeFull] || '';
     if (fs.existsSync(MARK) && /zzGoalOut\.js/.test(report)) test.check('full.run runs every suite of the folder and names the red one in the goal chat');
     else test.fail(OWED + 'after full.run: out ran ' + fs.existsSync(MARK) + ', goal chat ' + short(lines()));
-    if (said('verify.pass', 'fe/G1').length === 1 && !said('check.add').length) test.check('and it brings no Done: no verify.pass, no grant');
+    if (said('verify.pass', 'fe/G1').length === passesBeforeFull && !said('check.add').length) test.check('and it brings no Done: no verify.pass, no grant');
     else test.fail(OWED + 'after full.run: passes ' + said('verify.pass', 'fe/G1').length + ', checks ' + short(said('check.add')));
 
     // STOP DURING A FULL RUN (box point 3).
@@ -142,13 +151,13 @@ async function serverHalf() {
     if (took(busy) && r && /zzGoalSlow\.js/.test(String(r.suite))) test.check('now names the suite a full run is on, so the tab can offer Stop');
     else test.fail(OWED + 'now during a full run answered ' + short(busy.body));
     const stop = await call('stop');
-    await waitFor(function () { return lines().length >= 3; }, 3000);
-    if (took(stop) && stop.body.stopped === true && /stop/i.test(lines()[2] || '')) test.check('stop ends a full run at once, and its line says it was stopped');
+    await waitFor(function () { return lines().length >= linesBeforeFull + 2; }, 3000);
+    if (took(stop) && stop.body.stopped === true && /stop/i.test(lines()[linesBeforeFull + 1] || '')) test.check('stop ends a full run at once, and its line says it was stopped');
     else test.fail(OWED + 'stop answered ' + short(stop.body) + '; goal chat ' + short(lines()));
     await call('full.run', { id: 'fe/G1' });
-    await waitFor(function () { return lines().length >= 4; }, 30000);
-    if (lines().length >= 4 && !/stop/i.test(lines()[3])) test.check('and the next full run is not stopped by the last one\'s Stop');
-    else test.fail(OWED + 'the run after a Stop reported ' + short(lines()[3]));
+    await waitFor(function () { return lines().length >= linesBeforeFull + 3; }, 30000);
+    if (lines().length >= linesBeforeFull + 3 && !/stop/i.test(lines()[linesBeforeFull + 2])) test.check('and the next full run is not stopped by the last one\'s Stop');
+    else test.fail(OWED + 'the run after a Stop reported ' + short(lines()[linesBeforeFull + 2]));
   } finally {
     await new Promise(function (res) { kid.once('exit', res); kid.kill(); setTimeout(res, 3000); });
     node.close();

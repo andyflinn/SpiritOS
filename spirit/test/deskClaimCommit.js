@@ -296,8 +296,10 @@ async function verifyHalf() {
     await waitFor(function () { return lineOn('cv/G1.3').length > 0; }, 20000);
     await sleep(800);
     const not = lineOn('cv/G1.3');
-    if (not.length === 1 && /red not confirmed at/.test(not[0]) && /zzClaimGreen\.js is already green/.test(not[0]) && !spoke('cv/G1.3')) test.check('a red claim with a green suite: "red not confirmed", naming the green one, and no verdict');
-    else test.fail(OWED + 'lines on the half-red claim: ' + short(not) + '; spoke ' + spoke('cv/G1.3'));
+    // SINCE goal/G27.2's D10 (Andy, 2026-10-17: "i don't want deskVerify to refuse runs required by my agents."): a red
+    // with one red suite among its own is confirmed; the green one is reported beside it, not held against it.
+    if (not.length === 1 && /red confirmed at/.test(not[0]) && !/not confirmed/.test(not[0]) && /zzClaimGreen\.js is already green/.test(not[0]) && !spoke('cv/G1.3')) test.check('a red claim with a green suite among red ones: "red confirmed", the green one named beside it, and no verdict');
+    else test.fail('OWED by goal/G27.2: lines on the half-red claim: ' + short(not) + '; spoke ' + spoke('cv/G1.3'));
     if (said('verify.regress').length === regressBefore) test.check('and a red, expected there, takes no Done back');
     else test.fail(OWED + 'the red check asked verify.regress: ' + short(said('verify.regress').slice(regressBefore)));
 

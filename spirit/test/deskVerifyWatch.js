@@ -195,11 +195,16 @@ async function verifyHalf() {
     test.subHeading('4. nothing to run is not a pass');
     rec('press', { id: 'wt/G1.5', what: 'claim-done' });
     rec('press', { id: 'wt/G1.6', what: 'claim-done' });
-    await waitFor(function () { return ['wt/G1.5', 'wt/G1.6'].every(function (id) { return said('verify.reject', id).length || said('verify.pass', id).length; }); }, 8000);
-    if (!said('verify.pass', 'wt/G1.5').length && said('verify.reject', 'wt/G1.5').length === 1) test.check('an item with no test file on its list is rejected, not passed');
-    else test.fail(OWED + 'no test file: ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.5'; })));
-    if (!said('verify.pass', 'wt/G1.6').length && said('verify.reject', 'wt/G1.6').length === 1 && /zzWatchGone\.js/.test(String(said('verify.reject', 'wt/G1.6')[0].args.why))) test.check('a listed test file that is missing is rejected, naming it');
-    else test.fail(OWED + 'missing test file: ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.6'; })));
+    // SINCE goal/G27.2's D10 (Andy, 2026-10-17: "i don't want deskVerify to refuse runs required by my agents."):
+    // nothing to run is still not a pass, and no longer a reject either: it is "not checked", said on the item, the
+    // missing file named; neither verify.pass nor verify.reject is asked.
+    const lineOf = function (id) { return asks.filter(function (x) { return x.verb === 'chat.add' && x.args.id === id; }).map(function (x) { return String(x.args.text); }); };
+    await waitFor(function () { return ['wt/G1.5', 'wt/G1.6'].every(function (id) { return lineOf(id).length; }); }, 8000);
+    await sleep(500);
+    if (!said('verify.pass', 'wt/G1.5').length && !said('verify.reject', 'wt/G1.5').length && lineOf('wt/G1.5').some(function (l) { return /not checked/.test(l); })) test.check('an item with no test file on its list is not checked: neither passed nor rejected');
+    else test.fail('OWED by goal/G27.2: no test file: ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.5'; })));
+    if (!said('verify.pass', 'wt/G1.6').length && !said('verify.reject', 'wt/G1.6').length && lineOf('wt/G1.6').some(function (l) { return /not checked/.test(l) && /zzWatchGone\.js/.test(l); })) test.check('a listed test file that is missing, with nothing else to run, is not checked, naming it');
+    else test.fail('OWED by goal/G27.2: missing test file: ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.6'; })));
     const pressed = asks.filter(function (x) { return x.verb === 'press' || x.verb === 'check.set'; });
     if (!pressed.length) test.check('it pressed nothing on his behalf');
     else test.fail(OWED + 'deskVerify asked ' + short(pressed));
