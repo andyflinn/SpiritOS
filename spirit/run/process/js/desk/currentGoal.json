@@ -1,5 +1,5 @@
 {
- "change": 66966,
+ "change": 66990,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -15,7 +15,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G27.14"
+    "goal/G27.14",
+    "goal/G27.20"
    ],
    "go": false,
    "alone": false,
@@ -51,9 +52,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -369,6 +368,30 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T08:01:40.666Z",
      "text": "cw: noted: the blockage configuration is adjusted before design ends. I make no build changes on G27 until then."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T07:41:14.793Z",
+     "text": "this: \"One flaw is left. Since goal/G27.19, any verified item still waiting for his Done shows up to agents as open work. I raised it in Desk and will not fix it without his word and an item. I saved it as an open-threads memory, so I can raise it when the next sitting starts.\n\nThe Desk listener is armed again. The rules say the loop ends only when he closes VS Code.\"\n\nis the 'Done' claim ('Done' waiting for my press) not enough to indicate that the item now responds only to my chatted instructions, before i press 'Done'.. this is kind of vital in UI modifications, because i want to hold the item until I'm happy...\n\nthroughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:41:36.901Z",
+     "text": "Yes, that is the right signal: an item whose Done waits for your press is held for you, and the desk should treat it so.\nShape: it is never offered as open work; an agent may take its red again only after taking a line of yours in that item chat, so it moves on your word alone.\nProposed item: \"Desk: an item waiting for Done moves only on Andy chat\"; on your add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T07:42:29.627Z",
+     "text": "add it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:42:59.415Z",
+     "text": "Added as goal/G27.20, its box states the rule; it waits for your Go."
     }
    ]
   },
@@ -6946,6 +6969,85 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-17T05:41:23.514Z",
      "text": "It refused nothing it was asked: red not confirmed means it ran every file on the G27.2 list at the red commit, and deskPluginsGg.js is on that list but was green, since I only rewrote checks there, not a red.\nYour other line I answered in my window: I was building D8 and D9 on G27.2 after the desk offered its red; your go on was the answer."
+    }
+   ]
+  },
+  {
+   "id": "goal/G27.20",
+   "title": "Desk: an item waiting for Done moves only on Andy chat",
+   "goal": "goal/G27",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "An item whose Done waits for Andy press is held for him: it moves only on his chatted instructions, until he presses Done. This matters most for UI work, which he holds until he is happy with it.\n- It is never offered as open work: work.open lists no phase of it, so no listener is handed it as a job.\n- An agent may take its red again only after taking a line of his in that item chat (line.take), so each new cycle answers a word of his.\n- Without such a line its phases are refused, said as waiting for Andy word.\n- It extends goal/G27.19: phases stay re-takable until Done, now on his word alone.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T07:43:43.414Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
