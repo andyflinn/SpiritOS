@@ -16,6 +16,9 @@ module.exports = [
   'testSupport.js', 'scenario.js', 'world.js', 'runAll.js',
   // The child testSupport runs to post its last records before a suite exits (goal/G8.1): a helper, not a suite.
   'verifyPost.js',
+  // NOT A HARNESS SUITE (goal/G27.2, D9, Andy, 2026-10-17: "the stacks plugin must drive the stack checks exclusively"):
+  // the one-door stack-frame suite is run by the Stacks plugin alone, a door at a time, never by runAll or deskVerify.
+  'oneDoorStacks.js',
   // labMaster.js stood here; it lives in labMaster/, a folder the runner does not read (goal/G19.11).
   'labWorld.js', 'labPopulate.js', 'setupRelayFakes.js',
   'relayProbe.js', 'startTestAndy.js', 'startTestBert.js', 'startTestRelay.js',

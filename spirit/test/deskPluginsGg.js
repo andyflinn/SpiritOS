@@ -15,10 +15,10 @@
 //      one named by the suite-only value pluginsMore; a folder without its .json is not mounted.
 //   b. on the first mount each plugin's private goal exists under its fixed key, and a restart on the same state keeps
 //      that key and mints nothing again (one goal, the same items).
-//   c. the plugin sees a call first: Done, Close and abandon on its goal and its rerun item are refused, the reason
-//      naming the plugin, and neither offers those buttons; the same presses on an ordinary goal's items still land.
-//   d. the rerun item is in the plugin's goal, its file list exactly [spirit/test/oneDoorStacks.js], and an agent's
-//      verify.again on it is taken (the record deskVerify reruns that suite from).
+//   c. the plugin sees a call first: Done, Close and abandon on its goal are refused, the reason naming the plugin,
+//      and it offers none of those buttons; the same presses on an ordinary goal's items still land.
+//   d. SINCE goal/G27.2's D9 the goal has no rerun item: deskVerify reruns no stack check (it once held one whose
+//      verify.again had deskVerify rerun oneDoorStacks.js).
 //   e. the dialog's verb stackFrameChecks.make {gate, endpoint} makes a goal/G22.2-type item in the plugin's goal: its
 //      title, its box stating the rule, its file list [spirit/test/stackFrameTestItems.js]; empty, bad or repeated
 //      input is refused with a why.
@@ -311,42 +311,31 @@ function clickTab(el, tab) {
     else test.fail(OWED + FAKE_GOAL + ' reads ' + short(fake1));
     const before = JSON.stringify((await members(GOAL)).map(function (r) { return r.id; }).sort());
 
-    test.subHeading('d. the rerun item');
+    // d. SINCE goal/G27.2's D9 (Andy, 2026-10-17: "the stacks plugin must drive the stack checks exclusively") the goal
+    // has no rerun item: deskVerify reruns no stack check. deskStacksDialog.js asserts the old one is deleted.
+    test.subHeading('d. no rerun item');
     const items0 = await members(GOAL);
-    const rerun = items0.filter(function (r) { const p = pathsOf(r); return p.length === 1 && p[0] === 'spirit/test/oneDoorStacks.js'; })[0];
-    if (items0.length === 1 && rerun) test.check('the plugin\'s goal holds its rerun item ' + rerun.id + ', its file list exactly [spirit/test/oneDoorStacks.js]');
-    else test.fail(OWED + 'the items of ' + GOAL + ': ' + short(items0.map(function (r) { return [r.id, pathsOf(r)]; })));
-    const rerunId = rerun ? rerun.id : GOAL + '.1';
-    const again = await call('verify.again', { id: rerunId }, A);
-    if (landed(again)) test.check('an agent\'s verify.again on the rerun item is taken, so deskVerify reruns oneDoorStacks.js');
-    else test.fail(OWED + 'verify.again on the rerun item answered ' + short(again));
-    const filesTry = await call('item.files.add', { id: rerunId, paths: ['spirit/test/deskServer.js'] }, A);
-    const rerunAfter = await factsOf(rerunId);
-    if (!landed(filesTry) && JSON.stringify(pathsOf(rerunAfter)) === JSON.stringify(['spirit/test/oneDoorStacks.js'])) test.check('its file list stays exactly oneDoorStacks.js: ' + why(filesTry));
-    else test.fail(OWED + 'a file added to the rerun item answered ' + short(filesTry) + '; its list ' + short(pathsOf(rerunAfter)));
+    if (items0.length === 0) test.check('the plugin\'s fresh goal holds no item: no rerun item for deskVerify to rerun');
+    else test.fail(OWED + 'the items of ' + GOAL + ': ' + short(items0.map(function (r) { return [r.id, r.title, pathsOf(r)]; })));
 
     test.subHeading('c. the plugin sees a call first');
     // An ordinary goal beside it, its items closed and done as they always are.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'ord/G1', title: 'Ordinary' }, items: [
       { id: 'ord/G1.1', title: 'One', blocks: ['ord/G1'] }, { id: 'ord/G1.2', title: 'Two', blocks: ['ord/G1'] }] }) }, A);
     await call('press', { id: 'ord/G1', what: 'end-design' }, ANDY);
-    const tries = [[GOAL, 'close'], [GOAL, 'done'], [GOAL, 'abandon'], [rerunId, 'close'], [rerunId, 'done']];
+    const tries = [[GOAL, 'close'], [GOAL, 'done'], [GOAL, 'abandon']];
     for (const t of tries) {
       const r = await call('press', { id: t[0], what: t[1] }, ANDY);
       if (!landed(r) && /stackFrameChecks/.test(why(r))) test.check(t[1] + ' on ' + t[0] + ' is refused: ' + why(r));
       else test.fail(OWED + t[1] + ' on ' + t[0] + ' answered ' + short(r));
     }
-    const del = await call('item.delete', { id: rerunId }, ANDY);
-    if (!landed(del) && /stackFrameChecks/.test(why(del))) test.check('his delete of the rerun item is refused: ' + why(del));
-    else test.fail(OWED + 'item.delete on the rerun item answered ' + short(del));
     const g = await factsOf(GOAL);
-    const ri = await factsOf(rerunId);
-    const shown = [].concat((g && g.buttons) || [], (ri && ri.buttons) || []);
-    if (g && ri && g.status !== 'closed' && ri.status !== 'closed' && ri.status !== 'done' && !shown.some(function (b) { return ['close', 'done', 'delete'].indexOf(b) !== -1; })) {
-      test.check('both stay open and offer neither Close, Done nor Delete: ' + short(shown));
-    } else test.fail(OWED + 'the goal reads ' + short(g && [g.status, g.buttons]) + ', the rerun item ' + short(ri && [ri.status, ri.buttons]));
+    const shown = (g && g.buttons) || [];
+    if (g && g.status !== 'closed' && !shown.some(function (b) { return ['close', 'done'].indexOf(b) !== -1; })) {
+      test.check('the goal stays open and offers neither Close nor Done: ' + short(shown));
+    } else test.fail(OWED + 'the goal reads ' + short(g && [g.status, g.buttons]));
     const sess = await call('session.set', { json: JSON.stringify({ goal: { id: GOAL, title: 'Stack-frame checks' }, items: [] }) }, A);
-    if (!landed(sess) && /stackFrameChecks/.test(why(sess))) test.check('a session over its goal, which would close its rerun item as left out, is refused: ' + why(sess));
+    if (!landed(sess) && /stackFrameChecks/.test(why(sess))) test.check('a session over its goal, which would close its door items as left out, is refused: ' + why(sess));
     else test.fail(OWED + 'a session.set over ' + GOAL + ' answered ' + short(sess));
     const oDone = await call('press', { id: 'ord/G1.1', what: 'done' }, ANDY);
     const oClose = await call('press', { id: 'ord/G1.2', what: 'close' }, ANDY);

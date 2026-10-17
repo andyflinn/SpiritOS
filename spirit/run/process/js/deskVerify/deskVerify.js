@@ -766,21 +766,13 @@ async function redCheck(id, commit) {
   }
 }
 
-// ── ONE DOOR OF THE STACKS PLUGIN, RUN HERE (goal/G22.3) ─────────────────
+// ── THE STACKS PLUGIN'S DOOR VERDICTS, RECORDED HERE (goal/G27.2) ─────
 //
-//   Andy, 2026-10-13, in goal/G22.3's box: "every run here should report to deskVerify.", and of this server's console:
-//   "it means this app here should launch the run through deskVerify."
-//
-// DECIDED BY ANDY, not this file's to hand back: the stackFrameChecks plugin no longer spawns its runner; it asks
-// door.run {id}, and the run is a job of this server's queue like any other: one check at a time, Stop ends it, its
-// row in runs (kind door, the door's id, its outcome and its line), its records posted by the suite as every suite
-// posts them, its output in the console. The suite is the stack-frame suite in its one-door mode: SPIRIT_STACKS_DOOR
-// names the door, SPIRIT_STACKS_VERDICT the file its verdict is written to, and it reads the list of doors of the tree
-// it runs in (the plugin's list, on his node the same checkout). The verdict is kept under this server's --state,
-// doors/<id>.json, the newest per door, and read back with door.state {id}, which is what the plugin shows. No pull:
-// the door is measured on the tree as it stands, which is the tree the plugin just committed its list in. Nothing is
-// said to the desk: a door is not a desk item, and the row is the record.
-const DOOR_SUITE = 'spirit/test/oneDoorStacks.js';
+// DECIDED BY ANDY, 2026-10-17, in goal/G27.2's box, not this file's to take back: the Stacks subsystem stands alone (D9).
+// The plugin drives the stack checks exclusively and this server runs none of them: goal/G22.3's door.run and door.state,
+// which queued a door here and read its verdict back, are gone with their suite, and oneDoorStacks.js is on
+// spirit/test/notASuite.js, so neither a full run nor runAll takes it. What stays is door.record: the plugin hands each
+// verdict here as a record only (D5), kept under this server's --state, doors/<id>.json, and said in the console.
 const DOORS_DIR = path.join(STATE || path.dirname(DB_PATH), 'doors');
 const DOOR_ID = /^[A-Za-z0-9_-]{1,32}$/;
 const DOOR_PATHS_KEPT = 500;
@@ -788,56 +780,6 @@ function doorIdOf(id) {
   const s = String(id || '');
   if (!DOOR_ID.test(s)) throw refusedWhy('a door is named by the plugin\'s own id (d<n>): letters, digits, _ and -, at most 32; not ' + JSON.stringify(s.slice(0, 40)));
   return s;
-}
-function doorKept(id) {
-  try { const v = JSON.parse(fs.readFileSync(path.join(DOORS_DIR, id + '.json'), 'utf8')); return v && typeof v === 'object' ? v : null; } catch (e) { return null; }
-}
-async function doorRun(id) {
-  const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  const startedAt = new Date().toISOString();
-  running = { id: '', suite: DOOR_SUITE, since: startedAt };
-  const told = function (tests) {
-    say({ doing: 'door', id: id, suite: DOOR_SUITE, index: 1, of: 1, tests: tests, expected: 0,
-      line: 'door run: ' + id + ', ' + tests + ' tests', since: startedAt });
-  };
-  let kept = null;
-  try {
-    told(0);
-    fs.mkdirSync(DOORS_DIR, { recursive: true });
-    const file = path.join(REPO, DOOR_SUITE);
-    const tmp = path.join(DOORS_DIR, id + '.run.json');
-    try { fs.unlinkSync(tmp); } catch (e) { /* none left */ }
-    let run = null;
-    let v = null;
-    if (stopped) run = { stopped: true };
-    else if (!fs.existsSync(file)) run = { missing: true };
-    else {
-      run = await runSuite(file, port, told, { SPIRIT_STACKS_DOOR: id, SPIRIT_STACKS_VERDICT: tmp });
-      try { v = JSON.parse(fs.readFileSync(tmp, 'utf8')); } catch (e) { v = null; }
-      try { fs.unlinkSync(tmp); } catch (e) { /* none written */ }
-    }
-    const t = await tree();
-    const none = function (why) { return { ran: false, green: false, around: 0, of: 0, paths: [], why: why }; };
-    const verdict = run.stopped ? none('stopped by hand from the verifier tab, so nothing was measured')
-      : run.missing ? none(DOOR_SUITE + ' is missing from this checkout')
-        : run.timedOut ? none('stopped at the time limit of ' + SUITE_MS + 'ms, so nothing was measured')
-          : v && typeof v === 'object' ? { ran: true, green: v.green === true, around: Number(v.around) || 0, of: Number(v.of) || 0,
-            paths: (Array.isArray(v.paths) ? v.paths : []).slice(0, DOOR_PATHS_KEPT).map(String), why: String(v.why || '') }
-            : none('the suite exited ' + run.code + ' with no verdict');
-    kept = Object.assign({ door: id }, verdict, { startedAt: startedAt, endedAt: new Date().toISOString(), stopped: !!run.stopped,
-      commit: t.short || t.commit || '' });
-    const out = path.join(DOORS_DIR, id + '.json');
-    fs.writeFileSync(out + '.tmp', JSON.stringify(kept));
-    fs.renameSync(out + '.tmp', out);
-    const text = 'door ' + id + ': ' + (kept.ran ? (kept.green ? 'green, ' + kept.of + ' production call(s), every one through the gate'
-      : 'red, ' + kept.around + ' path(s) around the gate, of ' + kept.of + ' production call(s)') : 'no verdict, ' + kept.why) +
-      ' (at ' + (kept.commit || 'an unknown commit') + ')';
-    noteLine(text);
-    return { door: true, stopped: !!run.stopped, outcome: run.stopped ? 'stopped by hand' : kept.ran ? (kept.green ? 'green' : 'red') : 'no verdict' };
-  } finally {
-    running = { id: '', suite: '', since: '' };
-    sayIdle();
-  }
 }
 
 async function drainQueue() {
@@ -874,10 +816,8 @@ async function drainQueue() {
         if (job.kind === 'goal') r = await goalRun(job.id);
         else if (job.kind === 'full') r = await fullRun(job.id);
         else if (job.kind === 'red') r = await redCheck(job.id, job.commit);
-        else if (job.kind === 'door') r = await doorRun(job.id);
         else r = await claimCheck(job.id);
         if (r && r.stopped) outcome = 'stopped by hand';
-        else if (r && r.door) outcome = String(r.outcome);
         else if (r && r.red) outcome = r.confirmed ? 'red confirmed' : 'red not confirmed';
         else if (r && r.unchecked) outcome = 'not checked';
         else if (r && typeof r.rejected === 'boolean') outcome = r.rejected ? 'rejected' : 'passed';
@@ -1482,19 +1422,6 @@ appServer.serve({
       return { queued: true };
     },
   },
-  // ONE DOOR OF THE STACKS PLUGIN (goal/G22.3, Andy: "every run here should report to deskVerify."): queued behind
-  // whatever runs now, answered at once. A door already waiting or running is not queued twice (already: true).
-  'door.run': {
-    request: { id: '' }, reply: { queued: true, already: false },
-    handler: function (a) {
-      const id = doorIdOf(a.id);
-      const job = { kind: 'door', id: id };
-      const already = queuedAlready(job) || !!(runningJob && runningJob.kind === 'door' && runningJob.id === id);
-      if (!already) enqueue(job);
-      drainQueue();
-      return { queued: true, already: already };
-    },
-  },
   // A DOOR RUN BY THE PLUGIN ITSELF, RECORDED (goal/G27.2, D5). Andy, 2026-10-17: "i don't want verifier to block the
   // design-a-door process", and "i don't mind if our test sends the verifier a result". The plugin runs a door being
   // designed at once, outside this queue, and hands the verdict here as a record only: kept under doors/<id>.json as a
@@ -1514,31 +1441,6 @@ appServer.serve({
       consoleAdd('\n=== door ' + id + ', run by the plugin: ' + (kept.ran ? (kept.green ? 'green, ' + kept.of + ' production call(s), every one through the gate'
         : 'red, ' + kept.around + ' path(s) around the gate, of ' + kept.of + ' production call(s)') : 'no verdict, ' + kept.why) + ' ===\n');
       return { recorded: true };
-    },
-  },
-  // ITS NEWEST VERDICT, as kept under doors/<id>.json, with whether it runs or waits now. The paths come as many as fit
-  // one answer, the rest counted in pathsLeft; the kept file holds up to DOOR_PATHS_KEPT.
-  'door.state': {
-    request: { id: '' },
-    reply: { id: '', running: false, queued: false, ran: false, green: false, around: 0, of: 0, paths: [''], pathsLeft: 0, why: '',
-      startedAt: '', endedAt: '', stopped: false, commit: '' },
-    handler: function (a) {
-      const id = doorIdOf(a.id);
-      const k = doorKept(id) || {};
-      const all = Array.isArray(k.paths) ? k.paths.map(String) : [];
-      const paths = [];
-      let used = 0;
-      for (const p of all) {
-        const b = Buffer.byteLength(JSON.stringify(p), 'utf8') + 1;
-        if (used + b > 5000) break;
-        paths.push(p);
-        used += b;
-      }
-      return { id: id, running: !!(runningJob && runningJob.kind === 'door' && runningJob.id === id),
-        queued: watchQueue.some(function (q) { return q.kind === 'door' && q.id === id; }),
-        ran: k.ran === true, green: k.green === true, around: Number(k.around) || 0, of: Number(k.of) || 0, paths: paths,
-        pathsLeft: all.length - paths.length, why: String(k.why || ''), startedAt: String(k.startedAt || ''),
-        endedAt: String(k.endedAt || ''), stopped: k.stopped === true, commit: String(k.commit || '') };
     },
   },
   // THE CONSOLE OF THE CURRENT RUN (goal/G22.3): its output from `from`, one answer's room at a time. `to` is where the

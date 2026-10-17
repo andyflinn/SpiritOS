@@ -109,9 +109,10 @@ async function serverHalf() {
   gitIn(work, ['push', '-q', 'origin', 'master:master']);
   const listFile = path.join(work, 'stackFrameList.json');
   // D8's WORLD: two old doors from before the plugin, both naming one item outside the Stacks goal, as d1 and d2 name
-  // goal/G19.14 on his tree.
-  const OLD = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'or/G9.1' },
-    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'or/G9.1' }];
+  // goal/G19.14 on his tree. or/G1.1 is made by the session below, after the first mount: at that mount this desk does
+  // not know it yet, as a suite's scratch desk does not know his items, and must leave the list alone.
+  const OLD = [{ id: 'd1', gate: 'spirit/run/js/peerPost.js::holdStreams', endpoint: END, suites: [], item: 'or/G1.1' },
+    { id: 'd2', gate: 'spirit/run/js/peerPost.js::sendAttempt', endpoint: END, suites: [], item: 'or/G1.1' }];
   fs.writeFileSync(listFile, JSON.stringify(OLD, null, 2) + '\n');
   gitIn(work, ['add', 'stackFrameList.json']);
   gitIn(work, ['commit', '-q', '--no-verify', '-m', 'two old doors']);
@@ -153,6 +154,9 @@ async function serverHalf() {
   const ran = await call('stackFrameChecks.run', { id: door.id });
   let st = {};
   for (let i = 0; i < 100; i++) { st = await call('stackFrameChecks.runState', { id: door.id }); if (st.verdict && st.verdict.ran !== undefined && !st.running && st.endedAt) break; await sleep(200); }
+  // The record is handed over just after the verdict is kept, so it may land a moment after runState shows it.
+  const recorded = function () { return verifyAsks.slice(before).some(function (x) { return x[0] === 'door.record' && x[1] && x[1].id === door.id; }); };
+  for (let i = 0; i < 20 && !recorded(); i++) await sleep(100);
   const asked = verifyAsks.slice(before);
   if (ran.ok !== false && !asked.some(function (x) { return x[0] === 'door.run'; })) test.check('stackFrameChecks.run did not queue the door in deskVerify');
   else test.fail(OWED + 'run answered ' + short(ran) + ' and asked deskVerify ' + short(asked.map(function (x) { return x[0]; })));
@@ -196,22 +200,10 @@ async function serverHalf() {
   if (s2 > s1) test.check('a press on the current goal\'s item still shares it (guard)');
   else test.fail('the world: a press on the current goal shared nothing (current is ' + short(other) + ')');
 
-  test.subHeading('D8. every door has its own item in the Stacks goal');
-  const allDoors = ((await call('stackFrameChecks.doors', {})).doors || []);
-  const olds = allDoors.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
-  const oldItems = olds.map(function (d) { return d.item; });
-  const oldFacts = [];
-  for (const id of oldItems) oldFacts.push(await factsOf(id));
-  if (olds.length === 2 && oldItems.every(function (id) { return String(id).indexOf(GOAL + '.') === 0; }) && oldItems[0] !== oldItems[1] &&
-      oldFacts.every(function (f) { return f && f.goal === GOAL && f.status !== 'closed'; })) test.check('the two old doors got a fresh item each in ' + GOAL + ': ' + oldItems.join(', '));
-  else test.fail(OWED + 'the old doors read back ' + short(olds.map(function (d) { return d.id + '->' + d.item; })));
-  const items = allDoors.map(function (d) { return d.item; });
-  if (items.every(function (id, i) { return items.indexOf(id) === i; })) test.check('no two doors share an item');
-  else test.fail(OWED + 'doors share items: ' + short(items));
-  let listNow = [];
-  try { listNow = JSON.parse(fs.readFileSync(listFile, 'utf8')); } catch (e) { listNow = []; }
-  if (listNow.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; }).every(function (d) { return String(d.item).indexOf(GOAL + '.') === 0; })) test.check('the list itself points the old doors at their new items');
-  else test.fail(OWED + 'the list reads ' + short(listNow.map(function (d) { return d.id + '->' + d.item; })));
+  test.subHeading('D8. a door naming an item this desk does not know is left alone');
+  const firstDoors = ((await call('stackFrameChecks.doors', {})).doors || []).filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
+  if (firstDoors.length === 2 && firstDoors.every(function (d) { return d.item === 'or/G1.1'; })) test.check('at the first mount, before this desk held or/G1.1, the old doors kept it: no scratch desk rewrites his list');
+  else test.fail(OWED + 'at the first mount the old doors read ' + short(firstDoors.map(function (d) { return d.id + '->' + d.item; })));
 
   test.subHeading('D9. the Stacks subsystem stands alone: deskVerify runs no stack check');
   const verifySrc = fs.readFileSync(VERIFY, 'utf8');
@@ -238,6 +230,24 @@ async function serverHalf() {
   const leftAfter = await factsOf(left.id);
   if (!(await members()).some(function (x) { return x.title === RERUN; })) test.check('a rerun item left from before is deleted when the plugin mounts: ' + left.id + ' reads ' + short(leftAfter && leftAfter.status));
   else test.fail(OWED + 'after the restart ' + GOAL + ' still holds ' + left.id + ', ' + RERUN);
+
+  test.subHeading('D8. every door has its own item in the Stacks goal');
+  // At this second mount the desk knows or/G1.1, an item outside the Stacks goal that both old doors share.
+  const allDoors = ((await call('stackFrameChecks.doors', {})).doors || []);
+  const olds = allDoors.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; });
+  const oldItems = olds.map(function (d) { return d.item; });
+  const oldFacts = [];
+  for (const id of oldItems) oldFacts.push(await factsOf(id));
+  if (olds.length === 2 && oldItems.every(function (id) { return String(id).indexOf(GOAL + '.') === 0; }) && oldItems[0] !== oldItems[1] &&
+      oldFacts.every(function (f) { return f && f.goal === GOAL && f.status !== 'closed'; })) test.check('the two old doors got a fresh item each in ' + GOAL + ': ' + oldItems.join(', '));
+  else test.fail(OWED + 'the old doors read back ' + short(olds.map(function (d) { return d.id + '->' + d.item; })));
+  const items = allDoors.map(function (d) { return d.item; });
+  if (items.every(function (id, i) { return items.indexOf(id) === i; })) test.check('no two doors share an item');
+  else test.fail(OWED + 'doors share items: ' + short(items));
+  let listNow = [];
+  try { listNow = JSON.parse(fs.readFileSync(listFile, 'utf8')); } catch (e) { listNow = []; }
+  if (listNow.filter(function (d) { return d.id === 'd1' || d.id === 'd2'; }).every(function (d) { return String(d.item).indexOf(GOAL + '.') === 0; })) test.check('the list itself points the old doors at their new items');
+  else test.fail(OWED + 'the list reads ' + short(listNow.map(function (d) { return d.id + '->' + d.item; })));
 }
 
 // ── THE FACE ────────────────────────────────────────────────────────────

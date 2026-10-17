@@ -19,7 +19,8 @@ const test = require('./testSupport.js');
 const PLUGIN_DIR = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'plugins', 'js', 'stackFrameChecks');
 const FORMATTER = path.join(PLUGIN_DIR, 'violators.js');
 const SERVER_HALF = path.join(PLUGIN_DIR, 'stackFrameChecks.js');
-const UI = path.join(__dirname, '..', 'run', 'shell', 'desk', 'plugins', 'stackFrameChecks', 'stackFrameChecks.js');
+// The run's view: since goal/G27.2 (D1) the door's own dialog, shell/stackFrameCheckDetail, no longer the Stacks pane.
+const UI = path.join(__dirname, '..', 'run', 'shell', 'stackFrameCheckDetail', 'stackFrameCheckDetail.js');
 const REPO = path.join(__dirname, '..', '..');
 
 test.startTest('Stack-frame checks: a run\'s paths as one line per violator');

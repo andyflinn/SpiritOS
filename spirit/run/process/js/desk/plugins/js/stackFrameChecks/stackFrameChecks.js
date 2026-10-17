@@ -4,15 +4,24 @@
 // THE STACK-FRAME CHECKS PLUGIN (goal/G22.3), the first gg plugin: it governs its private goal of stack-frame items.
 //
 //   Andy, 2026-10-13, in the item's box: "The stack-frame plugin sets the parameters (gate frame and target frame) and
-//   generates the equivalent of a goal/G22.2 item from them.", "It governs its goal: the goal always stays open, and its
-//   rerun item (as goal/G22.1) always stays open, whether a Done button is ever seen or not.", "It has a companion dialog
-//   where the gate and endpoint functions are entered.", and "It is a pluggable version of goal/G0: a special goal that
-//   is always open while actually closed."
+//   generates the equivalent of a goal/G22.2 item from them.", "It governs its goal: the goal always stays open", "It
+//   has a companion dialog where the gate and endpoint functions are entered.", and "It is a pluggable version of
+//   goal/G0: a special goal that is always open while actually closed."
 //
-// DECIDED BY ANDY, not this file's to loosen: nothing closes, finishes, abandons or deletes the goal or its rerun item,
-// and the rerun item's file list stays spirit/test/oneDoorStacks.js alone, so a verify.again on it reruns that suite.
-// The plugin makes the desk items and keeps the list of doors; the agents measure each door's suites into the list and
-// do the work its red shows: it edits no test code.
+// DECIDED BY ANDY, not this file's to loosen: nothing closes, finishes or abandons the goal. The plugin makes the desk
+// items and keeps the list of doors; the agents measure each door's suites into the list and do the work its red shows:
+// it edits no test code.
+//
+// THE STACKS SUBSYSTEM STANDS ALONE (goal/G27.2, D9). Andy, 2026-10-17: "the stacks plugin must drive the stack checks
+// exclusively", and "We will resolve a verifier conflict by excluding the stack issues from verifier runs." So the
+// plugin alone runs a door's check (run, below); deskVerify runs none and only records the verdict; the rerun item
+// goal/G22.3 gave the goal, whose verify.again had deskVerify rerun the whole suite, is gone, and one left from before
+// is deleted when the plugin mounts.
+//
+// EVERY DOOR HAS ITS OWN ITEM (goal/G27.2, D8). Andy, 2026-10-17: "This chat MUST me the item chat associated with this
+// door", and "a new item here is going to make their old framing obsolete." A door whose item is outside its goal, or
+// shared with another door, gets a fresh item in its goal when the plugin mounts, made as make makes one, and the list
+// points at it; the old item keeps its own chat and is no longer held open by the plugin.
 //
 // ── IT RUNS THE SHOW (goal/G22.3) ───────────────────────────────────
 //
@@ -43,13 +52,14 @@
 //
 // What the desk hands it (process/js/desk/desk.js, MOUNTING THE PLUGINS): its goal's key, the desk's writes (as the
 // desk, or as the caller), the field rules, the id minting, its state folder, publish, and verify (one verb of this
-// node's deskVerify). What it gives back: refuses, handles and its verbs.
+// node's deskVerify). What it gives back: refuses and its verbs.
 
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const RERUN_TEST = 'spirit/test/oneDoorStacks.js';
+// The stack-frame suite in its one-door mode, which the plugin alone runs (D5, D9).
+const DOOR_TEST = 'spirit/test/oneDoorStacks.js';
 const ITEMS_TEST = 'spirit/test/stackFrameTestItems.js';
 
 // ── THE LIST OF DOORS IS THE PLUGIN'S (goal/G22.3) ──────────────────
@@ -273,17 +283,16 @@ function commitOne(what) {
 
 module.exports = function (desk) {
   const goal = desk.goal;
-  // THE RERUN ITEM, under a fixed id: the first item of its goal, made on the first mount, found by its id after.
-  const rerun = goal + '.1';
+  // THE RERUN ITEM LEFT FROM BEFORE D9 (see the header): deleted, so nothing in the goal has deskVerify run the suite.
+  const RERUN_TITLE = 'Rerun the stack-frame test';
   const st = desk.state();
-  if (!st.items[rerun]) {
-    desk.write('item.add', { goal: goal, title: 'Rerun the stack-frame test', minted: rerun });
-    desk.write('item.files.add', { id: rerun, paths: [RERUN_TEST] });
-    desk.write('box.write', { id: rerun, version: 0, text: 'every verify.again on this item reruns ' + RERUN_TEST +
-      ', the stack-frame test: one test per door of the plugin\'s list, stackFrameList.json beside it.\n' +
-      '- It always stays open, whether a Done button is ever seen or not: the stackFrameChecks plugin refuses its Done, Close and Delete (goal/G22.3).\n' +
-      '- Its file list is ' + RERUN_TEST + ' alone.' });
-  }
+  const before = st.goals[goal] ? st.goals[goal].members : [];
+  before.forEach(function (id) {
+    const m = st.items[id];
+    if (m && !m.done && !m.closed && m.title === RERUN_TITLE) {
+      try { desk.write('item.delete', { id: id }); } catch (e) { console.error('stackFrameChecks: the old rerun item ' + id + ' could not be deleted: ' + ((e && e.message) || e)); }
+    }
+  });
 
   // ── WHEN EACH DOOR LAST CHANGED (goal/G22.3) ──────────────────────
   //
@@ -372,7 +381,7 @@ module.exports = function (desk) {
     try { fs.mkdirSync(path.dirname(tmp), { recursive: true }); fs.unlinkSync(tmp); } catch (e) { /* none left */ }
     let kid = null;
     try {
-      kid = spawn(process.execPath, [path.join(REPO, RERUN_TEST)], { cwd: REPO, stdio: ['ignore', 'ignore', 'ignore'], windowsHide: true,
+      kid = spawn(process.execPath, [path.join(REPO, DOOR_TEST)], { cwd: REPO, stdio: ['ignore', 'ignore', 'ignore'], windowsHide: true,
         env: Object.assign({}, process.env, { SPIRIT_STACKS_DOOR: id, SPIRIT_STACKS_VERDICT: tmp, SPIRIT_STACKS_LIST: LIST }) });
     } catch (e) { kid = null; }
     const end = function (code) {
@@ -426,79 +435,106 @@ module.exports = function (desk) {
 
   function refuses(verb, a, ids) {
     if (!ids.some(desk.inGoal)) return '';
-    // A session names the whole goal and closes what it leaves out (goal/G4.24): the rerun item would be closed by it.
-    if (verb === 'session.set') return 'a session over its goal would close the items it leaves out, its rerun item ' + rerun + ' among them';
+    // A session names the whole goal and closes what it leaves out (goal/G4.24): its door items would be closed by it.
+    if (verb === 'session.set') return 'a session over its goal would close the items it leaves out, its door items among them';
     if (verb === 'press') {
       const what = String(a.what || '');
       // Abandon on any of its items abandons the goal itself (press()), so it is refused on all of them.
       if (what === 'abandon') return 'its goal is never abandoned';
       if ((what === 'close' || what === 'done') && a.id === goal) return 'its goal always stays open, so ' + what + ' is refused';
-      if ((what === 'close' || what === 'done') && a.id === rerun) return 'its rerun item ' + rerun + ' always stays open, so ' + what + ' is refused';
     }
-    if (verb === 'item.delete' && a.id === rerun) return 'its rerun item ' + rerun + ' always stays open, so it is never deleted';
     // A DOOR'S ITEM (goal/G27.2, D4). Andy, 2026-10-17: "that item never closes unless deleted from the stacks plugin
     // directly", and "the stacks goal handles it's item addition and deletion". So while its door is in the list its
     // item takes no close, done or delete; stackFrameChecks.remove strikes the door and deletes the item itself.
     const asking = verb === 'item.delete' || (verb === 'press' && (String(a.what || '') === 'close' || String(a.what || '') === 'done'));
     const ofDoor = asking ? readDoors().filter(function (d) { return d && d.item === a.id; })[0] : null;
     if (ofDoor) return a.id + ' is the item of door ' + (ofDoor.id || '') + ': it closes only when the door is removed, from its dialog in Stacks';
-    if (verb === 'item.files.add' && a.id === rerun) return 'the file list of its rerun item ' + rerun + ' is ' + RERUN_TEST + ' alone, so a verify.again reruns that suite';
     return '';
   }
 
-  // A RERUN ON ITS RERUN ITEM, taken by the plugin (as goal/G22.1). The desk's own verify.again takes a code item with
-  // a verify pass only; this item is neither, and its whole purpose is the rerun: the record is what deskVerify's
-  // watcher reads, and it runs the item's file list.
-  function handles(verb, a, caller) {
-    if (verb !== 'verify.again' || a.id !== rerun) return undefined;
-    return { change: desk.writeAs('verify.again', { id: rerun }, caller).change };
-  }
-
-  // THE DIALOG'S ADD: a door (gate, endpoint, paths, suites) in; the door added to the list under a new id and a
-  // goal/G22.2-type item out, in its goal. Each form is checked against the tree (the file there, the function in it,
-  // each suite there); the title, made of the short names (peerPost::post, presenceNode), obeys the label rule; a door
-  // already in the list or an open item asking the same is refused. Five writes: the item (by the caller), the door into
-  // the list with that item, then the item's file list, its box and its code mark (by the desk, as the plugin).
-  function make(a, caller) {
-    const list = doorsWithIds();
-    const door = doorOf(desk, a, list, '');
+  // A DOOR'S ITEM, made in its goal: its title from the short names (peerPost::post, presenceNode), obeying the label
+  // rule, an open item asking the same refused; then its file list, its box and its code mark (by the desk, as the
+  // plugin). The item.add is the caller's when a caller is given (make), the desk's otherwise (D8, at mount). Answers
+  // { id, change }.
+  function itemFor(door, doorId, caller, from) {
     const gate = door.gate;
     const endpoint = door.endpoint;
     const reached = /^node:/.test(endpoint) ? endpoint.slice(5) : shortOf(endpoint);
     const title = 'Nobody but ' + shortOf(gate.split('::')[0]) + '::' + gate.split('::')[1] + ' reaches ' + reached;
     if (desk.fieldWhy('title', title)) throw desk.refused('bad-request', desk.fieldWhy('the item\'s title, ' + JSON.stringify(title), title));
     const args = { goal: goal, title: title };
-    desk.writeAs('item.add', args, caller, function (s) {
+    const mint = function (s) {
       const g = s.goals[goal];
       const same = (g ? g.members : []).filter(function (id) { const m = s.items[id]; return m && !m.done && !m.closed && m.title === title; })[0];
       if (same) throw desk.refused('bad-request', same + ' asks this already: ' + title);
       args.minted = desk.nextItemId(s, goal);
-    });
+    };
+    if (caller) desk.writeAs('item.add', args, caller, mint); else desk.write('item.add', args, mint);
     const id = args.minted;
-    // THE DOOR, with the suites given, or none: an empty run fails in the stack-frame test, which is its red until an
-    // agent measures the suites that drive it.
-    const now = readDoors();
-    const doorId = nextDoorId(now);
-    now.push(Object.assign({ id: doorId }, door, { item: id }));
-    writeDoors(now);
     const on = endpoint + (door.paths ? ' on ' + door.paths.join(', ') : '');
     desk.write('item.files.add', { id: id, paths: [ITEMS_TEST] });
     desk.write('box.write', { id: id, version: 0, text: 'every production stack reaching ' + on + ' passes through ' + gate + '.\n' +
       '- Gate: ' + gate + ', one function. Endpoint: ' + on + (door.paths ? ', Node\'s own requests on those paths.' : ', the whole module: every function it exports, and what an exported factory returns.') + '\n' +
-      '- The door is ' + doorId + ' in the plugin\'s list, stackFrameList.json, ' + (door.suites.length ? 'driven by ' + door.suites.join(', ') : 'with no suites yet: ' + RERUN_TEST + ' fails it as an empty run until an agent measures the suites that drive it and writes them in') + '.\n' +
+      '- The door is ' + doorId + ' in the plugin\'s list, stackFrameList.json, ' + (door.suites && door.suites.length ? 'driven by ' + door.suites.join(', ') : 'with no suites yet: its run is an empty run until an agent measures the suites that drive it and writes them in') + '.\n' +
       '- ' + ITEMS_TEST + ' reads the list: its test for this item asserts the door is there, gated by one file::function.\n' +
-      '- ' + RERUN_TEST + ' holds its verdict, and ' + rerun + ' reruns it; the door\'s dialog in Stacks runs it alone, at once.\n' +
-      '- Made by the stackFrameChecks plugin from its dialog (goal/G22.3).' });
+      '- The door\'s dialog in Stacks runs its check alone, at once; the Stacks plugin alone runs it, never deskVerify (goal/G27.2, D9).\n' +
+      '- Made by the stackFrameChecks plugin ' + (from || 'from its dialog (goal/G22.3)') + '.' });
     // A goal/G22.2 item is a code item: its red is the entry in the test file, its build the row.
     const last = desk.write('press', { id: id, what: 'code' });
+    return { id: id, change: last.change };
+  }
+
+  // THE DIALOG'S ADD: a door (gate, endpoint, paths, suites) in; the door added to the list under a new id and a
+  // goal/G22.2-type item out, in its goal (itemFor). Each form is checked against the tree (the file there, the function
+  // in it, each suite there); a door already in the list or an open item asking the same is refused.
+  function make(a, caller) {
+    const list = doorsWithIds();
+    const door = doorOf(desk, a, list, '');
+    const now = readDoors();
+    const doorId = nextDoorId(now);
+    // THE DOOR, with the suites given, or none: an empty run fails in the stack-frame test, which is its red until an
+    // agent measures the suites that drive it.
+    const made = itemFor(door, doorId, caller);
+    now.push(Object.assign({ id: doorId }, door, { item: made.id }));
+    writeDoors(now);
+    const on = door.endpoint + (door.paths ? ' on ' + door.paths.join(', ') : '');
     // A minted id names a new door: a verdict kept under it before describes another (an id struck and
     // minted again).
     markChanged(doorId);
     say('list', doorId);
-    return commitOne('door ' + doorId + ' added, ' + gate + ' -> ' + on + ', for ' + id).then(function (said) {
-      return { id: id, change: last.change, commit: said };
+    return commitOne('door ' + doorId + ' added, ' + door.gate + ' -> ' + on + ', for ' + made.id).then(function (said) {
+      return { id: made.id, change: made.change, commit: said };
     });
   }
+
+  // EVERY DOOR ITS OWN ITEM (goal/G27.2, D8; see the header), once at mount: a door whose item is not an open item of
+  // this goal, or is the item of a door before it in the list, gets a fresh one, and the list is written and committed
+  // once. A door whose item cannot be made is said and left as it is.
+  // ONLY ITEMS THIS DESK KNOWS. A door naming an item this desk has never held is another desk's (a suite's scratch
+  // desk mounted on the tree's own list): it is left as it is, so no such desk ever rewrites or commits the list.
+  (function ownItems() {
+    let list = [];
+    try { list = doorsWithIds(); } catch (e) { return; }
+    const s = desk.state();
+    const seen = Object.create(null);
+    const moved = [];
+    list.forEach(function (d) {
+      const it = d.item ? s.items[d.item] : null;
+      if (!it) return;
+      const ours = !it.done && !it.closed && desk.inGoal(d.item) && !seen[d.item];
+      if (ours) { seen[d.item] = true; return; }
+      try {
+        const made = itemFor(d, d.id, null, 'for door ' + d.id + ', which named ' + (d.item || 'no item') + ' before every door had its own (goal/G27.2, D8)');
+        moved.push(d.id + ' ' + (d.item || 'none') + ' -> ' + made.id);
+        d.item = made.id;
+        seen[made.id] = true;
+      } catch (e) { console.error('stackFrameChecks: door ' + d.id + ' got no item of its own: ' + ((e && e.message) || e)); }
+    });
+    if (!moved.length) return;
+    writeDoors(list);
+    say('list', '');
+    commitOne('every door its own item: ' + moved.join(', ')).then(function (said) { console.error('stackFrameChecks: ' + said); });
+  }());
 
   // A DOOR CHANGED IN PLACE, under the add's rules; its id and its item stay. Its last verdict is cleared: it no longer
   // describes the door (Andy's "with a way to modify a row as well", 2026-10-13). Refused while its run is under way.
@@ -567,7 +603,6 @@ module.exports = function (desk) {
   const VERDICT = { ran: true, green: true, around: 0, of: 0, violators: [''], violatorsLeft: 0, paths: [''], pathsLeft: 0, why: '' };
   return {
     refuses: refuses,
-    handles: handles,
     verbs: {
       // commit: one line, what became of the list's commit and push (goal/G22.3).
       'stackFrameChecks.make': { request: { gate: '', endpoint: '', paths: [''], suites: [''] }, reply: { id: '', change: 0, commit: '' }, handler: make },

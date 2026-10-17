@@ -1445,7 +1445,7 @@ function deskVerifyBar() {
   var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
   var runPct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
   return deskVerifyBarHtml(runPct, 'run') +
-    '<div>' + (r.doing === 'full' ? 'Full run' : r.doing === 'goal' ? 'Goal ' + deskEsc(r.id) : r.doing === 'door' ? 'Door ' + deskEsc(r.id) : 'Item ' + deskEsc(r.id)) +
+    '<div>' + (r.doing === 'full' ? 'Full run' : r.doing === 'goal' ? 'Goal ' + deskEsc(r.id) : 'Item ' + deskEsc(r.id)) +
     (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
 }
 // IDLE, IT COUNTS DOWN (goal/G8.12). Andy: "after all is done, it should count down idle time, before it starts
@@ -1463,8 +1463,7 @@ function deskVerifyHtml() {
   if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
   var run = deskVerifier.running || { id: '', suite: '', since: '' };
   var queued = Array.isArray(deskVerifier.queued) ? deskVerifier.queued : [];
-  // A door run (goal/G22.3) names a door of the Stacks plugin, which is no desk item, so it offers no re-verify.
-  var item = (deskVerifyRun && deskVerifyRun.doing !== 'door' && deskVerifyRun.id) || run.id || deskVerifyLast;
+  var item = (deskVerifyRun && deskVerifyRun.id) || run.id || deskVerifyLast;
   var live = deskVerifyRun;
   // STOP ASKED UNTIL THE RUN ENDS (goal/G21.3): the newest published object says it, else the last now.
   var stopAsked = live ? live.stopAsked === true : deskVerifier.stopAsked === true;
@@ -1537,7 +1536,7 @@ function deskVerifyEvent(obj) {
   // stopped has ended.
   deskVerifyMissed = false;
   if (obj.doing === 'idle' && obj.stopAsked !== true && deskVerifyNote.indexOf(DESK_STOP_NOTE) === 0) deskVerifyNote = '';
-  if (obj.id && obj.doing !== 'door') deskVerifyLast = String(obj.id);
+  if (obj.id) deskVerifyLast = String(obj.id);
   if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' }, queued: [] }; deskDrawTabs(); }
   deskDrawVerifier();
   deskVerifyConsoleHeard(obj);
