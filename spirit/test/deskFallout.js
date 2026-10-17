@@ -21,6 +21,11 @@ const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
 
 const OWED = 'OWED by goal/G27.14: ';
+// goal/G29.5: Fallout talks to deskVerify only, its Reds list a shellCreateListSearch (goal/G29.4). Its box: "server
+// deskVerify, verb search, its stream deskVerify's"; "The container lends its one slot to the app ... The summary line
+// ... is two deskVerify searches"; "DELETED ... The desk-side wrapper verbs fallout.reds, fallout.summary and
+// fallout.history"; deskVerify "keys each test row by the test's identity, its file and its key".
+const OWED29 = 'OWED by goal/G29.5: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const PLUGIN_JS = path.join(RUN, 'process', 'js', 'desk', 'plugins', 'js', 'fallout', 'fallout.js');
@@ -85,44 +90,14 @@ async function serverHalf() {
   if (g && g.plugin === 'fallout' && /^fallout$/i.test(String(g.pluginTab || ''))) test.check('its first mount made the goal ' + GOAL + ', its tab Fallout');
   else test.fail(OWED + GOAL + ' reads ' + short(g));
 
-  test.subHeading('F3. the search is the plugin\'s verb, asking deskVerify for tests that are red now');
-  if (tree['fallout.reds']) test.check('the desk declares fallout.reds');
-  else { test.fail(OWED + 'the desk declares no fallout.reds'); return; }
-  const r1 = await call('fallout.reds', { text: 'relay key' });
-  const a1 = verifyAsks[verifyAsks.length - 1] || [];
-  const rows = ((r1 && r1.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } });
-  // NOTHING SENT THAT IS NOT SHOWN (Andy, 2026-10-17: "don't return shit in the search that i don't want to see! WASTE
-  // OF SPACE."): the list asks without commit or failure text (slim: yes); NEVER FOLDED (Andy, 2026-10-17: "i WANT TO
-  // SEE ONE FUCKING LINE PER FUCKING TEST." and "STOP COLLATING SHIT I DIDN?T ASK FOR!").
-  if (a1[0] === 'search' && a1[1].fold === undefined && a1[1].slim === 'yes') test.check('the list asks deskVerify for slim lines, one per test, nothing folded');
-  else test.fail(OWED + 'the list asked ' + short(a1));
-  if (a1[0] === 'search' && a1[1].over === 'tests' && a1[1].outcome === 'red' && a1[1].test === 'relay key' && a1[1].current === 'yes') test.check('words ask deskVerify search {over: tests, outcome: red, current: yes, test: the words}');
-  else test.fail(OWED + 'deskVerify was asked ' + short(a1));
-  if (rows.length === 1 && rows[0] && rows[0].title === RED.title && rows[0].failure === RED.failure) test.check('its answer carries deskVerify\'s rows as they came');
-  else test.fail(OWED + 'fallout.reds answered ' + short(r1));
-  await call('fallout.reds', { text: 'zzFalloutA.js' });
-  const a2 = verifyAsks[verifyAsks.length - 1] || [];
-  if (a2[1] && a2[1].suite === 'zzFalloutA.js' && !a2[1].test && a2[1].outcome === 'red') test.check('a suite\'s file name asks for that suite\'s reds');
-  else test.fail(OWED + 'a suite name asked ' + short(a2));
-  // The ✅/❌ filter (Andy, 2026-10-17: "do i get a filter for ✅ or ❌?"): green, red, or both ('').
-  await call('fallout.reds', { text: '', outcome: 'green' });
-  const a3 = verifyAsks[verifyAsks.length - 1] || [];
-  await call('fallout.reds', { text: '', outcome: '' });
-  const a4 = verifyAsks[verifyAsks.length - 1] || [];
-  if (a3[1] && a3[1].outcome === 'green' && a4[1] && !a4[1].outcome) test.check('the outcome asked is green, red, or both');
-  else test.fail(OWED + 'outcome filter asked ' + short([a3, a4]));
-  // THE SIZE OF THE PROBLEM (Andy, 2026-10-17: "i would like to know much more: how many red in total
-  // (size-of-problem-info)"): how many tests are red now, and how many green, whatever the search.
-  const before7 = verifyAsks.length;
-  const sum = await call('fallout.summary', {});
-  const asked7 = verifyAsks.slice(before7).map(function (x) { return x[1]; });
-  if (tree['fallout.summary'] && sum.red === 12 && sum.green === 340 && asked7.some(function (a) { return a.outcome === 'red' && a.current === 'yes' && !a.test && !a.suite; }) && asked7.some(function (a) { return a.outcome === 'green' && a.current === 'yes'; })) test.check('fallout.summary answers how many tests are red and green now: ' + sum.red + ' and ' + sum.green);
-  else test.fail(OWED + 'fallout.summary answered ' + short(sum) + ', asking ' + short(asked7));
-  // F6: the history of one tested thing, through the plugin's verb.
-  const h = await call('fallout.history', { suite: 'zzFalloutA.js', heading: 'the relay answers its key' });
-  const a5 = verifyAsks[verifyAsks.length - 1] || [];
-  if (tree['fallout.history'] && a5[0] === 'search' && a5[1].over === 'tests' && a5[1].suite === 'zzFalloutA.js' && a5[1].heading === 'the relay answers its key' && a5[1].history === 'yes' && a5[1].slim === 'yes' && Array.isArray(h.items)) test.check('fallout.history asks deskVerify for every flip under that heading, slim');
-  else test.fail(OWED + 'fallout.history answered ' + short(h) + ', asking ' + short(a5));
+  // goal/G29.5: FALLOUT TALKS TO DESKVERIFY ONLY. The plugin keeps its goal and tab; its wrapper verbs are deleted.
+  test.subHeading('G29.5. the plugin adds no verb to the desk');
+  const wrappers = ['fallout.reds', 'fallout.summary', 'fallout.history'].filter(function (v) { return tree[v]; });
+  if (!wrappers.length) test.check('fallout.reds, fallout.summary and fallout.history are gone from the desk');
+  else test.fail(OWED29 + 'the desk still declares ' + short(wrappers));
+  const r = await call('fallout.reds', { text: 'x' });
+  if (r && r.ok === false) test.check('asking fallout.reds is refused: no such verb');
+  else test.fail(OWED29 + 'fallout.reds still answers ' + short(r));
 }
 
 // ── ONE TEST, ONE KEY, WHICHEVER WAY IT TIPS (goal/G27.14) ───────────────
@@ -200,6 +175,10 @@ async function currentHalf() {
     else test.fail(OWED + 'current reds read ' + short(titles(now)) + ' (all reds ' + short(titles(all)) + ')');
     if (now.total === 1 && all.total === 2) test.check('each answer carries its total: 1 current, 2 in all');
     else test.fail(OWED + 'totals read ' + short([now.total, all.total]));
+    // goal/G29.5: A TEST ROW KEYED BY ITS IDENTITY, its file and its key, so the list's cache replaces it, never doubles it.
+    const keys = ((now && now.items) || []).map(function (i) { return i.key; });
+    if (JSON.stringify(keys) === JSON.stringify(['zzCur.js\nS #2'])) test.check('each test row is keyed by its file and its key, not its record');
+    else test.fail(OWED29 + 'test rows are keyed ' + short(keys));
     // F6, A TEST'S HISTORY (Andy, 2026-10-17: "so we'll add a dialog for test-history, that shows us the flips."):
     // every flip of every check under one sub-heading, not only the newest.
     await ask('record', { suite: 'zzHist.js', title: 'H #1', outcome: 'red', failure: 'first' });
@@ -245,264 +224,116 @@ function fakeElement(id) {
   return el;
 }
 async function paneHalf() {
-  test.subHeading('F2, F4. the Fallout pane: Reds and Items, a search and its table');
-  if (!fs.existsSync(PLUGIN_UI)) { test.fail(OWED + 'no shell/desk/plugins/fallout/fallout.js'); return; }
+  test.subHeading('G29.5. the Fallout pane on shellCreateListSearch, talking to deskVerify only');
+  if (!fs.existsSync(PLUGIN_UI)) { test.fail(OWED29 + 'no shell/desk/plugins/fallout/fallout.js'); return; }
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
   const win = { spiritFieldRules: require('../run/js/fieldRules.js'), spiritDeskPlugins: {} };
-  // THE SAME SEARCH CODE IN THE PAGE (Andy, 2026-10-17: "why down't the UI run the exact same search code in the shell?
-  // ... any search can then easiliy accumulate a cache that can be expanded with every search? it's a pattern...."):
-  // the probability modules load into a page's window as they load into node; a fake page cannot load a script, so
-  // the world puts them there, and counts the matches the pane asks of them.
-  const PROB = ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'js', f); });
-  PROB.forEach(function (f) { if (fs.existsSync(f)) { try { new Function('window', 'module', fs.readFileSync(f, 'utf8'))(win, undefined); } catch (e) { /* node-only: the red below says so */ } } });
-  let probCalls = 0;
-  if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function') {
-    const real = win.spiritProbability.probabilityStringMatch;
-    win.spiritProbability.probabilityStringMatch = function (a, b) { probCalls += 1; return real(a, b); };
-  }
-  // THE PANE'S BUCKET UNBOUNDED (Andy, 2026-10-17: "in probabilityBucket.js use serialize: function (map, maxBytes = 0)
-  // where 0 means unbounded."): the buckets the pane makes, and the ceiling it serialized them with.
-  const paneBuckets = [];
-  if (win.spiritProbability && typeof win.spiritProbability.createProbabilityBucket === 'function') {
-    const realBucket = win.spiritProbability.createProbabilityBucket;
-    win.spiritProbability.createProbabilityBucket = function (capacity) {
-      const b = realBucket(capacity);
-      const seen = { capacity: capacity, serialized: false, ceiling: null };
-      paneBuckets.push(seen);
-      const realSerialize = b.serialize;
-      b.serialize = function (map, maxBytes) { seen.serialized = true; seen.ceiling = maxBytes === undefined ? 0 : maxBytes; return realSerialize.apply(b, arguments); };
-      return b;
-    };
+  // The shell's modules as index.html loads them, and the shared container as the pane loads it on demand; a fake
+  // page cannot load a script, so the world puts it there and watches what the pane makes of it.
+  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+  });
+  const LIST = path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js');
+  if (fs.existsSync(LIST)) new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
+  const made = [];
+  if (win.spiritElements && typeof win.spiritElements.shellCreateListSearch === 'function') {
+    const real = win.spiritElements.shellCreateListSearch;
+    win.spiritElements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
   }
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
   const ui = win.spiritDeskPlugins.fallout;
-  if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spiritDeskPlugins.fallout.open'); return; }
+  if (!ui || typeof ui.open !== 'function') { test.fail(OWED29 + 'the UI registers no window.spiritDeskPlugins.fallout.open'); return; }
+  const GREEN = { suite: 'zzFalloutB.js', title: 'a door stays shut #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T07:00:00.000Z', failure: '' };
+  const desks = [];
   const asked = [];
-  let chatAt = null;
+  let inFlight = 0;
+  let maxInFlight = 0;
+  const streams = [];
   const dialogs = [];
+  let chatAt = null;
   const box = fakeElement('pane');
   ui.open(box, {
     goal: GOAL,
-    // Three checks under one sub-heading (the RED among them, the newest) and one under another: two tested things.
-    ask: function (verb, a) {
-      asked.push([verb, a]);
-      if (verb === 'fallout.summary') return Promise.resolve({ red: 12, green: 340 });
-      if (verb !== 'fallout.reds') return Promise.resolve({});
-      // A search whose answer brings nothing new: what shows comes from the cache.
-      if (a && a.text === 'door') return Promise.resolve({ items: [], more: false, total: 0 });
-      const more = [
-        { suite: 'zzFalloutA.js', title: 'the relay answers its key #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T08:00:00.000Z', failure: '' },
-        { suite: 'zzFalloutA.js', title: 'the relay answers its key #2', outcome: 'red', commit: 'abc1234', at: '2026-10-17T08:30:00.000Z', failure: 'older' },
-        { suite: 'zzFalloutB.js', title: 'a door stays shut #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T07:00:00.000Z', failure: '' },
-      ];
-      return Promise.resolve({ items: [RED].concat(more).map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: false, total: 3 });
-    },
-    onPublished: function () { return function () {}; }, chat: function (el) { chatAt = el; }, callDialog: function (app, params) { dialogs.push([app, params]); return new Promise(function () {}); },
-  });
-  await sleep(20);
-  const all = function () { return box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); };
-  // THE SIZE OF THE PROBLEM, shown on opening, whatever the search: how many red, of how many tests.
-  const sumText = doc.getElementById('fallout-summary').textContent;
-  if (asked.some(function (x) { return x[0] === 'fallout.summary'; }) && /12/.test(sumText) && /352/.test(sumText)) test.check('on opening it says how many are red now, of all: ' + sumText);
-  else test.fail(OWED + 'the summary reads ' + short(sumText) + ', asked ' + short(asked.map(function (x) { return x[0]; })));
-  if (/data-fallout-tab="reds"[^>]*>Reds</.test(all()) && /data-fallout-tab="items"[^>]*>Items</.test(all())) test.check('two inner tabs, Reds and Items');
-  else test.fail(OWED + 'the pane shows ' + short(all()));
-  if (/id="fallout-text"/.test(all()) && /id="fallout-search"/.test(all())) test.check('Reds holds a search box and its button');
-  else test.fail(OWED + 'no #fallout-text and #fallout-search in ' + short(all()));
-  doc.getElementById('fallout-text').value = 'relay key';
-  box.fire('click', { target: { id: 'fallout-search', getAttribute: function () { return null; } } });
-  await sleep(20);
-  const sent = asked.filter(function (x) { return x[0] === 'fallout.reds'; })[0];
-  if (sent && sent[1].text === 'relay key') test.check('its search sends fallout.reds with the words typed');
-  else test.fail(OWED + 'the search asked ' + short(asked));
-  const table = doc.getElementById('fallout-reds').innerHTML;
-  // ONE NICE LINE PER TEST (Andy, 2026-10-17: "one nice line per failure / test-file-name | failure-description |
-  // success or fail | since"): the description is the sentence of what is tested, its sub-heading; the raw failure a
-  // suite printed is no row text (at most a hover title).
-  const shown = table.replace(/\btitle="[^"]*"/g, '');
-  const atSuite = shown.indexOf('zzFalloutA.js');
-  const atWhat = shown.indexOf('the relay answers its key');
-  const atStatus = shown.indexOf('❌', shown.indexOf('<tbody>'));
-  const atSince = shown.indexOf('2026-10-17 09:00:00');
-  if (atSuite !== -1 && atWhat > atSuite && atStatus > atWhat && atSince > atStatus) test.check('each row reads test file, description, status, since, in that order');
-  else test.fail(OWED + 'the row order: file ' + atSuite + ', description ' + atWhat + ', status ' + atStatus + ', since ' + atSince + ' in ' + short(shown));
-  // NOT EVEN ON HOVER (Andy, 2026-10-17: "i understand that you need to store commit-level and failure detail, it just
-  // doesn't help me anything when looking at a list. I know you can read those details, so it doesn't need to be
-  // on-screen."), and the ❌/✅ stay ("Keep the fucking fail/success icons").
-  if (!/boom: no answer/.test(table) && !/older/.test(table) && !/abc1234/.test(table)) test.check('no failure text and no commit anywhere in the lines, not even on hover');
-  else test.fail(OWED + 'the lines still carry detail: ' + short(table));
-  // ONE LINE PER TEST, THE LATEST OF EACH (Andy, 2026-10-17: "i WANT TO SEE ONE FUCKING LINE PER FUCKING TEST." and
-  // "STOP COLLATING SHIT I DIDN?T ASK FOR!"): four tests, four lines, each its own key, its own status and time.
-  const lines = (shown.match(/<tr[\s>]/g) || []).length - 1;
-  const lineOf = function (key) { return (shown.match(new RegExp('<tr[^>]*>(?:(?!<\\/tr>).)*' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:(?!<\\/tr>).)*<\\/tr>')) || [''])[0]; };
-  if (lines === 4) test.check('one line per test: four tests, four lines');
-  else test.fail(OWED + lines + ' lines in ' + short(shown));
-  const red3 = lineOf('the relay answers its key #3');
-  const green1 = lineOf('the relay answers its key #1');
-  if (/❌/.test(red3) && /2026-10-17 09:00:00/.test(red3) && /✅/.test(green1) && !/❌/.test(green1)) test.check('each line is its own test: #3 ❌ at its time, #1 ✅');
-  else test.fail(OWED + 'the #3 line reads ' + short(red3) + ', the #1 line ' + short(green1));
-  // F6: a line opens the history dialog of its one test.
-  box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-suite' ? 'zzFalloutA.js' : n === 'data-heading' ? 'the relay answers its key #3' : null; }, closest: function () { return null; } } });
-  await sleep(20);
-  if (dialogs.some(function (d) { return d[0] === 'shell/falloutHistory' && d[1] && d[1].suite === 'zzFalloutA.js' && d[1].heading === 'the relay answers its key #3'; })) test.check('a line opens shell/falloutHistory with its suite and its test\'s key');
-  else test.fail(OWED + 'a click on a line opened ' + short(dialogs));
-  if (/data-suite="zzFalloutA\.js"/.test(table) && /data-heading="the relay answers its key #3"/.test(table)) test.check('each line carries its suite and its test\'s key to open with');
-  else test.fail(OWED + 'the lines carry no data-suite and data-heading: ' + short(table));
-  // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
-  if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
-  else test.fail(OWED + 'no #fallout-outcome select with red, green and both in ' + short(all()));
-  doc.getElementById('fallout-outcome').value = 'green';
-  box.fire('click', { target: { id: 'fallout-search', getAttribute: function () { return null; } } });
-  await sleep(20);
-  const sentGreen = asked.filter(function (x) { return x[0] === 'fallout.reds'; }).pop();
-  if (sentGreen && sentGreen[1].outcome === 'green') test.check('the filter goes with the search');
-  else test.fail(OWED + 'the search with the filter asked ' + short(sentGreen));
-  // THE SEARCH'S COUNT SAYS IT IS THE SEARCH'S (Andy, 2026-10-17: "what I want to know is TOTAL OF ALL FAILURES.
-  // period, THAT's size of the problem, NOT searching for "zyx" and getting a size-of-problem from that."): the size of
-  // the problem is the Now line; the count under the search says it counts what matches the search.
-  const countText = doc.getElementById('fallout-count').textContent;
-  if (/match/i.test(countText) && !/\bnow\b/i.test(countText)) test.check('the search count says it counts what matches the search: ' + countText);
-  else test.fail(OWED + 'the search count reads ' + short(countText));
-  if (/\b3\b/.test(doc.getElementById('fallout-count').textContent)) test.check('the tab says how many matched: ' + doc.getElementById('fallout-count').textContent);
-  else test.fail(OWED + 'the count reads ' + short(doc.getElementById('fallout-count').textContent));
-  // EVERY SEARCH RESULT CACHED, AND THE TERM MATCHED AMONG ALL OF IT (Andy, 2026-10-17: "and the UI still doesn't cache
-  // every search result, and then display what matches the search term among all cached rows...."): a later search
-  // whose answer brings nothing still shows the cached line its words match, and none other.
-  doc.getElementById('fallout-outcome').value = '';
-  doc.getElementById('fallout-text').value = 'door';
-  box.fire('click', { target: { id: 'fallout-search', getAttribute: function () { return null; } } });
-  await sleep(20);
-  const cachedTable = doc.getElementById('fallout-reds').innerHTML;
-  // SHELL-SIDE FOR EVERY ELEMENT (Andy, 2026-10-17: "they all can count on the probability stuff being available,
-  // shell-side...."): the shell's page loads both modules itself.
-  const indexHtml = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
-  // All three (Andy: "what about probabilityObject or whatever it's called?"), the object match after the string match
-  // it needs.
-  const atS = indexHtml.indexOf('<script src="/js/probabilityStringMatch.js"></script>');
-  const atO = indexHtml.indexOf('<script src="/js/probabilityStringObjectMatch.js"></script>');
-  const atB = indexHtml.indexOf('<script src="/js/probabilityBucket.js"></script>');
-  if (atS !== -1 && atO > atS && atB !== -1) test.check('index.html loads the three probability modules, the object match after the string match, so every element can count on them');
-  else test.fail(OWED + 'index.html loads string ' + atS + ', object ' + atO + ', bucket ' + atB);
-  // THE UNBOUNDED MODE ITSELF: a bucket made with Infinity seats every row, and serialize() with maxBytes left out (0)
-  // gives them all back, best first, with no byte ceiling (5000 rows of 200 bytes, far past any answer over the wire).
-  const B = require('../run/js/probabilityBucket.js').createProbabilityBucket(Infinity);
-  for (let i = 0; i < 5000; i++) B.seatFor((i % 100) / 100, { n: i, pad: 'x'.repeat(200) });
-  const everyRow = B.serialize().items;
-  if (everyRow.length === 5000 && everyRow[0].n % 100 === 99 && everyRow[4999].n % 100 === 0) test.check('a bucket made with Infinity seats all 5000 rows, and serialize() with no ceiling returns every one, best first');
-  else test.fail(OWED + 'an Infinity bucket serialized ' + everyRow.length + ' rows');
-  // SORT BY A COMPARE FUNCTION (Andy, 2026-10-17: "sort("search string") this way the bucket itself can be the cache
-  // needed in shell apps.", then "SORT(probability = compareFunction())"): every held object gets compare(object) as its
-  // new probability and the table re-orders, highest first; one scored outside 0 to 1 stays held but is not serialized
-  // until a later sort scores it again. The bucket still knows nothing of strings: the caller's function does.
-  const S = require('../run/js/probabilityBucket.js').createProbabilityBucket(Infinity);
-  ['alpha', 'beta', 'gamma', 'delta'].forEach(function (w) { S.seatFor(0, { w: w }); });
-  if (typeof S.sort === 'function') {
-    S.sort(function (o) { return o.w.indexOf('a') === 0 ? 0.9 : o.w.indexOf('e') !== -1 ? 0.5 : -1; });
-    const sorted = S.serialize().items.map(function (o) { return o.w; });
-    S.sort(function () { return 0; });
-    const back = S.serialize().items.map(function (o) { return o.w; });
-    if (JSON.stringify(sorted) === JSON.stringify(['alpha', 'beta', 'delta']) && back.length === 4 && back.indexOf('gamma') !== -1) test.check('sort(compare) re-orders by compare(object), leaves an unscored one out of serialize, and keeps it held for the next sort');
-    else test.fail(OWED + 'after sort the bucket serialized ' + short(sorted) + ', then ' + short(back));
-  } else test.fail(OWED + 'the bucket has no sort(compare)');
-  const bucketSrc = fs.readFileSync(path.join(RUN, 'js', 'probabilityBucket.js'), 'utf8');
-  if (/serialize:\s*function\s*\(map,\s*maxBytes\s*=\s*0\)/.test(bucketSrc) && typeof B.all === 'undefined') test.check('serialize reads (map, maxBytes = 0), 0 meaning unbounded, and the bucket has no all()');
-  else test.fail(OWED + 'serialize is not (map, maxBytes = 0), or all() is still there: ' + typeof B.all);
-  if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function' && typeof win.spiritProbability.probabilityStringObjectMatch === 'function' && typeof win.spiritProbability.createProbabilityBucket === 'function') test.check('the three probability modules load into a page\'s window');
-  else test.fail(OWED + 'js/probabilityStringMatch.js and js/probabilityBucket.js give a page nothing: ' + short(win.spiritProbability && Object.keys(win.spiritProbability)));
-  if (probCalls > 0) test.check('the pane ranks its cache with the same probabilityStringMatch the servers search with (' + probCalls + ' calls)');
-  else test.fail(OWED + 'the pane matched its cache without probabilityStringMatch');
-  if (paneBuckets.length > 0 && paneBuckets.every(function (b) { return b.capacity === Infinity && b.serialized && b.ceiling === 0; })) test.check('the pane ranks its cache in an unbounded bucket (Infinity), serialized with no ceiling');
-  else test.fail(OWED + 'the pane made buckets ' + short(paneBuckets));
-  // ALL ROWS, BEST ON TOP (Andy, 2026-10-17: "that way you can display ALL rows since the best maches will always be on
-  // top.."): the words rank the cached lines; a line they do not match still shows, below.
-  const doorAt = cachedTable.indexOf('a door stays shut');
-  const relayAt = cachedTable.indexOf('the relay answers its key');
-  if (doorAt !== -1 && relayAt > doorAt) test.check('a search shows every cached line, the one its term matches on top');
-  else test.fail(OWED + 'after searching door: door at ' + doorAt + ', relay at ' + relayAt + ' in ' + short(cachedTable));
-  // AS TYPED (Andy, 2026-10-17: "so why doesn't the fallout list update with each character typed or erased in the
-  // search box?"): every character typed or erased redraws the list from the cache at once, no click, no wait.
-  const typeIn = function (v) { doc.getElementById('fallout-text').value = v; box.fire('input', { target: { id: 'fallout-text', getAttribute: function () { return null; } } }); };
-  typeIn('relay');
-  const typedRelay = doc.getElementById('fallout-reds').innerHTML;
-  typeIn('');
-  const typedEmpty = doc.getElementById('fallout-reds').innerHTML;
-  if (typedRelay.indexOf('the relay answers its key') !== -1 && typedRelay.indexOf('a door stays shut') > typedRelay.indexOf('the relay answers its key')) test.check('typing "relay" redraws the list at once, its cached matches on top, the rest below');
-  else test.fail(OWED + 'after typing relay the list reads ' + short(typedRelay));
-  if (/the relay answers its key/.test(typedEmpty) && /a door stays shut/.test(typedEmpty)) test.check('erasing it redraws the list at once to every cached line');
-  else test.fail(OWED + 'after erasing the list reads ' + short(typedEmpty));
-  // ONE IN FLIGHT (Andy, 2026-10-17: "and make sure that only one typing update is in flight at the time...."): a
-  // search asked while one is out waits, and runs once, with the latest words, when the first returns.
-  let inFlight = 0;
-  let maxInFlight = 0;
-  const slowAsked = [];
-  const box2 = fakeElement('pane2');
-  ui.open(box2, {
-    goal: GOAL,
-    // MAX ONE OVER THE WIRE (Andy: "make SURE there's MAX one search in flight over the wire.... IMPORTANT."): every
-    // request the pane makes is counted, the summary's too, each answering slowly.
-    ask: function (verb, a) {
-      if (verb === 'fallout.reds') slowAsked.push(a.text);
+    ask: function (verb, a) { desks.push([verb, a]); return Promise.resolve({}); },
+    // Desk's own call, handed to its plugins since goal/G29.5: verb('jobs.api', {ask: {<server>: {<verb>: args}}}).
+    verb: function (name, body) {
+      const ask = (body && body.ask) || {};
+      const server = Object.keys(ask)[0];
+      const v = server && Object.keys(ask[server])[0];
+      const a = (v && ask[server][v]) || {};
+      asked.push({ name: name, server: server, verb: v, args: a });
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
       return new Promise(function (resolve) {
-        setTimeout(function () { inFlight -= 1; resolve(verb === 'fallout.summary' ? { red: 0, green: 0 } : { items: [], more: false, total: 0 }); }, 60);
+        setTimeout(function () {
+          inFlight -= 1;
+          let out = { ok: false, code: 'no-such-verb' };
+          if (server === 'deskVerify' && v === 'search') {
+            if (a.slim !== 'yes') out = { items: [], more: false, total: a.outcome === 'green' ? 340 : 12 };
+            else {
+              const rows = [RED, GREEN].filter(function (x) { return !a.outcome || x.outcome === a.outcome; });
+              out = { items: rows.map(function (x) { return { key: x.suite + '\n' + x.title, label: JSON.stringify({ suite: x.suite, title: x.title, outcome: x.outcome, at: x.at }) }; }), more: false, total: rows.length };
+            }
+          }
+          resolve({ status: 200, body: out });
+        }, 15);
       });
     },
-    onPublished: function () { return function () {}; }, chat: function () {}, callDialog: function () { return new Promise(function () {}); },
+    onPublished: function (fn, server) { streams.push(server); return function () {}; },
+    chat: function (el) { chatAt = el; },
+    callDialog: function (app, params) { dialogs.push([app, params]); return new Promise(function () {}); },
   });
-  const enter = function (v) { doc.getElementById('fallout-text').value = v; box2.fire('keydown', { key: 'Enter', repeat: false, target: { id: 'fallout-text', getAttribute: function () { return null; } } }); };
-  enter('a');
-  enter('ab');
-  enter('abc');
-  await sleep(600);
-  if (maxInFlight === 1) test.check('at most one request of the pane is on the wire at a time, its summary count included');
-  else test.fail(OWED + maxInFlight + ' requests of the pane were in flight at once');
-  // Those asked meanwhile fold into one, the latest words: "ab" is never asked, "abc" once and last.
-  if (slowAsked.length >= 1 && slowAsked.length <= 2 && slowAsked[slowAsked.length - 1] === 'abc' && slowAsked.indexOf('ab') === -1 && slowAsked.filter(function (t) { return t === 'abc'; }).length === 1) test.check('those asked meanwhile run once, with the latest words: ' + short(slowAsked));
-  else test.fail(OWED + 'the server was asked ' + short(slowAsked));
-  // THE TABLE GROWS WITH EVERY SEARCH (Andy, 2026-10-17: "1. i search with empty string, i get let's say 20 rows. 2. a
-  // search for 'y' or for releay, and if finds a row not previously displayed. 3. when clearing the search box (gimme
-  // all) then the fucking table should be larger than after step 1."). The server answers the empty box with 20 lines,
-  // "y" with one line it never gave before; clearing the box shows more lines than step 1 did, that one among them.
-  const box3 = fakeElement('pane3');
-  const twenty = []; for (let i = 0; i < 20; i++) twenty.push({ suite: 'zzGrow' + i + '.js', title: 'grows #' + i, outcome: 'red', at: '2026-10-17T10:00:' + String(10 + i) + '.000Z' });
-  const yRow = { suite: 'zzGrowY.js', title: 'only y finds this #1', outcome: 'red', at: '2026-10-17T09:00:00.000Z' };
-  ui.open(box3, {
-    goal: GOAL,
-    ask: function (verb, a) {
-      if (verb === 'fallout.summary') return Promise.resolve({ red: 21, green: 0 });
-      const rows = a && a.text === 'y' ? [yRow] : twenty;
-      return Promise.resolve({ items: rows.map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: a && a.text === '', total: a && a.text === '' ? 21 : rows.length });
-    },
-    onPublished: function () { return function () {}; }, chat: function () {}, callDialog: function () { return new Promise(function () {}); },
-  });
-  const typeAt3 = function (v) { doc.getElementById('fallout-text').value = v; box3.fire('input', { target: { id: 'fallout-text', getAttribute: function () { return null; } } }); };
-  const rowsShown = function () { return ((doc.getElementById('fallout-reds').innerHTML.match(/<tr[\s>]/g) || []).length - 1); };
-  doc.getElementById('fallout-outcome').value = '';
-  typeAt3('');
-  await sleep(600);
-  const step1 = rowsShown();
-  typeAt3('y');
-  await sleep(600);
-  typeAt3('');
-  await sleep(600);
-  const step3 = rowsShown();
-  const step3Table = doc.getElementById('fallout-reds').innerHTML;
-  if (step3 > step1 && /only y finds this/.test(step3Table)) test.check('clearing the box after a search that found a new line shows more lines than before (' + step1 + ' then ' + step3 + ')');
-  else test.fail(OWED + 'step 1 showed ' + step1 + ' lines, step 3 ' + step3 + ', the y line ' + (/only y finds this/.test(step3Table) ? 'among them' : 'missing'));
-  box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
-  await sleep(10);
-  const items = doc.getElementById('fallout-items');
-  if (items.hidden === false && /not yet|nothing yet|later/i.test(items.innerHTML) && doc.getElementById('fallout-pane-reds').hidden === true) test.check('Items shows, empty for now, saying so; Reds hides');
-  else test.fail(OWED + 'after Items: items hidden ' + items.hidden + ', says ' + short(items.innerHTML) + ', reds hidden ' + doc.getElementById('fallout-pane-reds').hidden);
-  // THE GOAL CHAT AT THE BOTTOM, NO FAILURE COLUMN (Andy, 2026-10-17: "drop the "Failure" column, it means nothing to
-  // me, and add the goal chat at the bottom.").
+  await sleep(200);
+  const cfg = made[0] && made[0].cfg;
+  if (made.length === 1 && cfg && cfg.server === 'deskVerify' && cfg.verb === 'search') test.check('the Reds list is one shellCreateListSearch over deskVerify\'s search');
+  else { test.fail(OWED29 + 'the pane made ' + made.length + ' list(s): ' + short(made.map(function (m) { return { server: m.cfg.server, verb: m.cfg.verb }; }))); return; }
+  if (!desks.length && asked.length && asked.every(function (x) { return x.name === 'jobs.api' && x.server === 'deskVerify'; })) test.check('Fallout talks to deskVerify only: ' + asked.length + ' requests, none to the desk');
+  else test.fail(OWED29 + 'it asked the desk ' + short(desks) + ' and ' + short(asked.map(function (x) { return x.server + ' ' + x.verb; })));
+  if (maxInFlight === 1 && asked.length >= 3) test.check('one request on the wire at a time, the summary\'s two included');
+  else test.fail(OWED29 + maxInFlight + ' requests were in flight at once, of ' + asked.length);
+  const sumText = doc.getElementById('fallout-summary').textContent;
+  if (/12/.test(sumText) && /352/.test(sumText) && asked.some(function (x) { return x.args.outcome === 'red' && x.args.current === 'yes' && x.args.slim !== 'yes'; }) && asked.some(function (x) { return x.args.outcome === 'green' && x.args.current === 'yes' && x.args.slim !== 'yes'; })) test.check('the summary is two deskVerify searches, red and green totals: ' + sumText);
+  else test.fail(OWED29 + 'the summary reads ' + short(sumText) + ' after ' + short(asked.map(function (x) { return x.args; })));
+  if (streams.indexOf('deskVerify') !== -1 && streams.indexOf('desk') === -1) test.check('it hears deskVerify\'s stream, not the desk\'s');
+  else test.fail(OWED29 + 'it hears ' + short(streams));
+
+  test.subHeading('G29.5. the configuration');
+  const a1 = cfg.args('relay key', { outcome: 'red' });
+  const a2 = cfg.args('zzFalloutA.js', { outcome: 'red' });
+  const a3 = cfg.args('', { outcome: '' });
+  if (a1 && a1.over === 'tests' && a1.current === 'yes' && a1.slim === 'yes' && a1.outcome === 'red' && a1.test === 'relay key' && a1.fold === undefined) test.check('words ask {over: tests, current: yes, slim: yes, outcome, test: the words}');
+  else test.fail(OWED29 + 'args for relay key read ' + short(a1));
+  if (a2 && a2.suite === 'zzFalloutA.js' && !a2.test && a3 && a3.outcome === undefined) test.check('a suite\'s file name asks by suite; both outcomes ask none');
+  else test.fail(OWED29 + 'args read ' + short([a2, a3]));
+  const f = (cfg.filters || [])[0];
+  const values = f ? f.choices.map(function (c) { return c.value; }) : [];
+  if (f && f.name === 'outcome' && JSON.stringify(values) === '["red","green",""]' && f.test(RED, 'red') === 1 && f.test(GREEN, 'red') === 0 && f.test(GREEN, '') === 1) test.check('one filter, outcome: ❌ fail, ✅ success, both; its test passes a row whose outcome matches');
+  else test.fail(OWED29 + 'the filter reads ' + short(f));
+  const painted = cfg.paint({ suite: RED.suite, title: RED.title, outcome: 'red', at: RED.at });
+  const order = [painted.indexOf('zzFalloutA.js'), painted.indexOf('the relay answers its key #3'), painted.indexOf('❌ fail'), painted.indexOf('2026-10-17 09:00:00')];
+  if (order.every(function (i, n) { return i !== -1 && (n === 0 || i > order[n - 1]); }) && !/boom|abc1234/.test(painted)) test.check('a row reads test file | what is tested | status | since, no failure and no commit');
+  else test.fail(OWED29 + 'a row paints ' + short(painted));
+  cfg.press({ suite: RED.suite, title: RED.title, outcome: 'red', at: RED.at });
+  if (dialogs.some(function (d) { return d[0] === 'shell/falloutHistory' && d[1].suite === RED.suite && d[1].heading === RED.title; })) test.check('a press opens shell/falloutHistory for that test');
+  else test.fail(OWED29 + 'a press opened ' + short(dialogs));
+  if (/No test matches/.test(String(cfg.empty || ''))) test.check('an empty list says no test matches');
+  else test.fail(OWED29 + 'the empty sentence reads ' + short(cfg.empty));
+  const deskFace = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'desk.js'), 'utf8');
+  if (/ui\.open\(el, \{[^]*?verb: function \(name, body\) \{ return deskApi\.verb\(name, body\); \}/.test(deskFace)) test.check('Desk hands its plugins its own call, verb(name, body)');
+  else test.fail(OWED29 + 'Desk hands its plugins no verb');
+
+  test.subHeading('G29.5. deleted, and what stays');
+  const src = fs.readFileSync(PLUGIN_UI, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
+  const left = ['wireBusy', 'typedTimer', 'TYPED_PAUSE_MS', 'testLines', 'probabilityStringMatch', 'createProbabilityBucket', 'fallout.reds', 'fallout.summary', 'fallout.history'].filter(function (w) { return src.indexOf(w) !== -1; });
+  if (!left.length) test.check('the pane\'s own cache, wire slot, typing timer, ranking and the wrapper verbs are gone');
+  else test.fail(OWED29 + 'the pane still holds ' + short(left));
+  const all = box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
+  if (/data-fallout-tab="reds"[^>]*>Reds</.test(all) && /data-fallout-tab="items"[^>]*>Items</.test(all)) test.check('two inner tabs stay, Reds and Items');
+  else test.fail(OWED29 + 'the tabs read ' + short(all));
   const markup = box.innerHTML;
-  if (chatAt && chatAt.id === 'fallout-chat' && markup.indexOf('id="fallout-chat"') > markup.indexOf('id="fallout-items"') && markup.indexOf('id="fallout-chat"') > markup.indexOf('id="fallout-pane-reds"')) test.check('the goal chat is mounted at the bottom, below both inner tabs');
-  else test.fail(OWED + 'the chat mounted in ' + short(chatAt && chatAt.id) + '; markup ' + short(markup.slice(-200)));
-  if (!/<th>Failure<\/th>/.test(all())) test.check('no Failure column');
-  else test.fail(OWED + 'a Failure column is still drawn');
+  if (chatAt && chatAt.id === 'fallout-chat' && markup.indexOf('id="fallout-chat"') > markup.indexOf('id="fallout-items"')) test.check('the goal chat stays at the bottom');
+  else test.fail(OWED29 + 'the chat mounted in ' + short(chatAt && chatAt.id));
 }
 
 // F6: THE HISTORY DIALOG, a hidden shell dialog that reads the flips through the plugin's verb.
@@ -526,18 +357,22 @@ async function historyHalf() {
   app.mount(box, {
     escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
     verb: function (name, body) {
-      const q = body && body.ask && body.ask.desk;
+      const ask = (body && body.ask) || {};
+      const server = Object.keys(ask)[0];
+      const q = server && ask[server];
       const v = q && Object.keys(q)[0];
-      calls.push([v, q && q[v]]);
-      return Promise.resolve({ status: 200, body: v === 'fallout.history' ? { items: FLIPS.map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: false, total: 2 } : {} });
+      calls.push([server, v, q && q[v]]);
+      return Promise.resolve({ status: 200, body: server === 'deskVerify' && v === 'search' ? { items: FLIPS.map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: false, total: 2 } : { ok: false, code: 'no-such-verb' } });
     },
     onPublished: function () { return function () {}; }, closeDialog: function () {}, setScreenTitle: function () {}, setDialogResult: function () {},
   });
   await app.open({ suite: 'zzFalloutA.js', heading: 'the relay answers its key' });
   await sleep(20);
   const page = box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
-  if (calls.some(function (c) { return c[0] === 'fallout.history' && c[1] && c[1].suite === 'zzFalloutA.js' && c[1].heading === 'the relay answers its key'; })) test.check('it reads the flips with fallout.history');
-  else test.fail(OWED + 'the dialog asked ' + short(calls));
+  // goal/G29.5: Fallout talks to deskVerify only, its history dialog too.
+  const hc = calls.filter(function (c) { return c[0] === 'deskVerify' && c[1] === 'search'; })[0];
+  if (calls.length && calls.every(function (c) { return c[0] === 'deskVerify'; }) && hc && hc[2].over === 'tests' && hc[2].suite === 'zzFalloutA.js' && hc[2].heading === 'the relay answers its key' && hc[2].history === 'yes' && hc[2].slim === 'yes') test.check('it reads the flips with deskVerify\'s search itself, history: yes, slim');
+  else test.fail(OWED29 + 'the dialog asked ' + short(calls));
   if (/#2/.test(page) && /❌/.test(page) && /✅/.test(page) && page.indexOf('2026-10-17 09:00:00') !== -1 && page.indexOf('2026-10-17 09:00:00') < page.indexOf('2026-10-16 09:00:00')) test.check('it shows each flip: the check, ❌ or ✅, and when, newest first');
   else test.fail(OWED + 'the dialog shows ' + short(page));
   if (!/bbb2222|aaa1111/.test(page) && !/boom again/.test(page)) test.check('no commit and no failure text on screen, not even on hover');

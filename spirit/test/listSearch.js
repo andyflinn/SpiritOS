@@ -228,6 +228,21 @@ test.startTest('goal/G29.4: shellCreateListSearch, the list with its search');
   if (/No test matches\./.test(el4.list.innerHTML)) test.check('an empty list says the configured sentence');
   else test.fail(OWED + 'the empty list reads ' + short(el4.list.innerHTML));
 
+  // goal/G29.5: THE SLOT LENT TO THE APP. Its box: "The container lends its one slot to the app: list.ask(verb, args)
+  // goes through the same serialized slot."
+  test.subHeading('8. goal/G29.5: its one slot, lent to the app');
+  const lend = fakeApi(function (args) { return args && args.total ? { items: [], more: false, total: 7 } : { items: pairs(['r1']), more: false, total: 1 }; }, 40);
+  const box5 = fakeElement('box5');
+  const list5 = make(box5, config(lend));
+  const el5 = parts(p, box5);
+  if (list5 && typeof list5.ask === 'function') {
+    typeInto(box5, el5.text, 'x');
+    const lent = list5.ask('fallout.reds', { total: 'yes' });
+    const got = await lent;
+    if (lend.maxInFlight === 1 && lend.asked.length === 2 && lend.asked[1].server === 'desk' && lend.asked[1].verb === 'fallout.reds' && got && got.total === 7) test.check('list.ask(verb, args) waits for the list\'s request, goes to the same server, and answers the body');
+    else test.fail('OWED by goal/G29.5: in flight ' + lend.maxInFlight + ', asked ' + short(lend.asked.map(function (a) { return a.verb + ' ' + JSON.stringify(a.args); })) + ', answered ' + short(got));
+  } else test.fail('OWED by goal/G29.5: the list lends no ask(verb, args)');
+
   test.subHeading('7. it hears its server');
   const before = api.asked.length;
   if (api.streams.indexOf('desk') !== -1 && api.heard.length) {
