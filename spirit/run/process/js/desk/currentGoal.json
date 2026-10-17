@@ -1,5 +1,5 @@
 {
- "change": 69653,
+ "change": 69695,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
@@ -2083,15 +2084,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29.7"
    ],
-   "blocked": [
-    "goal/G29.9"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -2302,10 +2302,11 @@
    "id": "goal/G29.9",
    "title": "the shared list's dropdown mode, contactSelector on it",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.8"
@@ -2315,21 +2316,82 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/shell/contacts/contacts.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/desk/plugins/fallout/fallout.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/js/contactSelector.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/chatter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactSelectorPane.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contacts.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactsListSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskFallout.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/listSearchModes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellElements.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "7121aece",
+   "redCommit": "cc301360",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -2368,7 +2430,17 @@
    "full": false,
    "box": "Nothing in it is specific to contacts: it makes the search list's pane and its dropdown one system, and puts the features common to lists into the shared element, for one look and feel.\n\nWHAT EXISTS (shellCreateListSearch, shell/shared/js/listSearch.js, today)\n- Rows 1 to 3 in one pane: the filter row (filters declared, each shown only when its when(rows) says so), the search row (box, its clear button inside on the right, the search button), a count line, the list.\n- One keyed cache, an unbounded probabilityBucket; each keystroke ranks it in the page (probabilityStringObjectMatch times every filter's test), all rows shown, the best on top.\n- The server asked through api, server, verb and args: serialized, one request on the wire, no typing pause; the slot lent to the app (list.ask); a publish on its stream asks again.\n- paint(row), press(row), empty; refresh() and redraw().\n- contactSelector holds a dropdown of its own (a button opening the list) and marks its chosen row with a bold name.\n\nWHAT IS NEW\n- Two modes, pane and dropdown. Rows 1 and 2 always stand where they are; only row 3 differs: a pane below them, or a dropdown that opens under the search row when the box is focused or typed into, and closes on a pick or a click outside. In dropdown mode the chosen row's name stands in the search box while closed, or a placeholder.\n- Two tiers, set in the create function: rows the page already holds (a function answering them: the shell's file mirror, a monitor's stream, a caller's own contacts), ranked in the page and never asking the server; and the optional server hook as today, its rows joining the same cache. Most lists use both; Files and the monitors, the page alone.\n- A press on a row: in dropdown mode a pick; in pane mode the optional details(row) hook, which opens the row's dialog (a file's contents, a contact's details); with no hook, a pick there too.\n- Keys: up and down move the current row, home and end go to the top or bottom, enter presses it, escape closes an open dropdown; while the search box has the focus home and end stay the text cursor's.\n- The current row drawn by the list itself, the same everywhere: a slightly brighter background across the whole row.\n- The matched parts marked: the list hands paint a mark(text) that wraps each matched word, so every search gets it.\n- contactSelector drops its own dropdown and its bold name and passes the mode; chatter's new-chat picker and grants follow with no change of their own.\n",
    "version": 8,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/shell/contacts/contacts.js, spirit/run/shell/js/contactSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-17T23:33:07.636Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -2507,6 +2579,54 @@
      "key": "",
      "at": "2026-10-17T23:26:40.284Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:28:06.496Z",
+     "text": "commit cc301360951adc5e5ac1cf314194551bc0f89d34: goal/G29.9: the red for the shared list's two modes and two tiers, details and pick, keys, the current row and the marks\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:28:30.686Z",
+     "text": "deskVerify: red confirmed at cc301360: spirit/test/listSearchModes.js. Beside it: spirit/test/chatter.js is already green; spirit/test/contactSelectorPane.js is already green; spirit/test/contacts.js is already green; spirit/test/contactsListSearch.js is already green; spirit/test/deskFallout.js is already green; spirit/test/listSearch.js is already green; spirit/test/shellElements.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:28:31.503Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:32:59.811Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:33:02.524Z",
+     "text": "Built and green here: the item's red 14/14, and the shared list, Fallout, contacts, chatter, picker and element suites all pass (listSearch 19, contactsListSearch 22, deskFallout 32, contacts 89, chatter 52, pane 19).\nThe commit waits on one grant: shell/js/contactSelector.js, a core file; the request is under the item."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:33:08.541Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:33:44.481Z",
+     "text": "commit 7121aece30eccb0e13d080cc8ec9328a37de385b: goal/G29.9: the shared list's two modes and two tiers, details and pick, keys, the current row and the marks; contactSelector and Fallout on them\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/run/shell/js/contactSelector.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/contactSelectorPane.js\n- spirit/test/contactsListSearch.js\n- spirit/test/deskFallout.js\n- spirit/test/listSearch.js\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:34:09.855Z",
+     "text": "deskVerify: passed, at 7121aece (pulled). 8 suites ran green."
     }
    ]
   }
