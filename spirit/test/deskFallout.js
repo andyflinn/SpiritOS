@@ -254,16 +254,17 @@ async function paneHalf() {
     const real = win.spiritProbability.probabilityStringMatch;
     win.spiritProbability.probabilityStringMatch = function (a, b) { probCalls += 1; return real(a, b); };
   }
-  // THE PANE'S BUCKET UNBOUNDED (Andy, 2026-10-17: "the bucket needs a mode that returns the result un-bounded." and
-  // "... or a function"): the buckets the pane makes, and whether it read them through all().
+  // THE PANE'S BUCKET UNBOUNDED (Andy, 2026-10-17: "in probabilityBucket.js use serialize: function (map, maxBytes = 0)
+  // where 0 means unbounded."): the buckets the pane makes, and the ceiling it serialized them with.
   const paneBuckets = [];
   if (win.spiritProbability && typeof win.spiritProbability.createProbabilityBucket === 'function') {
     const realBucket = win.spiritProbability.createProbabilityBucket;
     win.spiritProbability.createProbabilityBucket = function (capacity) {
       const b = realBucket(capacity);
-      const seen = { capacity: capacity, all: false };
+      const seen = { capacity: capacity, serialized: false, ceiling: null };
       paneBuckets.push(seen);
-      if (typeof b.all === 'function') { const realAll = b.all; b.all = function () { seen.all = true; return realAll.apply(b, arguments); }; }
+      const realSerialize = b.serialize;
+      b.serialize = function (map, maxBytes) { seen.serialized = true; seen.ceiling = maxBytes === undefined ? 0 : maxBytes; return realSerialize.apply(b, arguments); };
       return b;
     };
   }
@@ -377,18 +378,21 @@ async function paneHalf() {
   const atB = indexHtml.indexOf('<script src="/js/probabilityBucket.js"></script>');
   if (atS !== -1 && atO > atS && atB !== -1) test.check('index.html loads the three probability modules, the object match after the string match, so every element can count on them');
   else test.fail(OWED + 'index.html loads string ' + atS + ', object ' + atO + ', bucket ' + atB);
-  // THE UNBOUNDED MODE ITSELF: a bucket made with Infinity seats every row, and all() gives them all back, best first,
-  // with no byte ceiling (5000 rows of 200 bytes, far past any answer over the wire).
+  // THE UNBOUNDED MODE ITSELF: a bucket made with Infinity seats every row, and serialize() with maxBytes left out (0)
+  // gives them all back, best first, with no byte ceiling (5000 rows of 200 bytes, far past any answer over the wire).
   const B = require('../run/js/probabilityBucket.js').createProbabilityBucket(Infinity);
   for (let i = 0; i < 5000; i++) B.seatFor((i % 100) / 100, { n: i, pad: 'x'.repeat(200) });
-  const everyRow = typeof B.all === 'function' ? B.all() : null;
-  if (Array.isArray(everyRow) && everyRow.length === 5000 && everyRow[0].n % 100 === 99 && everyRow[4999].n % 100 === 0) test.check('a bucket made with Infinity seats all 5000 rows, and all() returns every one, best first, unbounded');
-  else test.fail(OWED + 'an Infinity bucket gave all() ' + (everyRow ? everyRow.length + ' rows' : 'nothing: no all()'));
+  const everyRow = B.serialize().items;
+  if (everyRow.length === 5000 && everyRow[0].n % 100 === 99 && everyRow[4999].n % 100 === 0) test.check('a bucket made with Infinity seats all 5000 rows, and serialize() with no ceiling returns every one, best first');
+  else test.fail(OWED + 'an Infinity bucket serialized ' + everyRow.length + ' rows');
+  const bucketSrc = fs.readFileSync(path.join(RUN, 'js', 'probabilityBucket.js'), 'utf8');
+  if (/serialize:\s*function\s*\(map,\s*maxBytes\s*=\s*0\)/.test(bucketSrc) && typeof B.all === 'undefined') test.check('serialize reads (map, maxBytes = 0), 0 meaning unbounded, and the bucket has no all()');
+  else test.fail(OWED + 'serialize is not (map, maxBytes = 0), or all() is still there: ' + typeof B.all);
   if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function' && typeof win.spiritProbability.probabilityStringObjectMatch === 'function' && typeof win.spiritProbability.createProbabilityBucket === 'function') test.check('the three probability modules load into a page\'s window');
   else test.fail(OWED + 'js/probabilityStringMatch.js and js/probabilityBucket.js give a page nothing: ' + short(win.spiritProbability && Object.keys(win.spiritProbability)));
   if (probCalls > 0) test.check('the pane ranks its cache with the same probabilityStringMatch the servers search with (' + probCalls + ' calls)');
   else test.fail(OWED + 'the pane matched its cache without probabilityStringMatch');
-  if (paneBuckets.length > 0 && paneBuckets.every(function (b) { return b.capacity === Infinity && b.all; })) test.check('the pane ranks its cache in an unbounded bucket (Infinity), read whole through all()');
+  if (paneBuckets.length > 0 && paneBuckets.every(function (b) { return b.capacity === Infinity && b.serialized && b.ceiling === 0; })) test.check('the pane ranks its cache in an unbounded bucket (Infinity), serialized with no ceiling');
   else test.fail(OWED + 'the pane made buckets ' + short(paneBuckets));
   if (/a door stays shut/.test(cachedTable) && !/the relay answers its key/.test(cachedTable)) test.check('a search shows what matches its term among every line any search brought');
   else test.fail(OWED + 'after searching door the table reads ' + short(cachedTable));
