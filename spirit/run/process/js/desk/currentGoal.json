@@ -1,5 +1,5 @@
 {
- "change": 66965,
+ "change": 66966,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -1035,10 +1035,9 @@
    "id": "goal/G27.2",
    "title": "Desk Stacks pane: open the door in a Dialog, not inline",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
