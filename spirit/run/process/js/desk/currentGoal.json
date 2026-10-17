@@ -1,5 +1,5 @@
 {
- "change": 66015,
+ "change": 66047,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -19,8 +19,7 @@
     "goal/G27.3",
     "goal/G27.5",
     "goal/G27.14",
-    "goal/G27.15",
-    "goal/G27.16"
+    "goal/G27.15"
    ],
    "go": false,
    "alone": false,
@@ -4637,10 +4636,11 @@
    "id": "goal/G27.16",
    "title": "A shell app shows only while its server runs",
    "goal": "goal/G27",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -4697,7 +4697,7 @@
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "11613999",
+   "claimCommit": "293cfdbc",
    "redCommit": "28b38677",
    "waived": true,
    "rules": [
@@ -4741,11 +4741,11 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "A shell app shows only while its server runs\n\nRequirements (Andy, goal/G27.9 chat, 2026-10-17):\nR1. A shell app manifest may name the server it needs. The shell shows that app only while that server is installed and running; when the server is uninstalled or stopped, the app is not offered.\nR2. The link lives on the app side only: no server manifest lists its shell apps, so the link cannot disagree with itself, and it still works once the server and its manifest are gone.\nR3. An app that names no server always shows, as today (contacts, files and the rest).\nR4. The shell names no app and no server: it reads the field from each manifest.\n\nFrom the code (at 5c127aa1): an app manifest has only a fixed hidden flag (shell/desk/desk.json); the shell already knows the running servers from its job list and ties shell/<name> to process/js/<name> for the stream (js/client/shell.js, onPublishedFor). deskAgentRemote needs deskAgent, so it names it in its manifest.\n\nFiles (expected): spirit/run/js/client/shell.js (core: one grant), the manifests of the shell apps that need a server (desk, deskDetails, ruleDetails, deskAgentRemote), and a red suite.",
-   "version": 1,
+   "box": "A shell app shows only while its server runs\n\nRequirements (Andy, goal/G27.9 chat, 2026-10-17):\nR1. A shell app manifest may name the server it needs. The shell shows that app only while that server is installed and running; when the server is uninstalled or stopped, the app is not offered.\nR2. The link lives on the app side only: no server manifest lists its shell apps, so the link cannot disagree with itself, and it still works once the server and its manifest are gone.\nR3. An app that names no server always shows, as today (contacts, files and the rest).\nR4. The shell names no app and no server: it reads the field from each manifest.\nR5. deskAgentRemote names no server: its deskAgent may run on a puppet, so a local check would hide it where it is needed (Andy, 2026-10-17). Chatter names chatClerver (folded in by Andy).\nOut of scope for this desk revision (Andy, 2026-10-17): offering an app wherever a reachable node (own, puppet, granted) runs its server.\n\nFrom the code (at 5c127aa1): an app manifest has only a fixed hidden flag (shell/desk/desk.json); the shell already knows the running servers from its job list and ties shell/<name> to process/js/<name> for the stream (js/client/shell.js, onPublishedFor). \n\nFiles (expected): spirit/run/js/client/shell.js (core: one grant), the manifests of the shell apps that need a server (desk, deskDetails, ruleDetails, deskAgentRemote), and a red suite.",
+   "version": 2,
    "checks": [
     {
      "number": "Q1",
@@ -4948,6 +4948,60 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-17T02:01:32.507Z",
      "text": "deskVerify: passed, at 11613999 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:10:36.363Z",
+     "text": "nice, i configured my own node 65432, and it all worked very nicely!"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:14:42.676Z",
+     "text": "Desk Agent Remote cannot list a server-dependency, because otherwise it won't let me connect to Levants deskAgent.\n\nit's almost like the shell needs to check all my puppets for these severs, so that it offers a UI if one of my puppets has the required server?\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:15:01.794Z",
+     "text": "cw: right, the Remote is the one app whose server may live on a puppet, so the local check is wrong for it. Plainest fix now: take the server line out of deskAgentRemote.json, so it always shows, as before this item.\nChecking puppets is possible but costs: the shell would ask each puppet for its jobs at load and again when one changes, and it has no generic puppet list today (the Remote keeps its own, puppets.json). That is its own item if you want it.\nDrop the Remote line now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:17:16.649Z",
+     "text": "thing is.... sooner or later all apps have to work on a puppet sooner or later, or on a remote node that grants the neccessary interfaces?\n\nthat is kind of the goal, isn't it, the whole shell or one app at the time should be able to operate an appServer anywhere..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:17:35.471Z",
+     "text": "cw: agreed, that is the goal: then \"the server it needs\" means a server this node can reach, its own, a puppet, or a node that grants the interface, and the shell needs one list of those reachable servers to decide what to offer. Today only the local check exists.\nSo this item stays the local stopgap, with the Remote line dropped, and the reachable-server list is a design item of its own: \"the shell offers an app wherever a reachable node runs its server\".\nDrop the line and propose that item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:18:54.681Z",
+     "text": "i think that is oos for the current desk revision. Let's just make deskAgentRemote not dependent on the deskAgent server (locally) for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:19:46.983Z",
+     "text": "commit 293cfdbcec218c438c284a7fd998aab7abd7c12c: goal/G27.16: deskAgentRemote names no server, so it shows whatever runs locally\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.json\n- spirit/test/shellAppNeedsServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:19:49.273Z",
+     "text": "cw: done at 293cfdbc: deskAgentRemote names no server and always shows; the red asserts it, 11 of 11. The box records your ruling and the out-of-scope point. deskVerify asked to check it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:19:58.850Z",
+     "text": "deskVerify: passed, at 293cfdbc (pulled). 1 suite ran green."
     }
    ]
   }
