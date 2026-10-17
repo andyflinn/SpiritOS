@@ -164,7 +164,9 @@ function ddButtonsHtml() {
   }
   // CODE ✓ (goal/G9.5). Andy: "the item Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the
   // user can set the Code-state of an item". Items only: a goal has no code state, and the server refuses a sub-goal.
-  if (f.goal !== '') {
+  // NOT WHERE IT IS NOT OFFERED (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
+  // items." The server says so in the facts (codeOffered false where the item's plugin refuses the code press).
+  if (f.goal !== '' && f.codeOffered !== false) {
     html += '<button type="button" id="dd-code">Code' + (f.code ? ' ✓' : '') + '</button>';
   }
   // MAKE CURRENT (goal/G2.19). Andy: "on any open goal i want a button \"make current goal\"". The server offers it on

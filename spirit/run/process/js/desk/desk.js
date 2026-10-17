@@ -1453,6 +1453,10 @@ function filesOf(it) {
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
+    // THE CODE TOGGLE, OFFERED OR NOT (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
+    // items." The dialog draws its Code toggle from this: an item (never a goal or sub-goal) whose plugin, if any, does
+    // not refuse the code press.
+    codeOffered: !it.goal && !it.subGoal && !PLUGINS.some(function (p) { return !!pluginRefusal(p, 'press', { id: it.id, what: 'code' }); }),
     // His Go on record (goal/G3.9): true once he pressed go or go-all on it; an agent's claim never sets it.
     go: it.go === true,
     // THE STAR IS GONE (goal/G4.20 point 8). Andy: "ha ha, the red star has no function anymore. take it out."
