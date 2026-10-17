@@ -12,7 +12,7 @@
 // THE SHAPE THIS RED NAMES: the manifest field is `server`, the server's folder name under process/js (desk.json:
 // "server": "desk"; deskAgentRemote.json: "server": "deskAgent"). Running is a job of type server whose module is
 // process/js/<server> and whose status is running, or pending (a node-operated server between restarts, which comes
-// back by itself); failed, completed or no such job is not running.
+// back by itself); failed, completed or no such job is not running. A server job is kind server; its type is its display name.
 // WHAT IS ASSERTED
 //   1. the manifests: Desk, its two dialogs, the Remote and Chatter name their servers; Text Editor names none.
 //   2. with no desk server running Desk is not on the desktop; Text Editor is (R3).
@@ -84,7 +84,9 @@ function bootShell(appScripts) {
   };
 }
 function shown(booted) { return booted.desktop.children.map(function (el) { return el.innerHTML; }).join(' | '); }
-function deskServer(status) { return { id: 'server-desk', type: 'server', module: 'process/js/desk', status: status, data: {} }; }
+// A server job as jobs.js makes it (createJob): kind server, its display name as type (goal/G27.16: on Levant's node the
+// deskAgent job reads type 'Desk Agent'), its module.
+function deskServer(status) { return { id: 'server-desk', kind: 'server', type: 'Desk', module: 'process/js/desk', status: status, data: {} }; }
 
 test.startTest('goal/G27.16: a shell app shows only while its server runs');
 
@@ -129,6 +131,12 @@ booted.update(deskServer('running'));
 booted.remove('server-desk');
 if (!/Desk/.test(shown(booted).replace(/Desk Agent Remote/g, ''))) test.check('a desk server gone from the jobs takes Desk away');
 else test.fail(OWED + 'Desk stays with its server gone: ' + short(shown(booted)));
+
+test.subHeading('4b. a job whose display name is not server still counts');
+booted.update({ id: 'server-desk', kind: 'server', type: 'Desk Agent', module: 'process/js/desk', status: 'running', data: {} });
+if (/Desk/.test(shown(booted).replace(/Desk Agent Remote/g, ''))) test.check('a server job typed with its display name keeps its app');
+else test.fail(OWED + 'a running server job typed Desk Agent was not seen: ' + short(shown(booted)));
+booted.remove('server-desk');
 
 test.subHeading('5. shell.js names no app and no server for this');
 const shellSrc = readRun('js/client/shell.js');
