@@ -40,7 +40,9 @@ if (typeof create === 'function') test.check('run/js/probabilityBucket.js export
 else { test.fail(OWED + 'no run/js/probabilityBucket.js exporting createProbabilityBucket'); test.reportSuccessFailureCount(); process.exit(0); }
 const b0 = create(3);
 const keys = Object.keys(b0).sort();
-if (JSON.stringify(keys) === JSON.stringify(['seatFor', 'serialize'])) test.check('a bucket answers seatFor and serialize, nothing else');
+// sort added under goal/G27.14 (Andy, 2026-10-17: "SORT(probability = compareFunction())"): the probability still
+// comes from the caller's function, so the bucket still knows nothing of string matching.
+if (JSON.stringify(keys) === JSON.stringify(['seatFor', 'serialize', 'sort'])) test.check('a bucket answers seatFor, serialize and sort, nothing else');
 else test.fail(OWED + 'a bucket answers ' + keys.join(', '));
 const src = fs.readFileSync(MODULE, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
 if (!/require\(/.test(src)) test.check('it requires nothing: no string matching, no compare');

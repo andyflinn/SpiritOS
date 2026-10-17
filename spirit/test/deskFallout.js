@@ -385,6 +385,20 @@ async function paneHalf() {
   const everyRow = B.serialize().items;
   if (everyRow.length === 5000 && everyRow[0].n % 100 === 99 && everyRow[4999].n % 100 === 0) test.check('a bucket made with Infinity seats all 5000 rows, and serialize() with no ceiling returns every one, best first');
   else test.fail(OWED + 'an Infinity bucket serialized ' + everyRow.length + ' rows');
+  // SORT BY A COMPARE FUNCTION (Andy, 2026-10-17: "sort("search string") this way the bucket itself can be the cache
+  // needed in shell apps.", then "SORT(probability = compareFunction())"): every held object gets compare(object) as its
+  // new probability and the table re-orders, highest first; one scored outside 0 to 1 stays held but is not serialized
+  // until a later sort scores it again. The bucket still knows nothing of strings: the caller's function does.
+  const S = require('../run/js/probabilityBucket.js').createProbabilityBucket(Infinity);
+  ['alpha', 'beta', 'gamma', 'delta'].forEach(function (w) { S.seatFor(0, { w: w }); });
+  if (typeof S.sort === 'function') {
+    S.sort(function (o) { return o.w.indexOf('a') === 0 ? 0.9 : o.w.indexOf('e') !== -1 ? 0.5 : -1; });
+    const sorted = S.serialize().items.map(function (o) { return o.w; });
+    S.sort(function () { return 0; });
+    const back = S.serialize().items.map(function (o) { return o.w; });
+    if (JSON.stringify(sorted) === JSON.stringify(['alpha', 'beta', 'delta']) && back.length === 4 && back.indexOf('gamma') !== -1) test.check('sort(compare) re-orders by compare(object), leaves an unscored one out of serialize, and keeps it held for the next sort');
+    else test.fail(OWED + 'after sort the bucket serialized ' + short(sorted) + ', then ' + short(back));
+  } else test.fail(OWED + 'the bucket has no sort(compare)');
   const bucketSrc = fs.readFileSync(path.join(RUN, 'js', 'probabilityBucket.js'), 'utf8');
   if (/serialize:\s*function\s*\(map,\s*maxBytes\s*=\s*0\)/.test(bucketSrc) && typeof B.all === 'undefined') test.check('serialize reads (map, maxBytes = 0), 0 meaning unbounded, and the bucket has no all()');
   else test.fail(OWED + 'serialize is not (map, maxBytes = 0), or all() is still there: ' + typeof B.all);
