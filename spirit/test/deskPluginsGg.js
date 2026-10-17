@@ -172,6 +172,12 @@ function mountFace(answers) {
   b.mount(container, {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
+      // goal/G29.5: the node's own fs.search, which lists the plugin folder, is asked by its name.
+      if (name === 'fs.search') {
+        asked.push(['fs.search', body]);
+        const f = answers['fs.search'];
+        return Promise.resolve({ status: 200, body: (typeof f === 'function' ? f(body) : f) || { items: [], more: false } });
+      }
       const ask = body && body.ask && body.ask.desk;
       const v = ask && Object.keys(ask)[0];
       if (v) asked.push([v, ask[v]]);
@@ -579,6 +585,16 @@ function clickTab(el, tab) {
         if (a && a.id === GOAL) return { chat: [{ by: 'claude-windows', at: new Date(Date.now() - 1000).toISOString(), text: 'a stacks line held before', taken: '' }], chatMore: false };
         return { chat: [], chatMore: false };
       },
+      // goal/G29.5: THE PLUGIN FOLDER, LISTED. Andy, 2026-10-17: "just search the plugin folder for subfolders, THAT's
+      // the way you find them all." Two plugins there; the ranked search for plugin/ above names only one of them.
+      'fs.search': function (b) {
+        return b && b.q === 'shell/desk/plugins/*' ? { items: [{ key: 'shell/desk/plugins/stackFrameChecks/' }, { key: 'shell/desk/plugins/zzLowRank/' }, { key: 'shell/desk/plugins/readme.md' }], more: false } : { items: [], more: false };
+      },
+      'item.get': function (a) {
+        if (a && a.id === GOAL) return { item: JSON.stringify({ id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [] }) };
+        if (a && a.id === 'plugin/zzLowRank') return { item: JSON.stringify({ id: 'plugin/zzLowRank', title: 'Low rank', goal: '', plugin: 'zzLowRank', pluginTab: 'LowRank', status: '', with: '', buttons: [], blocking: [], blocked: [] }) };
+        return { ok: false, code: 'no-such-item' };
+      },
     });
     await sleep(50);
     const top = doc.getElementById('desk-top').innerHTML;
@@ -600,12 +616,21 @@ function clickTab(el, tab) {
     if (/margin-top:1em/.test((/<div id="desk-app-tabs"[^>]*>/.exec(apps) || [''])[0])) test.check('the inner tab row is a block with its leading 1em');
     else test.fail(OWED + 'no #desk-app-tabs block with margin-top:1em in the Apps pane');
 
-    const pluginSearches = function () { return doc.asked.filter(function (x) { return x[0] === 'items.search' && x[1] && x[1].text === 'plugin/' && x[1].goalsOnly === true; }).length; };
-    const before0 = pluginSearches();
+    // goal/G29.5: THE PLUGINS ARE FOUND BY THEIR FOLDER, never by a ranked search (a long chat ranked Fallout's goal out
+    // of a capped answer, and its tab vanished). Andy, 2026-10-17: "just search the plugin folder for subfolders, THAT's
+    // the way you find them all."
+    const folderLists = function () { return doc.asked.filter(function (x) { return x[0] === 'fs.search' && x[1] && x[1].q === 'shell/desk/plugins/*'; }).length; };
+    const rankedPluginSearches = function () { return doc.asked.filter(function (x) { return x[0] === 'items.search' && x[1] && x[1].text === 'plugin/'; }).length; };
+    const before0 = folderLists();
     clickTab(doc.getElementById('desk-tabs'), 'apps');
     await sleep(20);
-    if (before0 === 0 && pluginSearches() === 1) test.check('the plugin goals are searched for when Apps opens, not at mount: the List\'s one ask on open stays one');
-    else test.fail(OWED + 'plugin searches before Apps opened ' + before0 + ', after ' + pluginSearches());
+    if (before0 === 0 && folderLists() === 1) test.check('the plugins are found when Apps opens, not at mount, by listing shell/desk/plugins/ once');
+    else test.fail('OWED by goal/G29.5: plugin folder listings before Apps opened ' + before0 + ', after ' + folderLists());
+    if (rankedPluginSearches() === 0) test.check('no ranked items.search for plugin/ is made any more');
+    else test.fail('OWED by goal/G29.5: the face still searches plugin/ ' + rankedPluginSearches() + ' time(s)');
+    const innerLow = doc.getElementById('desk-app-tabs').innerHTML;
+    if (/data-tab="app:zzLowRank"[^>]*>LowRank</.test(innerLow) && !/readme/.test(innerLow)) test.check('every plugin subfolder gets its tab, named from its goal, a plugin no search would rank included; files are not plugins');
+    else test.fail('OWED by goal/G29.5: the inner row reads ' + short(innerLow));
     const tabs2 = doc.getElementById('desk-tabs').innerHTML;
     const inner = doc.getElementById('desk-app-tabs').innerHTML;
     if (/data-tab="apps"[^>]*aria-selected="true"/.test(tabs2) && /data-tab="team"[^>]*aria-selected="true"[^>]*>Team</.test(inner)) test.check('Apps opens on its first inner tab, Team, both marked as showing');
