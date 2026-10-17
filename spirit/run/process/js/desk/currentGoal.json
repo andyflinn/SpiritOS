@@ -1,5 +1,5 @@
 {
- "change": 68440,
+ "change": 68472,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,12 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -511,10 +514,11 @@
    "id": "goal/G29.4",
    "title": "shell element list-search-container.",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.5"
@@ -524,21 +528,32 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "37ea359a",
+   "redCommit": "48549fe3",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -776,6 +791,60 @@
      "key": "",
      "at": "2026-10-17T13:04:15.198Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:06:07.883Z",
+     "text": "commit 48549fe3107f4e5483ef9a7abb33494d43984ebf: goal/G29.4: the red for shellCreateListSearch, the list with its search: layout, one keyed cache ranked as typed, serialized server calls\n- spirit/test/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:06:15.034Z",
+     "text": "Red written: spirit/test/listSearch.js. One key added to the shape in building: api, the shell api the app was mounted with, through which the element asks its server and hears its stream, as deskElement takes the app's subscribe.\nA publish from its server asks again with the words as they stand, serialized like the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:06:18.247Z",
+     "text": "deskVerify: red confirmed at 48549fe3: spirit/test/listSearch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:06:18.983Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:07:36.558Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T13:07:39.377Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:07:43.217Z",
+     "text": "commit 37ea359aa96388bc605725f616787080a8f1556e: goal/G29.4: shellCreateListSearch: one keyed unbounded cache ranked per keystroke, serialized server calls with no typing pause, filters declared and drawn the same everywhere\n- spirit/run/shell/shared/js/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T13:07:56.144Z",
+     "text": "Built at 37ea359a: shell/shared/js/listSearch.js, window.spiritElements.shellCreateListSearch; 18/18.\nNo app uses it yet: Fallout moves onto it in G29.5, the peer search in G29.6."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T13:07:57.438Z",
+     "text": "deskVerify: passed, at 37ea359a (pulled). 1 suite ran green."
     }
    ]
   },
@@ -786,15 +855,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29.6"
    ],
-   "blocked": [
-    "goal/G29.4"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
