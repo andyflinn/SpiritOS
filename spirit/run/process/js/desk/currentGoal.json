@@ -1,5 +1,5 @@
 {
- "change": 67042,
+ "change": 67175,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -10,12 +10,14 @@
    "status": "reviewing",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
     "goal/G27.14"
    ],
+   "codeOffered": false,
    "go": false,
    "alone": false,
    "alert": false,
@@ -45,12 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -406,6 +410,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -713,6 +718,7 @@
     "goal/G27.14"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -1066,6 +1072,7 @@
     "goal/G27.14"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -1850,33 +1857,111 @@
    "id": "goal/G27.3",
    "title": "\"musings\" tab replaced by desk-app \"vision\"",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27.14"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/plugins/js/vision/vision.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/plugins/js/vision/vision.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/plugins/vision/vision.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatFormat.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskDesignButtons.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskFrontPage.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLayout.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskMusing.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskMusingBubbles.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRulesTab.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVision.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "ollama agent node",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "f47dbe16",
+   "redCommit": "37068f68",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1908,8 +1993,8 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -2042,6 +2127,210 @@
      "key": "",
      "at": "2026-10-17T07:58:15.154Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:00:06.527Z",
+     "text": "commit 18834a44af2ab1e7df629259ff761214b2a16c00: goal/G27.3: the red for the desk app \"vision\" replacing the musings tab\n- spirit/test/deskVision.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:00:08.307Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:00:10.594Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:00:45.720Z",
+     "text": "deskVerify: red confirmed at 18834a44: spirit/test/deskVision.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:00:46.456Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:05:03.705Z",
+     "text": "commit d73f7e6584b694ade580d7f4f5e31453205188ce: goal/G27.3: the desk app \"vision\" replaces the musings tab\n- spirit/run/process/js/desk/plugins/js/stackFrameChecks/stackFrameChecks.json\n- spirit/run/process/js/desk/plugins/js/vision/vision.js\n- spirit/run/process/js/desk/plugins/js/vision/vision.json\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/desk/plugins/vision/vision.js\n- spirit/test/deskChatFormat.js\n- spirit/test/deskDesignButtons.js\n- spirit/test/deskFrontPage.js\n- spirit/test/deskLayout.js\n- spirit/test/deskMusing.js\n- spirit/test/deskMusingBubbles.js\n- spirit/test/deskRulesTab.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:05:14.559Z",
+     "text": "Built at d73f7e65: the Vision tab under Apps, its goal always in design, items with Rename, Close, Delete and blocking only; the Musings tab is gone.\nFiles: plugins vision.js and vision.json (server), shell plugins vision.js (pane), shell desk.js; five suites updated, deskMusing.js and deskMusingBubbles.js removed; stackFrameChecks.json text fixed.\nGreen: deskVision 22 of 22 and 22 related suites. Your old musings stay in the desk log; restart the desk to see Vision."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:05:15.851Z",
+     "text": "deskVerify: passed, at d73f7e65 (pulled). 5 suites ran green. Not run: spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:05:16.651Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:05:31.334Z",
+     "text": "deskVerify: passed, at d73f7e65 (pulled). 5 suites ran green. Not run: spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:09:48.205Z",
+     "text": "hmmmm, and where is my list of vision items? shouldn't that be a list in the vision-goal? how can i reach my vision items?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:10:34.761Z",
+     "text": "It should be in the Vision tab under Apps: the pane lists its goal items, but it searched every item and the answer holds one bucket of 7, so yours never came in.\nFix: the pane reads its goal own facts, which name its open items, then each item; no search, nothing cut off.\nTaking the red again on your line; the Stacks pane lists its items the same flawed way, a fix for later on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:11:30.851Z",
+     "text": "deskVerify: red not confirmed at d73f7e65: spirit/test/deskChatFormat.js is already green; spirit/test/deskDesignButtons.js is already green; spirit/test/deskFrontPage.js is already green; spirit/test/deskLayout.js is already green; spirit/test/deskRulesTab.js is already green; spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:11:31.696Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:11:47.169Z",
+     "text": "commit 4f3593ff782dfb9d90a304cae0a360bb4285bd10: goal/G27.3: the red for the vision list read from its goal, not a bucket-bound search\n- spirit/test/deskVision.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:11:56.476Z",
+     "text": "deskVerify: red not confirmed at 4f3593ff: spirit/test/deskChatFormat.js is already green; spirit/test/deskDesignButtons.js is already green; spirit/test/deskFrontPage.js is already green; spirit/test/deskLayout.js is already green; spirit/test/deskRulesTab.js is already green; spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:11:57.318Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:12:34.180Z",
+     "text": "commit 67f71f31013ab49a9c6ad302e69c422e0ef4ada5: goal/G27.3: the vision pane reads its list from its goal's facts, not a bucket-bound search\n- spirit/run/shell/desk/plugins/vision/vision.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:12:43.811Z",
+     "text": "Fixed at 67f71f31: the Vision pane now reads its list from its goal own facts, so every open vision item shows, yours plugin/vision.1 among them.\nFiles: shell plugins vision.js; red in deskVision.js. Green: deskVision 22 of 22.\nReload the Desk page to load the new pane."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:12:45.236Z",
+     "text": "deskVerify: passed, at 67f71f31 (pulled). 5 suites ran green. Not run: spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:12:46.029Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:12:58.948Z",
+     "text": "deskVerify: passed, at 67f71f31 (pulled). 5 suites ran green. Not run: spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:13:35.103Z",
+     "text": "Why the red was not confirmed: deskVision.js, the red itself, had dropped off the item file list; item.files.add replaces an agent whole list, and my later add left it out.\nThe full list is back, the red at 4f3593ff is claimed again, and a re-verify is asked; deskVerify will now run deskVision.js too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:13:38.050Z",
+     "text": "deskVerify: red not confirmed at 4f3593ff: spirit/test/deskChatFormat.js is already green; spirit/test/deskDesignButtons.js is already green; spirit/test/deskFrontPage.js is already green; spirit/test/deskLayout.js is already green; spirit/test/deskRulesTab.js is already green; spirit/test/deskVision.js is already green; spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:13:49.409Z",
+     "text": "deskVerify: passed, at 67f71f31 (pulled). 6 suites ran green. Not run: spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:14:10.942Z",
+     "text": "The pass at 67f71f31 now ran 6 suites, deskVision.js among them: the item is fully verified.\nThe late red check says not confirmed only because deskVerify runs a red on the tree it holds, which already has the build, not at the red commit 4f3593ff; I watched it red there myself.\nThat red-at-its-commit gap is deskVerify one; a fix for later, on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:17:33.847Z",
+     "text": "The code button should not be available in vision items."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:19:19.983Z",
+     "text": "commit 37068f6898f949fb114dfb0bf74416cbb2da8d58: goal/G27.3: the red for no Code toggle on vision items\n- spirit/test/deskVision.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:19:31.998Z",
+     "text": "deskVerify: red confirmed at 37068f68: spirit/test/deskVision.js. Beside it: spirit/test/deskChatFormat.js is already green; spirit/test/deskDesignButtons.js is already green; spirit/test/deskFrontPage.js is already green; spirit/test/deskLayout.js is already green; spirit/test/deskRulesTab.js is already green; spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T08:19:32.956Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:21:20.937Z",
+     "text": "commit f47dbe16601b25b662e4421c9e7449f9d6d7f9ea: goal/G27.3: no Code toggle on vision items; the facts say whether the code press is offered\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T08:21:31.958Z",
+     "text": "Fixed at f47dbe16: vision items show no Code button; the desk tells the dialog whether the code press is offered, and the vision plugin refuses it.\nFiles: process desk.js (facts), shell deskDetails.js; red in deskVision.js. Green: deskVision 24 of 24 and fourteen related suites.\nTakes effect when your desk restarts and the page reloads."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:21:35.512Z",
+     "text": "deskVerify: passed, at f47dbe16 (pulled). 6 suites ran green. Not run: spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T08:21:54.648Z",
+     "text": "deskVerify: passed, at f47dbe16 (pulled). 6 suites ran green. Not run: spirit/test/deskMusing.js is missing from this checkout; spirit/test/deskMusingBubbles.js is missing from this checkout."
     }
    ]
   },
@@ -2058,6 +2347,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -2437,6 +2727,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -3458,6 +3749,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -4157,6 +4449,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": false,
    "alone": false,
    "alert": false,
@@ -4213,6 +4506,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": false,
    "alone": false,
    "alert": false,
@@ -4269,6 +4563,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": false,
    "alone": false,
    "alert": false,
@@ -4350,6 +4645,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -4662,6 +4958,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -5231,6 +5528,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -5578,15 +5876,15 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
-   "blocked": [
-    "goal/G27.3"
-   ],
+   "blocked": [],
+   "codeOffered": true,
    "go": false,
    "alone": false,
    "alert": false,
@@ -5628,6 +5926,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -5915,6 +6214,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -6332,6 +6632,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -6796,6 +7097,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": false,
    "alone": false,
    "alert": false,
@@ -6852,6 +7154,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
@@ -7040,6 +7343,7 @@
     "goal/G27"
    ],
    "blocked": [],
+   "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
