@@ -40,6 +40,10 @@ const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
 const APP = path.join(RUN, 'shell', 'deskAgentRemote', 'deskAgentRemote.js');
 const LONG = 'deskAgentRemote: Smaller Fixes to the UI and to both deskAgent and its Remote';
+// The size and the overrun come from LONG itself (goal/G27.17): the checks named 81 bytes and 17 over, but LONG is 77 bytes,
+// so both checks failed against a correct desk and dialog.
+const LONG_BYTES = Buffer.byteLength(LONG, 'utf8');
+const LONG_OVER = LONG_BYTES - 64;
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskSmallFixesTestOwnerAAAAAAAAAAAAAAA=', label: 'andy' };
 const CW = { key: 'MCowBQYDK2VwAyEAdeskSmallFixesTestCWAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 
@@ -82,7 +86,7 @@ async function deskHalf() {
     await call('session.set', { json: JSON.stringify({ goal: { id: 'sf/G1', title: 'Fixes' }, items: [{ id: 'sf/G1.1', title: 'One', blocks: ['sf/G1'] }] }) }, CW);
     const add = await call('item.add', { goal: 'sf/G1', title: LONG, blocks: 'sf/G1' }, ANDY);
     const why = String(((add.body || {}).extra || {}).why || '');
-    if ((add.body || {}).ok === false && /title/i.test(why) && /81/.test(why) && /64/.test(why)) test.check('item.add with an 81-byte title says why: ' + why);
+    if ((add.body || {}).ok === false && /title/i.test(why) && why.indexOf(String(LONG_BYTES)) !== -1 && /64/.test(why)) test.check('item.add with a ' + LONG_BYTES + '-byte title says why: ' + why);
     else test.fail(OWED + 'item.add answered ' + short(add.body));
     const prof = await call('profile.set', { agent: CW.key, name: 'gemma', nick: 'NO SPACES' }, ANDY);
     const pwhy = String(((prof.body || {}).extra || {}).why || '');
@@ -146,8 +150,8 @@ async function dialogHalf() {
   body.fire('input', { target: target('dd-add-title') });
   await settled();
   const all = function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML + ' ' + byId[k].textContent; }).join('\n'); };
-  if (/17 bytes? (too many|over)|over by 17|-17/.test(all())) test.check('typed over the limit, it says by how many bytes (81 of 64: 17 over)');
-  else test.fail(OWED + 'after typing 81 bytes nothing says 17 over: ' + short(all().slice(0, 400)));
+  if (new RegExp(LONG_OVER + ' bytes? (too many|over)|over by ' + LONG_OVER + '|-' + LONG_OVER).test(all())) test.check('typed over the limit, it says by how many bytes (' + LONG_BYTES + ' of 64: ' + LONG_OVER + ' over)');
+  else test.fail(OWED + 'after typing ' + LONG_BYTES + ' bytes nothing says ' + LONG_OVER + ' over: ' + short(all().slice(0, 400)));
   const n0 = calls.length;
   body.fire('click', { target: target('dd-add'), preventDefault: function () {}, stopPropagation: function () {} });
   await settled();
