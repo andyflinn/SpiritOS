@@ -1,5 +1,5 @@
 {
- "change": 67023,
+ "change": 67042,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -10,7 +10,6 @@
    "status": "reviewing",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,14 +45,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1853,28 +1850,26 @@
    "id": "goal/G27.3",
    "title": "\"musings\" tab replaced by desk-app \"vision\"",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27.14"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1882,7 +1877,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "ollama agent node": "levant-local",
     "claude-windows": "claude-windows"
@@ -1890,8 +1914,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "\"musings\" tab replaced by desk-app \"vision\"\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.3 chat, 2026-10-14/15):\nR1. The \"musings\" tab is removed and replaced by a desk-app tab named \"vision\".\nR2. \"vision\" is a simple standard desk plugin, not a bespoke app.\nR3. The special goal allocated automatically by the first mount of the \"vision\" plugin stays in design mode at all times. No control anywhere ends design mode for that goal.\nR4. Items of the vision goal offer Rename and Close, available at all times; Close is are-you-sure styled. No Done, no Go, no code phases: code and code phases do not exist (are not visible) on these items.\nR5. No new button logic. The desk server already filters an item's buttons through its plugin's refusals, so the vision plugin refuses the presses go, done, code and claim, and end-design on its goal; the List and the dialog then never draw them.\nR6. Item details open in the standard deskDetail dialog. The only change to it is the missing buttons from R4 and the are-you-sure Close.\nR7. \"vision\" supports structured feedback from Andy: he chats with agents about his vision item by item, and the item chat is the record of each conversation. The item chat already records his voice, so no further logging is built.\nR8. Each desk plugin gets its own permanent goal, allocated at first mount of the plugin (\"team\" chat on goal/G0, \"stack\" its personal goal, \"vision\" its own). These plugin-owned goals are the basic data scope of their plugins. This mechanism exists in the desk server (plugin/<name>, written as desk at first mount) and is used, not built.\n\nNot in this item: the buttons of items of other goals.",
-   "version": 8,
+   "box": "\"musings\" tab replaced by desk-app \"vision\"\n\nRequirements (Andy's rulings, goal/G27 and goal/G27.3 chat, 2026-10-14/15):\nR1. The \"musings\" tab is removed and replaced by a desk-app tab named \"vision\".\nR2. \"vision\" is a simple standard desk plugin, not a bespoke app.\nR3. The special goal allocated automatically by the first mount of the \"vision\" plugin stays in design mode at all times. No control anywhere ends design mode for that goal.\nR4. Items of the vision goal offer Rename, Close and Delete, available at all times; Close is are-you-sure styled. Ideas go stale or are superseded, and a deleted one is still history. No Done, no Go, no code phases: code and code phases do not exist (are not visible) on these items.\nR5. No new button logic. The desk server already filters an item's buttons through its plugin's refusals, so the vision plugin refuses the presses go, done, code and claim, and end-design on its goal; the List and the dialog then never draw them.\nR6. Item details open in the standard deskDetail dialog. The only change to it is the missing buttons from R4 and the are-you-sure Close.\nR7. \"vision\" supports structured feedback from Andy: he chats with agents about his vision item by item, and the item chat is the record of each conversation. The item chat already records his voice, so no further logging is built.\nR8. Each desk plugin gets its own permanent goal, allocated at first mount of the plugin (plugin/<name>, written as desk at first mount); the plugin-owned goal is the basic data scope of its plugin, and \"vision\" has its own. This mechanism exists in the desk server and is used, not built. (In the tree Stacks is the one plugin mounting such a goal; Team is the group chat desk/G0.0, built into the face.)\nR9. Vision items keep blocking (block and unblock, the block bubble): it shows the relationships between topics of the vision, what must turn into reality before an item can.\nR10. The vision goal is a plugin goal, so it is never made the current goal (goal/G27.2, D6): already true, nothing to build.\n\nNot in this item: the buttons of items of other goals.",
+   "version": 9,
    "checks": [
     {
      "number": "Q1",
@@ -1988,6 +2012,36 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-15T00:21:45.249Z",
      "text": "cw: box capped to final statements: no new button logic, the plugin refuses go, done, code, claim and end-design; code phases not visible; the item chat is the record. Q2 cleared.\nNext question is on the blocking relations item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T07:52:47.149Z",
+     "text": "does this item need revision?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:53:27.095Z",
+     "text": "Small revision: items of any goal also offer Delete today (process desk.js buttons), so R5 must refuse item.delete too, or Rename and Close are not the only buttons.\nG27.2 D6 already keeps a plugin goal from ever being current, so vision gets that for free; worth one line.\nR8 is off on a fact: Team is no plugin in the tree, the group chat desk/G0.0 is built into the face; only Stacks mounts a plugin goal today."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T07:56:33.172Z",
+     "text": "Item delete should exist in \"vision\", ideas go stale or are superseded , and even 'delete' they are still 'history'.\n\nI might be interesting to keep blockage still in there, because it might indicate relationships between topics discussed in \"vision\", what must turn into reality before this item could turn into reality??"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:57:05.652Z",
+     "text": "In the box: R4 now Rename, Close and Delete; R9 keeps blocking for relationships between topics; R10 notes D6; R8 fact fixed.\nBoth come free: Delete and the block bubble (goal/G27.5) are already standard, so the plugin simply does not refuse them.\nThe box reads complete to me now."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T07:58:15.154Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
