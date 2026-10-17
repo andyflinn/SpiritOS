@@ -7,7 +7,7 @@
       "serverSurface.js",
       "everyVerb.js"
     ],
-    "item": "goal/G19.14"
+    "item": "plugin/stackFrameChecks.3"
   },
   {
     "id": "d2",
@@ -17,7 +17,7 @@
       "serverSurface.js",
       "everyVerb.js"
     ],
-    "item": "goal/G19.14"
+    "item": "plugin/stackFrameChecks.4"
   },
   {
     "id": "d3",
@@ -31,7 +31,7 @@
       "serverSurface.js",
       "everyVerb.js"
     ],
-    "item": "goal/G22.2"
+    "item": "plugin/stackFrameChecks.5"
   },
   {
     "id": "d4",
