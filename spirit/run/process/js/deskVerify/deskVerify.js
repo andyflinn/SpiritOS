@@ -512,17 +512,23 @@ async function claimCheckRun(id) {
     const reds = [];
     const failed = [];
     // NOTHING TO RUN IS NOT A PASS (goal/G8.10, grown from rule/11 point 2): an item with no test file on its list had
-    // no reds, and no reds asked verify.pass - so it took the Done button without one assertion having run. A list with
-    // nothing on it, and a listed file that is gone, are both rejections now, and the missing file is named.
-    if (!list.length) reds.push({ suite: '(no test file on the item\'s list)', failures: ['nothing to run, so nothing passed'] });
+    // no reds, and no reds asked verify.pass - so it took the Done button without one assertion having run.
+    // AND NOT A REFUSAL EITHER (goal/G27.2, D10). Andy, 2026-10-17: "i don't want deskVerify to refuse runs required by
+    // my agents. deskVerify is dumb, and cannot decide if a new run is neccessary or not." A listed file that is missing
+    // from the checkout, or leaves spirit/test, is said in the report and the rest is run; with nothing run at all the
+    // check is "not checked", neither a pass nor a reject, as a check whose commit is not here yet.
+    const unrun = [];
+    let ran = 0;
+    if (!list.length) unrun.push('the item lists no test file');
     let byHand = false;
     for (const rel of list) {
       const file = path.join(REPO, rel);
       // THE STOP IS CHECKED BEFORE EACH SUITE (goal/G21.3): one pressed during the pull or between suites ends the
       // check here, before the next suite starts.
       if (stopped) { byHand = true; reds.push({ suite: rel, failures: ['stopped by hand from the verifier tab before it ran, so nothing was measured'] }); break; }
-      if (leavesTests(rel)) { reds.push({ suite: rel, failures: ['the path leaves spirit/test, so it was not run'] }); continue; }
-      if (!fs.existsSync(file)) { reds.push({ suite: rel, failures: ['the listed test file is missing from this checkout'] }); continue; }
+      if (leavesTests(rel)) { unrun.push(rel + ' leaves spirit/test, so it was not run'); continue; }
+      if (!fs.existsSync(file)) { unrun.push(rel + ' is missing from this checkout'); continue; }
+      ran++;
       running = { id: String(id), suite: rel, since: new Date().toISOString() };
       const index = list.indexOf(rel) + 1;
       const expected = expectedOf(rel);
@@ -553,17 +559,22 @@ async function claimCheckRun(id) {
     const undo = await regress(failed, pulled, 'item check');
     const at = await tree();
     const where = 'at ' + (at.short || at.commit || 'an unknown commit') + ' (' + pulled + ')' + regressSaid(undo);
+    const besides = unrun.length ? ' Not run: ' + unrun.join('; ') + '.' : '';
+    if (!ran && !reds.length) {
+      await report('deskVerify: not checked, at ' + (at.short || at.commit || 'an unknown commit') + ' (' + pulled + '): nothing ran, so this is not a pass.' + besides);
+      return { rejected: false, unchecked: true, unrun: unrun };
+    }
     if (!reds.length) {
       // ALL GREEN IS ITS WORD TOO (goal/G8.3, found by claude-windows verifying b93a54d1): Andy, "only deskVerify brings
       // the button", so saying nothing would leave Done forever absent on his node. verify.pass is that word.
-      await report('deskVerify: passed, ' + where + '. ' + (list.length === 1 ? '1 suite' : list.length + ' suites') + ' ran green.');
+      await report('deskVerify: passed, ' + where + '. ' + (ran === 1 ? '1 suite' : ran + ' suites') + ' ran green.' + besides);
       return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.pass': { id: String(id) } } } }, 'http://127.0.0.1:' + port)
         .then(function () { return { rejected: false, reds: [] }; }, function () { return { rejected: false, reds: [] }; });
     }
     const why = reds.map(function (x) { return x.suite + (x.failures.length ? ': ' + x.failures.join('; ') : ''); }).join(' | ');
     // The red suites by name, so the line says WHAT to go and look at and not only that
     // something failed.
-    await report('deskVerify: rejected, ' + where + '. Red: ' + why);
+    await report('deskVerify: rejected, ' + where + '. Red: ' + why + besides);
     return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.reject': { id: String(id), why: why } } } }, 'http://127.0.0.1:' + port)
       .then(function () { return { rejected: true, stopped: byHand, reds: reds.map(function (x) { return x.suite; }) }; },
         function () { return { rejected: true, stopped: byHand, reds: reds.map(function (x) { return x.suite; }) }; });
@@ -608,7 +619,6 @@ runsOpen.all().forEach(function (r) {
   const job = { kind: String(r.kind), id: String(r.id), commit: String(r.commitAt || ''), row: Number(r.rowid) };
   if (r.state === 'waiting') { job.said = true; job.since = Date.parse(String(r.startedAt || '')) || Date.now(); waitingFor.push(job); } else watchQueue.push(job);
 });
-const goalsRun = Object.create(null);
 // A NEWER CLAIM OF THE SAME KIND ON THE SAME ITEM (goal/G19.13) is not a second run: the one already queued or waiting
 // takes the newer commit, which is the one the claim now stands at.
 function queuedAlready(job) {
@@ -718,8 +728,9 @@ async function waitOnce() {
 //   should be red. at the time", and "yes" to the red phase ending with its own commit, checked red by deskVerify.
 //
 // At the claimed commit, every test file the item lists is run (the same list and the same leavesTests guard as an
-// item's check) and each must come back red: at least one FAILURE line. One line on the item says which: confirmed,
-// naming the suites, or not confirmed, naming every one already green and any that could not be run. A red is what is
+// item's check) and a red is at least one FAILURE line. One line on the item says which: confirmed when at least one
+// suite is red (goal/G27.2, D10), naming them and, beside them, every one already green and any that could not be run;
+// not confirmed only when none is red. A red is what is
 // expected here, so it presses neither verify.pass nor verify.reject, and it never runs the undo (verify.regress).
 async function redCheck(id, commit) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
@@ -753,10 +764,13 @@ async function redCheck(id, commit) {
     }
     const t = await tree();
     const at = shortOf(commit) || t.short || t.commit || 'an unknown commit';
-    const confirmed = reds.length > 0 && !greens.length && !unrun.length;
+    // ONE RED SUITE CONFIRMS THE RED (goal/G27.2, D10): an item's list also holds suites the work only touched, which
+    // may well be green at the red; they and any that could not be run are said beside it, never held against it.
+    const others = greens.map(function (g) { return g + ' is already green'; }).concat(unrun);
+    const confirmed = reds.length > 0;
     const text = confirmed
-      ? 'deskVerify: red confirmed at ' + at + ': ' + reds.join(', ')
-      : 'deskVerify: red not confirmed at ' + at + ': ' + greens.map(function (g) { return g + ' is already green'; }).concat(unrun).join('; ');
+      ? 'deskVerify: red confirmed at ' + at + ': ' + reds.join(', ') + (others.length ? '. Beside it: ' + others.join('; ') : '')
+      : 'deskVerify: red not confirmed at ' + at + ': ' + others.join('; ');
     noteLine(text);
     await desk('chat.add', { id: String(id), text: text });
     return { red: true, confirmed: confirmed };
@@ -864,19 +878,14 @@ async function watchOnce() {
       if (recs.length && recs[recs.length - 1].at) lastWriteAt = String(recs[recs.length - 1].at);
       if (!history) {
         recs.forEach(function (r) {
-          // A GOAL REOPENED OR REGRESSED EMPTIES AGAIN (goal/G19.2): the desk clears its emptied mark on either, and its
-          // next goal.emptied is a fresh run that the once-per-goal rule below must not swallow.
-          let rb = null;
-          try { rb = JSON.parse(r && r.body || 'null'); } catch (e) { rb = null; }
-          if (rb && rb.id && (r.verb === 'verify.regress' || (r.verb === 'press' && rb.what === 'reopen'))) delete goalsRun[String(rb.id)];
           const job = watched(r);
           if (!job) return;
-          // ONE PASS PER GOAL (goal/G8.12): a second goal.emptied for a goal already run does nothing. A re-verify
-          // asked of a goal (goal/G19.2) is a word of its own and is always run.
-          if (job.kind === 'goal' && !job.again && goalsRun[job.id]) return;
+          // EVERY goal.emptied IS RUN (goal/G27.2, D10). Andy, 2026-10-17: "i don't want deskVerify to refuse runs
+          // required by my agents. deskVerify is dumb, and cannot decide if a new run is neccessary or not." goal/G8.12's
+          // one pass per goal is gone: the desk writes goal.emptied once per emptying, so each one is a run asked for.
+          // Only an identical run already waiting is not queued twice.
           if (queued.some(function (q) { return q.kind === job.kind && q.id === job.id; })) return;
           if (queuedAlready(job)) return;
-          if (job.kind === 'goal' && !job.again) goalsRun[job.id] = true;
           queued.push(job);
         });
       }
