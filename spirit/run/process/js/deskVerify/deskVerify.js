@@ -1178,7 +1178,7 @@ function deskVia(m, verb, args) {
 // file list; it writes nothing. A filter that does not belong to `over` is ignored, as the verb file says.
 const SEARCH_ROOM = appClient.ANSWER_MAX - 512;
 const SEARCH_SCANNED = 1000;
-const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since', 'current', 'heading', 'history'];
+const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since', 'current', 'heading', 'history', 'slim', 'fold'];
 function searchBytes(key, label) { return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(label) }], more: false }), 'utf8'); }
 function searchBucket(walk) {
   const bucket = createProbabilityBucket(SEARCH_SCANNED);
@@ -1264,16 +1264,41 @@ async function search(a) {
       return !!t && Date.parse(newest[r.suite]) - Date.parse(t) <= SUITE_MS;
     };
   }
+  // NOTHING SENT THAT IS NOT SHOWN (goal/G27.14). Andy, 2026-10-17: "don't return shit in the search that i don't want
+  // to see! WASTE OF SPACE." So slim: yes leaves each row's commit and failure text out, and fold: yes answers one line
+  // per test file and sub-heading ({suite, what, red, at}: red while any of its checks is, its newest time), so one
+  // answer, bound by PAYLOAD_MAX, carries as many lines as it can.
+  const slim = String(a.slim || '') === 'yes';
+  const fold = String(a.fold || '') === 'yes';
   // The words match a test's key and its failure text, where a red's words are since goal/G27.14.
   const found = [];
+  const lines = Object.create(null);
   for (const r of rowsOf(sql, params)) {
     if (inLatest && !inLatest(r)) continue;
     const p = words ? Math.max(probabilityStringMatch(words, String(r.title)), probabilityStringMatch(words, String(r.failure || ''))) : 0;
     if (words && !(p > 0)) continue;
-    found.push({ probability: p, pair: { key: String(r.rowid), label: JSON.stringify({ suite: r.suite, title: r.title, outcome: r.outcome,
-      commit: r.commitAt, at: r.at, failure: r.failure || '' }) } });
+    if (fold) {
+      const what = String(r.title).replace(/\s+#\d+$/, '');
+      const k = r.suite + '\n' + what;
+      const l = lines[k] || (lines[k] = { probability: p, suite: r.suite, what: what, red: false, at: '', key: String(r.rowid) });
+      if (r.outcome === 'red') l.red = true;
+      if (String(r.at) > l.at) l.at = String(r.at);
+      if (p > l.probability) l.probability = p;
+      continue;
+    }
+    const row = slim ? { suite: r.suite, title: r.title, outcome: r.outcome, at: r.at }
+      : { suite: r.suite, title: r.title, outcome: r.outcome, commit: r.commitAt, at: r.at, failure: r.failure || '' };
+    found.push({ probability: p, pair: { key: String(r.rowid), label: JSON.stringify(row) } });
   }
-  // HOW MANY (goal/G27.14, Andy: "how many red?"): every match counted, beside the bucket that carries the best of them.
+  if (fold) {
+    Object.keys(lines).forEach(function (k) {
+      const l = lines[k];
+      found.push({ probability: l.probability, pair: { key: l.key, label: JSON.stringify({ suite: l.suite, what: l.what, red: l.red, at: l.at }) } });
+    });
+    found.sort(function (x, y) { return JSON.parse(y.pair.label).at.localeCompare(JSON.parse(x.pair.label).at); });
+  }
+  // HOW MANY (goal/G27.14, Andy: "how many red?"): every match counted (each line, when folded), beside the bucket that
+  // carries the best of them.
   const out = searchBucket(found[Symbol.iterator]());
   out.total = found.length;
   return out;

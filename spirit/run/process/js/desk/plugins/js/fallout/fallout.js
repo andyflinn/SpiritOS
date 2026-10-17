@@ -20,7 +20,9 @@ module.exports = function (desk) {
     if (typeof desk.verify !== 'function') throw desk.refused('bad-request', 'this desk hands its plugins no deskVerify to search');
     const outcome = a.outcome === undefined ? 'red' : String(a.outcome);
     if (outcome && outcome !== 'red' && outcome !== 'green') throw desk.refused('bad-request', 'an outcome is red, green, or empty for both');
-    const ask = { over: 'tests', current: 'yes' };
+    // Folded and slim (Andy, 2026-10-17: "don't return shit in the search that i don't want to see!"): one line per
+    // test file and sub-heading, nothing the list does not show.
+    const ask = { over: 'tests', current: 'yes', fold: 'yes', slim: 'yes' };
     if (outcome) ask.outcome = outcome;
     if (/^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/.test(text)) ask.suite = text;
     else if (text) ask.test = text;
@@ -37,7 +39,7 @@ module.exports = function (desk) {
     if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/.test(suite)) throw desk.refused('bad-request', 'a suite is its file name, <name>.js');
     if (!heading) throw desk.refused('bad-request', 'a heading is needed: the sub-heading the checks stand under');
     if (typeof desk.verify !== 'function') throw desk.refused('bad-request', 'this desk hands its plugins no deskVerify to search');
-    return desk.verify('search', { over: 'tests', suite: suite, heading: heading, history: 'yes' }).then(function (r) {
+    return desk.verify('search', { over: 'tests', suite: suite, heading: heading, history: 'yes', slim: 'yes' }).then(function (r) {
       return { items: (r && Array.isArray(r.items) ? r.items : []).map(function (i) { return { key: String(i.key || ''), label: String(i.label || '') }; }),
         more: !!(r && r.more), total: Number(r && r.total) || 0 };
     });

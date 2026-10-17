@@ -1,5 +1,5 @@
 {
-  "description": "Search what this node's deskVerify keeps; a read, nothing is written. over \"tests\": the latest state of each test (its newest row), answering {suite, title, outcome, commit, at, failure} per item, filtered by suite (file name), test (words graded against the test's key and its failure text; a test they do not touch is left out), outcome (red or green), commit (a hash prefix), item (the tests of that item's listed suites), since (an ISO time; rows at or after it) current (\"yes\": only tests reported in their suite's latest run, what stands now), heading (a sub-heading: only the tests keyed \"<heading> #<n>\") and history (\"yes\": every row, each a flip, not only each test's newest). Since goal/G27.14 a test's key is its place, its sub-heading and its number under it, the same red or green. over \"runs\": each check it made, answering {kind, id, state, commit, queued, started, ended, outcome, line}, filtered by item, kind (item, red, goal, full), commit and since (queued at or after it). Every key but over is optional; a filter that does not belong to over is ignored. Answers {items: [{key, label: the row as json}], more, total}, newest first, bucket-bounded: more true means the answer is partial, so narrow the filters; total is how many matched in all.",
+  "description": "Search what this node's deskVerify keeps; a read, nothing is written. over \"tests\": the latest state of each test (its newest row), answering {suite, title, outcome, commit, at, failure} per item, filtered by suite (file name), test (words graded against the test's key and its failure text; a test they do not touch is left out), outcome (red or green), commit (a hash prefix), item (the tests of that item's listed suites), since (an ISO time; rows at or after it) current (\"yes\": only tests reported in their suite's latest run, what stands now), heading (a sub-heading: only the tests keyed \"<heading> #<n>\") history (\"yes\": every row, each a flip, not only each test's newest), slim (\"yes\": rows without commit and failure text) and fold (\"yes\": one line per test file and sub-heading, {suite, what, red, at}, red while any check under it is, newest first; total then counts lines). Since goal/G27.14 a test's key is its place, its sub-heading and its number under it, the same red or green. over \"runs\": each check it made, answering {kind, id, state, commit, queued, started, ended, outcome, line}, filtered by item, kind (item, red, goal, full), commit and since (queued at or after it). Every key but over is optional; a filter that does not belong to over is ignored. Answers {items: [{key, label: the row as json}], more, total}, newest first, bucket-bounded: more true means the answer is partial, so narrow the filters; total is how many matched in all.",
   "request": {
     "over": "",
     "suite": "",
@@ -11,6 +11,8 @@
     "since": "",
     "current": "",
     "heading": "",
-    "history": ""
+    "history": "",
+    "slim": "",
+    "fold": ""
   }
 }

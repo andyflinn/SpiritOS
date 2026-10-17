@@ -79,11 +79,12 @@
         var groups = [];
         var byKey = Object.create(null);
         rows.forEach(function (x) {
-          var what = String(x.title || '').replace(/\s+#\d+$/, '');
+          // deskVerify folds the lines itself (fold: yes, {suite, what, red, at}); plain rows are folded here alike.
+          var what = x.what !== undefined ? String(x.what) : String(x.title || '').replace(/\s+#\d+$/, '');
           var k = x.suite + '\n' + what;
           var g = byKey[k];
           if (!g) { g = byKey[k] = { suite: x.suite, what: what, red: false, at: '' }; groups.push(g); }
-          if (x.outcome === 'red') g.red = true;
+          if (x.outcome === 'red' || x.red === true) g.red = true;
           if (String(x.at || '') > g.at) g.at = String(x.at || '');
         });
         el.innerHTML = groups.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
