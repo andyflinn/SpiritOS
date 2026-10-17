@@ -122,6 +122,32 @@ async function cycle(redTaken) {
   const v4 = await facts(ID);
   if (ok(reopen) && ok(afterReopen) && v4.phase === 'red') test.check('after his Reopen red is taken again');
   else test.fail(OWED + 'Reopen answered ' + reopen.status + ', red after it ' + short(afterReopen.body || afterReopen.status) + ', phase ' + short(v4.phase));
+
+  // goal/G27.2, D11. Andy, 2026-10-17: "make that press queue it.": the verify pass sets the item back to waiting for
+  // deskVerify, so the desk writes the item's claimed commit on the pass's record, and deskVerify queues its check at
+  // that commit (deskClaimCommit.js asserts deskVerify's half).
+  test.subHeading('5. a verify pass carries the item\'s claimed commit');
+  const COMMIT = 'abcdef1234567890abcdef1234567890abcdef12';
+  const s5 = [];
+  s5.push((await call('phase.done', { id: ID, phase: 'red' }, CW)).status);
+  s5.push((await call('phase.take', { id: ID, phase: 'build' }, UBI)).status);
+  s5.push((await call('claim', { id: ID, phase: 'build', commit: COMMIT }, UBI)).status);
+  s5.push((await call('phase.done', { id: ID, phase: 'build' }, UBI)).status);
+  s5.push((await call('phase.take', { id: ID, phase: 'verify' }, CW)).status);
+  s5.push((await call('phase.done', { id: ID, phase: 'verify', pass: true }, CW)).status);
+  const ch = await call('changes', { n: 0, line: 0 }, ANDY);
+  let recs = (ch.body && ch.body.records) || [];
+  for (let n = Number(ch.body && ch.body.n) || 0, i = 0; ch.body && ch.body.more && i < 50; i++) {
+    const more = await call('changes', { n: n, line: 0 }, ANDY);
+    recs = recs.concat((more.body && more.body.records) || []);
+    n = Number(more.body && more.body.n) || n;
+    if (!(more.body && more.body.more)) break;
+  }
+  const passes = recs.filter(function (r) { return r.verb === 'phase.done'; }).map(function (r) { try { return JSON.parse(r.body); } catch (e) { return {}; } })
+    .filter(function (b) { return b.id === ID && b.phase === 'verify' && b.pass === true; });
+  const lastPass = passes[passes.length - 1] || {};
+  if (s5.every(function (x) { return x === 200; }) && lastPass.commit === COMMIT) test.check('the verify pass record carries the claimed commit ' + COMMIT.slice(0, 8));
+  else test.fail('OWED by goal/G27.2: the steps answered ' + short(s5) + '; the last verify pass record reads ' + short(lastPass));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   try { kid && kid.kill(); } catch (e) { /* gone */ }
   setTimeout(function () {

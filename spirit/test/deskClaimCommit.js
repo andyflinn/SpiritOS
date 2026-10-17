@@ -260,11 +260,18 @@ async function verifyHalf() {
     if (!await v.up()) { test.fail('the world: deskVerify did not start'); return; }
     await sleep(1500);
 
-    // A VERIFY-PHASE PASS STARTS NOTHING: it came without a commit, a moment before the claim.
+    // A VERIFY-PHASE PASS WITHOUT A COMMIT STARTS NOTHING (goal/G19.13): it would check a tree older than the claim.
     rec('phase.done', { id: 'cv/G1.9', phase: 'verify', pass: true });
     await sleep(2500);
-    if (!said('item.get', 'cv/G1.9').length && !lineOn('cv/G1.9').length && !spoke('cv/G1.9')) test.check('a verify-phase pass starts no check');
+    if (!said('item.get', 'cv/G1.9').length && !lineOn('cv/G1.9').length && !spoke('cv/G1.9')) test.check('a verify-phase pass with no commit starts no check');
     else test.fail(OWED + 'the verify-phase pass was checked: ' + short(asks.filter(function (x) { return x.args.id === 'cv/G1.9'; })));
+    // WITH THE CLAIMED COMMIT IT QUEUES THE CHECK (goal/G27.2, D11). Andy, 2026-10-17: "make that press queue it.": the
+    // pass sets the item back to waiting for deskVerify, so a run must follow; the desk writes the item's claimed commit
+    // on the record, and the check waits for that commit as a claim's does.
+    rec('phase.done', { id: 'cv/G1.9', phase: 'verify', pass: true, commit: repo.head });
+    await waitFor(function () { return spoke('cv/G1.9') > 0; }, 20000);
+    if (said('verify.pass', 'cv/G1.9').length === 1 && lineOn('cv/G1.9').some(function (l) { return /passed/.test(l) && l.indexOf(repo.head.slice(0, 7)) !== -1; })) test.check('a verify-phase pass carrying the claimed commit is checked at that commit: passed');
+    else test.fail('OWED by goal/G27.2: the verify-phase pass with its commit gave ' + short(asks.filter(function (x) { return x.args.id === 'cv/G1.9'; })));
 
     // A BUILD CLAIM WHOSE COMMIT HAS NOT ARRIVED.
     rec('claim', { id: 'cv/G1.1', phase: 'build', commit: repo.x });
