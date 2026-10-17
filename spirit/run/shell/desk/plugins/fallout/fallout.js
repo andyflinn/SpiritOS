@@ -1,0 +1,96 @@
+// spirit/run/shell/desk/plugins/fallout/fallout.js
+// THE FALLOUT PLUGIN'S PRIVATE UI (goal/G27.14): Desk's Fallout tab under Apps, in its reduced scope.
+//
+// DECIDED BY ANDY, 2026-10-17, in goal/G27.14's box: "I just want a Fallout app, that searches "reds" in verifier, and
+// shows me a table of test items that match the search term", and "we can leave the tabs inside this desk-app, we just
+// don't fill the second tab yet". So two inner tabs (F2): Reds, one search box and the table of the verifier's tests
+// that are red now and match it (suite, test, the commit and time it went red, its failure line), through the plugin's
+// verb fallout.reds; and Items, empty for now, saying so (F4).
+//
+// Loaded once into the Desk page the first time its tab opens (shell/desk/desk.js, deskOpenPlugin); it registers
+// window.spiritDeskPlugins.fallout = { open(container, ctx) }, ctx.ask being the call to the desk server.
+
+(function () {
+  var win = typeof window !== 'undefined' ? window : {};
+  var held = win.spiritDeskPlugins = win.spiritDeskPlugins || {};
+  var ctx = null;
+  var inner = 'reds';
+  var searching = false;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function when(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
+  function say(text) { var el = document.getElementById('fallout-note'); if (el) el.textContent = String(text || ''); }
+  function tabButton(name, label) {
+    var on = inner === name;
+    return '<button type="button" data-fallout-tab="' + name + '" aria-selected="' + (on ? 'true' : 'false') + '" style="margin-right:1em' +
+      (on ? ';font-weight:bold;text-decoration:underline' : '') + '">' + label + '</button>';
+  }
+  function drawTabs() {
+    var row = document.getElementById('fallout-tabs');
+    if (row) row.innerHTML = tabButton('reds', 'Reds') + tabButton('items', 'Items');
+    var reds = document.getElementById('fallout-pane-reds');
+    var items = document.getElementById('fallout-items');
+    if (reds) reds.hidden = inner !== 'reds';
+    // F4: Items, empty for now, saying so.
+    if (items) {
+      items.innerHTML = '<div class="label">Items</div><div class="job-manifest-note">Nothing yet: the Fallout items come later (goal/G27.14).</div>';
+      items.hidden = inner !== 'items';
+    }
+  }
+  // F2: the reds that match, one row each.
+  function search() {
+    if (!ctx || searching) return;
+    var box = document.getElementById('fallout-text');
+    var text = box ? String(box.value || '').trim() : '';
+    searching = true;
+    say('Searching the verifier.');
+    Promise.resolve(ctx.ask('fallout.reds', { text: text })).then(function (r) {
+      searching = false;
+      var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
+      var el = document.getElementById('fallout-reds');
+      if (el) {
+        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Suite</th><th>Test</th><th>Red since</th><th>Failure</th></tr></thead><tbody>' +
+          rows.map(function (x) {
+            return '<tr><td>' + esc(x.suite) + '</td><td>' + esc(x.title) + '</td><td>' + esc(String(x.commit || '').slice(0, 8)) + ' ' +
+              '<span class="job-manifest-note">' + esc(when(x.at)) + '</span></td><td>' + esc(x.failure) + '</td></tr>';
+          }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No red test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
+      }
+      say(r && r.more ? 'More reds match than one answer holds: narrow the search.' : '');
+    }, function (e) { searching = false; say('The verifier could not be searched: ' + ((e && e.message) || e)); });
+  }
+
+  held.fallout = {
+    open: function (container, given) {
+      ctx = given;
+      // Every block a leading 1em; each button 1em after itself (the desk's UI rules).
+      container.innerHTML =
+        '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Fallout</div>' +
+          '<div class="job-manifest-note">What a goal leaves red beyond its own scope. Reds searches the verifier\'s tests that are red now; ' +
+          'Items will hold the work they cause.</div></div>' +
+        '<div id="fallout-tabs" style="margin-top:1em"></div>' +
+        '<div id="fallout-pane-reds">' +
+          '<div class="start-job-form card" style="margin-top:1em"><label class="field-label grow">Search the reds' +
+            '<input type="search" id="fallout-text" data-field="label" placeholder="words of a test\'s name, or a suite like deskServer.js"></label>' +
+            '<button type="button" id="fallout-search" style="margin-right:1em">Search</button></div>' +
+          '<div id="fallout-note" class="job-start-error" style="margin-top:1em"></div>' +
+          '<div class="stat-tile wide" style="margin-top:1em"><div class="label">Red tests</div><div id="fallout-reds">' +
+            '<div class="job-manifest-note">Search to see the reds; an empty search lists the newest.</div></div></div>' +
+        '</div>' +
+        '<div id="fallout-items" class="stat-tile wide" style="margin-top:1em" hidden></div>';
+      if (!container.falloutWired) {
+        container.falloutWired = true;
+        container.addEventListener('click', function (e) {
+          var t = e && e.target;
+          if (!t) return;
+          var tab = t.getAttribute ? t.getAttribute('data-fallout-tab') : null;
+          if (tab === 'reds' || tab === 'items') { inner = tab; drawTabs(); return; }
+          if (t.id === 'fallout-search') search();
+        });
+        container.addEventListener('keydown', function (e) { var t = e && e.target; if (t && t.id === 'fallout-text' && e.key === 'Enter' && !e.repeat) search(); });
+      }
+      drawTabs();
+    },
+  };
+}());
