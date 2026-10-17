@@ -1,5 +1,5 @@
 {
- "change": 67546,
+ "change": 68084,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -7,15 +7,14 @@
    "id": "goal/G27",
    "title": "Desk Fixes: Current round.",
    "goal": "",
-   "status": "goal run started",
+   "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G27.14"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -405,6 +404,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-17T09:41:09.938Z",
      "text": "full run on 436 suites: red in spirit/test/agentOnboard.js: stopped by hand (at eb62be61, pulled)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:43:41.737Z",
+     "text": "goal run on 6 suites: all green (at ab09a573, pull failed: fatal: Cannot fast-forward to multiple branches.)"
     }
    ]
   },
@@ -5881,11 +5886,11 @@
    "id": "goal/G27.14",
    "title": "new desk app plugin: \"Fallout\"",
    "goal": "goal/G27",
-   "status": "deskVerify passed",
-   "with": "claude-windows",
+   "status": "done",
+   "with": "",
    "buttons": [
-    "done",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -5895,11 +5900,31 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/probabilityBucket.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/probabilityStringMatch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/probabilityStringObjectMatch.js",
+     "by": "claude-windows",
+     "core": true
+    },
     {
      "path": "spirit/run/process/js/desk/plugins/js/fallout/fallout.js",
      "by": "claude-windows",
@@ -5951,6 +5976,11 @@
      "core": false
     },
     {
+     "path": "spirit/test/probabilityBucket.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
      "path": "spirit/test/testSupport.js",
      "by": "claude-windows",
      "core": false
@@ -5963,8 +5993,8 @@
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "ab09a573",
-   "redCommit": "eb62be61",
+   "claimCommit": "48e792c7",
+   "redCommit": "c8d7cb9d",
    "waived": true,
    "rules": [
     {
@@ -5999,12 +6029,22 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "NOW, THE REDUCED SCOPE (Andy, 2026-10-17: a Fallout app that searches reds in the verifier and shows a table of the tests that match the search term):\nF1. Fallout is a standard desk plugin with its own goal, plugin/fallout, and a Fallout tab under Apps beside Team, Stacks and Vision.\nF2. Its tab holds two inner tabs, Reds and Items. Reds holds one search box and one table: the text is searched over the verifier records of tests that are red now (deskVerify search, outcome red), and each match is a row: suite, test, the commit and time it went red, and its failure line.\nF5. Each tested thing is one line, its latest state only: test file | what is tested (its sub-heading) | success or fail | since; no failure column, the raw failure only on hover.\nF6. A line opens a dialog with that test history: every flip of each check under it, red or green, with its time and commit, newest first (Andy, 2026-10-17).\nF3. The search goes through the plugin own verb, which asks this node deskVerify; the page reads no database of its own.\nF4. Items stays empty for now, saying so. The goal chat sits at the bottom of the Fallout tab (Andy, 2026-10-17). Nothing else of the design below is built now: no items, no item form.\n\nLATER, THE FULL DESIGN (kept as it was):\nFallout is a new desk plugin application.\n\nthat new, permanent goal/plugin combination servers to deal with the fallout resulting for this: Goals only run the verifier in a goal-related scope for a goal to pass implementation, which is a good thing. It's a good thing because it will discard out-of-scope adjustments that need to be made because of a new world the achieved goal brings with it. This fallout may only become apparent/documented when a full run of the Verifier ends...\n\n- the Fallout goal is NEVER in design mode, and all its new items are \"code\" by default. \"Fallout\" items are code (by default) items without red \"phase\", because it is failing tests that cause their existence. when they pass a verifier test, and are 'Done' and 'Closed' they disappear from the\n\n- The \"Fallout\" tab will appear along it's siblings \"Team\" and \"Stacks\", it will display at the top a line showing the \"create blocking item\" form, for creating \"Fallout\" items.\n- The second row will break down \"Fallout\" into two \"Fallout\" tabs:\n- First tab: \"Reds\", it allows the searching of the verifier database 's failed tests. Searched with our new \"probability\" search modules.\n- The second tab \"Items\" displays a list of open Fallout items;\n- both tabs display the same \"Fallout\"-chat at the bottom\"\n\nThe working method is: find a group of reds in the verifier database, manually create an item to address a few, usually grouped by the suite(s) that failed them, so which tests to run for verification is implicit.\nanother way to work of is an item to adjust or remove the suite(s) that fail. or remove/modify the test that fails, this also will produce a code item.",
-   "version": 11,
-   "checks": [],
+   "box": "NOW, THE REDUCED SCOPE (Andy, 2026-10-17: a Fallout app that searches reds in the verifier and shows a table of the tests that match the search term):\nF1. Fallout is a standard desk plugin with its own goal, plugin/fallout, and a Fallout tab under Apps beside Team, Stacks and Vision.\nF2. Its tab holds two inner tabs, Reds and Items. Reds holds one search box and one table: the text is searched over the verifier records of tests that are red now (deskVerify search, outcome red), and each match is a row: suite, test, the commit and time it went red, and its failure line.\nF5. Each tested thing is one line, its latest state only: test file | what is tested (its sub-heading) | success or fail | since; no failure column, the raw failure only on hover.\nF6. A line opens a dialog with that test history: every flip of each check under it, red or green, with its time and commit, newest first (Andy, 2026-10-17).\nF3. The search goes through the plugin own verb, which asks this node deskVerify; the page reads no database of its own.\nF4. Items stays empty for now, saying so. The goal chat sits at the bottom of the Fallout tab (Andy, 2026-10-17). Nothing else of the design below is built now: no items, no item form.\n\nLATER, THE FULL DESIGN (kept as it was):\n- Once there is real flip history: a flip in the history dialog may show the commit messages that came with it, and the goals pursued at the time (Andy, 2026-10-17). For agents too, to hunt a bug: the commit diffs between a test's last green and its first red. Waits for flips to exist.\nFallout is a new desk plugin application.\n\nthat new, permanent goal/plugin combination servers to deal with the fallout resulting for this: Goals only run the verifier in a goal-related scope for a goal to pass implementation, which is a good thing. It's a good thing because it will discard out-of-scope adjustments that need to be made because of a new world the achieved goal brings with it. This fallout may only become apparent/documented when a full run of the Verifier ends...\n\n- the Fallout goal is NEVER in design mode, and all its new items are \"code\" by default. \"Fallout\" items are code (by default) items without red \"phase\", because it is failing tests that cause their existence. when they pass a verifier test, and are 'Done' and 'Closed' they disappear from the\n\n- The \"Fallout\" tab will appear along it's siblings \"Team\" and \"Stacks\", it will display at the top a line showing the \"create blocking item\" form, for creating \"Fallout\" items.\n- The second row will break down \"Fallout\" into two \"Fallout\" tabs:\n- First tab: \"Reds\", it allows the searching of the verifier database 's failed tests. Searched with our new \"probability\" search modules.\n- The second tab \"Items\" displays a list of open Fallout items;\n- both tabs display the same \"Fallout\"-chat at the bottom\"\n\nThe working method is: find a group of reds in the verifier database, manually create an item to address a few, usually grouped by the suite(s) that failed them, so which tests to run for verification is implicit.\nanother way to work of is an item to adjust or remove the suite(s) that fail. or remove/modify the test that fails, this also will produce a code item.",
+   "version": 13,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/probabilityBucket.js, spirit/run/js/probabilityStringMatch.js, spirit/run/js/probabilityStringObjectMatch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-17T10:31:03.099Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -6569,6 +6609,942 @@
      "key": "",
      "at": "2026-10-17T09:42:45.958Z",
      "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:43:34.291Z",
+     "text": "i clicked 'Done' by accident."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T09:43:35.184Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T09:44:21.257Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T09:44:23.302Z",
+     "text": "commit bc7dcbbf394ac3909cb8fbc5f76dfea1a1998573: goal/G27.14: the red for no commit and no failure detail on screen, the icons kept\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:45:11.947Z",
+     "text": "deskVerify: red confirmed at bc7dcbbf: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T09:45:12.841Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T09:45:18.701Z",
+     "text": "commit f127bc6134406bfcd2097a6ab0c543fb9d94f47a: goal/G27.14: no commit and no failure detail on Fallout's screens, not even on hover; the icons kept\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/run/shell/falloutHistory/falloutHistory.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T09:45:33.999Z",
+     "text": "Done at f127bc61: no commit and no failure text on either screen, not even on hover; the ❌ fail / ✅ success icons stay. The history dialog is Check | Status | When.\nThe details stay in deskVerify for the agents. Files: pane fallout.js, shell/falloutHistory; red in deskFallout.js, 33 of 33.\nThe item reopened fine, so your accidental Done did not stick. Ctrl+F5 to see it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:46:07.637Z",
+     "text": "deskVerify: passed, at f127bc61 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:50:28.133Z",
+     "text": "i suppose the test history details will not show any flips yet, because of the design screwup that we just fixed.\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T09:50:45.357Z",
+     "text": "Correct. The records under the old wording keys never flip, and the new keys only began with the full run you started after 3bef61c4, which wrote each test first sighting.\nA flip shows once a test changes outcome in a later run under its new key; until then each history holds one line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:53:16.963Z",
+     "text": "that's fine. at least it will show history from now on. It might then even be possible to show the commit comments associated with a flip, and possibly even the goals pursued at the time....\n\nbut we'll have to wait with that until there's some actual flipping history..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T09:53:44.921Z",
+     "text": "Noted under LATER in the box: commit messages and the goals of the time beside each flip, once flips exist."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:54:26.599Z",
+     "text": "It will be usefull for agents, this ability to hunt a bug with information about what commit-diffs occurred before a flip."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T09:55:01.518Z",
+     "text": "Added to the same LATER line: for agents hunting a bug, the commit diffs between a test last green and its first red; deskVerify keeps both commits, so the range is there to read."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T09:59:45.592Z",
+     "text": "on the fallout's goal page, where you list how many found:\n\ni would like to know much more: how many red in total (size-of-problem-info)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:01:17.410Z",
+     "text": "commit 3f474b940acd10787a00cf3c45002af5e77db5b6: goal/G27.14: the red for the size of the problem: how many red now, of all\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:02:04.785Z",
+     "text": "deskVerify: red confirmed at 3f474b94: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:02:05.608Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:02:08.458Z",
+     "text": "commit cee6dcc99729ea5c1a9459efaa1c2e7b6ba82508: goal/G27.14: the size of the problem on Fallout: how many red of all tests now, whatever the search\n- spirit/run/process/js/desk/plugins/js/fallout/fallout.js\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:02:29.440Z",
+     "text": "Done at cee6dcc9: above the tabs a line says the size of the problem, whatever the search; right now on your node that is ❌ 46 red of 6217 tests (1%).\nIt is read on opening and again after each search. Files: plugin fallout.js (fallout.summary), pane fallout.js; red in deskFallout.js, 35 of 35.\nYour desk needs a restart for the new verb, then Ctrl+F5."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:03:33.444Z",
+     "text": "deskVerify: passed, at cee6dcc9 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:07:06.882Z",
+     "text": "why does the search return more that you display in the list? can't you fetch more stuff in the history dialog? and even there i likely don't want to see more that i see on the list right now. this would increase the number of search results returned.\n\nalso, why doesn't the UI cache all records found, and then display the search filter for all records it has cached. that's a pretty sound principle for any search ui.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:07:31.877Z",
+     "text": "The count is every matching check; the list folds the checks under one sub-heading into one line, and each row still carries commit and failure text you never see, so one answer of about 8 KB holds few lines.\nFix I propose: deskVerify folds the lines itself and sends only file, what is tested, status, since; one answer then holds several times as many lines, and the history dialog asks for its one test alone.\nCaching every record clashes with your rule, no lists, only searches, never paging: 6217 tests do not fit one answer, so a full cache means paging; slim lines get most of the gain without it. Go on that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:08:17.903Z",
+     "text": "and why is the fucking answer not bound by MAX_PAYLOAD?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:08:48.063Z",
+     "text": "It is bound by it, through two steps: PAYLOAD_MAX is 22528 bytes; a sealed packet holds 3/4 of that after its envelope (base64), and an answer gets half of that again, room for JSON escaping when it rides inside a sealed packet (appClient.ANSWER_MAX, about 8.4 KB).\nThe search fills that answer up to 512 bytes short; so one answer is about 8 KB, which is why fat rows mean few lines.\nSlim rows are the lever; the ceiling itself stays PAYLOAD_MAX."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:09:03.182Z",
+     "text": "don't return shit in the search that i don't want to see! WASTE OF SPACE."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:10:02.790Z",
+     "text": "AND WHY DOES BUCKET NOT MEASURE AFTER EVERY DROP TO FIND THE ACTUAL CUT-OFF????????????"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:10:03.614Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:10:19.233Z",
+     "text": "commit d690a9be46fe049d53e2dc4e5370d1556732aa39: goal/G27.14: the red for slim, folded search answers: nothing sent that is not shown\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:11:03.268Z",
+     "text": "deskVerify: red confirmed at d690a9be: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:11:04.045Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:11:53.010Z",
+     "text": "commit 00f268cd592abfadc499a5d77cffae1a57c4a3f8: goal/G27.14: slim, folded search answers: deskVerify sends only what Fallout shows\n- spirit/run/process/js/desk/plugins/js/fallout/fallout.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/search.json\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:12:08.394Z",
+     "text": "Done at 00f268cd: deskVerify now folds the lines itself and sends only file, what is tested, red or not and since; the history sends only check, status and when. No commit, no failure text on the wire.\nOne answer now holds far more lines under the same PAYLOAD_MAX bound. Files: deskVerify.js and search.json (slim, fold), plugin and pane fallout.js; red in deskFallout.js, 38 of 38.\nRestart your node for the new deskVerify, then Ctrl+F5."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:12:42.484Z",
+     "text": "It does: probabilityBucket.serialize measures the real JSON bytes after every row it adds and stops at the first that would not fit, so the cut-off is exact against the room deskVerify gives it, the answer ceiling less 512 bytes for the envelope.\nThe list was short because each row was fat (commit, failure text, the full key); since 00f268cd a row is only file, what is tested, red and since, so the same measured room holds many more lines.\nNothing in the bucket guesses; the only estimate left is that fixed 512 for the answer frame around the rows."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:15:33.951Z",
+     "text": "also, you seem to list the total number as \"total-matching-search-term\" what I want to know is TOTAL OF ALL FAILURES. period, THAT's size of the problem, NOT searching for \"zyx\" and getting a size-of-problem from that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:16:26.981Z",
+     "text": "commit 9d00687750fa17102ed887cbf7973d522699f4db: goal/G27.14: the red for the search count saying it is the search's, the Now line the size of the problem\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:17:03.777Z",
+     "text": "commit 5e2b7e683d23e7b18cab4a1a41ff7cbc7cadbdc5: goal/G27.14: the search count says it counts what matches the search; the Now line is the size of the problem\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:17:10.707Z",
+     "text": "deskVerify: red confirmed at 9d006877: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:17:11.537Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:17:23.419Z",
+     "text": "That total is the Now line above the tabs, whatever the search: your desk answers it right now as ❌ 47 red of 6221 tests.\nThe count under the search now says only what it is, N match this search, so the two are not confused. Done at 5e2b7e68, deskFallout 39 of 39.\nCtrl+F5; if the Now line still reads Counting, restart your node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:18:00.593Z",
+     "text": "deskVerify: passed, at 5e2b7e68 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:20:02.887Z",
+     "text": "and the UI still doesn't cache every search result, and then display what matches the search term among all cached rows...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:20:42.900Z",
+     "text": "Taking it: the pane will keep every line any search brought, and show what matches the term among all of them, merged with what the new search returns."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:22:41.150Z",
+     "text": "commit 2b0e8d1260284aeb1abc68f2fb411c90963fafc1: goal/G27.14: Fallout caches every line its searches brought and shows what matches the term among all of them\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:22:55.741Z",
+     "text": "commit 6b88bb5ee7baa2be483bfe6bca090364562378cb: goal/G27.14: the red for the pane caching every search result and matching the term among all of it\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:22:58.872Z",
+     "text": "Done at 2b0e8d12: the pane keeps every line any search brought; each search shows what it returned plus every cached line its words and the ❌/✅ filter match, newest first.\nSo a term finds what an earlier search fetched even when the new answer is empty. The cache lives for the page; Ctrl+F5 starts it afresh.\nFile: pane fallout.js; red in deskFallout.js, 40 of 40."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:23:27.809Z",
+     "text": "deskVerify: passed, at 2b0e8d12 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:24:06.558Z",
+     "text": "why down't the UI run the exact same search code in the shell? the shells hold the probability set of files, and any search can then easiliy accumulate a cache that can be expanded with every search?\n\nit's a pattern...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:25:21.840Z",
+     "text": "...and ideally we make it super-easy to implement it, right inside of contact-list elements etc,, and they all can count on the probability stuff being available, shell-side...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:25:22.566Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:25:32.514Z",
+     "text": "commit 221015dab8d6b4467188aa2758c8dbaab2729291: goal/G27.14: the red for the pane searching its cache with the same probability modules as the servers\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:26:14.432Z",
+     "text": "deskVerify: red not confirmed at 221015da: the item lists no test file"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:26:15.226Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:27:41.236Z",
+     "text": "Built and green (deskFallout 42 of 42, the probability suites 42 of 42), but the commit needs your grant: the two core files js/probabilityStringMatch.js and js/probabilityBucket.js.\nThe change in them: each runs in a page too (found on window.spiritProbability) and keeps its names in its own scope; node use is unchanged. Fallout then ranks its cache with that same code.\nGrant on the item and I commit at once."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:29:00.544Z",
+     "text": "what about probabilityObject or whatever it's called?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:29:01.547Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:29:02.864Z",
+     "text": "Yes: index.html now loads both probability modules, so every shell element, a contact list included, finds probabilityStringMatch and createProbabilityBucket on window.spiritProbability without loading anything; Fallout uses them that way.\nThe grant request under the item now covers three core files: index.html and the two modules. Green: deskFallout 43 of 43, index.html readers green.\nThe red not confirmed at 221015da was a moment when the item list was being rewritten; it is whole again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:29:16.394Z",
+     "text": "spirit\\run\\js\\probabilityStringObjectMatch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:29:17.278Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:30:25.740Z",
+     "text": "Included: probabilityStringObjectMatch.js runs in the page too, loaded by index.html right after probabilityStringMatch.js, which it needs; all three are on window.spiritProbability.\nGreen: deskFallout 43 of 43, the three probability suites, relaySearchMatcher and five desk search suites.\nThe grant request now covers four core files: index.html and the three modules; grant and I commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:30:49.311Z",
+     "text": "Yes, that one: spirit/run/js/probabilityStringObjectMatch.js is in, loaded by index.html after probabilityStringMatch.js.\nThe commit waits only for your grant G1 on the item, which names the four core files."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:31:32.572Z",
+     "text": "commit 655196a56532792086cf35220fbf715a503ec9c8: goal/G27.14: the servers' own search code in the shell: index.html loads the three probability modules for every element; Fallout ranks its cache with them\n- spirit/run/index.html\n- spirit/run/js/probabilityBucket.js\n- spirit/run/js/probabilityStringMatch.js\n- spirit/run/js/probabilityStringObjectMatch.js\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:31:47.764Z",
+     "text": "Committed at 655196a5 under your grant: index.html loads probabilityStringMatch, probabilityStringObjectMatch and probabilityBucket for every shell element, on window.spiritProbability; Fallout ranks its cache with them.\nFiles: index.html, the three js/probability* modules, pane fallout.js; red in deskFallout.js, 43 of 43.\nCtrl+F5 loads the new index.html."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:32:21.950Z",
+     "text": "deskVerify: passed, at 655196a5 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:35:31.943Z",
+     "text": "so why doesn't the fallout list update with each character typed or erased in the search box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:36:32.059Z",
+     "text": "commit 99c2e2c04d393dac0655daf5a56eb55ea47bd6ab: goal/G27.14: the red for the Fallout list redrawn with each character typed or erased\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:36:49.448Z",
+     "text": "and make sure that only one typing update is in flight at the time...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:36:50.271Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:37:15.215Z",
+     "text": "deskVerify: red confirmed at 99c2e2c0: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:37:16.066Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:37:45.243Z",
+     "text": "commit 920a9b46030ccebc9a506eb54914e231a7141799: goal/G27.14: the Fallout list redraws from its cache with each character typed or erased; the server asked once typing pauses\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:38:00.266Z",
+     "text": "Done at 920a9b46: each character typed or erased redraws the list at once from the cache, ranked by the shell probability code; the ✅/❌ filter does too.\nWhen typing pauses for 0.4 s the server is asked as well, and its lines join the cache. Enter and Search still ask at once.\nFile: pane fallout.js; red in deskFallout.js, 45 of 45. Ctrl+F5."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:38:32.210Z",
+     "text": "deskVerify: passed, at 920a9b46 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:38:33.106Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:38:35.961Z",
+     "text": "Taking it: one search to the server at a time; a newer one asked meanwhile waits and runs once, with the latest words, when the first returns."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:38:52.237Z",
+     "text": "correct, and make SURE there's MAX one search in flight over the wire.... IMPORTANT."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:38:53.123Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:39:15.400Z",
+     "text": "commit 856da71487b119279c1182c14bb839baf4e53ec2: goal/G27.14: the red for one search in flight at a time, the latest words following once\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:39:54.811Z",
+     "text": "commit 32483ec6634702dee146bdbe328967cb45ffe8c9: goal/G27.14: one Fallout search in flight at a time; one asked meanwhile runs once, with the latest words, when the first returns\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:40:00.224Z",
+     "text": "deskVerify: red confirmed at 856da714: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:40:00.896Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:40:09.808Z",
+     "text": "Done at 32483ec6: only one search goes to the server at a time; any asked while it is out is folded into one that runs, with the words as they stand then, when the first returns. The list still redraws from the cache on every keystroke.\nFile: pane fallout.js; red in deskFallout.js, 47 of 47. Ctrl+F5."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:40:35.421Z",
+     "text": "Taking it: the summary count still goes out beside a search, so every request of the pane will queue behind the one on the wire, max one at a time."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:40:47.610Z",
+     "text": "(red confirmed at 856da714 noted)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:40:48.986Z",
+     "text": "deskVerify: passed, at 32483ec6 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:40:49.793Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:41:33.057Z",
+     "text": "commit 871201f29f33c907e51086421e35d71f82fd4b99: goal/G27.14: the red for at most one request of the Fallout pane on the wire, its summary included\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:42:20.848Z",
+     "text": "deskVerify: red confirmed at 871201f2: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:42:21.631Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:43:52.090Z",
+     "text": "commit 79c9192acb0c19616239d1876ebc430e11b00aa5: goal/G27.14: one wire slot for the Fallout pane: at most one request out, its summary included; a search asked meanwhile folds into the latest\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:44:05.653Z",
+     "text": "Built at 79c9192a: every request of the pane, summary included, goes through one wire slot, never two out.\nA search typed meanwhile folds into the latest words; deskFallout.js 47/47."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:44:46.055Z",
+     "text": "deskVerify: passed, at 79c9192a (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:49:54.936Z",
+     "text": "still not correct, when i empty the search box after searching for terms not seen in the list, i sould gradually see more and more rows.\n\n1. i search with empty string, i get let's say 20 rows.\n2. a search for 'y' or for releay, and if finds a row not previously displayed.\n3. when clearing the search box (gimme all) then the fucking table should be larger than after step 1.\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:50:17.743Z",
+     "text": "Correct: an empty box shows every row the cache holds, so after step 2 the table is larger than at step 1.\nTaking it: I find why it is not, under a red first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:51:02.115Z",
+     "text": "because the bucket in shell doesn't need to be bound by MAX_PAYLOAD or seals or any of that stuff..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:51:38.655Z",
+     "text": "Your 3 steps pass as a test on 79c9192a (22 rows, then 23), and on ❌ there are only 25 reds now: the empty search already brings them all, so a search cannot add one.\nOn ❌+✅ the server does bring new rows (empty: 47 of 2134, relay: 47 not seen before), so the table should grow there.\nThe pane loads its script once per page: reload Desk, set the filter to both, and say if it still does not grow."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:52:00.064Z",
+     "text": "Correct, and it is not: the pane seats every cached row, no byte ceiling, so the table holds all the cache ever got.\nOnly each answer over the wire is capped (47 rows), so every search adds at most that many."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:52:33.562Z",
+     "text": "the bucket needs a mode that returns the result un-bounded."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:52:44.679Z",
+     "text": "... or a function"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:53:16.560Z",
+     "text": "Taking it as both: a bucket made with no limit (Infinity) seats everything, and bucket.all() returns every seated row, best first, no byte ceiling.\nThe pane ranks its cache with exactly that; the server keeps its bounded serialize. Red first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:53:58.935Z",
+     "text": "commit 4b5b3810255ec20e494eafeee1d7748b56c5b676: goal/G27.14: the red for an unbounded bucket (Infinity, all()) ranking the pane's cache, and for the table growing with every search\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:54:50.404Z",
+     "text": "deskVerify: red confirmed at 4b5b3810: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T10:54:51.236Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:55:14.986Z",
+     "text": "commit bea2624e301c816be4fade680e617a26dcb8dc82: goal/G27.14: the bucket's unbounded way, all(), with Infinity seating everything; the Fallout pane ranks its cache through it\n- spirit/run/js/probabilityBucket.js\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/test/probabilityBucket.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T10:55:42.276Z",
+     "text": "Built at bea2624e: bucket.all() returns every seated row, best first, unbounded; a bucket made with Infinity seats everything.\nThe pane ranks its whole cache that way; servers keep the bounded serialize.\nThe G18.4 bucket test now expects all beside seatFor and serialize."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T10:56:08.327Z",
+     "text": "deskVerify: passed, at bea2624e (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:01:03.805Z",
+     "text": "i still can't get the displayed list bigger by searching for other terms and returning to an empty search box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:02:30.989Z",
+     "text": "Ran the real pane code against your desk: filter both gives 47 rows, then 76 for y, then 94 on clearing; filter ❌ gives 25 every step, because only 25 tests are red at all.\nSo on ❌ it cannot grow; on both it does unless your page still runs the script it loaded before bea2624e.\nPlease reload the whole page (Ctrl+F5), set the filter to both, and try again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:03:41.734Z",
+     "text": "in probabilityBucket.js use\n\nserialize: function (map, maxBytes = 0)\n\nwhere 0 means unbounded."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:03:59.073Z",
+     "text": "Taking it: serialize(map, maxBytes = 0), 0 meaning unbounded, and all() deleted.\nThe pane calls serialize() with no ceiling on an Infinity bucket. Red first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:04:45.516Z",
+     "text": "commit dfa420845f2671cbfcccd56e34a28d4dee8b78dc: goal/G27.14: the red for serialize(map, maxBytes = 0), 0 unbounded, all() gone, the pane serializing its Infinity bucket with no ceiling\n- spirit/test/deskFallout.js\n- spirit/test/probabilityBucket.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:05:30.844Z",
+     "text": "commit aad93ea6551abee0976eba9153108fd2e31bf5b7: goal/G27.14: serialize(map, maxBytes = 0), 0 unbounded; all() deleted; the pane serializes its Infinity bucket with no ceiling\n- spirit/run/js/probabilityBucket.js\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:05:37.435Z",
+     "text": "deskVerify: red confirmed at dfa42084: spirit/test/deskFallout.js, spirit/test/probabilityBucket.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:05:47.388Z",
+     "text": "Built at aad93ea6: serialize(map, maxBytes = 0), 0 meaning unbounded; all() deleted, the G18.4 test back to seatFor and serialize only.\nThe pane serializes its Infinity bucket with no ceiling. Files: probabilityBucket.js, the fallout pane, deskFallout.js, the bucket test."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:06:32.101Z",
+     "text": "deskVerify: passed, at aad93ea6 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:08:28.235Z",
+     "text": "now: what you CAN add to the probability bucket is:\n\nsort(\"search string\") this way the bucket itself can be the cache needed in shell apps."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:08:53.413Z",
+     "text": "sort(text) re-ranks every object the bucket holds with probabilityStringObjectMatch and keeps them all, so the pane drops its own cache.\nThis overturns the G18.4 rule that the bucket knows nothing about string matching, and a row seen twice needs a key to replace the older one.\nShould the bucket take string matching in, with seatFor(probability, object, key)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:10:01.843Z",
+     "text": "then do this, SORT(probability = compareFunction())"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:10:27.219Z",
+     "text": "Taking it: sort(compare) gives every held object compare(object) as its new probability and re-orders, the bucket still blind to strings.\nAn object scored outside 0 to 1 stays held but is left out of serialize until a later sort scores it. Red first.\nNext question after that: may seatFor take a key, so a row a later search brings again replaces the older one?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:11:04.760Z",
+     "text": "commit 7f188a546dc7ab9667040b8f30e79722d0d2e828: goal/G27.14: the red for the bucket's sort(compare), a probability per held object from the caller's function\n- spirit/test/deskFallout.js\n- spirit/test/probabilityBucket.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:11:40.774Z",
+     "text": "that way you can display ALL rows since the best maches will always be on top.."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T11:11:41.561Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:11:55.035Z",
+     "text": "deskVerify: red confirmed at 7f188a54: spirit/test/deskFallout.js, spirit/test/probabilityBucket.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T11:11:55.927Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:11:59.625Z",
+     "text": "commit 97fa8c8c3397ec1acd9ccdf394fca8b736e44a64: goal/G27.14: the bucket's sort(compare): each held object re-scored by the caller's function and re-ordered; an unscored one held but not serialized\n- spirit/run/js/probabilityBucket.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:12:12.187Z",
+     "text": "Built at 97fa8c8c: bucket.sort(compare) re-scores every held object with your function and re-orders; one scored outside 0 to 1 stays held, unserialized.\nThe pane still keeps its own keyed cache until seatFor can replace a row seen twice.\nMay seatFor take a key, seatFor(probability, object, key), so the pane's cache becomes one Infinity bucket?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:12:35.334Z",
+     "text": "Taking it: the table shows every cached row the ✅/❌ filter lets through, best matches on top, the rest below; the words rank, never hide.\nThe count still says how many match the words. Red first; the key question stays open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:12:56.086Z",
+     "text": "deskVerify: passed, at 97fa8c8c (pulled). 5 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:13:11.142Z",
+     "text": "commit 436ec290732011ff9faa9b1420268f4e114c974f: goal/G27.14: the red for every cached row shown, the best matches on top, the rest below\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:13:59.984Z",
+     "text": "commit 36d40a0942b16251f77c97851bf1fb1827cb0ca8: goal/G27.14: the Fallout table shows every cached row the filter lets through, the best matches on top; the words rank, never hide\n- spirit/run/shell/desk/plugins/fallout/fallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:14:08.499Z",
+     "text": "Built at 36d40a09: every cached row the ✅/❌ filter lets through is shown, best matches on top, the rest below.\nThe count says how many match, and how many lines show in all.\nStill open: may seatFor take a key, so the pane's cache becomes one Infinity bucket kept sorted by sort(compare)?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:14:26.568Z",
+     "text": "All rows, best on top, is pushed (red 436ec290, build 36d40a09, 52/52 here), but the item went held at the 97fa8c8c pass after your line, so Desk refused the phases.\nA word from you now opens red again, and I claim it for deskVerify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:14:56.673Z",
+     "text": "deskVerify: red confirmed at 436ec290: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/probabilityBucket.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:15:27.494Z",
+     "text": "do it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:15:49.769Z",
+     "text": "deskVerify: passed, at 36d40a09 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:16:10.593Z",
+     "text": "Done: 36d40a09 claimed and passed to deskVerify.\nDoes your do it also cover seatFor(probability, object, key), so the pane keeps one Infinity bucket as its cache?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:16:42.644Z",
+     "text": "deskVerify: red not confirmed at 436ec290: spirit/test/deskFallout.js is already green; spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/probabilityBucket.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:16:55.991Z",
+     "text": "That red-not-confirmed is my re-claim of 436ec290 after the build had landed; deskVerify confirmed that red earlier, and passed 36d40a09."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:17:33.655Z",
+     "text": "deskVerify: passed, at 36d40a09 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:21:40.967Z",
+     "text": "why can i not get more than 25 rows displayed ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:22:05.473Z",
+     "text": "On ❌ there are 46 red checks now, folded into 25 lines, one per tested thing (test file plus what is tested); the empty search brings all 25.\nSet the filter to both and the table grows past 25 with every search."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:23:48.834Z",
+     "text": "i WANT TO SEE ONE FUCKING LINE PER FUCKING TEST."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:24:22.613Z",
+     "text": "STOP COLLATING SHIT I DIDN?T ASK FOR! HOW MANY TIMES DO I HAVE TO SAY THIS????"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:24:34.132Z",
+     "text": "Taking it: no folding, one line per test key, so ❌ shows all 46 red tests now.\nTwo tests under one heading differ only by their number, so the line reads the heading with its number (relay answers #2)?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:24:52.572Z",
+     "text": "Taking it: no collating anywhere, one line per test, each test as the verifier keys it. Red first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:26:15.290Z",
+     "text": "commit c8d7cb9d044fb4af3ba457583b2b0ea14d5fbbb1: goal/G27.14: the red for one line per test: nothing folded anywhere, fold gone from deskVerify, a test's own history by its key\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:27:04.827Z",
+     "text": "deskVerify: red confirmed at c8d7cb9d: spirit/test/deskFallout.js. Beside it: spirit/test/deskVerifyDataset.js is already green; spirit/test/deskVerifyFixes.js is already green; spirit/test/probabilityBucket.js is already green; spirit/test/testSupport.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T11:27:05.591Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:27:32.211Z",
+     "text": "i WANT TO SEE ONE LINE PER TEST, THE MOPST RECENT ONE, if only 25 ARE FUCKING FAILING, then SAY FUCKING 25 at the ToP, FUCK MAN?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T11:27:32.937Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:28:32.469Z",
+     "text": "A FAILURE IN THE PAST IS NOT A FUCKING FAILURE, IF THE TEST IS GREEN IN THE LATEST RUN..... GRRRR"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:28:34.543Z",
+     "text": "commit 48e792c74b205e2d64ece625c5cfcc39c4470b1f: goal/G27.14: one line per test: fold deleted from deskVerify, the plugin and the pane; a test's full key reads its own history\n- spirit/run/process/js/desk/plugins/js/fallout/fallout.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/search.json\n- spirit/run/shell/desk/plugins/fallout/fallout.js\n- spirit/test/deskFallout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:28:48.077Z",
+     "text": "Built at 48e792c7: one line per test, its full key, nothing collated anywhere; fold is deleted from deskVerify, and a line opens that one test's history.\nYour desk and deskVerify run the old code until your node restarts; I restart 65432 on your yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T11:29:28.786Z",
+     "text": "46 tests are failing in their latest run (checked in verify.db: every one reported red in its suite's last run); 25 was the old grouping by heading.\nWith 48e792c7 the list shows those 46, one line per test, its latest state, and the top says 46; a test green in its latest run is never ❌.\nIt shows once your node restarts: say go and I restart 65432."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T11:29:32.762Z",
+     "text": "deskVerify: passed, at 48e792c7 (pulled). 5 suites ran green."
     }
    ]
   },
