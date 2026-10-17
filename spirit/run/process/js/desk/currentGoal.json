@@ -1,5 +1,5 @@
 {
- "change": 65836,
+ "change": 65840,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -50,7 +50,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "excluded": [
     "ollama agent node"
    ],
@@ -650,11 +650,9 @@
    "id": "goal/G27.9",
    "title": "Clean up Desk and deskAgent UI realtime (incl. remote)",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -663,17 +661,17 @@
     "goal/G27.5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -681,7 +679,52 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -762,6 +805,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-16T08:57:26.060Z",
      "text": "cw: red question closed as you asked. Its text was whether to fold in G27.7 as written or reopen it; I have left S4 as written and G27.7 closed. Tell me if you want G27.7 reopened."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:06:27.638Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
