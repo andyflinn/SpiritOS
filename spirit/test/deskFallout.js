@@ -28,7 +28,8 @@ const PLUGIN_JSON = path.join(RUN, 'process', 'js', 'desk', 'plugins', 'js', 'fa
 const PLUGIN_UI = path.join(RUN, 'shell', 'desk', 'plugins', 'fallout', 'fallout.js');
 const GOAL = 'plugin/fallout';
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskFalloutTestOwnerAAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
-const RED = { suite: 'zzFalloutA.js', title: 'the relay answers its key', outcome: 'red', commit: 'abc1234', at: '2026-10-17T09:00:00.000Z', failure: 'boom: no answer' };
+// Keyed as testSupport keys a test since goal/G27.14: its sub-heading and its number under it.
+const RED = { suite: 'zzFalloutA.js', title: 'the relay answers its key #3', outcome: 'red', commit: 'abc1234', at: '2026-10-17T09:00:00.000Z', failure: 'boom: no answer' };
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -229,15 +230,20 @@ async function paneHalf() {
   if (sent && sent[1].text === 'relay key') test.check('its search sends fallout.reds with the words typed');
   else test.fail(OWED + 'the search asked ' + short(asked));
   const table = doc.getElementById('fallout-reds').innerHTML;
-  if (/zzFalloutA\.js/.test(table) && /the relay answers its key/.test(table) && /abc1234/.test(table) && /boom: no answer/.test(table)) test.check('each red is a table row: suite, test, commit, time and failure');
-  else test.fail(OWED + 'the table reads ' + short(table));
-  // THE ORDER (Andy, 2026-10-17: "the search results better list that file, then the failure description, then the
-  // current status..."): suite first, the failure next, the status third.
-  const atSuite = table.indexOf('zzFalloutA.js');
-  const atFailure = table.indexOf('boom: no answer');
-  const atStatus = table.indexOf('❌', table.indexOf('<tbody>'));
-  if (atSuite !== -1 && atFailure > atSuite && atStatus > atFailure) test.check('each row reads the suite, then the failure, then the status');
-  else test.fail(OWED + 'the row order: suite at ' + atSuite + ', failure at ' + atFailure + ', status at ' + atStatus);
+  // ONE NICE LINE PER TEST (Andy, 2026-10-17: "one nice line per failure / test-file-name | failure-description |
+  // success or fail | since"): the description is the sentence of what is tested, its sub-heading; the raw failure a
+  // suite printed is no row text (at most a hover title).
+  const shown = table.replace(/\btitle="[^"]*"/g, '');
+  const atSuite = shown.indexOf('zzFalloutA.js');
+  const atWhat = shown.indexOf('the relay answers its key');
+  const atStatus = shown.indexOf('❌', shown.indexOf('<tbody>'));
+  const atSince = shown.indexOf('2026-10-17 09:00:00');
+  if (atSuite !== -1 && atWhat > atSuite && atStatus > atWhat && atSince > atStatus) test.check('each row reads test file, description, status, since, in that order');
+  else test.fail(OWED + 'the row order: file ' + atSuite + ', description ' + atWhat + ', status ' + atStatus + ', since ' + atSince + ' in ' + short(shown));
+  if (!/boom: no answer/.test(shown) && !/#\d/.test(shown)) test.check('no raw failure text and no key number in the row');
+  else test.fail(OWED + 'the row still shows ' + short(shown));
+  if ((shown.match(/<tr>/g) || []).length === 2) test.check('one line per test, below one header line');
+  else test.fail(OWED + 'the rows: ' + short(shown));
   // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
   if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
   else test.fail(OWED + 'no #fallout-outcome select with red, green and both in ' + short(all()));
