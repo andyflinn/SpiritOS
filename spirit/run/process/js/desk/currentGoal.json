@@ -1,5 +1,5 @@
 {
- "change": 65921,
+ "change": 66015,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -58,9 +58,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -651,10 +649,9 @@
    "id": "goal/G27.9",
    "title": "Clean up Desk and deskAgent UI realtime (incl. remote)",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -4640,10 +4637,10 @@
    "id": "goal/G27.16",
    "title": "A shell app shows only while its server runs",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "delete"
+    "done"
    ],
    "blocking": [
     "goal/G27"
@@ -4652,21 +4649,57 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/chatter/chatter.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/ruleDetails/ruleDetails.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellAppNeedsServer.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "11613999",
+   "redCommit": "28b38677",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -4708,13 +4741,215 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "A shell app shows only while its server runs\n\nRequirements (Andy, goal/G27.9 chat, 2026-10-17):\nR1. A shell app manifest may name the server it needs. The shell shows that app only while that server is installed and running; when the server is uninstalled or stopped, the app is not offered.\nR2. The link lives on the app side only: no server manifest lists its shell apps, so the link cannot disagree with itself, and it still works once the server and its manifest are gone.\nR3. An app that names no server always shows, as today (contacts, files and the rest).\nR4. The shell names no app and no server: it reads the field from each manifest.\n\nFrom the code (at 5c127aa1): an app manifest has only a fixed hidden flag (shell/desk/desk.json); the shell already knows the running servers from its job list and ties shell/<name> to process/js/<name> for the stream (js/client/shell.js, onPublishedFor). deskAgentRemote needs deskAgent, so it names it in its manifest.\n\nFiles (expected): spirit/run/js/client/shell.js (core: one grant), the manifests of the shell apps that need a server (desk, deskDetails, ruleDetails, deskAgentRemote), and a red suite.",
    "version": 1,
-   "checks": [],
-   "chat": []
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "This item is not marked as code, so your Go opened no red phase: press Code on it?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-17T01:43:43.675Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-17T01:44:09.386Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:39:37.329Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:40:03.977Z",
+     "text": "cw: it is not marked as a code item, so your Go opened no red phase and the desk refuses me one. Press Code on it and the red starts with your Go (goal/G8.10); I am reading the shell meanwhile."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:40:06.751Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:40:28.831Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:40:45.757Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:41:32.139Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:41:50.515Z",
+     "text": "cw: the repeated limbo lines are the desk reacting to my listener: on a plain item limbo follows my working/listening word, which flips each time it arms. Press Code on this item and they stop: I take its red, which is written and red (6 owed) in my clone, and the build is next."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:41:53.296Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:43:44.451Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:44:08.599Z",
+     "text": "commit 28b386770a8c90549867c288332586ec5d55c431: goal/G27.16: the red for a shell app shown only while its server runs\n- spirit/test/shellAppNeedsServer.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:44:15.240Z",
+     "text": "deskVerify: red confirmed at 28b38677: spirit/test/shellAppNeedsServer.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:44:16.130Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:46:38.452Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:46:40.582Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:46:59.685Z",
+     "text": "commit d6de2583cf1e224332cd45f6fad697d1e63a2cbf: goal/G27.16: a shell app shows only while its server runs\n- spirit/run/js/client/shell.js\n- spirit/run/shell/desk/desk.json\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.json\n- spirit/run/shell/deskDetails/deskDetails.json\n- spirit/run/shell/ruleDetails/ruleDetails.json"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:47:07.504Z",
+     "text": "deskVerify: passed, at d6de2583 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T01:47:08.349Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:47:14.911Z",
+     "text": "cw: built and pushed at d6de2583; build and verify taken through, shellAppNeedsServer 10 of 10. Files: shell.js and the manifests of Desk, deskDetails, ruleDetails (server desk) and deskAgentRemote (server deskAgent).\nAfter it lands, your desktop offers Desk only while the desk server runs. It waits on deskVerify for your Done."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:50:22.540Z",
+     "text": "chatter and deskAgentRemote, do these shell apps already carry their appServer dependencies?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:50:44.939Z",
+     "text": "cw: deskAgentRemote does (server deskAgent, in this build). Chatter does not: it is the face of chatClerver, and its manifest names nothing yet, so it always shows.\nOne line in chatter.json, \"server\": \"chatClerver\", fixes it; the other apps that listen to a server are Desk and deskDetails, both done. Fold it into this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:51:54.688Z",
+     "text": "Fold it into this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:53:21.744Z",
+     "text": "commit a4a1d9ede9e18a060efb66ddbc044c1b8c200387: goal/G27.16: Chatter names its server, chatClerver (folded in by Andy)\n- spirit/run/shell/chatter/chatter.json\n- spirit/test/shellAppNeedsServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T01:53:23.706Z",
+     "text": "cw: folded in and pushed at a4a1d9ed: chatter.json names chatClerver, and the red checks it. shellAppNeedsServer 10 of 10, the chatter suites green. Claimed again; deskVerify asked to check it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:53:29.889Z",
+     "text": "deskVerify: passed, at a4a1d9ed (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T01:59:42.126Z",
+     "text": "Desk Agent Remote doesn't show in Levant s shell, (11111) i can't figure out why."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:00:37.767Z",
+     "text": "cw: found it, my bug: the shell looked for jobs typed \"server\", but a server job carries kind server and its display name as type (\"Desk Agent\" on 11111). So every app naming a server hides even while it runs. My red used the same wrong shape, so it passed.\nFixing now: the red gets the real job shape, then the shell reads kind."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:00:57.374Z",
+     "text": "commit 0912560a57406c32ea33f79b4381db99238ebeb4: goal/G27.16: the red with a server job's real shape (kind server, display type)\n- spirit/test/shellAppNeedsServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:01:26.025Z",
+     "text": "commit 11613999cec0cbec7c8b75e80283081658b3676f: goal/G27.16: a server job is known by its kind, not its type\n- spirit/run/js/client/shell.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:01:28.069Z",
+     "text": "cw: fixed at 11613999: the shell knows a server job by its kind. The red now uses the real job shape (0912560a) and is green. Once your nodes pull it, Desk Agent Remote shows on 11111 again, since its deskAgent job runs there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:01:32.507Z",
+     "text": "deskVerify: passed, at 11613999 (pulled). 1 suite ran green."
+    }
+   ]
   }
  ]
 }
