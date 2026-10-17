@@ -1337,6 +1337,11 @@ function mayTake(s, it, phase, who) {
   const w = it.waived === true;
   if (phase === 'red') {
     if (it.phase === 'red') return w || who !== it.builder ? '' : 'not-offered';
+    // PHASES STAY RE-TAKABLE UNTIL HIS DONE (goal/G27.19). Andy, 2026-10-17: "the desk should allow any restart of
+    // phases as long as 'done' is not pressed", "Just because 'Done' is offered doesn't mean it's fucking done....". A
+    // verify pass leaves the phase empty; while the item is not done (checked above) red opens a fresh cycle under the
+    // same item, its Go standing, never to the builder unless waived, as the verifier's extension of the red below.
+    if (!it.phase) return w || who !== it.builder ? '' : 'not-offered';
     if (it.phase === 'verify' && it.verifier && who === it.verifier) return w || who !== it.builder ? '' : 'not-offered';
     return 'not-offered';
   }
