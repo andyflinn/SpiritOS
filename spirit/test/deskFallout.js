@@ -91,6 +91,10 @@ async function serverHalf() {
   const r1 = await call('fallout.reds', { text: 'relay key' });
   const a1 = verifyAsks[verifyAsks.length - 1] || [];
   const rows = ((r1 && r1.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } });
+  // NOTHING SENT THAT IS NOT SHOWN (Andy, 2026-10-17: "don't return shit in the search that i don't want to see! WASTE
+  // OF SPACE."): the list asks for folded lines (fold: yes) without commit or failure text (slim: yes).
+  if (a1[0] === 'search' && a1[1].fold === 'yes' && a1[1].slim === 'yes') test.check('the list asks deskVerify for folded, slim lines');
+  else test.fail(OWED + 'the list asked ' + short(a1));
   if (a1[0] === 'search' && a1[1].over === 'tests' && a1[1].outcome === 'red' && a1[1].test === 'relay key' && a1[1].current === 'yes') test.check('words ask deskVerify search {over: tests, outcome: red, current: yes, test: the words}');
   else test.fail(OWED + 'deskVerify was asked ' + short(a1));
   if (rows.length === 1 && rows[0] && rows[0].title === RED.title && rows[0].failure === RED.failure) test.check('its answer carries deskVerify\'s rows as they came');
@@ -116,7 +120,7 @@ async function serverHalf() {
   // F6: the history of one tested thing, through the plugin's verb.
   const h = await call('fallout.history', { suite: 'zzFalloutA.js', heading: 'the relay answers its key' });
   const a5 = verifyAsks[verifyAsks.length - 1] || [];
-  if (tree['fallout.history'] && a5[0] === 'search' && a5[1].over === 'tests' && a5[1].suite === 'zzFalloutA.js' && a5[1].heading === 'the relay answers its key' && a5[1].history === 'yes' && Array.isArray(h.items)) test.check('fallout.history asks deskVerify for every flip under that heading');
+  if (tree['fallout.history'] && a5[0] === 'search' && a5[1].over === 'tests' && a5[1].suite === 'zzFalloutA.js' && a5[1].heading === 'the relay answers its key' && a5[1].history === 'yes' && a5[1].slim === 'yes' && Array.isArray(h.items)) test.check('fallout.history asks deskVerify for every flip under that heading, slim');
   else test.fail(OWED + 'fallout.history answered ' + short(h) + ', asking ' + short(a5));
 }
 
@@ -205,6 +209,16 @@ async function currentHalf() {
     const ht = ((hist && hist.items) || []).map(function (i) { try { const x = JSON.parse(i.label); return x.title + ':' + x.outcome; } catch (e) { return ''; } });
     if (JSON.stringify(ht.slice().sort()) === JSON.stringify(['H #1:green', 'H #1:red', 'H #2:red'])) test.check('history: yes answers every flip under the heading H, and nothing of HX');
     else test.fail(OWED + 'the history of H reads ' + short(ht));
+    // SLIM AND FOLDED (Andy: "don't return shit in the search that i don't want to see!").
+    const slimHist = await ask('search', { over: 'tests', suite: 'zzHist.js', heading: 'H', history: 'yes', slim: 'yes' });
+    const sl = ((slimHist && slimHist.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
+    if (sl.length === 3 && sl.every(function (x) { return x.title && x.outcome && x.at && x.commit === undefined && x.failure === undefined; })) test.check('slim: yes leaves commit and failure text out of each row');
+    else test.fail(OWED + 'slim rows read ' + short(sl));
+    const folded = await ask('search', { over: 'tests', suite: 'zzHist.js', fold: 'yes', slim: 'yes' });
+    const fl = ((folded && folded.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
+    const fh = fl.filter(function (x) { return x.what === 'H'; })[0];
+    if (fl.length === 2 && fh && fh.red === true && fh.suite === 'zzHist.js' && fh.at && fh.title === undefined && fh.failure === undefined && folded.total === 2) test.check('fold: yes answers one line per test file and heading, red while any check is, its total the lines');
+    else test.fail(OWED + 'folded lines read ' + short(fl) + ', total ' + short(folded.total));
   } finally {
     await new Promise(function (r) { vk.once('exit', r); vk.kill(); setTimeout(r, 3000); });
     deskNode.close();
