@@ -370,6 +370,17 @@ async function paneHalf() {
   else test.fail(OWED + 'the pane matched its cache without probabilityStringMatch');
   if (/a door stays shut/.test(cachedTable) && !/the relay answers its key/.test(cachedTable)) test.check('a search shows what matches its term among every line any search brought');
   else test.fail(OWED + 'after searching door the table reads ' + short(cachedTable));
+  // AS TYPED (Andy, 2026-10-17: "so why doesn't the fallout list update with each character typed or erased in the
+  // search box?"): every character typed or erased redraws the list from the cache at once, no click, no wait.
+  const typeIn = function (v) { doc.getElementById('fallout-text').value = v; box.fire('input', { target: { id: 'fallout-text', getAttribute: function () { return null; } } }); };
+  typeIn('relay');
+  const typedRelay = doc.getElementById('fallout-reds').innerHTML;
+  typeIn('');
+  const typedEmpty = doc.getElementById('fallout-reds').innerHTML;
+  if (/the relay answers its key/.test(typedRelay) && !/a door stays shut/.test(typedRelay)) test.check('typing "relay" redraws the list at once to its cached matches');
+  else test.fail(OWED + 'after typing relay the list reads ' + short(typedRelay));
+  if (/the relay answers its key/.test(typedEmpty) && /a door stays shut/.test(typedEmpty)) test.check('erasing it redraws the list at once to every cached line');
+  else test.fail(OWED + 'after erasing the list reads ' + short(typedEmpty));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
   await sleep(10);
   const items = doc.getElementById('fallout-items');
