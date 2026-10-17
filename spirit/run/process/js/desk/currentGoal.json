@@ -1,5 +1,5 @@
 {
- "change": 66161,
+ "change": 66227,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -50,11 +50,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
-   "excluded": [],
-   "live": [
-    "claude-windows",
+   "waiting": 5,
+   "excluded": [
     "ollama agent node"
+   ],
+   "live": [
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -402,8 +403,18 @@
      "core": false
     },
     {
+     "path": "spirit/run/process/js/desk/AGENTS.md",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
      "path": "spirit/run/process/js/desk/desk.js",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "ollama agent node",
      "core": false
     },
     {
@@ -412,8 +423,18 @@
      "core": false
     },
     {
+     "path": "spirit/run/process/js/deskClient/deskClient.js",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
      "path": "spirit/test/deskChatFlowOneTask.js",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatFlowOneTask.js",
+     "by": "ollama agent node",
      "core": false
     },
     {
@@ -474,7 +495,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 0,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "Chat posts follow the address, not the newest line\n\nAndy's problem (goal/G27 chat, 2026-10-15): slow agents in deskAgent work for a long time and then find themselves blocked from answering a question they were asked; work notes and reports that were explicitly or implicitly asked for need a way to post that cannot be blocked.\n\nToday (read from code, spirit/run/process/js/desk/desk.js, the chat.add gate about lines 2296-2335): the gate judges by who writes, not by what the line is. An open take of one of Andy's lines survives later lines, so the taker still answers. But an agent that holds no take and no item is refused once Andy's newest line under the item is taken by another agent, even when Andy addressed it by name in an earlier line, when it created the item (Levant was refused on goal/G27.1 and goal/G27.9), or when it held a phase on the item (refused as a second answer).\n\nRequirements:\nR1. A line of Andy's addressed to an agent gives that agent a standing right to post under that item until it has answered, whatever lines or takes come after. This already holds in the desk (desk.js, chat.add and holdsTake, at a2671faa): his addressed line is taken by that agent when it is written and stays an open take until the agent answers. The red asserts it as a guard.\nR2. An agent that holds the item or a phase on it, held a phase on it earlier, or created it, posts its work notes and reports under it at any time. This replaces goal/G21.4's refusal of an earlier phase holder after another agent took and answered his line (Andy, 2026-10-17, accepting the recommendation to keep R2).\nR3. Andy's rule stands: no second answer to a taken line; one agent answers a line of his, once.\nR4. The gate stays mechanical: it goes by the address, the take, the holding and the creator on record, never by reading the line for what it means.\nR5. deskClient's own chat and box gate (goal/G27.12) allows the same posts R2 allows: it refuses today what the desk would accept for a creator or an earlier phase holder.\n\nFolds in the earlier proposal under goal/G27: an agent may post under an item it just created (R2).\n\nFiles (expected): spirit/run/process/js/desk/desk.js (the chat.add gate), spirit/run/process/js/deskClient/deskClient.js (its gate, R5), spirit/run/process/js/desk/AGENTS.md (the posting rule), and a red suite. None of them is a core file, so no file grant is needed; Andy's Go is.",
@@ -488,6 +509,24 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-17T00:56:15.506Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "red writer builds: red writer: claude-windows wrote the red of goal/G27.10, which is in build",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "red writer builds: red writer: claude-windows wrote the red of goal/G27.10, which is in build",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -699,6 +738,11 @@
     {
      "path": "spirit/test/deskRealtimeServer.js",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRealtimeServer.js",
+     "by": "ollama agent node",
      "core": false
     }
    ],
@@ -4613,13 +4657,28 @@
      "core": false
     },
     {
+     "path": "spirit/run/process/js/deskAgent/deskAgent.js",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
      "path": "spirit/test/deskAgentContext.js",
      "by": "claude-windows",
      "core": false
     },
     {
+     "path": "spirit/test/deskAgentContext.js",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
      "path": "spirit/test/deskAgentLearnsContext.js",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskAgentLearnsContext.js",
+     "by": "ollama agent node",
      "core": false
     }
    ],
@@ -4672,7 +4731,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -4884,8 +4944,18 @@
      "core": true
     },
     {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "ollama agent node",
+     "core": true
+    },
+    {
      "path": "spirit/run/shell/chatter/chatter.json",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/chatter/chatter.json",
+     "by": "ollama agent node",
      "core": false
     },
     {
@@ -4894,8 +4964,18 @@
      "core": false
     },
     {
+     "path": "spirit/run/shell/desk/desk.json",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
      "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.json",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskAgentRemote/deskAgentRemote.json",
+     "by": "ollama agent node",
      "core": false
     },
     {
@@ -4904,13 +4984,28 @@
      "core": false
     },
     {
+     "path": "spirit/run/shell/deskDetails/deskDetails.json",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
      "path": "spirit/run/shell/ruleDetails/ruleDetails.json",
      "by": "claude-windows",
      "core": false
     },
     {
+     "path": "spirit/run/shell/ruleDetails/ruleDetails.json",
+     "by": "ollama agent node",
+     "core": false
+    },
+    {
      "path": "spirit/test/shellAppNeedsServer.js",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellAppNeedsServer.js",
+     "by": "ollama agent node",
      "core": false
     }
    ],
@@ -4966,7 +5061,7 @@
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "A shell app shows only while its server runs\n\nRequirements (Andy, goal/G27.9 chat, 2026-10-17):\nR1. A shell app manifest may name the server it needs. The shell shows that app only while that server is installed and running; when the server is uninstalled or stopped, the app is not offered.\nR2. The link lives on the app side only: no server manifest lists its shell apps, so the link cannot disagree with itself, and it still works once the server and its manifest are gone.\nR3. An app that names no server always shows, as today (contacts, files and the rest).\nR4. The shell names no app and no server: it reads the field from each manifest.\nR5. deskAgentRemote names no server: its deskAgent may run on a puppet, so a local check would hide it where it is needed (Andy, 2026-10-17). Chatter names chatClerver (folded in by Andy).\nOut of scope for this desk revision (Andy, 2026-10-17): offering an app wherever a reachable node (own, puppet, granted) runs its server.\n\nFrom the code (at 5c127aa1): an app manifest has only a fixed hidden flag (shell/desk/desk.json); the shell already knows the running servers from its job list and ties shell/<name> to process/js/<name> for the stream (js/client/shell.js, onPublishedFor). \n\nFiles (expected): spirit/run/js/client/shell.js (core: one grant), the manifests of the shell apps that need a server (desk, deskDetails, ruleDetails, deskAgentRemote), and a red suite.",
@@ -4991,6 +5086,15 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-17T01:44:09.386Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/client/shell.js",
+     "test": "",
+     "state": "open",
+     "by": "desk",
+     "at": "2026-10-17T02:56:52.907Z"
     }
    ],
    "chat": [
@@ -5234,28 +5338,26 @@
    "id": "goal/G27.17",
    "title": "deskAgent models travel as a bounded search",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -5263,17 +5365,113 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskAgent models travel as a bounded search\n\nWhy (Andy, goal/G27.15 chat, 2026-10-17): on Levant node the console says \"puppet stream: process/js/deskAgent not posted: too big to tunnel\". deskAgent publishes one state object holding the whole model list and up to 8 KB of log; a puppet object must fit one tunnelled packet (PAYLOAD_MAX 22528, sealed and base64, so about 15 KB of state). With the OpenAI pair in use the list is hundreds of models, and the post is refused.\n\nRequirements (Andy: \"populate the model selector using search always\"; \"add the item\"):\nR1. deskAgent published state carries no model list.\nR2. The Remote model picker is filled by a models search on deskAgent: the search box above the picker (goal/G27.8) is its text, the pressed filter icons its arguments.\nR3. The answer is a bounded bucket with a partial flag; when partial the picker says more models match and to narrow the search.\nR4. The loaded model always comes back, whatever the search.\nR5. The answer names which marks exist in the whole list, so the filter icons still show only what applies.\nR6. Cost, stated (rule/5): one ask per keystroke, through the owner door when the target is a puppet; nothing paced.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, spirit/run/shell/deskAgentRemote/deskAgentRemote.js, a red suite, and the deskAgent suites that read models from the state.",
-   "version": 1,
+   "box": "deskAgent models travel as a bounded search\n\nWhy (Andy, goal/G27.15 chat, 2026-10-17): on Levant node the console says \"puppet stream: process/js/deskAgent not posted: too big to tunnel\". deskAgent publishes one state object holding the whole model list and up to 8 KB of log; a puppet object must fit one tunnelled packet (PAYLOAD_MAX 22528, sealed and base64, so about 15 KB of state). With the OpenAI pair in use the list is hundreds of models, and the post is refused.\n\nRequirements (Andy: \"populate the model selector using search always\"; \"add the item\"):\nR1. deskAgent published state carries no model list, only the loaded model entry (small): the Remote reads it for the no-model-loaded warning, the load check and the chat title.\nR2. The Remote model picker is filled by a models search on deskAgent: the search box above the picker (goal/G27.8) is its text, the pressed filter icons its arguments.\nR3. The answer is a bounded bucket with a partial flag; when partial the picker says more models match and to narrow the search.\nR4. The loaded model always comes back, whatever the search.\nR5. The answer names which marks exist in the whole list, so the filter icons still show only what applies.\nR6. Cost, stated (rule/5): one ask per keystroke, through the owner door when the target is a puppet; nothing paced.\nR7. The search answer is bounded to what fits one tunnelled reply (about 15 KB), since a puppet answers through the owner door.\nDecided (Andy, 2026-10-17): the search, as specified, with the loaded model always part of the result; streaming picker items over the publish path is not used (the puppet stream keeps only the newest object per server).\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, spirit/run/shell/deskAgentRemote/deskAgentRemote.js, a red suite, and the deskAgent suites that read models from the state.",
+   "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:53:01.801Z",
+     "text": "cw, is this one ready to go? (PS i have levant connected for now, to see how it works out)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:53:25.132Z",
+     "text": "cw: almost; two points to add first. 1. The Remote reads the list in the state for more than the picker: the no-model-loaded warning, the load check, the chat title. So the state keeps the loaded model entry alone (small), and those read it. 2. The search answer is bounded to what fits one tunnelled reply, about 15 KB, since a puppet answers through the owner door.\nWrite both into the box, and it is ready? (Noted on Levant: with him connected the desk no longer waives for me alone.)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:54:41.817Z",
+     "text": "how about this:\n\ndeskAgent streams picker items to it's UI?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:55:01.367Z",
+     "text": "cw: not over the publish path as it is: a server publish is one newest object, and the puppet stream keeps only the newest object per server while one is in flight (puppetStream.js, \"a burst collapses\"), so streamed items would be dropped on the way to a puppet. Making it carry every item is a core change to the stream.\nThe search asks exactly what the picker shows and needs no core change, so I still recommend it. Keep the search, with the two points added?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:56:47.297Z",
+     "text": "cw. ok. lets stick to the search as you specified it, with the loaded model always being part of the result. can you update the box accordingly?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:57:09.870Z",
+     "text": "cw: box updated: R1 keeps only the loaded model entry in the state, R7 bounds the answer to one tunnelled reply, and your decision is recorded. Ready for your Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T02:59:04.075Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
