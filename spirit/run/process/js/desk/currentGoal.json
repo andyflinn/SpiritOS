@@ -1,5 +1,5 @@
 {
- "change": 68766,
+ "change": 69327,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -13,9 +13,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G29.6"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -46,12 +44,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1208,10 +1208,11 @@
    "id": "goal/G29.6",
    "title": "update peer search box, for use in contacts, chatter etc.",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29"
@@ -1221,21 +1222,112 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/chatter/chatter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/contacts/contacts.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/contactSelector.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/chatter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactSelector.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactSelectorPane.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contacts.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactsFilter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactsListSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceProof.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellElements.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/shellStreamSenders.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "5f80e46e",
+   "redCommit": "0eb570d1",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1269,11 +1361,11 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "The peer picker, contactSelector, becomes a thin wrapper around shellCreateListSearch (G29.4), for Contacts, chatter and every place a peer is picked.\n\nCOLUMNS\n- Fixed, always: ★ (the contact is my puppet: an owned contact, its signed card naming this node its owner, goal/G19.8), presence (green or white), the name.\n- Configurable: one status column, its icons from a little list [{status, iconKey}], the first the default.\n- A star says it all: the word \" — owned\" leaves the label. More is said by a tooltip on the star: this contact is your puppet, its card naming this node its owner.\n\nFILTERS\n- One filter per state, owned (★), blocked and held, each shown only when the list holds any contact in that state; each narrows the list to that state.\n\nWHAT THE ROWS CARRY\n- contact.search, a node verb, changes by Andy's grant of the changed verb: it answers each peer as {key: its public key, label: json {name, owned, blocked, held}}, so the star is drawn from the row.\n\nBEHAVIOUR BEYOND THE SHARED LIST\n- The app repaints one row when a peer's presence or status changes, without asking the server.\n\nONE BY ONE, STARTING WITH CONTACTS\n- This item is Contacts: the peer picker and hub's contact.search, ranked with the probability modules instead of the old search.\n- Everything else of the old search (relay's peer search, peerSearch.js, gradedSearch.js, bucket.js, searchBucket.js and its other server searches) is killed in this goal, one item each, after this one.\n\nOUT OF SCOPE FOR NOW\n- A puppet link in its row that opens a new window with a shell pointed at that puppet.\n\n",
-   "version": 9,
+   "box": "The peer picker, contactSelector, becomes a thin wrapper around shellCreateListSearch (G29.4), for Contacts, chatter and every place a peer is picked.\n\nCOLUMNS\n- Fixed, always: ★ (the contact is my puppet: an owned contact, its signed card naming this node its owner, goal/G19.8), presence (green or white), the name.\n- Configurable: one status column, its icons from a little list [{status, iconKey}], the first the default.\n- A star says it all: the word \" — owned\" leaves the label. More is said by a tooltip on the star: this contact is your puppet, its card naming this node its owner.\n\nFILTERS\n- One filter per state, owned (★), blocked and held, each shown only when the list holds any contact in that state; each narrows the list to that state.\n\nWHAT THE ROWS CARRY\n- contact.search, a node verb, changes by Andy's grant of the changed verb: it answers each peer as {key: its public key, label: json {name, owned, blocked, held}}, so the star is drawn from the row.\n- contact.search takes binary filters beside q: owned, blocked and held (yes: only those contacts); shell.js finds your puppets with owned: yes, and the picker's filters send them.\n\nEVERY LIST BEHAVES THE SAME\n- Contacts, chatter and every picker show all their rows, the matches on top; no list hides a row while words are typed.\n\nBEHAVIOUR BEYOND THE SHARED LIST\n- The app repaints one row when a peer's presence or status changes, without asking the server.\n\nONE BY ONE, STARTING WITH CONTACTS\n- This item is Contacts: the peer picker and hub's contact.search, ranked with the probability modules instead of the old search.\n- Everything else of the old search (relay's peer search, peerSearch.js, gradedSearch.js, bucket.js, searchBucket.js and its other server searches) is killed in this goal, one item each, after this one.\n\nOUT OF SCOPE FOR NOW\n- A puppet link in its row that opens a new window with a shell pointed at that puppet.\n\n",
+   "version": 11,
    "checks": [
     {
      "number": "Q1",
@@ -1285,6 +1377,35 @@
      "at": "2026-10-17T13:58:18.151Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/js/contactSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-17T14:25:30.541Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/js/contactSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-17T14:37:21.431Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "placedBy": "desk",
+     "placedKey": ""
     }
    ],
    "chat": [
@@ -1527,6 +1648,252 @@
      "key": "",
      "at": "2026-10-17T14:15:37.105Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:15:51.355Z",
+     "text": "Noted: I write the red at its Go and wait on each core grant as the commit hook asks for it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:18:53.043Z",
+     "text": "Mapped: only Contacts parses the label words; shell.js finds your puppets by searching the word owned, so it will ask the whole book and read owned from each row instead (shell.js is core: a grant).\nOne gap: by G4.13 each picker row is named by the contact-label element, which follows renames live; the shared list paints rows as html, so it needs an afterPaint(list) hook where the wrapper mounts those labels.\nThe other way, the row name as plain text, would show a rename only at the next search. Add the hook?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:20:29.946Z",
+     "text": "why would owned not be a binary filter, owned or not?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T14:20:30.661Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:21:15.913Z",
+     "text": "It should be: contact.search takes owned, blocked and held as yes-filters beside q; shell.js asks owned: yes for your puppets, and the picker's filters send them. In the box, as part of the verb change you granted.\nStill open: the afterPaint hook for the live contact labels?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:22:13.074Z",
+     "text": "i don't give a shit what breaks, this will be done RIGHT, and if other shit breaks, it should break. DAMMIT."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T14:22:13.956Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:22:27.471Z",
+     "text": "no fucking protecting old design."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T14:22:28.398Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:22:52.731Z",
+     "text": "Understood: no hook, no old label element in the rows. A row's name comes from the row; a rename is a publish on the node's stream, so the list asks again and the row comes back renamed, like every other change.\nWhatever breaks gets rewritten to the new shape. Writing the red now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:25:08.049Z",
+     "text": "commit 0eb570d16408a2280cd89df48bf66827b38680bf: goal/G29.6: the red for the peer picker on the shared list, Contacts first: json labels with owned, blocked and held, yes-filters, probability ranking\n- spirit/test/contactsListSearch.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:25:34.618Z",
+     "text": "deskVerify: red confirmed at 0eb570d1: spirit/test/contactsListSearch.js, spirit/test/shellStreamSenders.js. Beside it: spirit/test/chatter.js is already green; spirit/test/contactSelector.js is already green; spirit/test/contactSelectorPane.js is already green; spirit/test/contacts.js is already green; spirit/test/contactsFilter.js is already green; spirit/test/listSearch.js is already green; spirit/test/presenceProof.js is already green; spirit/test/shellElements.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T14:25:35.546Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:30:05.444Z",
+     "text": "Build under way: contact.search answers json labels with owned/blocked/held filters and probability ranking; shell.js finds puppets with owned: yes; contactSelector is a wrapper on the shared list; Contacts' book is that picker. The item's red is green (21/21).\nNow rewriting the seven older suites that tested the old selector and Contacts table to the new shape. index.html now loads listSearch.js before contactSelector.js (core: the grant covers it?)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:33:54.847Z",
+     "text": "One conflict for you: on the shared list chatter's pane shows every chat it holds, best matches on top (your Fallout rule); your G4.10 rule said typing a name lists only its chats, and a name with no chat lists nobody.\nWhich stands for the chat pane: all rows with matches on top, or only the matches while words are typed? I'd keep one rule for every list: all rows, best on top."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:36:02.620Z",
+     "text": "Built and staged: the item's red 22/22, and the older suites rewritten and green (Contacts 89, filter 4, presence 11, picker 19, elements 8, streams 20), except chatter's two checks that wait on your answer above.\nThe commit waits on one grant: index.html, which now loads listSearch.js before contactSelector.js. The grant request is under the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:37:49.133Z",
+     "text": "commit b1b707f7a876ecb1b7ee2595be497a4436f0336e: goal/G29.6: the peer picker on the shared list, Contacts first: contact.search answers json labels with owned, blocked and held filters, ranked by the probability modules; contactSelector wraps shellC\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/js/hub.js\n- spirit/run/js/server.js\n- spirit/run/shell/chatter/chatter.js\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/js/contactSelector.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/chatter.js\n- spirit/test/contactSelectorPane.js\n- spirit/test/contacts.js\n- spirit/test/contactsFilter.js\n- spirit/test/contactsListSearch.js\n- spirit/test/presenceProof.js\n- spirit/test/shellElements.js\n- spirit/test/shellStreamSenders.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:48:59.274Z",
+     "text": "contacts and chatter don't show a star next to Levant, who is my puppet."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:49:30.959Z",
+     "text": "Your node already answers Levant as {name: Levant, owned: true}, and serves the new picker, page and Contacts; so your open page still runs the scripts it loaded before.\nPlease reload the whole page (Ctrl+F5) and look again; if the star is still missing, say which: no star column at all, or Levant without one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:50:05.422Z",
+     "text": "and why on fucking earth are contacts showing in json format? HUH?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:50:29.288Z",
+     "text": "That is the old picker still loaded in your page drawing the node's new json labels as text; the new code reads name and owned out of them, and no screen prints the label raw any more.\nA full reload (Ctrl+F5) loads the new picker; if json still shows after it, tell me where and I fix it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:50:43.194Z",
+     "text": "WHY you didn't need json for the deskVerify search?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:50:59.263Z",
+     "text": "I did: deskVerify's search always answered each row's label as json ({suite, title, outcome, at}), and so did the desk's items.search; contact.search was the odd one, a plain text label with the state as a word.\nSo now every search answers alike, label = the row as json, which is what the shared list reads."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:51:42.404Z",
+     "text": "and WHY THE FUCK AM I SEEING JSON IN THESE FUCKING SEARCHES?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:53:06.791Z",
+     "text": "I opened 65432 fresh in a headless Chrome: Contacts lists bella, Cruella, Levant... as names, Levant with ⭐ and its tooltip, typing lev puts Levant on top, and no element on the page shows json.\nSo your tab runs the scripts it loaded before the update: close it and open 65432 again (or Ctrl+F5), and it will match."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:54:07.722Z",
+     "text": "and why don't i see the filters above the search bar?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:54:39.484Z",
+     "text": "In a fresh page they are there, above the search box: [all] [⭐ my puppets], since your book holds Levant; blocked and held show only when the book holds such a contact, and yours holds none.\nYour tab still runs the old picker, which has no filters: close it and open 65432 again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:56:53.283Z",
+     "text": "the lists look fine now. maybe i forgot to refresh. sorry.\n\nand the lists look all nice and pretty and the filter icon/buttons are all there."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:57:09.178Z",
+     "text": "Good. One answer left before I claim: in chatter's pane, while you type, all chats with the matches on top (as every list now), or only the matching chats (your G4.10 rule)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:58:01.324Z",
+     "text": "i noticed chatter won't show levant, probably a good idea."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:58:19.215Z",
+     "text": "The chat pane lists only peers you have a chat with, and there is none with Levant; the new-chat dropdown offers your whole book less blocked contacts, so Levant can be started from there.\nStill open: while typing, all chats with matches on top, or only the matches?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T14:59:01.523Z",
+     "text": "yep. every list behaves the same, that's NICE!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T14:59:50.100Z",
+     "text": "commit 5f80e46e52e35fd3deec1a29890b43aca354ac83: goal/G29.6: chatter's pane follows the shared list: every chat listed, the matches on top\n- spirit/test/chatter.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T14:59:58.786Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T15:00:36.394Z",
+     "text": "deskVerify: passed, at 5f80e46e (pulled). 10 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T15:03:10.432Z",
+     "text": "how many searches in node?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T15:03:42.270Z",
+     "text": "Eight search verbs in the node: contact.search (done in G29.6), relay.search, peer.search, fs.search, jobs.search, jobs.authSearch, owner.boxSearch, proxy.search; seven still on the old search.\nBeside them, the old searchBucket also answers inside includeList and introSpector, and in the servers chatClerver, desk, deskAgent and deskClient."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T15:04:45.916Z",
+     "text": "what does this list have to do with goal/G29.6?\n\ncontactsListSearch.js (the item's own test)\t22\ncontacts.js\t89\nchatter.js\t52\nshellStreamSenders.js\t20\nlistSearch.js\t19\ncontactSelectorPane.js\t19\npresenceProof.js\t11\nshellElements.js\t8\ncontactsFilter.js\t4"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T15:05:15.524Z",
+     "text": "They are the suites G29.6 changed: contactsListSearch.js is its own red; the other eight tested the old picker, the old Contacts table or contact.search's text labels, so they broke as you said they should and were rewritten to the new shape.\nThey are the item's file list, which is why deskVerify ran ten suites for it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T15:10:05.168Z",
+     "text": "apps, files, groups, jobs monitor and selector, natter, grants, relay monitor, they all have lists, that need fixing. i will take a break and then return to do just that. signoff."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T15:10:35.091Z",
+     "text": "Noted for your return: apps, files, groups, jobs monitor and selector, natter, grants and relay monitor lists onto the shared list, with the seven old node searches behind them. Enjoy the break."
     }
    ]
   }
