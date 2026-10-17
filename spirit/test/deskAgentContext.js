@@ -64,8 +64,10 @@ const ITEM_BOX = 'ITEM BOX: the context auto-built from the desk goal. The call 
 // contextLimit from the configuration file. ... that's a decision."); the window is sized to the context_length the
 // studio reports for the loaded model, which the fake studio below answers.
 const CONFIGURATION = { persona: 'Levant', preamble: PREAMBLE, model: 'fake/Levant-Test-GGUF', answerTokens: 25, bytesPerToken: 4 };
-const STUDIO_CONTEXT = 375;
-const PROMPT_ROOM = (STUDIO_CONTEXT - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken;
+// goal/G27.15: every call is sized to 95% of the context, so the studio reports 395 here, which leaves the window of
+// 1400 bytes this suite was written for: (floor(395 * 0.95) - 25) * 4.
+const STUDIO_CONTEXT = 395;
+const PROMPT_ROOM = (Math.floor(STUDIO_CONTEXT * 0.95) - CONFIGURATION.answerTokens) * CONFIGURATION.bytesPerToken;
 function filler(n) { let s = 'chat line ' + n + ' of the item, kept long enough that a few of them fill the window: '; while (s.length < 100) s += 'word '; return s.trim(); }
 
 const desk = { items: {} };

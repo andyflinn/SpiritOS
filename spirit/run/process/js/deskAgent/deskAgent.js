@@ -193,12 +193,29 @@ let studioContext = 0;
 // room is a bigger prompt, and a paid server bills more per answer.
 function contextLimit() {
   const have = readKnown();
+  let reported = studioContext > 0 ? studioContext : CONTEXT_FALLBACK;
   if (have && have.studio === false) {
     const chosen = MODEL || String(have.active || '');
     const entry = have.models.filter(function (m) { return m && m.id === chosen; })[0];
-    return entry && Number(entry.context) > 0 ? Number(entry.context) : CONTEXT_FALLBACK;
+    reported = entry && Number(entry.context) > 0 ? Number(entry.context) : CONTEXT_FALLBACK;
   }
-  return studioContext > 0 ? studioContext : CONTEXT_FALLBACK;
+  // LEARNED FROM A REFUSAL (goal/G27.15, R2): the smaller of what the server reports and what a refusal taught wins.
+  const learned = Number((learnedEntry() || {}).learnedContext) || 0;
+  return learned > 0 && learned < reported ? learned : reported;
+}
+// The model in use's entry in the pair in use's list, whatever its quantization.
+function learnedEntry() {
+  const have = readKnown();
+  const chosen = MODEL || String((have && have.active) || '');
+  return have && Array.isArray(have.models) ? have.models.filter(function (m) { return m && m.id === chosen && Number(m.learnedContext) > 0; })[0] || null : null;
+}
+// THE MARGIN (goal/G27.15, R1). Andy, 2026-10-17: "i wouldn't mind a safety margin, always used, maybe 95% or something,
+// that would avoid re-tries". Every call is sized to this share of the limit.
+const CONTEXT_MARGIN = 0.95;
+// Bytes per token: what a refusal taught this model (R2), else the configuration's.
+function bytesPerToken() {
+  const learned = Number((learnedEntry() || {}).bytesPerToken) || 0;
+  return learned > 0 ? learned : BYTES_PER_TOKEN;
 }
 // NEVER 0 (goal/G19.7): started on defaults (goal/G19.12) the answer had no room and the call asked for 0 tokens.
 const ANSWER_TOKENS_DEFAULT = 1024;
@@ -206,7 +223,7 @@ const ANSWER_TOKENS = Number(CONFIGURATION.answerTokens) > 0 ? Number(CONFIGURAT
 const BYTES_PER_TOKEN = Number(CONFIGURATION.bytesPerToken) || 4;
 // HIS FORMULA (goal/G10.3): the room for the whole prompt is what is left of the context once the answer has its
 // own, in bytes, at bytesPerToken each. A function since the limit may follow the studio.
-function promptRoom() { return Math.max(0, (contextLimit() - ANSWER_TOKENS) * BYTES_PER_TOKEN); }
+function promptRoom() { return Math.max(0, Math.floor((Math.floor(contextLimit() * CONTEXT_MARGIN) - ANSWER_TOKENS) * bytesPerToken())); }
 // WHETHER THE MODEL'S CONTEXT IS KNOWN (goal/G23.4): the studio's context_length once read, or a plain pair's entry
 // that gave one. Unknown, the tool loop has no bound and no tool result is cut for room: the server decides. The
 // window of chat lines a call is built with still uses promptRoom, the fallback included.
@@ -402,7 +419,7 @@ function studio(method, pathname, body, timeoutMs, conn, flight) {
       res.on('data', function (c) { raw += c; });
       res.on('end', function () {
         // The status rides on the error, so a 404 tells a plain OpenAI server from a studio (goal/G18.6).
-        const failed = function (text) { const e = new Error(text); e.status = res.statusCode; return e; };
+        const failed = function (text) { const e = new Error(text); e.status = res.statusCode; e.raw = raw; return e; };
         let got = null;
         try { got = JSON.parse(raw); } catch (e) { return reject(failed('the studio did not answer JSON at ' + pathname)); }
         if (res.statusCode >= 400) return reject(failed('the studio refused ' + pathname + ': ' + res.statusCode + ' ' + raw.slice(0, 120)));
@@ -721,8 +738,56 @@ function askModelRound(messages, list, round, flight, onTool) {
     // never sent silently as if complete".
     if (choice && choice.finish_reason === 'length') return content + TRUNCATED_MARK;
     return content;
+  }, function (e) {
+    // A REFUSAL FOR SIZE IS LEARNED AND ASKED AGAIN ONCE (goal/G27.15, R2 and R3). Andy, 2026-10-17: "the studio has
+    // 400 error messages that name two number, the limit and the size supplied that exceeds the limit, if thos can be
+    // mechanically extracted, then the lower number represents the limit". Any other refusal, or a second one, fails
+    // the turn as before (R4).
+    if (flight.sizeRetried || !learnFromRefusal(e, messages, body.model)) throw e;
+    flight.sizeRetried = true;
+    cutToFit(messages);
+    note(flight.from, 'reply', 'refused for size: learned the limit and bytes per token, asked again with the oldest lines cut');
+    return askModelRound(messages, list, round, flight, onTool);
   });
 }
+// What a 400 naming two numbers teaches (goal/G27.15, R2): the lower is the limit, the higher the tokens supplied; the
+// bytes deskAgent counted for the prompt over those tokens is this model's bytes per token. Both kept on the model's
+// entry in the pair in use's list (models.json). A refusal naming fewer than two numbers teaches nothing: false.
+function learnFromRefusal(e, messages, model) {
+  if (!e || e.status !== 400) return false;
+  const numbers = (String(e.raw || '').match(/\d+/g) || []).map(Number).filter(function (n) { return n >= 16; });
+  const distinct = numbers.filter(function (n, i) { return numbers.indexOf(n) === i; });
+  if (distinct.length < 2) return false;
+  const limit = Math.min.apply(null, distinct);
+  const supplied = Math.max.apply(null, distinct);
+  const sent = messages.reduce(function (sum, m) { return sum + messageBytes(m); }, 0);
+  if (!(supplied > 0) || !(sent > 0)) return false;
+  const have = readKnown();
+  if (!have || !Array.isArray(have.models)) return false;
+  const id = String(model || MODEL);
+  let hit = false;
+  const list = have.models.map(function (m) {
+    if (!m || m.id !== id) return m;
+    hit = true;
+    return Object.assign({}, m, { learnedContext: limit, bytesPerToken: Math.round((sent / supplied) * 100) / 100 });
+  });
+  if (!hit) return false;
+  writeKnown(Object.assign({}, have, { models: list }));
+  say(id + ' was refused for size: learned limit ' + limit + ' and ' + (Math.round((sent / supplied) * 100) / 100) + ' bytes per token');
+  return true;
+}
+// THE RETRY'S CUT (R3): the oldest messages after the system message go first, a tool result left without its call
+// with them, until the prompt fits the room now learned; the newest message always stays.
+function cutToFit(messages) {
+  const room = promptRoom() - ROOM_RESERVE;
+  const total = function () { return messages.reduce(function (sum, m) { return sum + messageBytes(m); }, 0); };
+  const first = messages.length && messages[0].role === 'system' ? 1 : 0;
+  while (total() > room && messages.length - first > 1) {
+    messages.splice(first, 1);
+    while (messages.length - first > 1 && messages[first].role === 'tool') messages.splice(first, 1);
+  }
+}
+
 const TRUNCATED_MARK = ' [truncated: the answer reached its length limit]';
 
 // ── THE STUDIO'S MODELS, AND A LOAD (goal/G14.4) ──────────────────────
@@ -811,6 +876,8 @@ function plainList(conn, name, got) {
     const id = String(m.id);
     const w = was[id] || {};
     const entry = { id: id, quant: '', loaded: id === chosen, bytes: 0, task: '', vision: false, reasoning: w.reasoning === true, audio: w.audio === true, recommended: w.recommended === true, tested: String(w.tested || '') };
+    // What a refusal taught it (goal/G27.15) is kept through a refresh, as its marks are.
+    if (Number(w.learnedContext) > 0) { entry.learnedContext = Number(w.learnedContext); entry.bytesPerToken = Number(w.bytesPerToken) || 0; }
     // The model's context as the server names it (goal/G14.11): max_input_tokens, or context_length; else none.
     const context = Number(m.max_input_tokens) > 0 ? Number(m.max_input_tokens) : Number(m.context_length) > 0 ? Number(m.context_length) : 0;
     if (context) entry.context = context;
@@ -865,6 +932,9 @@ function fetchModels(conn, name) {
                 audio: loaded ? st.is_audio === true : w.audio === true,
                 recommended: w.recommended === true,
                 tested: String(w.tested || ''),
+                // What a refusal taught it (goal/G27.15), kept through a refresh.
+                learnedContext: Number(w.learnedContext) || 0,
+                bytesPerToken: Number(w.bytesPerToken) || 0,
               });
             });
           });
