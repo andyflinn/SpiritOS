@@ -1,5 +1,5 @@
 {
- "change": 68084,
+ "change": 68086,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -7,17 +7,17 @@
    "id": "goal/G27",
    "title": "Desk Fixes: Current round.",
    "goal": "",
-   "status": "goal run passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done",
-    "close"
+    "close",
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "codeOffered": false,
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -730,7 +730,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G27.14"
+    "goal/G27"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -1083,7 +1083,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G27.14"
+    "goal/G27"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -1877,7 +1877,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G27.14"
+    "goal/G27"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -5886,10 +5886,9 @@
    "id": "goal/G27.14",
    "title": "new desk app plugin: \"Fallout\"",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
