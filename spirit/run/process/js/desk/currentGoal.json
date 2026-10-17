@@ -1,5 +1,5 @@
 {
- "change": 66048,
+ "change": 66101,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -19,7 +19,8 @@
     "goal/G27.3",
     "goal/G27.5",
     "goal/G27.14",
-    "goal/G27.15"
+    "goal/G27.15",
+    "goal/G27.17"
    ],
    "go": false,
    "alone": false,
@@ -4591,23 +4592,21 @@
    "id": "goal/G27.15",
    "title": "deskAgent learns a model context from a refusal",
    "goal": "goal/G27",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
     "goal/G27"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -4620,17 +4619,157 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskAgent learns a model context from a refusal\n\nRequirements (Andy, goal/G27.8 chat, 2026-10-17):\nR1. When the host refuses a call with a 400 whose text names the context or its length, deskAgent remembers the smaller size for that model on that pair, and every later call to it is sized to it.\nR2. That same call is asked again once, with the oldest chat lines and the oldest tool results cut until it fits the smaller size. A second refusal fails the turn as today.\nR3. Any other 400 fails the turn as today: nothing cut, nothing retried.\n\nFrom the code (deskAgent.js at a2671faa): the room is the context the studio reports for the loaded model, or a plain pair entry context, else 8192; a refused call ends the turn as \"the answer failed\" in the test tab log.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js and a red suite.",
-   "version": 1,
+   "box": "deskAgent learns a model context from a refusal\n\nRequirements (Andy, goal/G27.8 and goal/G27.15 chat, 2026-10-17):\nR1. Every call to the model is sized to 95% of its limit, always: a safety margin so that most refusals never happen.\nR2. When the host refuses a call with a 400 whose text names two numbers (the limit, and the size supplied that exceeds it), deskAgent learns two things for that model on that pair: its limit, the lower number; and its bytes per token, the bytes it sent divided by the higher number. Both are kept on the model entry in that pair list (models.json) and used for every later call; where the studio reports its own context_length on a refresh, the smaller of reported and learned is the limit.\nR3. That same call is asked again once, with the oldest chat lines and the oldest tool results cut until it fits the learned size. A second refusal fails the turn as today.\nR4. Any other 400, or one that names fewer than two numbers, fails the turn as today: nothing learned, nothing cut, nothing retried.\n\nFrom the code (deskAgent.js at 5c127aa1): the room is the context the studio reports for the loaded model (api/inference/status, context_length), or a plain pair entry context, else 8192; the prompt is sized in bytes at bytesPerToken from the configuration (4 by default); a refused call ends the turn as \"the answer failed\" in the test tab log.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js and a red suite.",
+   "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:23:21.413Z",
+     "text": "is this item ready to go, or does it need revision?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:23:47.396Z",
+     "text": "cw: one revision first. R1 says \"remembers the smaller size\", but the box does not say which size: an OpenAI refusal names the limit in its text, a studio refusal may not. My proposal: the number the refusal names; else three quarters of the size that was refused.\nAnd where it lives: on the model entry in that pair list (models.json), and the smaller of learned and reported wins, since the studio reports its size again on every refresh.\nAccept both, and it is ready to go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:25:57.821Z",
+     "text": "the studio has 400 error messages that name two number, the limit and the size supplied that exceeds the limit, if thos can be mechanically extracted, then the lower number represents the limit....\n\nis there no API verb that can retrieve the limit?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:26:21.632Z",
+     "text": "cw: yes, the lower of the two numbers is the limit, mechanically. And the studio does have the verb: deskAgent already reads context_length from api/inference/status. So on the studio the limit is known; a 400 there means deskAgent counted the prompt too small: it sizes by bytes at a fixed 4 bytes per token.\nSo the refusal teaches the real ratio: the bytes it sent divided by the larger number (the tokens supplied) is that model bytes per token. Revise R1 to learn the limit (lower number) and that ratio, per model, and use both?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:28:00.695Z",
+     "text": "i wouldn't mind a safety margin, always used, maybe 95% or something, that would avoid re-tries, if the number was sensible?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:28:18.270Z",
+     "text": "cw: sensible: a fixed margin makes most retries unnecessary, and the learned ratio catches the rest. So, all together: every call is sized to 95% of the limit; a refusal naming two numbers teaches that model its limit (the lower) and its bytes per token (bytes sent over the higher), kept on its entry in models.json; then one retry with the oldest lines cut, as R2 says.\nShall I write that into the box, and then it is ready for your Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:29:23.762Z",
+     "text": "ok. lets specified it like that in the box, then i press go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:29:52.568Z",
+     "text": "cw: specified in the box as agreed: the 95% margin, learning the limit and bytes per token from a two-number refusal, one retry with the oldest lines cut, any other 400 as today. Ready for your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:30:14.603Z",
+     "text": "also, i keep getting this console error on levant's node....\n\npuppet stream: process/js/deskAgent not posted: too big to tunnel — this packet would not fit if carried to a partner\npuppet stream: process/js/deskAgent not posted: too big to tunnel — this packet would not fit if carried to a partner\npuppet stream: process/js/deskAgent not posted: too big to tunnel — this packet would not fit if carried to a partner"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:30:51.108Z",
+     "text": "cw: cause: deskAgent publishes one state object holding the whole model list and up to 8 KB of log. With the OpenAI pair in use that list is hundreds of models, and a puppet object must fit a tunnelled packet (22 KB, sealed and base64, so about 15 KB of state); it does not, so the post is refused. With the studio pair now it is 3 KB and passes.\nThe fix, by your no-lists rule: the state carries no model list; the picker asks a bucket-bounded models search (with its partial flag, the search box typed into it). Outside this item: add it as \"deskAgent models travel as a bounded search, not in its state\"?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:33:29.072Z",
+     "text": "so the solution is to populate the model selector using \"search\" always. That wouldn't bother me at all.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:33:48.304Z",
+     "text": "cw: agreed, it fits what is there: the search box above the picker (G27.8) becomes the query, the filter icons its arguments, and deskAgent answers a bounded bucket with a partial flag (\"more match: narrow the search\"); the loaded model always comes back, and the answer names which marks exist in the whole list, so the icons still show only what applies.\nCost, stated: one ask per keystroke, through the owner door when the target is a puppet; nothing paced. Add it as an item with that shape?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:34:46.848Z",
+     "text": "add the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:35:17.378Z",
+     "text": "cw: added as goal/G27.17, deskAgent models travel as a bounded search, with its box written. It waits on your Go, as G27.15 does."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T02:35:44.950Z",
+     "text": "is this item green now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T02:36:02.380Z",
+     "text": "cw: green: settled, nothing open, box current (v2). Ready for your Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T02:36:16.532Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G27.16",
@@ -5003,6 +5142,51 @@
      "text": "deskVerify: passed, at 293cfdbc (pulled). 1 suite ran green."
     }
    ]
+  },
+  {
+   "id": "goal/G27.17",
+   "title": "deskAgent models travel as a bounded search",
+   "goal": "goal/G27",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G27"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskAgent models travel as a bounded search\n\nWhy (Andy, goal/G27.15 chat, 2026-10-17): on Levant node the console says \"puppet stream: process/js/deskAgent not posted: too big to tunnel\". deskAgent publishes one state object holding the whole model list and up to 8 KB of log; a puppet object must fit one tunnelled packet (PAYLOAD_MAX 22528, sealed and base64, so about 15 KB of state). With the OpenAI pair in use the list is hundreds of models, and the post is refused.\n\nRequirements (Andy: \"populate the model selector using search always\"; \"add the item\"):\nR1. deskAgent published state carries no model list.\nR2. The Remote model picker is filled by a models search on deskAgent: the search box above the picker (goal/G27.8) is its text, the pressed filter icons its arguments.\nR3. The answer is a bounded bucket with a partial flag; when partial the picker says more models match and to narrow the search.\nR4. The loaded model always comes back, whatever the search.\nR5. The answer names which marks exist in the whole list, so the filter icons still show only what applies.\nR6. Cost, stated (rule/5): one ask per keystroke, through the owner door when the target is a puppet; nothing paced.\n\nFiles (expected): spirit/run/process/js/deskAgent/deskAgent.js, spirit/run/shell/deskAgentRemote/deskAgentRemote.js, a red suite, and the deskAgent suites that read models from the state.",
+   "version": 1,
+   "checks": [],
+   "chat": []
   }
  ]
 }
