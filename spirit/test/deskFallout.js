@@ -50,7 +50,7 @@ async function startNode() {
         if (j && j.ask && j.ask.deskVerify) {
           const verb = Object.keys(j.ask.deskVerify)[0];
           verifyAsks.push([verb, j.ask.deskVerify[verb] || {}]);
-          out = verb === 'search' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false } : { ok: false, code: 'no-such-verb', error: 'no such verb' };
+          out = verb === 'search' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false, total: (j.ask.deskVerify.search || {}).outcome === 'green' ? 340 : 12 } : { ok: false, code: 'no-such-verb', error: 'no such verb' };
         }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
@@ -106,6 +106,13 @@ async function serverHalf() {
   const a4 = verifyAsks[verifyAsks.length - 1] || [];
   if (a3[1] && a3[1].outcome === 'green' && a4[1] && !a4[1].outcome) test.check('the outcome asked is green, red, or both');
   else test.fail(OWED + 'outcome filter asked ' + short([a3, a4]));
+  // THE SIZE OF THE PROBLEM (Andy, 2026-10-17: "i would like to know much more: how many red in total
+  // (size-of-problem-info)"): how many tests are red now, and how many green, whatever the search.
+  const before7 = verifyAsks.length;
+  const sum = await call('fallout.summary', {});
+  const asked7 = verifyAsks.slice(before7).map(function (x) { return x[1]; });
+  if (tree['fallout.summary'] && sum.red === 12 && sum.green === 340 && asked7.some(function (a) { return a.outcome === 'red' && a.current === 'yes' && !a.test && !a.suite; }) && asked7.some(function (a) { return a.outcome === 'green' && a.current === 'yes'; })) test.check('fallout.summary answers how many tests are red and green now: ' + sum.red + ' and ' + sum.green);
+  else test.fail(OWED + 'fallout.summary answered ' + short(sum) + ', asking ' + short(asked7));
   // F6: the history of one tested thing, through the plugin's verb.
   const h = await call('fallout.history', { suite: 'zzFalloutA.js', heading: 'the relay answers its key' });
   const a5 = verifyAsks[verifyAsks.length - 1] || [];
@@ -234,6 +241,7 @@ async function paneHalf() {
     // Three checks under one sub-heading (the RED among them, the newest) and one under another: two tested things.
     ask: function (verb, a) {
       asked.push([verb, a]);
+      if (verb === 'fallout.summary') return Promise.resolve({ red: 12, green: 340 });
       if (verb !== 'fallout.reds') return Promise.resolve({});
       const more = [
         { suite: 'zzFalloutA.js', title: 'the relay answers its key #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T08:00:00.000Z', failure: '' },
@@ -246,6 +254,10 @@ async function paneHalf() {
   });
   await sleep(20);
   const all = function () { return box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); };
+  // THE SIZE OF THE PROBLEM, shown on opening, whatever the search: how many red, of how many tests.
+  const sumText = doc.getElementById('fallout-summary').textContent;
+  if (asked.some(function (x) { return x[0] === 'fallout.summary'; }) && /12/.test(sumText) && /352/.test(sumText)) test.check('on opening it says how many are red now, of all: ' + sumText);
+  else test.fail(OWED + 'the summary reads ' + short(sumText) + ', asked ' + short(asked.map(function (x) { return x[0]; })));
   if (/data-fallout-tab="reds"[^>]*>Reds</.test(all()) && /data-fallout-tab="items"[^>]*>Items</.test(all())) test.check('two inner tabs, Reds and Items');
   else test.fail(OWED + 'the pane shows ' + short(all()));
   if (/id="fallout-text"/.test(all()) && /id="fallout-search"/.test(all())) test.check('Reds holds a search box and its button');
