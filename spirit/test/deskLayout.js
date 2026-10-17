@@ -152,9 +152,9 @@ settle().then(function () {
   // deskFrontPage.js asserts them on the List tab).
   test.subHeading('T14: the tab row is one row on every tab');
   const tabTo = function (name) { tabs.fire('click', { target: clickTarget(tabs, { 'data-tab': name }), currentTarget: tabs }); return tabs.innerHTML; };
-  const rows = [tabTo('list'), tabTo('musings'), tabTo('team')];
+  const rows = [tabTo('list'), tabTo('rules'), tabTo('team')];
   // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13); the one row holds Apps where Team stood.
-  if (rows.every(function (h) { return /data-tab="apps"/.test(h) && !/data-agent=/.test(h); })) test.check('List, Musings, Team under Apps: the one tab row, no agent tab on any');
+  if (rows.every(function (h) { return /data-tab="apps"/.test(h) && !/data-agent=/.test(h); })) test.check('List, Rules, Team under Apps: the one tab row, no agent tab on any');
   else test.fail(OWED + 'the tab row across the tabs: ' + JSON.stringify(rows.map(function (h) { return h.slice(0, 80); })));
 
   test.subHeading('T2: design mode ends only on the second press');
@@ -200,12 +200,13 @@ settle().then(function () {
   test.subHeading('T6: chat boxes take several lines, and Return sends nothing');
   const shell = root.innerHTML;
   const say = doc.getElementById('desk-team-say');
-  const areas = ['desk-team-say', 'desk-muse'].filter(function (id) { return new RegExp('<textarea[^>]*id="' + id + '"').test(shell); });
+  // The Musings box went with goal/G27.3; the Team box is the face's own chat textarea.
+  const areas = ['desk-team-say'].filter(function (id) { return new RegExp('<textarea[^>]*id="' + id + '"').test(shell); });
   posted.length = 0;
   say.value = 'first thought';
   say.fire('keydown', { key: 'Enter', repeat: false, preventDefault: function () {} });
   return settle().then(function () {
-    if (areas.length === 2 && posted.length === 0) test.check('the Team and Musings boxes are textareas; Return in one sent nothing');
+    if (areas.length === 1 && posted.length === 0) test.check('the Team box is a textarea; Return in it sent nothing');
     else test.fail(OWED + 'textareas ' + JSON.stringify(areas) + ', sent on Return ' + posted.length);
   });
 }).then(function () {

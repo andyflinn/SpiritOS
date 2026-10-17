@@ -398,7 +398,7 @@ function deskAgentProfileSave() {
   }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 
-// Drawn whole, as markup: List | Apps | Rules | Musings, then the bubbles. SINCE goal/G22.3 Team is Apps' first inner
+// Drawn whole, as markup: List | Apps | Rules, then the bubbles (Musings went with goal/G27.3, for Vision under Apps). SINCE goal/G22.3 Team is Apps' first inner
 // tab (Andy, 2026-10-13: "Team (today's Team tab, moved into Apps as its first special goal)"); Apps stands where Team
 // stood and shows as on while any of its inner tabs does. The inner row is drawn with it.
 function deskDrawTabs() {
@@ -411,11 +411,12 @@ function deskDrawTabs() {
     deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
     deskTabButton('data-tab="apps"', deskIsAppTab(deskTab), 'Apps') +
     deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
-    deskTabButton('data-tab="musings"', deskTab === 'musings', 'Musings') +
-    // RIGHT AFTER MUSINGS, AND ONLY WHERE ONE RUNS (goal/G8.11): his words were "right after [musings]", and the tab
+    // THE MUSINGS TAB STOOD HERE, and went with goal/G27.3 (R1, Andy: "musings" tab replaced by desk-app "vision"):
+    // his thoughts for later are the Vision tab under Apps now, item by item, each with its chat.
+    // WHERE MUSINGS STOOD, AND ONLY WHERE ONE RUNS (goal/G8.11): his words were "right after [musings]", and the tab
     // is absent on a node with no deskVerify, as the backup bubble is.
     (deskVerifier ? deskTabButton('data-tab="verifier"', deskTab === 'verifier', 'Verifier') : '') +
-    // ON EVERY TAB, RIGHT AFTER MUSINGS (goal/G9.8). Andy: "The [Start/End design] buttons should be displayed always,
+    // ON EVERY TAB, WHERE MUSINGS STOOD (goal/G9.8). Andy: "The [Start/End design] buttons should be displayed always,
     // not only when the team tab is active, and it should be placed right after the [Musings] tab header". Still its
     // own colour, so it looms (Andy, earlier: "so it loooms over the proceedings").
     '<button type="button" id="desk-end-design"' + (design ? '' : ' hidden') +
@@ -898,24 +899,6 @@ function deskLineHtml(m) {
   return out.join('<br>').replace(/<br>(<ul)/g, '$1').replace(/(<\/ul>)<br>/g, '$1');
 }
 
-// ── MUSINGS: HIS THOUGHTS FOR LATER, NOT A CONVERSATION ─────────────
-//
-// Andy: "now i need something that lets me pipe stuff to voice.jsonl
-// bypassing scoreboard issues", "ideas deferred to close-time". So a
-// musing belongs to no row and expects no reply: kind `musing`, sent to
-// the lead, listed here in order, and gone through with him at close.
-function deskMusings() {
-  var lines = deskMessages.filter(function (m) { return m.dir === 'out' && m.kind === 'musing'; });
-  if (!lines.length) return '<div class="job-manifest-note">Nothing logged yet. What you write here waits for close time; nobody answers it now.</div>';
-  // EACH MUSING A BUBBLE (goal/G6.3). Andy, FACE.md: "each musing in the log should be in a separate bubble, possibly
-  // with the same background color as the header area." and "vertical spacing between input text area and each bubble
-  // in the log: 1em". The header area's background is #desk-bars' (#1a1a2e); 1em above every bubble.
-  return lines.slice().reverse().map(function (m) {
-    return '<div style="margin-top:1em;padding:6px 10px;background:#1a1a2e;border-radius:var(--spirit-radius,8px)">' +
-      '<span class="job-manifest-note">' + deskTime(m.at) + '</span> ' + deskLineHtml(m) + '</div>';
-  }).join('');
-}
-
 // ── TEAM: THE GROUP CHAT, ANDY AND EVERY AGENT ──────────────────────
 //
 //   Andy, 2026-09-27: "so one more chat we need in the tabs, that's
@@ -1078,28 +1061,6 @@ function deskStartDesign() { var g = deskGoalRow(); deskPress(g && g.status !== 
 // key auto-repeat is ignored, and a box with a send in flight sends nothing
 // more until it settles.
 var deskSending = Object.create(null);
-// To the agent named, or to the lead.
-// A MUSING NEEDS NO LEAD (desk/G3.9). Andy: "Why would it require a lead to
-// update my musings?" It goes to the desk server alone, into its log
-// (deskRecord); no agent is sent anything.
-function deskMuse() {
-  var box = document.getElementById('desk-muse');
-  var err = document.getElementById('desk-muse-error');
-  var said = box ? String(box.value || '').trim() : '';
-  if (!said || deskSending['desk-muse']) return;
-  // A MUSING SAYS WHAT IT IS. Andy: "\"note to self: \" should be a prefix in
-  // the musings chat". Added once, and never twice when he types it himself.
-  if (!/^note to self:/i.test(said)) said = 'note to self: ' + said;
-  deskSending['desk-muse'] = true;
-  var line = deskOutgoing('', { from: 'andy', kind: 'musing', text: said }, { ok: true });
-  deskRecord([line]).then(function (kept) {
-    deskSending['desk-muse'] = false;
-    // Only a kept musing leaves the box; an unkept one stays for him to log again.
-    if (!kept) { if (err) err.textContent = 'Not kept: the desk server did not take it.'; return; }
-    box.value = '';
-    if (err) err.textContent = '';
-  });
-}
 // HIS DIRECT LINE TO ONE AGENT STOOD HERE (deskSend, with the desk's busy reply of goal/G2.5) and went with
 // goal/G3.12: the page posts no agents packet any more. What he says to the team is one chat.add on the group
 // chat (deskGroupSay); what he says about an item goes under the item. The desk server answers a line to a busy
@@ -1114,8 +1075,6 @@ function deskDraw() {
   deskDrawGoAll();
   var el = document.getElementById('desk-top');
   if (!el) return;
-  var musings = document.getElementById('desk-musings');
-  if (musings) musings.innerHTML = deskMusings();
   var backup = document.getElementById('desk-backup');
   if (backup) backup.innerHTML = deskBackupHtml();
   var team = document.getElementById('desk-team');
@@ -1246,7 +1205,6 @@ function deskLoad() {
     deskAsk('seen.get', {}).then(function (r) { seenRaw = r.json || ''; }, function () { seenRaw = ''; }),
     deskSearch({ todo: DESK_TEAM }).then(function (r) { deskTake(r.lines); }),
     deskAskGroup(),
-    deskSearch({ kind: 'musing' }).then(function (r) { deskTake(r.lines); }),
     deskSearch({ todo: '-' }).then(function (r) { deskTake(r.lines); }),
     deskAskBackup(),
   ];
@@ -1640,13 +1598,6 @@ spirit.shell.activateApp({
           '<div id="desk-rule-error" class="job-start-error"></div>' +
           '<div id="desk-rule-list"></div>' +
         '</div></div>' +
-        '<div data-pane="musings" hidden>' +
-          '<div class="start-job-form card"><label class="field-label grow">Muse' +
-            '<textarea id="desk-muse" rows="3" placeholder="a thought for later; nobody answers it now"></textarea></label>' +
-          '<button type="button" id="desk-muse-send">Log</button></div>' +
-          '<div id="desk-muse-error" class="job-start-error"></div>' +
-          '<div class="stat-tile wide"><div class="label">Musings, for close time, newest first</div><div id="desk-musings"></div></div>' +
-        '</div>' +
         // THE VERIFIER TAB'S PANE (goal/G8.11): #desk-verifier takes the whole body and every click in it.
         '<div data-pane="verifier" hidden><div id="desk-verifier"></div></div>' +
         // AN AGENT'S SCOPE (goal/G4.23), opened from its bubble.
@@ -1816,7 +1767,6 @@ spirit.shell.activateApp({
       }, function (e) { deskVerifyNote = 'Not verified again: ' + ((e && e.message) || e); deskDrawVerifier(); });
     });
     document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
-    document.getElementById('desk-muse-send').addEventListener('click', deskMuse);
     document.getElementById('desk-team-send').addEventListener('click', deskGroupSay);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {

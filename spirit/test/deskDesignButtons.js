@@ -24,7 +24,8 @@ const kernel = require('../run/js/kernel.js');
 
 const OWED = 'OWED by goal/G9.8: ';
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
-const TABS = ['list', 'team', 'rules', 'musings'];
+// The Musings tab went with goal/G27.3; the design button stands where it stood, right after Rules.
+const TABS = ['list', 'team', 'rules'];
 
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }
@@ -91,16 +92,16 @@ test.startTest('goal/G9.8: the design button is always in the tab row, and the y
     } else test.fail(OWED + 'on the ' + name + ' tab: ' + short({ end: tagOf(html, 'desk-end-design'), start: tagOf(html, 'desk-start-design') }));
   }
 
-  test.subHeading('2. it sits right after the Musings tab button');
+  test.subHeading('2. it sits where the Musings tab stood: right after the Rules tab button (goal/G27.3)');
   const html = await open('list');
-  const musings = html.indexOf('data-tab="musings"');
+  const musings = html.indexOf('data-tab="rules"');
   const design = Math.min.apply(null, ['desk-end-design', 'desk-start-design'].map(function (id) {
     const at = html.indexOf('id="' + id + '"');
     return at === -1 ? Number.MAX_SAFE_INTEGER : at;
   }));
   const bubbles = html.indexOf('data-bubble=');
   if (musings !== -1 && design > musings && (bubbles === -1 || design < bubbles)) {
-    test.check('the design button comes after the Musings tab and before the agent bubbles');
+    test.check('the design button comes after the Rules tab and before the agent bubbles');
   } else test.fail(OWED + 'in the tab row: ' + short({ musingsAt: musings, designAt: design === Number.MAX_SAFE_INTEGER ? -1 : design, bubblesAt: bubbles }));
 
   test.subHeading('3. which of the two shows still follows design mode');

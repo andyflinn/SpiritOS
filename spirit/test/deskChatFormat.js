@@ -149,7 +149,6 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   const direct = doc.getElementById('desk-team').innerHTML;
   report(checks('agent tab', direct), direct);
 
-  test.subHeading('Desk, Musings');
-  const musings = doc.getElementById('desk-musings').innerHTML;
-  report(checks('Musings', musings), musings);
+  // DESK, MUSINGS STOOD HERE: the tab went with goal/G27.3 (Andy: "musings" tab replaced by desk-app "vision");
+  // a vision item's chat is drawn by the shared chat element, as every item chat.
 })().catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });

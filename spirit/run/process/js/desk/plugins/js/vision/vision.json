@@ -1,0 +1,7 @@
+{
+  "label": "Vision",
+  "tab": "Vision",
+  "description": "Andy's vision, item by item (goal/G27.3): it replaces the musings tab. Its goal stays in design mode at all times; its items offer Rename, Close and Delete and keep blocking, and never take Go, Done, a code mark or a claim. Each item's chat is the record of the conversation about it.",
+  "kind": "deskPlugin",
+  "goal": "Vision"
+}

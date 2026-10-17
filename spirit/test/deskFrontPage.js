@@ -117,14 +117,15 @@ test.startTest('goal/G3.12: the front page — agent bubbles beside the tabs, Te
   await settled();
   const t0 = p.tabs();
   // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13), so the row holds Apps where Team stood.
-  const threeTabs = /data-tab="list"/.test(t0) && /data-tab="apps"/.test(t0) && /data-tab="musings"/.test(t0);
+  // Since goal/G27.3 the Musings tab is gone (Vision is under Apps): List, Apps and Rules.
+  const threeTabs = /data-tab="list"/.test(t0) && /data-tab="apps"/.test(t0) && /data-tab="rules"/.test(t0) && !/data-tab="musings"/.test(t0);
   const cw = bubble(t0, 'claude-windows');
   const wsl = bubble(t0, 'wsl-claude');
-  if (threeTabs && cw && wsl) test.check('List, Apps, Musings, then a bubble for each live agent, drawn on the List tab');
+  if (threeTabs && cw && wsl) test.check('List, Apps, Rules, then a bubble for each live agent, drawn on the List tab');
   else test.fail(OWED + 'the tab row: ' + JSON.stringify(t0.slice(0, 400)));
   if (wsl && /data-working="1"/.test(wsl) && cw && !/data-working="1"/.test(cw)) test.check('the working agent\'s bubble carries data-working="1", the other\'s does not');
   else test.fail(OWED + 'working marks: wsl ' + JSON.stringify(wsl) + ', cw ' + JSON.stringify(cw));
-  const tabOrder = t0.indexOf('data-tab="musings"') < t0.indexOf('data-bubble=');
+  const tabOrder = t0.indexOf('data-tab="rules"') < t0.indexOf('data-bubble=');
   if (tabOrder) test.check('the bubbles come after the three tab buttons');
   else test.fail(OWED + 'a bubble is drawn before the tab buttons');
   p.publish({ change: 20, verb: 'agent.state', item: JSON.parse(goalRow({ working: ['claude-windows'] })) });

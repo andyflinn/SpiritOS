@@ -97,11 +97,11 @@ test.startTest('goal/G6.5: the Rules tab: new rule, search with seven toggles, t
   const d = mount();
   await settled();
 
-  test.subHeading('1. a Rules tab between Team and Musings');
+  test.subHeading('1. a Rules tab after Apps, and no Musings since goal/G27.3');
   const tabs = d.doc.getElementById('desk-tabs').innerHTML;
   const at = function (t) { return tabs.indexOf('data-tab="' + t + '"'); };
   // Since goal/G22.3: Team is Apps' first inner tab (Andy, 2026-10-13), and Apps stands where Team stood.
-  if (at('rules') !== -1 && at('apps') !== -1 && at('apps') < at('rules') && at('rules') < at('musings')) test.check('#desk-tabs holds data-tab="rules" between apps and musings');
+  if (at('rules') !== -1 && at('apps') !== -1 && at('apps') < at('rules') && at('musings') === -1) test.check('#desk-tabs holds data-tab="rules" after apps, and no musings tab');
   else test.fail(OWED + 'tab positions: apps ' + at('apps') + ', rules ' + at('rules') + ', musings ' + at('musings'));
   const tabsEl = d.doc.getElementById('desk-tabs');
   tabsEl.fire('click', { target: target({ 'data-tab': 'rules' }), currentTarget: tabsEl });
