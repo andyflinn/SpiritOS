@@ -1,5 +1,5 @@
 {
- "change": 65835,
+ "change": 65836,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -50,7 +50,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 8,
    "excluded": [
     "ollama agent node"
    ],
@@ -382,10 +382,9 @@
    "id": "goal/G27.10",
    "title": "Chat posts follow the address, not the newest line",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
