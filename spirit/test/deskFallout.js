@@ -408,8 +408,12 @@ async function paneHalf() {
   else test.fail(OWED + 'the pane matched its cache without probabilityStringMatch');
   if (paneBuckets.length > 0 && paneBuckets.every(function (b) { return b.capacity === Infinity && b.serialized && b.ceiling === 0; })) test.check('the pane ranks its cache in an unbounded bucket (Infinity), serialized with no ceiling');
   else test.fail(OWED + 'the pane made buckets ' + short(paneBuckets));
-  if (/a door stays shut/.test(cachedTable) && !/the relay answers its key/.test(cachedTable)) test.check('a search shows what matches its term among every line any search brought');
-  else test.fail(OWED + 'after searching door the table reads ' + short(cachedTable));
+  // ALL ROWS, BEST ON TOP (Andy, 2026-10-17: "that way you can display ALL rows since the best maches will always be on
+  // top.."): the words rank the cached lines; a line they do not match still shows, below.
+  const doorAt = cachedTable.indexOf('a door stays shut');
+  const relayAt = cachedTable.indexOf('the relay answers its key');
+  if (doorAt !== -1 && relayAt > doorAt) test.check('a search shows every cached line, the one its term matches on top');
+  else test.fail(OWED + 'after searching door: door at ' + doorAt + ', relay at ' + relayAt + ' in ' + short(cachedTable));
   // AS TYPED (Andy, 2026-10-17: "so why doesn't the fallout list update with each character typed or erased in the
   // search box?"): every character typed or erased redraws the list from the cache at once, no click, no wait.
   const typeIn = function (v) { doc.getElementById('fallout-text').value = v; box.fire('input', { target: { id: 'fallout-text', getAttribute: function () { return null; } } }); };
@@ -417,7 +421,7 @@ async function paneHalf() {
   const typedRelay = doc.getElementById('fallout-reds').innerHTML;
   typeIn('');
   const typedEmpty = doc.getElementById('fallout-reds').innerHTML;
-  if (/the relay answers its key/.test(typedRelay) && !/a door stays shut/.test(typedRelay)) test.check('typing "relay" redraws the list at once to its cached matches');
+  if (typedRelay.indexOf('the relay answers its key') !== -1 && typedRelay.indexOf('a door stays shut') > typedRelay.indexOf('the relay answers its key')) test.check('typing "relay" redraws the list at once, its cached matches on top, the rest below');
   else test.fail(OWED + 'after typing relay the list reads ' + short(typedRelay));
   if (/the relay answers its key/.test(typedEmpty) && /a door stays shut/.test(typedEmpty)) test.check('erasing it redraws the list at once to every cached line');
   else test.fail(OWED + 'after erasing the list reads ' + short(typedEmpty));
