@@ -153,6 +153,10 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   const html2 = box2.innerHTML;
   const inside = html2.indexOf('id="' + popup.id + '"');
   const sameRows = inside !== -1 && html2.indexOf(el2.filters.id) > inside && html2.indexOf(el2.text.id) > html2.indexOf(el2.filters.id) && html2.indexOf(el2.list.id) > html2.indexOf(el2.text.id);
+  // The popup covers what lies under it: a solid background, never the tile's see-through one alone (seen in grants).
+  const popTag = (html2.match(/<div id="[^"]+popup"[^>]*>/) || [''])[0];
+  if (/background:[^;"]*#1a1a2e/.test(popTag)) test.check('the popup is solid: what lies under it does not show through');
+  else test.fail(OWED + 'the popup is see-through: ' + short(popTag));
   if (/choose…/.test(fieldText()) && popup.hidden === true && sameRows) test.check('closed: a field with the placeholder; the popup, shut, holds the filters, the search row and the list, as a pane');
   else test.fail(OWED + 'dropdown: field "' + fieldText() + '", popup hidden ' + popup.hidden + ', the pane\'s rows inside ' + sameRows);
   box2.fire('click', { target: { id: field.id, getAttribute: function () { return null; } } });
