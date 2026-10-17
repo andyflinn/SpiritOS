@@ -254,6 +254,19 @@ async function paneHalf() {
     const real = win.spiritProbability.probabilityStringMatch;
     win.spiritProbability.probabilityStringMatch = function (a, b) { probCalls += 1; return real(a, b); };
   }
+  // THE PANE'S BUCKET UNBOUNDED (Andy, 2026-10-17: "the bucket needs a mode that returns the result un-bounded." and
+  // "... or a function"): the buckets the pane makes, and whether it read them through all().
+  const paneBuckets = [];
+  if (win.spiritProbability && typeof win.spiritProbability.createProbabilityBucket === 'function') {
+    const realBucket = win.spiritProbability.createProbabilityBucket;
+    win.spiritProbability.createProbabilityBucket = function (capacity) {
+      const b = realBucket(capacity);
+      const seen = { capacity: capacity, all: false };
+      paneBuckets.push(seen);
+      if (typeof b.all === 'function') { const realAll = b.all; b.all = function () { seen.all = true; return realAll.apply(b, arguments); }; }
+      return b;
+    };
+  }
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
   const ui = win.spiritDeskPlugins.fallout;
   if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spiritDeskPlugins.fallout.open'); return; }
@@ -364,10 +377,19 @@ async function paneHalf() {
   const atB = indexHtml.indexOf('<script src="/js/probabilityBucket.js"></script>');
   if (atS !== -1 && atO > atS && atB !== -1) test.check('index.html loads the three probability modules, the object match after the string match, so every element can count on them');
   else test.fail(OWED + 'index.html loads string ' + atS + ', object ' + atO + ', bucket ' + atB);
+  // THE UNBOUNDED MODE ITSELF: a bucket made with Infinity seats every row, and all() gives them all back, best first,
+  // with no byte ceiling (5000 rows of 200 bytes, far past any answer over the wire).
+  const B = require('../run/js/probabilityBucket.js').createProbabilityBucket(Infinity);
+  for (let i = 0; i < 5000; i++) B.seatFor((i % 100) / 100, { n: i, pad: 'x'.repeat(200) });
+  const everyRow = typeof B.all === 'function' ? B.all() : null;
+  if (Array.isArray(everyRow) && everyRow.length === 5000 && everyRow[0].n % 100 === 99 && everyRow[4999].n % 100 === 0) test.check('a bucket made with Infinity seats all 5000 rows, and all() returns every one, best first, unbounded');
+  else test.fail(OWED + 'an Infinity bucket gave all() ' + (everyRow ? everyRow.length + ' rows' : 'nothing: no all()'));
   if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function' && typeof win.spiritProbability.probabilityStringObjectMatch === 'function' && typeof win.spiritProbability.createProbabilityBucket === 'function') test.check('the three probability modules load into a page\'s window');
   else test.fail(OWED + 'js/probabilityStringMatch.js and js/probabilityBucket.js give a page nothing: ' + short(win.spiritProbability && Object.keys(win.spiritProbability)));
   if (probCalls > 0) test.check('the pane ranks its cache with the same probabilityStringMatch the servers search with (' + probCalls + ' calls)');
   else test.fail(OWED + 'the pane matched its cache without probabilityStringMatch');
+  if (paneBuckets.length > 0 && paneBuckets.every(function (b) { return b.capacity === Infinity && b.all; })) test.check('the pane ranks its cache in an unbounded bucket (Infinity), read whole through all()');
+  else test.fail(OWED + 'the pane made buckets ' + short(paneBuckets));
   if (/a door stays shut/.test(cachedTable) && !/the relay answers its key/.test(cachedTable)) test.check('a search shows what matches its term among every line any search brought');
   else test.fail(OWED + 'after searching door the table reads ' + short(cachedTable));
   // AS TYPED (Andy, 2026-10-17: "so why doesn't the fallout list update with each character typed or erased in the
@@ -411,6 +433,36 @@ async function paneHalf() {
   // Those asked meanwhile fold into one, the latest words: "ab" is never asked, "abc" once and last.
   if (slowAsked.length >= 1 && slowAsked.length <= 2 && slowAsked[slowAsked.length - 1] === 'abc' && slowAsked.indexOf('ab') === -1 && slowAsked.filter(function (t) { return t === 'abc'; }).length === 1) test.check('those asked meanwhile run once, with the latest words: ' + short(slowAsked));
   else test.fail(OWED + 'the server was asked ' + short(slowAsked));
+  // THE TABLE GROWS WITH EVERY SEARCH (Andy, 2026-10-17: "1. i search with empty string, i get let's say 20 rows. 2. a
+  // search for 'y' or for releay, and if finds a row not previously displayed. 3. when clearing the search box (gimme
+  // all) then the fucking table should be larger than after step 1."). The server answers the empty box with 20 lines,
+  // "y" with one line it never gave before; clearing the box shows more lines than step 1 did, that one among them.
+  const box3 = fakeElement('pane3');
+  const twenty = []; for (let i = 0; i < 20; i++) twenty.push({ suite: 'zzGrow' + i + '.js', what: 'grows ' + i, red: true, at: '2026-10-17T10:00:' + String(10 + i) + '.000Z' });
+  const yRow = { suite: 'zzGrowY.js', what: 'only y finds this', red: true, at: '2026-10-17T09:00:00.000Z' };
+  ui.open(box3, {
+    goal: GOAL,
+    ask: function (verb, a) {
+      if (verb === 'fallout.summary') return Promise.resolve({ red: 21, green: 0 });
+      const rows = a && a.text === 'y' ? [yRow] : twenty;
+      return Promise.resolve({ items: rows.map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: a && a.text === '', total: a && a.text === '' ? 21 : rows.length });
+    },
+    onPublished: function () { return function () {}; }, chat: function () {}, callDialog: function () { return new Promise(function () {}); },
+  });
+  const typeAt3 = function (v) { doc.getElementById('fallout-text').value = v; box3.fire('input', { target: { id: 'fallout-text', getAttribute: function () { return null; } } }); };
+  const rowsShown = function () { return ((doc.getElementById('fallout-reds').innerHTML.match(/<tr[\s>]/g) || []).length - 1); };
+  doc.getElementById('fallout-outcome').value = '';
+  typeAt3('');
+  await sleep(600);
+  const step1 = rowsShown();
+  typeAt3('y');
+  await sleep(600);
+  typeAt3('');
+  await sleep(600);
+  const step3 = rowsShown();
+  const step3Table = doc.getElementById('fallout-reds').innerHTML;
+  if (step3 > step1 && /only y finds this/.test(step3Table)) test.check('clearing the box after a search that found a new line shows more lines than before (' + step1 + ' then ' + step3 + ')');
+  else test.fail(OWED + 'step 1 showed ' + step1 + ' lines, step 3 ' + step3 + ', the y line ' + (/only y finds this/.test(step3Table) ? 'among them' : 'missing'));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
   await sleep(10);
   const items = doc.getElementById('fallout-items');
