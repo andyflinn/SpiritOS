@@ -389,12 +389,15 @@ async function paneHalf() {
   const box2 = fakeElement('pane2');
   ui.open(box2, {
     goal: GOAL,
+    // MAX ONE OVER THE WIRE (Andy: "make SURE there's MAX one search in flight over the wire.... IMPORTANT."): every
+    // request the pane makes is counted, the summary's too, each answering slowly.
     ask: function (verb, a) {
-      if (verb !== 'fallout.reds') return Promise.resolve(verb === 'fallout.summary' ? { red: 0, green: 0 } : {});
-      slowAsked.push(a.text);
+      if (verb === 'fallout.reds') slowAsked.push(a.text);
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
-      return new Promise(function (resolve) { setTimeout(function () { inFlight -= 1; resolve({ items: [], more: false, total: 0 }); }, 60); });
+      return new Promise(function (resolve) {
+        setTimeout(function () { inFlight -= 1; resolve(verb === 'fallout.summary' ? { red: 0, green: 0 } : { items: [], more: false, total: 0 }); }, 60);
+      });
     },
     onPublished: function () { return function () {}; }, chat: function () {}, callDialog: function () { return new Promise(function () {}); },
   });
@@ -402,9 +405,9 @@ async function paneHalf() {
   enter('a');
   enter('ab');
   enter('abc');
-  await sleep(300);
-  if (maxInFlight === 1) test.check('only one search to the server is in flight at a time');
-  else test.fail(OWED + maxInFlight + ' searches were in flight at once');
+  await sleep(600);
+  if (maxInFlight === 1) test.check('at most one request of the pane is on the wire at a time, its summary count included');
+  else test.fail(OWED + maxInFlight + ' requests of the pane were in flight at once');
   if (slowAsked.length === 2 && slowAsked[0] === 'a' && slowAsked[1] === 'abc') test.check('those asked meanwhile run once, with the latest words: ' + short(slowAsked));
   else test.fail(OWED + 'the server was asked ' + short(slowAsked));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
