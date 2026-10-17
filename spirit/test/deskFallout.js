@@ -215,7 +215,17 @@ async function paneHalf() {
   const box = fakeElement('pane');
   ui.open(box, {
     goal: GOAL,
-    ask: function (verb, a) { asked.push([verb, a]); return Promise.resolve(verb === 'fallout.reds' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false, total: 3 } : {}); },
+    // Three checks under one sub-heading (the RED among them, the newest) and one under another: two tested things.
+    ask: function (verb, a) {
+      asked.push([verb, a]);
+      if (verb !== 'fallout.reds') return Promise.resolve({});
+      const more = [
+        { suite: 'zzFalloutA.js', title: 'the relay answers its key #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T08:00:00.000Z', failure: '' },
+        { suite: 'zzFalloutA.js', title: 'the relay answers its key #2', outcome: 'red', commit: 'abc1234', at: '2026-10-17T08:30:00.000Z', failure: 'older' },
+        { suite: 'zzFalloutB.js', title: 'a door stays shut #1', outcome: 'green', commit: 'abc1234', at: '2026-10-17T07:00:00.000Z', failure: '' },
+      ];
+      return Promise.resolve({ items: [RED].concat(more).map(function (x, i) { return { key: String(i), label: JSON.stringify(x) }; }), more: false, total: 3 });
+    },
     onPublished: function () { return function () {}; }, chat: function (el) { chatAt = el; }, callDialog: function () { return new Promise(function () {}); },
   });
   await sleep(20);
@@ -243,8 +253,15 @@ async function paneHalf() {
   else test.fail(OWED + 'the row order: file ' + atSuite + ', description ' + atWhat + ', status ' + atStatus + ', since ' + atSince + ' in ' + short(shown));
   if (!/boom: no answer/.test(shown) && !/#\d/.test(shown)) test.check('no raw failure text and no key number in the row');
   else test.fail(OWED + 'the row still shows ' + short(shown));
-  if ((shown.match(/<tr[\s>]/g) || []).length === 2) test.check('one line per test, below one header line');
-  else test.fail(OWED + 'the rows: ' + short(shown));
+  // ONLY THE LATEST, ONE LINE PER TESTED THING (Andy, 2026-10-17: "i only want to see the latest, if you want to show
+  // the history of one test, use a dialog."): one line per test file and sub-heading, ❌ while any check under it is
+  // red, its newest time.
+  const lines = (shown.match(/<tr[\s>]/g) || []).length - 1;
+  const relayLine = (shown.match(/<tr[^>]*>(?:(?!<\/tr>).)*the relay answers its key(?:(?!<\/tr>).)*<\/tr>/) || [''])[0];
+  if (lines === 2) test.check('one line per tested thing: two lines for two sub-headings');
+  else test.fail(OWED + lines + ' lines in ' + short(shown));
+  if (/❌/.test(relayLine) && /2026-10-17 09:00:00/.test(relayLine)) test.check('a line is ❌ while any check under it is red, and shows its newest time');
+  else test.fail(OWED + 'the relay line reads ' + short(relayLine));
   // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
   if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
   else test.fail(OWED + 'no #fallout-outcome select with red, green and both in ' + short(all()));
