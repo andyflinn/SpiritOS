@@ -1,5 +1,5 @@
 {
- "change": 66990,
+ "change": 67022,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -15,8 +15,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G27.14",
-    "goal/G27.20"
+    "goal/G27.14"
    ],
    "go": false,
    "alone": false,
@@ -47,12 +46,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -6976,10 +6977,11 @@
    "id": "goal/G27.20",
    "title": "Desk: an item waiting for Done moves only on Andy chat",
    "goal": "goal/G27",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G27"
@@ -6988,21 +6990,32 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPhaseRestart.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "9a2cc6f0",
+   "redCommit": "7515c6ee",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -7048,6 +7061,78 @@
      "key": "",
      "at": "2026-10-17T07:43:43.414Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:44:12.057Z",
+     "text": "It is not marked code, so it has no phases and I cannot take its red; the code press is yours alone.\nPress Code on it, and I start at the red."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T07:44:14.983Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T07:45:39.273Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T07:45:41.780Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:45:43.221Z",
+     "text": "commit 7515c6ee8e2ae5d0cc8bda4215d7de38d5e226a3: goal/G27.20: the red for an item waiting for Done moving only on Andy's chat\n- spirit/test/deskPhaseRestart.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T07:45:49.026Z",
+     "text": "deskVerify: red confirmed at 7515c6ee: spirit/test/deskPhaseRestart.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T07:45:49.929Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:48:54.575Z",
+     "text": "commit 9a2cc6f0b70c36617f630e65d61f8daf1f63f093: goal/G27.20: an item waiting for Done moves only on Andy's chat\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskPhaseRestart.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T07:49:02.672Z",
+     "text": "deskVerify: passed, at 9a2cc6f0 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T07:49:03.561Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T07:49:10.115Z",
+     "text": "Built at 9a2cc6f0: an item waiting for your Done is no open work; its red opens only to an agent that took a line of yours in its chat since the verify pass.\nFiles: process desk.js (mayTake, the pass time), spirit/test/deskPhaseRestart.js.\nGreen: deskPhaseRestart 10 of 10, fourteen phase, take and Done suites; takes effect when your desk restarts."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T07:49:20.050Z",
+     "text": "deskVerify: passed, at 9a2cc6f0 (pulled). 1 suite ran green."
     }
    ]
   }
