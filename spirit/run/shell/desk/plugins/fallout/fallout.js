@@ -62,11 +62,24 @@
         // success or fail | since"). The description is the sentence of what is tested, the test's sub-heading (its key
         // without the number); what the suite printed on failing is for a debugging agent, so it is no row text, only
         // the line's hover title.
-        el.innerHTML = rows.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
-          rows.map(function (x) {
-            var what = String(x.title || '').replace(/\s+#\d+$/, '');
-            return '<tr title="' + esc(x.failure || '') + '"><td>' + esc(x.suite) + '</td><td>' + esc(what) + '</td>' +
-              '<td>' + (x.outcome === 'red' ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(x.at)) + '</td></tr>';
+        // ONLY THE LATEST, ONE LINE PER TESTED THING (Andy, 2026-10-17: "i only want to see the latest, if you want to
+        // show the history of one test, use a dialog."). A test file and its sub-heading are one tested thing: its
+        // checks fold into one line, ❌ fail while any of them is red, its newest time; the failures it printed are
+        // the line's hover title.
+        var groups = [];
+        var byKey = Object.create(null);
+        rows.forEach(function (x) {
+          var what = String(x.title || '').replace(/\s+#\d+$/, '');
+          var k = x.suite + '\n' + what;
+          var g = byKey[k];
+          if (!g) { g = byKey[k] = { suite: x.suite, what: what, red: false, at: '', failures: [] }; groups.push(g); }
+          if (x.outcome === 'red') { g.red = true; if (x.failure) g.failures.push(String(x.failure)); }
+          if (String(x.at || '') > g.at) g.at = String(x.at || '');
+        });
+        el.innerHTML = groups.length ? '<table class="jobs-table"><thead><tr><th>Test file</th><th>What is tested</th><th>Status</th><th>Since</th></tr></thead><tbody>' +
+          groups.map(function (g) {
+            return '<tr title="' + esc(g.failures.join('\n')) + '"><td>' + esc(g.suite) + '</td><td>' + esc(g.what) + '</td>' +
+              '<td>' + (g.red ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(g.at)) + '</td></tr>';
           }).join('') + '</tbody></table>' : '<div class="job-manifest-note">No test matches' + (text ? ' "' + esc(text) + '"' : '') + '.</div>';
       }
       say(r && r.more ? 'More match than one answer holds: narrow the search.' : '');
