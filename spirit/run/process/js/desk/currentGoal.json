@@ -1,5 +1,5 @@
 {
- "change": 67175,
+ "change": 67176,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [],
    "live": [
     "claude-windows"
@@ -714,7 +714,6 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G27.3",
     "goal/G27.14"
    ],
    "blocked": [],
@@ -1068,7 +1067,6 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G27.3",
     "goal/G27.14"
    ],
    "blocked": [],
@@ -1857,10 +1855,9 @@
    "id": "goal/G27.3",
    "title": "\"musings\" tab replaced by desk-app \"vision\"",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
