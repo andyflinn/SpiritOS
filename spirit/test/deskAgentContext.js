@@ -223,7 +223,7 @@ async function suite() {
   // The studio's context is read with the known list, which a models ask refreshes (goal/G14.6, goal/G10.7).
   const client = appClient.createAppClient({ rootDir: scratch, log: function () {} });
   client.register('deskAgent', pipe);
-  await client.ask({ deskAgent: { models: {} } }).catch(function () { return null; });
+  await client.ask({ deskAgent: { 'models.search': { text: '', marks: [] } } }).catch(function () { return null; });
   await until(function () { return studioReads.indexOf('/api/inference/status') !== -1; }, 5000);
 
   test.subHeading('2. the call: rules, persona, both boxes, the newest lines that fit');

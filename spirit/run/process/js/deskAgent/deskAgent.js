@@ -1054,7 +1054,9 @@ function modelsSearch(text, marks) {
     const present = Object.keys(MARKS).filter(function (k) { return all.some(MARKS[k]); });
     const loaded = all.filter(function (x) { return x && x.loaded; });
     const answer = { models: [], more: false, marks: present, active: m.active, activeQuant: m.activeQuant, cached: m.cached, load: m.load, test: m.test };
-    const query = String(text || '');
+    // An empty search is every model: '**', since a single '*' never spans a '/' (gradedSearch.js), and a studio id
+    // holds one (fake/Agent-9B-GGUF), as the desk's own searches do.
+    const query = String(text || '').trim() ? String(text) : '**';
     const room = SEARCH_ROOM - Buffer.byteLength(JSON.stringify(answer), 'utf8');
     const bucket = require('../../../js/searchBucket.js').createSearch({
       query: query,
@@ -1901,10 +1903,6 @@ appServer.serve({
   'models.search': {
     request: { text: '', marks: [''] }, reply: { models: [{ id: '', loaded: true }], more: true, marks: [''], active: '' },
     handler: function (a) { return modelsSearch(a.text, a.marks); },
-  },
-  models: {
-    request: {}, reply: { active: '', cached: true, load: { model: '', state: '', error: '' }, models: [{ id: '', loaded: true, quant: '', bytes: 0, task: '', vision: true, reasoning: true, audio: true }] },
-    handler: function () { return models(); },
   },
   // THE QUANTIZATION NAMED (goal/G10.9); answered at once, the studio not waited for (goal/G14.4).
   'model.load': {

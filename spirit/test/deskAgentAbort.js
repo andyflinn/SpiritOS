@@ -202,7 +202,7 @@ async function serverHalf() {
   function ask(verb, args) { const a = {}; a[verb] = args || {}; return client.ask({ deskAgent: a }).then(function (r) { return r.body || {}; }); }
   async function answerOf(id, ms) { let a = {}; const end = Date.now() + (ms || 10000); while (Date.now() < end) { a = await ask('chat.answer', { id: id }); if (a.done) return a; await sleep(100); } return a; }
   // The studio's context is read with the known list: the room below is (2000 - 100) * 4.
-  await ask('models', {});
+  await ask('models.search', { text: '', marks: [] });
   await sleep(800);
 
   // ── 1. THE ABORT VERB ─────────────────────────────────────────────────
@@ -374,18 +374,18 @@ async function serverHalf() {
   await sleep(300);
   studio.hangList = true;
   const l0 = studio.hits['/api/models/cached-gguf'] || 0;
-  await ask('models', {});
+  await ask('models.search', { text: '', marks: [] });
   await until(function () { return (studio.hits['/api/models/cached-gguf'] || 0) > l0; }, 3000);
-  const freed = await until(function () { ask('models', {}).catch(function () {}); return (studio.hits['/api/models/cached-gguf'] || 0) > l0 + 1; }, LIST_WAIT);
+  const freed = await until(function () { ask('models.search', { text: '', marks: [] }).catch(function () {}); return (studio.hits['/api/models/cached-gguf'] || 0) > l0 + 1; }, LIST_WAIT);
   studio.hangList = false;
   if (freed) test.check('a cached-gguf that never answers frees the refresh: the next models ask reads the studio again');
   else test.fail(OWED + 'a hanging cached-gguf held the refresh for ' + LIST_WAIT + ' ms: no second read');
   await sleep(6000);
   studio.hangStatus = true;
   const s0 = studio.hits['/api/inference/status'] || 0;
-  await ask('models', {});
+  await ask('models.search', { text: '', marks: [] });
   await until(function () { return (studio.hits['/api/inference/status'] || 0) > s0; }, 3000);
-  const freed2 = await until(function () { ask('models', {}).catch(function () {}); return (studio.hits['/api/inference/status'] || 0) > s0 + 1; }, LIST_WAIT);
+  const freed2 = await until(function () { ask('models.search', { text: '', marks: [] }).catch(function () {}); return (studio.hits['/api/inference/status'] || 0) > s0 + 1; }, LIST_WAIT);
   studio.hangStatus = false;
   if (freed2) test.check('an inference/status that never answers frees the refresh too');
   else test.fail(OWED + 'a hanging inference/status held the refresh for ' + LIST_WAIT + ' ms: no second read');

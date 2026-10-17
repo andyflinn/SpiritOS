@@ -229,13 +229,14 @@ async function suite() {
   const tree = await doorUp(client, 10000);
   if (!tree) { test.fail(OWED + 'deskAgent never answered api on its pipe (' + JSON.stringify((out.stderr + out.stdout).slice(0, 200)) + ')'); return; }
   function ask(verb, args) { const a = {}; a[verb] = args || {}; return client.ask({ deskAgent: a }).then(function (r) { return r.body || {}; }); }
-  askModels = function () { return ask('models', {}); };
+  askModels = function () { return ask('models.search', { text: '', marks: [] }); };
 
   test.subHeading('1. models: the cached list, merged');
   const verbs = Object.keys(tree).sort();
-  if (['models', 'model.load', 'chat.send', 'chat.answer'].every(function (v) { return verbs.indexOf(v) !== -1; })) test.check('its api declares models, model.load, chat.send and chat.answer: ' + verbs.join(', '));
+  // goal/G27.17: models.search replaced models (Andy: "remove it, in this item.").
+  if (['models.search', 'model.load', 'chat.send', 'chat.answer'].every(function (v) { return verbs.indexOf(v) !== -1; }) && verbs.indexOf('models') === -1) test.check('its api declares models.search, model.load, chat.send and chat.answer, and no models: ' + verbs.join(', '));
   else { test.fail(OWED + 'the verb tree reads ' + verbs.join(', ')); return; }
-  const m1 = await ask('models', {});
+  const m1 = await ask('models.search', { text: '', marks: [] });
   const ids = (m1.models || []).map(function (m) { return m.id; });
   if (m1.active === LOADED && ids.length === 3 && ids.indexOf('ollama/qwen3-coder:30b') === -1 && ids.indexOf(LOADED) !== -1 && ids.indexOf(OTHER) !== -1) test.check('models lists the three cached models and none of the studio\'s ollama entries; active names the loaded one');
   else test.fail(OWED + 'models answered ' + short(m1));
@@ -257,7 +258,7 @@ async function suite() {
   else test.fail(OWED + 'models.json reads ' + short(knownFile));
   studio.calls.length = 0;
   const ta = Date.now();
-  const ma = await ask('models', {});
+  const ma = await ask('models.search', { text: '', marks: [] });
   const atOnceMs = Date.now() - ta;
   await sleep(300);
   if (atOnceMs < 600 && Array.isArray(ma.models) && ma.models.length === 3 && studio.calls.some(function (c) { return c.url.split('?')[0] === '/api/models/cached-gguf'; })) test.check('a second ask is answered from the file in ' + atOnceMs + ' ms, and a refresh from the studio runs behind it');
@@ -275,7 +276,7 @@ async function suite() {
   test.subHeading('1c. a dawdling v1/models does not take the ask past the wall');
   v1HoldMs = appClient.DOOR_WAIT_MS + 3000;
   const ts = Date.now();
-  const ms = await ask('models', {});
+  const ms = await ask('models.search', { text: '', marks: [] });
   const slowMs = Date.now() - ts;
   const q2 = (ms.models || []).filter(function (m) { return m.id === LOADED; })[0];
   const img2 = (ms.models || []).filter(function (m) { return m.id === 'unsloth/Qwen-Image-2.1-GGUF'; })[0];
@@ -305,7 +306,7 @@ async function suite() {
   const o2 = (m2.models || []).filter(function (m) { return m.id === OTHER; })[0];
   if (m2.active === OTHER && o2 && o2.loaded === true && o2.vision === true && o2.audio === true) test.check('once the studio is done, a later ask shows the new one loaded and active, with its flags');
   else test.fail(OWED + 'models after the load: ' + short(m2));
-  const m3 = await ask('models', {});
+  const m3 = await ask('models.search', { text: '', marks: [] });
   if (JSON.stringify(m3.models) === JSON.stringify(m2.models) && m3.active === m2.active) test.check('the known list is what was last read: two asks in a row agree');
   else test.fail(OWED + 'two asks disagree: ' + short(m2) + ' vs ' + short(m3));
 
@@ -313,7 +314,7 @@ async function suite() {
   const lb = await ask('model.load', { id: BROKEN, quant: '' });
   let mf = {};
   let failed = false;
-  for (let i = 0; i < 30 && !failed; i++) { mf = await ask('models', {}); failed = !!(mf.load && mf.load.state === 'failed'); if (!failed) await sleep(200); }
+  for (let i = 0; i < 30 && !failed; i++) { mf = await ask('models.search', { text: '', marks: [] }); failed = !!(mf.load && mf.load.state === 'failed'); if (!failed) await sleep(200); }
   if (lb.model === BROKEN && lb.loaded === false && failed && mf.load && mf.load.model === BROKEN && mf.load.state === 'failed' && /llama-server exited/.test(mf.load.error)) test.check('model.load of a model the studio refuses answers at once, and models then carries load {model, state: failed, error} with the studio\'s words');
   else test.fail(OWED + 'a failing load: model.load ' + short(lb) + ', models.load ' + short(mf.load));
   const lr = await ask('model.load', { id: OTHER, quant: '' });
@@ -392,7 +393,7 @@ async function suite() {
   const tree2 = await doorUp(client, 10000);
   if (!tree2) { test.fail(OWED + 'deskAgent did not come back on its pipe for the cached-flag part'); return; }
   const td = Date.now();
-  const md = await ask('models', {});
+  const md = await ask('models.search', { text: '', marks: [] });
   const downMs = Date.now() - td;
   if (md.cached === true && Array.isArray(md.models) && md.models.length === 3 && downMs < 3000) test.check('with the studio down, models answers the known list from the file in ' + downMs + ' ms, cached true');
   else test.fail(OWED + 'with the studio down, models answered in ' + downMs + ' ms: ' + short(md));

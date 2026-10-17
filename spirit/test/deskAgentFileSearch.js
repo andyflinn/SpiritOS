@@ -196,7 +196,7 @@ async function suite() {
 
   test.subHeading('6. the model is offered it, and it is answered while he is disconnected');
   await ask('connection.set', { name: 'plain', url: 'http://127.0.0.1:' + model.address().port + '/v1', key: 'k' });
-  await until(async function () { const m = (await ask('models', {})).body; return ((m && m.models) || []).some(function (x) { return x.id === 'plain-x'; }); }, 6000);
+  await until(async function () { const m = (await ask('models.search', { text: '', marks: [] })).body; return ((m && m.models) || []).some(function (x) { return x.id === 'plain-x'; }); }, 6000);
   await ask('model.load', { id: 'plain-x', quant: '' });
   await sleep(200);
   const sent = (await ask('chat.send', { lines: [{ role: 'user', text: 'find the js files' }] })).body;

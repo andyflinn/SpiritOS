@@ -127,7 +127,7 @@ async function exercise(name, url, key, workspace) {
   const args = { name: name, url: url, key: key };
   if (workspace !== undefined) args.workspace = workspace;
   const set = await ask('connection.set', args);
-  await until(async function () { return ids(await ask('models', {})) === 'gpt-x'; }, 6000);
+  await until(async function () { return ids(await ask('models.search', { text: '', marks: [] })) === 'gpt-x'; }, 6000);
   await ask('model.load', { id: 'gpt-x', quant: '' });
   await sleep(200);
   const sent = await ask('chat.send', { lines: [{ role: 'user', text: 'hello there' }] });
@@ -186,7 +186,7 @@ async function serverHalf() {
   test.subHeading('3. the model list refused: deskAgent\'s own reason');
   await ask('connection.set', { name: 'refuser', url: REFUSER_URL, key: 'k-bad' });
   let refusedList = {};
-  await until(async function () { refusedList = await ask('models', {}); return refusedList.ok === false; }, 6000);
+  await until(async function () { refusedList = await ask('models.search', { text: '', marks: [] }); return refusedList.ok === false; }, 6000);
   const why = String((refusedList.extra && refusedList.extra.why) || '');
   if (refusedList.ok === false && /could not be read/.test(why)) test.check('the models ask is refused with deskAgent\'s reason: ' + short(why));
   else test.fail('the world: the models ask answered ' + short(refusedList));

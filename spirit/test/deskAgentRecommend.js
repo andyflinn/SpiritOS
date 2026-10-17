@@ -166,9 +166,9 @@ async function serverHalf() {
   if (!await up()) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
 
   test.subHeading('1. one entry per downloaded model and quantization');
-  let m = await ask('models', {});
+  let m = await ask('models.search', { text: '', marks: [] });
   await until(function () { return !!knownFile(); }, 5000);
-  m = await ask('models', {});
+  m = await ask('models.search', { text: '', marks: [] });
   const pairs = (m.models || []).map(function (x) { return x.id + ' ' + x.quant; }).sort();
   if (JSON.stringify(pairs) === JSON.stringify([REPO + ' ' + BAD, REPO + ' ' + GOOD].sort())) test.check('models lists ' + pairs.join(' and ') + ', not the one not downloaded');
   else test.fail(OWED + 'models listed ' + short(pairs));
@@ -206,14 +206,14 @@ async function serverHalf() {
   await ask('connect', { on: false });
   await ask('model.load', { id: REPO, quant: BAD });
   await until(function () { return loaded.variant === BAD; }, 3000);
-  await ask('models', {}); await sleep(400);
+  await ask('models.search', { text: '', marks: [] }); await sleep(400);
   const refusedOn = await ask('connect', { on: true });
   const s1 = await ask('state', {});
   if (refusedOn.ok === false && s1.connected === false) test.check('connect on is refused while the loaded pair has no 🧵');
   else test.fail(OWED + 'connect on with ' + BAD + ' loaded answered ' + short(refusedOn) + ', state ' + short(s1));
   await ask('model.load', { id: REPO, quant: GOOD });
   await until(function () { return loaded.variant === GOOD; }, 3000);
-  await ask('models', {}); await sleep(400);
+  await ask('models.search', { text: '', marks: [] }); await sleep(400);
   const takenOn = await ask('connect', { on: true });
   if (takenOn.connected === true) test.check('and taken while it has one');
   else test.fail(OWED + 'connect on with ' + GOOD + ' loaded answered ' + short(takenOn));

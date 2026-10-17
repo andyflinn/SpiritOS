@@ -207,7 +207,8 @@ async function remoteHalf() {
         const v = a ? Object.keys(a)[0] : '';
         const here = name === 'jobs.api';
         if (here && !local) return Promise.resolve({ status: 404, body: { ok: false, code: 'app-not-served', error: 'deskAgent is not served here' } });
-        const said = v === 'state' ? READY : v === 'models' ? MODELS : {};
+        // goal/G27.17: the picker asks models.search; it answers as models did.
+        const said = v === 'state' ? READY : (v === 'models' || v === 'models.search') ? MODELS : {};
         return Promise.resolve(here ? { status: 200, body: said } : { status: 200, body: { ok: true, status: 200, body: said } });
       },
     });
@@ -220,7 +221,7 @@ async function remoteHalf() {
   const s = models.indexOf('id="dur-model"');
   if (r !== -1 && s !== -1 && r < s) test.check('a refresh button sits left of the model picker');
   else test.fail(OWED + '#dur-models reads ' + short(models));
-  const asked = function (c) { return c.slice().filter(function (x) { const a = (x.body && x.body.ask && x.body.ask.deskAgent) || (x.body && x.body.body && x.body.body.ask && x.body.body.ask.deskAgent); return a && a.models; }).length; };
+  const asked = function (c) { return c.slice().filter(function (x) { const a = (x.body && x.body.ask && x.body.ask.deskAgent) || (x.body && x.body.body && x.body.body.ask && x.body.body.ask.deskAgent); return a && (a.models || a['models.search']); }).length; };
   const before = asked(own.calls);
   own.doc.getElementById('dur-refresh').fire('click', {});
   await settled();

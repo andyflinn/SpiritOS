@@ -108,7 +108,7 @@ async function suite() {
   for (let i = 0; i < 60 && !up && out.code === null; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.deskAgent && r.body.deskAgent.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
   await ask('connection.set', { name: 'plain', url: 'http://127.0.0.1:' + model.address().port + '/v1', key: 'k' });
-  await until(async function () { const m = await ask('models', {}); return ((m && m.models) || []).some(function (x) { return x.id === 'plain-x'; }); }, 6000);
+  await until(async function () { const m = await ask('models.search', { text: '', marks: [] }); return ((m && m.models) || []).some(function (x) { return x.id === 'plain-x'; }); }, 6000);
   await ask('model.load', { id: 'plain-x', quant: '' });
   await sleep(200);
   const sent = await ask('chat.send', { lines: [{ role: 'user', text: 'which tools do you have?' }] });

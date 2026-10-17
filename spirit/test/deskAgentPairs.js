@@ -177,7 +177,7 @@ async function serverHalf() {
   const s0 = await ask('state', {});
   if (names(s0) === 'studio*' && s0.connections[0].url === STUDIO_URL) test.check('the state lists one pair, studio, in use, with its url');
   else test.fail(OWED + 'state.connections reads ' + short(s0.connections));
-  const m0 = await ask('models', {});
+  const m0 = await ask('models.search', { text: '', marks: [] });
   const kept = (m0.models || []).filter(function (x) { return x.id === REPO && x.quant === QUANT; })[0];
   if (kept && kept.recommended === true) test.check('the old known list is still there, its 🧵 kept');
   else test.fail(OWED + 'models after the old files: ' + short(m0.models));
@@ -199,8 +199,8 @@ async function serverHalf() {
   else test.fail(OWED + 'a 65-byte name answered ' + short(long) + '; no name ' + short(none));
 
   test.subHeading('3. a plain OpenAI server: its /v1/models, no load, a test');
-  await until(async function () { return ids(await ask('models', {})) === 'gpt-x,gpt-y'; }, 6000);
-  const m1 = await ask('models', {});
+  await until(async function () { return ids(await ask('models.search', { text: '', marks: [] })) === 'gpt-x,gpt-y'; }, 6000);
+  const m1 = await ask('models.search', { text: '', marks: [] });
   if (ids(m1) === 'gpt-x,gpt-y') test.check('models lists the server\'s /v1/models: gpt-x and gpt-y');
   else test.fail(OWED + 'models with the openai pair in use: ' + short(m1.models));
   if (openai.auth.some(function (a) { return a === 'Bearer ' + OPENAI_KEY; })) test.check('the calls carry that pair\'s key');
@@ -208,13 +208,13 @@ async function serverHalf() {
   await ask('model.load', { id: 'gpt-x', quant: '' });
   await sleep(300);
   const s2 = await ask('state', {});
-  const m2 = await ask('models', {});
+  const m2 = await ask('models.search', { text: '', marks: [] });
   const gx = (m2.models || []).filter(function (x) { return x.id === 'gpt-x'; })[0];
   if (openai.loads === 0 && s2.model === 'gpt-x' && gx && gx.loaded === true && m2.load && m2.load.state === 'done') test.check('model.load sets gpt-x without a load: the model named, the entry loaded');
   else test.fail(OWED + 'after model.load gpt-x: loads ' + openai.loads + ', model ' + short(s2.model) + ', load ' + short(m2.load) + ', entry ' + short(gx));
   await ask('model.test', { id: 'gpt-x', quant: '' });
-  await until(async function () { const m = await ask('models', {}); const e = (m.models || []).filter(function (x) { return x.id === 'gpt-x'; })[0]; return !!(e && e.tested); }, 8000);
-  const m3 = await ask('models', {});
+  await until(async function () { const m = await ask('models.search', { text: '', marks: [] }); const e = (m.models || []).filter(function (x) { return x.id === 'gpt-x'; })[0]; return !!(e && e.tested); }, 8000);
+  const m3 = await ask('models.search', { text: '', marks: [] });
   const gt = (m3.models || []).filter(function (x) { return x.id === 'gpt-x'; })[0];
   if (gt && gt.recommended === true) test.check('model.test against it: a real tool call marks gpt-x 🧵');
   else test.fail(OWED + 'after model.test gpt-x: ' + short(gt));
@@ -239,9 +239,9 @@ async function serverHalf() {
   const connectedBefore = (await ask('state', {})).connected;
   const signoffsBefore = deskWords.filter(function (w) { return w === 'signoff'; }).length;
   await ask('connection.use', { name: 'studio' });
-  await until(async function () { return ids(await ask('models', {})) === REPO + ' ' + QUANT; }, 6000);
+  await until(async function () { return ids(await ask('models.search', { text: '', marks: [] })) === REPO + ' ' + QUANT; }, 6000);
   const s3 = await ask('state', {});
-  const m4 = await ask('models', {});
+  const m4 = await ask('models.search', { text: '', marks: [] });
   const back = (m4.models || []).filter(function (x) { return x.id === REPO; })[0];
   if (names(s3).split(',').sort().join() === 'openai,studio*' && s3.model === REPO && back && back.recommended === true) test.check('connection.use studio: its list, its model ' + REPO + ', its 🧵');
   else test.fail(OWED + 'after use studio: ' + short(names(s3)) + ', model ' + short(s3.model) + ', list ' + short(m4.models));
@@ -254,9 +254,9 @@ async function serverHalf() {
   if (connectedBefore === true && s3.connected === false && deskWords.filter(function (w) { return w === 'signoff'; }).length > signoffsBefore) test.check('the switch disconnected Levant, with a signoff');
   else test.fail(OWED + 'connected before ' + connectedBefore + ', after ' + s3.connected + '; signoffs ' + signoffsBefore + ' -> ' + deskWords.filter(function (w) { return w === 'signoff'; }).length);
   await ask('connection.use', { name: 'openai' });
-  await until(async function () { return ids(await ask('models', {})) === 'gpt-x,gpt-y'; }, 6000);
+  await until(async function () { return ids(await ask('models.search', { text: '', marks: [] })) === 'gpt-x,gpt-y'; }, 6000);
   const s4 = await ask('state', {});
-  const m5 = await ask('models', {});
+  const m5 = await ask('models.search', { text: '', marks: [] });
   const again = (m5.models || []).filter(function (x) { return x.id === 'gpt-x'; })[0];
   if (s4.model === 'gpt-x' && again && again.recommended === true) test.check('and back to openai: gpt-x chosen, its 🧵 as left');
   else test.fail(OWED + 'back on openai: model ' + short(s4.model) + ', gpt-x ' + short(again));

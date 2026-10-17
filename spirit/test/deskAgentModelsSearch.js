@@ -9,6 +9,7 @@
 //   R3. the answer is a bounded bucket with a partial flag; when partial the picker says more match.
 //   R4. the loaded model always comes back, whatever the search.
 //   R5. the answer names the marks present in the whole list, so the icons show only what applies.
+//   R8. the old models verb, which answered the whole list, is gone (Andy: "remove it, in this item.").
 //   R7. the answer fits one tunnelled reply (about 15 KB); the door caps an answer tighter still (appClient ANSWER_MAX).
 //
 // THE SHAPES THIS RED NAMES: the state's `loaded` (the loaded entry, or null) in place of `models`; the verb
@@ -121,7 +122,7 @@ async function serverHalf() {
   start();
   if (!await up()) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
   await until(function () { return published.length > 0; }, 6000);
-  await ask('models', {});
+  await ask('models.search', { text: '', marks: [] });
   await sleep(800);
 
   test.subHeading('R1. the published state carries no list, only the loaded entry');
@@ -144,6 +145,11 @@ async function serverHalf() {
   const ranked = someIds.slice(1, 11);
   if (someIds[0] === LOADED && ranked.length === 10 && ranked.every(function (x) { return x.indexOf('gpt-030') === 0; })) test.check('text gpt-030 answers the loaded model first, then its 10 exact matches ahead of the rest');
   else test.fail(OWED + 'models.search gpt-030 answered, in order, ' + short(someIds.slice(0, 14)));
+
+  test.subHeading('R8. the old models verb is gone');
+  const old = await ask('models', {});
+  if (old.ok === false && old.code === 'no-such-verb') test.check('models answers no-such-verb: models.search replaced it');
+  else test.fail(OWED + 'the old models verb still answers: ' + short(Object.keys(old)));
 
   test.subHeading('R2, R5. the marks: filtering, and which exist');
   const tested = await ask('models.search', { text: '', marks: ['desk-tested'] });

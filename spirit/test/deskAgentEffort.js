@@ -186,7 +186,7 @@ async function serverHalf() {
   client.register('deskAgent', pipe);
   start();
   if (!await up()) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
-  await until(async function () { return ((await ask('models', {})).models || []).length === 2; }, 6000);
+  await until(async function () { return ((await ask('models.search', { text: '', marks: [] })).models || []).length === 2; }, 6000);
 
   test.subHeading('1. medium by default, on a model the table names');
   const s0 = await ask('state', {});
@@ -239,7 +239,7 @@ async function serverHalf() {
 
   test.subHeading('5. the studio: no row, nothing extra');
   await ask('connection.use', { name: 'studio' });
-  await until(async function () { return ((await ask('models', {})).models || []).some(function (m) { return m.id === STUDIO_REPO; }); }, 6000);
+  await until(async function () { return ((await ask('models.search', { text: '', marks: [] })).models || []).some(function (m) { return m.id === STUDIO_REPO; }); }, 6000);
   const before = studioChats.length;
   const sent = await ask('chat.send', { lines: [{ role: 'user', text: 'hello studio' }] });
   await until(async function () { const a = sent.id ? await ask('chat.answer', { id: sent.id }) : {}; return a.done === true; }, 8000);

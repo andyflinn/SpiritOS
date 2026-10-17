@@ -124,7 +124,7 @@ function ids(m) { return ((m && m.models) || []).map(function (x) { return x.id;
 
 async function usePair(name, url, model) {
   await ask('connection.set', { name: name, url: url, key: 'k-' + name });
-  await until(async function () { return ids(await ask('models', {})) === model; }, 6000);
+  await until(async function () { return ids(await ask('models.search', { text: '', marks: [] })) === model; }, 6000);
   await ask('model.load', { id: model, quant: '' });
   await sleep(200);
 }

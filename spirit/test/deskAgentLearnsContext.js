@@ -138,7 +138,7 @@ async function main() {
   client.register('deskAgent', pipe);
   start();
   if (!await up()) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
-  await until(async function () { const m = await ask('models', {}); return (m.models || []).some(function (x) { return x.id === 'm-1' && x.context === CONTEXT; }); }, 6000);
+  await until(async function () { const m = await ask('models.search', { text: '', marks: [] }); return (m.models || []).some(function (x) { return x.id === 'm-1' && x.context === CONTEXT; }); }, 6000);
 
   test.subHeading('R1. every call sized to 95% of the limit');
   const lines = longLines(120, 100);
@@ -164,9 +164,9 @@ async function main() {
   else test.fail(OWED + 'the retry held ' + windowBytes(second) + ' bytes');
 
   test.subHeading('R2. the learned values hold for later calls, and through a refresh of the list');
-  await ask('models', {});
+  await ask('models.search', { text: '', marks: [] });
   await sleep(300);
-  await ask('models', {});
+  await ask('models.search', { text: '', marks: [] });
   server.mode = 'ok';
   const c3 = await chatOnce(lines);
   const e3 = entry();

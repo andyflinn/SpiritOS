@@ -258,7 +258,7 @@ async function suite() {
   function ask(verb, args) { const a = {}; a[verb] = args || {}; return client.ask({ deskAgent: a }).then(function (r) { return r.body || {}; }); }
   // THE ROOM FOLLOWS THE STUDIO (since goal/G10.7 always): the known list is read once (models), which carries the
   // studio's context_length; then a page over a quarter of (2000 - 100) * 4 bytes comes back cut to that room.
-  await ask('models', {});
+  await ask('models.search', { text: '', marks: [] });
   await sleep(300);
   script = [{ toolCalls: [toolCall('room-1', 'deskAgent_file_load', { path: 'shell/big.test' })] }, { text: 'seen the big page' }];
   studio.chats.length = 0;

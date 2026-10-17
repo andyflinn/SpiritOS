@@ -131,7 +131,7 @@ function ids(m) { return ((m && m.models) || []).map(function (x) { return x.id;
 async function exercise(name, url, model, seen) {
   const set = await ask('connection.set', { name: name, url: url, key: 'k-' + name });
   let listed = {};
-  await until(async function () { listed = await ask('models', {}); return ids(listed) === model; }, 6000);
+  await until(async function () { listed = await ask('models.search', { text: '', marks: [] }); return ids(listed) === model; }, 6000);
   await ask('model.load', { id: model, quant: '' });
   await sleep(200);
   const sent = await ask('chat.send', { lines: [{ role: 'user', text: 'please read the long file' }] });
