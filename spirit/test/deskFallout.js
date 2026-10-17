@@ -267,6 +267,11 @@ async function paneHalf() {
   const atSince = shown.indexOf('2026-10-17 09:00:00');
   if (atSuite !== -1 && atWhat > atSuite && atStatus > atWhat && atSince > atStatus) test.check('each row reads test file, description, status, since, in that order');
   else test.fail(OWED + 'the row order: file ' + atSuite + ', description ' + atWhat + ', status ' + atStatus + ', since ' + atSince + ' in ' + short(shown));
+  // NOT EVEN ON HOVER (Andy, 2026-10-17: "i understand that you need to store commit-level and failure detail, it just
+  // doesn't help me anything when looking at a list. I know you can read those details, so it doesn't need to be
+  // on-screen."), and the ❌/✅ stay ("Keep the fucking fail/success icons").
+  if (!/boom: no answer/.test(table) && !/older/.test(table) && !/abc1234/.test(table)) test.check('no failure text and no commit anywhere in the lines, not even on hover');
+  else test.fail(OWED + 'the lines still carry detail: ' + short(table));
   if (!/boom: no answer/.test(shown) && !/#\d/.test(shown)) test.check('no raw failure text and no key number in the row');
   else test.fail(OWED + 'the row still shows ' + short(shown));
   // ONLY THE LATEST, ONE LINE PER TESTED THING (Andy, 2026-10-17: "i only want to see the latest, if you want to show
@@ -343,8 +348,10 @@ async function historyHalf() {
   const page = box.innerHTML + Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
   if (calls.some(function (c) { return c[0] === 'fallout.history' && c[1] && c[1].suite === 'zzFalloutA.js' && c[1].heading === 'the relay answers its key'; })) test.check('it reads the flips with fallout.history');
   else test.fail(OWED + 'the dialog asked ' + short(calls));
-  if (/#2/.test(page) && /❌/.test(page) && /✅/.test(page) && /bbb2222/.test(page) && /aaa1111/.test(page) && page.indexOf('bbb2222') < page.indexOf('aaa1111')) test.check('it shows each flip: the check, ❌ or ✅, its time and commit, newest first');
+  if (/#2/.test(page) && /❌/.test(page) && /✅/.test(page) && page.indexOf('2026-10-17 09:00:00') !== -1 && page.indexOf('2026-10-17 09:00:00') < page.indexOf('2026-10-16 09:00:00')) test.check('it shows each flip: the check, ❌ or ✅, and when, newest first');
   else test.fail(OWED + 'the dialog shows ' + short(page));
+  if (!/bbb2222|aaa1111/.test(page) && !/boom again/.test(page)) test.check('no commit and no failure text on screen, not even on hover');
+  else test.fail(OWED + 'the dialog still carries detail: ' + short(page));
 }
 
 (async function () { await serverHalf(); await paneHalf(); await keysHalf(); await currentHalf(); await historyHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
