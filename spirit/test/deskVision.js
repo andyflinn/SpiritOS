@@ -98,6 +98,12 @@ async function serverHalf() {
   const fa2 = await factsOf(a.id);
   if (fa2 && fa2.code !== true && !fa2.phase) test.check('the item has no code mark and no phase');
   else test.fail(OWED + 'the item reads code ' + short(fa2 && fa2.code) + ', phase ' + short(fa2 && fa2.phase));
+  // THE CODE TOGGLE IS NOT OFFERED (goal/G27.3). Andy, 2026-10-17: "The code button should not be available in vision
+  // items." The dialog draws its Code toggle from the facts' codeOffered, which the plugin's refusal sets false.
+  const ord = await call('session.set', { json: JSON.stringify({ goal: { id: 'or/G1', title: 'Ordinary' }, items: [{ id: 'or/G1.1', title: 'one', blocks: ['or/G1'] }] }) });
+  const fo = await factsOf('or/G1.1');
+  if (fa2 && fa2.codeOffered === false && fo && fo.codeOffered === true) test.check('a vision item carries codeOffered false; an ordinary item true');
+  else test.fail(OWED + 'codeOffered reads ' + short([fa2 && fa2.codeOffered, fo && fo.codeOffered]) + ' (session ' + short(ord) + ')');
   const rn = await call('item.rename', { id: a.id, title: 'A city for people' });
   if (landed(rn)) test.check('Rename lands');
   else test.fail(OWED + 'item.rename answered ' + short(rn));
@@ -188,6 +194,31 @@ async function faceHalf() {
   else test.fail(OWED + 'Open opened ' + short(dialogs));
   if (chatAt) test.check('the pane mounts its goal\'s chat through the face (ctx.chat)');
   else test.fail(OWED + 'the pane mounted no chat');
+
+  test.subHeading('the dialog draws no Code toggle where none is offered');
+  const DD = path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js');
+  const drawIn = async function (codeOffered) {
+    const ids = {};
+    const d2 = { getElementById: function (id) { return ids[id] || (ids[id] = fakeElement(id)); } };
+    let app = null;
+    new Function('spirit', 'document', 'window', fs.readFileSync(DD, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, d2, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') });
+    const f = { id: 'x/G1.1', title: 'an item', goal: 'x/G1', status: '', with: '', buttons: ['close', 'delete'], blocking: [], blocked: [], code: false, codeOffered: codeOffered };
+    app.mount(fakeElement('dd'), { escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
+      verb: function (n, body) { const q = body && body.ask && body.ask.desk; const v = q && Object.keys(q)[0];
+        if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(f), version: 1, change: 1 } });
+        if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [], chatMore: false } });
+        if (v === 'item.checks') return Promise.resolve({ status: 200, body: { checks: [] } });
+        if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: '', version: 1 } });
+        return Promise.resolve({ status: 200, body: { items: [], more: false } }); },
+      onPublished: function () { return function () {}; }, closeDialog: function () {}, armUntilElsewhere: function () {}, setScreenTitle: function () {}, setDialogResult: function () {} });
+    await app.open({ id: 'x/G1.1' });
+    await sleep(20);
+    return Object.keys(ids).map(function (k) { return ids[k].innerHTML; }).join('\n');
+  };
+  const without = await drawIn(false);
+  const withIt = await drawIn(true);
+  if (!/id="dd-code"/.test(without) && /id="dd-code"/.test(withIt)) test.check('deskDetails draws Code only when the item\'s facts offer it');
+  else test.fail(OWED + 'the dialog drew Code: offered false ' + /id="dd-code"/.test(without) + ', offered true ' + /id="dd-code"/.test(withIt));
 }
 
 (async function () { await serverHalf(); await faceHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
