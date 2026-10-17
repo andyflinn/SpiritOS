@@ -1,5 +1,5 @@
 {
- "change": 66047,
+ "change": 66048,
  "line": 8510,
  "goal": "goal/G27",
  "items": [
@@ -50,7 +50,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "excluded": [
     "ollama agent node"
    ],
@@ -4636,10 +4636,9 @@
    "id": "goal/G27.16",
    "title": "A shell app shows only while its server runs",
    "goal": "goal/G27",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
