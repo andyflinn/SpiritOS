@@ -90,7 +90,7 @@ async function serverHalf() {
   const r1 = await call('fallout.reds', { text: 'relay key' });
   const a1 = verifyAsks[verifyAsks.length - 1] || [];
   const rows = ((r1 && r1.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } });
-  if (a1[0] === 'search' && a1[1].over === 'tests' && a1[1].outcome === 'red' && a1[1].test === 'relay key') test.check('words ask deskVerify search {over: tests, outcome: red, test: the words}');
+  if (a1[0] === 'search' && a1[1].over === 'tests' && a1[1].outcome === 'red' && a1[1].test === 'relay key' && a1[1].current === 'yes') test.check('words ask deskVerify search {over: tests, outcome: red, current: yes, test: the words}');
   else test.fail(OWED + 'deskVerify was asked ' + short(a1));
   if (rows.length === 1 && rows[0] && rows[0].title === RED.title && rows[0].failure === RED.failure) test.check('its answer carries deskVerify\'s rows as they came');
   else test.fail(OWED + 'fallout.reds answered ' + short(r1));
@@ -98,6 +98,94 @@ async function serverHalf() {
   const a2 = verifyAsks[verifyAsks.length - 1] || [];
   if (a2[1] && a2[1].suite === 'zzFalloutA.js' && !a2[1].test && a2[1].outcome === 'red') test.check('a suite\'s file name asks for that suite\'s reds');
   else test.fail(OWED + 'a suite name asked ' + short(a2));
+  // The ✅/❌ filter (Andy, 2026-10-17: "do i get a filter for ✅ or ❌?"): green, red, or both ('').
+  await call('fallout.reds', { text: '', outcome: 'green' });
+  const a3 = verifyAsks[verifyAsks.length - 1] || [];
+  await call('fallout.reds', { text: '', outcome: '' });
+  const a4 = verifyAsks[verifyAsks.length - 1] || [];
+  if (a3[1] && a3[1].outcome === 'green' && a4[1] && !a4[1].outcome) test.check('the outcome asked is green, red, or both');
+  else test.fail(OWED + 'outcome filter asked ' + short([a3, a4]));
+}
+
+// ── ONE TEST, ONE KEY, WHICHEVER WAY IT TIPS (goal/G27.14) ───────────────
+//   Andy, 2026-10-17: "a passing test MUST BE stored under the same fucking name as a failing test, how the fuck are we
+//   supposed to keep track of a tests tipping either way?", and "that was the POINT when we conceived the fucking
+//   verifier?!?!??!". So testSupport keys each assertion by its place, its sub-heading and its number under it, and
+//   deskVerify answers what is red NOW (current: yes), the reds of the suite's latest run, with a total.
+function miniSuite(name, second) {
+  const f = path.join(scratch, name);
+  fs.writeFileSync(f, ["'use strict';", 'const test = require(' + JSON.stringify(path.join(__dirname, 'testSupport.js')) + ');',
+    "test.startTest('mini');", "test.subHeading('S. the part');", "test.check('alpha holds');", second,
+    'test.reportSuccessFailureCount();', 'process.exit(0);'].join('\n'));
+  return f;
+}
+async function keysHalf() {
+  test.subHeading('one test keeps one key, red or green');
+  const bodies = [];
+  const sink = await new Promise(function (resolve) {
+    const s = http.createServer(function (req, res) {
+      let b = ''; req.on('data', function (c) { b += c; });
+      req.on('end', function () { bodies.push(b); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"written":true}'); });
+    }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
+  });
+  const runOne = function (file) {
+    return new Promise(function (resolve) {
+      const k = spawn(process.execPath, [file, '--verify-port', String(sink.port)], { stdio: 'ignore' });
+      k.on('exit', function () { resolve(); });
+    });
+  };
+  await runOne(miniSuite('zzKeyRed.js', "test.fail('OWED: beta answered 41', 'and more');"));
+  await sleep(300);
+  const reds = bodies.splice(0).map(function (b) { try { return JSON.parse(b).ask.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
+  await runOne(miniSuite('zzKeyRed.js', "test.check('beta holds');"));
+  await sleep(300);
+  const greens = bodies.splice(0).map(function (b) { try { return JSON.parse(b).ask.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
+  sink.close();
+  const r2 = reds[1] || {};
+  const g2 = greens[1] || {};
+  if (r2.title && r2.title === g2.title && r2.outcome === 'red' && g2.outcome === 'green' && (reds[0] || {}).title === (greens[0] || {}).title) test.check('the second assertion keeps its key, ' + JSON.stringify(r2.title) + ', red then green');
+  else test.fail(OWED + 'the keys were red ' + short(reds.map(function (r) { return r.title; })) + ', green ' + short(greens.map(function (r) { return r.title; })));
+  if (/beta answered 41/.test(String(r2.failure || '')) && /and more/.test(String(r2.failure || ''))) test.check('the red carries its words as its failure text, beside the key');
+  else test.fail(OWED + 'the red record reads ' + short(r2));
+}
+
+async function currentHalf() {
+  test.subHeading('deskVerify answers what is red now, and how many');
+  const VERIFY = path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js');
+  const dir = path.join(scratch, 'verify');
+  fs.mkdirSync(path.join(dir, 'run', 'relay-state'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'state'), { recursive: true });
+  const deskNode = await new Promise(function (resolve) {
+    const s = http.createServer(function (req, res) { req.resume(); req.on('end', function () { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"desk":{}}'); }); })
+      .listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
+  });
+  fs.writeFileSync(path.join(dir, 'run', 'relay-state', 'environment.json'), JSON.stringify({ PORT: deskNode.port }));
+  const vpipe = process.platform === 'win32' ? appClient.pipePathFor(dir, 'deskVerify', 'win32', 'process') : path.join(dir, 'door.sock');
+  const vc = appClient.createAppClient({ rootDir: dir });
+  vc.register('deskVerify', vpipe);
+  const vk = spawn(process.execPath, [VERIFY, JSON.stringify({ db: path.join(dir, 'verify.db'), suiteMs: 400 }), '--pipe', vpipe, '--state', path.join(dir, 'state')], { cwd: path.join(dir, 'run'), stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  const ask = function (verb, a) { const q = {}; q[verb] = a; return vc.ask({ deskVerify: q }, ANDY).then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); };
+  let up = false;
+  for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await vc.ask('api'); up = !!(r.body && r.body.deskVerify && r.body.deskVerify.ok !== false); } catch (e) { /* not yet */ } }
+  try {
+    if (!up) { test.fail('the world: deskVerify did not start'); return; }
+    // An old run: a red under a wording no later run reports again (what the old keys left behind).
+    await ask('record', { suite: 'zzCur.js', title: 'old wording 41', outcome: 'red', failure: 'old' });
+    await sleep(900);
+    // The latest run of the same suite: one green, one red.
+    await ask('record', { suite: 'zzCur.js', title: 'S #1', outcome: 'green' });
+    await ask('record', { suite: 'zzCur.js', title: 'S #2', outcome: 'red', failure: 'now' });
+    const now = await ask('search', { over: 'tests', outcome: 'red', current: 'yes' });
+    const all = await ask('search', { over: 'tests', outcome: 'red' });
+    const titles = function (r) { return ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label).title; } catch (e) { return ''; } }); };
+    if (JSON.stringify(titles(now)) === '["S #2"]') test.check('current: yes answers only the reds of the suite\'s latest run');
+    else test.fail(OWED + 'current reds read ' + short(titles(now)) + ' (all reds ' + short(titles(all)) + ')');
+    if (now.total === 1 && all.total === 2) test.check('each answer carries its total: 1 current, 2 in all');
+    else test.fail(OWED + 'totals read ' + short([now.total, all.total]));
+  } finally {
+    await new Promise(function (r) { vk.once('exit', r); vk.kill(); setTimeout(r, 3000); });
+    deskNode.close();
+  }
 }
 
 // ── THE PRIVATE UI ──────────────────────────────────────────────────────
@@ -125,7 +213,7 @@ async function paneHalf() {
   const box = fakeElement('pane');
   ui.open(box, {
     goal: GOAL,
-    ask: function (verb, a) { asked.push([verb, a]); return Promise.resolve(verb === 'fallout.reds' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false } : {}); },
+    ask: function (verb, a) { asked.push([verb, a]); return Promise.resolve(verb === 'fallout.reds' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false, total: 3 } : {}); },
     onPublished: function () { return function () {}; }, chat: function () {}, callDialog: function () { return new Promise(function () {}); },
   });
   await sleep(20);
@@ -143,6 +231,17 @@ async function paneHalf() {
   const table = doc.getElementById('fallout-reds').innerHTML;
   if (/zzFalloutA\.js/.test(table) && /the relay answers its key/.test(table) && /abc1234/.test(table) && /boom: no answer/.test(table)) test.check('each red is a table row: suite, test, commit, time and failure');
   else test.fail(OWED + 'the table reads ' + short(table));
+  // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
+  if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
+  else test.fail(OWED + 'no #fallout-outcome select with red, green and both in ' + short(all()));
+  doc.getElementById('fallout-outcome').value = 'green';
+  box.fire('click', { target: { id: 'fallout-search', getAttribute: function () { return null; } } });
+  await sleep(20);
+  const sentGreen = asked.filter(function (x) { return x[0] === 'fallout.reds'; }).pop();
+  if (sentGreen && sentGreen[1].outcome === 'green') test.check('the filter goes with the search');
+  else test.fail(OWED + 'the search with the filter asked ' + short(sentGreen));
+  if (/\b3\b/.test(doc.getElementById('fallout-count').textContent)) test.check('the tab says how many matched: ' + doc.getElementById('fallout-count').textContent);
+  else test.fail(OWED + 'the count reads ' + short(doc.getElementById('fallout-count').textContent));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
   await sleep(10);
   const items = doc.getElementById('fallout-items');
@@ -150,7 +249,7 @@ async function paneHalf() {
   else test.fail(OWED + 'after Items: items hidden ' + items.hidden + ', says ' + short(items.innerHTML) + ', reds hidden ' + doc.getElementById('fallout-pane-reds').hidden);
 }
 
-(async function () { await serverHalf(); await paneHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
+(async function () { await serverHalf(); await paneHalf(); await keysHalf(); await currentHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   try { kid && kid.kill(); } catch (e) { /* gone */ }
   try { node && node.close(); } catch (e) { /* closed */ }
   setTimeout(function () {
