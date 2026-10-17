@@ -15,7 +15,7 @@
 //   paint(row),                   one row's cells, html
 //   press(row),                   a press on a row
 //   empty                         the sentence of an empty list
-// }) -> { refresh, destroy }
+// }) -> { refresh, ask(verb, args), destroy }      ask: the one slot lent to the app (goal/G29.5)
 //
 // WHAT EVERY SEARCH IT CALLS ANSWERS: {items: [{key, label}], more, total}; key is the identity of what the row shows,
 // label the row as json. A row is that json's object; paint, press and test all take it.
@@ -125,26 +125,41 @@
       last = { total: Number(answer && answer.total) || 0, more: !!(answer && answer.more), error: '' };
     }
 
-    // THE ONE SLOT ON THE WIRE.
-    function ask() {
-      if (!live || !o.api || typeof o.api.verb !== 'function') return;
-      if (busy) { again = true; return; }
-      busy = true;
+    // THE ONE SLOT ON THE WIRE: the list's search first, with the words as they stand when it goes; then what the app
+    // asks through the lent slot (goal/G29.5, list.ask), one at a time, in the order asked.
+    var lent = [];
+    function send(verb, args) {
       var inner = {};
-      inner[o.verb] = typeof o.args === 'function' ? o.args(words(), Object.assign({}, values)) : { text: words() };
+      inner[verb] = args;
       var outer = {};
       outer[o.server] = inner;
-      Promise.resolve(o.api.verb('jobs.api', { ask: outer })).then(function (r) {
+      return Promise.resolve(o.api.verb('jobs.api', { ask: outer })).then(function (r) {
         var body = r && r.body;
-        if (!r || r.status !== 200 || !body || body.ok === false) last = { total: last.total, more: last.more, error: 'The search could not be run: ' + ((body && (body.error || body.code)) || 'no answer') };
-        else take(body);
-      }, function (e) {
-        last = { total: last.total, more: last.more, error: 'The search could not be run: ' + ((e && e.message) || e) };
-      }).then(function () {
-        busy = false;
-        draw();
-        if (again) { again = false; ask(); }
+        if (!r || r.status !== 200 || !body || body.ok === false) throw new Error((body && (body.error || body.code)) || 'no answer');
+        return body;
       });
+    }
+    function pump() {
+      if (busy || !live || !o.api || typeof o.api.verb !== 'function') return;
+      var done = function () { busy = false; pump(); };
+      if (again) {
+        again = false;
+        busy = true;
+        send(o.verb, typeof o.args === 'function' ? o.args(words(), Object.assign({}, values)) : { text: words() }).then(function (body) {
+          take(body);
+        }, function (e) {
+          last = { total: last.total, more: last.more, error: 'The search could not be run: ' + ((e && e.message) || e) };
+        }).then(function () { draw(); done(); });
+        return;
+      }
+      var job = lent.shift();
+      if (!job) return;
+      busy = true;
+      send(job.verb, job.args).then(function (body) { job.resolve(body); }, function (e) { job.reject(e); }).then(done);
+    }
+    function ask() { again = true; pump(); }
+    function lend(verb, args) {
+      return new Promise(function (resolve, reject) { lent.push({ verb: verb, args: args || {}, resolve: resolve, reject: reject }); pump(); });
     }
 
     function typed() { draw(); ask(); }
@@ -176,6 +191,9 @@
 
     return {
       refresh: function () { ask(); },
+      // THE SLOT LENT TO THE APP (goal/G29.5): another call of the app to the same server, through the same one slot, so
+      // nothing of the app's is ever two on the wire; it answers the server's body.
+      ask: function (verb, args) { return lend(verb, args); },
       destroy: function () { live = false; if (typeof off === 'function') off(); off = null; },
     };
   }

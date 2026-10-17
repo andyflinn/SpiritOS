@@ -1278,7 +1278,9 @@ async function search(a) {
     if (words && !(p > 0)) continue;
     const row = slim ? { suite: r.suite, title: r.title, outcome: r.outcome, at: r.at }
       : { suite: r.suite, title: r.title, outcome: r.outcome, commit: r.commitAt, at: r.at, failure: r.failure || '' };
-    found.push({ probability: p, pair: { key: String(r.rowid), label: JSON.stringify(row) } });
+    // A TEST'S IDENTITY AS ITS KEY (goal/G29.5): its file and its key, so a list that caches rows replaces a test it
+    // already holds; a flip of its history is its own record.
+    found.push({ probability: p, pair: { key: history ? String(r.rowid) : r.suite + '\n' + r.title, label: JSON.stringify(row) } });
   }
   // HOW MANY (goal/G27.14, Andy: "how many red?"): every match counted, beside the bucket that carries the best of them.
   const out = searchBucket(found[Symbol.iterator]());

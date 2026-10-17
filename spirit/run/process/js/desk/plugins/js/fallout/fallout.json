@@ -1,7 +1,7 @@
 {
   "label": "Fallout",
   "tab": "Fallout",
-  "description": "The fallout of goals that pass on their own scope (goal/G27.14): for now its Reds tab searches the verifier's tests that are red now, through fallout.reds, which asks this node's deskVerify. Its Items tab, the item form and the chat come later.",
+  "description": "The fallout of goals that pass on their own scope (goal/G27.14): for now its Reds tab searches the verifier's tests that stand now, asking this node's deskVerify itself (goal/G29.5). Its Items tab and the item form come later.",
   "kind": "deskPlugin",
   "goal": "Fallout"
 }

@@ -5,9 +5,10 @@
 //   "so we'll add a dialog for test-history, that shows us the flips."
 //
 // Opened from a line of the Fallout tab with { suite, heading }: the test file and the sub-heading its checks stand
-// under (since goal/G27.14 a check's key is "<heading> #<n>"). It reads every flip through the Fallout plugin's verb
-// fallout.history, which asks this node's deskVerify, and draws one line per flip, newest first: the check's number,
-// ❌ fail or ✅ success, and when; the commit and the printed failure stay in deskVerify, off the screen.
+// under (since goal/G27.14 a check's key is "<heading> #<n>"), or one test's full key. It reads every flip with this
+// node's deskVerify search itself (goal/G29.5: "fallout talks to deskVerify only"), and draws one line per flip,
+// newest first: the check's number, ❌ fail or ✅ success, and when; the commit and the printed failure stay in
+// deskVerify, off the screen.
 
 var fhApi = null;
 var fhBody = null;
@@ -16,9 +17,9 @@ var fhKey = '';
 function fhEsc(s) { return fhApi && fhApi.escapeHtml ? fhApi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function fhWhen(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
 function fhAsk(verb, args) {
-  var desk = {};
-  desk[verb] = args;
-  return Promise.resolve(fhApi.verb('jobs.api', { ask: { desk: desk } })).then(function (r) {
+  var deskVerify = {};
+  deskVerify[verb] = args;
+  return Promise.resolve(fhApi.verb('jobs.api', { ask: { deskVerify: deskVerify } })).then(function (r) {
     var body = (r && r.body) || {};
     if (body.ok === false) throw new Error((body.extra && body.extra.why) || body.code || 'refused');
     return body;
@@ -38,7 +39,7 @@ spirit.shell.activateApp({
     // Every block a leading 1em (the desk's UI rules).
     fhBody.innerHTML = '<div class="stat-tile wide" style="margin-top:1em"><div class="label">' + fhEsc(suite) + ': ' + fhEsc(heading) + '</div>' +
       '<div id="fh-note" class="job-manifest-note">Reading its flips.</div><div id="fh-rows" style="margin-top:1em"></div></div>';
-    return fhAsk('fallout.history', { suite: suite, heading: heading }).then(function (r) {
+    return fhAsk('search', { over: 'tests', suite: suite, heading: heading, history: 'yes', slim: 'yes' }).then(function (r) {
       if (fhKey !== key) return;
       var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean)
         .sort(function (a, b) { return String(b.at).localeCompare(String(a.at)); });

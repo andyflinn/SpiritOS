@@ -782,7 +782,9 @@ function deskOpenPlugin(app) {
     // goal/G22.3: onPublished(fn, server) takes another server's stream too.
     // goal/G27.2 (D1): callDialog(app, params) is the shell's dialog, passed through, so a plugin opens its own detail
     // (Stacks: shell/stackFrameCheckDetail) as Desk opens deskDetails.
-    ui.open(el, { goal: app.goal, ask: deskAsk, onPublished: function (fn, server) { return server ? deskApi.onPublished(fn, server) : deskApi.onPublished(fn); },
+    // goal/G29.5: verb(name, body) is Desk's own call, so a plugin talks to the server it needs (Fallout to deskVerify
+    // only) and hands it to the shared list (shellCreateListSearch) with onPublished as that list's api.
+    ui.open(el, { goal: app.goal, ask: deskAsk, verb: function (name, body) { return deskApi.verb(name, body); }, onPublished: function (fn, server) { return server ? deskApi.onPublished(fn, server) : deskApi.onPublished(fn); },
       chat: function (container) { deskMountChat(container, app.goal); },
       callDialog: function (dialog, params) { return deskApi.callDialog(dialog, params); } });
   };
