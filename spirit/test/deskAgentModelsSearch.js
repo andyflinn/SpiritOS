@@ -179,6 +179,7 @@ async function faceHalf() {
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   const calls = [];
   let behavior = null;
+  let failing = '';
   const ctx = { spirit: { shell: { activateApp: function (a) { behavior = a; } }, core: kernel.core, keyTail: function (k) { return String(k).slice(-6); } }, document: doc, window: {}, console: console, setTimeout: setTimeout, clearTimeout: clearTimeout };
   ctx.window = ctx;
   ctx.window.spiritFieldRules = fieldRules;
@@ -192,6 +193,8 @@ async function faceHalf() {
       const v = a ? Object.keys(a)[0] : '';
       if (v) calls.push({ verb: v, args: a[v] });
       if (v === 'state') return Promise.resolve({ status: 200, body: STATE });
+      if (v === 'models.search' && failing === 'refused') return Promise.resolve({ status: 200, body: { ok: false, code: 'handler-failed', error: 'the studio did not answer', extra: { why: 'the studio did not answer' } } });
+      if (v === 'models.search' && failing === 'empty') return Promise.resolve({ status: 200, body: { models: [], more: false, marks: [], active: '', activeQuant: '', cached: false, load: {}, test: {} } });
       if (v === 'models.search') {
         const text = String((a[v] || {}).text || '');
         const list = text === 'gpt-03' ? [{ id: 'gpt-0300', quant: '', loaded: false }, loadedEntry] : [{ id: 'gpt-0000', quant: '', loaded: false }, { id: 'gpt-0001', quant: '', loaded: false, recommended: true }, loadedEntry];
@@ -220,6 +223,21 @@ async function faceHalf() {
   const warn = Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
   if (!/No model is loaded/.test(warn)) test.check('with the loaded entry in the state, no "no model loaded" warning');
   else test.fail(OWED + 'the Remote warns no model is loaded although the state names ' + LOADED);
+
+  // Andy, 2026-10-17: "why would the search be conditional on model-provider?" A provider that does not answer (Unsloth
+  // Studio down), or one with nothing listed yet, still gets the search box.
+  failing = 'refused';
+  doc.getElementById('dur-refresh').fire('click', {});
+  for (let i = 0; i < 4; i++) { await settled(); await sleep(20); }
+  if (/id="dur-model-search"/.test(box()) && /could not be read/.test(box())) test.check('a search the provider could not answer still shows the search box, and why');
+  else test.fail(OWED + 'with the search refused the picker reads ' + short(box()));
+  failing = 'empty';
+  search.value = '';
+  search.fire('input', { target: search });
+  doc.getElementById('dur-models').fire('click', clickOn({ 'data-filter': 'reasoning' }));
+  for (let i = 0; i < 4; i++) { await settled(); await sleep(20); }
+  if (/id="dur-model-search"/.test(box())) test.check('an empty list still shows the search box');
+  else test.fail(OWED + 'with an empty list the picker reads ' + short(box()));
 }
 
 (async function () { await serverHalf(); await faceHalf(); })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(async function () {
