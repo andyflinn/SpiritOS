@@ -92,8 +92,9 @@ async function serverHalf() {
   const a1 = verifyAsks[verifyAsks.length - 1] || [];
   const rows = ((r1 && r1.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } });
   // NOTHING SENT THAT IS NOT SHOWN (Andy, 2026-10-17: "don't return shit in the search that i don't want to see! WASTE
-  // OF SPACE."): the list asks for folded lines (fold: yes) without commit or failure text (slim: yes).
-  if (a1[0] === 'search' && a1[1].fold === 'yes' && a1[1].slim === 'yes') test.check('the list asks deskVerify for folded, slim lines');
+  // OF SPACE."): the list asks without commit or failure text (slim: yes); NEVER FOLDED (Andy, 2026-10-17: "i WANT TO
+  // SEE ONE FUCKING LINE PER FUCKING TEST." and "STOP COLLATING SHIT I DIDN?T ASK FOR!").
+  if (a1[0] === 'search' && a1[1].fold === undefined && a1[1].slim === 'yes') test.check('the list asks deskVerify for slim lines, one per test, nothing folded');
   else test.fail(OWED + 'the list asked ' + short(a1));
   if (a1[0] === 'search' && a1[1].over === 'tests' && a1[1].outcome === 'red' && a1[1].test === 'relay key' && a1[1].current === 'yes') test.check('words ask deskVerify search {over: tests, outcome: red, current: yes, test: the words}');
   else test.fail(OWED + 'deskVerify was asked ' + short(a1));
@@ -214,11 +215,17 @@ async function currentHalf() {
     const sl = ((slimHist && slimHist.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
     if (sl.length === 3 && sl.every(function (x) { return x.title && x.outcome && x.at && x.commit === undefined && x.failure === undefined; })) test.check('slim: yes leaves commit and failure text out of each row');
     else test.fail(OWED + 'slim rows read ' + short(sl));
-    const folded = await ask('search', { over: 'tests', suite: 'zzHist.js', fold: 'yes', slim: 'yes' });
-    const fl = ((folded && folded.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } });
-    const fh = fl.filter(function (x) { return x.what === 'H'; })[0];
-    if (fl.length === 2 && fh && fh.red === true && fh.suite === 'zzHist.js' && fh.at && fh.title === undefined && fh.failure === undefined && folded.total === 2) test.check('fold: yes answers one line per test file and heading, red while any check is, its total the lines');
-    else test.fail(OWED + 'folded lines read ' + short(fl) + ', total ' + short(folded.total));
+    // ONE TEST'S HISTORY: a full key as the heading answers the flips of that one test.
+    const one = await ask('search', { over: 'tests', suite: 'zzHist.js', heading: 'H #1', history: 'yes', slim: 'yes' });
+    const ot = ((one && one.items) || []).map(function (i) { try { const x = JSON.parse(i.label); return x.title + ':' + x.outcome; } catch (e) { return ''; } });
+    if (JSON.stringify(ot.slice().sort()) === JSON.stringify(['H #1:green', 'H #1:red'])) test.check('a full key as heading answers the flips of that one test');
+    else test.fail(OWED + 'the history of H #1 reads ' + short(ot));
+    // NO COLLATING (Andy, 2026-10-17: "STOP COLLATING SHIT I DIDN?T ASK FOR!"): fold is gone from deskVerify's search.
+    let searchKeys = [];
+    try { searchKeys = Object.keys(JSON.parse(fs.readFileSync(path.join(RUN, 'process', 'js', 'deskVerify', 'search.json'), 'utf8')).request); } catch (e) { searchKeys = ['unreadable']; }
+    const vsrc = fs.readFileSync(path.join(RUN, 'process', 'js', 'deskVerify', 'deskVerify.js'), 'utf8');
+    if (searchKeys.indexOf('fold') === -1 && !/'fold'/.test(vsrc)) test.check('deskVerify\'s search takes no fold: nothing is collated');
+    else test.fail(OWED + 'deskVerify still folds: search.json keys ' + short(searchKeys));
   } finally {
     await new Promise(function (r) { vk.once('exit', r); vk.kill(); setTimeout(r, 3000); });
     deskNode.close();
@@ -325,23 +332,22 @@ async function paneHalf() {
   // on-screen."), and the ❌/✅ stay ("Keep the fucking fail/success icons").
   if (!/boom: no answer/.test(table) && !/older/.test(table) && !/abc1234/.test(table)) test.check('no failure text and no commit anywhere in the lines, not even on hover');
   else test.fail(OWED + 'the lines still carry detail: ' + short(table));
-  if (!/boom: no answer/.test(shown) && !/#\d/.test(shown)) test.check('no raw failure text and no key number in the row');
-  else test.fail(OWED + 'the row still shows ' + short(shown));
-  // ONLY THE LATEST, ONE LINE PER TESTED THING (Andy, 2026-10-17: "i only want to see the latest, if you want to show
-  // the history of one test, use a dialog."): one line per test file and sub-heading, ❌ while any check under it is
-  // red, its newest time.
+  // ONE LINE PER TEST, THE LATEST OF EACH (Andy, 2026-10-17: "i WANT TO SEE ONE FUCKING LINE PER FUCKING TEST." and
+  // "STOP COLLATING SHIT I DIDN?T ASK FOR!"): four tests, four lines, each its own key, its own status and time.
   const lines = (shown.match(/<tr[\s>]/g) || []).length - 1;
-  const relayLine = (shown.match(/<tr[^>]*>(?:(?!<\/tr>).)*the relay answers its key(?:(?!<\/tr>).)*<\/tr>/) || [''])[0];
-  if (lines === 2) test.check('one line per tested thing: two lines for two sub-headings');
+  const lineOf = function (key) { return (shown.match(new RegExp('<tr[^>]*>(?:(?!<\\/tr>).)*' + key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?:(?!<\\/tr>).)*<\\/tr>')) || [''])[0]; };
+  if (lines === 4) test.check('one line per test: four tests, four lines');
   else test.fail(OWED + lines + ' lines in ' + short(shown));
-  if (/❌/.test(relayLine) && /2026-10-17 09:00:00/.test(relayLine)) test.check('a line is ❌ while any check under it is red, and shows its newest time');
-  else test.fail(OWED + 'the relay line reads ' + short(relayLine));
-  // F6: a line opens the history dialog of its tested thing.
-  box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-suite' ? 'zzFalloutA.js' : n === 'data-heading' ? 'the relay answers its key' : null; }, closest: function () { return null; } } });
+  const red3 = lineOf('the relay answers its key #3');
+  const green1 = lineOf('the relay answers its key #1');
+  if (/❌/.test(red3) && /2026-10-17 09:00:00/.test(red3) && /✅/.test(green1) && !/❌/.test(green1)) test.check('each line is its own test: #3 ❌ at its time, #1 ✅');
+  else test.fail(OWED + 'the #3 line reads ' + short(red3) + ', the #1 line ' + short(green1));
+  // F6: a line opens the history dialog of its one test.
+  box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-suite' ? 'zzFalloutA.js' : n === 'data-heading' ? 'the relay answers its key #3' : null; }, closest: function () { return null; } } });
   await sleep(20);
-  if (dialogs.some(function (d) { return d[0] === 'shell/falloutHistory' && d[1] && d[1].suite === 'zzFalloutA.js' && d[1].heading === 'the relay answers its key'; })) test.check('a line opens shell/falloutHistory with its suite and heading');
+  if (dialogs.some(function (d) { return d[0] === 'shell/falloutHistory' && d[1] && d[1].suite === 'zzFalloutA.js' && d[1].heading === 'the relay answers its key #3'; })) test.check('a line opens shell/falloutHistory with its suite and its test\'s key');
   else test.fail(OWED + 'a click on a line opened ' + short(dialogs));
-  if (/data-suite="zzFalloutA\.js"/.test(table) && /data-heading="the relay answers its key"/.test(table)) test.check('each line carries its suite and heading to open with');
+  if (/data-suite="zzFalloutA\.js"/.test(table) && /data-heading="the relay answers its key #3"/.test(table)) test.check('each line carries its suite and its test\'s key to open with');
   else test.fail(OWED + 'the lines carry no data-suite and data-heading: ' + short(table));
   // The ✅/❌ filter and the count (Andy, 2026-10-17: "how many red?" and "do i get a filter for ✅ or ❌?").
   if (/<select[^>]*id="fallout-outcome"/.test(all()) && /value="red"/.test(all()) && /value="green"/.test(all()) && /value=""/.test(all())) test.check('a ✅/❌ filter: red, green or both');
