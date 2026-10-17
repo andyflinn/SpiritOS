@@ -243,6 +243,17 @@ async function paneHalf() {
   const byId = {};
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); }, body: fakeElement('body') };
   const win = { spiritFieldRules: require('../run/js/fieldRules.js'), spiritDeskPlugins: {} };
+  // THE SAME SEARCH CODE IN THE PAGE (Andy, 2026-10-17: "why down't the UI run the exact same search code in the shell?
+  // ... any search can then easiliy accumulate a cache that can be expanded with every search? it's a pattern...."):
+  // the probability modules load into a page's window as they load into node; a fake page cannot load a script, so
+  // the world puts them there, and counts the matches the pane asks of them.
+  const PROB = ['probabilityStringMatch.js', 'probabilityBucket.js'].map(function (f) { return path.join(RUN, 'js', f); });
+  PROB.forEach(function (f) { if (fs.existsSync(f)) { try { new Function('window', 'module', fs.readFileSync(f, 'utf8'))(win, undefined); } catch (e) { /* node-only: the red below says so */ } } });
+  let probCalls = 0;
+  if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function') {
+    const real = win.spiritProbability.probabilityStringMatch;
+    win.spiritProbability.probabilityStringMatch = function (a, b) { probCalls += 1; return real(a, b); };
+  }
   new Function('document', 'window', fs.readFileSync(PLUGIN_UI, 'utf8'))(doc, win);
   const ui = win.spiritDeskPlugins.fallout;
   if (!ui || typeof ui.open !== 'function') { test.fail(OWED + 'the UI registers no window.spiritDeskPlugins.fallout.open'); return; }
@@ -343,6 +354,10 @@ async function paneHalf() {
   box.fire('click', { target: { id: 'fallout-search', getAttribute: function () { return null; } } });
   await sleep(20);
   const cachedTable = doc.getElementById('fallout-reds').innerHTML;
+  if (win.spiritProbability && typeof win.spiritProbability.probabilityStringMatch === 'function' && typeof win.spiritProbability.createProbabilityBucket === 'function') test.check('the probability modules load into a page\'s window');
+  else test.fail(OWED + 'js/probabilityStringMatch.js and js/probabilityBucket.js give a page nothing: ' + short(win.spiritProbability && Object.keys(win.spiritProbability)));
+  if (probCalls > 0) test.check('the pane ranks its cache with the same probabilityStringMatch the servers search with (' + probCalls + ' calls)');
+  else test.fail(OWED + 'the pane matched its cache without probabilityStringMatch');
   if (/a door stays shut/.test(cachedTable) && !/the relay answers its key/.test(cachedTable)) test.check('a search shows what matches its term among every line any search brought');
   else test.fail(OWED + 'after searching door the table reads ' + short(cachedTable));
   box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fallout-tab' ? 'items' : null; } } });
