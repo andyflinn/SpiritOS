@@ -87,19 +87,38 @@ const CONFIGURATION = fs.existsSync(path.join(STATE, CONFIGURATION_FILE)) ? read
 // to a pair that has one carries the header anthropic-workspace-id (pairHeaders below). One header, not an
 // adapter: Andy refused an adapter for deskAgent in goal/G21.
 const LEGACY_PAIR = 'studio';
+// THE EFFORT, PER API AND MODEL (goal/G27.8). Andy's box: "Effort is the control for how much work a task gets, like
+// the low to high sliders in claude-code: an effort slider in the configuration, per api/model combination that
+// supports it", "configured not guessed", and the slider defaults to medium (Andy, 2026-10-17). So a table of rows
+// {server, model, field}: a row applies to a pair whose url holds its server and to a model whose id begins with its
+// model; its field is the one the request carries. configuration.json may carry its own table as effort; without one,
+// these rows. The level is kept per pair and model, on the pair, medium until set; off sends nothing; a model no row
+// applies to sends nothing and its slider is disabled. The studio has no row until its accepted fields are confirmed.
+const EFFORT_LEVELS = ['off', 'low', 'medium', 'high'];
+const EFFORT_DEFAULT = 'medium';
+const EFFORT_TABLE_DEFAULT = [
+  { server: 'api.openai.com', model: 'o', field: 'reasoning_effort' },
+  { server: 'api.openai.com', model: 'gpt-5', field: 'reasoning_effort' },
+  { server: 'api.anthropic.com', model: 'claude-', field: 'thinking' },
+];
+function effortLevels(x) {
+  const out = {};
+  if (x && typeof x === 'object' && !Array.isArray(x)) Object.keys(x).forEach(function (m) { if (EFFORT_LEVELS.indexOf(x[m]) !== -1) out[m] = x[m]; });
+  return out;
+}
 function readConnections() {
   let c = null;
   try { c = JSON.parse(fs.readFileSync(path.join(STATE, CONNECTION_FILE), 'utf8')); } catch (e) { return []; }
   if (Array.isArray(c)) {
     return c.filter(function (p) { return p && typeof p.name === 'string' && p.name; }).map(function (p) {
-      return { name: p.name, url: String(p.url || ''), key: String(p.key || ''), use: p.use === true, model: String(p.model || ''), workspace: String(p.workspace || '') };
+      return { name: p.name, url: String(p.url || ''), key: String(p.key || ''), use: p.use === true, model: String(p.model || ''), workspace: String(p.workspace || ''), effort: effortLevels(p.effort) };
     });
   }
-  if (c && typeof c === 'object' && c.url) return [{ name: LEGACY_PAIR, url: String(c.url), key: String(c.key || ''), use: true, model: String(CONFIGURATION.model || ''), workspace: '' }];
+  if (c && typeof c === 'object' && c.url) return [{ name: LEGACY_PAIR, url: String(c.url), key: String(c.key || ''), use: true, model: String(CONFIGURATION.model || ''), workspace: '', effort: {} }];
   return [];
 }
 function writeConnections() {
-  const rows = CONNECTIONS.map(function (p) { return { name: p.name, url: p.url, key: p.key, use: p.use, model: p.model, workspace: p.workspace || '' }; });
+  const rows = CONNECTIONS.map(function (p) { return { name: p.name, url: p.url, key: p.key, use: p.use, model: p.model, workspace: p.workspace || '', effort: effortLevels(p.effort) }; });
   fs.writeFileSync(path.join(STATE, CONNECTION_FILE), JSON.stringify(rows, null, 2) + '\n');
 }
 // The headers of every call to a pair: its key, and its workspace only when it has one (goal/G14.10).
@@ -115,6 +134,44 @@ function pairHeaders(pair) {
 function pairNamed(name) { return CONNECTIONS.filter(function (p) { return p.name === name; })[0] || null; }
 let CONNECTIONS = readConnections();
 let CONNECTION = CONNECTIONS.filter(function (p) { return p.use; })[0] || {};
+const EFFORT_TABLE = (Array.isArray(CONFIGURATION.effort) ? CONFIGURATION.effort : EFFORT_TABLE_DEFAULT).filter(function (r) {
+  return r && typeof r.server === 'string' && r.server && typeof r.model === 'string' && (r.field === 'reasoning_effort' || r.field === 'thinking');
+});
+function effortRow(pair, model) {
+  const url = String((pair && pair.url) || '');
+  const id = String(model || '');
+  return EFFORT_TABLE.filter(function (r) { return url.indexOf(r.server) !== -1 && id.indexOf(r.model) === 0; })[0] || null;
+}
+function effortLevel(pair, model) { return ((pair && pair.effort) || {})[String(model || '')] || EFFORT_DEFAULT; }
+function effortNow() { return { supported: !!effortRow(CONNECTION, MODEL), level: effortLevel(CONNECTION, MODEL) }; }
+// THE THINKING BUDGET: a share of the answer's own length mark, which it must stay under (Anthropic refuses a budget at
+// or over max_tokens). The cost, stated (rule/5): thinking spends that share of the answer's tokens.
+const THINKING_SHARE = { low: 0.25, medium: 0.5, high: 0.75 };
+// Only the mapped field is added; the rest of the body is unchanged.
+function withEffort(body) {
+  const row = effortRow(CONNECTION, body.model);
+  const level = effortLevel(CONNECTION, body.model);
+  if (!row || level === 'off') return body;
+  if (row.field === 'reasoning_effort') body.reasoning_effort = level;
+  else {
+    const room = Number(body.max_completion_tokens || body.max_tokens) || 0;
+    const budget = Math.floor(room * THINKING_SHARE[level]);
+    if (budget > 0) body.thinking = { type: 'enabled', budget_tokens: budget };
+  }
+  return body;
+}
+function setEffort(model, level) {
+  const id = String(model || '');
+  if (EFFORT_LEVELS.indexOf(level) === -1) throw refused('the level is one of ' + EFFORT_LEVELS.join(', ') + ', not ' + JSON.stringify(level));
+  if (!CONNECTION.name) throw refused('no pair is in use');
+  if (!effortRow(CONNECTION, id)) throw refused('no effort row applies to ' + JSON.stringify(id) + ' on ' + CONNECTION.name + ': its slider is disabled');
+  CONNECTION.effort = Object.assign({}, CONNECTION.effort || {});
+  CONNECTION.effort[id] = level;
+  writeConnections();
+  say('effort ' + level + ' for ' + id + ' on ' + CONNECTION.name);
+  publishState();
+  return { model: id, level: level };
+}
 
 const PERSONA = String(CONFIGURATION.persona || 'agent');
 const PREAMBLE = String(CONFIGURATION.preamble || '');
@@ -603,7 +660,7 @@ function learnReasoning(model, got) {
 
 function askModelRound(messages, list, round, flight, onTool) {
   if (flight.aborted) return Promise.reject(abortedError());
-  const body = withAnswerTokens({ model: MODEL, messages: messages });
+  const body = withEffort(withAnswerTokens({ model: MODEL, messages: messages }));
   if (list.length) body.tools = list;
   note(flight.from, 'request', 'to ' + (MODEL || '(no model)') + ', round ' + (round + 1) + ': ' + messages.length + ' messages, ' +
     messages.reduce(function (s, m) { return s + messageBytes(m); }, 0) + ' bytes, ' + list.length + ' tools; the last: ' + lastWords(messages));
@@ -660,9 +717,13 @@ function askModelRound(messages, list, round, flight, onTool) {
       messages.push({ role: 'user', content: SPELLED_AGAIN });
       return askModelRound(messages, list, round + 1, flight, onTool);
     }
+    // A REPLY CUT AT THE LENGTH LIMIT IS SAID SO (goal/G27.8, design C): "marked truncated in the chat or box text,
+    // never sent silently as if complete".
+    if (choice && choice.finish_reason === 'length') return content + TRUNCATED_MARK;
     return content;
   });
 }
+const TRUNCATED_MARK = ' [truncated: the answer reached its length limit]';
 
 // ── THE STUDIO'S MODELS, AND A LOAD (goal/G14.4) ──────────────────────
 //
@@ -877,6 +938,8 @@ function stateObject() {
     cached: !(refreshedAt && Date.now() - refreshedAt < FRESH_MS),
     load: { model: load.model, state: load.state, error: load.error },
     test: testNow(),
+    // The effort for the model in use (goal/G27.8): whether a row applies, and its level.
+    effort: effortNow(),
     models: Array.isArray(have.models) ? have.models : [],
     // The tool in flight, if any (goal/G14.6), so the chat box can show the fetch.
     chat: chatObject(),
@@ -988,7 +1051,7 @@ function testModel(id, quant) {
       // The test's call is the model at work too: abort reaches it and the test tab logs it (goal/G19.7).
       const flight = takeOff('test');
       note('test', 'request', 'to ' + id + (quant ? ' ' + quant : '') + ', ' + list.length + ' tools: ' + TEST_PROMPT);
-      return studio('POST', '/v1/chat/completions', withAnswerTokens({ model: id, messages: [{ role: 'system', content: PREAMBLE }, { role: 'user', content: TEST_PROMPT }], tools: list }), undefined, undefined, flight)
+      return studio('POST', '/v1/chat/completions', withEffort(withAnswerTokens({ model: id, messages: [{ role: 'system', content: PREAMBLE }, { role: 'user', content: TEST_PROMPT }], tools: list })), undefined, undefined, flight)
         .then(function (got) { land(flight); return got; }, function (e) { land(flight); throw e; });
     });
   }).then(function (got) {
@@ -1043,7 +1106,7 @@ function setConnection(name, url, key, workspace) {
   if (why) throw refused(why);
   const n = require('../../../js/fieldRules.js').normalize(name);
   let p = pairNamed(n);
-  if (!p) { p = { name: n, url: '', key: '', use: false, model: '', workspace: '' }; CONNECTIONS.push(p); }
+  if (!p) { p = { name: n, url: '', key: '', use: false, model: '', workspace: '', effort: {} }; CONNECTIONS.push(p); }
   p.url = String(url || '');
   p.key = String(key || '');
   p.workspace = String(workspace || '').trim();
@@ -1662,8 +1725,8 @@ appServer.serve({
     handler: function (a) { return setConnected(a.on === true); },
   },
   state: {
-    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }], working: true },
-    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow(), working: flights.size > 0 }; },
+    request: {}, reply: { connected: true, persona: '', model: '', server: { url: '', answers: true, error: '' }, connections: [{ name: '', url: '', use: true }], working: true, effort: { supported: true, level: '' } },
+    handler: function () { return { connected: connected, persona: PERSONA, model: MODEL, server: { url: server.url, answers: server.answers, error: server.error }, connections: connectionsNow(), working: flights.size > 0, effort: effortNow() }; },
   },
   // CLEAR SIGNOFF (goal/G27.6, approved by Andy 2026-10-16): the Remote's button lifts a signoff the desk gave. The
   // node asks its deskClient, which clears the state and answers with it.
@@ -1697,6 +1760,11 @@ appServer.serve({
   'connection.use': {
     request: { name: '' }, reply: { url: '', answers: true, error: '' },
     handler: function (a) { return usePair(String(a.name)); },
+  },
+  // THE EFFORT SLIDER'S VERB (goal/G27.8): the level for one model on the pair in use.
+  'effort.set': {
+    request: { model: '', level: '' }, reply: { model: '', level: '' },
+    handler: function (a) { return setEffort(String(a.model || ''), String(a.level || '')); },
   },
   'connection.remove': {
     request: { name: '' }, reply: { connections: [{ name: '', url: '', use: true }] },

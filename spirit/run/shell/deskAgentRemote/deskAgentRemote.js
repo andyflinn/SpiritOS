@@ -377,6 +377,42 @@ function deskAgentRemoteDrawModels() {
     if (emptyRefresh) emptyRefresh.addEventListener('click', function () { deskAgentRemoteLoadModels(); });
     return;
   }
+  // THE SEARCH AND THE FILTERS (goal/G27.8, R4). Andy, 2026-10-17: "a model search above the picker, with filter icons
+  // for desk-tested, vision etc..", and "each list offers only filters that apply to the list". The picker shows the
+  // models whose id holds the search and that carry every pressed mark; a filter is offered only when a model of the
+  // list carries its mark.
+  var offered = DESK_AGENT_REMOTE_FILTERS.filter(function (f) { return models.some(f.has); });
+  Object.keys(deskAgentRemoteFilters).forEach(function (k) { if (!offered.some(function (f) { return f.key === k; })) delete deskAgentRemoteFilters[k]; });
+  var needle = deskAgentRemoteSearch.toLowerCase();
+  models = models.filter(function (m) {
+    if (needle && String(m.id || '').toLowerCase().indexOf(needle) === -1) return false;
+    return offered.every(function (f) { return !deskAgentRemoteFilters[f.key] || f.has(m); });
+  });
+  var searchRow = '<div class="start-job-form card">' +
+    '<input type="search" id="dur-model-search" class="grow" placeholder="search models" value="' + escape(deskAgentRemoteSearch) + '">' +
+    offered.map(function (f) {
+      var on = !!deskAgentRemoteFilters[f.key];
+      return '<button type="button" data-filter="' + f.key + '" aria-pressed="' + on + '" title="' + f.key + (on ? ': on' : '') + '"' + (on ? ' class="primary"' : '') + '>' + deskAgentRemoteIcon(f.icon) + '</button>';
+    }).join('') +
+    '</div>';
+  if (!box.durFiltersWired) {
+    box.durFiltersWired = true;
+    box.addEventListener('click', function (e) {
+      var t = e && e.target;
+      var b = t && t.closest ? t.closest('[data-filter]') : t;
+      var key = b && b.getAttribute ? b.getAttribute('data-filter') : null;
+      if (!key) return;
+      if (deskAgentRemoteFilters[key]) delete deskAgentRemoteFilters[key];
+      else deskAgentRemoteFilters[key] = true;
+      deskAgentRemoteDrawModels();
+    });
+  }
+  if (!models.length) {
+    box.innerHTML = searchRow + '<div class="start-job-form card">' +
+      '<label class="field-label grow">Model<select id="dur-model" disabled><option value="">no model matches the search</option></select></label></div>';
+    deskAgentRemoteWireSearch();
+    return;
+  }
   var loadedOne = models.filter(function (m) { return m.loaded; })[0];
   var chosen = models.some(function (m) { return deskAgentRemoteKey(m) === deskAgentRemoteChosen; }) ? deskAgentRemoteChosen
     : deskAgentRemoteKey(loadedOne || models[0]);
@@ -386,7 +422,7 @@ function deskAgentRemoteDrawModels() {
   var testingThis = test.state === 'running' && test.id === model.id && String(test.quant || '') === String(model.quant || '');
   var line = deskAgentRemoteLineFor(model);
   var loading = deskAgentRemoteLoadTimer && !model.loaded;
-  box.innerHTML =
+  box.innerHTML = searchRow +
     '<div class="start-job-form card">' +
       // THE REFRESH (goal/G10.10). Andy, 2026-10-12: "we need a button to the left of the model-picker that allows me
       // to refresh the model list, so i don't have to re-start the Remote or 11111".
@@ -410,6 +446,7 @@ function deskAgentRemoteDrawModels() {
         (testingThis ? 'testing…' : deskAgentRemoteTestArmed ? 'test: disconnects Levant, sure?' : 'test') + '</button>' +
       '<span id="dur-icons">' + line.icons.join(' ') + (model.recommended ? ' ' + deskAgentRemoteIcon('THREAD') : '') + '</span>' +
     '</div>' +
+    deskAgentRemoteEffortRow(escape) +
     (test.state && test.state !== 'running' && test.id === model.id && String(test.quant || '') === String(model.quant || '')
       ? '<div class="' + (test.state === 'passed' ? 'job-manifest-note' : 'job-start-error') + '" id="dur-test-result">test ' + escape(test.state) + ': ' + escape(test.why || '') + '</div>' : '') +
     '<div class="job-manifest-note" id="dur-small">' + escape(line.small) + (loading ? ' · loading…' : '') + (got.cached && !loading ? ' · from what was known; asking the studio…' : '') + '</div>';
@@ -424,7 +461,56 @@ function deskAgentRemoteDrawModels() {
   if (testButton) testButton.addEventListener('click', deskAgentRemoteTest);
   var refresh = document.getElementById('dur-refresh');
   if (refresh) refresh.addEventListener('click', function () { deskAgentRemoteLoadModels(); });
+  deskAgentRemoteWireSearch();
+  var effort = document.getElementById('dur-effort');
+  if (effort) effort.addEventListener('change', deskAgentRemoteEffortMoved);
   deskAgentRemoteDrawChatTitle();
+}
+
+// THE FILTERS (goal/G27.8, R4): each with the mark it reads and its icon.
+var DESK_AGENT_REMOTE_FILTERS = [
+  { key: 'desk-tested', icon: 'THREAD', has: function (m) { return !!(m && m.recommended); } },
+  { key: 'vision', icon: 'VIEW', has: function (m) { return !!(m && m.vision); } },
+  { key: 'reasoning', icon: 'THINK', has: function (m) { return !!(m && m.reasoning); } },
+  { key: 'audio', icon: 'MUSIC', has: function (m) { return !!(m && m.audio); } },
+];
+var deskAgentRemoteSearch = '';    // the search typed above the picker
+var deskAgentRemoteFilters = {};   // the filters pressed, by key
+// The search redraws the picker as it is typed; the redraw replaces the field, so the caret is put back in it.
+function deskAgentRemoteWireSearch() {
+  var search = document.getElementById('dur-model-search');
+  if (!search) return;
+  search.addEventListener('input', function (e) {
+    deskAgentRemoteSearch = String((e && e.target && e.target.value) || '');
+    deskAgentRemoteDrawModels();
+    var again = document.getElementById('dur-model-search');
+    if (again && again.focus) {
+      again.focus();
+      if (again.setSelectionRange) again.setSelectionRange(deskAgentRemoteSearch.length, deskAgentRemoteSearch.length);
+    }
+  });
+}
+
+// THE EFFORT SLIDER (goal/G27.8, R2): off, low, medium, high, for the model in use; disabled when no row of deskAgent's
+// table applies to it. Its level is the state's; moving it sends effort.set and the published state brings it back.
+var DESK_AGENT_REMOTE_EFFORT = ['off', 'low', 'medium', 'high'];
+function deskAgentRemoteEffortRow(escape) {
+  var s = deskAgentRemoteState || {};
+  var effort = s.effort || { supported: false, level: 'medium' };
+  var at = DESK_AGENT_REMOTE_EFFORT.indexOf(effort.level);
+  if (at === -1) at = 2;
+  return '<div class="start-job-form card"><label class="field-label grow">Effort for ' + escape(s.model || 'the model in use') +
+    '<input type="range" id="dur-effort" min="0" max="3" step="1" value="' + at + '"' +
+    (effort.supported ? '' : ' disabled title="this model takes no effort setting"') + '></label>' +
+    '<span id="dur-effort-word">' + (effort.supported ? DESK_AGENT_REMOTE_EFFORT[at] : 'not offered') + '</span></div>';
+}
+function deskAgentRemoteEffortMoved(e) {
+  var level = DESK_AGENT_REMOTE_EFFORT[Number(e && e.target && e.target.value)];
+  var s = deskAgentRemoteState || {};
+  if (!level || !s.model || !deskAgentRemoteTarget) return;
+  deskAgentRemoteAsk(deskAgentRemoteTarget, 'effort.set', { model: s.model, level: level }).then(function (said) {
+    if (said && said.ok === false) deskAgentRemoteSay('the effort was not set: ' + deskAgentRemoteWhy(said, 'no answer'), true);
+  }, function (err) { deskAgentRemoteSay('the effort was not set: ' + String((err && err.message) || err), true); });
 }
 
 // THE TEST'S PRESS (goal/G10.9): model.test for the chosen pair, answered at once; the outcome comes back published
@@ -530,7 +616,7 @@ function deskAgentRemoteTakeLog(log) {
 
 function deskAgentRemoteApplyPublished(obj) {
   if (!obj || typeof obj !== 'object' || typeof obj.connected !== 'boolean') return;
-  deskAgentRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' }, connections: Array.isArray(obj.connections) ? obj.connections : [], working: obj.working === true };
+  deskAgentRemoteState = { connected: obj.connected, persona: obj.persona || '', model: obj.model || '', server: obj.server || { url: '', answers: false, error: '' }, connections: Array.isArray(obj.connections) ? obj.connections : [], working: obj.working === true, effort: obj.effort || { supported: false, level: 'medium' } };
   // The switch's busy flag is the flip's own (goal/G19.7): a state published mid-flip no longer re-enables it.
   deskAgentRemoteModels = { active: obj.active || '', activeQuant: obj.activeQuant || '', cached: !!obj.cached, load: obj.load || {}, test: obj.test || {}, models: Array.isArray(obj.models) ? obj.models : [] };
   deskAgentRemoteTakeLog(obj.log);
