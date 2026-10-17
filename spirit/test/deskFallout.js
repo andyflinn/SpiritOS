@@ -466,8 +466,8 @@ async function paneHalf() {
   // all) then the fucking table should be larger than after step 1."). The server answers the empty box with 20 lines,
   // "y" with one line it never gave before; clearing the box shows more lines than step 1 did, that one among them.
   const box3 = fakeElement('pane3');
-  const twenty = []; for (let i = 0; i < 20; i++) twenty.push({ suite: 'zzGrow' + i + '.js', what: 'grows ' + i, red: true, at: '2026-10-17T10:00:' + String(10 + i) + '.000Z' });
-  const yRow = { suite: 'zzGrowY.js', what: 'only y finds this', red: true, at: '2026-10-17T09:00:00.000Z' };
+  const twenty = []; for (let i = 0; i < 20; i++) twenty.push({ suite: 'zzGrow' + i + '.js', title: 'grows #' + i, outcome: 'red', at: '2026-10-17T10:00:' + String(10 + i) + '.000Z' });
+  const yRow = { suite: 'zzGrowY.js', title: 'only y finds this #1', outcome: 'red', at: '2026-10-17T09:00:00.000Z' };
   ui.open(box3, {
     goal: GOAL,
     ask: function (verb, a) {

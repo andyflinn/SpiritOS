@@ -84,7 +84,7 @@
       el.textContent = '❌ ' + red + ' red of ' + all + ' tests now' + (all ? ' (' + Math.round(red * 100 / all) + '%)' : '') + '.';
     }, function () { /* the line stays as it was */ });
   }
-  // F2: the lines that match, one per tested thing.
+  // F2: the lines that match, one per test.
   // The form as it stands: the words, and THE ✅/❌ FILTER (Andy, 2026-10-17: "do i get a filter for ✅ or ❌?"): red,
   // green, or '' for both.
   function form() {
@@ -93,20 +93,19 @@
     return { text: box ? String(box.value || '').trim() : '', outcome: pick ? String(pick.value == null ? 'red' : pick.value) : 'red' };
   }
   // ONE NICE LINE PER TEST (Andy, 2026-10-17: "one nice line per failure / test-file-name | failure-description |
-  // success or fail | since"). The description is the sentence of what is tested, the test's sub-heading (its key
-  // without the number); what the suite printed on failing is for a debugging agent, so it is not on screen.
-  // ONLY THE LATEST, ONE LINE PER TESTED THING (Andy, 2026-10-17: "i only want to see the latest, if you want to
-  // show the history of one test, use a dialog."). A test file and its sub-heading are one tested thing: its checks
-  // fold into one line, ❌ fail while any of them is red, its newest time.
-  function foldRows(rows) {
+  // success or fail | since"). The description is the test's key, its sub-heading and its number; what the suite
+  // printed on failing is for a debugging agent, so it is not on screen.
+  // ONE LINE PER TEST, ONLY ITS LATEST (Andy, 2026-10-17: "i only want to see the latest, if you want to show the
+  // history of one test, use a dialog.", then "i WANT TO SEE ONE FUCKING LINE PER FUCKING TEST." and "STOP COLLATING
+  // SHIT I DIDN?T ASK FOR!"): each test its own line, nothing collated; a test brought twice keeps its newest.
+  function testLines(rows) {
     var answer = Object.create(null);
     rows.forEach(function (x) {
-      // deskVerify folds the lines itself (fold: yes, {suite, what, red, at}); plain rows are folded here alike.
-      var what = x.what !== undefined ? String(x.what) : String(x.title || '').replace(/\s+#\d+$/, '');
+      var what = String(x.title || '');
       var k = x.suite + '\n' + what;
-      var g = answer[k] || (answer[k] = { suite: x.suite, what: what, red: false, at: '' });
-      if (x.outcome === 'red' || x.red === true) g.red = true;
-      if (String(x.at || '') > g.at) g.at = String(x.at || '');
+      var at = String(x.at || '');
+      if (answer[k] && answer[k].at > at) return;
+      answer[k] = { suite: x.suite, what: what, red: x.outcome === 'red', at: at };
     });
     return answer;
   }
@@ -178,7 +177,7 @@
     wire('fallout.reds', { text: f.text, outcome: f.outcome }).then(function (r) {
       summary();
       var rows = ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
-      var answer = foldRows(rows);
+      var answer = testLines(rows);
       Object.keys(answer).forEach(function (k) { cache[k] = answer[k]; });
       draw(answer, Number(r && r.total) || rows.length);
       say(r && r.more ? 'More match than one answer holds: narrow the search.' : '');
@@ -227,7 +226,7 @@
           if (!t) return;
           var tab = t.getAttribute ? t.getAttribute('data-fallout-tab') : null;
           if (tab === 'reds' || tab === 'items') { inner = tab; drawTabs(); return; }
-          // F6: a line opens the history dialog of its tested thing.
+          // F6: a line opens the history dialog of its one test, its full key as the heading.
           var line = t.closest ? t.closest('[data-suite]') : null;
           var suite = (line && line.getAttribute('data-suite')) || (t.getAttribute ? t.getAttribute('data-suite') : null);
           var heading = (line && line.getAttribute('data-heading')) || (t.getAttribute ? t.getAttribute('data-heading') : null);

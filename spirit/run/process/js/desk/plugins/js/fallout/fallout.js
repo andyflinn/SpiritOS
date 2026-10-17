@@ -20,9 +20,9 @@ module.exports = function (desk) {
     if (typeof desk.verify !== 'function') throw desk.refused('bad-request', 'this desk hands its plugins no deskVerify to search');
     const outcome = a.outcome === undefined ? 'red' : String(a.outcome);
     if (outcome && outcome !== 'red' && outcome !== 'green') throw desk.refused('bad-request', 'an outcome is red, green, or empty for both');
-    // Folded and slim (Andy, 2026-10-17: "don't return shit in the search that i don't want to see!"): one line per
-    // test file and sub-heading, nothing the list does not show.
-    const ask = { over: 'tests', current: 'yes', fold: 'yes', slim: 'yes' };
+    // Slim (Andy, 2026-10-17: "don't return shit in the search that i don't want to see!"), and one line per test,
+    // never folded ("i WANT TO SEE ONE FUCKING LINE PER FUCKING TEST.", "STOP COLLATING SHIT I DIDN?T ASK FOR!").
+    const ask = { over: 'tests', current: 'yes', slim: 'yes' };
     if (outcome) ask.outcome = outcome;
     if (/^[A-Za-z0-9_][A-Za-z0-9_.-]*\.js$/.test(text)) ask.suite = text;
     else if (text) ask.test = text;
@@ -31,8 +31,8 @@ module.exports = function (desk) {
         more: !!(r && r.more), total: Number(r && r.total) || 0 };
     });
   }
-  // F6, A TESTED THING'S HISTORY (Andy, 2026-10-17: "so we'll add a dialog for test-history, that shows us the flips."):
-  // every flip of every check under one sub-heading of one suite, newest first, for the dialog shell/falloutHistory.
+  // F6, A TEST'S HISTORY (Andy, 2026-10-17: "so we'll add a dialog for test-history, that shows us the flips."): every
+  // flip of one test, its full key as the heading, newest first, for the dialog shell/falloutHistory.
   function history(a) {
     const suite = String(a.suite || '').trim();
     const heading = String(a.heading || '').trim();
