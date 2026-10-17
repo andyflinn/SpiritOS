@@ -27,6 +27,8 @@
 // page alike.
 function utf8Bytes(text) { return unescape(encodeURIComponent(String(text))).length; }
 
+function scored(probability) { return typeof probability === 'number' && probability >= 0 && probability <= 1; }
+
 function createProbabilityBucket(capacity) {
   var cap = typeof capacity === 'number' && capacity > 0 ? Math.floor(capacity) : 0;
   var table = [];          // { probability, object }, highest first
@@ -59,11 +61,24 @@ function createProbabilityBucket(capacity) {
       var out = [];
       var cut = false;
       for (var i = 0; i < table.length; i += 1) {
+        if (!scored(table[i].probability)) continue;
         var row = toWire(table[i].object);
         if (ceiling && utf8Bytes(JSON.stringify(out.concat([row]))) > ceiling) { cut = true; break; }
         out.push(row);
       }
       return { items: out, bytes: utf8Bytes(JSON.stringify(out)), more: turnedAway > 0 || cut, truncated: cut };
+    },
+
+    // RE-SORTED BY THE CALLER'S FUNCTION (goal/G27.14, Andy, 2026-10-17: "sort("search string") this way the bucket
+    // itself can be the cache needed in shell apps.", then "SORT(probability = compareFunction())"): every held object
+    // gets compare(object) as its new probability, highest first, an equal one keeping its place. The bucket still
+    // knows nothing of strings; the function does. One scored outside 0 to 1 stays held, left out of serialize until a
+    // later sort scores it again.
+    sort: function (compare) {
+      if (typeof compare !== 'function') return;
+      table = table.map(function (x, at) { var p = compare(x.object); return { probability: scored(p) ? p : -1, object: x.object, at: at }; })
+        .sort(function (a, b) { return b.probability - a.probability || a.at - b.at; })
+        .map(function (x) { return { probability: x.probability, object: x.object }; });
     },
   };
 }
