@@ -14,7 +14,7 @@
 // process/js/<server> and whose status is running, or pending (a node-operated server between restarts, which comes
 // back by itself); failed, completed or no such job is not running. A server job is kind server; its type is its display name.
 // WHAT IS ASSERTED
-//   1. the manifests: Desk, its two dialogs, the Remote and Chatter name their servers; Text Editor names none.
+//   1. the manifests: Desk, its two dialogs and Chatter name their servers; the Remote names none (its server may be on a puppet); Text Editor names none.
 //   2. with no desk server running Desk is not on the desktop; Text Editor is (R3).
 //   3. once a desk server job runs, Desk shows; the Remote, needing deskAgent, still does not.
 //   4. a server restarting (pending) keeps its app; a failed one, or one gone from the jobs, takes it away.
@@ -93,14 +93,13 @@ test.startTest('goal/G27.16: a shell app shows only while its server runs');
 test.subHeading('1. the manifests name their servers');
 const named = {
   'shell/desk/desk.json': 'desk', 'shell/deskDetails/deskDetails.json': 'desk', 'shell/ruleDetails/ruleDetails.json': 'desk',
-  'shell/deskAgentRemote/deskAgentRemote.json': 'deskAgent',
   // Folded in by Andy, 2026-10-17: Chatter is the face of chatClerver.
   'shell/chatter/chatter.json': 'chatClerver',
 };
 const wrong = Object.keys(named).filter(function (rel) { return manifest(rel).server !== named[rel]; });
-if (!wrong.length) test.check('Desk, its two dialogs, the Remote and Chatter name their servers');
+if (!wrong.length) test.check('Desk, its two dialogs and Chatter name their servers');
 else test.fail(OWED + 'these manifests do not name their server: ' + wrong.map(function (r) { return r + ' reads ' + JSON.stringify(manifest(r).server); }).join('; '));
-if (manifest('shell/textEditor/textEditor.json').server === undefined) test.check('Text Editor names none');
+if (manifest('shell/textEditor/textEditor.json').server === undefined && manifest('shell/deskAgentRemote/deskAgentRemote.json').server === undefined) test.check('Text Editor and the Remote name none');
 else test.fail(OWED + 'textEditor.json names a server: ' + short(manifest('shell/textEditor/textEditor.json').server));
 
 const booted = bootShell(['shell/desk/desk.js', 'shell/deskAgentRemote/deskAgentRemote.js', 'shell/textEditor/textEditor.js']);
@@ -117,8 +116,9 @@ booted.update(deskServer('running'));
 const withDesk = shown(booted).replace(/Desk Agent Remote/g, '');
 if (/Desk/.test(withDesk)) test.check('with the desk server running, Desk shows');
 else test.fail(OWED + 'Desk is not on the desktop with its server running: ' + short(shown(booted)));
-if (!has('Desk Agent Remote')) test.check('the Remote, needing deskAgent, still does not');
-else test.fail(OWED + 'the Remote shows with no deskAgent server: ' + short(shown(booted)));
+// Andy, 2026-10-17: the Remote names no server, its deskAgent may run on a puppet; it always shows.
+if (has('Desk Agent Remote')) test.check('the Remote, naming no server, shows with no deskAgent here');
+else test.fail(OWED + 'the Remote is hidden: ' + short(shown(booted)));
 
 test.subHeading('4. restarting keeps it, failed or gone takes it');
 booted.update(deskServer('pending'));
