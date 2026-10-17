@@ -52,6 +52,13 @@
     var busy = false;
     var again = false;
     var off = null;
+    // goal/G29.9: the mode, the current row (by key), the rows drawn last, the order rows first came in, and the choice.
+    var dropdown = o.mode === 'dropdown';
+    var open = !dropdown;
+    var currentKey = null;
+    var shown = [];
+    var seated = 0;
+    var self = { value: '', row: null };
 
     // ITS PARTS FOUND INSIDE IT FIRST (goal/G29.6): an element made before the app places it on the page (the contact
     // selector is) is not in the document yet, so the document cannot find what it holds.
@@ -78,16 +85,25 @@
       '<div id="' + pre + 'filters" style="margin-top:1em">' + filterHtml() + '</div>' +
       '<div style="margin-top:1em;display:flex;gap:1em;align-items:center">' +
         '<span style="position:relative;display:inline-block;flex:1">' +
-          '<input id="' + pre + 'text" type="text" autocomplete="off" style="width:100%;padding-right:2em;box-sizing:border-box">' +
+          '<input id="' + pre + 'text" type="text" autocomplete="off"' + (o.placeholder ? ' placeholder="' + esc(o.placeholder) + '"' : '') + ' style="width:100%;padding-right:2em;box-sizing:border-box">' +
           '<button id="' + pre + 'clear" type="button" title="Clear" style="position:absolute;right:0.3em;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer">✕</button>' +
         '</span>' +
         '<button id="' + pre + 'search" type="button">Search</button>' +
       '</div>' +
-      '<div id="' + pre + 'count" class="job-manifest-note" style="margin-top:1em"></div>' +
-      '<div id="' + pre + 'list" style="margin-top:1em"></div>';
+      // ROW 3, THE ONLY ONE THAT DIFFERS (goal/G29.9): a pane below rows 1 and 2, or a dropdown under the search row.
+      '<div style="position:relative">' +
+        '<div id="' + pre + 'count" class="job-manifest-note" style="margin-top:1em"' + (dropdown ? ' hidden' : '') + '></div>' +
+        '<div id="' + pre + 'list"' + (dropdown
+          ? ' class="stat-tile wide" style="margin-top:1em;position:absolute;left:0;right:0;z-index:10;max-height:20em;overflow:auto" hidden'
+          : ' style="margin-top:1em"') + '></div>' +
+      '</div>';
+    if (dropdown) { var l0 = el('list'); if (l0) l0.hidden = true; var c0 = el('count'); if (c0) c0.hidden = true; }
 
     // SCORED AND DRAWN FROM THE CACHE: the words' match times every filter's test; a filter at 0 leaves the row out.
-    function score(w) {
+    // A TIE KEEPS THE ORDER ROWS FIRST CAME IN, so clearing the words gives the first order back.
+    function score(w) { var s = rank(w); return s < 0 ? -1 : s * (1 - 1e-9) + 1e-9 / (1 + w.at); }
+    function rank(w) {
+      if (w.gone) return -1;
       var f = 1;
       for (var i = 0; i < filters.length; i++) {
         var t = filters[i].test;
@@ -101,15 +117,53 @@
       var m = typeof P.probabilityStringObjectMatch === 'function' ? Number(P.probabilityStringObjectMatch(text, w.row)) || 0 : 0;
       return Math.max(0, Math.min(1, m)) * f;
     }
+    // THE MATCHED PARTS MARKED (goal/G29.9): every word typed wrapped where it stands in the text, the rest escaped.
+    function mark(text) {
+      var s = String(text == null ? '' : text);
+      var ws = words().split(/\s+/).filter(Boolean).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+      if (!ws.length) return esc(s);
+      var re = new RegExp(ws.join('|'), 'ig');
+      var out = '';
+      var at = 0;
+      var hit;
+      while ((hit = re.exec(s)) !== null) {
+        if (!hit[0]) { re.lastIndex += 1; continue; }
+        out += esc(s.slice(at, hit.index)) + '<mark>' + esc(hit[0]) + '</mark>';
+        at = hit.index + hit[0].length;
+      }
+      return out + esc(s.slice(at));
+    }
+    // THE PAGE'S OWN ROWS (goal/G29.9, the first tier): rows() answers them; each joins the cache by its key, and one
+    // no longer answered leaves the list.
+    var pageKeys = Object.create(null);
+    function takePage() {
+      if (typeof o.rows !== 'function') return;
+      var now = Object.create(null);
+      (o.rows() || []).forEach(function (r) {
+        if (!r || r.key == null) return;
+        var key = String(r.key);
+        now[key] = true;
+        if (byKey[key]) { byKey[key].row = r; byKey[key].gone = false; return; }
+        byKey[key] = { key: key, row: r, at: seated++ };
+        bucket.seatFor(0, byKey[key]);
+      });
+      Object.keys(pageKeys).forEach(function (k) { if (!now[k] && byKey[k]) byKey[k].gone = true; });
+      pageKeys = now;
+    }
     function draw() {
       if (!live) return;
+      takePage();
       bucket.sort(score);
       var rows = bucket.serialize().items;
+      shown = rows;
       var list = el('list');
       if (list) {
         list.innerHTML = rows.length
           ? '<table class="jobs-table"><tbody>' + rows.map(function (w) {
-            return '<tr data-key="' + esc(w.key) + '" style="cursor:pointer">' + (typeof o.paint === 'function' ? o.paint(w.row) : esc(JSON.stringify(w.row))) + '</tr>';
+            // THE CURRENT ROW, DRAWN BY THE LIST, THE SAME EVERYWHERE (goal/G29.9): a slightly brighter background.
+            var cur = w.key === currentKey;
+            return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +
+              (typeof o.paint === 'function' ? o.paint(w.row, mark) : mark(JSON.stringify(w.row))) + '</tr>';
           }).join('') + '</tbody></table>'
           : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>';
       }
@@ -126,7 +180,7 @@
         if (!row || it.key == null) return;
         var key = String(it.key);
         if (byKey[key]) { byKey[key].row = row; return; }
-        byKey[key] = { key: key, row: row };
+        byKey[key] = { key: key, row: row, at: seated++ };
         bucket.seatFor(0, byKey[key]);
       });
       last = { total: Number(answer && answer.total) || 0, more: !!(answer && answer.more), error: '' };
@@ -171,14 +225,71 @@
       return new Promise(function (resolve, reject) { lent.push({ verb: verb, args: args || {}, resolve: resolve, reject: reject }); pump(); });
     }
 
-    function typed() { draw(); ask(); }
+    function typed() { setOpen(true); draw(); ask(); }
     function rowOf(target) {
       var tr = target && typeof target.closest === 'function' ? target.closest('[data-key]') : null;
       var key = tr && typeof tr.getAttribute === 'function' ? tr.getAttribute('data-key') : (target && typeof target.getAttribute === 'function' ? target.getAttribute('data-key') : null);
-      return key != null && byKey[key] ? byKey[key].row : null;
+      return key != null && byKey[key] ? byKey[key] : null;
+    }
+    function nameOf(row) { return typeof o.name === 'function' ? String(o.name(row)) : String((row && (row.name || row.key)) || ''); }
+    // ROW 3 OPENED AND SHUT (goal/G29.9), in dropdown mode only, its count line with it. Shut, the chosen name stands
+    // in the search box; opened, the box is emptied of it so the words are the person's own.
+    function setOpen(want) {
+      if (!dropdown || open === want) return;
+      open = want;
+      var l = el('list'); if (l) l.hidden = !open;
+      var c = el('count'); if (c) c.hidden = !open;
+      var box = el('text');
+      if (!box || !self.row) return;
+      if (open && box.value === nameOf(self.row)) box.value = '';
+      else if (!open && !String(box.value || '').trim()) box.value = nameOf(self.row);
+    }
+    // A PRESS (goal/G29.9): in dropdown mode a pick; in pane mode details(row) when the list was given one, else a pick.
+    function pick(w) {
+      self.value = w.key;
+      self.row = w.row;
+      currentKey = w.key;
+      if (dropdown) { setOpen(false); var box = el('text'); if (box) box.value = nameOf(w.row); }
+      draw();
+      if (typeof o.pick === 'function') o.pick(w.row, w.key);
+    }
+    function pressRow(w) {
+      if (!w) return;
+      currentKey = w.key;
+      if (!dropdown && typeof o.details === 'function') { draw(); o.details(w.row, w.key); return; }
+      pick(w);
+    }
+    // KEYS (goal/G29.9): up and down move the current row, home and end to the top or bottom (not in the search box,
+    // where they are the text cursor's), enter presses it, escape shuts an open dropdown.
+    function move(to) {
+      if (!shown.length) return;
+      var at = shown.map(function (w) { return w.key; }).indexOf(currentKey);
+      var next = to === 'top' ? 0 : to === 'bottom' ? shown.length - 1
+        : Math.max(0, Math.min(shown.length - 1, (at === -1 ? (to > 0 ? -1 : shown.length) : at) + to));
+      currentKey = shown[next].key;
+      setOpen(true);
+      draw();
     }
     container.addEventListener('input', function (e) { var t = e && e.target; if (t && t.id === pre + 'text') typed(); });
-    container.addEventListener('keydown', function (e) { var t = e && e.target; if (t && t.id === pre + 'text' && e.key === 'Enter' && !e.repeat) ask(); });
+    container.addEventListener('keydown', function (e) {
+      var t = (e && e.target) || {};
+      var inBox = t.id === pre + 'text';
+      var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
+      if (e.key === 'ArrowDown') { stop(); move(1); return; }
+      if (e.key === 'ArrowUp') { stop(); move(-1); return; }
+      if ((e.key === 'Home' || e.key === 'End') && !inBox) { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
+      if (e.key === 'Escape') { setOpen(false); return; }
+      if (e.key === 'Enter' && !e.repeat) {
+        if (currentKey != null && byKey[currentKey] && open) { stop(); pressRow(byKey[currentKey]); return; }
+        if (inBox) ask();
+      }
+    });
+    var opening = function (e) { var t = e && e.target; if (t && t.id === pre + 'text' && !open) { setOpen(true); draw(); } };
+    container.addEventListener('focus', opening, true);
+    container.addEventListener('focusin', opening);
+    if (dropdown && typeof document.addEventListener === 'function') document.addEventListener('click', function (e) {
+      if (open && e && e.target && typeof container.contains === 'function' && !container.contains(e.target)) setOpen(false);
+    });
     container.addEventListener('click', function (e) {
       var t = e && e.target;
       if (!t) return;
@@ -193,21 +304,21 @@
         typed();
         return;
       }
-      var row = rowOf(t);
-      if (row && typeof o.press === 'function') o.press(row);
+      pressRow(rowOf(t));
     });
     if (o.api && typeof o.api.onPublished === 'function') off = o.api.onPublished(function () { ask(); }, o.server);
 
-    return {
-      refresh: function () { ask(); },
-      // ONE ROW CHANGED BY THE APP, NOT THE SERVER (goal/G29.6: "The app repaints one row when a peer's presence or
-      // status changes, without asking the server."): the list drawn again from what it holds.
-      redraw: function () { draw(); },
-      // THE SLOT LENT TO THE APP (goal/G29.5): another call of the app to the same server, through the same one slot, so
-      // nothing of the app's is ever two on the wire; it answers the server's body.
-      ask: function (verb, args) { return lend(verb, args); },
-      destroy: function () { live = false; if (typeof off === 'function') off(); off = null; },
-    };
+    // THE LIST ITSELF: value and row are the chosen one's (goal/G29.9).
+    self.refresh = function () { draw(); ask(); };
+    // ONE ROW CHANGED BY THE APP, NOT THE SERVER (goal/G29.6: "The app repaints one row when a peer's presence or
+    // status changes, without asking the server."): the list drawn again from what it holds.
+    self.redraw = function () { draw(); };
+    // THE SLOT LENT TO THE APP (goal/G29.5): another call of the app to the same server, through the same one slot, so
+    // nothing of the app's is ever two on the wire; it answers the server's body.
+    self.ask = function (verb, args) { return lend(verb, args); };
+    self.destroy = function () { live = false; if (typeof off === 'function') off(); off = null; };
+    if (typeof o.rows === 'function') draw();
+    return self;
   }
 
   window.spiritElements = window.spiritElements || {};

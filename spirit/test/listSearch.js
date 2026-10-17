@@ -103,7 +103,7 @@ function config(api, extra) {
     filters: [{ name: 'outcome', choices: [{ value: 'red', icon: '❌', word: 'fail' }, { value: 'green', icon: '✅', word: 'success' }, { value: '', word: 'both' }],
       test: function (row, value) { return !value || row.outcome === value ? 1 : 0; } }],
     paint: function (row) { return '<td>' + row.suite + '</td><td>' + row.title + '</td>'; },
-    press: function () {},
+    details: function () {},
     empty: 'No test matches.',
   }, extra || {});
 }
@@ -137,7 +137,8 @@ test.startTest('goal/G29.4: shellCreateListSearch, the list with its search');
   }, 5);
   const pressed = [];
   const box = fakeElement('box');
-  make(box, config(api, { press: function (row) { pressed.push(row); } }));
+  // goal/G29.9: in pane mode a press calls the details hook (press is gone).
+  make(box, config(api, { details: function (row) { pressed.push(row); } }));
   const el = parts(p, box);
 
   test.subHeading('2. its layout, the same everywhere');
@@ -204,7 +205,7 @@ test.startTest('goal/G29.4: shellCreateListSearch, the list with its search');
 
   test.subHeading('6. the configuration does what it says');
   el.list.fire && box.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-key' ? 'r3' : null; }, closest: function () { return null; } } });
-  if (pressed.length === 1 && pressed[0].title === ROWS.r3.title) test.check('a press on a row calls press(row) with that row');
+  if (pressed.length === 1 && pressed[0].title === ROWS.r3.title) test.check('a press on a row calls details(row) with that row (goal/G29.9)');
   else test.fail(OWED + 'press got ' + short(pressed));
   el.text.value = 'gate';
   box.fire('click', { target: { id: el.clear.id, getAttribute: function () { return null; } } });

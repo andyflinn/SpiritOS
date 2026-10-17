@@ -61,12 +61,14 @@
   }];
   // ONE NICE LINE PER TEST (Andy: "test-file-name | failure-description | success or fail | since"), and NO DETAIL ON
   // SCREEN ("I know you can read those details, so it doesn't need to be on-screen."): the failure and the commit stay in
-  // deskVerify.
-  function paint(row) {
-    return '<td>' + esc(row.suite) + '</td><td>' + esc(row.title) + '</td><td>' + (row.outcome === 'red' ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(row.at)) + '</td>';
+  // deskVerify. goal/G29.9: the list hands paint its mark(text), the matched words marked.
+  function paint(row, mark) {
+    var m = typeof mark === 'function' ? mark : esc;
+    return '<td>' + m(row.suite) + '</td><td>' + m(row.title) + '</td><td>' + (row.outcome === 'red' ? '❌ fail' : '✅ success') + '</td><td>' + esc(when(row.at)) + '</td>';
   }
-  // A test's history in a dialog (Andy: "if you want to show the history of one test, use a dialog.").
-  function press(row) {
+  // A test's history in a dialog (Andy: "if you want to show the history of one test, use a dialog."): the list's details
+  // hook, a press in its pane (goal/G29.9).
+  function details(row) {
     if (ctx && typeof ctx.callDialog === 'function') ctx.callDialog('shell/falloutHistory', { suite: row.suite, heading: row.title });
   }
 
@@ -97,7 +99,7 @@
       args: args,
       filters: FILTERS,
       paint: paint,
-      press: press,
+      details: details,
       empty: 'No test matches.',
     });
     list.refresh();

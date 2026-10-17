@@ -110,12 +110,14 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   test.subHeading('4. keys and the current row');
   el.text.value = '';
   fire(box, 'input', el.text);
-  fire(box, 'keydown', el.text, { key: 'ArrowDown' });
-  fire(box, 'keydown', el.text, { key: 'ArrowDown' });
+  // The press on c above made c the current row; two ups from it reach the top.
+  const pressedCur = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
+  fire(box, 'keydown', el.text, { key: 'ArrowUp' });
+  fire(box, 'keydown', el.text, { key: 'ArrowUp' });
   const cur = (el.list.innerHTML.match(/<tr[^>]*current[^>]*>/g) || []);
   const curKey = cur.length ? (cur[0].match(/data-key="([^"]+)"/) || [])[1] : '';
-  if (cur.length === 1 && curKey === 'b' && /background/.test(cur[0])) test.check('down twice makes the second row current, drawn with its own background, and only it');
-  else test.fail(OWED + 'after two downs the current rows are ' + short(cur));
+  if (pressedCur === 'c' && cur.length === 1 && curKey === 'a' && /background/.test(cur[0])) test.check('a press makes its row current; up twice moves to the first row, drawn with its own background, and only it');
+  else test.fail(OWED + 'pressed row current ' + short(pressedCur) + ', after two ups the current rows are ' + short(cur));
   fire(box, 'keydown', { id: 'elsewhere' }, { key: 'End' });
   const endKey = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
   fire(box, 'keydown', el.text, { key: 'Home' });

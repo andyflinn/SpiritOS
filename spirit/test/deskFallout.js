@@ -314,8 +314,9 @@ async function paneHalf() {
   const order = [painted.indexOf('zzFalloutA.js'), painted.indexOf('the relay answers its key #3'), painted.indexOf('❌ fail'), painted.indexOf('2026-10-17 09:00:00')];
   if (order.every(function (i, n) { return i !== -1 && (n === 0 || i > order[n - 1]); }) && !/boom|abc1234/.test(painted)) test.check('a row reads test file | what is tested | status | since, no failure and no commit');
   else test.fail(OWED29 + 'a row paints ' + short(painted));
-  cfg.press({ suite: RED.suite, title: RED.title, outcome: 'red', at: RED.at });
-  if (dialogs.some(function (d) { return d[0] === 'shell/falloutHistory' && d[1].suite === RED.suite && d[1].heading === RED.title; })) test.check('a press opens shell/falloutHistory for that test');
+  // goal/G29.9: the list's details hook, a press in its pane.
+  cfg.details({ suite: RED.suite, title: RED.title, outcome: 'red', at: RED.at });
+  if (dialogs.some(function (d) { return d[0] === 'shell/falloutHistory' && d[1].suite === RED.suite && d[1].heading === RED.title; })) test.check('a press opens shell/falloutHistory for that test (the list\'s details hook)');
   else test.fail(OWED29 + 'a press opened ' + short(dialogs));
   if (/No test matches/.test(String(cfg.empty || ''))) test.check('an empty list says no test matches');
   else test.fail(OWED29 + 'the empty sentence reads ' + short(cfg.empty));

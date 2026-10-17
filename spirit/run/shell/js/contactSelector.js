@@ -24,7 +24,8 @@
 //
 // THE ROOT, as before: .value the chosen key, .row the chosen row, one bubbling `change` on a pick; refresh() asks again;
 // present(key, state, title) and mark(key, status) repaint that row from what the list holds, never asking the node.
-// options.face 'pane' is the list itself; the default face is the same list under a button, closed by a pick.
+// options.face 'pane' is the list itself; the default face is the shared list's dropdown mode (goal/G29.9): the filter
+// and search rows stand, the list drops down under the search row and closes on a pick, the chosen name in the box.
 // options.status(row), when given, names a row's status from the row itself (Contacts: blocked, held).
 
 (function () {
@@ -57,13 +58,8 @@
     root.value = '';
     root.row = null;
 
-    var field = null;
-    if (!isPane) {
-      field = document.createElement('button');
-      field.type = 'button';
-      field.className = 'contact-selector-field';
-      root.appendChild(field);
-    }
+    // THE MODE IS THE SHARED LIST'S (goal/G29.9): pane or dropdown, the same three rows in both; this element holds no
+    // dropdown of its own any more.
     var pane = document.createElement('div');
     pane.className = 'contact-selector-pane';
     root.appendChild(pane);
@@ -76,35 +72,21 @@
     }
     function presenceGlyph(key) { return presentOf[key] === true ? (ICON.GREEN_CIRCLE || '●') : (ICON.WHITE_CIRCLE || '○'); }
 
-    function paint(row) {
+    // The current row (goal/G4.14: "the pane usually has a \"current\"") is the shared list's, drawn the same in every list
+    // since goal/G29.9; the name is marked where the words match.
+    function paint(row, mark) {
       var star = row.owned ? '<span title="Your puppet: its card names this node as its owner.">' + (ICON.STAR || '★') + '</span>' : '';
       var pt = presentTitle[row.key];
+      var m = typeof mark === 'function' ? mark : escapeHtml;
       return '<td class="icon-cell">' + star + '</td>' +
         '<td class="icon-cell"' + (pt ? ' title="' + escapeHtml(pt) + '"' : '') + '>' + presenceGlyph(row.key) + '</td>' +
-        // THE CURRENT ROW (goal/G4.14, Andy: "the pane usually has a \"current\" which is the equivalent of selected in
-        // the drop-box"): the chosen key's name drawn as chosen.
-        '<td class="label-cell' + (row.key === root.value ? ' current" style="font-weight:bold"' : '"') + '>' + escapeHtml(row.name || row.key) + '</td>' +
+        '<td class="label-cell">' + m(row.name || row.key) + '</td>' +
         '<td class="icon-cell">' + statusGlyph(row) + '</td>';
     }
-
-    function paintField() {
-      if (!field) return;
-      var label = root.row ? (root.row.name || root.row.key) : (options.placeholder || 'choose a contact…');
-      field.innerHTML = '<span class="contact-selector-name">' + escapeHtml(label) + '</span><span class="contact-selector-caret">▾</span>';
-    }
-    function setOpen(open) {
-      if (isPane) return;
-      pane.hidden = !open;
-      // Open, the pane stands alone; the button returns when it closes (Andy, goal/G4.10).
-      if (field) field.hidden = !!open;
-      if (open && list) list.refresh();
-    }
+    // A pick, from either mode: the root carries it and says so.
     function pick(row) {
       root.value = row.key;
       root.row = row;
-      list.redraw();
-      paintField();
-      setOpen(false);
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
@@ -141,6 +123,8 @@
     var yes = function (name) { return function (row, value) { return !value || row[name] === true ? 1 : 0; }; };
     var any = function (name) { return function (all) { return all.some(function (r) { return r && r[name] === true; }); }; };
     list = window.spiritElements.shellCreateListSearch(pane, {
+      mode: isPane ? 'pane' : 'dropdown',
+      placeholder: isPane ? '' : (options.placeholder || 'choose a contact…'),
       api: api,
       server: 'node',
       verb: 'contact.search',
@@ -155,7 +139,8 @@
         { name: 'held', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.WAITING || '', word: 'held' }], test: yes('held'), when: any('held') },
       ],
       paint: paint,
-      press: function (row) { pick(row); },
+      pick: function (row) { pick(row); },
+      details: typeof options.details === 'function' ? options.details : undefined,
       empty: options.empty || 'Nobody matches.',
     });
 
@@ -168,14 +153,6 @@
     };
     root.mark = function (key, status) { statusOf[key] = status; list.redraw(); };
 
-    if (field) {
-      field.addEventListener('click', function () { setOpen(pane.hidden); });
-      if (typeof document.addEventListener === 'function') document.addEventListener('click', function (event) {
-        if (!pane.hidden && event && event.target && root.contains && !root.contains(event.target)) setOpen(false);
-      });
-    }
-    paintField();
-    if (!isPane) pane.hidden = true;
     list.refresh();
     return root;
   }

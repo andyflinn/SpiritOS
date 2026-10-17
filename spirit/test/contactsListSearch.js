@@ -183,14 +183,16 @@ const listHtml = function (p, m) {
   else test.fail(OWED + 'after present and mark Bert reads ' + short(bert2) + ', asks ' + (asks.length - before));
 
   test.subHeading('8. a pick sets its value and says so');
-  m.cfg.press({ name: 'pup', owned: true, blocked: false, held: false, key: 'K-pup' });
+  // goal/G29.9: a press on the row, as a click lands on the list; in the pane with no details hook it is a pick.
+  m.el.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-key' ? 'K-pup' : null; }, closest: function () { return null; } } });
   if (root.value === 'K-pup' && changes.length === 1 && changes[0].bubbles) test.check('a press on a row sets value to its key and fires one bubbling change');
   else test.fail(OWED + 'after a press value is ' + short(root.value) + ', ' + changes.length + ' change(s)');
   // goal/G4.14 stands: "the pane usually has a \"current\" which is the equivalent of selected in the drop-box".
   const chosen = listHtml(p, m).list;
   const pupNow = (chosen.match(/<tr[^>]*data-key="K-pup"[^>]*>[\s\S]*?<\/tr>/) || [''])[0];
   const bertNow = (chosen.match(/<tr[^>]*data-key="K-bert"[^>]*>[\s\S]*?<\/tr>/) || [''])[0];
-  if (/class="label-cell current"/.test(pupNow) && !/current/.test(bertNow)) test.check('the chosen row alone is drawn current');
+  // Since goal/G29.9 the list draws the current row itself, the same in every list.
+  if (/<tr[^>]*class="current"/.test(pupNow) && !/current/.test(bertNow)) test.check('the chosen row alone is drawn current, by the shared list');
   else test.fail(OWED + 'after the pick the rows read ' + short([pupNow, bertNow]));
 
   test.subHeading('9. callers with their own rows still work');
