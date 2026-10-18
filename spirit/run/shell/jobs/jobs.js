@@ -55,13 +55,31 @@ function jobsHear(job) {
   return true;
 }
 
+// The job the page heard of last, from api.onJobs: the one green dot.
+var jobsLatest = '';
+
+// BY ID, STANDING STILL (goal/G29.14; Andy, 2026-10-18: "the re-sort makes clicking on a line very difficult, just sort
+// them by ID when no search term is active"): job_10 after job_9, and an update never moves a row. The shared list keeps
+// this order for ties.
+function jobsIdNumber(id) { var m = /(\d+)$/.exec(String(id)); return m ? Number(m[1]) : 0; }
 function jobsRows() {
   var rows = [];
-  if (jobsMap && typeof jobsMap.forEach === 'function') jobsMap.forEach(function (job) { rows.push(Object.assign({ key: job.id }, job)); });
-  // With no words the newest updated is on top; the shared list keeps this order for ties.
-  rows.sort(function (a, b) { return (b.updatedAt || 0) - (a.updatedAt || 0); });
+  var newest = -1;
+  var newestId = '';
+  if (jobsMap && typeof jobsMap.forEach === 'function') jobsMap.forEach(function (job) {
+    rows.push(Object.assign({ key: job.id }, job));
+    if ((job.updatedAt || 0) > newest) { newest = job.updatedAt || 0; newestId = job.id; }
+  });
+  // Before any event is heard, the newest updated stands in for the most recent update.
+  if (!jobsLatest || !(jobsMap && jobsMap.has && jobsMap.has(jobsLatest))) jobsLatest = newestId;
+  rows.sort(function (a, b) { return jobsIdNumber(a.id) - jobsIdNumber(b.id) || String(a.id).localeCompare(String(b.id)); });
   return rows;
 }
+
+// THE KIND (goal/G29.14; Andy: "server-stats, relay-presence and fs-watcher are neither appServers nor transient"): the
+// node's own jobs (kind permanent in js/jobs.js) are node; appServers are servers; a process started for one run is
+// transient.
+function jobsKind(job) { return job.kind === 'permanent' ? 'node' : job.kind === 'server' ? 'server' : 'transient'; }
 
 function jobsProgress(job) {
   var open = jobsOpen[job.id];
@@ -70,10 +88,13 @@ function jobsProgress(job) {
   return bar(open.done, open.total, open.text);
 }
 
+// ONE GREEN DOT (goal/G29.14; Andy: "make a left-most icon column, where a one green dot hops between rows, always
+// showing the most recent update").
 function jobsPaint(job, mark) {
-  return '<td>' + (STATUS_ICON[job.status] || '') + ' ' + jobsEscapeHtml(job.status) + '</td>' +
+  return '<td>' + (job.id === jobsLatest ? '<span class="job-latest" title="the most recent update" style="color:#3c3">●</span>' : '') + '</td>' +
+    '<td>' + (STATUS_ICON[job.status] || '') + ' ' + jobsEscapeHtml(job.status) + '</td>' +
     '<td>' + mark(jobsName(job)) + '</td>' +
-    '<td>' + jobsEscapeHtml(job.kind === 'server' ? 'server' : 'transient') + '</td>' +
+    '<td>' + jobsEscapeHtml(jobsKind(job)) + '</td>' +
     '<td>' + jobsProgress(job) + '</td>' +
     '<td>' + (job.updatedAt ? new Date(job.updatedAt).toLocaleTimeString() : '') + '</td>';
 }
@@ -105,8 +126,8 @@ spirit.shell.activateApp({
     jobsList = window.spiritElements.shellCreateListSearch(container, {
       rows: jobsRows,
       filters: [
-        { name: 'kind', choices: [{ value: 'all', word: 'all' }, { value: 'server', word: 'servers' }, { value: 'transient', word: 'transient' }],
-          test: function (job, v) { return v === 'server' ? job.kind === 'server' : v === 'transient' ? job.kind !== 'server' : true; } },
+        { name: 'kind', choices: [{ value: 'all', word: 'all' }, { value: 'node', word: 'node' }, { value: 'server', word: 'servers' }, { value: 'transient', word: 'transient' }],
+          test: function (job, v) { return v === 'all' || jobsKind(job) === v; } },
         { name: 'status', multi: true,
           choices: function (rows) {
             return rows.map(function (j) { return String(j.status || ''); }).filter(function (s, i, a) { return s && a.indexOf(s) === i; }).sort()
@@ -116,6 +137,7 @@ spirit.shell.activateApp({
       ],
       matched: function (job) { return { name: jobsName(job), type: String(job.type || ''), module: String(job.module || ''), id: String(job.id) }; },
       paint: jobsPaint,
+      head: ['', 'Status', 'Name', 'Kind', 'Progress', 'Updated'],
       // A row opens its job's screen (goal/G2.11): the events, the data and the actions are there.
       details: function (job) {
         if (jobsApi && typeof jobsApi.callDialog === 'function') jobsApi.callDialog('shell/jobsDetails', { id: job.id });
@@ -126,7 +148,8 @@ spirit.shell.activateApp({
     // EVERY JOB EVENT, with the job that moved (null on a snapshot): its {job} events feed the bar.
     if (typeof api.onJobs === 'function') api.onJobs(function (jobsById, changed) {
       jobsMap = jobsById;
-      if (changed) { if (jobsHear(changed)) jobsRedraw(); else throttledRedraw(); return; }
+      // The dot hops to the job this event is about.
+      if (changed) { jobsLatest = changed.id; if (jobsHear(changed)) jobsRedraw(); else throttledRedraw(); return; }
       if (jobsById && typeof jobsById.forEach === 'function') jobsById.forEach(jobsHear);
       throttledRedraw();
     });

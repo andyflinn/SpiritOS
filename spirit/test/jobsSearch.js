@@ -233,7 +233,8 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   stats.data = { cpu: 1 };
   stats.updatedAt += 100;
   hear(stats);
-  redraw();
+  // Jobs redraws a plain update at most once a second (its existing throttle), so the hop shows on the trailing redraw.
+  await new Promise(function (r) { setTimeout(r, 1100); });
   if ((jlist().match(/job-latest/g) || []).length === 1 && /job-latest/.test(rowOf('job_10'))) test.check('server-stats ticks: the dot hops to its row');
   else test.fail(OWED + 'after a server-stats tick the dot is not on job_10 alone');
   jobsBox.fire('click', { target: target({}, 'job_4') });

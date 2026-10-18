@@ -21,6 +21,9 @@
 //   fold(row, key),               a press on a row that folds it (a folder in a tree): true when it took the press
 //                                 itself, so it is no pick (goal/G29.8)
 //   empty                         the sentence of an empty list
+//   head                          the column headings of the app's cells, in order (goal/G29.14)
+//   filters[].multi               a row of toggles, every one on at the start; test gets the values turned off, and
+//                                 choices may be a function of the rows held (goal/G29.14)
 // }) -> { refresh, redraw, words(), ask(verb, args), destroy }   ask: the one slot lent to the app (goal/G29.5)
 //
 // WHAT EVERY SEARCH IT CALLS ANSWERS: {items: [{key, label}], more, total}; key is the identity of what the row shows,
@@ -220,6 +223,13 @@
         return '<td class="list-rank" style="width:3em;min-width:3em" title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '">' +
           '<div style="width:3em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div></td>';
       }
+      // COLUMN HEADINGS, THE LIST'S OWN (goal/G29.14; Andy, 2026-10-18: "put column headings ( a flaw in out
+      // list-search element?)"): options.head names the app's cells, one heading each; the rank column, while words are
+      // typed, gets an empty one of its own.
+      function headHtml(searching) {
+        if (!Array.isArray(o.head) || !o.head.length) return '';
+        return '<thead><tr>' + (searching ? '<th></th>' : '') + o.head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead>';
+      }
       var list = el('list');
       if (list) {
         if (snap) list.scrollTop = 0;
@@ -240,7 +250,7 @@
         list.innerHTML = (dropdown && o.all && !noneInTable ? noneBtn.replace('type="button"', 'type="button" style="margin-top:0.5em"') : '') + ((rows.length || noneInTable)
           // IN A POPUP THE TABLE TAKES ITS OWN WIDTH (goal/G29.8): a table at 100% gives a popup sized by its rows nothing
           // to measure; the popup's own max-width keeps it inside the page.
-          ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '><tbody>' + noneRow + rows.map(function (w) {
+          ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '>' + headHtml(searching) + '<tbody>' + noneRow + rows.map(function (w) {
             // THE CURRENT ROW, DRAWN BY THE LIST, THE SAME EVERYWHERE (goal/G29.9): a slightly brighter background.
             var cur = w.key === currentKey;
             return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +

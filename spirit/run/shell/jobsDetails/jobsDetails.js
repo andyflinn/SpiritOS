@@ -51,14 +51,16 @@ function jdJob() {
 //
 // An event is what a job publishes: its `app` object, when it differs from the one heard before (a job-updated for a
 // log line carries the same object again, and is no event). For fs-watcher it is the tree command each change carries
-// (goal/G4.25), {op, path, at}. Kept here, in the page, oldest falling off the top; nothing is asked of the node.
+// (goal/G4.25), {op, path, at}. The node's own other jobs (server-stats, relay-presence) report through their data, a
+// plain JSON object, so for them the data is the event, each time it changes (goal/G29.14, box v10). Kept here, in the
+// page, oldest falling off the top; nothing is asked of the node.
 var JD_WINDOW = 256;
 var jdEvents = Object.create(null);    // job id -> [{at, json}]
 var jdLast = Object.create(null);      // job id -> the json heard last
 
 function jdHear(job) {
   if (!job) return;
-  var obj = job.type === 'fs-watcher' ? (job.data && job.data.command) : job.app;
+  var obj = job.type === 'fs-watcher' ? (job.data && job.data.command) : job.kind === 'permanent' ? job.data : job.app;
   if (!obj || typeof obj !== 'object') return;
   var json = '';
   try { json = JSON.stringify(obj); } catch (e) { return; }
