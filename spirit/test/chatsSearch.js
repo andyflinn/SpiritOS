@@ -85,6 +85,10 @@ async function main() {
   else test.fail(OWED + 'chatter does not ask chats.search {}');
   if (/'chat\.search',\s*\{\s*peer:[^}]*who:/.test(chatter)) test.check('chatter\'s chat window searches its lines through chat.search {peer, text, who}');
   else test.fail(OWED + 'chatter has no search over a chat\'s lines');
+  // A DROPDOWN WHOSE PICK IS A LINE IN THE HISTORY (Andy, 2026-10-18): put in by time when missing, then current.
+  const chatSearchList = (/chSearch = window\.spiritElements\.shellCreateListSearch\([\s\S]*?\n {4}\}\);/.exec(chatter) || [''])[0];
+  if (/mode:\s*'dropdown'/.test(chatSearchList) && /pick:\s*function \(l\) \{[\s\S]*chUpsert\(l\);[\s\S]*chSetCurrent\(chKey\(l\.sent, l\.seq\)\)/.test(chatSearchList)) test.check('the chat search is a dropdown; a picked line is put into the history when missing (chUpsert) and becomes the current line');
+  else test.fail(OWED + 'the chat search is not a dropdown whose pick puts the line in and makes it current');
   if (!fs.existsSync(path.join(__dirname, 'chatPeers.js'))) test.check('goal/G4.3\'s chatPeers.js is retired; this suite holds its checks');
   else test.fail(OWED + 'spirit/test/chatPeers.js still asserts peers.search');
 

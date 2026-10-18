@@ -569,9 +569,16 @@ spirit.shell.activateApp({
           '<td>' + (l.sent === 1 ? 'me' : 'them') + '</td>' +
           '<td>' + mark(String(l.text || '')) + '</td>';
       },
-      details: function (l) {
-        var k = chKey(l.sent, l.seq);
-        if (chLines[k]) chSetCurrent(k);
+      // A DROPDOWN, AND A PICK IS A LINE IN THE HISTORY (Andy, 2026-10-18: "can that chat history thing be a dropdown,
+      // when a line is selected it inserts it's hole content into the shown chat history, if it's missing, and the
+      // selected line becomes the currently selected line in the chat history?"): the line is put in its place by time
+      // when the window does not hold it (chUpsert), and becomes the current line.
+      mode: 'dropdown',
+      placeholder: 'search this chat…',
+      pick: function (l) {
+        if (!l) return;
+        chUpsert(l);
+        chSetCurrent(chKey(l.sent, l.seq));
       },
       empty: 'Type words to search this chat.',
     });
