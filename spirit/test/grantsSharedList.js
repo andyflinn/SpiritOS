@@ -209,6 +209,21 @@ function page() {
   await settle();
   if (chose === 'desk' && dd.value === '' && picks[picks.length - 1] === '' && /all servers/.test(fieldText())) test.check('desk chosen, then None: the value is empty, the pick hears it, the field reads all servers again');
   else test.fail(OWED + 'after desk then Clear: chose ' + short(chose) + ', value ' + short(dd.value) + ', picks ' + short(picks) + ', field ' + short(fieldText()));
+  // Andy, 2026-10-18: "in the contact selector, could you left-align the [None] button with the user labels?" The None
+  // button stands in the table, in the column the selector names for its labels: in the contact selector after the
+  // star and the presence cells.
+  const cRoot = line && line.children[0];
+  const cHost = cRoot && p.made.filter(function (n) { let x = n; while (x && x !== cRoot) x = x.parentNode; return x === cRoot && /listsearch-\d+-field/.test(n.innerHTML); })[0];
+  const cPre = cHost && (/id="(listsearch-\d+-)field"/.exec(cHost.innerHTML) || [])[1];
+  if (cHost && cPre) cHost.dispatchEvent({ type: 'click', target: p.doc.getElementById(cPre + 'field') });
+  await settle(); await settle();
+  const cList = cPre ? p.doc.getElementById(cPre + 'list').innerHTML : '';
+  const noneTr = (/<tr[^>]*>(?:(?!<\/tr>)[\s\S])*?id="listsearch-\d+-none"[\s\S]*?<\/tr>/.exec(cList) || [''])[0];
+  const before = noneTr ? (noneTr.split(/id="listsearch-\d+-none"/)[0].match(/<td/g) || []).length : -1;
+  if (noneTr && before === 3 && !/data-key/.test((/<tr[^>]*>/.exec(noneTr) || [''])[0])) test.check('in the contact selector [None] stands in the names\' column (third cell), in a row that is no pick');
+  else test.fail(OWED + 'the contact dropdown\'s None: ' + short(noneTr || cList.slice(0, 200)) + ' (cells before it ' + before + ')');
+  if (cHost && cPre) cHost.dispatchEvent({ type: 'click', target: p.doc.getElementById(cPre + 'field') });
+  await settle();
   const selSrc = code(path.join(RUN, 'shell', 'js', 'appServerSelector.js')) + code(path.join(RUN, 'shell', 'js', 'contactSelector.js'));
   if (!/unshift\(\s*\{\s*key:\s*''/.test(selSrc)) test.check('the selectors no longer smuggle the none-row in as a row of their own');
   else test.fail(OWED + 'a selector still unshifts its own all row');
