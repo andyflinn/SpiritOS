@@ -13,6 +13,8 @@
 //   filters: [{ name, choices: [{ value, icon, word }], test(row, value) }],
 //                                 declared, drawn here; test answers a probability, 0 to 1, that only lowers a row
 //   paint(row, mark),             one row's cells, html; mark(text) marks the words in a text
+//   matched(row, filters),        what of a row the words are matched against, by the filters' values; the row itself
+//                                 when not given (goal/G29.8: the file list's words in: names | paths)
 //   rows(),                       the page's own rows, ranked here; with no words they stand in the order rows() gives
 //   fold(row, key),               a press on a row that folds it (a folder in a tree): true when it took the press
 //                                 itself, so it is no pick (goal/G29.8)
@@ -130,7 +132,8 @@
       }
       var text = words();
       if (!text) return f;
-      var m = typeof P.probabilityStringObjectMatch === 'function' ? Number(P.probabilityStringObjectMatch(text, w.row)) || 0 : 0;
+      var against = typeof o.matched === 'function' ? o.matched(w.row, values) : w.row;
+      var m = typeof P.probabilityStringObjectMatch === 'function' ? Number(P.probabilityStringObjectMatch(text, against)) || 0 : 0;
       return Math.max(0, Math.min(1, m)) * f;
     }
     // THE MATCHED PARTS MARKED (goal/G29.9): every word typed wrapped where it stands in the text, the rest escaped.
@@ -176,7 +179,9 @@
       var list = el('list');
       if (list) {
         list.innerHTML = rows.length
-          ? '<table class="jobs-table"><tbody>' + rows.map(function (w) {
+          // IN A POPUP THE TABLE TAKES ITS OWN WIDTH (goal/G29.8): a table at 100% gives a popup sized by its rows nothing
+          // to measure; the popup's own max-width keeps it inside the page.
+          ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '><tbody>' + rows.map(function (w) {
             // THE CURRENT ROW, DRAWN BY THE LIST, THE SAME EVERYWHERE (goal/G29.9): a slightly brighter background.
             var cur = w.key === currentKey;
             return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +

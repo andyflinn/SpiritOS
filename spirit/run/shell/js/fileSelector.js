@@ -96,7 +96,8 @@
         for (var i = 0; i < depth; i++) indent += '<span class="file-selector-indent" style="display:inline-block;width:1em"></span>';
         name = indent + iconOf(f) + ' ' + m(f.name) + (f.kind === 'folder' && !opened[f.relativePath] ? ' …' : '');
       }
-      return '<td class="label-cell">' + name + '</td>' +
+      // A NAME IS NEVER CUT SHORT (goal/G29.8): no label-cell cap; the popup is as wide as its rows, up to the page.
+      return '<td style="white-space:nowrap">' + name + '</td>' +
         '<td style="text-align:right;white-space:nowrap">' + (f.kind === 'file' && typeof f.size === 'number' ? escapeHtml(formatBytes(f.size)) : '') + '</td>' +
         '<td style="text-align:right;white-space:nowrap">' + when(f.modified) + '</td>';
     }
@@ -105,6 +106,10 @@
       mode: isPane ? 'pane' : 'dropdown',
       placeholder: isPane ? '' : (o.placeholder || 'choose a file…'),
       rows: rows,
+      // WORDS IN: NAMES | PATHS (goal/G29.8; Andy, 2026-10-18: "the default for your filter should be filename only"):
+      // names matches the words against the file name alone, paths against the whole path, folders included.
+      filters: [{ name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'paths', word: 'paths' }] }],
+      matched: function (row, values) { return values.in === 'paths' ? { name: row.name, path: row.key } : { name: row.name }; },
       paint: paint,
       name: function (row) { return row.key; },
       // A FOLDER IS NEVER A PICK: in the tree its press opens or shuts it; in the list it does nothing.

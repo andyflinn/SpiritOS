@@ -372,16 +372,19 @@ const TREE = [
     typeInto(named, 'shared');
     await settle();
     const byName = keysOf(named);
-    const strip = (partOf(named, 'filters') || { innerHTML: '' }).innerHTML;
+    // The strip is drawn with the pane's markup, into the element the list lives in.
+    const strip = (hostOf(named) || { innerHTML: '' }).innerHTML;
     if (/data-filter="in"[^>]*data-value="names"/.test(strip) && /data-value="paths"/.test(strip)) test.check('the file list draws one filter, words in: names | paths');
     else test.fail(OWED + 'the filter strip reads ' + short(strip));
-    if (byName.indexOf('shell/shared') !== -1 && byName.indexOf('shell/shared/js/listSearch.js') === -1) test.check('by default the words match names only: shared finds the folder shared, not the files under it');
-    else test.fail(OWED + 'with names, shared shows ' + short(byName));
+    // Every row stands in the shared list, ranked (goal/G29.4): a row the words miss sinks below every row they match.
+    const deepFile = 'shell/shared/js/listSearch.js';
+    if (byName[0] === 'shell/shared' && byName.indexOf(deepFile) > byName.indexOf('js')) test.check('by default the words match names only: shared ranks the folder shared first, and the files under it no higher than any miss');
+    else test.fail(OWED + 'with names, shared ranks ' + short(byName));
     fire(hostOf(named), 'click', { target: { id: '', getAttribute: function (k) { return k === 'data-filter' ? 'in' : k === 'data-value' ? 'paths' : null; }, closest: function () { return null; } } });
     await settle();
     const byPathKeys = keysOf(named);
-    if (byPathKeys.indexOf('shell/shared/js/listSearch.js') !== -1) test.check('with paths the words match the whole path: shared finds shell/shared/js/listSearch.js');
-    else test.fail(OWED + 'with paths, shared shows ' + short(byPathKeys));
+    if (byPathKeys.indexOf(deepFile) !== -1 && byPathKeys.indexOf(deepFile) < byPathKeys.indexOf('js')) test.check('with paths the words match the whole path: shared ranks shell/shared/js/listSearch.js above the misses');
+    else test.fail(OWED + 'with paths, shared ranks ' + short(byPathKeys));
 
     // "it maybe neccessary for file dropdowns to have a hidden mime-type filter that an app can configure"
     const typed = m.make({ face: 'pane', accept: ['.js'], files: function () { return TREE; } });
