@@ -90,6 +90,16 @@ function fakeElement() {
   if (at('/shell/node_modules/codemirror/lib/codemirror.css') !== -1 && at('/shell/node_modules/codemirror/lib/codemirror.js') !== -1 && at('/shell/js/textView.js') > at('/shell/node_modules/codemirror/lib/codemirror.js')) test.check('index.html loads CodeMirror\'s css and js, then textView.js');
   else test.fail(OWED + 'index.html: codemirror.css at ' + at('/shell/node_modules/codemirror/lib/codemirror.css') + ', codemirror.js at ' + at('/shell/node_modules/codemirror/lib/codemirror.js') + ', textView.js at ' + at('/shell/js/textView.js'));
 
+  // Andy, 2026-10-18: "does the editor have tools like search, replace?", then "add them here." CodeMirror 5's own
+  // add-ons, after its core, in the order they need each other: dialog, searchcursor, search, jump-to-line.
+  const ADDONS = ['addon/dialog/dialog.js', 'addon/search/searchcursor.js', 'addon/search/search.js', 'addon/search/jump-to-line.js'];
+  const missing = ADDONS.concat(['addon/dialog/dialog.css']).filter(function (f) { return !fs.existsSync(path.join(CM, f)) || !tracked('spirit/run/shell/node_modules/codemirror/' + f); });
+  if (!missing.length) test.check('the search add-ons are in the tree and committed: dialog (with its css), searchcursor, search, jump-to-line');
+  else test.fail(OWED + 'add-ons missing or not committed: ' + short(missing));
+  const order = ['lib/codemirror.js'].concat(ADDONS).map(function (f) { return at('/shell/node_modules/codemirror/' + f); });
+  if (order.every(function (n, i) { return n !== -1 && (i === 0 || n > order[i - 1]); }) && at('/shell/node_modules/codemirror/addon/dialog/dialog.css') !== -1) test.check('index.html loads them after CodeMirror, in order, and the dialog\'s css');
+  else test.fail(OWED + 'index.html places them at ' + short(order) + ', dialog.css at ' + at('/shell/node_modules/codemirror/addon/dialog/dialog.css'));
+
   test.subHeading('2. textView marks every match and scrolls to the first');
   const CodeMirror = fakeCodeMirror();
   const win = { CodeMirror: CodeMirror };
