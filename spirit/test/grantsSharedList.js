@@ -170,6 +170,11 @@ function page() {
   const deskRows = rowsNow();
   if (picked && deskRows.length === 2 && deskRows.every(function (k) { return /\ndesk/.test(k.replace(/&#10;|\\n/g, '\n')) || /desk/.test(k); }) && verbBox && verbBox.hidden === false) test.check('choosing the server desk narrows the table to desk\'s grants and shows the verb selector');
   else test.fail(OWED + 'after choosing desk: picked ' + picked + ', rows ' + short(deskRows) + ', verb hidden ' + (verbBox && verbBox.hidden));
+  // Andy, 2026-10-18: "get those two selector, server and verb NEXT to each other, not stacked". The pair is one inline
+  // row: the branch selector lays its two halves out side by side, the server half never a block of its own.
+  const inlineOf = function (el) { return String((el && (el.style.display || el.getAttribute('style'))) || ''); };
+  if (/inline-flex|^flex/.test(inlineOf(branchRoot)) && /inline/.test(inlineOf(serverRoot))) test.check('server and verb stand side by side: the branch selector is an inline row, the server half inline');
+  else test.fail(OWED + 'the branch selector displays ' + short(inlineOf(branchRoot)) + ', its server half ' + short(inlineOf(serverRoot)));
   const contactRoot = line && line.children[0];
   const pickedAlice = contactRoot ? pick(contactRoot, ALICE) : false;
   await settle(); await settle();
