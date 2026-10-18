@@ -132,6 +132,9 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   const endAfterTyping = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
   if (endAfterTyping === 'a') test.check('once the user types, end in the search box is the text cursor\'s again');
   else test.fail('OWED by goal/G29.8: after typing, end in the box made ' + short(endAfterTyping) + ' current');
+  // Back to c, where the checks below start.
+  fire(box, 'keydown', el.text, { key: 'ArrowDown' });
+  fire(box, 'keydown', el.text, { key: 'ArrowDown' });
   fire(box, 'keydown', el.text, { key: 'ArrowUp' });
   fire(box, 'keydown', el.text, { key: 'Enter' });
   if (details[details.length - 1] === 'b') test.check('up, then enter presses the current row');

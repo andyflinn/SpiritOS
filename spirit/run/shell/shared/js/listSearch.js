@@ -242,7 +242,9 @@
       return new Promise(function (resolve, reject) { lent.push({ verb: verb, args: args || {}, resolve: resolve, reject: reject }); pump(); });
     }
 
-    function typed() { setOpen(true); draw(); ask(); }
+    // Whether up or down moved the current row since the user last typed: Home and End are the list's then.
+    var arrowed = false;
+    function typed() { arrowed = false; setOpen(true); draw(); ask(); }
     function rowOf(target) {
       var tr = target && typeof target.closest === 'function' ? target.closest('[data-key]') : null;
       var key = tr && typeof tr.getAttribute === 'function' ? tr.getAttribute('data-key') : (target && typeof target.getAttribute === 'function' ? target.getAttribute('data-key') : null);
@@ -305,11 +307,12 @@
       var t = (e && e.target) || {};
       var inBox = t.id === pre + 'text';
       var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
-      if (e.key === 'ArrowDown') { stop(); move(1); return; }
-      if (e.key === 'ArrowUp') { stop(); move(-1); return; }
-      // In an open dropdown they are the list's, from the search box too (goal/G29.8; Andy, 2026-10-18: "The home and End
-      // keys don't work in the dropdown."); in a pane the search box keeps them for its text cursor.
-      if ((e.key === 'Home' || e.key === 'End') && (!inBox || (dropdown && open))) { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
+      if (e.key === 'ArrowDown') { stop(); arrowed = true; move(1); return; }
+      if (e.key === 'ArrowUp') { stop(); arrowed = true; move(-1); return; }
+      // HOME AND END FOLLOW THE ARROWS (goal/G29.8; Andy, 2026-10-18: "after the user uses up and down arrow keys the home
+      // and end should belong to the list"): in the search box they are the text cursor's until up or down moved the
+      // current row, and again once the user types. Pane and dropdown alike.
+      if ((e.key === 'Home' || e.key === 'End') && (!inBox || arrowed)) { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
       if (e.key === 'Escape') { setOpen(false); return; }
       if (e.key === 'Enter' && !e.repeat) {
         if (currentKey != null && byKey[currentKey] && open) { stop(); pressRow(byKey[currentKey]); return; }
