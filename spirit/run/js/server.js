@@ -1827,7 +1827,7 @@ contactBook.syncMarks(ROOT_DIR);
 
   // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
-  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs });
+  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.core.const.MIME_TYPES });
   // jobs.auth (apiAuth/G1.4): the owner's allow-table, loopback only. Andy: "jobs.auth supersedes: "api.auth,
   // sibling to app names";". An answer is the verb's object as is; a refusal is the catalogue's, by name.
   const apiAuth = require('./apiAuth').createApiAuth({
@@ -1935,7 +1935,7 @@ contactBook.syncMarks(ROOT_DIR);
   // still red-green the same way.
   introSpector.claim(loopbackVerbs, 'fs', 'server.js', {
     // The node's files by path (puppets/G2). fs.stat stays the "get".
-    'fs.search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.fsSearch(b); }) },
+    'fs.search': { request: { q: '', contents: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.fsSearch(b); }) },
     'fs.stat': { request: { path: '' }, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: handleFsStat },
     // The file's text (goal/G14.8), the same read as the static route.
     'fs.load': { request: { path: '' }, reply: { path: '', text: '' }, handler: handleFsLoad },

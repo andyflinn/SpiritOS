@@ -39,7 +39,9 @@ spirit.shell.activateApp({
       var mimeType = spirit.shell.mimeTypeForName(name);
       var handlerId = spirit.shell.CATEGORY_APP_HANDLERS[spirit.shell.classifyMimeType(mimeType)];
       // Through api, not the global: opening another app is what step 6 gave a system app a doorway for.
-      if (handlerId) { filesApi.launchApp(handlerId, { path: path }); return; }
+      // goal/G29.11: a file found by its contents opens at that line with the words marked.
+      var row = filesPane.row || {};
+      if (handlerId) { filesApi.launchApp(handlerId, { path: path, words: row.line > 0 ? filesPane.words() : '', line: row.line || 0 }); return; }
       filesShowDetail(name, path, mimeType);
     });
   },

@@ -1487,7 +1487,7 @@
         // viewer that doesn't also implement loadFile would keep showing
         // whichever file it first opened, forever.
         // THE FILE ON CODEMIRROR (goal/G29.12): the text view shows it, the search words marked, the first in view.
-        function codeViewerLoadFile(path, words) {
+        function codeViewerLoadFile(path, words, line) {
           setViewerTitle(path);
           var content = spirit.core.fs.loadFile(path);
           document.getElementById('cv-body').innerHTML =
@@ -1504,8 +1504,9 @@
             '<div id="job-manifest-form"></div>' +
             '<div id="cv-text" class="text-view"></div>' +
             renderAnnotationsSection(path);
-          window.spiritElements.createTextView(document.getElementById('cv-text'), {
-            text: content == null ? '(could not load file)' : content, words: words || '', readOnly: true, path: path,
+          var cvText = document.getElementById('cv-text');
+          window.spiritElements.createTextView(cvText, {
+            text: content == null ? '(could not load file)' : content, words: words || '', line: line || 0, readOnly: true, path: path,
           });
           renderAppOfFile(document.getElementById('app-of-file'), path);
           renderOpenWith(document.getElementById('cv-open-with'), 'text-file-launcher', path);
@@ -1524,10 +1525,10 @@
           type: 'launcher',
           mount: function (container, api, params) {
             container.innerHTML = '<div id="cv-body" class="stack"></div>';
-            codeViewerLoadFile(params.path, params.words);
+            codeViewerLoadFile(params.path, params.words, params.line);
           },
           loadFile: function (path, params) {
-            codeViewerLoadFile(path, params && params.words);
+            codeViewerLoadFile(path, params && params.words, params && params.line);
           },
           render: function () {}, // static between loadFile calls — the file's content doesn't live-update
         });

@@ -15,7 +15,12 @@
 //   accept     the app's hidden type filter: an array of extensions ('.js') and mimetype prefixes ('text/', 'image/'),
 //              or a function of the entry; files outside it never show, folders always do
 // A press on a file makes it the root's value (its path) and row, and fires one bubbling change on the root; a press on
-// a folder is never a pick: in the tree it opens or shuts the folder.
+// a folder is never a pick: in the tree it opens or shuts the folder. root.words() answers the words typed.
+//
+// INSIDE THE FILES (goal/G29.11): a contents filter, off by default. On, the words go to the node too (fs.search with
+// contents: yes, the verb change Andy approved), and a file found by its text shows its first matching line, the words
+// marked; its row (root.row) carries line and text. Names and paths stay searched in the page; the node is asked only
+// while contents is on.
 //
 // AFTER THE FIRST BUILD (the box): "No words: every folder starts folded; a press on a folder unfolds or folds it, in
 // the pane and in the dropdown alike, and is never a pick."; "Words typed: every match shows, nothing folded."; "In the
@@ -34,6 +39,7 @@
     var byPath = Object.create(null);   // path -> the tree's entry, for paint and pick
     var opened = Object.create(null);   // folder path -> true while its rows show; every folder starts folded
     var list = null;
+    var found = Object.create(null);    // path -> {line, text}: what the node found inside, while contents is on
 
     var root = document.createElement(isPane ? 'div' : 'span');
     root.className = 'file-selector ' + (isPane ? 'file-selector-face-pane' : 'file-selector-face-dropdown');
@@ -74,8 +80,34 @@
         if (!accepted(f)) return false;
         byPath[f.relativePath] = f;
         return !tree || !underFolded(f.relativePath);
-      }).map(function (f) { return { key: f.relativePath, name: f.name }; });
+      }).map(function (f) {
+        var r = { key: f.relativePath, name: f.name };
+        var hit = found[f.relativePath];
+        if (hit && hit.line > 0) { r.line = hit.line; r.text = hit.text; }
+        return r;
+      });
     }
+    // THE NODE, ONLY WHILE CONTENTS IS ON: the shared list's server tier, answered here. What the node found inside is
+    // kept by path and joins the page's own rows; the list gets no rows of its own from it.
+    var api = {
+      verb: function (name, body) {
+        var a = (body && body.ask && body.ask.node && body.ask.node['fs.search']) || {};
+        if (a.contents !== 'yes' || !a.q) {
+          found = Object.create(null);
+          return Promise.resolve({ status: 200, body: { items: [], more: false } });
+        }
+        return spirit.core.ask('fs.search', { q: a.q, contents: 'yes' }).then(function (r) {
+          var next = Object.create(null);
+          (((r && r.body) || {}).items || []).forEach(function (it) {
+            var hit = null;
+            try { hit = JSON.parse(it.label); } catch (e) { hit = null; }
+            if (hit && hit.line > 0) next[String(hit.path).replace(/\/$/, '')] = { line: Number(hit.line), text: String(hit.text || '') };
+          });
+          found = next;
+          return { status: 200, body: { items: [], more: !!(r && r.body && r.body.more) } };
+        });
+      },
+    };
     function iconOf(f) {
       if (f.kind === 'folder') return ICON.FOLDER || '';
       var sh = spirit.shell;
@@ -89,7 +121,11 @@
       var f = byPath[row.key] || { kind: 'file', name: row.name, relativePath: row.key };
       var m = typeof mark === 'function' ? mark : escapeHtml;
       var name;
-      if (words()) name = iconOf(f) + ' ' + m(f.relativePath);
+      if (words()) {
+        name = iconOf(f) + ' ' + m(f.relativePath);
+        // FOUND INSIDE: its first matching line under the path, the words marked.
+        if (row.line > 0) name += '<div class="file-selector-line" style="white-space:pre;opacity:0.85">' + row.line + ': ' + m(row.text) + '</div>';
+      }
       else {
         var depth = f.relativePath.split('/').length - 1;
         var indent = '';
@@ -109,8 +145,20 @@
       rows: rows,
       // WORDS IN: NAMES | PATHS (goal/G29.8; Andy, 2026-10-18: "the default for your filter should be filename only"):
       // names matches the words against the file name alone, paths against the whole path, folders included.
-      filters: [{ name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'paths', word: 'paths' }] }],
-      matched: function (row, values) { return values.in === 'paths' ? { name: row.name, path: row.key } : { name: row.name }; },
+      filters: [
+        { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'paths', word: 'paths' }] },
+        { name: 'contents', choices: [{ value: 'off', word: 'contents off' }, { value: 'on', word: 'contents on' }] },
+      ],
+      // A file found inside is matched by its line as well.
+      matched: function (row, values) {
+        var m = values.in === 'paths' ? { name: row.name, path: row.key } : { name: row.name };
+        if (row.line > 0) m.line = row.text;
+        return m;
+      },
+      api: api,
+      server: 'node',
+      verb: 'fs.search',
+      args: function (text, values) { return { q: text, contents: values.contents === 'on' ? 'yes' : '' }; },
       paint: paint,
       name: function (row) { return row.key; },
       // A FOLDER IS NEVER A PICK: in the tree its press opens or shuts it; in the list it does nothing.
@@ -122,7 +170,7 @@
       },
       pick: function (row) {
         root.value = row.key;
-        root.row = byPath[row.key] || row;
+        root.row = Object.assign({}, byPath[row.key] || row, row.line > 0 ? { line: row.line, text: row.text } : {});
         root.dispatchEvent(new Event('change', { bubbles: true }));
       },
       empty: o.empty || 'No file matches.',
@@ -130,6 +178,7 @@
 
     // The tree changed: the list drawn again from it.
     root.refresh = function () { list.redraw(); };
+    root.words = function () { return words(); };
     root.destroy = function () { list.destroy(); };
     return root;
   }

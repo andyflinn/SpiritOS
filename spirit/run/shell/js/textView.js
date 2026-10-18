@@ -5,10 +5,11 @@
 //   match marked, the first in view; the text editor edits and saves on the same CodeMirror, its plain text area gone."
 //   CodeMirror 5 is the shell's local copy, spirit/run/shell/node_modules/codemirror/, loaded by index.html before this.
 //
-// createTextView(container, { text, words, readOnly, path }) puts one CodeMirror in the container and answers
+// createTextView(container, { text, words, line, readOnly, path }) puts one CodeMirror in the container and answers
 // { value(), mark(words), cm }:
 //   text       what it shows
 //   words      the search words: every match marked (case ignored), the first scrolled into view
+//   line       a 1-based line put in view instead (goal/G29.11: a file found by its contents opens at its line)
 //   readOnly   a display, not an editor
 //   path       the file's path, which picks the syntax colours by its extension
 // The marks are drawn as the shared list marks a match (class text-view-match, index.html).
@@ -49,6 +50,8 @@
         marks.push(cm.markText(from, cm.posFromIndex(r[1]), { className: 'text-view-match' }));
         if (!first) first = from;
       });
+      // The line asked for wins over the first match (goal/G29.11).
+      if (Number(o.line) > 0) first = { line: Number(o.line) - 1, ch: 0 };
       firstAt = first;
       if (first) {
         cm.setCursor(first);

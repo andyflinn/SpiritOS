@@ -157,8 +157,10 @@ function fakeElement() {
   else test.fail(OWED + 'textEditor.js: createTextView ' + /createTextView\s*\(/.test(editor) + ', textarea ' + /<textarea/.test(editor) + ', value() ' + /\.value\(\)/.test(editor));
   // "we only do it for the text viewer/launcher, if we go from there to \"textEditor\" those highlights will vanish.
   // correct. (I'm fine with that)"
-  if (!/words/.test(editor)) test.check('the editor opens unmarked: it takes no words');
-  else test.fail(OWED + 'textEditor.js still takes words');
+  // AMENDED BY goal/G29.11 (Andy, 2026-10-18: "only if i use the file picker in editor to search file contents"): the
+  // editor takes no words from whoever opens it; only its own picker, found by contents, hands it some.
+  if (!/params\s*&&\s*params\.words|params\.words/.test(editor)) test.check('the editor takes no words from whoever opens it');
+  else test.fail(OWED + 'textEditor.js still takes words from its opener');
   if (/createTextView\s*:\s*spiritElements\.createTextView/.test(code(path.join(RUN, 'js', 'client', 'shell.js')))) test.check('apps get it as api.ui.elements.createTextView');
   else test.fail(OWED + 'shell.js hands apps no createTextView');
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {

@@ -21,17 +21,19 @@ var APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 // it picked, or the one "Open with" handed over, is the one loaded and saved.
 var textEditorPath = '';
 // THE TEXT ON CODEMIRROR (goal/G29.12): the file is edited in the shell's text view, its plain text area gone, and
-// shown unmarked: the marks belong to the viewer (Andy, 2026-10-18). A file loaded makes a fresh view.
+// shown unmarked: the marks belong to the viewer (Andy, 2026-10-18), save one way in. A file its own picker found by
+// its contents opens marked with the picker's words, at that line (goal/G29.11: "i go to text editor search for files
+// with peerPost in them and them open the top candidates"). A file loaded makes a fresh view.
 var textEditorApi = null;
 var textEditorView = null;
-function textEditorLoadPath(path) {
+function textEditorLoadPath(path, words, line) {
   var content = spirit.core.fs.loadFile(path);
   textEditorPath = path;
   var pathEl = document.getElementById('editor-path');
   if (pathEl) pathEl.textContent = path;
   var place = document.getElementById('editor-content');
   place.innerHTML = '';
-  textEditorView = textEditorApi.ui.elements.createTextView(place, { text: content == null ? '' : content, path: path });
+  textEditorView = textEditorApi.ui.elements.createTextView(place, { text: content == null ? '' : content, words: words || '', line: line || 0, path: path });
   document.getElementById('editor-status').textContent = content == null ? 'not found (or empty) — you can still Save to create it' : 'loaded';
 }
 
@@ -53,7 +55,12 @@ spirit.shell.activateApp({
     // Its text types only (goal/G29.8: "A file dropdown takes a hidden type filter the app configures").
     var picker = api.ui.elements.createFileSelector({ accept: ['text/', 'application/json', 'application/javascript', '.md'], placeholder: 'open a file…' });
     document.getElementById('editor-picker').appendChild(picker);
-    picker.addEventListener('change', function () { if (picker.row && picker.row.kind === 'file') textEditorLoadPath(picker.value); });
+    picker.addEventListener('change', function () {
+      if (!picker.row || picker.row.kind !== 'file') return;
+      // Found by its contents: opened marked with the picker's words, at its line.
+      var contentsHit = picker.row.line > 0;
+      textEditorLoadPath(picker.value, contentsHit ? picker.words() : '', contentsHit ? picker.row.line : 0);
+    });
 
     document.getElementById('editor-load').addEventListener('click', function () {
       textEditorLoadPath(textEditorPath);
