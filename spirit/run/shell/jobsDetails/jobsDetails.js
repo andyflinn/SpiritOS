@@ -5,18 +5,22 @@
 //
 // A dialog in the pattern of contactsDetails: hidden, pushed by the Jobs
 // table for one row, showing that job and nothing else, launching nothing,
-// and the only way out is back to the table. The console that used to fold
-// open under the row lives here, with the actions that sat in the row.
+// and the only way out is back to the table.
 //
-// NO DATA BOX. Andy: "get rid of that box. it's the (relatively) static portion of the fs data." The
-// console is what the job does; its job.data record is not drawn.
+// NO DATA BOX. Andy: "get rid of that box. it's the (relatively) static portion of the fs data."
 //
-// LIVE THROUGH THE SHELL, NOT A STREAM OF ITS OWN. A dialog is never driven
-// by the job tick (switchTo, renderActive), so this asks the shell for the
-// jobs with api.onJobs — its opt-in for an app that wants live data — and
-// repaints on every event about the job it shows. One subscription, taken
-// at mount, kept for the pane's life: the shell mounts a dialog once and
-// opens it per subject.
+// A LIVE MONITOR OF WHAT THE JOB PUBLISHES, NEVER ITS STDOUT (goal/G29.14). The item's box: "A real-time monitor of a
+// capturable event stream, never stdout: an agent's file changes through fs-watcher, and what each server publishes.
+// It shows what could be logged; nothing is logged or kept." The window holds the last 256 events the shell receives;
+// the node does no more work. The dialog fills the page and the page itself does not scroll: the header, the rolling
+// event log (a third of the height, one JSON line per event), and the Extract/analyze box (a third of the height: the
+// last event clicked, JSON.stringify(object, null, 2), in a read-only CodeMirror text view). The log and the Extract
+// box scroll inside themselves.
+//
+// LIVE THROUGH THE SHELL, NOT A STREAM OF ITS OWN. A dialog is never driven by the job tick (switchTo, renderActive),
+// so this asks the shell for the jobs with api.onJobs, once at mount, kept for the pane's life: the shell mounts a
+// dialog once and opens it per subject. Every job's events are heard whatever is on screen, so a reopen shows what
+// came meanwhile.
 
 var jdEscapeHtml = spirit.core.util.escapeHtml;
 var jdIcon = spirit.core.const.ICON;
@@ -24,9 +28,9 @@ var jdApi = null;
 
 var jdId = '';          // which job this screen is about
 var jdJobs = null;      // the shell's live Map, as api.onJobs last handed it over
+var jdView = null;      // the Extract box's read-only text view
 
-// The canonical set lives in js/jobs.js, node-side; shell/jobs/jobs.js and
-// app/stats keep the same copy for the same reason (see the note there).
+// The canonical set lives in js/jobs.js, node-side; shell/jobs/jobs.js and app/stats keep the same copy.
 var JD_TERMINAL = ['completed', 'failed', 'cancelled', 'stopped'];
 
 var JD_STATUS_ICON = {
@@ -43,51 +47,36 @@ function jdJob() {
   return (jdJobs && jdId && jdJobs.get(jdId)) || null;
 }
 
-// ── THE WATCHER'S CONSOLE IS ITS STREAM (goal/G2.16) ───────────────────
+// ── THE EVENTS, THE LAST 256 PER JOB (goal/G29.14) ─────────────────────
 //
-//   Andy, 2026-10-02: "jobs don't need to write logs, logs should be consumed
-//   by an outside reader ... the watcher only needs to stream data", and "let's
-//   just make the consoles display the usefull data, the data in the live
-//   stream, we'll do it one item per job."
-//
-// fs-watcher writes no log line; each change arrives as a job event whose data
-// carries one tree command {op, path, at} (goal/G4.25). This page is the reader:
-// every such event, heard while the page lives (open or not), becomes one line —
-// time, event, path — in a window of JD_WINDOW lines kept here, oldest falling
-// off the top. Nothing is asked of the node, and a repeat of the same event at
-// the same moment adds nothing.
-var JD_WINDOW = 1000;
-var jdStreams = Object.create(null);   // job id -> [{at, event, path}]
+// An event is what a job publishes: its `app` object, when it differs from the one heard before (a job-updated for a
+// log line carries the same object again, and is no event). For fs-watcher it is the tree command each change carries
+// (goal/G4.25), {op, path, at}. Kept here, in the page, oldest falling off the top; nothing is asked of the node.
+var JD_WINDOW = 256;
+var jdEvents = Object.create(null);    // job id -> [{at, json}]
+var jdLast = Object.create(null);      // job id -> the json heard last
 
 function jdHear(job) {
-  if (!job || job.type !== 'fs-watcher') return;
-  var c = job.data && job.data.command;
-  if (!c || !c.path) return;
-  var lines = jdStreams[job.id] || (jdStreams[job.id] = []);
-  var last = lines[lines.length - 1];
-  if (last && last.at === c.at && last.event === c.op && last.path === c.path) return;
-  lines.push({ at: c.at, event: String(c.op || ''), path: String(c.path) });
+  if (!job) return;
+  var obj = job.type === 'fs-watcher' ? (job.data && job.data.command) : job.app;
+  if (!obj || typeof obj !== 'object') return;
+  var json = '';
+  try { json = JSON.stringify(obj); } catch (e) { return; }
+  if (jdLast[job.id] === json) return;
+  jdLast[job.id] = json;
+  var lines = jdEvents[job.id] || (jdEvents[job.id] = []);
+  lines.push({ at: job.updatedAt || Date.now(), json: json });
   if (lines.length > JD_WINDOW) lines.splice(0, lines.length - JD_WINDOW);
 }
 
-function jdStreamHtml(job) {
-  var lines = jdStreams[job.id] || [];
-  if (!lines.length) return '<div class="job-log-empty">(no file events heard yet)</div>';
-  return lines.map(function (l) {
-    return '<div class="job-log-entry"><span class="job-log-time">' +
-      new Date(l.at).toLocaleTimeString() + '</span>' + jdEscapeHtml(l.event) + ' ' + jdEscapeHtml(l.path) + '</div>';
-  }).join('');
-}
-
 function jdLogHtml(job) {
-  if (job.type === 'fs-watcher') return jdStreamHtml(job);
-  if (!job.log || job.log.length === 0) return '<div class="job-log-empty">(no log entries yet)</div>';
-  return job.log.map(function (entry) {
-    return '<div class="job-log-entry"><span class="job-log-time">' +
-      new Date(entry.timestamp).toLocaleTimeString() + '</span>' + jdEscapeHtml(String(entry.message)) + '</div>';
+  var lines = jdEvents[job.id] || [];
+  if (!lines.length) return '<div class="job-log-empty">(no events heard yet)</div>';
+  return lines.map(function (l, i) {
+    return '<div class="job-log-entry" data-event="' + i + '" title="' + jdEscapeHtml(new Date(l.at).toLocaleTimeString()) +
+      '" style="cursor:pointer;white-space:nowrap">' + jdEscapeHtml(l.json) + '</div>';
   }).join('');
 }
-
 
 // The rule the row had, moved and unchanged: Cancel for a one-shot process
 // and for a user-operated server, never for a node-operated one, which
@@ -108,72 +97,86 @@ function jdTitle(job) {
 }
 
 function jdRender() {
-  var body = document.getElementById('jd-body');
-  if (!body) return;
+  var head = document.getElementById('jd-head');
+  var log = document.getElementById('jd-log');
+  if (!head || !log) return;
   var job = jdJob();
   if (jdApi && jdApi.setScreenTitle) jdApi.setScreenTitle(jdTitle(job));
 
   if (!job) {
-    // Deleted or never there: say so rather than drawing a console that
-    // looks like a job with nothing to say yet.
-    body.innerHTML = '<div class="stat-tile wide"><div class="job-log-empty">That job is no longer listed.</div></div>';
+    // Deleted or never there: say so rather than drawing a log that looks like a job with nothing to say yet.
+    head.innerHTML = '<div class="job-log-empty">That job is no longer listed.</div>';
+    log.innerHTML = '';
     return;
   }
 
-  // Sticky scroll, as the folded panel had it: rebuilding the console
-  // resets its scroll, so a panel that was at the bottom is pinned back
-  // there and one scrolled up to read history keeps its place.
-  var panel = body.querySelector ? body.querySelector('#jd-log') : null;
-  var stickToBottom = true;
-  var previousScrollTop = 0;
-  if (panel) {
-    var distanceFromBottom = panel.scrollHeight - panel.scrollTop - panel.clientHeight;
-    stickToBottom = distanceFromBottom < 20;
-    previousScrollTop = panel.scrollTop;
-  }
-
-  var facts = spirit.shell.factRow([
+  head.innerHTML = spirit.shell.factRow([
     ['Status', (JD_STATUS_ICON[job.status] || '') + ' ' + String(job.status || '')],
     ['Id', String(job.id)],
     ['Kind / Type', String(job.kind || '') + ' / ' + String(job.type || '') + (job.module ? ' (' + job.module + ')' : '')],
     ['Updated', job.updatedAt ? new Date(job.updatedAt).toLocaleTimeString() : ''],
-  ]);
+  ]) + '<div class="start-job-form card">' + jdButtonsHtml(job) + '</div>';
 
-  body.innerHTML =
-    '<div class="stat-tile wide">' +
-      facts +
-      '<div class="start-job-form card">' + jdButtonsHtml(job) + '</div>' +
-    '</div>' +
-    '<div class="stat-tile wide">' +
-      '<div class="job-manifest-note">Console</div>' +
-      '<div class="job-log-panel" id="jd-log">' + jdLogHtml(job) + '</div>' +
-    '</div>';
+  // Sticky scroll: rebuilding the log resets its scroll, so a log that was at the bottom is pinned back there and one
+  // scrolled up to read keeps its place.
+  var distanceFromBottom = log.scrollHeight - log.scrollTop - log.clientHeight;
+  var stickToBottom = distanceFromBottom < 20;
+  var previousScrollTop = log.scrollTop;
+  log.innerHTML = jdLogHtml(job);
+  log.scrollTop = stickToBottom ? log.scrollHeight : previousScrollTop;
+}
 
-  var fresh = body.querySelector ? body.querySelector('#jd-log') : null;
-  if (fresh) fresh.scrollTop = stickToBottom ? fresh.scrollHeight : previousScrollTop;
+// THE EXTRACT/ANALYZE BOX: the clicked event, as JSON.stringify(object, null, 2) writes it.
+function jdExtract(i) {
+  var line = (jdEvents[jdId] || [])[Number(i)];
+  if (!line || !jdView || !jdView.cm) return;
+  var pretty = line.json;
+  try { pretty = JSON.stringify(JSON.parse(line.json), null, 2); } catch (e) { /* shown as it came */ }
+  jdView.cm.setValue(pretty);
+  if (typeof jdView.cm.refresh === 'function') jdView.cm.refresh();
 }
 
 spirit.shell.activateApp({
   // Once per pane, ever. The subject arrives in open().
   mount: function (container, api) {
     jdApi = api;
-    container.innerHTML = '<div id="jd-body" class="stack"></div>';
+    // THE PAGE IS FULL AND DOES NOT SCROLL: the header, then the log and the Extract box, a third of the height each,
+    // scrolling inside themselves.
+    container.innerHTML =
+      '<div id="jd-body" class="stack">' +
+        '<div class="stat-tile wide" id="jd-head"></div>' +
+        '<div class="stat-tile wide"><div class="job-manifest-note">Events (the last ' + JD_WINDOW + ')</div>' +
+          '<div class="job-log-panel" id="jd-log" style="height:33vh;max-height:33vh;overflow:auto"></div></div>' +
+        '<div class="stat-tile wide"><div class="job-manifest-note">Extract</div>' +
+          '<div id="jd-extract" style="height:33vh;overflow:auto"></div></div>' +
+      '</div>';
 
-    // The shell's live jobs, once for the pane's life. A snapshot or any
-    // job event repaints this screen when it is about the job shown — or
-    // when the shell did not say which job moved.
+    var make = api.ui && api.ui.elements && api.ui.elements.createTextView;
+    var extract = document.getElementById('jd-extract');
+    if (typeof make === 'function' && extract) {
+      jdView = make(extract, { text: '', readOnly: true, path: 'event.json' });
+      if (jdView && jdView.cm && typeof jdView.cm.setSize === 'function') jdView.cm.setSize('100%', '100%');
+    }
+
+    // The shell's live jobs, once for the pane's life. Every job's events are heard; the screen repaints when the
+    // event is about the job shown, or when the shell did not say which job moved.
     api.onJobs(function (jobsById, changed) {
       jdJobs = jobsById;
-      // The watcher's stream is heard whatever is on screen, so a reopen shows what came meanwhile (goal/G2.16).
       if (changed) jdHear(changed);
       else if (jobsById && jobsById.forEach) jobsById.forEach(jdHear);
       if (!jdId) return;
       if (!changed || changed.id === jdId) jdRender();
     });
 
-    // Delegated, because the panel is repainted on every event and a
-    // handler bound to a button would go with it.
-    document.getElementById('jd-body').addEventListener('click', function (event) {
+    // A click on an event line puts it in the Extract box. Delegated, because the log is repainted on every event.
+    document.getElementById('jd-log').addEventListener('click', function (event) {
+      var t = event && event.target;
+      var line = t && typeof t.closest === 'function' ? (t.closest('[data-event]') || t) : t;
+      var i = line && typeof line.getAttribute === 'function' ? line.getAttribute('data-event') : null;
+      if (i !== null && i !== '') jdExtract(i);
+    });
+
+    document.getElementById('jd-head').addEventListener('click', function (event) {
       var id = event.target && event.target.id;
       if (id === 'jd-cancel') {
         // The screen stays: the next event shows the job stop.
@@ -181,8 +184,7 @@ spirit.shell.activateApp({
         return;
       }
       if (id === 'jd-delete') {
-        // THE SCREEN GOES WITH THE JOB: once it is deleted there is nobody
-        // left to show, so back to the table, which is where it is gone.
+        // THE SCREEN GOES WITH THE JOB: once it is deleted there is nobody left to show, so back to the table.
         spirit.core.jobs.delete(jdId).then(function () {
           if (jdApi) jdApi.closeDialog({ changed: true, id: jdId });
         }).catch(function (err) { console.error('delete failed', err); });
@@ -190,10 +192,10 @@ spirit.shell.activateApp({
     });
   },
 
-  // Every call, mounted or not — the shell guarantees it. The subject
-  // arrives here, and everything about the last one is let go of.
+  // Every call, mounted or not — the shell guarantees it. The subject arrives here, and the Extract box is emptied.
   open: function (params) {
     jdId = (params && params.id) || '';
+    if (jdView && jdView.cm) jdView.cm.setValue('');
     jdRender();
   },
 });

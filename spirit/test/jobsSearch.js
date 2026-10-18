@@ -250,7 +250,8 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   const logStyle = JSON.stringify((dp.byId['jd-log'] || {}).style) + ' ' + read('shell/jobsDetails/jobsDetails.js');
   if (/jd-log[^>]*33vh|33vh[\s\S]{0,200}jd-log|jd-log[\s\S]{0,300}33vh/.test(logStyle) && /jd-extract[\s\S]{0,300}33vh|33vh[\s\S]{0,200}jd-extract/.test(logStyle)) test.check('the log and the Extract box each take a third of the page height');
   else test.fail(OWED + 'jd-log and jd-extract are not a third of the page height each');
-  const at = (/data-event="(\d+)"[^>]*>[^<]*(?:<[^>]*>)*[^<]*(?:&quot;n&quot;:250|"n":250)/.exec(log) || [])[1];
+  // The line that holds event 250, read inside that one line (its text, never the next line's).
+  const at = (/data-event="(\d+)"[^>]*>[^<]*?(?:&quot;n&quot;:250|"n":250)/.exec(log) || [])[1];
   const logEl = dp.byId['jd-log'];
   if (logEl) logEl.fire('click', { target: target({ 'data-event': at == null ? '' : at }) });
   dbox.fire('click', { target: target({ 'data-event': at == null ? '' : at }) });

@@ -3184,19 +3184,14 @@ test.subHeading('The Jobs screen is one table: rows only (goal/G2.11)');
     test.fail(jobFields + ' captions, ' + inputs + ' inputs still on the Jobs screen');
   }
 
-  // A column removed is two numbers to keep in step: the header and
-  // every colspan under it. Read rather than assumed, because a colspan
-  // that is one too wide only shows as a panel bleeding past the table.
+  // The table is the shared list since goal/G29.14 (jobsSearch.js proves its columns): Jobs draws no header and no
+  // colspan of its own any more, so there are no two numbers left to keep in step.
   const headers = (src.match(/<th>/g) || []).length;
-  const spans = (src.match(/colspan="(\d+)"/g) || []).map(function (m) {
-    return Number(/\d+/.exec(m)[0]);
-  });
-  // Four columns since goal/G2.11: the action column went to jobsDetails
-  // with the buttons that filled it.
-  if (headers === 4 && spans.length && spans.every(function (n) { return n === headers; })) {
-    test.check('and every colspan still matches the ' + headers + ' columns above it');
+  const spans = (src.match(/colspan="(\d+)"/g) || []).length;
+  if (/shellCreateListSearch\(/.test(src) && headers === 0 && spans === 0) {
+    test.check('and its table is the shared list: no header or colspan of its own to keep in step');
   } else {
-    test.fail(headers + ' headers vs colspans ' + JSON.stringify(spans));
+    test.fail('Jobs still draws its own table: ' + headers + ' headers, ' + spans + ' colspans');
   }
 }
 

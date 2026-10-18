@@ -1400,6 +1400,8 @@
           createFileSelector: spiritElements.createFileSelector,
           // A file's text on CodeMirror 5, the search words marked (goal/G29.12, shell/js/textView.js).
           createTextView: spiritElements.createTextView,
+          // One bar drawn from (done, total, text); the app hooks it to its job (goal/G29.14, shell/shared/js/progressBar.js).
+          progressBar: spiritElements.progressBar,
           // The header area an app fills, sticky under the titlebar (goal/G6.1, shell/js/appHeader/appHeader.js).
           createAppHeader: spiritElements.createAppHeader,
         },

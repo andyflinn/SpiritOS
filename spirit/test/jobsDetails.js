@@ -73,8 +73,9 @@ function click(d, container, target) {
   });
 }
 function button(id) { return { id: id, dataset: {}, closest: function () { return null; } }; }
+// Since goal/G29.14 the rows are the shared list's, keyed by data-key.
 function rowOf(jobId) {
-  return { id: '', dataset: {}, closest: function (sel) { return sel === '[data-job-row]' ? { dataset: { jobRow: jobId } } : null; } };
+  return { id: '', dataset: {}, getAttribute: function () { return null; }, closest: function (sel) { return sel === '[data-key]' ? { getAttribute: function (k) { return k === 'data-key' ? jobId : null; } } : null; } };
 }
 
 function job(id, over) {
@@ -99,7 +100,13 @@ function load(script, d, calls) {
       },
     },
   };
-  new Function('spirit', 'document', 'window', 'console', fs.readFileSync(script, 'utf8'))(shellSpirit, d.doc, {}, { error: function () {}, log: function () {} });
+  // The shared list and its probability modules, as index.html loads them before any app (goal/G29.14: Jobs is on it).
+  const win = {};
+  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
+    new Function('window', 'module', fs.readFileSync(path.join(RUN_DIR, 'js', f), 'utf8'))(win, undefined);
+  });
+  new Function('document', 'window', fs.readFileSync(path.join(RUN_DIR, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(d.doc, win);
+  new Function('spirit', 'document', 'window', 'console', fs.readFileSync(script, 'utf8'))(shellSpirit, d.doc, win, { error: function () {}, log: function () {} });
   return behavior;
 }
 function newCalls() { return { started: [], cancelled: [], deleted: [], streams: 0, dialogs: [], closed: [], launched: [], feeds: [] }; }
@@ -132,9 +139,11 @@ test.startTest('goal/G2.11: Job Monitor rows only, the console in a jobsDetails 
     } catch (e) { tripped = e; }
     if (tripped) test.fail(OWED + 'the list tripped: ' + (tripped.stack || tripped));
     const html = allHtml(d, container);
-    if (html.indexOf('start-job-form') === -1 && html.indexOf('<form') === -1 && html.indexOf('<input') === -1) test.check('no start form: the list mounts no form and no input');
+    // The one input left is the shared list's search box (goal/G29.14: "Jobs can be searched").
+    const inputs = (html.match(/<input[^>]*>/g) || []).filter(function (i) { return !/id="listsearch-\d+-text"/.test(i); });
+    if (html.indexOf('start-job-form') === -1 && html.indexOf('<form') === -1 && !inputs.length) test.check('no start form: the list mounts no form, and no input but its search box');
     else test.fail(OWED + 'the list still mounts a form or an input');
-    const rows = (html.match(/data-job-row="/g) || []).length;
+    const rows = (html.match(/data-key="job_/g) || []).length;
     if (rows === 2) test.check('one row per job');
     else test.fail('rows drawn: ' + rows + ' of 2');
     if (html.indexOf('data-job-id=') === -1 && html.indexOf('data-delete-job-id=') === -1 && !/>\s*(Cancel|Delete)\s*</.test(html)) test.check('no Cancel or Delete in a row: the actions live in the dialog');
@@ -167,8 +176,8 @@ test.startTest('goal/G2.11: Job Monitor rows only, the console in a jobsDetails 
   const dialog = load(DIALOG_SCRIPT, d, calls);
   const api = apiFor(calls);
   let jobs = jobsMap([
-    job('job_7', { data: { pid: 4242, note: 'seven-data' }, log: [{ timestamp: 1, message: 'seven one' }, { timestamp: 2, message: 'seven <b>two</b>' }] }),
-    job('job_8', { status: 'completed', log: [{ timestamp: 3, message: 'eight only' }] }),
+    job('job_7', { data: { pid: 4242, note: 'seven-data' }, log: [{ timestamp: 1, message: 'seven printed' }], app: { said: 'seven <b>two</b>' } }),
+    job('job_8', { status: 'completed', log: [{ timestamp: 3, message: 'eight printed' }], app: { said: 'eight only' } }),
     job('job_9', { kind: 'server', type: 'desk', data: { operated: 'node' }, log: [] }),
     job('job_10', { kind: 'server', type: 'face', data: { operated: 'user' }, log: [] }),
   ]);
@@ -176,26 +185,26 @@ test.startTest('goal/G2.11: Job Monitor rows only, the console in a jobsDetails 
   dialog.mount(container, api);
   if (typeof dialog.open !== 'function') { test.fail(OWED + 'the dialog has no open(params): it is mounted once and opened per job'); return; }
 
-  test.subHeading('3. the console: the one job, its log, live — no data box');
+  test.subHeading('3. the events: the one job, what it publishes, live — no data box, never its log (goal/G29.14)');
   dialog.open({ id: 'job_7' });
   feed();
   await settled();
   let html = allHtml(d, container);
   if (calls.feeds.length === 1 && calls.streams === 0) test.check('live jobs come through api.onJobs, asked once — no second stream');
   else test.fail(OWED + 'onJobs subscriptions ' + calls.feeds.length + ', own streams ' + calls.streams);
-  if (html.indexOf('seven one') !== -1 && html.indexOf('seven &lt;b&gt;two&lt;/b&gt;') !== -1 && html.indexOf('<b>two</b>') === -1) test.check('every log line of the job, escaped');
-  else test.fail(OWED + 'the console of job_7 does not show its log, escaped');
+  if (html.indexOf('seven &lt;b&gt;two&lt;/b&gt;') !== -1 && html.indexOf('<b>two</b>') === -1 && html.indexOf('seven printed') === -1) test.check('what the job published, escaped, and never what it printed');
+  else test.fail(OWED + 'the events of job_7 are not its published object, escaped, without its log');
   if (html.indexOf('seven-data') === -1 && html.indexOf('running') !== -1 && html.indexOf('counter') !== -1) test.check('its status and its type, and no data box (Andy: "get rid of that box")');
   else test.fail(OWED + 'the dialog shows the data box, or lacks job_7\'s status and type');
   if (html.indexOf('eight only') === -1) test.check('and nothing of any other job');
   else test.fail(OWED + 'another job\'s log is on the screen');
   const seven = jobs.get('job_7');
-  jobs.set('job_7', Object.assign({}, seven, { log: seven.log.concat([{ timestamp: 4, message: 'seven three, live' }]) }));
+  jobs.set('job_7', Object.assign({}, seven, { app: { said: 'seven three, live' } }));
   feed(jobs.get('job_7'));
   await settled();
   html = allHtml(d, container);
   if (html.indexOf('seven three, live') !== -1) test.check('a later job event repaints the console without a reopen');
-  else test.fail(OWED + 'a new log line did not reach the open dialog');
+  else test.fail(OWED + 'a new published object did not reach the open dialog');
 
   test.subHeading('4. the actions, moved and unchanged');
   const hasCancel = function (h) { return h.indexOf('id="jd-cancel"') !== -1; };
@@ -224,7 +233,7 @@ test.startTest('goal/G2.11: Job Monitor rows only, the console in a jobsDetails 
   feed();
   await settled();
   html = allHtml(d, container);
-  if (html.indexOf('eight only') !== -1 && html.indexOf('seven one') === -1) test.check('opened for another job it shows that job and nothing of the first');
+  if (html.indexOf('eight only') !== -1 && html.indexOf('seven three') === -1) test.check('opened for another job it shows that job and nothing of the first');
   else test.fail(OWED + 'after reopening for job_8 the screen is not job_8\'s alone');
   if (hasDelete(html) && !hasCancel(html)) test.check('a terminal job offers Delete and no Cancel');
   else test.fail(OWED + 'job_8 (completed): cancel ' + hasCancel(html) + ', delete ' + hasDelete(html));

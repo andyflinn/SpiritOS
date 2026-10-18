@@ -66,7 +66,11 @@
     var pre = 'listsearch-' + (++made) + '-';
     var filters = Array.isArray(o.filters) ? o.filters : [];
     var values = Object.create(null);
-    filters.forEach(function (f) { values[f.name] = f.choices && f.choices.length ? f.choices[0].value : ''; });
+    // A MULTI FILTER (goal/G29.14) is a row of toggles, every one on at the start: its value is the object of the
+    // values turned off, which its test is handed. Its choices may be a function of the rows held ("one toggle per
+    // status the list holds").
+    filters.forEach(function (f) { values[f.name] = f.multi ? {} : (f.choices && f.choices.length ? f.choices[0].value : ''); });
+    function choicesOf(f) { return (typeof f.choices === 'function' ? f.choices(cachedRows()) : f.choices) || []; }
     var bucket = P.createProbabilityBucket(Infinity);
     var byKey = Object.create(null);   // key -> { key, row }, the one object the bucket holds for it
     var last = { total: 0, more: false, error: '' };
@@ -96,8 +100,8 @@
     // held, (if our list has any)"): one with when(rows) is drawn only while that answers true for the rows held.
     function filterHtml() {
       return filters.filter(function (f) { return typeof f.when !== 'function' || !!f.when(cachedRows()); }).map(function (f) {
-        return '<span data-filter="' + esc(f.name) + '">' + (f.choices || []).map(function (c) {
-          var on = values[f.name] === c.value;
+        return '<span data-filter="' + esc(f.name) + '">' + choicesOf(f).map(function (c) {
+          var on = f.multi ? !values[f.name][c.value] : values[f.name] === c.value;
           return '<button type="button" data-filter="' + esc(f.name) + '" data-value="' + esc(c.value) + '" style="margin-right:1em;' +
             (on ? 'font-weight:bold;outline:1px solid currentColor' : 'opacity:0.6') + '">' + esc((c.icon ? c.icon + ' ' : '') + (c.word || '')) + '</button>';
         }).join('') + '</span>';
@@ -191,6 +195,8 @@
     function draw() {
       if (!live) return;
       takePage();
+      // Toggles drawn from the rows held follow the rows (goal/G29.14).
+      if (filters.some(function (f) { return typeof f.choices === 'function'; })) { var fs0 = el('filters'); if (fs0) fs0.innerHTML = filterHtml(); }
       bucket.sort(score);
       var rows = bucket.serialize().items;
       shown = rows;
@@ -403,7 +409,11 @@
       var name = typeof t.getAttribute === 'function' ? t.getAttribute('data-filter') : null;
       var value = typeof t.getAttribute === 'function' ? t.getAttribute('data-value') : null;
       if (name != null && value != null) {
-        values[name] = value;
+        var multi = filters.filter(function (f) { return f.name === name && f.multi; })[0];
+        if (multi) {
+          // A toggle: off when it was on, on when it was off; the others stay as they are.
+          if (values[name][value]) delete values[name][value]; else values[name][value] = true;
+        } else values[name] = value;
         var strip = el('filters');
         if (strip) strip.innerHTML = filterHtml();
         typed();

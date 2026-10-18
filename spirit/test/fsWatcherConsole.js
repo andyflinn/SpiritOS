@@ -13,11 +13,11 @@
 //      console line per job event that carries a new data.lastEvent — the time (the job's updatedAt), the event
 //      (eventType) and the path (filename) — in arrival order, newest last.
 //   2. A repeated event is not a line: an update carrying the same lastEvent and the same updatedAt adds nothing.
-//   3. THE WINDOW IS ON THE PAGE, 1,000 LINES. Older lines fall off the top; nothing asks the node for history.
+//   3. THE WINDOW IS ON THE PAGE, 256 LINES since goal/G29.14 (1,000 under goal/G2.16). Older lines fall off the top; nothing asks the node for history.
 //      The window is kept for the page's life, so closing the dialog and opening it again on the same job shows
 //      the lines heard meanwhile.
 //   4. Escaped: a path is shown as text, never as markup.
-//   5. Other jobs keep their console as today (a process job's printed lines still show).
+//   5. SUPERSEDED by goal/G29.14 (never stdout): another job shows what it publishes, never what it printed.
 // Not asserted, the builder's: the exact time format, the line's wording, sticky scroll.
 
 const fs = require('fs');
@@ -115,13 +115,13 @@ test.startTest('goal/G2.16: the fs-watcher console shows the file events from th
   if (count(html, 'shell/new/thing.js') === 1) test.check('the same event at the same moment, sent again, adds nothing');
   else test.fail(OWED + 'shell/new/thing.js drawn ' + count(html, 'shell/new/thing.js') + ' times after a repeat');
 
-  test.subHeading('3. the window lives on the page, 1,000 lines, kept across a reopen');
+  test.subHeading('3. the window lives on the page, 256 lines (goal/G29.14), kept across a reopen');
   for (let i = 0; i < 1005; i++) page.put(watcher(1790000010000 + i, { eventType: 'change', filename: 'f/' + i + '.txt' }));
   await settled();
   html = page.html();
   const kept = (html.match(/f\/\d+\.txt/g) || []).length;
-  if (html.indexOf('f/1004.txt') !== -1 && html.indexOf('f/5.txt') !== -1 && html.indexOf('f/4.txt<') === -1 && html.indexOf('shell/jobs/jobs.js') === -1 && kept === 1000) {
-    test.check('after 1,005 more events the newest 1,000 stand, the oldest fell off the top');
+  if (html.indexOf('f/1004.txt') !== -1 && html.indexOf('f/749.txt') !== -1 && html.indexOf('f/748.txt') === -1 && html.indexOf('shell/jobs/jobs.js') === -1 && kept === 256) {
+    test.check('after 1,005 more events the newest 256 stand, the oldest fell off the top');
   } else test.fail(OWED + 'window after 1,005 events: lines with f/N.txt ' + kept + ', newest there ' + (html.indexOf('f/1004.txt') !== -1) + ', first event gone ' + (html.indexOf('shell/jobs/jobs.js') === -1));
   page.open('job_other');
   page.put(watcher(1790000020000, { eventType: 'change', filename: 'meanwhile.txt' }));
@@ -138,14 +138,14 @@ test.startTest('goal/G2.16: the fs-watcher console shows the file events from th
   if (html.indexOf('&lt;b&gt;bold&lt;/b&gt;.txt') !== -1 && html.indexOf('<b>bold</b>') === -1) test.check('escaped');
   else test.fail(OWED + 'the markup path is not shown escaped');
 
-  test.subHeading('5. other jobs keep their console');
+  test.subHeading('5. another job shows what it publishes, never what it printed (goal/G29.14)');
   page.put({ id: 'job_p', kind: 'process', type: 'counter', status: 'running', createdAt: 1, updatedAt: 2, data: { pid: 9 },
-    log: [{ timestamp: 1790000040000, message: 'printed by the process' }] });
+    log: [{ timestamp: 1790000040000, message: 'printed by the process' }], app: { said: 'published by the process' } });
   page.open('job_p');
   await settled();
   html = page.html();
-  if (html.indexOf('printed by the process') !== -1 && html.indexOf('meanwhile.txt') === -1) test.check('a process job still shows what it printed, and none of the watcher\'s lines');
-  else test.fail(OWED + 'process console: its line ' + (html.indexOf('printed by the process') !== -1) + ', watcher lines leaking ' + (html.indexOf('meanwhile.txt') !== -1));
+  if (html.indexOf('published by the process') !== -1 && html.indexOf('printed by the process') === -1 && html.indexOf('meanwhile.txt') === -1) test.check('a process job shows what it published, not what it printed, and none of the watcher\'s lines');
+  else test.fail(OWED + 'process: published ' + (html.indexOf('published by the process') !== -1) + ', printed shown ' + (html.indexOf('printed by the process') !== -1) + ', watcher lines leaking ' + (html.indexOf('meanwhile.txt') !== -1));
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
 });
