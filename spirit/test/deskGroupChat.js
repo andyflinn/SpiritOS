@@ -85,7 +85,8 @@ async function server() {
     return;
   }
   // A goal of the ordinary kind, set as every goal is: it is the current one, and desk/G0.0 is not in its way.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, ANDY);
   const current = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
   const open = labels(await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
   // Since goal/G22.3: a fresh desk mounts its plugins, and each plugin's first mount writes its private goal (and the

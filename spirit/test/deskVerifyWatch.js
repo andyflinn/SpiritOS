@@ -73,7 +73,8 @@ async function deskHalf() {
   const d = server(DESK, 'desk');
   try {
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'wa/G1', title: 'Again' }, items: [{ id: 'wa/G1.1', title: 'Built', blocks: ['wa/G1'], code: true }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'wa/G1', title: 'Again' }, items: [{ id: 'wa/G1.1', title: 'Built', blocks: ['wa/G1'], code: true }] }) }, ANDY);
     await d.call('press', { id: 'wa/G1', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'wa/G1.1', what: 'go' }, ANDY);
     await d.call('phase.take', { id: 'wa/G1.1', phase: 'red' }, CW); await d.call('phase.done', { id: 'wa/G1.1', phase: 'red' }, CW);

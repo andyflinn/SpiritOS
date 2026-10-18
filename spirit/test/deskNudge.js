@@ -164,7 +164,8 @@ async function main() {
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: andysUrl + '/' }),
   }));
   await up('desk');
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'n/G1', title: 'Nudged' }, items: [{ id: 'n/G1.1', title: 'A', blocks: ['n/G1'] }] }) }, A_AT_DESK);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'n/G1', title: 'Nudged' }, items: [{ id: 'n/G1.1', title: 'A', blocks: ['n/G1'] }] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: POLL_MS, historyMax: 50 }), '--pipe', clientPipe, '--state', clientState,
     '--node', JSON.stringify({ name: 'wsl-claude', publicKey: B_KEY })], {

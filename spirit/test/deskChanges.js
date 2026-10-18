@@ -47,7 +47,8 @@ let kid = null;
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
 
   // A goal, a press, a chat line: three records. And two desk lines.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'c/G1', title: 'Goal' }, items: [{ id: 'c/G1.1', title: 'A', blocks: ['c/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'c/G1', title: 'Goal' }, items: [{ id: 'c/G1.1', title: 'A', blocks: ['c/G1'] }] }) }, ANDY);
   await call('press', { id: 'c/G1', what: 'end-design' }, ANDY);
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
   await call('item.take', { id: 'c/G1.1' }, WSL);

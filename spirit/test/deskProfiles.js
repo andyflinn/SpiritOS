@@ -54,7 +54,8 @@ test.startTest('goal/G4.23: the agent profile — name and nick — and "<nick>:
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Profiles' }, items: [{ id: 'p/G1.1', title: 'Work', blocks: ['p/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Profiles' }, items: [{ id: 'p/G1.1', title: 'Work', blocks: ['p/G1'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude answers a line
     // of his it has taken.
     await call('chat.add', { id: 'p/G1.1', text: 'anyone here?' }, ANDY);

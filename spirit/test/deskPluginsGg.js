@@ -322,8 +322,9 @@ function clickTab(el, tab) {
 
     test.subHeading('c. the plugin sees a call first');
     // An ordinary goal beside it, its items closed and done as they always are.
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'ord/G1', title: 'Ordinary' }, items: [
-      { id: 'ord/G1.1', title: 'One', blocks: ['ord/G1'] }, { id: 'ord/G1.2', title: 'Two', blocks: ['ord/G1'] }] }) }, A);
+      { id: 'ord/G1.1', title: 'One', blocks: ['ord/G1'] }, { id: 'ord/G1.2', title: 'Two', blocks: ['ord/G1'] }] }) }, ANDY);
     await call('press', { id: 'ord/G1', what: 'end-design' }, ANDY);
     const tries = [[GOAL, 'close'], [GOAL, 'done'], [GOAL, 'abandon']];
     for (const t of tries) {

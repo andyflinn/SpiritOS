@@ -99,12 +99,13 @@ async function main() {
   test.check('items.find {text, by, since, before} -> {items: [{key, label}], more}');
 
   // The world: one goal, four items; a second goal abandoned with a matching line.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'f/G1', title: 'Finding' }, items: [
     { id: 'f/G1.1', title: 'Plain', blocks: ['f/G1'] },
     { id: 'f/G1.2', title: 'Rails for the List', blocks: ['f/G1'] },
     { id: 'f/G1.3', title: 'Third', blocks: ['f/G1'] },
     { id: 'f/G1.4', title: 'Closed early', blocks: ['f/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   await call('press', { id: 'f/G1', what: 'end-design' }, ANDY);
   await say('f/G1.1', 'first word, nothing special', ANDY);
@@ -166,7 +167,8 @@ async function main() {
   if (listedIds.indexOf('f/G1.4') === -1 && wslRails.ids.indexOf('f/G1.4') !== -1) test.check('f/G1.4, closed: hidden from items.search, answered by items.find');
   else test.fail(OWED + 'closed f/G1.4: items.search ' + JSON.stringify(listedIds) + ', items.find ' + JSON.stringify(wslRails.ids));
   // A second goal with a matching line, then abandoned: its items are gone from every search.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'f/G2', title: 'Left' }, items: [{ id: 'f/G2.1', title: 'Also rails', blocks: ['f/G2'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'f/G2', title: 'Left' }, items: [{ id: 'f/G2.1', title: 'Also rails', blocks: ['f/G2'] }] }) }, ANDY);
   await say('f/G2.1', 'rails here too', ANDY);
   const seen = await find({ text: 'rails' });
   await call('press', { id: 'f/G2', what: 'abandon' }, ANDY);
@@ -192,7 +194,8 @@ async function main() {
   const many = [];
   for (let i = 0; i < 90; i++) many.push({ id: 'f/G1.' + (10 + i), title: 'Filler ' + i + ' with a long enough title to take room in the answer', blocks: ['f/G1'] });
   const base = [{ id: 'f/G1.1', title: 'Plain' }, { id: 'f/G1.2', title: 'Rails for the List' }, { id: 'f/G1.3', title: 'Third' }, { id: 'f/G1.4', title: 'Closed early' }].map(function (x) { x.blocks = ['f/G1']; return x; });
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'f/G1', title: 'Finding' }, items: base.concat(many) }) }, CW);
+  // goal/G29.21: an agent's session adds no item without his words, so the owner writes it.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'f/G1', title: 'Finding' }, items: base.concat(many) }) }, ANDY);
   for (let i = 0; i < 90; i++) await say('f/G1.' + (10 + i), 'filler line ' + i + ' says sideways', ANDY);
   const cut = await find({ text: 'sideways' });
   if (cut.status === 200 && cut.more === true && cut.ids.length > 0 && cut.ids.length < 90 && cut.bytes <= ROOM && /^f\/G1\.\d\d$/.test(cut.ids[0])) test.check('90 matching items: ' + cut.ids.length + ' came back in ' + cut.bytes + ' bytes (half a room is ' + ROOM + '), a filler first, more true');

@@ -142,7 +142,8 @@ async function main() {
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
   const items = ['a/G1.1', 'a/G1.2', 'a/G1.3', 'a/G1.4', 'a/G1.5'].map(function (id, i) { return { id: id, title: 'item ' + (i + 1), blocks: ['a/G1'] }; });
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Quiet' }, items: items }) }, SELF_AT_DESK);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Quiet' }, items: items }) }, ANDY);
   if (set.status !== 200) { test.fail('the world: the test desk took no session: ' + short(set.body)); return; }
   // Both agents known to the desk by key, name and nick, as Andy's profiles hold them, so his "wsl:" line is addressed.
   await call('desk', 'profile.set', { agent: SELF_KEY, name: 'claude-windows', nick: 'cw' }, ANDY);

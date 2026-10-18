@@ -40,8 +40,9 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, CW);
+      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
     // Out of design mode, so items offer Go and the goal's buttons are the ordinary ones.
     await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
@@ -78,8 +79,9 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
     await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
     await call('press', { id: 'g/G1.2', what: 'done' }, ANDY);
     const beforeNew = await buttonsOf('g/G1');
+    // goal/G29.21: an agent's session adds no item without his words, so the owner writes it.
     const grown = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }, { id: 'g/G1.3', title: 'C', blocks: ['g/G1'] }] }) }, CW);
+      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }, { id: 'g/G1.3', title: 'C', blocks: ['g/G1'] }] }) }, ANDY);
     const withNew = await buttonsOf('g/G1');
     if (beforeNew.indexOf('done') !== -1 && grown.status === 200 && withNew.indexOf('done') === -1) {
       test.check('Done offered with every item done; a third item added open: Done gone');

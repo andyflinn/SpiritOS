@@ -311,13 +311,14 @@ async function main() {
   else test.fail(OWED + 'AGENTS served ' + served.status + ', the file matched: ' + (text === onDisk) + ', sentences found at ' + JSON.stringify(at) + ', first section at ' + firstSection);
 
   test.subHeading('B. the desk: go is his press; a claim before Go is refused; Close before Go');
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   const set = await desk('session.set', { json: JSON.stringify({ goal: { id: 'r/G1', title: 'Rules' }, items: [
     // r/G1.1 blocks r/G1.2, so his go-all on the goal never reaches r/G1.2 (wsl-claude's review of the first red).
     { id: 'r/G1.1', title: 'Gone by his press', blocks: ['r/G1.2'] },
     { id: 'r/G1.2', title: 'Never gone', blocks: ['r/G1'] },
     { id: 'r/G1.3', title: 'Gone by go-all', blocks: ['r/G1'] },
     { id: 'r/G1.4', title: 'Closed before Go', blocks: ['r/G1'] },
-  ] }) }, SELF_AT_DESK);
+  ] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   // A session arrives in design mode, where nothing offers Go (desk/G3.1); his end-design opens the goal.
   await desk('press', { id: 'r/G1', what: 'end-design' }, ANDY);

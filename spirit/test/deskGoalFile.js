@@ -104,7 +104,8 @@ async function main() {
 
   test.subHeading('2. a server with no value writes no file');
   const quiet = await server('quiet', {});
-  await quiet.call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Quiet' }, items: [{ id: 'q/G1.1', title: 'One', blocks: ['q/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await quiet.call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Quiet' }, items: [{ id: 'q/G1.1', title: 'One', blocks: ['q/G1'] }] }) }, ANDY);
   await quiet.call('press', { id: 'q/G1', what: 'end-design' }, ANDY);
   await quiet.call('press', { id: 'q/G1.1', what: 'go' }, ANDY);
   await sleep(200);
@@ -119,11 +120,12 @@ async function main() {
   if (argName) args[argName] = 'spirit/run/process/js/desk/currentGoal.json';
   const d = await server('written', args);
   const file = path.join(d.state, 'currentGoal.json');
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   const set = await d.call('session.set', { json: JSON.stringify({ goal: { id: 'w/G1', title: 'Written' }, items: [
     { id: 'w/G1.1', title: 'First', blocks: ['w/G1'] },
     { id: 'w/G1.2', title: 'Second', blocks: ['w/G1'] },
     { id: 'w/G1.3', title: 'Closed early', blocks: ['w/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   await sleep(200);
   const afterSet = readJson(file);

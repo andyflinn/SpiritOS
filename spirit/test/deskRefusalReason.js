@@ -65,7 +65,7 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  const g = await call('goal.add', { title: 'Refusals' }, AGENT);
+  const g = await call('goal.add', { title: 'Refusals' }, ANDY); // goal/G29.21: an agent creates no goal without his "add goal"
   const gid = g.body && g.body.id;
   if (!gid) { test.fail('the goal was not minted: ' + short(g.body)); return; }
   await call('chat.add', { id: gid, text: 'add items' }, ANDY); // goal/G29.21: an agent adds under his words

@@ -51,7 +51,7 @@ async function press(id, what, who) { return call('press', { id: id, what: what 
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  const g = await call('goal.add', { title: 'Closed blockers' }, AGENT);
+  const g = await call('goal.add', { title: 'Closed blockers' }, ANDY); // goal/G29.21: an agent creates no goal without his "add goal"
   const gid = g.body && g.body.id;
   if (!gid) { test.fail('the goal was not minted: ' + short(g.body)); return; }
   await call('chat.add', { id: gid, text: 'add items' }, ANDY); // goal/G29.21: an agent adds under his words

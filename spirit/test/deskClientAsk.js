@@ -150,7 +150,8 @@ async function main() {
   const nodeUrl = 'http://127.0.0.1:' + port;
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
-  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Asked' }, items: [{ id: 'a/G1.1', title: 'A', blocks: ['a/G1'] }] }) }, AGENT);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  const set = await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Asked' }, items: [{ id: 'a/G1.1', title: 'A', blocks: ['a/G1'] }] }) }, OWNER);
   if (set.status !== 200) { test.fail(OWED + 'the test desk took no session: ' + JSON.stringify(set.body)); return; }
   let kid = startClient(nodeUrl);
 

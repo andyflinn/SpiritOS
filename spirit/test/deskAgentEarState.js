@@ -73,7 +73,8 @@ async function main() {
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: nodeUrl + '/' }),
   }));
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'e/G1', title: 'Ears' }, items: [{ id: 'e/G1.1', title: 'A', blocks: ['e/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'e/G1', title: 'Ears' }, items: [{ id: 'e/G1.1', title: 'A', blocks: ['e/G1'] }] }) }, ANDY);
   if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
 
   test.subHeading('1. agent.state takes listening or working from the caller, nothing else');

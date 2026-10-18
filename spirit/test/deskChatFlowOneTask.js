@@ -92,7 +92,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskchatflow-'));
       { id: 'cf/G1.9', title: 'Done' }, { id: 'cf/G1.10', title: 'Excluded' }, { id: 'cf/G1.11', title: 'Code three', code: true },
       { id: 'cf/G1.12', title: 'Spare' },
     ].map(function (x) { return Object.assign({ blocks: ['cf/G1'] }, x); });
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'cf/G1', title: 'Chat flow' }, items: items }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'cf/G1', title: 'Chat flow' }, items: items }) }, ANDY);
     await call('press', { id: 'cf/G1', what: 'end-design' }, ANDY);
     for (const id of ['cf/G1.2', 'cf/G1.6', 'cf/G1.7', 'cf/G1.11']) {
       const g = await call('press', { id: id, what: 'go' }, ANDY);

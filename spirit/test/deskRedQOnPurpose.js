@@ -97,7 +97,8 @@ async function theServer() {
   try {
     if (!await start()) { test.fail('the world: the desk did not start'); return; }
     const items = ['q/G1.1', 'q/G1.2', 'q/G1.3', 'q/G1.4', 'q/G1.5', 'q/G1.6', 'q/G1.7'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['q/G1'] }; });
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Red Qs' }, items: items }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Red Qs' }, items: items }) }, ANDY);
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, WSL);
 
@@ -202,7 +203,8 @@ async function theServer() {
     else test.fail(OWED + 'an agent\'s "Q:clear" cleared ' + short(await qsOf('q/G1.6')));
 
     test.subHeading('6. an open red Q holds a press until it is cleared');
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Press' }, items: [{ id: 'p/G1.1', title: 'Held', blocks: ['p/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Press' }, items: [{ id: 'p/G1.1', title: 'Held', blocks: ['p/G1'] }] }) }, ANDY);
     await ask('p/G1.1', 'Is the shape settled?', WSL);
     const held = await call('press', { id: 'p/G1', what: 'end-design' }, ANDY);
     await call('chat.add', { id: 'p/G1.1', text: 'Q1:clear' }, ANDY);

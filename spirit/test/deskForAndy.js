@@ -179,9 +179,10 @@ test.startTest('goal/G4.20: Desk for Andy');
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
       { id: 'g/G1.1', title: 'Asks', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'Claimed', blocks: ['g/G1'] },
-      { id: 'g/G1.3', title: 'Hidden', blocks: ['g/G1'] }, { id: 'g/G1.4', title: 'Boxed', blocks: ['g/G1'] }] }) }, CW);
+      { id: 'g/G1.3', title: 'Hidden', blocks: ['g/G1'] }, { id: 'g/G1.4', title: 'Boxed', blocks: ['g/G1'] }] }) }, ANDY);
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + short(set.body)); return; }
 
     test.subHeading('10-11. the waiting list: G and Q checks, asks, and Close alone counts nothing');
