@@ -216,6 +216,10 @@ const TREE = [
     const start = keysOf(pane);
     if (JSON.stringify(start) === JSON.stringify(['js', 'media', 'shell'])) test.check('with no words every folder starts folded: only js, media and shell show');
     else test.fail(OWED + 'with no words the rows are ' + short(start));
+    // Andy, 2026-10-18, on a folded folder's "…": "the ... ellipses are only there for NO good reason ... get rid of those".
+    const foldedRow = (rowFor(pane, 'shell') || { html: '' }).html;
+    if (foldedRow && !/…|\.\.\./.test(foldedRow)) test.check('a folded folder carries no ellipsis after its name');
+    else test.fail(OWED + 'the folded folder shell draws ' + short(foldedRow));
     for (const k of ['shell', 'shell/shared', 'shell/shared/js', 'js', 'media']) { press(pane, k); await settle(); }
     const order = keysOf(pane);
     const want = TREE.map(function (f) { return f.relativePath; });
