@@ -37,6 +37,7 @@
       theme: 'material-darker',
     });
     var marks = [];
+    var firstAt = null;   // where the first match stands, put in view again once the page is drawn
     // EVERY MATCH MARKED, THE FIRST IN VIEW: each word wherever it stands, case ignored, as the shared list marks it.
     function mark(words) {
       marks.forEach(function (m) { m.clear(); });
@@ -54,6 +55,7 @@
         marks.push(cm.markText(from, to, { className: 'text-view-match' }));
         if (!first) first = from;
       }
+      firstAt = first;
       if (first) {
         cm.setCursor(first);
         cm.scrollIntoView({ line: first.line, ch: first.ch }, 80);
@@ -61,6 +63,14 @@
       return marks.length;
     }
     mark(o.words);
+    // DRAWN ONCE THE PAGE SHOWS IT (goal/G29.12; Andy, 2026-10-18: "when the file viewer/launcher is called, it shows
+    // almost nothing"): a launcher stays mounted and the shell hands it the next file while its pane is still hidden,
+    // and CodeMirror built in a hidden box measures nothing and draws no lines. So it is refreshed once this turn is
+    // over, the pane shown, and the first match is put in view again.
+    setTimeout(function () {
+      cm.refresh();
+      if (firstAt) cm.scrollIntoView({ line: firstAt.line, ch: firstAt.ch }, 80);
+    }, 0);
     return { cm: cm, value: function () { return cm.getValue(); }, mark: mark };
   }
 
