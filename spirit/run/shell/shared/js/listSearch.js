@@ -106,8 +106,10 @@
       ? '<span style="position:relative;display:inline-block">' +
           '<button id="' + pre + 'field" type="button" style="text-align:left"></button>' +
           // SOLID (seen in grants: the tile's see-through background let the page under it show): the tile's tint over
-          // the page's own colour, a shadow, and room for its rows even under a narrow field.
-          '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;min-width:24em;z-index:10;' +
+          // the page's own colour, a shadow, and room for its rows even under a narrow field. AS WIDE AS ITS ROWS
+          // (goal/G29.8; Andy, 2026-10-18: "can it be the required with to display everything, constrained by page
+          // width?"): hung off a narrow field it would shrink to the field, so it is sized by its content, up to the page.
+          '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;min-width:24em;width:max-content;max-width:calc(100vw - 32px);z-index:10;' +
             'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
         '</span>'
       : paneHtml;
@@ -305,7 +307,9 @@
       var stop = function () { if (typeof e.preventDefault === 'function') e.preventDefault(); };
       if (e.key === 'ArrowDown') { stop(); move(1); return; }
       if (e.key === 'ArrowUp') { stop(); move(-1); return; }
-      if ((e.key === 'Home' || e.key === 'End') && !inBox) { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
+      // In an open dropdown they are the list's, from the search box too (goal/G29.8; Andy, 2026-10-18: "The home and End
+      // keys don't work in the dropdown."); in a pane the search box keeps them for its text cursor.
+      if ((e.key === 'Home' || e.key === 'End') && (!inBox || (dropdown && open))) { stop(); move(e.key === 'Home' ? 'top' : 'bottom'); return; }
       if (e.key === 'Escape') { setOpen(false); return; }
       if (e.key === 'Enter' && !e.repeat) {
         if (currentKey != null && byKey[currentKey] && open) { stop(); pressRow(byKey[currentKey]); return; }
