@@ -217,7 +217,11 @@
       var list = el('list');
       if (list) {
         if (snap) list.scrollTop = 0;
-        list.innerHTML = rows.length
+        // NONE, A SELECT THING (goal/G29.7; Andy, 2026-10-18: "Those selection option need to be very different from the
+        // rest of the options otherwise they're not recognized....", "id rather have it at the top of the list as button
+        // saying [None]", "it's a Select-thing"): a dropdown given options.all starts its list with [None], which chooses
+        // nothing; while nothing is chosen its field reads that all text.
+        list.innerHTML = (dropdown && o.all ? '<button id="' + pre + 'none" type="button" style="margin-top:0.5em">None</button>' : '') + (rows.length
           // IN A POPUP THE TABLE TAKES ITS OWN WIDTH (goal/G29.8): a table at 100% gives a popup sized by its rows nothing
           // to measure; the popup's own max-width keeps it inside the page.
           ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '><tbody>' + rows.map(function (w) {
@@ -226,7 +230,7 @@
             return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +
               (searching ? bar(w) : '') + (typeof o.paint === 'function' ? o.paint(w.row, mark) : mark(JSON.stringify(w.row))) + '</tr>';
           }).join('') + '</tbody></table>'
-          : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>';
+          : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>');
       }
       var count = el('count');
       if (count) {
@@ -299,7 +303,7 @@
       var f = el('field');
       if (!f) return;
       var row = showing || self.row;
-      f.innerHTML = esc(row ? nameOf(row) : (o.placeholder || 'choose…')) + ' ▾';
+      f.innerHTML = esc(row ? nameOf(row) : (o.all || o.placeholder || 'choose…')) + ' ▾';
     }
     // THE POPUP OPENED AND SHUT (goal/G29.9), in dropdown mode only; opened, its search box takes the focus.
     function setOpen(want) {
@@ -375,6 +379,16 @@
       if (!t) return;
       if (t.id === pre + 'field') { setOpen(!open); return; }
       if (t.id === pre + 'clear') { var box = el('text'); if (box) box.value = ''; typed(); return; }
+      if (t.id === pre + 'none') {
+        self.value = '';
+        self.row = null;
+        currentKey = null;
+        setOpen(false);
+        paintField();
+        draw();
+        if (typeof o.pick === 'function') o.pick(null, '');
+        return;
+      }
       if (t.id === pre + 'search') { ask(); return; }
       var name = typeof t.getAttribute === 'function' ? t.getAttribute('data-filter') : null;
       var value = typeof t.getAttribute === 'function' ? t.getAttribute('data-value') : null;

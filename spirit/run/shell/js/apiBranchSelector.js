@@ -30,7 +30,7 @@
   // server. options.all names the server half's first row (unchosen: every server). It fires a bubbling change.
   function createApiBranchSelector(options) {
     options = options || {};
-    var ALL_VERBS = '*';
+    var ALL_VERBS = '*';   // kept for a pick that names all verbs; the dropdown's Clear means the same
     var root = document.createElement('div');
     root.className = 'api-branch-selector' + (options.className ? ' ' + options.className : '');
     var servers = window.spiritElements.createAppServerSelector({ placeholder: options.serverPlaceholder, all: options.all });
@@ -49,7 +49,7 @@
 
     function verbRows() {
       var verbs = root.server ? window.spiritApiTreeIndex.verbs(servers.tree, root.server) : [];
-      return [{ key: ALL_VERBS, name: 'all verbs' }].concat(verbs.map(function (v) { return { key: v, name: v }; }));
+      return verbs.map(function (v) { return { key: v, name: v }; });
     }
     var verbList = window.spiritElements.shellCreateListSearch(verbBox, {
       mode: 'dropdown',
@@ -57,7 +57,8 @@
       rows: verbRows,
       paint: function (row, mark) { return '<td style="white-space:nowrap">' + (typeof mark === 'function' ? mark(row.name) : escapeHtml(row.name)) + '</td>'; },
       name: function (row) { return row.name; },
-      pick: function (row) { root.verb = row.key === ALL_VERBS ? '' : row.key; settle(); },
+      all: 'all verbs',
+      pick: function (row) { root.verb = !row || row.key === ALL_VERBS ? '' : row.key; settle(); },
       empty: 'No verb matches.',
     });
     function settle() {

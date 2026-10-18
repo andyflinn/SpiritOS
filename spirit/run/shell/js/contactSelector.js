@@ -85,8 +85,9 @@
     }
     // A pick, from either mode: the root carries it and says so.
     function pick(row) {
-      root.value = row.key;
-      root.row = row;
+      // A Clear from the dropdown (options.all, goal/G29.7) picks nothing: the value is empty again.
+      root.value = row ? row.key : '';
+      root.row = row || null;
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
@@ -110,9 +111,6 @@
           var items = ((answer && answer.items) || []).filter(function (i) { return i && i.key; }).map(function (i) {
             return { key: String(i.key), label: JSON.stringify(parseRow(i)) };
           });
-          // AN "ALL" ROW (goal/G29.7): options.all names a first row with value '', for a selector that filters (Grants:
-          // unchosen means every peer).
-          if (options.all) items.unshift({ key: '', label: JSON.stringify({ key: '', name: String(options.all) }) });
           return { status: 200, body: { items: items, more: !!(answer && answer.more), total: Number(answer && answer.total) || items.length } };
         });
       },
@@ -128,6 +126,7 @@
     list = window.spiritElements.shellCreateListSearch(pane, {
       mode: isPane ? 'pane' : 'dropdown',
       placeholder: isPane ? '' : (options.placeholder || 'choose a contact…'),
+      all: isPane ? undefined : options.all,
       api: api,
       server: 'node',
       verb: 'contact.search',

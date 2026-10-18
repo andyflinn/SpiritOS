@@ -177,8 +177,9 @@ function page() {
   else test.fail(OWED + 'the branch selector displays ' + short(inlineOf(branchRoot)) + ', its server half ' + short(inlineOf(serverRoot)));
   // Andy, 2026-10-18: "Ah, you smuggled them in like that was a peer-label or a server-label.... Those selection option
   // need to be very different from the rest of the options otherwise they're not recognized....", then "like a [Clear]
-  // button....". The shared list's dropdown offers clearing itself (options.all): while nothing is chosen its field reads
-  // the all text, and the open dropdown holds a [Clear] button beside its search; no row stands in for it.
+  // button....", then "NO it's not a SEARCH function, id rather have it at the top of the list as button saying [None]",
+  // "it's a Select-thing". The shared list's dropdown offers it itself (options.all): while nothing is chosen its field
+  // reads the all text, and the open dropdown's list starts with a [None] button; no row stands in for it.
   const p2 = page();
   const w2 = {};
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
@@ -196,17 +197,17 @@ function page() {
   else test.fail(OWED + 'with nothing chosen the field reads ' + short(fieldText()));
   if (pre2) box2.dispatchEvent({ type: 'click', target: p2.byId[pre2 + 'field'] });
   await settle();
-  const popHtml = box2.innerHTML;
-  const keys2 = ((pre2 && p2.byId[pre2 + 'list'] ? p2.byId[pre2 + 'list'].innerHTML : '').match(/data-key="[^"]*"/g) || []);
-  if (new RegExp('<button[^>]*id="' + pre2 + 'none"[^>]*>\\s*Clear\\s*</button>').test(popHtml) && keys2.length === 2 && keys2.indexOf('data-key=""') === -1) test.check('the open dropdown has a [Clear] button, and no row stands in for it');
-  else test.fail(OWED + 'the dropdown: Clear button ' + /none"/.test(popHtml) + ', rows ' + short(keys2));
+  const listHtml2 = pre2 && p2.byId[pre2 + 'list'] ? p2.byId[pre2 + 'list'].innerHTML : '';
+  const keys2 = (listHtml2.match(/data-key="[^"]*"/g) || []);
+  if (new RegExp('^\\s*<button[^>]*id="' + pre2 + 'none"[^>]*>\\s*None\\s*</button>').test(listHtml2) && keys2.length === 2 && keys2.indexOf('data-key=""') === -1) test.check('the open dropdown\'s list starts with a [None] button, and no row stands in for it');
+  else test.fail(OWED + 'the dropdown list starts ' + short(listHtml2.slice(0, 160)) + ', rows ' + short(keys2));
   box2.dispatchEvent({ type: 'click', target: { id: '', getAttribute: function (k) { return k === 'data-key' ? 'desk' : null; }, closest: function () { return null; } } });
   await settle();
   const chose = dd.value;
   if (pre2) box2.dispatchEvent({ type: 'click', target: p2.byId[pre2 + 'field'] });
-  if (pre2) box2.dispatchEvent({ type: 'click', target: p2.byId[pre2 + 'none'] });
+  if (pre2) box2.dispatchEvent({ type: 'click', target: p2.doc.getElementById(pre2 + 'none') });
   await settle();
-  if (chose === 'desk' && dd.value === '' && picks[picks.length - 1] === '' && /all servers/.test(fieldText())) test.check('desk chosen, then Clear: the value is empty, the pick hears it, the field reads all servers again');
+  if (chose === 'desk' && dd.value === '' && picks[picks.length - 1] === '' && /all servers/.test(fieldText())) test.check('desk chosen, then None: the value is empty, the pick hears it, the field reads all servers again');
   else test.fail(OWED + 'after desk then Clear: chose ' + short(chose) + ', value ' + short(dd.value) + ', picks ' + short(picks) + ', field ' + short(fieldText()));
   const selSrc = code(path.join(RUN, 'shell', 'js', 'appServerSelector.js')) + code(path.join(RUN, 'shell', 'js', 'contactSelector.js'));
   if (!/unshift\(\s*\{\s*key:\s*''/.test(selSrc)) test.check('the selectors no longer smuggle the none-row in as a row of their own');

@@ -23,7 +23,8 @@
   //   answer left out (apiTreeIndex.js decides; this paints).
   //
   // ON THE SHARED LIST (goal/G29.7): a dropdown of shellCreateListSearch, as the contact selector is, never a native
-  // select. options.all names a first row with value '' (Grants: unchosen means every server).
+  // select. options.all is what the field reads while nothing is chosen, and the dropdown's Clear sets it back
+  // (Grants: unchosen means every server).
   //
   // root.value is the chosen server's name; root.tree the 'api' answer
   // it was painted from, so the api-branch selector (G1.9) can read one
@@ -43,17 +44,17 @@
     function rows() {
       var names = root.tree ? window.spiritApiTreeIndex.servers(root.tree) : [];
       var out = names.map(function (name) { return { key: name, name: name }; });
-      if (options.all) out.unshift({ key: '', name: String(options.all) });
       return out;
     }
     var list = window.spiritElements.shellCreateListSearch(host, {
       mode: 'dropdown',
       placeholder: options.placeholder || 'choose a server…',
+      all: options.all,
       rows: rows,
       paint: function (row, mark) { return '<td style="white-space:nowrap">' + (typeof mark === 'function' ? mark(row.name) : escapeHtml(row.name)) + '</td>'; },
       name: function (row) { return row.name; },
       pick: function (row) {
-        root.value = row.key || '';
+        root.value = row ? row.key || '' : '';
         root.dispatchEvent(new Event('change', { bubbles: true }));
       },
       empty: 'No server matches.',
