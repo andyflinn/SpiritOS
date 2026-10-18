@@ -137,7 +137,11 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   // Andy, 2026-10-18, twice: "i don't see the bars", "score bars STILL NOT SEEN", though the column's tooltips showed. A
   // bar drawn only as a background colour is dropped by contrast themes; the marks, which he sees, are yellow. So the
   // bar is drawn as a solid border, in the marks' yellow, 0.8em tall.
-  const barTag = (/<div[^>]*>/.exec(ranked[0].first) || [''])[0];
+  // Then, at his window width (955 px), every bar measured 0 px: rows that never wrap squeezed the table and the empty
+  // cell gave its width up. The cell holds a fixed 5em box the bar sits in, so it cannot be squeezed.
+  if (/<td[^>]*class="list-rank"[^>]*min-width:\s*5em[^>]*>\s*<div[^>]*style="[^"]*width:\s*5em/.test(ranked[0].first)) test.check('the rank cell holds a fixed 5em box (min-width 5em): no row can squeeze it to nothing');
+  else test.fail(OWED + 'the rank cell is ' + short(ranked[0].first));
+  const barTag = (/<div[^>]*border-top[^>]*>/.exec(ranked[0].first) || [''])[0];
   if (/border-top:\s*0\.8em\s+solid/.test(barTag) && /rgb\(255,\s*2[0-9]{2},\s*[0-9]+\)|#ff[de][0-9a-f]{3}|yellow/i.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid yellow border, 0.8em tall, no background-only drawing');
   else test.fail(OWED + 'the bar is drawn ' + short(barTag));
 
