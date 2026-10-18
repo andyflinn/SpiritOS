@@ -1,5 +1,5 @@
 {
- "change": 72169,
+ "change": 72203,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -53,7 +53,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -8261,11 +8263,9 @@
    "id": "goal/G29.22",
    "title": "The last old searches: jobs, boxes, modules",
    "goal": "goal/G29",
-   "status": "running",
-   "with": "",
-   "buttons": [
-    "delete"
-   ],
+   "status": "build",
+   "with": "claude-windows",
+   "buttons": [],
    "blocking": [
     "goal/G29"
    ],
@@ -8276,19 +8276,25 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/oldSearchGone.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "claude-windows",
    "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "redCommit": "172fa7b5",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -8340,8 +8346,92 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T23:30:16.737Z",
      "text": "Green: the box is settled, no open question. Go, and I write the red."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:34:08.932Z",
+     "text": "commit 172fa7b55873fdae912bdc45fa799b1f970a4562: goal/G29.22: the red for the last old searches ranked by probability and the old search deleted\n- spirit/test/oldSearchGone.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T23:34:19.344Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T23:34:24.469Z",
+     "text": "deskVerify: red confirmed at 172fa7b5: spirit/test/oldSearchGone.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:34:54.243Z",
+     "text": "Red at 172fa7b5 (oldSearchGone), 6 owed. Named in it: the size cap for a single answer moves to limits; ranked means every row comes back, best first, none filtered out by the words. Building."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:36:49.382Z",
+     "text": "You added G29.23, Remove bucket.js gradedSearch.js. This item box already deletes those plus searchBucket.js, and its red asserts they are gone. The three searches are moved and green; only the deletion is left.\nShould the deletion stay here, with G29.23 closed as folded in?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T23:38:59.664Z",
+     "text": "NICE! i approve.... I'll close the other item then."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T23:39:31.182Z",
+     "text": "let the deletion stay here, i'll remove the new item"
     }
    ]
+  },
+  {
+   "id": "goal/G29.23",
+   "title": "Remove bucket.js gradedSearch.js",
+   "goal": "goal/G29",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Word searches still on it: jobs.search (nodeSearches.js), including:\n\n- all comments referring to this type of search\n- the js files for this search\n- any reference in design documents to these files/functions.",
+   "version": 1,
+   "checks": [],
+   "chat": []
   }
  ]
 }
