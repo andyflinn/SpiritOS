@@ -1,5 +1,5 @@
 {
- "change": 71160,
+ "change": 71206,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,13 +47,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows"
-   ],
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -5298,15 +5297,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29"
    ],
-   "blocked": [
-    "goal/G29.15"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -5475,10 +5473,11 @@
    "id": "goal/G29.15",
    "title": "Progress protocol: one published message, one bar",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.14"
@@ -5488,21 +5487,82 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/appServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/kernel.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/chatClerver/chatClerver.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskAgent/deskAgent.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/fileServer/fileServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/fixtures/publishFixture.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/jobCycle.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/noCoalescing.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/sharedLimit.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/silentNoMore.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "24e16d96",
+   "redCommit": "78f7304f",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -5541,7 +5601,17 @@
    "full": false,
    "box": "One progress protocol for every appServer and for the transient processes that remain in SpiritOS, so every app (Jobs, Desk, any that sends off jobs) draws the same progress bar.\nThe Jobs list (goal/G29.14) gets its progress column from this item.\n\nTHE JOB CYCLE\n- A job is: start, then progress and app-specific messages (typically from execution loops), then end.\n- No process runs more than one job at a time. An appServer may run many jobs over its life, one after another.\n- A transient process IS its job.\n\nTHE CALLS, in spirit.core.jobs\n- start(name), progress(done, total, text), end(result or error). Each is published, so the shell sees a job begin, move and finish.\n- total 0 means unknown: the bar shows as indeterminate.\n- A start while a job is open is refused by name. A server that gets more work while busy queues it itself.\n- A transient process only calls progress: the node marks its start at spawn and its end at exit (complete/fail).\n\nWHERE IT LIVES\n- spirit.core.jobs (kernel.js) holds what every spawned process shares: report, log, complete, fail, publish, start, progress, end.\n- publish moves out of appServer.js into spirit.core.jobs, size check with it; appServer.js keeps only what serving needs.\n- appProcess.js is made only when something is unique to transient processes; nothing is yet.\n\nTHE SHELL\n- One shared bar element draws a process's open job; a server between jobs shows idle, no bar.",
    "version": 3,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/appServer.js, spirit/run/js/kernel.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T14:57:03.511Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -5644,6 +5714,72 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T14:49:28.056Z",
      "text": "Green: settled, nothing open, box current (v3). Waiting on Go and the grant for kernel.js and appServer.js."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:52:28.538Z",
+     "text": "commit 78f7304f87efd5208cb24413703e2ba78cf75e03: goal/G29.15: the red for the job cycle in spirit.core.jobs\n- spirit/test/jobCycle.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T14:52:32.020Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:52:40.270Z",
+     "text": "deskVerify: red confirmed at 78f7304f: spirit/test/jobCycle.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:52:49.547Z",
+     "text": "Red 78f7304f: jobCycle.js, 17 of 17 red. Named in it: the five servers switch to spirit.core.jobs.publish, and deskVerify runs each queue run as one job with its suites as progress. Building; kernel.js and appServer.js need your grant at commit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:57:43.829Z",
+     "text": "commit b9c26ae78b7c92f69c7a8f7ba799cc55276a3156: goal/G29.15: the job cycle in spirit.core.jobs: publish moved from appServer, start/progress/end, deskVerify runs its queue as jobs\n- spirit/run/js/appServer.js\n- spirit/run/js/kernel.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/fileServer/fileServer.js\n- spirit/test/fixtures/publishFixture.js\n- spirit/test/noCoalescing.js\n- spirit/test/sharedLimit.js\n- spirit/test/silentNoMore.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:58:00.248Z",
+     "text": "Built and verified at b9c26ae7: jobCycle 17 of 17.\nspirit.core.jobs now has publish (moved from appServer, size check with it), start, progress and end; a second start answers job-open.\nThe five servers publish through it; deskVerify runs each queue run as one job, its suites as progress.\nFiles: kernel.js, appServer.js, desk.js, deskVerify.js, deskAgent.js, fileServer.js, chatClerver.js; tests jobCycle, noCoalescing, silentNoMore, sharedLimit, publishFixture."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:58:20.731Z",
+     "text": "deskVerify: rejected, at b9c26ae7 (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/jobCycle.js: FAILURE #1.1: OWED by goal/G29.15: drainQueue does not run start/end; FAILURE #1.2: OWED by goal/G29.15: say() reports no progress"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T14:58:22.436Z",
+     "text": "verify rejected: spirit/test/jobCycle.js: FAILURE #1.1: OWED by goal/G29.15: drainQueue does not run start/end; FAILURE #1.2: OWED by goal/G29.15: say() reports no progress"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:59:15.647Z",
+     "text": "commit 24e16d96b5bcc50b11cdb58d336c4939a37a47e6: goal/G29.15: jobCycle cuts the deskVerify bodies on \\r\\n too, as his checkout writes them\n- spirit/test/jobCycle.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:59:31.903Z",
+     "text": "The reject was the test, not the build: your checkout ends lines with CRLF and my two body cuts expected LF only. Fixed at 24e16d96, checked on both endings; jobCycle 17 of 17."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:59:42.615Z",
+     "text": "deskVerify: passed, at 24e16d96 (pulled). 5 suites ran green."
     }
    ]
   }
