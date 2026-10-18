@@ -1997,7 +1997,7 @@ contactBook.syncMarks(ROOT_DIR);
       if (!key) return { ok: false, status: 400, error: 'key required' };
       const box = boxes ? boxes.get(key) : null;
       if (!box) return { ok: false, status: 404, error: 'no such box' };
-      return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, box: box });
+      return require('./limits').boundedGet({ ok: true, status: 200, key: key, box: box });
     }) },
     // The puppet's answer as it came, its hash beside it.
     'owner.command': { request: { to: '', command: '', body: {} }, reply: { hash: '' }, handler: function (rq, rs) {

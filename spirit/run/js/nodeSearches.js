@@ -34,7 +34,6 @@
 
 var fs = require('fs');
 var path = require('path');
-var searchBucket = require('./searchBucket');
 var limits = require('./limits');
 var probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
 var probabilityStringMatch = require('./probabilityStringMatch').probabilityStringMatch;
@@ -54,16 +53,20 @@ function createNodeSearches(opts) {
 
   function jobLabel(j) { return String(j.type || j.id) + ' (' + String(j.status || '') + ')'; }
 
+  // goal/G29.22: every job, ranked by the words over its type, status and kind (probabilityStringObjectMatch), the
+  // listing's order among equals, cut by bytes; no words (or '*', the kernel's empty ask) is every job in that order.
   function jobsSearch(body) {
-    var s = searchBucket.createSearch({
-      query: body && body.q,
-      getLabelStringFromIncomingObject: function (j) { return jobLabel(j) + ' ' + String(j.kind || ''); },
-      extractKeyAndLabelFromRow: function (j) { return { key: j.id, label: jobLabel(j) }; },
-    });
+    var q = String((body && body.q) || '').trim();
+    if (q === '*') q = '';
+    var bucket = createProbabilityBucket(Infinity);
     var all = jobs.listJobs();
-    for (var i = 0; i < all.length; i += 1) { if (!s.offer(all[i])) break; }
-    var r = s.getResult();
-    return { ok: true, status: 200, items: r.items, more: r.more };
+    for (var i = 0; i < all.length; i += 1) {
+      var j = all[i];
+      var p = q ? probabilityStringObjectMatch(q, { type: String(j.type || j.id), status: String(j.status || ''), kind: String(j.kind || '') }) : 0;
+      bucket.seatFor(p, { key: j.id, label: jobLabel(j) });
+    }
+    var r = bucket.serialize(null, FS_SEARCH_ROOM);
+    return { ok: true, status: 200, items: r.items, more: !!r.more };
   }
 
   function jobsGet(body) {
@@ -77,13 +80,13 @@ function createNodeSearches(opts) {
     var out = {};
     Object.keys(job).forEach(function (k) { if (k.charAt(0) !== '_') out[k] = job[k]; });
     if (out.type === 'fs-watcher') out.data = Object.assign({}, out.data, { fileCount: jobs.fsTreeEntries().length });
-    return searchBucket.boundedGet({ ok: true, status: 200, key: key, job: out });
+    return limits.boundedGet({ ok: true, status: 200, key: key, job: out });
   }
 
   // FILES BY WORDS, ON THE NODE'S OWN TREE (goal/G29.8). The item's box: "It stays, on the node's own cached tree (the
   // watcher's), as Files sits on the shell's: the agents' file tool and every caller that is not a page", and "It
-  // ranks words by the same probability modules as the shared list, best first; fs.search's patterns (* and ?) and
-  // gradedSearch with them go." Each entry is scored by probabilityStringObjectMatch over its name and path; no words
+  // ranks words by the same probability modules as the shared list, best first; fs.search's patterns (* and ?)
+  // go." Each entry is scored by probabilityStringObjectMatch over its name and path; no words
   // is the whole tree in path order. A folder reads with its trailing slash, so a person can tell the two apart.
   // Bounded by bytes, never by rows: what does not fit says more.
   //

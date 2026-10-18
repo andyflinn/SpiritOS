@@ -125,7 +125,7 @@ const ROWS = [
     // THE REAL SEARCH, NOT THE FAKE ONE. The page kernel asks relay.search
     // with '*'; every suite above fakes the node's answer, so they stayed
     // green while the real one answered nothing: it matched label + ' ' +
-    // url, and a single '*' never spans the '/' a url holds (gradedSearch).
+    // url, and a single '*' never spans the '/' a url holds (the old graded search).
     // Andy saw it as "natter doesn't recognize my relay as alive anymore"
     // (slim/G1.3, 2026-09-29). An unreachable relay still makes a row
     // (offline), so no relay has to be up for this.

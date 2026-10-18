@@ -257,7 +257,7 @@ said about it.
   **triage** — it helps the owner pick which relay to examine: a list, most
   in need first, each row with its reason, each opening its relay.
 - **The order is learned, so it is not in the screen**: a replaceable
-  ranking module on the node (like gradedSearch beside relay.js) returns
+  ranking module on the node (as the search's ranking sat beside relay.js) returns
   `{relay, score 0..1, reason}`; cycle 4 ships the simplest rule (lowest
   lever headroom, heap % of limit); tune-develop cycles replace the module.
   *Future:* the dropdown ordered the same way, red in the font fading with
@@ -2997,7 +2997,7 @@ shape.
 | scaffolding | 5 | **partner acquisition**, the §5 model, **with the partner-to-partner API** (describe, propose/consent, terms); partner roll born in SQLite. **Its first piece, 5.1, is the vouch** (§6), before alpha | agreed (Andy) |
 | optimization | 6 | **dynamic shares** — fixed owner reservation, shares recomputed on connect/disconnect, fixed caps converted (§10) | |
 | optimization | 7 | DISC allotments; cycle 1's live run; Governor learning | |
-| optimization | — | **a search index**, a learning cycle after the scaffolding exists (Andy, 2026-09-19). Today search walks the roll a page at a time, which does not block but grows with the roll. Options: FTS5 trigram (keeps matches inside a word, 3+ characters, more disc); a `member_tokens(token, publicKey)` table or FTS5 words (starts-with per word, one seek per word, any word count); five indexed token columns (the same, but five seeks per word and words after the fifth unsearchable unless labels are capped at five words). In every option gradedSearch still ranks what the index returns, and 1–2 letter queries keep the walk. **Open, and it decides the option:** must matching inside a word (`ann` in `hannah`) stay? `node:sqlite` has FTS5 and trigram (SQLite 3.53.4, Node 24; spirit-3's Node 25 not checked) | |
+| optimization | — | **a search index**, a learning cycle after the scaffolding exists (Andy, 2026-09-19). Today search walks the roll a page at a time, which does not block but grows with the roll. Options: FTS5 trigram (keeps matches inside a word, 3+ characters, more disc); a `member_tokens(token, publicKey)` table or FTS5 words (starts-with per word, one seek per word, any word count); five indexed token columns (the same, but five seeks per word and words after the fifth unsearchable unless labels are capped at five words). In every option the search's ranking (since goal/G29.22 the probability modules (probabilityStringMatch, probabilityStringObjectMatch, probabilityBucket)) still ranks what the index returns, and 1–2 letter queries keep the walk. **Open, and it decides the option:** must matching inside a word (`ann` in `hannah`) stay? `node:sqlite` has FTS5 and trigram (SQLite 3.53.4, Node 24; spirit-3's Node 25 not checked) | |
 | before separate shipping | — | version tolerance (§7) | |
 
 **Cycles 2–5 agreed "for now", cycle 2 locked in** (Andy, 2026-09-19).

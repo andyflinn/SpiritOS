@@ -240,7 +240,8 @@ available by tidying.
   [NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), Open, *one tree or
   two*. *This document's counts are from `e647e60` and stale; a static
   re-count at `c3cd6d0` puts `labelRule.js` in the shared core (via
-  `nodeCard.js`) and `peerSearch`, `gradedSearch`, `bucket` relay-only.*
+  `nodeCard.js`) and peer search, the old graded search and its bucket relay-only;
+  all three are gone since goal/G29.22, replaced by the probability modules (probabilityStringMatch, probabilityStringObjectMatch, probabilityBucket).*
 
 ---
 

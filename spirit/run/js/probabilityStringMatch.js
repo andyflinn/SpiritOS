@@ -11,18 +11,17 @@
 //   that we discuss how to integrated them."
 //   The item: "result probability = probabilityStringMatch(A,B) where A and B must be strings." "if A or B are not of
 //   type string return 0.0; if A is EXACTLY equal to B return 1.0"; "shorterString = the shorter String of A and B,
-//   longerString = longer String of A and B; if they are of equal length, shorterString = A, longerString = B, then use
-//   the logic from gradedSearch to return a result between 0 and 1". And: "in this version, we just compute the
-//   matching of two string, no matter which one is the search string."
+//   longerString = longer String of A and B; if they are of equal length, shorterString = A, longerString = B, then
+//   return a result between 0 and 1". And: "in this version, we just compute the matching of two string, no matter
+//   which one is the search string."
 //
-// THE LOGIC IS gradedSearch.js's, COPIED, NOT REQUIRED: the helpers below are its own (fold, tokens, longestRun,
-// tokenScore, matchTokens, sequenceRun, anyTokenFound, rank and the four signals with their weights), so the shorter
-// string is graded as its query and the longer as its label. gradedSearch.js is left as it is until the integration is
-// argued. What differs is what "no search string" asks for: no wildcards, so * and ? are characters like any other.
+// THE GRADING: the shorter string is graded as the query and the longer as the label, through the helpers below (fold,
+// tokens, longestRun, tokenScore, matchTokens, sequenceRun, anyTokenFound, rank and the signals with their weights).
+// No wildcards: * and ? are characters like any other.
 //
 // NO I/O, NO CLOCK, NO STATE: two strings in, one number out.
 
-// ── ACCENTS FOLDED, BOTH WAYS (gradedSearch: "ü matches u and é matches e, both ways") ──
+// ── ACCENTS FOLDED, BOTH WAYS ("ü matches u and é matches e, both ways") ──
 function fold(text) {
   var s = String(text == null ? '' : text).toLowerCase();
   return typeof s.normalize === 'function' ? s.normalize('NFD').replace(/[̀-ͯ]/g, '') : s;
@@ -35,7 +34,7 @@ function tokens(text) {
 }
 
 // ONE TOKEN AGAINST ONE TOKEN: the whole word is worth its length, a part of a longer word the share it accounts for,
-// a longer query word nothing (gradedSearch: "if the result token is shorter, its obviously no match").
+// a longer query word nothing ("if the result token is shorter, its obviously no match").
 function tokenScore(queryToken, resultToken) {
   if (resultToken.length < queryToken.length) return 0;
   if (resultToken === queryToken) return queryToken.length;
@@ -111,8 +110,7 @@ function anyTokenFound(queryTokens, label) {
   return false;
 }
 
-// HOW GOOD A MATCH IS: 0 exact, 1 starts with, 2 found somewhere, 3 some of the words, -1 none. gradedSearch's rank
-// without its wildcard branch.
+// HOW GOOD A MATCH IS: 0 exact, 1 starts with, 2 found somewhere, 3 some of the words, -1 none. No wildcards.
 function rank(label, query) {
   if (label === query) return 0;
   if (label.indexOf(query) === 0) return 1;
@@ -130,7 +128,7 @@ function proximity(order) {
   return order.length / (hi - lo + 1);
 }
 
-// THE SIGNALS AND THEIR WEIGHTS: gradedSearch's TEXT_SIGNALS, with distance added and order lowered by goal/G29.1. Its
+// THE SIGNALS AND THEIR WEIGHTS, with distance added and order lowered by goal/G29.1. Its
 // box: "Distance counts, and more than order: a fifth signal, proximity ... People type words in any order, but words
 // far apart usually belong to different thoughts, so proximity weighs 0.35 and order drops from 0.25 to 0.15. That
 // ratio is a guess." The weights are set by hand until they are learned from what makes a user happier.
@@ -232,7 +230,7 @@ function probabilityStringMatch(A, B) {
   if (typeof A !== 'string' || typeof B !== 'string') return 0.0;
   if (A === B) return 1.0;
   // NOTHING MATCHES SOMETHING NOT AT ALL. Andy, 2026-10-12: "and empty string against a non-empty string should return
-  // 0". gradedSearch's rank calls '' a prefix of every string, which gave it 0.54.
+  // 0". Without this, rank calls '' a prefix of every string, which gave it 0.54.
   if (A === '' || B === '') return 0.0;
   // The shorter is graded as the query; of two the same length, A ("shorterString = A, longerString = B").
   var shorter = A.length <= B.length ? A : B;

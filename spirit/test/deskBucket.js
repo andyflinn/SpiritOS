@@ -1,17 +1,17 @@
 'use strict';
 
 // spirit/test/deskBucket.js
-// THE DESK SERVER CUTS ITS ANSWERS WITH bucket.js — slim/G1.2, written FIRST,
+// THE DESK SERVER CUTS ITS ANSWERS WITH THE SHARED BUCKET — slim/G1.2, written FIRST,
 // red on today's code.
 //
-//   Andy, on slim/G1.2: "Desk must adhere to standards as well. use the
-//   bucket.js", and "the 182 too-big lines already stored get split once, so
+//   Andy, on slim/G1.2: "Desk must adhere to standards as well.", and
+//   "the 182 too-big lines already stored get split once, so
 //   their history shows again, but from now on the MAX_PAYLOAD applies."
 //
 // THE CONTRACT (claude-windows' tests, wsl-claude's build). The room is one
 // answer: appClient.ANSWER_MAX - 512 bytes, measured as log.search counts a
 // line (the stored line, JSON-escaped once more).
-//   T1 log.search and pending.get answer through searchBucket.js in its own
+//   T1 log.search and pending.get answer through the shared bucket in its own
 //      shape, {items: [{key, label}], more}, a line being its label; cut on
 //      whole items by bytes, `more` (not `partial`) telling the truth;
 //      desk.js keeps no cut of its own.
@@ -41,7 +41,7 @@ const OWED = 'OWED by slim/G1.2: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const ROOM = appClient.ANSWER_MAX - 512;
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-// The standard search answer (searchBucket.js): {items: [{key, label}], more}; a line is its label.
+// The standard search answer: {items: [{key, label}], more}; a line is its label.
 function linesOf(r) { return ((r && r.items) || []).map(function (i) { return i.label; }); }
 function cost(lineJson) { return Buffer.byteLength(JSON.stringify(lineJson), 'utf8'); }
 
@@ -60,7 +60,7 @@ function plantRows(dbFile, rows) {
   db.close();
 }
 
-test.startTest('slim/G1.2: the desk server cuts its answers with bucket.js');
+test.startTest('slim/G1.2: the desk server cuts its answers with the shared bucket');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskbucket-'));
 const state = path.join(scratch, 'state');
 fs.mkdirSync(state, { recursive: true });
@@ -145,7 +145,7 @@ const kids = [];
   const p1 = await call('pending.get', { who: 'andy' });
   const bytes = linesOf(r1).reduce(function (s, l) { return s + cost(l); }, 0);
   const src = fs.readFileSync(DESK, 'utf8');
-  // Since goal/G29.21 the bucket is the probability bucket (searchBucket left desk.js).
+  // Since goal/G29.21 the bucket is the probability bucket (the old graded search left desk.js).
   const usesBucket = /require\([^)]*probabilityBucket/.test(src);
   const handCut = /ANSWER_ROOM\)\s*\{\s*partial\s*=\s*true/.test(src);
   if (r1.more === true && !('partial' in r1) && typeof p1.more === 'boolean' && !('partial' in p1) && bytes <= ROOM && linesOf(r1).length > 0 && usesBucket && !handCut) {

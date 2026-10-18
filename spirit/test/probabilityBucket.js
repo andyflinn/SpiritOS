@@ -3,7 +3,7 @@
 // spirit/test/probabilityBucket.js
 // goal/G18.4: probabilityBucket, the third probabilit* module. Red on today's tree (6a4f7aa9); claude-windows wrote it
 // and builds it. The item's box (v7), Andy, 2026-10-12:
-//   "like bucket.js ... 1. function createProbabilityBucket(capacity) 2. seatFor(probability, item)"; "objecs are
+//   "... 1. function createProbabilityBucket(capacity) 2. seatFor(probability, item)"; "objecs are
 //   simply dropped into the the probabilityBucket with their probability, and probabilityBucket sorts that into it's
 //   table all by itself."; "The Bucket knows NOTHING about string matching, it will only know how to sort-add objects
 //   by probability. internally its table carries objects like this: { probability, object } the serialize will only

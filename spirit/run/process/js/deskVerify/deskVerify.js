@@ -1189,7 +1189,7 @@ const SEARCH_ROOM = appClient.ANSWER_MAX - 512;
 const SEARCH_SCANNED = 1000;
 const SEARCH_KEYS = ['over', 'suite', 'test', 'outcome', 'commit', 'item', 'kind', 'since', 'current', 'heading', 'history', 'slim'];
 function searchBytes(key, label) { return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(label) }], more: false }), 'utf8'); }
-function searchBucket(walk) {
+function rankedRows(walk) {
   const bucket = createProbabilityBucket(SEARCH_SCANNED);
   let more = false;
   let scanned = 0;
@@ -1228,7 +1228,7 @@ async function search(a) {
         queued: r.queuedAt, started: r.startedAt, ended: r.endedAt, outcome: r.outcome, line: r.line || '' }) } });
     }
     // HOW MANY (goal/G27.14): every match counted, beside the bucket.
-    const outRuns = searchBucket(runRows[Symbol.iterator]());
+    const outRuns = rankedRows(runRows[Symbol.iterator]());
     outRuns.total = runRows.length;
     return outRuns;
   }
@@ -1292,7 +1292,7 @@ async function search(a) {
     found.push({ probability: p, pair: { key: history ? String(r.rowid) : r.suite + '\n' + r.title, label: JSON.stringify(row) } });
   }
   // HOW MANY (goal/G27.14, Andy: "how many red?"): every match counted, beside the bucket that carries the best of them.
-  const out = searchBucket(found[Symbol.iterator]());
+  const out = rankedRows(found[Symbol.iterator]());
   out.total = found.length;
   return out;
 }

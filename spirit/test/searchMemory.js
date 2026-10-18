@@ -20,11 +20,14 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const relayKeys = require('../run/js/relayKeys');
 const contactBook = require('../run/js/contacts');
-const gradedSearch = require('../run/js/gradedSearch');
+// goal/G29.22: the old graded search is gone; the peer search's slots live in peerRank.
+const peerRank = require('../run/js/peerRank');
 const hubModule = require('../run/js/hub');
 
 const RELAY = 'http://relay-a.example';
-const SLOTS = gradedSearch.SLOTS;
+const SLOTS = peerRank.SLOTS;
+// goal/G29.17: the peer search answers the shared shape {items: [{key, label}]}, each label the row as JSON.
+function rowsOf(body) { return ((body && body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } }); }
 
 function makeHome() {
   const H = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-searchmem-'));
@@ -93,7 +96,7 @@ async function run() {
 
   const live = relayAnswering([{ publicKey: 'K-LIVE', publicLabel: 'bella live' }]);
   const on = await search(H, 'bella', live);
-  const m = on.body.matches || [];
+  const m = rowsOf(on.body);
 
   const liveRow = byKey(m, 'K-LIVE');
   if (on.status === 200 && liveRow && !liveRow.fromMemory && liveRow.publicLabel === 'bella live' &&
@@ -145,16 +148,16 @@ async function run() {
   }
 
   const none = await search(H, 'zzzz', live);
-  if ((none.body.matches || []).filter(function (r) { return r.fromMemory; }).length === 0) {
+  if ((rowsOf(none.body)).filter(function (r) { return r.fromMemory; }).length === 0) {
     test.check('memory is matched like a relay: a name nobody has finds nobody');
   } else {
-    test.fail('zzzz matched: ' + JSON.stringify(none.body.matches));
+    test.fail('zzzz matched: ' + JSON.stringify(rowsOf(none.body)));
   }
 
   test.subHeading('A relay that does not answer: memory answers for it');
 
   const quiet = await search(H, 'bella remembered', relayAnswering(null));
-  if (quiet.status === 200 && byKey(quiet.body.matches, 'K-MEM') &&
+  if (quiet.status === 200 && byKey(rowsOf(quiet.body), 'K-MEM') &&
       (quiet.body.silent || []).indexOf(RELAY) !== -1) {
     test.check('the relay is named as silent, and memory still finds who it can');
   } else {
@@ -164,7 +167,7 @@ async function run() {
   test.subHeading('Not connected at all: memory, instead of a refusal');
 
   const off = await search(H, 'bella remembered', null);
-  if (off.status === 200 && byKey(off.body.matches, 'K-MEM') && off.body.asked === 0 &&
+  if (off.status === 200 && byKey(rowsOf(off.body), 'K-MEM') && off.body.asked === 0 &&
       (off.body.silent || []).indexOf(RELAY) !== -1) {
     test.check('a node with no connection answers from memory (it used to answer 503), asking nobody and saying so');
   } else {
@@ -190,7 +193,7 @@ async function run() {
     for (let n = 0; n < 10; n += 1) st.seen.put('K-CARL-' + n, { seen: 100 + n });
 
     const got = await search(C, 'carl', null);
-    const keys = (got.body.matches || []).map(function (r) { return r.publicKey; });
+    const keys = (rowsOf(got.body)).map(function (r) { return r.publicKey; });
     const carls = keys.filter(function (k) { return /^K-CARL-/.test(k); }).sort();
     if (carls.join(',') === 'K-CARL-5,K-CARL-6,K-CARL-7,K-CARL-8,K-CARL-9') {
       test.check('with the cap at 5, the five newest strangers are compared and the five oldest are not');

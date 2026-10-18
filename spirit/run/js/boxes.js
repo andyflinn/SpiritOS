@@ -104,15 +104,19 @@ function createBoxes(opts) {
   function boxLabel(g) {
     return (g.boxLabel || g.fingerprint || '(unnamed box)') + (g.warning ? ' — over-committed' : '');
   }
+  // goal/G29.22: every box, ranked by the words over its label and fingerprint (probabilityStringObjectMatch), the
+  // listing's order among equals, cut by bytes; no words (or '*') is every box.
   function search(q) {
-    const s = require('./searchBucket').createSearch({
-      query: q,
-      getLabelStringFromIncomingObject: function (g) { return boxLabel(g) + ' ' + (g.fingerprint || ''); },
-      extractKeyAndLabelFromRow: function (g) { return { key: g.fingerprint, label: boxLabel(g) }; },
+    const words = String(q == null ? '' : q).trim();
+    const text = words === '*' ? '' : words;
+    const bucket = require('./probabilityBucket').createProbabilityBucket(Infinity);
+    const match = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+    list().forEach(function (g) {
+      const p = text ? match(text, { label: boxLabel(g), fingerprint: String(g.fingerprint || '') }) : 0;
+      bucket.seatFor(p, { key: g.fingerprint, label: boxLabel(g) });
     });
-    const all = list();
-    for (let i = 0; i < all.length; i += 1) { if (!s.offer(all[i])) break; }
-    return s.getResult();
+    const r = bucket.serialize(null, require('./limits').PLAINTEXT_MAX);
+    return { items: r.items, more: !!r.more };
   }
   function get(key) {
     return list().filter(function (g) { return g.fingerprint === key; })[0] || null;

@@ -7,10 +7,10 @@
 //   - peers.search becomes chats.search: which peers have a chat, the newest line, the unanswered count; keys and chat
 //     facts only. No arguments: text matched part of a key, and keys are never searched; since and before go. A chat
 //     is revived by finding the person by name (contact.search) and opening it; chat.read reads it from memory.db.
-//   - chats.search and chat.read leave the old graded bucket (searchBucket.createSearch): newest first, cut by bytes,
+//   - chats.search and chat.read leave the old graded bucket: newest first, cut by bytes,
 //     through the probability bucket's serialize.
 //   - A new verb, chat.search {peer, text}: that chat's lines ranked by the probability modules, newest first on a
-//     tie, cut by bytes. The chat window searches with it. chatClerver no longer requires searchBucket.
+//     tie, cut by bytes. The chat window searches with it. chatClerver no longer requires the old graded search.
 //   - chatter asks chats.search with no arguments; its chat window has a search over its own lines, through chat.search.
 // It replaces goal/G4.3's chatPeers.js, whose peers.search it removes: the row, the blocked rule, the bound and the
 // read are asserted here instead.

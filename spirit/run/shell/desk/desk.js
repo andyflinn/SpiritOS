@@ -144,7 +144,7 @@ function deskRefusalText(body) {
   // THE WHY TOO (goal/G18.10): every refusal carries its reason since goal/G10.10, and the page showed the code alone.
   return body.code + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (x.why ? ': ' + x.why : '') + (body.error ? ' (' + body.error + ')' : '');
 }
-// One bounded search; the server answers newest first in searchBucket's
+// One bounded search; the server answers newest first in the shared search
 // shape, {items: [{key, label}], more}, a line being its label (slim/G1.2).
 // Every key is sent, as the server matches them exactly (appPair D8).
 function deskSearch(q) {

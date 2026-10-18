@@ -83,7 +83,7 @@
 
 // WHAT A COMPOSER MAY BUILD. Unchanged at 16 KB, deliberately: this is
 // the promise apps were written against, and cycle 10 is not an occasion
-// to move it. `natterDetails`, `gradedSearch` and every app that sizes a
+// to move it. `natterDetails` and every app that sizes a
 // payload measure themselves against this.
 var PLAINTEXT_MAX = 16384;
 
@@ -301,7 +301,23 @@ function fitsSealed(text) {
     <= SEALED_MAX;
 }
 
+// ── ONE ENTRY, THE OTHER HALF OF A SEARCH (X.get) ───────────────────
+//
+// A search answers pairs, and get(key) fetches the rest of one entry. That
+// answer goes out too, so it is bounded the same way (Andy: "Everything,
+// everywhere that goes out, is bounded by MAX_PAYLOAD"). One entry cannot
+// be cut sensibly, so an entry too big for the answer is refused by name,
+// with its size, and the caller asks something narrower. Here since
+// goal/G29.22. In bytes, in node and in a page alike.
+function boundedGet(answer, maxBytes) {
+  var cap = typeof maxBytes === 'number' && maxBytes > 0 ? Math.floor(maxBytes) : PLAINTEXT_MAX;
+  var bytes = unescape(encodeURIComponent(JSON.stringify(answer))).length;
+  if (bytes <= cap) return answer;
+  return { ok: false, status: 413, code: 'answer-too-large', bytes: bytes, error: 'answer too large for a packet' };
+}
+
 var limitsApi = {
+  boundedGet: boundedGet,
   PAYLOAD_MAX: PAYLOAD_MAX,
   PLAINTEXT_MAX: PLAINTEXT_MAX,
   SEAL_ENVELOPE: SEAL_ENVELOPE,

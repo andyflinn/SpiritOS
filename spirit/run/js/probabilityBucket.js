@@ -7,8 +7,7 @@
 // THE BEST OBJECTS BY PROBABILITY, SEATED AS THEY COME AND SERIALIZED TO A CEILING — goal/G18.4, the third of the
 // probabilit* modules.
 //
-//   Andy, 2026-10-12: "like bucket.js ... 1. function createProbabilityBucket(capacity) 2. seatFor(probability,
-//   item)"; "objecs are simply dropped into the the probabilityBucket with their probability, and probabilityBucket
+//   Andy, 2026-10-12: "1. function createProbabilityBucket(capacity) 2. seatFor(probability, item)"; "objecs are simply dropped into the the probabilityBucket with their probability, and probabilityBucket
 //   sorts that into it's table all by itself."; "The Bucket knows NOTHING about string matching, it will only know how
 //   to sort-add objects by probability. internally its table carries objects like this: { probability, object } the
 //   serialize will only serialize and measure the object portion of its array-entries."; "the bucket fills up with

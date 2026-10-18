@@ -1444,7 +1444,7 @@ function createHub(rootDir) {
     if (!key) return { ok: false, status: 400, error: 'key required' };
     var person = buildPeople(rootDir).filter(function (p) { return p.publicKey === key; })[0];
     if (!person) return { ok: false, status: 404, error: 'not in the book' };
-    return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, person: person });
+    return require('./limits').boundedGet({ ok: true, status: 200, key: key, person: person });
   }
 
   // ── peer.find STOOD HERE (handleHandle / findHandle), DELETED ──────
@@ -2671,7 +2671,7 @@ function createHub(rootDir) {
   //   Andy, in the item: "we should have put in the new search thinggie for
   //   relay's" ; "add it."
   //
-  // It matched its own way (searchBucket over gradedSearch), where a '*'
+  // It matched its own way, where a '*'
   // never spans a '/': a relay whose label is its url, as a claim lists
   // one, was left out of Natter's list although relay.get found it. Now
   // it ranks as the desk's items.search does (desk.js, ranked(), goal/G18.5):
@@ -2762,7 +2762,7 @@ function createHub(rootDir) {
       var row = summary.rows.filter(function (r) { return r.url === key; })[0];
       if (!row) return { ok: false, status: 404, error: 'no such relay' };
       var reports = (deps && deps.router && deps.router.relayStatus) ? deps.router.relayStatus() : {};
-      return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, relay: row,
+      return require('./limits').boundedGet({ ok: true, status: 200, key: key, relay: row,
         report: reports[key] || null });
     });
   }

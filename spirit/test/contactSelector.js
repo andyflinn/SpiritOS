@@ -7,8 +7,8 @@
 //   - shell.js hands apps api.ui.elements.createContactSelector(options), beside createIconSelector: an
 //     element whose root carries .value (the chosen contact's KEY — identity is the key, contacts.js) and
 //     fires a bubbling change; each row shows the contact's label.
-//   - It finds contacts through the node's bounded search, contact.search (peerSearch.js and
-//     searchBucket.js under it), never a list of everybody (Andy: "there are no (complete) lists, only
+//   - It finds contacts through the node's bounded search, contact.search (once the old graded search, now
+//     the probability modules), never a list of everybody (Andy: "there are no (complete) lists, only
 //     searches"). A caller that already holds its own rows hands them in as options.contacts
 //     [{ key, label }], the way natterDetails must (its candidates are relay owners, not everybody).
 //   - natterDetails hand-rolls a contact <select> today (natterDetails.js:1101, '<select

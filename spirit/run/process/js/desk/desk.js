@@ -91,7 +91,7 @@ const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
 
 // ── ONE MEASURE OF "FITS" (slim/G1.2) ───────────────────────────────
 //
-//   Andy: "Desk must adhere to standards as well. use the bucket.js", and
+//   Andy: "Desk must adhere to standards as well.", and
 //   "from now on the MAX_PAYLOAD applies".
 //
 // A line fits when an answer holding it alone fits the room, measured as

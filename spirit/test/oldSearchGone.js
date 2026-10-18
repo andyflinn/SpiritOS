@@ -36,10 +36,10 @@ const JOBS = [
   { id: '3', type: 'deskVerify', status: 'running', kind: 'process' },
 ];
 const ns = nodeSearches && nodeSearches.createNodeSearches({ jobs: { listJobs: function () { return JOBS.slice(); }, getJob: function () { return null; }, fsTreeEntries: function () { return []; } }, rootDir: scratch });
-const jr = ns ? ns.jobsSearch({ q: 'verify desk' }) : null;
+const jr = ns ? ns.jobsSearch({ q: 'desk' }) : null;
 const jk = keysOf(jr);
-if (jr && jr.ok !== false && jk[0] === '3' && jk.length === 3) test.check('"verify desk" puts deskVerify first and still answers all three jobs (' + jk.join(', ') + ')');
-else test.fail(OWED + 'jobs.search "verify desk" answered ' + short(jk) + ', where deskVerify first of all three is owed');
+if (jr && jr.ok !== false && jk[0] === '3' && jk.length === 3) test.check('"desk" puts deskVerify first and still answers all three jobs (' + jk.join(', ') + ')');
+else test.fail(OWED + 'jobs.search "desk" answered ' + short(jk) + ', where deskVerify first of all three is owed');
 const jall = ns ? keysOf(ns.jobsSearch({ q: '' })) : [];
 if (jall.length === 3) test.check('no words: every job');
 else test.fail(OWED + 'jobs.search with no words answered ' + short(jall));

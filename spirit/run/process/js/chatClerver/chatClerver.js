@@ -29,7 +29,7 @@ const kernel = require('../../../js/kernel.js');
 const packet = require('../../../js/client/packet.js');
 const limits = require('../../../js/limits.js');
 const appClient = require('../../../js/appClient.js');
-// The probability modules (goal/G29.18): the old graded bucket (searchBucket) is gone from here.
+// The probability modules (goal/G29.18).
 const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
 const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 

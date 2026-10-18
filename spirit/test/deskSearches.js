@@ -8,7 +8,7 @@
 //     (the goal's chat and every one of its items' chats, ranked together); each line found carries the item it was said
 //     in, and the goal dialog draws it as a link to that item; block.targets in goal order through the probability bucket.
 //   - deskClient history.search ranks by verb and outcome; deskAgent's models search by id and quant, loaded first.
-//   - desk, deskClient and deskAgent no longer require searchBucket.
+//   - desk, deskClient and deskAgent no longer require the old graded search.
 // NAMED HERE where the box names none: scope '' is the item's own chat, as chat.search always was; a goal-wide line's
 // label carries item, the id of the item (or goal) it was said in; deskDetails asks chat.search with scope 'items' on a
 // goal and draws a found line's item as a link (data-open-item).

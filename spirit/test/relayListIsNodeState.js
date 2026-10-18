@@ -18,7 +18,7 @@
 //     verb to the node's interface needs peer review and his yes on that verb (AGENT.md), and his sentence
 //     already says how a relay gets in — a successful claim puts it there.
 //     AND ONLY ONE OF THE TWO IS NEW. Verified at 9d0426bb: server.js:2070 already claims relay.search
-//     (hub.relaySearch, searchBucket over relaySummary), so the box reads wrong in calling both new. What that
+//     (hub.relaySearch, the old graded search over relaySummary), so the box reads wrong in calling both new. What that
 //     verb lacks is not existence but its source: it searches the APP's file today. So its check below is a
 //     CONTROL — it must keep working — and the requirement on it is section 3's, that it read the node's list.
 //     relay.remove is the one verb this item actually adds.

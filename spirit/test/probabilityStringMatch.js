@@ -5,20 +5,18 @@
 // claude-windows wrote it and builds it. The item's box (v3), Andy, 2026-10-12:
 //   "result probability = probabilityStringMatch(A,B) where A and B must be strings." "if A or B are not of type
 //   string return 0.0; if A is EXACTLY equal to B return 1.0"; "shorterString = the shorter String of A and B,
-//   longerString = longer String of A and B; if they are of equal length, shorterString = A, longerString = B, then use
-//   the logic from gradedSearch to return a result between 0 and 1"; and "in this version, we just compute the matching
+//   longerString = longer String of A and B; if they are of equal length, shorterString = A, longerString = B" (the rest
+//   pointed at the old graded search's logic for a result between 0 and 1); and "in this version, we just compute the matching
 //   of two string, no matter which one is the search string."
 //
 // WHAT IS ASSERTED
 //   1. the module exists in run/js and exports probabilityStringMatch(A, B).
 //   2. not two strings: 0.0. Exactly equal: 1.0. Every answer a number from 0 to 1.
 //   3. no search string: the answer is the same either way round; * and ? are plain characters.
-//   4. its order holds: whole word over prefix over found inside over none (gradedSearch's quality until goal/G29.1).
-//   5. gradedSearch.js is untouched by this item (the integration is argued after).
-//   6, 7. goal/G29.1: case counts by 0.000001 a character; distance counts, proximity 0.35 over order 0.15.
+//   4. its order holds: whole word over prefix over found inside over none (the old graded search's quality until goal/G29.1).
+//   5, 6. goal/G29.1: case counts by 0.000001 a character; distance counts, proximity 0.35 over order 0.15.
 // rule/11: through testSupport only.
 
-const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 
@@ -58,19 +56,14 @@ if (psm('a*c', 'abc') === 0 && psm('a?c', 'abc') === 0 && psm('a*c', 'xa*cx') > 
 else test.fail(OWED + 'wildcards: ' + JSON.stringify([psm('a*c', 'abc'), psm('a?c', 'abc'), psm('a*c', 'xa*cx')]));
 
 test.subHeading('4. its order');
-// goal/G29.1 departs from gradedSearch on purpose (case and distance count, the weights move), so the answer is no
-// longer gradedSearch's quality; the order of the four kinds of match still holds.
+// goal/G29.1 departs from the old graded search on purpose (case and distance count, the weights move), so the
+// answer is no longer its quality; the order of the four kinds of match still holds.
 const whole = psm('ann', 'ann');
 const prefix = psm('ann', 'annabel');
 const inside = psm('ann', 'joanne');
 const none = psm('ann', 'bob');
 if (whole > prefix && prefix > inside && inside > none && none === 0) test.check('its order holds: equal ' + whole.toFixed(2) + ' > starts with ' + prefix.toFixed(2) + ' > found inside ' + inside.toFixed(2) + ' > none 0');
 else test.fail(OWED + 'order: ' + JSON.stringify([whole, prefix, inside, none]));
-
-test.subHeading('5. gradedSearch.js untouched');
-const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'gradedSearch.js'), 'utf8');
-if (!/probabilityStringMatch/.test(src)) test.check('gradedSearch.js does not use it yet: the integration is argued after');
-else test.fail(OWED + 'gradedSearch.js already refers to probabilityStringMatch');
 
 // goal/G29.1: IMPROVE THE STRING MATCH ITSELF. Its box: "Case counts: "Relay" matches "Relay" better than "relay" or
 // "reLay" does. 0.000001 is subtracted from the probability for every character whose case differs, counted over the
@@ -79,7 +72,7 @@ else test.fail(OWED + 'gradedSearch.js already refers to probabilityStringMatch'
 // match to the last (side by side 1.0) ... proximity weighs 0.35 and order drops from 0.25 to 0.15. That ratio is a
 // guess."
 const OWED29 = 'OWED by goal/G29.1: ';
-test.subHeading('6. goal/G29.1: case counts, by a hair');
+test.subHeading('5. goal/G29.1: case counts, by a hair');
 const exactCase = psm('Relay', 'Relay');
 const oneOff = psm('relay', 'Relay');
 const twoOff = psm('reLay', 'Relay');
@@ -95,7 +88,7 @@ const inLongLower = psm('relay', 'the relay answers');
 if (inLong < inLongLower && inLongLower - inLong < 0.00001) test.check('found inside with the wrong case: a hair below the right case (' + (inLongLower - inLong).toExponential(1) + ')');
 else test.fail(OWED29 + 'relay in the RELAY answers ' + inLong + ', in the relay answers ' + inLongLower);
 
-test.subHeading('7. goal/G29.1: distance counts, more than order');
+test.subHeading('6. goal/G29.1: distance counts, more than order');
 // Two labels alike in length, words and order, the matched words side by side in one and far apart in the other.
 const filler = function (n, from) { const w = []; for (let i = 0; i < n; i++) w.push('w' + String(from + i).padStart(3, '0')); return w.join(' '); };
 const near = 'relay w000 key ' + filler(300, 1);

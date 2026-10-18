@@ -443,10 +443,11 @@ start.
     ### And the rank can be weighted signals rather than one ratio
 
     `recent uses / bytes held` is a single ratio standing in for several
-    judgements. The tree already has the richer shape, in the module that
-    was isolated for exactly this reason:
+    judgements. The tree had the richer shape, in the module that was
+    isolated for exactly this reason (the old graded search, gone since
+    goal/G29.22; the probability modules (probabilityStringMatch, probabilityStringObjectMatch, probabilityBucket) replace it):
 
-    > `gradedSearch.TEXT_SIGNALS` — *"the TUNING SURFACE… so a weight can
+    > its text-signal weights — *"the TUNING SURFACE… so a weight can
     > be argued about with numbers rather than impressions"*, with
     > `explain()` beside it *"so a weight can be argued about with
     > numbers"*.
@@ -1140,13 +1141,13 @@ and after [SURFACE.md](SURFACE.md) §10 the shape is:
 Search is the only remaining reader that genuinely wants the whole
 membership, and it is **already bounded**: a term comes back ranked, cut to
 slots and to a byte budget, with the answer saying how much was dropped
-(`bucket.js`, `gradedSearch.js`).
+(then the old graded search; since goal/G29.22 the probability modules (probabilityStringMatch, probabilityStringObjectMatch, probabilityBucket)).
 
 So it does not need the roll resident — it needs to *stream* over it,
 ranking as it goes and holding only the slots. RAM cost becomes the slot
 count rather than the membership, which is the external-sort shape and the
-cheap-for-expensive trade stated plainly. `bucket.js` already ranks into
-bounded slots; what changes is where the rows come from.
+cheap-for-expensive trade stated plainly. The probability bucket already
+ranks into bounded slots; what changes is where the rows come from.
 
 ### What stays in memory
 

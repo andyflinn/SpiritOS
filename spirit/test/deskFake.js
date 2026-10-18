@@ -7,7 +7,7 @@
 // (process/js/desk) through jobs.api on the loopback door (D4). A suite that
 // mounts Desk hands it this as `api.verb`, so it answers as the real server
 // does: the same verbs, the same shapes, the same bound (appClient.ANSWER_MAX
-// less 512, newest first, in searchBucket's {items, more}), and it records every call so a
+// less 512, newest first, in the shared {items, more}), and it records every call so a
 // suite can see what Desk asked for.
 //
 //   const fake = require('./deskFake.js').create(lines);   // lines: row objects
@@ -20,7 +20,7 @@
 
 const appClient = require('../run/js/appClient.js');
 
-const searchBucket = require('../run/js/searchBucket.js');
+const createProbabilityBucket = require('../run/js/probabilityBucket.js').createProbabilityBucket;
 
 const ROOM = appClient.ANSWER_MAX - 512;
 
@@ -46,22 +46,19 @@ function create(rows) {
     }).sort(function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : (x.key < y.key ? 1 : -1); });
     return walked(hits, function (m) { return { key: String(m.key), label: JSON.stringify(m) }; });
   }
-  // As the real server walks (desk.js walked, slim/G1.2): one searchBucket,
+  // As the real server walks (desk.js walked, slim/G1.2): one bucket,
   // '**', a line too big to be sent alone skipped and said by `more`.
   function walked(walk, pairOf) {
-    const bucket = searchBucket.createSearch({
-      query: '**', maxBytes: ROOM,
-      getLabelStringFromIncomingObject: function (p) { return p.label; },
-      extractKeyAndLabelFromRow: function (p) { return p; },
-    });
+    // goal/G29.22: the probability bucket, as desk.js walked() is now; probability 0 keeps the walk's order.
+    const bucket = createProbabilityBucket(Infinity);
     let skipped = false;
     for (const obj of walk) {
       const p = pairOf(obj);
       if (Buffer.byteLength(JSON.stringify({ items: [p], more: false }), 'utf8') > ROOM) { skipped = true; continue; }
-      if (!bucket.offer(p)) break;
+      bucket.seatFor(0, p);
     }
-    const r = bucket.getResult();
-    return { items: r.items, more: r.more || skipped };
+    const r = bucket.serialize(null, ROOM);
+    return { items: r.items, more: !!r.more || skipped };
   }
   const desk = {
     'log.add': function (a) {

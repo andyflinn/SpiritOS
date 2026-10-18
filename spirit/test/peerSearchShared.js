@@ -5,7 +5,7 @@
 // claude-windows writes it and builds it (one agent). The item's box (v1):
 //   THE UI: the panel's own input, Search button and list go; the panel is the shared list.
 //   THE SEARCH: each relay ranks its members with the probability modules and answers a capped list; the old graded
-//   search (peerSearch.js, gradedSearch.js) goes. The node merges the relays' answers with the same modules.
+//   search goes. The node merges the relays' answers with the same modules.
 //   peer.search answers the shared shape {items: [{key, label}], more}. A wire change: every relay and node together.
 // NAMED HERE where the box names none (argued in Desk first if the build disagrees):
 //   - js/peerRank.js, the one ranker both use: rank(rows, q, slots) -> {rows, more}; a row is matched on its public
@@ -13,7 +13,8 @@
 //     match is left out; slots caps the answer and sets more.
 //   - peer.search's label is the row as the node built it, json {publicKey, publicLabel, tail, relay, relayLabel,
 //     present, acquiredVia, fromMemory, ...}; key is the public key. q, asked, remembered and silent stay beside items.
-//   - gradedSearch.js stays while searchBucket.js (the other old searches) still needs it; peerSearch.js goes.
+//   - the old graded search stays while the other old searches still need it; peerSearch.js goes. (All of it is
+//     gone since goal/G29.22.)
 // rule/11: through testSupport only.
 
 const fs = require('fs');

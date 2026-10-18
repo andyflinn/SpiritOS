@@ -27,7 +27,7 @@
 //   8. It asks through the kernel and nothing else: no fetch, no http, no AGENTS_ environment variable in its code.
 // Every refusal above is a code the catalogue already has (spiritErrors.js), so no core module changes.
 // Not asserted, the builder's: what a record says when the desk never answers at all; what history.search does
-// with a text (the walk and the cut are searchBucket's); whether a refused-before-posting ask is recorded.
+// with a text (the walk and the cut are the probability bucket's); whether a refused-before-posting ask is recorded.
 
 const fs = require('fs');
 const os = require('os');

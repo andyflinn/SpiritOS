@@ -2938,7 +2938,7 @@ is never cut by either.
 > results."*
 
 **One ranking, not two.** Remembered rows go through the same graded match
-the relays use (`peerSearch.search`, `gradedSearch`, `SLOTS`) and the same
+the relays use (`peerSearch.search` and its `SLOTS`) and the same
 node-side filter and order (`hub.js:1965` drops `present === false`;
 `hub.js:2117` sorts). Exactly means the drop applies too: a peer
 remembered as *absent* is left out, one whose presence is unknown is not.

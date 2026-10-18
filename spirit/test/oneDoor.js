@@ -393,8 +393,8 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
 //   interface helpers. that is the whole point of interfaces. they must be
 //   opaque. their internal mechanics shouldn't even be reachable."
 //
-// The reach that a `fetch` tally cannot see. I gave peerSearch and
-// gradedSearch an `internal: {...}` bag holding eleven helpers, labelled
+// The reach that a `fetch` tally cannot see. I gave the old peer and
+// graded searches an `internal: {...}` bag holding eleven helpers, labelled
 // "for the suite alone" — an escape hatch with a note on it. Reachable is
 // reachable: a caller will eventually reach for the same reason a test
 // did, and a mechanic with a caller is a mechanic that cannot change,

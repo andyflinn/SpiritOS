@@ -7,7 +7,7 @@
 //     label: name}], more}. Names only; the description, request and reply are AGENTS.<verb>'s.
 //   - With no words every verb with a file, in name order. With words each verb is ranked by the probability modules:
 //     its name weighs 2/3, its verb-description file 1/3; a verb matching neither is left out.
-//   - Cut by bytes to one answer through the probability bucket's serialize; no searchBucket in introSpector.
+//   - Cut by bytes to one answer through the probability bucket's serialize; no old graded search in introSpector.
 //   - deskAgent's tools ask it with text ''.
 //   - The node filters by the caller's grants: AGENTS.introspect lists only granted verbs, AGENTS.<verb> describes only
 //     a granted verb. The owner sees all. Per-persona and per-job grants are out of scope.

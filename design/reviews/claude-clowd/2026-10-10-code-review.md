@@ -85,9 +85,9 @@ Reproduced
 H9
 High
 A long search query stalls the relay's event loop for seconds
-js/gradedSearch.js:79-114, 168-239, 485-516; js/relay.js:3352
+the old graded search (deleted in goal/G29.22); js/relay.js:3352
 No cap on q. 1,000 rows against "a ".repeat(1000) took 7.3 s, 8,000 chars took 30.5 s; partners get the same query
-Cap the query (about 128 bytes, 8 tokens) in gradedSearch.open; compute matchTokens once per row
+Cap the query (about 128 bytes, 8 tokens) where the search opens; compute matchTokens once per row
 Measured
 Medium
 Thirty-one findings, grouped by area. "Reproduced" means a scratch script showed it; the rest were confirmed by reading.

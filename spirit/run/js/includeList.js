@@ -121,18 +121,18 @@ function seedOnce(rootDir) {
 
 // ── config.searchModules: WHAT THIS NODE INCLUDES, AS A SEARCH ───────
 //
-// Andy: "there are no (complete) lists, only searches". Through searchBucket
-// like every search; an empty query is everything, as '**', since a single
-// '*' never spans the '/' every path holds (gradedSearch.js).
+// Andy: "there are no (complete) lists, only searches". Since goal/G29.22 on
+// the probability modules: every module, ranked by the words over its path,
+// sorted order among equals, cut by bytes; no words (or '*') is every module.
 function search(rootDir, query, maxBytes) {
-  const q = String(query == null ? '' : query).trim();
-  const bucket = require('./searchBucket').createSearch({
-    query: q || '**', maxBytes: maxBytes,
-    getLabelStringFromIncomingObject: function (p) { return p; },
-    extractKeyAndLabelFromRow: function (p) { return { key: p, label: p }; },
-  });
-  for (const p of paths(rootDir)) { if (!bucket.offer(p)) break; }
-  return bucket.getResult();
+  const words = String(query == null ? '' : query).trim();
+  const q = words === '*' || words === '**' ? '' : words;
+  const bucket = require('./probabilityBucket').createProbabilityBucket(Infinity);
+  const match = require('./probabilityStringMatch').probabilityStringMatch;
+  for (const p of paths(rootDir)) bucket.seatFor(q ? match(q, p) : 0, { key: p, label: p });
+  const room = typeof maxBytes === 'number' && maxBytes > 0 ? maxBytes : require('./limits').PLAINTEXT_MAX;
+  const r = bucket.serialize(null, room);
+  return { items: r.items, more: !!r.more };
 }
 
 module.exports = { paths: paths, includes: includes, add: add, remove: remove, seedOnce: seedOnce, search: search, isPath: isPath };

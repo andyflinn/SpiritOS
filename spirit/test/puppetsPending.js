@@ -121,8 +121,8 @@ test.subHeading('one return bound, both paths');
   // own :127 against its :146. The nameable unit is the shared helper
   // every collection verb answers through, because a per-verb
   // implementation is the duplication the probe exists to catch.
-  // SLICE 1 IS BUILT: searchBucket.js, createSearch(opts).getResult(),
-  // at ff22e8c, asserted by sharedSearch.js. What G2 still owes is the rest
+  // SLICE 1 WAS BUILT at ff22e8c, a shared search helper, since replaced
+  // by the probability modules (goal/G29.22). What G2 still owes is the rest
   // of Andy's order: "replace the getList interface flat-out , with
   // \"search\" and KILL the replaced verb".
   //
@@ -136,7 +136,7 @@ test.subHeading('one return bound, both paths');
   const stillLists = listBlock ? (listBlock[1].match(/'([a-z]+\.[a-zA-Z]+)'/g) || []).map(function (q) { return q.slice(1, -1); }) : null;
   test.awaiting('puppets/G2', 'no verb answers with a list: each is search + get', stillLists !== null && stillLists.length === 0,
     'still answering with a list (everyVerb.js LISTS_TODAY): ' + (stillLists ? stillLists.join(', ') : 'LISTS_TODAY NOT FOUND') +
-    '. Each becomes search(label) giving key/label pairs through searchBucket.js, plus get(key), and the ' +
+    '. Each becomes search(label) giving key/label pairs through the probability bucket, plus get(key), and the ' +
     'apps that call it change in the same commit',
     { there: 50, cost: 'a sitting per collection, after Andy\'s yes on the verb list' });
 

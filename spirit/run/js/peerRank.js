@@ -3,8 +3,8 @@
 // spirit/run/js/peerRank.js
 // THE PEER SEARCH'S ONE RANKER, ON THE PROBABILITY MODULES (goal/G29.17).
 //
-//   The item's box: "Each relay ranks its members with the probability modules and answers a capped list; the old
-//   graded search (peerSearch.js, gradedSearch.js) goes. The node merges the relays' answers with the same modules."
+//   The item's box: "Each relay ranks its members with the probability modules and answers a capped list. The node
+//   merges the relays' answers with the same modules."
 //
 // A relay ranks its connected members with it, and the node ranks what the relays and its memory answered with it, so
 // one name scores the same wherever it is ranked. A peer is matched on its public label and nothing else: a key is

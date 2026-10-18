@@ -297,9 +297,10 @@ async function booted(port) {
     if (found.status === 200 && items && keys.indexOf('process/js/alpha') !== -1 && typeof found.body.more === 'boolean') {
       test.check('config.searchModules {query: \'\'} -> {items, more}, process/js/alpha among the items');
     } else test.fail(OWED + 'config.searchModules answered ' + found.status + ' ' + String(found.text).slice(0, 160));
+    // goal/G29.22: the search ranks, it does not filter; words that match nothing still answer every module, in order.
     const narrow = await call(port, { verb: 'config.searchModules', query: 'zzz-none' });
-    const none = narrow.body && Array.isArray(narrow.body.items) ? narrow.body.items : null;
-    if (narrow.status === 200 && none && none.length === 0) test.check('a query nothing matches finds nothing');
+    const none = narrow.body && Array.isArray(narrow.body.items) ? narrow.body.items.map(function (i) { return i.key; }) : null;
+    if (narrow.status === 200 && none && none.length === keys.length && none.join() === keys.join()) test.check('a query nothing matches still answers every module, in order');
     else test.fail(OWED + 'a query matching nothing answered ' + narrow.status + ' ' + String(narrow.text).slice(0, 120));
 
     test.subHeading('Switched off, it leaves the list (and stops at the next restart)');

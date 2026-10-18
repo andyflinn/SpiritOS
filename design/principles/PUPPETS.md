@@ -424,8 +424,8 @@ The argument and its measurements are in
 **No paging: search, and the bucket.** Andy, 2026-09-27, in Desk: *"all the
 same rules apply, list-subsets can be retrieved by search, as always. and
 the bucket-toolset is available everywhere."* A list longer than the cap
-answers with what fits, bounded by the bucket (`bucket.js`) with its
-partial flag, and the requester narrows by searching (G2's shared search:
+answers with what fits, bounded by the bucket (probabilityBucket since
+goal/G29.22) with its partial flag, and the requester narrows by searching (G2's shared search:
 a scan by key and an extractor per collection). That is the requester
 being responsible, never a page cursor handed out by the answerer. (claude's
 explanation under the row had said "paging", which was wrong.)
@@ -469,8 +469,8 @@ wsl-claude on Andy's "go."). Citations at `6637c75`.
    *"replace the getList interface flat-out , with \"search\" and KILL
    the replaced verb"*.
 2. **The bucket never scans.** *"i doubt that bucket scans itself,
-   that's a can of worms ... the priority sequence can only be known by
-   the user of bucket.js"*. The collection walks its own data in its
+   that's a can of worms"*: only the bucket's user knows the priority
+   sequence. The collection walks its own data in its
    own priority order and hands objects to the bucket. It stops at
    `MAX_SEARCHED_ITEMS` (*"you may name the limit however you want"*;
    today that limit is `searchMemoryRows`, `nodeSettings.js:60`
@@ -489,15 +489,16 @@ wsl-claude on Andy's "go."). Citations at `6637c75`.
    before counting strangers. That changes.
 5. **Bytes only.** *"the cap IS measure in bytes only"*, and
    *"the getResult() call on the bucket is what creates the byte-limited
-   json result"*. The call exists as `serialize(map, maxBytes)`
-   (`bucket.js:147`), has no caller, and counts characters, not bytes:
-   `bucket.js:156` `if (JSON.stringify(next).length > ceiling)`. It
-   becomes `getResult()`, counting UTF-8 bytes.
+   json result"*. The call then existed in the old bucket as
+   `serialize(map, maxBytes)`, had no caller, and counted characters, not
+   bytes. It becomes `getResult()`, counting UTF-8 bytes. (The old bucket
+   is gone since goal/G29.22; probabilityBucket's serialize replaces it.)
 6. **`more` tells the whole truth.** It is true when the bucket turned
    an object away, when `getResult()` cut to fit, AND when the walk
    stopped at `MAX_SEARCHED_ITEMS` with objects left unchecked (wsl-claude,
    accepted as part of the design Andy called *"fairly clean"*).
-7. **The work, in Andy's four parts:** complete `bucket.js`; move every
+7. **The work, in Andy's four parts:** complete the bucket (now
+   probabilityBucket); move every
    node and relay collection verb onto it; give every shell app a search
    box over its list; adapt the suites, including G3's every-verb suite.
    A collection's verb and the apps that call it change in one commit,

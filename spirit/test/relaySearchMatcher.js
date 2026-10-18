@@ -3,7 +3,7 @@
 // spirit/test/relaySearchMatcher.js
 // goal/G19.17: relay.search ranks the node's relays with probabilityStringObjectMatch, as the desk ranks its items.
 //
-// THE ITEM, AS FOUND: relay.search (hub.js) matched its own way, through searchBucket and gradedSearch, while the
+// THE ITEM, AS FOUND: relay.search (hub.js) matched its own way, through the old graded search, while the
 // desk (process/js/desk/desk.js) had moved onto the probabilit* modules (goal/G18.5). A '*' never spans the '/' of a
 // url, so a relay whose label is its url was left out of the answer; and a claim lists a relay with its url as the
 // label (hub.js hands ownerBadge.addRelay an empty label, relayKeys.list falls back on the url), so a relay just
@@ -20,7 +20,7 @@
 //   4. The byte cap holds and `more` says when something was cut.
 //   5. An empty query lists every relay, in the node's list order.
 //   6. The answer keeps its shape {ok, items:[{key,label}], more, mustPick, name}.
-//   7. hub.js ranks with probabilityStringObjectMatch and probabilityBucket, and relay.search no longer uses searchBucket.
+//   7. hub.js ranks with probabilityStringObjectMatch and probabilityBucket, and relay.search no longer uses the old graded search.
 //
 // The relays are unreachable loopback ports, so each makes an offline row without any relay having to be up.
 // Temp roots of this suite's own.
