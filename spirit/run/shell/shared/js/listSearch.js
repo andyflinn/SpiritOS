@@ -209,7 +209,9 @@
         var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
         // The number shown is the bar's own: 1.00 for the best row (Andy: "why would the top not be fucking 1.0?").
         return '<td class="list-rank" style="width:5em" title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '">' +
-          '<div style="width:' + pct + '%;margin-left:auto;height:0.6em;border-radius:3px;background:rgba(120,190,255,0.75)"></div></td>';
+          // A SOLID BORDER, NOT A BACKGROUND (Andy, 2026-10-18: "score bars STILL NOT SEEN", while the marks showed): a
+          // background-only bar is dropped by contrast themes; the bar is the marks' yellow, 0.8em tall.
+          '<div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid rgb(255,230,0)"></div></td>';
       }
       var list = el('list');
       if (list) {
