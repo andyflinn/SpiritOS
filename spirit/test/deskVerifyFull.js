@@ -86,7 +86,8 @@ async function deskHalf() {
   try {
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
     await sleep(500);
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'fe/G1', title: 'Empties' }, items: [{ id: 'fe/G1.1', title: 'One', blocks: ['fe/G1'] }, { id: 'fe/G1.2', title: 'Two', blocks: ['fe/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'fe/G1', title: 'Empties' }, items: [{ id: 'fe/G1.1', title: 'One', blocks: ['fe/G1'] }, { id: 'fe/G1.2', title: 'Two', blocks: ['fe/G1'] }] }) }, ANDY);
     await d.call('press', { id: 'fe/G1', what: 'end-design' }, ANDY);
     const emptied = async function () {
       const ch = (await d.call('changes', { n: 0, line: 0 }, ANDY)).body || {};
@@ -117,7 +118,8 @@ async function deskHalf() {
     else test.fail(OWED + 'after the goal\'s pass its status reads ' + short(g2.status));
 
     // The same for an item: an agent's verify pass, deskVerify's rejection and its pass each set the status word.
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'fs/G1', title: 'Status' }, items: [{ id: 'fs/G1.1', title: 'Code', blocks: ['fs/G1'], code: true }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'fs/G1', title: 'Status' }, items: [{ id: 'fs/G1.1', title: 'Code', blocks: ['fs/G1'], code: true }] }) }, ANDY);
     await d.call('press', { id: 'fs/G1', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'fs/G1.1', what: 'go' }, ANDY);
     const WSLX = { key: 'MCowBQYDK2VwAyEAdeskVerifyFullTestWSLAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };

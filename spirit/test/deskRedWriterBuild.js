@@ -61,10 +61,11 @@ async function partA() {
   const call = function (v, args, caller) { const q = {}; q[v] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'm/G1', title: 'May' }, items: [
     { id: 'm/G1.1', title: 'Code', blocks: ['m/G1'], code: true },
     { id: 'm/G1.2', title: 'Decision', blocks: ['m/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   await call('press', { id: 'm/G1', what: 'end-design' }, ANDY);
   await call('press', { id: 'm/G1.1', what: 'go' }, ANDY);
   await call('press', { id: 'm/G1.2', what: 'go' }, ANDY);

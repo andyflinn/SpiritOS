@@ -615,10 +615,18 @@ function addressOf(s, text) {
 
 // AN AGENT ADDS ITEMS ONLY UNDER HIS WORDS (goal/G29.21). Andy, 2026-10-18, decided, in the item's box: Desk lets an
 // agent add items only while his newest Desk line holds "add item" (one item) or "add items" (several) in sequence, and
-// the grant ends with his next line. Proposing items stays free. What his line grants: -1 several, 1 one, 0 none.
+// the grant ends with his next line. Proposing items stays free. What his line grants: -1 several, 1 one, 0 none; and
+// only in the goal the line was written in (decided by Andy, 2026-10-19: the items go to THAT goal), kept as
+// addGrantGoal.
 function addGrantOf(text) {
   if (/\badd\s+items\b/i.test(String(text))) return -1;
   return /\badd\s+item\b/i.test(String(text)) ? 1 : 0;
+}
+// His "add goal" grants an agent one goal and no items (goal/G29.21, decided by Andy), until his next line.
+function goalGrantOf(text) { return /\badd\s+goal\b/i.test(String(text)) ? 1 : 0; }
+// How many items a session brings that the desk does not hold yet.
+function newItemsOf(s, sess) {
+  return (Array.isArray(sess.items) ? sess.items : []).filter(function (x) { const id = String((x && x.id) || ''); return id && !s.items[id]; }).length;
 }
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
@@ -696,6 +704,8 @@ function apply(s, r, b, item, goalOf) {
       const sess = b.session;
       const gid = String(sess.goal.id);
       const fresh = !s.goals[gid];
+      // goal/G29.21: an agent's new items spend his "add item" grant.
+      if (r.by !== 'andy' && r.by !== 'desk' && s.addGrant > 0 && newItemsOf(s, sess)) s.addGrant = 0;
       const g = s.goals[gid] || (s.goals[gid] = { id: gid, design: true, abandoned: false, members: [] });
       const goalItem = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
       goalItem.title = String(sess.goal.title || goalItem.title);
@@ -790,7 +800,8 @@ function apply(s, r, b, item, goalOf) {
       const line = { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') };
       it.chat.push(line);
       // HIS NEWEST LINE GRANTS ITEM ADDS, OR ENDS THE GRANT (goal/G29.21).
-      if (r.by === 'andy') s.addGrant = addGrantOf(b.text);
+      // The item grant holds only for the goal his line is in: under the goal itself or one of its items.
+      if (r.by === 'andy') { s.addGrant = addGrantOf(b.text); s.addGrantGoal = it.goal ? it.id : it.goalId; s.goalGrant = goalGrantOf(b.text); }
       if (r.by === 'andy' && Array.isArray(b.to)) {
         // THE BINDING NICK (goal/G21.1): addressed at the write (addressOf), replayed from the record.
         line.to = b.to.map(String);
@@ -969,6 +980,8 @@ function apply(s, r, b, item, goalOf) {
       const gi = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
       gi.title = String(b.title || gi.title);
       gi.at = r.at;
+      // goal/G29.21: an agent's goal spends his "add goal".
+      if (r.by !== 'andy' && r.by !== 'desk' && s.goalGrant > 0) s.goalGrant -= 1;
       return;
     }
     case 'item.add': {
@@ -988,7 +1001,7 @@ function apply(s, r, b, item, goalOf) {
       if (g.members.indexOf(id) === -1) g.members.push(id);
       // goal/G29.21: code from the record (the handler decided it); an agent's add spends one of an "add item" grant.
       if (b.code === true && !one.subGoal) one.code = true;
-      if (r.by !== 'andy' && s.addGrant > 0) s.addGrant -= 1;
+      if (r.by !== 'andy' && r.by !== 'desk' && s.addGrant > 0) s.addGrant -= 1;
       return;
     }
     // HIS DELETE CLOSES IT AS A LEFT-OUT ONE IS CLOSED (goal/G9.7). Andy, 2026-10-07: "the button bar of items will
@@ -2316,7 +2329,15 @@ appServer.serve(withPlugins({
       const w = writerOf(caller);
       const sess = parsed(a.json);
       if (!sess.goal || !sess.goal.id || !Array.isArray(sess.items)) throw new Error('a session needs its goal and items');
-      return { change: write('session.set', { session: sess, by: w.by, key: w.key }).change };
+      return { change: write('session.set', { session: sess, by: w.by, key: w.key }, function (st) {
+        // goal/G29.21, decided by Andy: an agent's session creates no goal, and the new items it brings need his
+        // "add item" (one) or "add items" (several), as item.add does (addGrantOf).
+        if (w.by === 'andy') return;
+        if (!st.goals[String(sess.goal.id)]) throw refusedWhy('not-granted', 'an agent creates a goal only through goal.add, while Andy\'s newest line says "add goal"');
+        const fresh = newItemsOf(st, sess);
+        const here = st.addGrantGoal === String(sess.goal.id);
+        if (fresh && !(here && (st.addGrant === -1 || (st.addGrant === 1 && fresh === 1)))) throw refusedWhy('not-granted', 'this session brings ' + fresh + ' new item(s); an agent adds items only while Andy\'s newest line, written in this goal, says "add item" (one) or "add items" (several)');
+      }).change };
     },
   },
   // ONE GOAL, ONE ITEM, AND THE DESK NAMES IT (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and
@@ -2331,7 +2352,11 @@ appServer.serve(withPlugins({
       const title = String(a.title || '').trim();
       if (!title) throw refusedWhy('bad-request', 'a goal needs a title');
       const args = { title: title, by: w.by, key: w.key };
-      const r = write('goal.add', args, function (st) { args.minted = nextGoalId(st); });
+      const r = write('goal.add', args, function (st) {
+        // goal/G29.21, decided by Andy: an agent creates a goal only under his "add goal": one goal, no items.
+        if (w.by !== 'andy' && !(st.goalGrant > 0)) throw refusedWhy('not-granted', 'an agent creates a goal only while Andy\'s newest line says "add goal"; propose it to him instead');
+        args.minted = nextGoalId(st);
+      });
       return { id: args.minted, change: r.change };
     },
   },
@@ -2358,7 +2383,7 @@ appServer.serve(withPlugins({
       const r = write('item.add', args, function (st) {
         if (!st.goals[gid] || !st.items[gid]) throw refused('no-such-item');
         // AN AGENT ADDS UNDER HIS WORDS (goal/G29.21), decided by Andy: see addGrantOf.
-        if (w.by !== 'andy' && !st.addGrant) throw refusedWhy('not-granted', 'an agent adds an item only while Andy\'s newest line says "add item" (one) or "add items" (several); propose it to him instead');
+        if (w.by !== 'andy' && !(st.addGrant && st.addGrantGoal === gid)) throw refusedWhy('not-granted', 'an agent adds an item only while Andy\'s newest line, written in this goal, says "add item" (one) or "add items" (several); propose it to him instead');
         // A NEW ITEM IS CODE (goal/G29.21), unless its plugin refuses the code press (a vision item). Carried in the
         // record, so the items added before this replay as they were.
         args.code = !PLUGINS.some(function (p) { return !!pluginRefusal(p, 'press', { id: gid, what: 'code' }); });

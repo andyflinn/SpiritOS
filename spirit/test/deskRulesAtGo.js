@@ -86,10 +86,11 @@ function session(goal, title, items) {
   if (gone) await call('rule.version', { key: gone, text: 'This one is deleted.', status: 'deleted' }, ANDY);
   if (!design || !desk || !code || !ui || !gone || !(proposed && proposed.key)) { test.fail('the world: the rules were not made, ' + short([design, desk, code, ui, gone, proposed])); return; }
 
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', session('r/G1', 'Rules at Go', [
     { id: 'r/G1.1', title: 'A plain item', blocks: ['r/G1'] },
     { id: 'r/G1.2', title: 'A face item', blocks: ['r/G1'] },
-  ]), CW);
+  ]), ANDY);
   // The box is what names the paths a type is drawn from, so each item gets one before his Go.
   await call('box.write', { id: 'r/G1.1', version: 0, text: 'A decision, no path named at all.' }, CW);
   await call('box.write', { id: 'r/G1.2', version: 0, text: 'Where: spirit/run/shell/chatter/chatter.js' }, CW);
@@ -120,11 +121,12 @@ function session(goal, title, items) {
   const late = await activeRule('design', 'Plain english', 'Plain english is always preferred by this user.');
   if (!late) { test.fail('the world: the late rule was not made'); return; }
   await call('press', { id: 'r/G1', what: 'reopen' }, ANDY);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', session('r/G1', 'Rules at Go', [
     { id: 'r/G1.1', title: 'A plain item', blocks: ['r/G1'] },
     { id: 'r/G1.2', title: 'A face item', blocks: ['r/G1'] },
     { id: 'r/G1.3', title: 'Added after the reopening', blocks: ['r/G1'] },
-  ]), CW);
+  ]), ANDY);
   await call('box.write', { id: 'r/G1.3', version: 0, text: 'Added while the goal was closed and reopened.' }, CW);
   await call('press', { id: 'r/G1', what: 'end-design' }, ANDY);
   const go3 = await call('press', { id: 'r/G1.3', what: 'go' }, ANDY);

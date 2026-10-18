@@ -70,7 +70,8 @@ async function settled(pick) { for (let i = 0; i < 40; i++) { if (published.some
   await new Promise(function (r) { door.listen(0, '127.0.0.1', r); });
   const url = 'http://127.0.0.1:' + door.address().port + '/api/spirit';
   if (!await start(url)) { test.fail('the desk server did not start'); return; }
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'rc/G1', title: 'Rule chat' }, items: [{ id: 'rc/G1.1', title: 'Work', blocks: ['rc/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'rc/G1', title: 'Rule chat' }, items: [{ id: 'rc/G1.1', title: 'Work', blocks: ['rc/G1'] }] }) }, ANDY);
 
   test.subHeading('A. the other rule verbs publish the rule key (the contrast, green today)');
   const added = await call('rule.add', { type: 'desk', label: 'Questions as checks', text: 'A question goes on its item as a Q check.' }, CW);

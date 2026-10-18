@@ -40,7 +40,8 @@ const CW = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerCWAAAAAAAAAAAAAAAAAA=', lab
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskPanelsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Panels' }, items: [] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Panels' }, items: [] }) }, ANDY);
     await call('box.write', { id: 'p/G1', text: 'B'.repeat(6000), version: 0 }, CW);
     await call('check.add', { id: 'p/G1', kind: 'C', words: 'look', test: '' }, CW);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.

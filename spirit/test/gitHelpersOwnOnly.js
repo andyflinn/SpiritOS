@@ -39,6 +39,8 @@ const PUSH_ORIGIN = path.join(RUN, 'process', 'js', 'pushOrigin', 'pushOrigin.js
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
 const CW = { key: 'MCowBQYDK2VwAyEAgitHelpersTestPeerCWAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+// goal/G29.21: the owner writes the world, since an agent's session creates no goal.
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAgitHelpersTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 const ENV = Object.assign({}, process.env, { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t' });
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -228,7 +230,7 @@ test.startTest('goal/G19.6: the git helpers touch only what they put there thems
     });
     try {
       for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-      await client.ask({ desk: { 'session.set': { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Same' }, items: [{ id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }] }) } } }, CW).catch(function () { return null; });
+      await client.ask({ desk: { 'session.set': { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Same' }, items: [{ id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }] }) } } }, ANDY).catch(function () { return null; });
       const file = path.join(state, 'currentGoal.json');
       for (let i = 0; i < 30 && !fs.existsSync(file); i++) await sleep(100);
       let doc = null;

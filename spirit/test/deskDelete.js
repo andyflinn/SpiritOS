@@ -59,9 +59,10 @@ async function listed(includeClosed) {
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // A fresh goal arrives in design mode; d/G1.1 blocks d/G1.2.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'd/G1', title: 'Deletes' }, items: [
     { id: 'd/G1.1', title: 'To delete', blocks: ['d/G1', 'd/G1.2'] }, { id: 'd/G1.2', title: 'Waits on it', blocks: ['d/G1'] },
-    { id: 'd/G1.3', title: 'Kept', blocks: ['d/G1'] }] }) }, CW);
+    { id: 'd/G1.3', title: 'Kept', blocks: ['d/G1'] }] }) }, ANDY);
   await call('box.write', { id: 'd/G1.1', text: 'Its own words.', version: 0 }, CW);
   const g = await facts('d/G1');
   if (g.design === true && ((await facts('d/G1.2')).blocked || []).indexOf('d/G1.1') !== -1) test.check('the world: d/G1 in design mode, d/G1.2 waits on d/G1.1');

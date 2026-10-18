@@ -68,9 +68,10 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // A goal with one code item, his Go on it, and both agents live by having written.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'sg/G1', title: 'Signoff' }, items: [
     { id: 'sg/G1.1', title: 'A code item', blocks: ['sg/G1'], code: true },
-    { id: 'sg/G1.2', title: 'Another', blocks: ['sg/G1'], code: true }] }) }, CW);
+    { id: 'sg/G1.2', title: 'Another', blocks: ['sg/G1'], code: true }] }) }, ANDY);
   await call('press', { id: 'sg/G1', what: 'end-design' }, ANDY);
   await call('press', { id: 'sg/G1.1', what: 'go' }, ANDY);
   await call('agent.state', { word: 'working' }, CW);

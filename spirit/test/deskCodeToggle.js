@@ -114,17 +114,19 @@ async function item(id) { const r = await call('item.get', { id: id }, ANDY); re
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // THE WORLD: a goal with a plain item, a code item, and one he has split into a sub-goal.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'ct/G1', title: 'Code toggle' }, items: [
     { id: 'ct/G1.1', title: 'Plain', blocks: ['ct/G1'] },
     { id: 'ct/G1.2', title: 'A code item', blocks: ['ct/G1'], code: true },
     { id: 'ct/G1.3', title: 'Split later', blocks: ['ct/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'ct/G1', title: 'Code toggle' }, split: ['ct/G1.3'], items: [
     { id: 'ct/G1.1', title: 'Plain', blocks: ['ct/G1'] },
     { id: 'ct/G1.2', title: 'A code item', blocks: ['ct/G1'], code: true },
     { id: 'ct/G1.3', title: 'Split later', blocks: ['ct/G1'] },
     { id: 'ct/G1.4', title: 'Under the sub-goal' },
-  ] }) }, CW);
+  ] }) }, ANDY);
   const w1 = await item('ct/G1.1'); const w2 = await item('ct/G1.2'); const w3 = await item('ct/G1.3');
   if (w1.code === false && w2.code === true && w3.subGoal === true) test.check('the world: a plain item, a code item, and a sub-goal');
   else { test.fail('the world did not land: ' + short({ plain: w1.code, code: w2.code, sub: w3.subGoal })); return; }

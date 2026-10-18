@@ -80,7 +80,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desklinetake-'));
     if (!await waitUp()) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
     const items = ['lt/G1.1', 'lt/G1.2', 'lt/G1.3', 'lt/G1.4', 'lt/G1.5'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['lt/G1'] }; });
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'lt/G1', title: 'Line takes' }, items: items }) }, A);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'lt/G1', title: 'Line takes' }, items: items }) }, ANDY);
     await call('press', { id: 'lt/G1', what: 'end-design' }, ANDY);
     await call('agent.state', { word: 'listening' }, A);
     await call('agent.state', { word: 'listening' }, B);

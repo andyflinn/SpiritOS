@@ -101,12 +101,13 @@ async function deskHalf() {
     if (api.claim && api['AGENTS.claim']) test.check('the api lists claim, and its verb file tells the agents of it (AGENTS.claim)');
     else test.fail(OWED + 'the api lists ' + short(Object.keys(api).filter(function (k) { return /claim/.test(k); })));
 
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await d.call('session.set', { json: JSON.stringify({ goal: { id: 'cc/G1', title: 'Claims' }, items: [
       { id: 'cc/G1.1', title: 'Code with Go', blocks: ['cc/G1'], code: true },
       { id: 'cc/G1.2', title: 'Plain with Go', blocks: ['cc/G1'] },
       { id: 'cc/G1.3', title: 'Code without Go', blocks: ['cc/G1'], code: true },
       { id: 'cc/G1.4', title: 'Plain without Go', blocks: ['cc/G1'] },
-    ] }) }, CW);
+    ] }) }, ANDY);
     await d.call('press', { id: 'cc/G1', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'cc/G1.1', what: 'go' }, ANDY);
     await d.call('press', { id: 'cc/G1.2', what: 'go' }, ANDY);

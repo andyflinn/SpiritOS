@@ -50,7 +50,8 @@ function call(verb, args, headers) {
   kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   for (let i = 0; i < 60; i++) { await sleep(150); const r = await pipeRequest(pipe, 'POST', '/', '"api"', { type: 'application/json', timeoutMs: 1000 }).catch(function () { return null; }); if (r && r.status === 200) break; }
 
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Goal' }, items: [{ id: 'k/G1.1', title: 'A', blocks: ['k/G1'] }] }) }, MEMBER);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Goal' }, items: [{ id: 'k/G1.1', title: 'A', blocks: ['k/G1'] }] }) }, OWNER);
 
   test.subHeading('a member\'s write is tracked by its key and shown by its label');
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.

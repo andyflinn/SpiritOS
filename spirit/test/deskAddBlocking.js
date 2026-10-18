@@ -59,10 +59,11 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
 
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G3', title: 'Old' }, items: [
-    { id: 'goal/G3.1', title: 'One', blocks: ['goal/G3'] }] }) }, CW);
+    { id: 'goal/G3.1', title: 'One', blocks: ['goal/G3'] }] }) }, ANDY);
   await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G5', title: 'Elsewhere' }, items: [
-    { id: 'goal/G5.1', title: 'Other goal', blocks: ['goal/G5'] }] }) }, CW);
+    { id: 'goal/G5.1', title: 'Other goal', blocks: ['goal/G5'] }] }) }, ANDY);
   const plain = await call('item.add', { goal: 'goal/G3', title: 'Plain' }, ANDY);
   if (took(plain) && same((await facts(plain.body.id)).blocking, ['goal/G3'])) test.check('the world: item.add without blocks blocks its goal (goal/G9.9)');
   else { test.fail('the world: a plain item.add answered ' + plain.status + ' ' + short(plain.body)); return; }

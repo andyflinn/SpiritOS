@@ -68,12 +68,13 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'cq/G1', title: 'Questions' }, items: [
     { id: 'cq/G1.1', title: 'Asked', blocks: ['cq/G1'] },
     { id: 'cq/G1.2', title: 'Not asked', blocks: ['cq/G1'] },
     { id: 'cq/G1.3', title: 'Twice', blocks: ['cq/G1'] },
     { id: 'cq/G1.4', title: 'His own', blocks: ['cq/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   // SINCE goal/G18.8 AN AGENT WRITES ONLY WHERE IT HOLDS THE ITEM OR THE TAKE OF HIS LINE: wsl-claude holds the items
   // it asks under; on cq/G1.3 claude-windows answers a line of his it has taken.
   // Since goal/G21.4 an agent holds one task at a time: wsl-claude takes each item as it gets to it (hold), letting the

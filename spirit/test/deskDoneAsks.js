@@ -48,9 +48,10 @@ test.startTest('goal/G4.26: an offered Done lights his ❌ once every agent invo
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'd/G1', title: 'Done' }, items: [
       { id: 'd/G1.1', title: 'Two takers', blocks: ['d/G1'] }, { id: 'd/G1.2', title: 'Nobody took it', blocks: ['d/G1'] },
-      { id: 'd/G1.3', title: 'Only Go', blocks: ['d/G1'] }] }) }, CW);
+      { id: 'd/G1.3', title: 'Only Go', blocks: ['d/G1'] }] }) }, ANDY);
     await call('press', { id: 'd/G1', what: 'end-design' }, ANDY);
 
     test.subHeading('3. an offered Go counts nothing');

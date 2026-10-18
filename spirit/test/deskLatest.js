@@ -60,9 +60,10 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
 
   // ── G3.4: Go all ──────────────────────────────────────────────────────
   // A goal with three items: A and B unblocked, C blocked by A.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Fixing round' }, items: [
     { id: 'g/G1.1', title: 'A', blocks: ['g/G1.3'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }, { id: 'g/G1.3', title: 'C', blocks: ['g/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   test.subHeading('G3.4: the goal offers Go all only once design has ended');
   let by = await items();
   if (by['g/G1'] && !has(by['g/G1'], 'go-all')) test.check('in design mode the goal offers no Go all');
@@ -117,7 +118,8 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   else test.fail(G32 + 'with the current goal closed the List holds ' + JSON.stringify(ids.map(function (id) { return [id, by[id].status, by[id].buttons]; })));
 
   test.subHeading('G3.2: an abandoned goal stays invisible');
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G2', title: 'Dropped' }, items: [{ id: 'g/G2.1', title: 'D', blocks: ['g/G2'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G2', title: 'Dropped' }, items: [{ id: 'g/G2.1', title: 'D', blocks: ['g/G2'] }] }) }, ANDY);
   await press('g/G2', 'abandon');
   by = await items();
   if (!by['g/G2'] && !by['g/G2.1']) test.check('the abandoned current goal and its item are not listed');
@@ -127,7 +129,8 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   // Andy pressed desk/G2's Go! and asked what it meant (claude-windows, records 48-50); desk/G3 offered it again.
   test.subHeading('G3.7: a goal never offers Go!, even with every item done');
   const G37 = 'OWED by desk/G3.7: ';
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G3', title: 'Short round' }, items: [{ id: 'g/G3.1', title: 'E', blocks: ['g/G3'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G3', title: 'Short round' }, items: [{ id: 'g/G3.1', title: 'E', blocks: ['g/G3'] }] }) }, ANDY);
   await press('g/G3', 'end-design');
   await press('g/G3.1', 'go');
   await press('g/G3.1', 'claim-done', WSL);

@@ -56,12 +56,13 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
     kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) return; } catch (e) { /* not yet */ } }
   };
-  const session = function (ids) {
-    return call('session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Archive' }, items: ids.map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['a/G1'] }; }) }) }, CW);
+  const session = function (ids, caller) {
+    return call('session.set', { json: JSON.stringify({ goal: { id: 'a/G1', title: 'Archive' }, items: ids.map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['a/G1'] }; }) }) }, caller || CW);
   };
   try {
     await start();
-    await session(['a/G1.1', 'a/G1.2', 'a/G1.3']);
+    // goal/G29.21: an agent's session creates no goal, so Andy writes the world; cw's later session brings no new item.
+    await session(['a/G1.1', 'a/G1.2', 'a/G1.3'], ANDY);
     await call('press', { id: 'a/G1', what: 'end-design' }, ANDY);
     await call('press', { id: 'a/G1.1', what: 'go' }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.

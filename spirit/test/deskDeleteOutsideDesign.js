@@ -58,13 +58,14 @@ async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // x/G1.1 a plain item never gone, x/G1.2 a code item whose red claude-windows will hold, x/G1.3 a plain item an
   // agent claims done, x/G1.4 a code item whose red is done and whose build nobody holds yet. x/G1.1 blocks x/G1.5.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'x/G1', title: 'Deletes out of design' }, items: [
     { id: 'x/G1.1', title: 'No longer serves', blocks: ['x/G1', 'x/G1.5'] },
     { id: 'x/G1.2', title: 'Red held', blocks: ['x/G1'], code: true },
     { id: 'x/G1.3', title: 'Claimed done', blocks: ['x/G1'] },
     { id: 'x/G1.4', title: 'Build open, unheld', blocks: ['x/G1'], code: true },
     { id: 'x/G1.5', title: 'Waits on x/G1.1', blocks: ['x/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   await call('box.write', { id: 'x/G1.1', text: 'Its own words.', version: 0 }, CW);
   await call('item.take', { id: 'x/G1.1' }, CW);
   await call('chat.add', { id: 'x/G1.1', text: 'claude-windows: a line under it.' }, CW);

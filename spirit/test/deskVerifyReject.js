@@ -69,7 +69,8 @@ async function deskHalf() {
   const d = server(DESK, 'desk');
   try {
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'rj/G1', title: 'Reject' }, items: [{ id: 'rj/G1.1', title: 'Built', blocks: ['rj/G1'], code: true }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'rj/G1', title: 'Reject' }, items: [{ id: 'rj/G1.1', title: 'Built', blocks: ['rj/G1'], code: true }] }) }, ANDY);
     await d.call('press', { id: 'rj/G1', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'rj/G1.1', what: 'go' }, ANDY);
     await d.call('phase.take', { id: 'rj/G1.1', phase: 'red' }, CW); await d.call('phase.done', { id: 'rj/G1.1', phase: 'red' }, CW);
@@ -119,7 +120,8 @@ async function deskOnNode() {
   try {
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
     await sleep(500);
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'rn/G1', title: 'On a node' }, items: [{ id: 'rn/G1.1', title: 'Built', blocks: ['rn/G1'], code: true }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'rn/G1', title: 'On a node' }, items: [{ id: 'rn/G1.1', title: 'Built', blocks: ['rn/G1'], code: true }] }) }, ANDY);
     await d.call('press', { id: 'rn/G1', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'rn/G1.1', what: 'go' }, ANDY);
     const round = async function () {

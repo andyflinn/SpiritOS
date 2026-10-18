@@ -125,11 +125,12 @@ function answerFor(buttons) {
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'w/G1', title: 'Waive' }, items: [
     { id: 'w/G1.1', title: 'One agent', blocks: ['w/G1'], code: true },
     { id: 'w/G1.2', title: 'His press', blocks: ['w/G1'], code: true },
     { id: 'w/G1.3', title: 'While the build runs', blocks: ['w/G1'], code: true },
-    { id: 'w/G1.4', title: 'No red yet', blocks: ['w/G1'], code: true }] }) }, CW);
+    { id: 'w/G1.4', title: 'No red yet', blocks: ['w/G1'], code: true }] }) }, ANDY);
   await call('press', { id: 'w/G1', what: 'end-design' }, ANDY);
   for (const id of ['w/G1.1', 'w/G1.2', 'w/G1.3', 'w/G1.4']) await call('press', { id: id, what: 'go' }, ANDY);
 

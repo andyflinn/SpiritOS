@@ -77,12 +77,13 @@ async function open(caller) {
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Queue' }, items: [
     { id: 'q/G1.1', title: 'Code item', blocks: ['q/G1'], code: true },
     { id: 'q/G1.2', title: 'A decision', blocks: ['q/G1'] },
     { id: 'q/G1.3', title: 'One agent alone', blocks: ['q/G1'], code: true },
     { id: 'q/G1.4', title: 'Goes stale', blocks: ['q/G1'], code: true },
-  ] }) }, CW);
+  ] }) }, ANDY);
   // A GOAL A session.set MAKES STARTS IN DESIGN (desk.js session.set), and Go is held back while it is on: end it first,
   // as deskLimbo does. Found by claude-windows building against e4bd1acb.
   const ended = await call('press', { id: 'q/G1', what: 'end-design' }, ANDY);

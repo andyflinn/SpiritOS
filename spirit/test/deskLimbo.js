@@ -68,10 +68,11 @@ test.startTest('goal/G5.4: limbo marker, sub-goal mark on split, sub-goal Go cas
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
 
     test.subHeading('1. limbo marker: go on record, no Done, no open G/Q, nobody working');
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'L/G1', title: 'Limbo' }, items: [
       { id: 'L/G1.1', title: 'Sits in limbo', blocks: ['L/G1'] },
       { id: 'L/G1.2', title: 'Taken and working', blocks: ['L/G1'] },
-      { id: 'L/G1.3', title: 'Has an open Q', blocks: ['L/G1'] }] }) }, CW);
+      { id: 'L/G1.3', title: 'Has an open Q', blocks: ['L/G1'] }] }) }, ANDY);
     await call('press', { id: 'L/G1', what: 'end-design' }, ANDY);
     await call('press', { id: 'L/G1.1', what: 'go' }, ANDY);
 
@@ -102,8 +103,9 @@ test.startTest('goal/G5.4: limbo marker, sub-goal mark on split, sub-goal Go cas
     else test.fail(OWED + 'L/G1.3 has an open Q but limbo is ' + short(qItem.limbo));
 
     test.subHeading('2. sub-goal mark: a split sets subGoal on the parent');
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'S/G1', title: 'Split' }, items: [
-      { id: 'S/G1.1', title: 'Parent, soon to be split', blocks: ['S/G1'] }] }) }, CW);
+      { id: 'S/G1.1', title: 'Parent, soon to be split', blocks: ['S/G1'] }] }) }, ANDY);
     await call('press', { id: 'S/G1', what: 'end-design' }, ANDY);
     const parentBefore = await factsOf('S/G1.1');
     if (parentBefore.subGoal === false) test.check('S/G1.1 before the split: facts.subGoal === false');
@@ -111,10 +113,11 @@ test.startTest('goal/G5.4: limbo marker, sub-goal mark on split, sub-goal Go cas
 
     // The split: a session.set keeps the parent, adds new items that block it, and names it in split (goal/G6.8:
     // "an item becomes a sub-goal only when i say split"; a new blocker alone marks nothing, deskSplitGreen asserts).
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'S/G1', title: 'Split' }, split: ['S/G1.1'], items: [
       { id: 'S/G1.1', title: 'Parent, soon to be split', blocks: ['S/G1'] },
       { id: 'S/G1.2', title: 'First blocker', blocks: ['S/G1.1'] },
-      { id: 'S/G1.3', title: 'Second blocker', blocks: ['S/G1.1'] }] }) }, CW);
+      { id: 'S/G1.3', title: 'Second blocker', blocks: ['S/G1.1'] }] }) }, ANDY);
     const parentAfter = await factsOf('S/G1.1');
     if (parentAfter.subGoal === true) test.check('S/G1.1 after the split (two blockers added): facts.subGoal === true');
     else test.fail(OWED + 'parent after the split: subGoal is ' + short(parentAfter.subGoal) + ' and blocked ' + short(parentAfter.blocked));
@@ -139,11 +142,12 @@ test.startTest('goal/G5.4: limbo marker, sub-goal mark on split, sub-goal Go cas
     // tree refuses the press and nothing moves, so the check would pass vacuously. We require
     // b1 and b2 to carry go first, so a build that silently cascades to every goal member is
     // caught, and today's refused tree reports it as owed, not as a pass.
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'S/G1', title: 'Split' }, items: [
       { id: 'S/G1.1', title: 'Parent, soon to be split', blocks: ['S/G1'] },
       { id: 'S/G1.2', title: 'First blocker', blocks: ['S/G1.1'] },
       { id: 'S/G1.3', title: 'Second blocker', blocks: ['S/G1.1'] },
-      { id: 'S/G1.4', title: 'Unrelated sibling', blocks: ['S/G1'] }] }) }, CW);
+      { id: 'S/G1.4', title: 'Unrelated sibling', blocks: ['S/G1'] }] }) }, ANDY);
     // S/G1.4 is brand new, so its go starts false; the earlier press on S/G1.1 ran before
     // it existed. Press again to see whether the cascade reaches it under the new session.
     await call('press', { id: 'S/G1.1', what: 'go' }, ANDY);

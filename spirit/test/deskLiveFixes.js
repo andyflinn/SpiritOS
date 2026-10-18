@@ -80,7 +80,8 @@ async function serverHalf() {
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'lf/G1', title: 'Live' }, items: [{ id: 'lf/G1.1', title: 'Plain', blocks: ['lf/G1'] }, { id: 'lf/G1.2', title: 'Core', blocks: ['lf/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'lf/G1', title: 'Live' }, items: [{ id: 'lf/G1.1', title: 'Plain', blocks: ['lf/G1'] }, { id: 'lf/G1.2', title: 'Core', blocks: ['lf/G1'] }] }) }, ANDY);
     await call('press', { id: 'lf/G1', what: 'end-design' }, ANDY);
     await call('press', { id: 'lf/G1.1', what: 'go' }, ANDY);
     await call('press', { id: 'lf/G1.2', what: 'go' }, ANDY);
@@ -120,11 +121,12 @@ async function serverHalf() {
     test.subHeading('4. the desk searches rank by probability');
     const psm = require('../run/js/probabilityStringMatch.js').probabilityStringMatch;
     const psom = require('../run/js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 'sr/G1', title: 'Search' }, items: [
       { id: 'sr/G1.1', title: 'Apples and pears', blocks: ['sr/G1'] },
       { id: 'sr/G1.2', title: 'zebra crossing', blocks: ['sr/G1'] },
       { id: 'sr/G1.3', title: 'Plums', blocks: ['sr/G1'] },
-    ] }) }, CW);
+    ] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
     // Since goal/G21.4 an agent holds one task at a time: claude-windows lets lf/G1.2 go before it takes sr/G1.3.
     await call('item.release', { id: 'lf/G1.2' }, CW);

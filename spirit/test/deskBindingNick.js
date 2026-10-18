@@ -96,7 +96,8 @@ async function theServer() {
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await cursor();
     const items = ['b/G1.1', 'b/G1.2', 'b/G1.3', 'b/G1.4', 'b/G1.5', 'b/G1.6'].map(function (id) { return { id: id, title: 'Item ' + id, blocks: ['b/G1'] }; });
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'b/G1', title: 'Binding' }, items: items }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'b/G1', title: 'Binding' }, items: items }) }, ANDY);
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, WSL);
 

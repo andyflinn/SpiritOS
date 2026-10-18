@@ -70,8 +70,9 @@ async function openGrants(id) {
 
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'ft/G1', title: 'Files' }, items: [
-    { id: 'ft/G1.1', title: 'Touches files', blocks: ['ft/G1'] }, { id: 'ft/G1.2', title: 'Touches no core', blocks: ['ft/G1'] }] }) }, CW);
+    { id: 'ft/G1.1', title: 'Touches files', blocks: ['ft/G1'] }, { id: 'ft/G1.2', title: 'Touches no core', blocks: ['ft/G1'] }] }) }, ANDY);
   if ((await facts('ft/G1.1')).id === 'ft/G1.1') test.check('the world: two items');
   else { test.fail('the world did not land'); return; }
 

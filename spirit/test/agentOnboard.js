@@ -189,7 +189,8 @@ function pointAt(home, relayUrl, relayKey) {
   deskClient.register('desk', appClient.pipePathFor(andyHome, 'desk', process.platform, 'process'));
   const deskAsk = function (v, a, caller) { const q = {}; q[v] = a; return deskClient.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   await waitFor(function () { return deskAsk('state.get', {}, OTHER).then(function (r) { return r.status === 200; }); }, 15000);
-  await deskAsk('session.set', { json: JSON.stringify({ goal: { id: 'o/G1', title: 'Onboarding' }, items: [{ id: 'o/G1.1', title: 'Work', blocks: ['o/G1'] }] }) }, OTHER);
+  // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
+  await deskAsk('session.set', { json: JSON.stringify({ goal: { id: 'o/G1', title: 'Onboarding' }, items: [{ id: 'o/G1.1', title: 'Work', blocks: ['o/G1'] }] }) }, ANDY);
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
   await deskAsk('item.take', { id: 'o/G1.1' }, OTHER);
   const wrote = await deskAsk('chat.add', { id: 'o/G1.1', text: 'claude-windows was here first' }, OTHER);

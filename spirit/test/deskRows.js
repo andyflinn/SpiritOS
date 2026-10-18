@@ -111,8 +111,9 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     test.subHeading('the server: one publish carries every row the press changed');
     // A blocks B; B blocks the goal.
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1.2'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, CW);
+      { id: 'g/G1.1', title: 'A', blocks: ['g/G1.2'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
     if (set.status !== 200) test.fail('the session was not taken: ' + JSON.stringify(set));
     await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
     await sleep(300);

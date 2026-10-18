@@ -68,7 +68,8 @@ async function theServer() {
   let row = null;
   let kid = await start();
   try {
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Known' }, items: [{ id: 'k/G1.1', title: 'Talk', blocks: ['k/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Known' }, items: [{ id: 'k/G1.1', title: 'Talk', blocks: ['k/G1'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
     await call('item.take', { id: 'k/G1.1' }, GEMMA);
     await call('chat.add', { id: 'k/G1.1', text: 'gemma here, then gone' }, GEMMA);

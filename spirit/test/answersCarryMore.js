@@ -175,7 +175,8 @@ async function theDeskPath() {
   const port = node.address().port;
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'b/G1', title: 'Big' }, items: [{ id: 'b/G1.1', title: 'Long chat', blocks: ['b/G1'] }] }) }, AGENT);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 'b/G1', title: 'Big' }, items: [{ id: 'b/G1.1', title: 'Long chat', blocks: ['b/G1'] }] }) }, OWNER);
   // A desk with more records than one answer holds: forty lines of three hundred characters.
   for (let i = 0; i < 40; i++) await call('desk', 'chat.add', { id: 'b/G1.1', text: 'line ' + i + ' "quoted" ' + 'x'.repeat(290) }, AGENT);
   kids.push(spawn(process.execPath, [CLIENT, '{}', '--pipe', clientPipe, '--state', clientState], {

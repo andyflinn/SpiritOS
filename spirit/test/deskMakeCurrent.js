@@ -64,8 +64,9 @@ async function currentGoal() {
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // TWO GOALS, the second written last, so it is the current one by today's only rule.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'mc/G1', title: 'First' }, items: [{ id: 'mc/G1.1', title: 'One', blocks: ['mc/G1'] }] }) }, CW);
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'mc/G2', title: 'Second' }, items: [{ id: 'mc/G2.1', title: 'Two', blocks: ['mc/G2'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'mc/G1', title: 'First' }, items: [{ id: 'mc/G1.1', title: 'One', blocks: ['mc/G1'] }] }) }, ANDY);
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'mc/G2', title: 'Second' }, items: [{ id: 'mc/G2.1', title: 'Two', blocks: ['mc/G2'] }] }) }, ANDY);
   const opened = await currentGoal();
   if (opened === 'mc/G2') test.check('the goal written last is the current one, as session.set leaves it');
   else { test.fail('the world: the current goal reads ' + short(opened) + ', expected mc/G2'); return; }
@@ -141,8 +142,9 @@ async function currentGoal() {
   const goalFile = path.join(twoState, 'currentGoal.json');
   const readFile = function () { try { return JSON.parse(fs.readFileSync(goalFile, 'utf8')); } catch (e) { return null; } };
   try {
-    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G1', title: 'First' }, items: [{ id: 'sh/G1.1', title: 'One', blocks: ['sh/G1'] }] }) }, CW);
-    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G2', title: 'Second' }, items: [{ id: 'sh/G2.1', title: 'Two', blocks: ['sh/G2'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G1', title: 'First' }, items: [{ id: 'sh/G1.1', title: 'One', blocks: ['sh/G1'] }] }) }, ANDY);
+    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G2', title: 'Second' }, items: [{ id: 'sh/G2.1', title: 'Two', blocks: ['sh/G2'] }] }) }, ANDY);
     await sleep(300);
     const before = readFile();
     if (before && before.goal === 'sh/G2') test.check('the file names the goal written last, sh/G2');

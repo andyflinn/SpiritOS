@@ -92,7 +92,8 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
     { id: 't/G1.1', title: 'Alpha', blocks: ['t/G1.2'] },
     { id: 't/G1.2', title: 'Beta', blocks: ['t/G1'] },
   ] };
-  await call('session.set', { json: JSON.stringify(session) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify(session) }, ANDY);
 
   test.subHeading('the session: rows, and nothing from before the redesign');
   let by = await items();

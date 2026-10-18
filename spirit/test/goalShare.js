@@ -192,7 +192,8 @@ async function theDesk(root, repo) {
   const checkoutBefore = fs.readFileSync(checkoutFile, 'utf8');
   const d = await run({ goalRepo: repo, goalPath: GOAL_PATH }, 'shared');
   try {
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [{ id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [{ id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, ANDY);
     await settleJobs(1);
     const onSession = created.length;
     await d.call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
@@ -227,8 +228,9 @@ async function theDesk(root, repo) {
 
   const bare = await run({}, 'bare');
   try {
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     const n0 = created.length;
-    await bare.call('session.set', { json: JSON.stringify({ goal: { id: 'h/G1', title: 'Quiet' }, items: [{ id: 'h/G1.1', title: 'A', blocks: ['h/G1'] }] }) }, CW);
+    await bare.call('session.set', { json: JSON.stringify({ goal: { id: 'h/G1', title: 'Quiet' }, items: [{ id: 'h/G1.1', title: 'A', blocks: ['h/G1'] }] }) }, ANDY);
     await bare.call('press', { id: 'h/G1', what: 'end-design' }, ANDY);
     await bare.call('press', { id: 'h/G1.1', what: 'go' }, ANDY);
     await sleep(800);

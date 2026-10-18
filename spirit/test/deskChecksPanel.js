@@ -62,7 +62,8 @@ const WSL = { key: 'MCowBQYDK2VwAyEAdeskChecksPanelTestWSLAAAAAAAAAAAAAAAAAA=', 
 
 async function suite() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'cp/G1', title: 'Checks' }, items: [{ id: 'cp/G1.1', title: 'One', blocks: ['cp/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'cp/G1', title: 'Checks' }, items: [{ id: 'cp/G1.1', title: 'One', blocks: ['cp/G1'] }] }) }, ANDY);
   const first = await call('check.add', { id: 'cp/G1.1', kind: 'Q', words: 'A first question?', test: '' }, CW);
   if (took(first) && (await checks('cp/G1.1')).length === 1) test.check('the world: cp/G1.1 has one open Q');
   else { test.fail('the world: the first check.add answered ' + first.status + ' ' + short(first.body)); return; }
@@ -115,7 +116,8 @@ async function suite() {
   // SINCE goal/G21.2 NO CHAT LINE MAKES A Q, and the one sentence is asked of the Q itself: a check.add holding more
   // than one sentence is refused (deskRedQOnPurpose.js holds the rest).
   test.subHeading('2. since goal/G21.2 a chat line makes no Q, and a Q of more than one sentence is refused');
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'cp/G2', title: 'Lines' }, items: [{ id: 'cp/G2.1', title: 'Two', blocks: ['cp/G2'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'cp/G2', title: 'Lines' }, items: [{ id: 'cp/G2.1', title: 'Two', blocks: ['cp/G2'] }] }) }, ANDY);
   const line = 'cw: the first sentence states a fact. The second states another, at some length, so that the whole line is long. Is this the question?';
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
   await call('item.take', { id: 'cp/G2.1' }, CW);

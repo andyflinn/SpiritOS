@@ -60,9 +60,10 @@ async function currentGoal() {
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
   // THE WORLD, written the old way: goal/G3 with two items, and a goal of another area that must not count.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'other/G7', title: 'Another area' }, items: [] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'other/G7', title: 'Another area' }, items: [] }) }, ANDY);
   await call('session.set', { json: JSON.stringify({ goal: { id: 'goal/G3', title: 'Old' }, items: [
-    { id: 'goal/G3.1', title: 'One', blocks: ['goal/G3'] }, { id: 'goal/G3.2', title: 'Two', blocks: ['goal/G3'] }] }) }, CW);
+    { id: 'goal/G3.1', title: 'One', blocks: ['goal/G3'] }, { id: 'goal/G3.2', title: 'Two', blocks: ['goal/G3'] }] }) }, ANDY);
   if ((await facts('goal/G3.2')).id === 'goal/G3.2' && await currentGoal() === 'goal/G3') test.check('the world: goal/G3 with two items, current');
   else { test.fail('the world did not land: ' + short(await facts('goal/G3.2'))); return; }
 
@@ -74,6 +75,7 @@ async function currentGoal() {
   const gf = await facts('goal/G4');
   if (gf.id === 'goal/G4' && gf.title === 'Made by him' && gf.goal === '') test.check('goal/G4 is a goal, with his title');
   else test.fail(OWED + 'goal/G4 reads ' + short(gf));
+  await call('chat.add', { id: 'goal/G4', text: 'add goal' }, ANDY); // goal/G29.21: an agent's goal needs his "add goal"
   const g2 = await call('goal.add', { title: 'Made by an agent' }, CW);
   if (took(g2) && g2.body.id === 'goal/G5') test.check('an agent\'s goal.add answers goal/G5: the same verb, the next id');
   else test.fail(OWED + 'the agent\'s goal.add answered ' + g2.status + ' ' + short(g2.body));

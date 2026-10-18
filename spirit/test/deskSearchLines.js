@@ -52,10 +52,11 @@ test.startTest('goal/G4.24 point 2: the List search matches chat lines and the b
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await call('session.set', { json: JSON.stringify({ goal: { id: 's/G1', title: 'Search' }, items: [
       { id: 's/G1.1', title: 'Alpha', blocks: ['s/G1'] },
       { id: 's/G1.2', title: 'Beta', blocks: ['s/G1'] },
-      { id: 's/G1.3', title: 'Gamma', blocks: ['s/G1'] }] }) }, CW);
+      { id: 's/G1.3', title: 'Gamma', blocks: ['s/G1'] }] }) }, ANDY);
     // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.
     await call('item.take', { id: 's/G1.2' }, CW);
     await call('chat.add', { id: 's/G1.2', text: 'we tested the fs-watch library here' }, CW);

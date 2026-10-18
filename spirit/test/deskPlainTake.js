@@ -55,10 +55,11 @@ function ok(r) { return r && r.status === 200; }
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'Takes' }, items: [
     { id: 't/G1.1', title: 'Taken plainly, then phased', blocks: ['t/G1'], code: true },
     { id: 't/G1.2', title: 'Taken plainly, then left', blocks: ['t/G1'], code: true },
-  ] }) }, CW);
+  ] }) }, ANDY);
   const ended = await call('press', { id: 't/G1', what: 'end-design' }, ANDY);
   const gos = [];
   for (const id of ['t/G1.1', 't/G1.2']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);

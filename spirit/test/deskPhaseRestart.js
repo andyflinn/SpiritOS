@@ -74,10 +74,11 @@ async function cycle(redTaken) {
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'r/G1', title: 'Restart' }, items: [
     { id: ID, title: 'Code item', blocks: ['r/G1'], code: true },
     { id: 'r/G1.2', title: 'A decision', blocks: ['r/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   const ended = await call('press', { id: 'r/G1', what: 'end-design' }, ANDY);
   const go1 = await call('press', { id: ID, what: 'go' }, ANDY);
   const go2 = await call('press', { id: 'r/G1.2', what: 'go' }, ANDY);

@@ -117,7 +117,8 @@ async function main() {
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
-  await desk('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Scopes' }, items: [{ id: 'k/G1.1', title: 'Work', blocks: ['k/G1'] }] }) }, SELF_AT_DESK);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await desk('session.set', { json: JSON.stringify({ goal: { id: 'k/G1', title: 'Scopes' }, items: [{ id: 'k/G1.1', title: 'Work', blocks: ['k/G1'] }] }) }, ANDY);
   await desk('press', { id: 'k/G1', what: 'end-design' }, ANDY);
   await desk('press', { id: 'k/G1.1', what: 'go' }, ANDY);
 

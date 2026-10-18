@@ -112,7 +112,8 @@ async function deskHalf() {
     await sleep(600);
 
     // A REOPENED GOAL WAITS FOR A FRESH RUN (fix 2).
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'dg/G1', title: 'Reopen' }, items: [{ id: 'dg/G1.1', title: 'One', blocks: ['dg/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'dg/G1', title: 'Reopen' }, items: [{ id: 'dg/G1.1', title: 'One', blocks: ['dg/G1'] }] }) }, ANDY);
     await d.call('press', { id: 'dg/G1', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'dg/G1.1', what: 'go' }, ANDY);
     await d.call('press', { id: 'dg/G1.1', what: 'claim-done' }, CW);
@@ -138,7 +139,8 @@ async function deskHalf() {
     else test.fail(OWED + 'verify.again on a goal answered ' + short(va.body) + '; record ' + short(vaRec));
 
     // verify.regress (the undo).
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'dg/G2', title: 'Regress' }, items: [{ id: 'dg/G2.1', title: 'Code', blocks: ['dg/G2'], code: true }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'dg/G2', title: 'Regress' }, items: [{ id: 'dg/G2.1', title: 'Code', blocks: ['dg/G2'], code: true }] }) }, ANDY);
     await d.call('press', { id: 'dg/G2', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'dg/G2.1', what: 'go' }, ANDY);
     const answers = [];
@@ -160,7 +162,8 @@ async function deskHalf() {
     const byAgent = await d.call('verify.regress', { id: 'dg/G2.1', why: 'spirit/test/zzX.js' }, CW);
     if (!took(byAgent) && byAgent.body && byAgent.body.code !== 'no-such-verb' && whyOf(byAgent)) test.check('verify.regress from an agent is refused, saying why (' + whyOf(byAgent) + ')');
     else test.fail(OWED + 'verify.regress from an agent answered ' + byAgent.status + ' ' + short(byAgent.body));
-    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'dg/G3', title: 'Open' }, items: [{ id: 'dg/G3.1', title: 'Open one', blocks: ['dg/G3'] }, { id: 'dg/G3.2', title: 'Closed one', blocks: ['dg/G3'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'dg/G3', title: 'Open' }, items: [{ id: 'dg/G3.1', title: 'Open one', blocks: ['dg/G3'] }, { id: 'dg/G3.2', title: 'Closed one', blocks: ['dg/G3'] }] }) }, ANDY);
     await d.call('press', { id: 'dg/G3', what: 'end-design' }, ANDY);
     await d.call('press', { id: 'dg/G3.2', what: 'close' }, ANDY);
     const onOpen = await d.call('verify.regress', { id: 'dg/G3.1', why: 'spirit/test/zzX.js' }, ANDY);

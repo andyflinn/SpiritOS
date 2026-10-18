@@ -62,17 +62,19 @@ const BASE = [
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  await call('session.set', { json: JSON.stringify({ goal: { id: G, title: 'Split' }, items: BASE }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: G, title: 'Split' }, items: BASE }) }, ANDY);
   const p0 = await facts(P);
   if (same(p0.blocking, [G, Q])) test.check('the world: ' + P + ' blocks the goal and ' + Q);
   else { test.fail('the world: ' + P + ' blocks ' + short(p0.blocking)); return; }
 
   // THE SPLIT: three new items, sent the three ways a session can send them.
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   const res = await call('session.set', { json: JSON.stringify({ goal: { id: G, title: 'Split' }, split: [P], items: BASE.concat([
     { id: 'sr/G1.3', title: 'New, the parent named', blocks: [P] },
     { id: 'sr/G1.4', title: 'New, nothing named' },
     { id: 'sr/G1.5', title: 'New, the implicit ones named too', blocks: [P, G, Q] },
-  ]) }) }, CW);
+  ]) }) }, ANDY);
   const marked = await facts(P);
   if (res.status === 200 && marked.subGoal === true) test.check('the split lands: ' + P + ' is a sub-goal');
   else { test.fail('the split did not land: ' + res.status + ' ' + short(res.body) + '; ' + P + ' ' + short(marked)); return; }

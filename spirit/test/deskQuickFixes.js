@@ -63,11 +63,12 @@ function heard(r) { return ((r.body && r.body.andy) || []).map(function (l) { re
 
 (async function () {
   if (!await start()) { test.fail('the desk server did not start'); return; }
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'q/G1', title: 'Quick fixes' }, items: [
     { id: 'q/G1.1', title: 'Limbo, quietly', blocks: ['q/G1'], code: true },
     { id: 'q/G1.2', title: 'A code item', blocks: ['q/G1'], code: true },
     { id: 'q/G1.3', title: 'A decision', blocks: ['q/G1'] },
-  ] }) }, CW);
+  ] }) }, ANDY);
   const ended = await call('press', { id: 'q/G1', what: 'end-design' }, ANDY);
   const go3 = await call('press', { id: 'q/G1.3', what: 'go' }, ANDY);
   if (!ok(ended) || !ok(go3)) { test.fail('the world: end-design ' + ended.status + ', Go ' + go3.status); return; }

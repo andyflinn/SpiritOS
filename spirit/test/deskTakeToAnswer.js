@@ -64,7 +64,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desktaketoanswer-'
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
     await sleep(500);
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'ta/G1', title: 'Takes' }, items: [{ id: 'ta/G1.1', title: 'Asked', blocks: ['ta/G1'] }, { id: 'ta/G1.2', title: 'Held', blocks: ['ta/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'ta/G1', title: 'Takes' }, items: [{ id: 'ta/G1.1', title: 'Asked', blocks: ['ta/G1'] }, { id: 'ta/G1.2', title: 'Held', blocks: ['ta/G1'] }] }) }, ANDY);
     // Both agents heard from once, as at a start (an agent never heard from is nobody the desk knows).
     await call('agent.state', { word: 'listening' }, CW);
     await call('agent.state', { word: 'listening' }, LEV);

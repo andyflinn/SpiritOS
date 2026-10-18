@@ -140,7 +140,8 @@ function clickTarget(attrs) {
   else test.fail('with a closed goal row, Start design sent ' + JSON.stringify(pressed2 || null));
 
   test.subHeading('G3.3: an item with a long chat still opens, with its newest lines');
-  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [{ id: 't/G1.1', title: 'Talky', blocks: ['t/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [{ id: 't/G1.1', title: 'Talky', blocks: ['t/G1'] }] }) }, ANDY);
   await call('box.write', { id: 't/G1.1', text: 'the box', version: 0 }, CW);
   const n = Math.ceil((appClient.ANSWER_MAX * 3) / 1000);
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line.

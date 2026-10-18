@@ -65,7 +65,8 @@ async function deskHalf() {
     let up = false;
     for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.desk && r.body.desk.ok !== false); } catch (e) { /* not yet */ } }
     if (!up) { test.fail('the world: the desk did not start'); return; }
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'cn/G1', title: 'Numbers' }, items: [{ id: 'cn/G1.1', title: 'Grants', blocks: ['cn/G1'] }] }) }, CW);
+    // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'cn/G1', title: 'Numbers' }, items: [{ id: 'cn/G1.1', title: 'Grants', blocks: ['cn/G1'] }] }) }, ANDY);
     await call('press', { id: 'cn/G1', what: 'end-design' }, ANDY);
     await call('press', { id: 'cn/G1.1', what: 'go' }, ANDY);
     await call('item.take', { id: 'cn/G1.1' }, CW);

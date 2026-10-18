@@ -133,7 +133,8 @@ async function main() {
 
   // An ordinary goal with an item, whose chat must never be answered; then four lines in the group chat, each at
   // its own moment.
-  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('desk', 'session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, ANDY);
   await call('desk', 'chat.add', { id: 't/G1.1', text: 'alpha in another item' }, ANDY);
   const said = [[ANDY, 'alpha one'], [CW, 'alpha two'], [WSL, 'beta three'], [ANDY, 'beta four']];
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line, the team chat too (Andy:

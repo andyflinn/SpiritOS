@@ -47,7 +47,8 @@ let kid = null;
 (async function () {
   kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'o/G1', title: 'Goal' }, items: [{ id: 'o/G1.1', title: 'Item', blocks: ['o/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'o/G1', title: 'Goal' }, items: [{ id: 'o/G1.1', title: 'Item', blocks: ['o/G1'] }] }) }, ANDY);
   // Since goal/G18.8 an agent writes only where it holds the item or the take of his line: wsl-claude holds o/G1.1.
   await call('item.take', { id: 'o/G1.1' }, WSL);
 
@@ -84,7 +85,8 @@ let kid = null;
   test.subHeading('every write that stores text refuses what could not come back, and keeps nothing');
   const writes = [
     ['log.add', { json: JSON.stringify({ key: 'big1', at: '2026-09-30T00:00:00Z', text: BIG }) }],
-    ['session.set', { json: JSON.stringify({ goal: { id: 'o/G2', title: BIG }, items: [] }) }, CW],
+    // goal/G29.21: an agent's session creates no goal, so his session carries the oversized title.
+    ['session.set', { json: JSON.stringify({ goal: { id: 'o/G2', title: BIG }, items: [] }) }, ANDY],
     ['check.add', { id: 'o/G1.1', kind: 'C', words: BIG, test: '' }, WSL],
     ['item.rename', { id: 'o/G1.1', title: BIG }, ANDY],
     ['item.status', { id: 'o/G1.1', word: BIG }, WSL],

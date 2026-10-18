@@ -61,7 +61,8 @@ async function version(id) { const r = await call('item.box', { id: id }, ANDY);
 
 async function server() {
   if (!await start()) { test.fail('the desk server did not start'); return; }
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'bt/G1', title: 'Boxes' }, items: [{ id: 'bt/G1.1', title: 'One', blocks: ['bt/G1'] }] }) }, CW);
+  // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'bt/G1', title: 'Boxes' }, items: [{ id: 'bt/G1.1', title: 'One', blocks: ['bt/G1'] }] }) }, ANDY);
   const first = await call('box.write', { id: 'bt/G1.1', text: 'First text.', version: 0 }, CW);
   if (took(first)) test.check('the world: bt/G1.1 has a box, version 1');
   else { test.fail('the world: the first box.write answered ' + first.status + ' ' + short(first.body)); return; }

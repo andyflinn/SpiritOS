@@ -63,7 +63,8 @@ function ok(r) { return r && r.status === 200; }
 function session(gid, items, split) {
   const s = { goal: { id: gid, title: gid }, items: items };
   if (split) s.split = split;
-  return call('session.set', { json: JSON.stringify(s) }, CW);
+  // goal/G29.21: an agent's session creates no goal and adds no item without his words, so Andy writes the sessions.
+  return call('session.set', { json: JSON.stringify(s) }, ANDY);
 }
 async function ask(id, words) {
   await call('check.add', { id: id, kind: 'Q', words: words, test: '' }, CW);

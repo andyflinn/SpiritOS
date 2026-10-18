@@ -181,7 +181,8 @@ async function main() {
   if (!deskRule || !codeRule || !uiRule) { test.fail('the world: rules could not be made: ' + short([deskRule, codeRule, uiRule])); return; }
 
   // A code item whose box names a core path (code) and no shell path (not ui).
-  await desk('session.set', { json: JSON.stringify({ goal: { id: 'j/G1', title: 'Jobs' }, items: [{ id: 'j/G1.1', title: 'A code job', blocks: ['j/G1'], code: true }] }) }, OTHER_AT_DESK);
+  // goal/G29.21: an agent's session creates no goal, so Andy writes the world.
+  await desk('session.set', { json: JSON.stringify({ goal: { id: 'j/G1', title: 'Jobs' }, items: [{ id: 'j/G1.1', title: 'A code job', blocks: ['j/G1'], code: true }] }) }, ANDY);
   const box = await desk('item.box', { id: 'j/G1.1' }, ANDY);
   await desk('box.write', { id: 'j/G1.1', text: 'Change spirit/run/js/router.js so the route expires sooner.', version: (box.body && box.body.version) || 0 }, OTHER_AT_DESK);
   await desk('press', { id: 'j/G1', what: 'end-design' }, ANDY);
