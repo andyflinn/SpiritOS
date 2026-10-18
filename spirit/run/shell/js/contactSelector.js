@@ -144,6 +144,8 @@
       pick: function (row) { pick(row); },
       details: typeof options.details === 'function' ? options.details : undefined,
       empty: options.empty || 'Nobody matches.',
+      // [None] in the name column, after the star and the presence cells (goal/G29.7).
+      noneAt: 2,
     });
 
     root.refresh = function () { list.refresh(); };

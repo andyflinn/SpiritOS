@@ -221,10 +221,20 @@
         // rest of the options otherwise they're not recognized....", "id rather have it at the top of the list as button
         // saying [None]", "it's a Select-thing"): a dropdown given options.all starts its list with [None], which chooses
         // nothing; while nothing is chosen its field reads that all text.
-        list.innerHTML = (dropdown && o.all ? '<button id="' + pre + 'none" type="button" style="margin-top:0.5em">None</button>' : '') + (rows.length
+        // In the labels' column when the list names it (options.noneAt, the cells before its labels; Andy: "in the
+        // contact selector, could you left-align the [None] button with the user labels?"): a row of its own, no pick.
+        var noneBtn = '<button id="' + pre + 'none" type="button">None</button>';
+        var noneInTable = dropdown && o.all && typeof o.noneAt === 'number';
+        var noneRow = '';
+        if (noneInTable) {
+          noneRow = '<tr class="list-none">' + (searching ? '<td></td>' : '');
+          for (var c = 0; c < o.noneAt; c++) noneRow += '<td></td>';
+          noneRow += '<td>' + noneBtn + '</td></tr>';
+        }
+        list.innerHTML = (dropdown && o.all && !noneInTable ? noneBtn.replace('type="button"', 'type="button" style="margin-top:0.5em"') : '') + ((rows.length || noneInTable)
           // IN A POPUP THE TABLE TAKES ITS OWN WIDTH (goal/G29.8): a table at 100% gives a popup sized by its rows nothing
           // to measure; the popup's own max-width keeps it inside the page.
-          ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '><tbody>' + rows.map(function (w) {
+          ? '<table class="jobs-table"' + (dropdown ? ' style="width:auto"' : '') + '><tbody>' + noneRow + rows.map(function (w) {
             // THE CURRENT ROW, DRAWN BY THE LIST, THE SAME EVERYWHERE (goal/G29.9): a slightly brighter background.
             var cur = w.key === currentKey;
             return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +
