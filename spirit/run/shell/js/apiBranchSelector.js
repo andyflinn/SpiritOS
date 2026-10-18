@@ -36,6 +36,11 @@
     var servers = window.spiritElements.createAppServerSelector({ placeholder: options.serverPlaceholder, all: options.all });
     var verbBox = document.createElement('span');
     verbBox.hidden = true;
+    // SIDE BY SIDE (goal/G29.7; Andy, 2026-10-18: "get those two selector, server and verb NEXT to each other, not
+    // stacked"): the pair is one inline row in the line it stands in.
+    root.style.display = 'inline-flex';
+    root.style.alignItems = 'center';
+    root.style.gap = '1em';
     root.appendChild(servers);
     root.appendChild(verbBox);
     root.server = '';

@@ -33,6 +33,8 @@
     options = options || {};
     var root = document.createElement('div');
     root.className = 'app-server-selector' + (options.className ? ' ' + options.className : '');
+    // An input control stands inline, never a block of its own (goal/G29.7: server and verb side by side).
+    root.style.display = 'inline-block';
     var host = document.createElement('span');
     root.appendChild(host);
     root.value = '';
