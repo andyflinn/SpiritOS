@@ -544,6 +544,10 @@ spirit.shell.activateApp({
           var peer = chPeer;
           if (!peer || !String(a.text || '').trim()) return Promise.resolve({ status: 200, body: { items: [], more: false } });
           return chAsk('chat.search', { peer: peer, text: String(a.text || ''), who: String(a.who || '') }).then(function (b) {
+            // EVERY LINE FOUND JOINS THE HISTORY (Andy, 2026-10-18: "all found lines are added to the chat, if they're
+            // missing, that won't hurt"), each by its time, while this chat is still the one open.
+            var found = chItemsToLines((b && b.items) || []);
+            if (peer === chPeer) found.forEach(function (l) { chUpsert(l); });
             var items = ((b && b.items) || []).map(function (it) {
               var l = {};
               try { l = JSON.parse(it.label); } catch (e) { l = {}; }
@@ -572,7 +576,7 @@ spirit.shell.activateApp({
       // A DROPDOWN, AND A PICK IS A LINE IN THE HISTORY (Andy, 2026-10-18: "can that chat history thing be a dropdown,
       // when a line is selected it inserts it's hole content into the shown chat history, if it's missing, and the
       // selected line becomes the currently selected line in the chat history?"): the line is put in its place by time
-      // when the window does not hold it (chUpsert), and becomes the current line.
+      // when the window does not hold it (chUpsert), and becomes the current line, the one a reply quotes (chSend).
       mode: 'dropdown',
       placeholder: 'search this chat…',
       pick: function (l) {
