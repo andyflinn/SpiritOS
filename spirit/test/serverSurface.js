@@ -49,7 +49,7 @@ const { setupRelayFakes } = require('./setupRelayFakes');
 
 const KEY_SENTINEL = 'SENTINEL-PRIVATE-KEY-must-never-be-served';
 const ENV_KEY_SENTINEL = 'SENTINEL-API-KEY-must-never-leave-the-box';
-// Andy's Grok key, allowlisted for api.x.ai only (grokReview, 2026-09-22).
+// Andy's Grok key (grokReview, 2026-09-22): grokReview and the key fill went with goal/G29.20; the sentinel only proves nothing leaks.
 const GROK_KEY_SENTINEL = 'SENTINEL-GROK-KEY-must-never-leave-the-box';
 const BOOT_TIMEOUT_MS = 10000;
 
@@ -319,68 +319,30 @@ freePort()
 
   // ---- 4. the proxy's env substitution is not scoped to a destination ----
   .then(function (port) {
-    test.subHeading('net.fetch does not hand the API key to any host named');
+    test.subHeading('net.fetch hands no API key to this machine: it does not reach it at all');
     return startSink().then(function (s) {
       sink = s;
-      // ── THE VERB, NOT THE ROUTE (2026-09-15) ────────────────────────
-      //
-      // This posted to /api/proxy. That route folded into the single
-      // loopback door as `net.fetch`, and pointing this at the new one is
-      // the mechanical half of the change.
-      //
-      // The half that matters: IT PASSED ANYWAY when the route vanished.
-      // A 405 means the proxy never ran, the sink saw nothing, `received`
-      // was '' — and '' took the "withheld the key" branch. The check
-      // read "nothing happened" as "the key was withheld", which is the
-      // most comfortable way for a security test to be wrong.
-      //
-      // So the first thing asserted now is that the sink was REACHED.
-      // Without it this can only fail by leaking; with it, it also fails
-      // by not happening.
-      return request(port, 'POST', '/api/spirit', {
-        verb: 'net.fetch',
-        url: 'http://127.0.0.1:' + s.port + '/v1/messages',
-        method: 'POST',
-        headers: { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}' },
-        body: { hello: 'world' },
-      }).then(function () {
-        if (s.seen.headers) {
-          test.check('net.fetch reached the host it was given — so what follows is about the key');
-        } else {
-          test.fail('net.fetch never reached the sink, so the key check below proves nothing. ' +
-            'The verb is not wired, or the door refused it.' + lastWords());
-        }
-
-        const received = (s.seen.headers && s.seen.headers['x-api-key']) || '';
-        if (received === ENV_KEY_SENTINEL) {
-          test.fail('net.fetch sent the real ANTHROPIC_API_KEY to an unrelated host');
-        } else if (received.indexOf('${ENV:') === 0 || received === '') {
-          test.check('and withheld the key from an unrelated host (sent ' + JSON.stringify(received) + ')');
-        } else {
-          test.check('and did not send the real key (sent ' + JSON.stringify(received) + ')');
-        }
-
-        // THE GROK KEY, THE SAME WAY (2026-09-22). A second name on the
-        // allowlist is a second secret that must not reach a host it is
-        // not paired with; the sink here is not api.x.ai.
-        s.seen.headers = null;
-        return request(port, 'POST', '/api/spirit', {
-          verb: 'net.fetch',
-          url: 'http://127.0.0.1:' + s.port + '/v1/responses',
-          method: 'POST',
-          headers: { Authorization: 'Bearer ${ENV:GROK_API_KEY}' },
-          body: { hello: 'world' },
-        }).then(function () {
-          const auth = (s.seen.headers && s.seen.headers.authorization) || '';
-          if (!s.seen.headers) {
-            test.fail('net.fetch never reached the sink for the Grok case, so it proves nothing' + lastWords());
-          } else if (auth.indexOf(GROK_KEY_SENTINEL) !== -1) {
-            test.fail('net.fetch sent the real GROK_API_KEY to a host that is not api.x.ai');
-          } else {
-            test.check('and withheld the Grok key from a host that is not api.x.ai (sent ' + JSON.stringify(auth) + ')');
-          }
-          return port;
-        });
+      // THE SINK IS ON THIS MACHINE, AND SINCE goal/G29.20 net.fetch DOES NOT REACH IT (Andy, 2026-10-18: "fetch will
+      // not be able to reach ports on this machine, and agents may use it."). This section proved the key withheld from
+      // an unrelated host by reading what the sink received; a sink on 127.0.0.1 now receives nothing, by the fence. So
+      // it asserts the refusal by name and that nothing arrived — never "nothing happened" read as "withheld" (the trap
+      // its 2026-09-15 note named): the 403 and its code are asserted first. Which key goes to which host is
+      // gone with goal/G29.20: net.fetch fills no key at all.
+      const ask = function (url, headers) {
+        return request(port, 'POST', '/api/spirit', { verb: 'net.fetch', url: url, method: 'POST', headers: headers, body: { hello: 'world' } });
+      };
+      return ask('http://127.0.0.1:' + s.port + '/v1/messages', { 'x-api-key': '${ENV:ANTHROPIC_API_KEY}' }).then(function (r) {
+        let body = null;
+        try { body = JSON.parse((r && (r.text || r.body)) || 'null'); } catch (e) { body = (r && r.body) || null; }
+        if (r && r.status === 403 && body && body.code === 'this-machine') test.check('net.fetch to a port on this machine is refused 403, this-machine');
+        else test.fail('net.fetch to this machine answered ' + JSON.stringify(r && { status: r.status, body: body }).slice(0, 200) + lastWords());
+        if (!s.seen.headers) test.check('and the sink on this machine received nothing, so no key reached it');
+        else test.fail('net.fetch reached a port on this machine, carrying ' + JSON.stringify(s.seen.headers['x-api-key'] || ''));
+        return ask('http://localhost:' + s.port + '/v1/responses', { Authorization: 'Bearer ${ENV:GROK_API_KEY}' });
+      }).then(function (r) {
+        if (r && r.status === 403 && !s.seen.headers) test.check('and by name too: localhost is refused, the Grok key goes nowhere');
+        else test.fail('net.fetch to localhost answered ' + (r && r.status) + ', sink saw ' + JSON.stringify(s.seen.headers || null) + lastWords());
+        return port;
       });
     });
   })
@@ -452,121 +414,27 @@ freePort()
     });
   })
 
-  // ---- 6. the owner's proxy list, through a real node -------------------
+  // ---- 6. net.fetch carries any size; the packet bound stands for the rest ----
+  // THE OWNER'S PROXY LIST AND ITS VERBS STOOD HERE (proxy.search, get, close, open; relay-state/proxy.json): they went
+  // with goal/G29.20 ("remove all the env logic and allow-list crap"). What stands is net.fetch's own door.
   .then(function (port) {
-    test.subHeading('The owner\'s proxy list: private, closable, and no wait of its own');
+    test.subHeading('net.fetch carries any size; every other verb keeps the packet bound');
     function verb(obj, waitMs) {
       return request(port, 'POST', '/api/spirit', null, {
         raw: JSON.stringify(obj), headers: { 'Content-Type': 'application/json' }, waitMs: waitMs,
       });
     }
-    let quick = null;
-    // proxy.list is gone (puppets/G2): the list is a search, '*' by default.
-    return verb({ verb: 'proxy.search' }).then(function (r) {
-      let body = null;
-      try { body = JSON.parse(r.text); } catch (e) { body = null; }
-      const pairs = body && Array.isArray(body.items) && body.items.every(function (i) {
-        return Object.keys(i).sort().join(',') === 'key,label';
-      });
-      if (r.status === 200 && body && body.open === true && pairs && body.items.length >= 3) {
-        test.check('proxy.search answers the owner\'s list as key/label pairs, written from the old code list on first use');
-      } else {
-        test.fail('proxy.search: HTTP ' + r.status + ' ' + r.text.slice(0, 160));
-      }
-      return verb({ verb: 'proxy.get', key: body && body.items && body.items[0] && body.items[0].key });
-    }).then(function (r) {
-      let body = null;
-      try { body = JSON.parse(r.text); } catch (e) { body = null; }
-      if (r.status === 200 && body && body.entry && body.entry.host) test.check('proxy.get answers one whole entry by its key');
-      else test.fail('proxy.get: HTTP ' + r.status + ' ' + r.text.slice(0, 160));
-      return request(port, 'GET', '/relay-state/proxy.json');
-    }).then(function (r) {
-      if (r.status !== 200 && r.text.indexOf('GROK_API_KEY') === -1) {
-        test.check('relay-state/proxy.json is not served (HTTP ' + r.status + ')');
-      } else {
-        test.fail('the proxy list was SERVED: HTTP ' + r.status);
-      }
-      return verb({ verb: 'fs.save', path: 'relay-state/proxy.json', content: '{"open":true,"entries":[{"key":"GROK_API_KEY","host":"127.0.0.1"}]}' });
-    }).then(function (r) {
-      return verb({ verb: 'proxy.search' }).then(function (l) {
-        const hijacked = l.text.indexOf('127.0.0.1') !== -1;
-        if (r.status >= 400 && !hijacked) {
-          test.check('and fs.save cannot write it (HTTP ' + r.status + ') — only the proxy verbs change it');
-        } else {
-          test.fail('fs.save rewrote the proxy list: HTTP ' + r.status);
-        }
-      });
-    }).then(function () {
-      return startSink();
-    }).then(function (s) {
-      quick = s;
-      return verb({ verb: 'proxy.close' });
-    }).then(function () {
-      quick.seen.headers = null;
-      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/x', method: 'GET' });
-    }).then(function (r) {
-      if (r.status === 403 && /closed by the owner/.test(r.text) && !quick.seen.headers) {
-        test.check('proxy.close: the next net.fetch is refused "closed by the owner", and nothing leaves');
-      } else {
-        test.fail('closed gate: HTTP ' + r.status + ' ' + r.text.slice(0, 120) + ', reached: ' + !!quick.seen.headers);
-      }
-      return verb({ verb: 'proxy.open' });
-    }).then(function () {
-      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/x', method: 'GET' });
-    }).then(function (r) {
-      if (r.status === 200 && quick.seen.headers) {
-        test.check('proxy.open: and the next one goes again');
-      } else {
-        test.fail('reopened gate: HTTP ' + r.status);
-      }
-      return verb({ verb: 'proxy.close', key: 'GROK_API_KEY' });
-    }).then(function () {
-      quick.seen.headers = null;
-      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/x', method: 'GET',
-        headers: { Authorization: 'Bearer ${ENV:GROK_API_KEY}' } });
-    }).then(function (r) {
-      if (r.status === 403 && /GROK_API_KEY is closed by the owner/.test(r.text) && !quick.seen.headers) {
-        test.check('proxy.close { key }: a call naming that key is refused before it leaves');
-      } else {
-        test.fail('closed key: HTTP ' + r.status + ' ' + r.text.slice(0, 120));
-      }
-      return verb({ verb: 'proxy.open', key: 'GROK_API_KEY' });
-    }).then(function () {
-      // NO SIZE LIMIT ON WHAT THE PROXY CARRIES (2026-09-22). Andy: "no
-      // limit on size for proxy request, yes". 100 KB — six times the
-      // door's packet bound — goes out whole; every other verb keeps it.
-      quick.seen.bytes = 0;
-      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/big', method: 'POST',
-        body: { blob: 'x'.repeat(100000) } });
-    }).then(function (r) {
-      if (r.status === 200 && quick.seen.bytes > 100000) {
-        test.check('a 100 KB proxy request goes out whole (' + quick.seen.bytes + ' bytes reached the far end)');
-      } else {
-        test.fail('big proxy request: HTTP ' + r.status + ', far end saw ' + quick.seen.bytes + ' bytes');
-      }
+    // NO SIZE LIMIT ON WHAT THE PROXY CARRIES (2026-09-22). Andy: "no limit on size for proxy request, yes". A 100 KB
+    // body — six times the door's packet bound — gets past the door: aimed at this machine, it is refused by the fence
+    // (403, this-machine), which is net.fetch's own answer, never the door's 413.
+    return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:1/big', method: 'POST', body: { blob: 'x'.repeat(100000) } }).then(function (r) {
+      if (r.status === 403 && /this-machine/.test(r.text)) test.check('a 100 KB net.fetch is not refused by size: it reaches net.fetch, whose fence answers this-machine');
+      else test.fail('big net.fetch: HTTP ' + r.status + ' ' + r.text.slice(0, 120));
       return verb({ verb: 'fs.save', path: 'shell/natter/too-big.json', content: 'x'.repeat(100000) });
     }).then(function (r) {
-      if (r.status === 413) {
-        test.check('and any other verb with 100 KB is still refused 413 — the packet bound stands for them');
-      } else {
-        test.fail('a big non-proxy verb was not refused: HTTP ' + r.status);
-      }
-    }).then(function () {
-      quick.close();
-      return startSink(11000);
-    }).then(function (slow) {
-      const started = Date.now();
-      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + slow.port + '/slow', method: 'GET' }, 20000)
-        .then(function (r) {
-          slow.close();
-          const took = Date.now() - started;
-          if (r.status === 200 && took >= 10500) {
-            test.check('no wait of its own: a far end that takes 11 s — past the old 10 s default — is answered (' + took + ' ms)');
-          } else {
-            test.fail('slow far end: HTTP ' + r.status + ' after ' + took + ' ms ' + r.text.slice(0, 120));
-          }
-          return port;
-        });
+      if (r.status === 413) test.check('and any other verb with 100 KB is still refused 413 — the packet bound stands for them');
+      else test.fail('a big non-proxy verb was not refused: HTTP ' + r.status);
+      return port;
     });
   })
 
@@ -746,8 +614,6 @@ freePort()
       // below only saw claims written as `function`, and these two are
       // claimed through proxyVerb(...). An empty host is refused, so
       // nothing on the list changes.
-      ['POST', '/api/spirit', { verb: 'proxy.allow', host: '' }],
-      ['POST', '/api/spirit', { verb: 'proxy.remove', host: '' }],
       ['POST', '/api/spirit', { verb: 'nope.thing' }],
     ];
 

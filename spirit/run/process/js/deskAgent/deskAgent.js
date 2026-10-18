@@ -521,7 +521,9 @@ function toolRoom() { return contextKnown() ? Math.floor(promptRoom() / 4) : Inf
 // ONE ROOT (goal/G23.5): the node's fs tools left his list. They were rooted at spirit/run and his own file verbs at
 // the repo root of his clone, so a path his search gave him failed when he read it. Andy: "give him everything." and
 // "Levant should have the same rules as you". Every file tool is deskAgent's own, in repository paths.
-const TOOL_NAMESPACES = ['desk', 'deskAgent'];
+// NET IS BACK (goal/G29.20). Andy, 2026-10-18, reversing goal/G19.9: "fetch will not be able to reach ports on this
+// machine, and agents may use it." net.fetch refuses this machine (js/netFence.js), so the reason it left is gone.
+const TOOL_NAMESPACES = ['desk', 'deskAgent', 'net'];
 // NOTHING RUNS ON THE DESK WHILE HE IS DISCONNECTED (goal/G18.9). Found in the record on 2026-10-12: his signoff
 // reached the desk, and an answer already in flight went on writing (two check.set, a chat.add, item.status,
 // item.files.add), each write making him live again for ten minutes. So a desk or deskAgent tool asked while he is

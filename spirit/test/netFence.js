@@ -51,6 +51,12 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   else test.fail(OWED + 'not counted as this machine: ' + wrongMine.join(', '));
   if (fence && !wrongNot.length) test.check('not this machine, so open: ' + notMine.join(', ') + ' (the LAN and link-local stay open)');
   else test.fail(OWED + 'wrongly fenced: ' + wrongNot.join(', '));
+  // "ports on this machine": its own LAN addresses reach them too, so they are this machine.
+  const own = [];
+  Object.values(os.networkInterfaces()).forEach(function (l) { (l || []).forEach(function (i) { if (i && i.family === 'IPv4' && !i.internal) own.push(i.address); }); });
+  if (fence && own.length && own.every(function (a) { return is(a) === true; })) test.check('this machine\'s own interface addresses are this machine too: ' + own.join(', '));
+  else if (fence && !own.length) test.check('(no external interface on this box to check)');
+  else test.fail(OWED + 'this machine\'s own addresses not fenced: ' + own.filter(function (a) { return is(a) !== true; }).join(', '));
   const looked = fence ? await new Promise(function (resolve) {
     try { fence.lookup('localhost', {}, function (err) { resolve(err || null); }); } catch (e) { resolve(e); }
   }) : null;
@@ -103,6 +109,25 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   else test.fail(OWED + 'deskAgent\'s TOOL_NAMESPACES are ' + namespaces.trim());
   if (!fs.existsSync(path.join(__dirname, 'netNoAgentTool.js'))) test.check('goal/G19.9\'s netNoAgentTool.js is retired with the ruling it held');
   else test.fail(OWED + 'spirit/test/netNoAgentTool.js still asserts the reversed ruling');
+
+  // ── 4. NO SECRETS IN NET.FETCH, AND THEIR USERS GO (box v4) ─────────────
+  // Andy, 2026-10-18: "remove all the env logic and allow-list crap from it at well", "kill'em all, they will be replaced
+  // with from-scratch conforming designs....", "the GROK API key stuff, it all goes....".
+  test.subHeading('4. no env secrets, no allow list, no proxy verbs; grokReview and the caption processes gone');
+  const gone = ['js/envSecrets.js', 'js/proxyList.js', 'js/proxy', 'process/js/grokReview', 'process/js/imageCaptionClaude', 'process/js/imageCaptionClaudeBatch']
+    .filter(function (rel) { return fs.existsSync(path.join(RUN, rel)); });
+  if (!gone.length) test.check('gone: js/envSecrets.js, js/proxyList.js, js/proxy/, process/js/grokReview, imageCaptionClaude, imageCaptionClaudeBatch');
+  else test.fail(OWED + 'still there: ' + gone.join(', '));
+  const suites = ['envSecrets.js', 'proxyList.js', 'grokReview.js'].filter(function (t) { return fs.existsSync(path.join(__dirname, t)); });
+  if (!suites.length) test.check('their suites retire: envSecrets.js, proxyList.js, grokReview.js');
+  else test.fail(OWED + 'suites still asserting them: ' + suites.join(', '));
+  const server = code('js/server.js');
+  const verbs = ['proxy.search', 'proxy.get', 'proxy.allow', 'proxy.remove', 'proxy.close', 'proxy.open'].filter(function (v) { return server.indexOf("'" + v + "'") !== -1; });
+  if (!verbs.length && !/envSecrets|proxyList/.test(server) && !/\$\{ENV:/.test(server)) test.check('server.js: no proxy verbs, no envSecrets or proxyList, no ${ENV:...} fill');
+  else test.fail(OWED + 'server.js still has ' + (verbs.length ? verbs.join(', ') : 'the env fill or the allow list'));
+  const errors = code('js/spiritErrors.js');
+  if (!/'proxy-closed'|'proxy-list-broken'/.test(errors)) test.check('the refusal codes proxy-closed and proxy-list-broken are gone');
+  else test.fail(OWED + 'spiritErrors.js still defines the proxy codes');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);

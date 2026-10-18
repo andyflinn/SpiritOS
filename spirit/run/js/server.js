@@ -580,13 +580,12 @@ function handleFsAnnotate(req, res) {
   });
 }
 
-// WHICH SECRET MAY GO WHERE lives in envSecrets.js: the ${ENV:NAME}
-// allowlist, scoped by name, by recipient host, and — for a key that can
-// change things — by method. It moved out of this file on 2026-09-22 so
-// the rule can be tested directly (spirit/test/envSecrets.js).
-const envSecrets = require('./envSecrets');
-// The owner's list: which key may go to which website, and the gate.
-const proxyList = require('./proxyList');
+// NO SECRETS AND NO ALLOW LIST HERE (goal/G29.20). envSecrets.js (the env-variable key fill) and proxyList.js (the
+// owner's list and its gate, relay-state/proxy.json) are gone with the proxy verbs. Andy, 2026-10-18: "remove all the
+// env logic and allow-list crap from it at well"; secrets will live in a later module that manages API keys and
+// secrets in a general fashion, the node being the owner.
+// net.fetch never reaches this machine (goal/G29.20).
+const netFence = require('./netFence');
 
 // Generic outbound-request proxy — knows nothing about LM Studio, Claude,
 // or any other specific service, unlike the two hardcoded handlers this
@@ -597,15 +596,10 @@ const proxyList = require('./proxyList');
 // url/method/headers/body/timeout and owns all response-shape parsing —
 // this just forwards and relays back whatever the target actually
 // returned, or a synthesized {error} on timeout/unreachable.
-// ── THE PROXY, UNDER THE OWNER'S LIST (2026-09-22) ─────────────────────
+// ── THE PROXY (2026-09-22; the gate and the keys went with goal/G29.20) ───
 //
-// design/proxy/THE-PROXY.md. Three things changed here, each ruled by Andy:
-//
-//   THE GATE. The owner's list (relay-state/proxy.json, proxyList.js) is
-//   read on every call, so a close takes effect on the next one. A closed
-//   proxy, website or key is refused with words saying the owner closed it.
-//
-//   THE KEYS come from that list, not from code (envSecrets.js applies it).
+// design/proxy/THE-PROXY.md ruled a gate (the owner's list) and keys from that list; both are gone, with every
+// placeholder fill (goal/G29.20). What stands of it:
 //
 //   NO WAIT OF ITS OWN. Andy: "wait times are not the proxies concern."
 //   The caller's timeoutMs is honoured when given; when not, the proxy
@@ -655,23 +649,18 @@ function handleGenericProxy(req, res) {
     // Whatever host the outbound request will actually reach — the only
     // thing that decides whether a secret is allowed into these headers.
     const targetHost = target.hostname.toLowerCase();
-    const method = String(body.method || 'GET').toUpperCase();
-
-    const headers = Object.assign({}, body.body !== undefined ? { 'Content-Type': 'application/json' } : {}, body.headers || {});
-    const keys = [];
-    Object.keys(headers).forEach((k) => {
-      envSecrets.named(headers[k]).forEach((n) => { if (keys.indexOf(n) === -1) keys.push(n); });
-    });
-
-    const list = proxyList.load(ROOT_DIR);
-    const gate = proxyList.gate(list, targetHost, keys);
-    if (!gate.ok) {
-      res.writeHead(gate.status, { 'Content-Type': 'application/json; charset=utf-8' });
-      res.end(JSON.stringify({ error: gate.error, closed: true }));
+    // NEVER THIS MACHINE (goal/G29.20; Andy, 2026-10-18: "fetch will not be able to reach ports on this machine, and
+    // agents may use it."). A target written as an address is refused here, before anything is sent; a name is
+    // checked on the address it resolves to, at connect (netFence.lookup below).
+    if (netFence.isThisMachine(targetHost)) {
+      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, code: 'this-machine', error: 'net.fetch does not reach this machine: ' + targetHost }));
       return;
     }
-    const entries = proxyList.openEntries(list);
-    Object.keys(headers).forEach((k) => { headers[k] = envSecrets.substitute(headers[k], targetHost, method, undefined, entries); });
+    const method = String(body.method || 'GET').toUpperCase();
+
+    // The caller's headers as given: no placeholder is filled and no list gates them (goal/G29.20).
+    const headers = Object.assign({}, body.body !== undefined ? { 'Content-Type': 'application/json' } : {}, body.headers || {});
 
     const payload = body.body !== undefined ? JSON.stringify(body.body) : null;
     if (payload !== null) headers['Content-Length'] = Buffer.byteLength(payload);
@@ -685,7 +674,7 @@ function handleGenericProxy(req, res) {
     }
 
     const lib = target.protocol === 'https:' ? https : http;
-    const out = lib.request(target, { method: method, headers: headers }, (reply) => {
+    const out = lib.request(target, { method: method, headers: headers, lookup: netFence.lookup }, (reply) => {
       // STRAIGHT THROUGH, HOLDING NOTHING (goal/G16.6, his "no number at
       // all"). The reply is piped to the asker as it arrives, so this door
       // never has the body in hand and there is no size for it to refuse.
@@ -707,7 +696,11 @@ function handleGenericProxy(req, res) {
         out.destroy();
       });
     }
-    out.on('error', () => { answer(502, JSON.stringify({ error: 'proxy target unreachable' })); });
+    out.on('error', (err) => {
+      // A name that resolved to this machine (goal/G29.20): refused by name, as an address is above.
+      if (err && err.code === 'this-machine') { answer(403, JSON.stringify({ ok: false, code: 'this-machine', error: err.message })); return; }
+      answer(502, JSON.stringify({ error: 'proxy target unreachable' }));
+    });
     // A caller that gives up takes the call down with it.
     req.on('close', () => { if (!answered) out.destroy(); });
     out.end(payload === null ? undefined : payload);
@@ -1778,18 +1771,8 @@ contactBook.syncMarks(ROOT_DIR);
     // WIRE: it reaches the internet, so being offline fails it.
   }, { wire: true });
 
-  // ── THE OWNER'S LIST, MAINTAINED (2026-09-22) ─────────────────────────
-  //
-  // The only way to change relay-state/proxy.json: the fs verbs cannot
-  // write relay-state, and the static route cannot serve it. Andy: "a
-  // client api (loopback) that allows that internal list to be
-  // maintained." For agents first; the shell's manager is deferred.
-  //   proxy.search { q? }                     key/label pairs, and whether the gate is open
-  //   proxy.get    { key }                    one entry
-  //   proxy.allow  { host, key?, methods? }   add or replace one entry
-  //   proxy.remove { host, key? }             take one entry out
-  //   proxy.close  {} | { key } | { host }    close the gate, a key, a site
-  //   proxy.open   {} | { key } | { host }    and open it again
+  // THE PROXY VERBS WENT WITH goal/G29.20 (proxy.search, get, allow, remove, close, open): the owner's list they kept
+  // is gone. proxyVerb stays: it is the plain body-in, answer-out wrapper every group below uses.
   function proxyVerb(work) {
     return function (rq, rs) {
       readJsonBody(rq).then((body) => {
@@ -1812,19 +1795,6 @@ contactBook.syncMarks(ROOT_DIR);
     };
   }
   const LIST = { ok: true, items: [{ key: '', label: '' }], more: false };
-  introSpector.claim(loopbackVerbs, 'proxy', 'server.js', {
-    // proxy.list is gone: a list is a search (puppets/G2). Andy, 2026-09-27:
-    // "the verb changes changing list fetches to a search(labe) and
-    // geKey(key) pair are approved", and "get is fine".
-    'proxy.search': { request: { q: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, open: true }, handler: proxyVerb(function (b) { return proxyList.search(ROOT_DIR, b); }) },
-    'proxy.get': { request: { key: '' }, reply: { ok: true, key: '', entry: {} }, handler: proxyVerb(function (b) { return proxyList.get(ROOT_DIR, b); }) },
-    'proxy.allow': { request: { host: '', key: '', methods: [''], open: true }, reply: { ok: true, entry: {} }, handler: proxyVerb(function (b) { return proxyList.allow(ROOT_DIR, b); }) },
-    'proxy.remove': { request: { host: '', key: '' }, reply: { ok: true, removed: {} }, handler: proxyVerb(function (b) { return proxyList.remove(ROOT_DIR, b); }) },
-    'proxy.close': { request: { key: '', host: '' }, reply: { ok: true, open: false, changed: 0 }, handler: proxyVerb(function (b) { return proxyList.close(ROOT_DIR, b); }) },
-    'proxy.open': { request: { key: '', host: '' }, reply: { ok: true, open: true, changed: 0 }, handler: proxyVerb(function (b) { return proxyList.open(ROOT_DIR, b); }) },
-    // LOCAL: the owner's own list, on this node's disk.
-  }, { wire: false });
-
   // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
   const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.core.const.MIME_TYPES });

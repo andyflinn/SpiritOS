@@ -376,19 +376,13 @@ define('not-a-sender', {
   texts: ['your id is not a valid sender here'],
   prefixes: ['not sent: this relay refused this node'],
 });
-// ── THE PROXY, UNDER THE OWNER'S LIST (2026-09-22, THE-PROXY.md) ──────
-define('proxy-closed', {
-  status: 403, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['the proxy is closed by the owner'],
-  note: 'The owner closed the gate — all of it, one key, or one website ' +
-    '("<key> is closed by the owner", "<host> is closed by the owner"). ' +
-    'An agent stops and reports; retrying cannot help.',
-});
-define('proxy-list-broken', {
-  status: 503, presence: NONE, retry: 'no', fault: 'node',
-  prefixes: ['the proxy is closed:'],
-  note: 'relay-state/proxy.json cannot be read, so the gate is closed ' +
-    'rather than open. The owner repairs the file.',
+// proxy-closed AND proxy-list-broken STOOD HERE: the owner's list and its gate went with goal/G29.20.
+// ── NET.FETCH NEVER REACHES THIS MACHINE (goal/G29.20) ───────────────
+define('this-machine', {
+  status: 403, presence: NONE, retry: 'no', fault: 'caller',
+  prefixes: ['net.fetch does not reach this machine:'],
+  note: 'A url on loopback, localhost, 0.0.0.0, :: or one of this machine\'s own addresses (or a name resolving to ' +
+    'one). Andy: "fetch will not be able to reach ports on this machine, and agents may use it." Nothing was sent.',
 });
 define('job-not-found', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',

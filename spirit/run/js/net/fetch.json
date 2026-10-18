@@ -1,0 +1,3 @@
+{
+  "description": "Fetch a url from the internet: {url, method, headers, body, timeoutMs} -> the outside answer as it comes, its status and content type kept. It never reaches this machine: a url on loopback, localhost, 0.0.0.0 or :: (or a name that resolves to one) is refused 403, code this-machine, and nothing is sent. A secret key named in a header goes only to a website the owner's proxy list allows."
+}

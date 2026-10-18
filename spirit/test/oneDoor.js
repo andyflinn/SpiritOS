@@ -190,7 +190,7 @@ const TALLY = {
   // the loopback door like agents.js, walked and counted, not skipped.
   // 2 since 2026-09-22: require('http') and its one call — Node's fetch cut
   // the script off from its own node at 300 s while Grok was still thinking.
-  'process/js/grokReview/grokReview.js': 2,
+  // process/js/grokReview/grokReview.js STOOD HERE, granted 2: it went with goal/G29.20.
 
   // ── THE WSL DESKTOP — A PLATFORM TOOL, THE SAME KIND OF EXCEPTION ────
   //
@@ -244,7 +244,6 @@ const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
   .concat(walk(path.join(SPIRIT, 'run', 'shell'), 'shell/', []))
   // spirit/test is not walked: tests are not subject to the same rules (Andy, 2026-10-02).
   // The folders of process/ that are walked: the granted exceptions above.
-  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'grokReview'), 'process/js/grokReview/', []))
   // platform/ — tools for Andy's machines, beside spirit/ (platform/README.md).
   .concat(walk(path.join(SPIRIT, '..', 'platform'), 'platform/', []));
 

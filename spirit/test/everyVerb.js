@@ -132,9 +132,9 @@ let said = '';
 
 (async function () {
   // ── THE LIST IS READ, AND IT IS THE REAL ONE ────────────────────────
-  if (VERBS.length >= 30 && VERBS.indexOf('node.card') !== -1 && VERBS.indexOf('proxy.allow') !== -1) {
-    test.check(VERBS.length + ' verbs read from server.js\'s claim blocks, including the two a hand list missed '
-      + '(proxy.allow, proxy.remove)');
+  if (VERBS.length >= 30 && VERBS.indexOf('node.card') !== -1 && VERBS.indexOf('net.fetch') !== -1) {
+    // proxy.allow and proxy.remove, the two a hand list once missed, went with goal/G29.20.
+    test.check(VERBS.length + ' verbs read from server.js\'s claim blocks, node.card and net.fetch among them');
   } else {
     test.fail('only ' + VERBS.length + ' verbs parsed out of server.js: the claim shape moved, and nothing below '
       + 'can be trusted');
@@ -262,16 +262,7 @@ let said = '';
       test.fail('jobs.get on the watcher: ' + (got ? got.status + ', ' + got.bytes + ' bytes' : 'no watcher found in jobs.search'));
     }
   }
-  {
-    const closed = json(await ask({ verb: 'proxy.close' }));
-    const opened = json(await ask({ verb: 'proxy.open' }));
-    const lists = [closed, opened].filter(function (j) { return j && Object.keys(j).some(function (k) { return Array.isArray(j[k]) || (j[k] && typeof j[k] === 'object'); }); });
-    if (closed && closed.ok && opened && opened.ok && !lists.length) {
-      test.check('proxy.close and proxy.open answer only what changed, never the whole list');
-    } else {
-      test.fail('proxy switches answered: close ' + JSON.stringify(closed) + ', open ' + JSON.stringify(opened));
-    }
-  }
+  // proxy.close and proxy.open STOOD HERE: the proxy verbs went with goal/G29.20.
 
   // ── LISTS, UNTIL THEY ARE SEARCHES ──────────────────────────────────
   const lists = VERBS.filter(function (v) { return carriesList(answers[v].text); }).sort();
