@@ -243,6 +243,19 @@ function page() {
   else test.fail(OWED + 'Grant asked ' + short(g || asked.map(function (a) { return a.verb; })));
   if (!asked.some(function (a) { return a.verb === 'jobs.authPeer'; })) test.check('the page holds the grants: no jobs.authPeer is asked');
   else test.fail(OWED + 'the page still asks jobs.authPeer');
+  if (grantBtn && !grantBtn.hidden) test.check('with a contact and a server chosen, Grant shows');
+  else test.fail(OWED + 'with alice and desk chosen Grant is ' + short(grantBtn ? { hidden: grantBtn.hidden } : 'missing'));
+
+  // A fresh Grants, nothing chosen: no Grant, Select a contact in its place.
+  const container2 = p.node('div');
+  try { sp.app.mount(container2, api); } catch (e) { test.fail(OWED + 'a second mount threw: ' + (e && e.message || e)); }
+  await settle(); await settle();
+  const line2 = p.byId['gr-line'];
+  // The fake page hands back the same gr-line for the same id, so the newest mount's controls are the last ones.
+  const btn2 = line2 && line2.children.filter(function (c) { return c.tagName === 'BUTTON' && /gr-grant/.test(c.id); }).pop();
+  const hint2 = line2 && line2.children.filter(function (c) { return /gr-hint/.test(c.id); }).pop();
+  if (btn2 && btn2.hidden === true && hint2 && !hint2.hidden && /Select a contact/.test(String(hint2.textContent))) test.check('nothing chosen: no Grant, the line says Select a contact');
+  else test.fail(OWED + 'nothing chosen: Grant ' + short(btn2 ? { hidden: btn2.hidden } : 'missing') + ', hint ' + short(hint2 ? { hidden: hint2.hidden, text: hint2.textContent } : 'missing'));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 100);
