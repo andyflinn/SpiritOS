@@ -1,5 +1,5 @@
 {
- "change": 70954,
+ "change": 70990,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.13"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -52,9 +53,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -142,6 +141,36 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-17T16:29:11.430Z",
      "text": "goal run on 4 suites: all green (at 5f80e46e, pulled)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T06:08:01.540Z",
+     "text": "break time. signoff. ttyl. thanks."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T06:08:18.799Z",
+     "text": "Enjoy the break. Today in G29: G29.10, G29.8, G29.12, G29.11 and G29.7 are done. Still on the old search: relay.search, peer.search, jobs.search, owner.boxSearch, proxy.search. Listening."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T06:09:01.730Z",
+     "text": "are the server searches and the api searches in grants all the new probability search?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T06:09:21.209Z",
+     "text": "Yes, all of Grants: the server and verb dropdowns rank the api tree in the page with the probability modules (the shared list), the contact dropdown asks contact.search (moved in G29.6), the grants table ranks in the page, and jobs.authSearch on the node is the new search too (G29.7). Nothing in Grants is left on the old one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T06:09:48.912Z",
+     "text": "good, be back soon"
     }
    ]
   },
@@ -5080,6 +5109,98 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T03:30:23.754Z",
      "text": "Yes: the list marks its rows, and the viewer marks a file when it is handed words; nothing hands it words until G29.11 brings the contents search. Done is offered."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.13",
+   "title": "Kill/Eliminate process-browser (Job Selector) shell app",
+   "goal": "goal/G29",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Nothing, absolutely nothing, can be done with the Job Selector (shell/process-browser) that cannot be done through Files. So it goes, completely.\n\nWHAT GOES\n- The app itself: shell/process-browser, its script and its manifest.\n- Every mention that keeps it alive: its place in the Spirit group (index.html), its entry in the shell's intrinsic apps and its old-id rename (js/client/shell.js), and any comment pointing at it as a living app.\n- Its tests: the checks of natterIntrinsic and fsWatcherCommands that name it turn into checks that it is gone.\n\nWHAT STAYS\n- Starting a program: the file viewer's start form for a script under process/, which Files opens like any file.",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T13:42:40.546Z",
+     "text": "What it would take, from the tree:\n- delete shell/process-browser (its .js and .json);\n- drop it from the Spirit group in index.html and from the shell's intrinsic list and rename map (shell.js);\n- natterIntrinsic and fsWatcherCommands name it: their checks turn into it is gone.\nNothing is lost: it only lists the scripts under process/; starting one happens in the file viewer (its start form for a process script), which Files opens the same way, now with search.\nThe box is yours to fill; I can draft it from this if you like."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T13:44:24.802Z",
+     "text": "fill the box. tell me green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T13:45:00.272Z",
+     "text": "Box filled: what goes (the app, its place in the Spirit group, its entries in the shell, its tests turned into it-is-gone checks) and what stays (starting a program from the file viewer). Green."
     }
    ]
   }
