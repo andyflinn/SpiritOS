@@ -55,7 +55,7 @@ function fakeCodeMirror() {
       scrollIntoView: function (where) { cm.scrolled.push(where); },
       setCursor: function (p) { cm.cursor = p; },
       setOption: function (k, v) { cm.opts[k] = v; },
-      refresh: function () {},
+      refresh: function () { cm.refreshed = (cm.refreshed || 0) + 1; },
       on: function () {},
     };
     made.push(cm);
@@ -112,6 +112,15 @@ function fakeElement() {
     else test.fail(OWED + 'the display opened with readOnly ' + short(cm.opts.readOnly));
     if (view && typeof view.value === 'function' && view.value() === TEXT) test.check('value() answers the text');
     else test.fail(OWED + 'value() answers ' + short(view && typeof view.value === 'function' ? view.value() : view));
+    // Andy, 2026-10-18: "when the file viewer/launcher is called, it shows almost nothing". The launcher stays mounted
+    // and the shell hands it the next file while its pane is still hidden; CodeMirror built in a hidden box draws no
+    // lines until it is refreshed. So a view refreshes itself once the page is drawn, and puts the first match in view
+    // again then.
+    const before = cm.refreshed || 0;
+    const scrolledBefore = cm.scrolled.length;
+    await new Promise(function (r) { setTimeout(r, 50); });
+    if ((cm.refreshed || 0) > before && cm.scrolled.length > scrolledBefore) test.check('once the page is drawn the view refreshes itself and puts the first match in view again');
+    else test.fail(OWED + 'after the page was drawn: refreshed ' + (cm.refreshed || 0) + ' time(s), scrolled ' + cm.scrolled.length);
     make(fakeElement(), { text: 'two words here, words', words: 'two here', readOnly: false });
     const cm2 = CodeMirror.made[CodeMirror.made.length - 1] || { marks: [] };
     if (cm2.marks.filter(function (m) { return m.className === 'text-view-match'; }).length === 2) test.check('several words: each is marked where it stands');
