@@ -25,6 +25,8 @@
 var chApi = null;
 var chPane = null;        // the peer pane (contactSelector, face pane)
 var chPeer = '';          // the key of the chat shown
+var chSearch = null;      // the open chat's search, the shared list (goal/G29.18)
+function chEscapeHtml(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 var chSelf = '';          // this node's key, for a reply to one of its own lines
 var chLines = {};         // 'sent:seq' -> {line, el}
 var chOrder = [];         // the keys of chLines, by the line's data
@@ -34,7 +36,7 @@ var chLoadingOlder = false;
 var chStyle = 'plain';
 var chOpenSeq = 0;        // the newest openChat wins
 var chPresent = {};       // the keys the last relay-presence table named
-var chRows = {};          // peers.search's row per key: {at, sent, seq, unanswered}
+var chRows = {};          // chats.search's row per key: {at, sent, seq, unanswered}
 var chSeen = {};          // per peer, the newest line time already shown here (kept in shell/chatter)
 var ICON = (spirit.core.const && spirit.core.const.ICON) || {};
 var CH_PREFS = 'prefs.json';
@@ -63,7 +65,7 @@ function chSay(text) {
 
 // ── THE PEERS (G4.10) ────────────────────────────────────────────────
 
-// peers.search's rows carry the record as label: {peer, at, sent, seq, unanswered}. The pane is handed keys alone
+// chats.search's rows carry the record as label: {peer, at, sent, seq, unanswered}. The pane is handed keys alone
 // (the label element names them); the record only decides the mark.
 //
 // TYPED TEXT FINDS NAMES, NOT KEYS (Andy, goal/G4.10: "the search on top or the pane seem to search keys instead of
@@ -72,7 +74,7 @@ function chSay(text) {
 // ONE PANE, THE BOOK AND THE CHATS (goal/G29.9). Andy, 2026-10-18: "in chatter, why does the contact pane look
 // different from contacts? It fails to show proper columns for contacts, it should be all-pane mode there, that would
 // be enough." So the pane lists the node's book, json labels {name, owned, blocked, held} from contact.search, less
-// this node and every blocked contact (P5: never offered); a new chat starts from any of them. The chats (peers.search,
+// this node and every blocked contact (P5: never offered); a new chat starts from any of them. The chats (chats.search,
 // the record {peer, at, sent, seq, unanswered}) only decide the ⌛ mark, and a chat with a key the book does not hold
 // is listed by its key while no words are typed. The two asks go one after the other, never two on the wire.
 function chPeersSearch(text, ask) {
@@ -81,7 +83,7 @@ function chPeersSearch(text, ask) {
   var book = {};
   return spirit.core.ask('contact.search', args).then(function (a) { book = (a && a.body) || {}; }, function () { book = {}; })
     // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
-    .then(function () { return chAsk('peers.search', { text: '', since: '', before: '' }).then(function (b) { return b || {}; }, function () { return {}; }); })
+    .then(function () { return chAsk('chats.search', {}).then(function (b) { return b || {}; }, function () { return {}; }); })
     .then(function (chats) {
       var out = [];
       var listed = {};
@@ -454,6 +456,8 @@ spirit.shell.activateApp({
     });
     titleBar.appendChild(styleSel);
     centre.appendChild(titleBar);
+    // THIS CHAT, SEARCHED (goal/G29.18): the shared list over chat.search, its own box, a who filter.
+    centre.appendChild(make('div', 'ch-search', 'ch-search'));
     centre.appendChild(make('div', 'ch-lines', 'ch-lines', { tabindex: '0' }));
     centre.appendChild(make('div', 'ch-status', 'ch-status'));
     var input = make('textarea', 'ch-input', 'ch-input', { placeholder: 'Enter sends, Shift+Enter a new line' });
@@ -527,6 +531,50 @@ spirit.shell.activateApp({
     });
     chPane.addEventListener('change', function () { if (chPane.value) chOpen(chPane.value); });
     left.appendChild(chPane);
+
+    // THIS CHAT, SEARCHED (goal/G29.18; Andy, 2026-10-18: "the chat window itself can then have a search", and "the
+    // chat-history-search should have filters me, other person or both"). The shared list, asking chatClerver's
+    // chat.search for the open chat's lines; nothing is asked until words are typed. A row is keyed by its chat as
+    // well, so a line of another chat held from an earlier search never stands for this one; a press puts the line
+    // in view when the window holds it.
+    chSearch = window.spiritElements.shellCreateListSearch(chEl('ch-search'), {
+      api: {
+        verb: function (name, body) {
+          var a = (body && body.ask && body.ask.chatClerver && body.ask.chatClerver['chat.search']) || {};
+          var peer = chPeer;
+          if (!peer || !String(a.text || '').trim()) return Promise.resolve({ status: 200, body: { items: [], more: false } });
+          return chAsk('chat.search', { peer: peer, text: String(a.text || ''), who: String(a.who || '') }).then(function (b) {
+            var items = ((b && b.items) || []).map(function (it) {
+              var l = {};
+              try { l = JSON.parse(it.label); } catch (e) { l = {}; }
+              l.peer = peer;
+              return { key: peer + ':' + it.key, label: JSON.stringify(l) };
+            });
+            return { status: 200, body: { items: items, more: !!(b && b.more) } };
+          });
+        },
+        onPublished: function () { return function () {}; },
+      },
+      server: 'chatClerver',
+      verb: 'chat.search',
+      args: function (text, filters) { return { text: text, who: filters.who === 'both' ? '' : filters.who }; },
+      filters: [{ name: 'who', choices: [{ value: 'both', word: 'both' }, { value: 'me', word: 'me' }, { value: 'them', word: 'the other' }],
+        test: function (l, v) {
+          if (l.peer !== chPeer) return 0;
+          return v === 'me' ? (l.sent === 1 ? 1 : 0) : v === 'them' ? (l.sent === 0 ? 1 : 0) : 1;
+        } }],
+      matched: function (l) { return { text: String(l.text || '') }; },
+      paint: function (l, mark) {
+        return '<td>' + chEscapeHtml(l.at ? new Date(l.at).toLocaleString() : '') + '</td>' +
+          '<td>' + (l.sent === 1 ? 'me' : 'them') + '</td>' +
+          '<td>' + mark(String(l.text || '')) + '</td>';
+      },
+      details: function (l) {
+        var k = chKey(l.sent, l.seq);
+        if (chLines[k]) chSetCurrent(k);
+      },
+      empty: 'Type words to search this chat.',
+    });
 
     var lines = chEl('ch-lines');
     lines.addEventListener('click', function (event) {

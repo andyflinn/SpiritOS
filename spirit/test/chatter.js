@@ -23,7 +23,7 @@
 //   api.onPublished(fn, 'chatClerver'). It builds with the shell's elements, api.ui.elements.
 //   G4.10, THE PEERS:
 //     P1. The left pane is createContactSelector({face: 'pane', statuses, search}), statuses
-//         [{status: 'none'}, {status: 'unanswered', iconKey: 'WAITING'}] (Andy: "use ICON:WAITING"), search asking peers.search
+//         [{status: 'none'}, {status: 'unanswered', iconKey: 'WAITING'}] (Andy: "use ICON:WAITING"), search asking chats.search
 //         {text, since, before}. EVERY ASK carries exactly its verb's request keys, read from chatClerver.js: the
 //         fake server refuses any other, as the real one does.
 //     P2. A peer whose row counts unanswered above zero is marked unanswered (⌛ WAITING); the number is drawn nowhere, and
@@ -31,9 +31,9 @@
 //     P3. A click on a row opens that peer's chat in the centre: chat.read {peer, before: ''}.
 //     P4. A new chat: a contact picked from the node's book (a createContactSelector dropdown, its rows from
 //         contact.search), a blocked contact never offered (contact.search lists blocked rows; how they are left out
-//         is the builder's, contact.get per row as peers.search does); the pick opens its (empty) chat and the
+//         is the builder's, contact.get per row as chats.search does); the pick opens its (empty) chat and the
 //         first line goes line.write {to}.
-//     P5. A published line from a peer the list does not hold makes the list ask peers.search again.
+//     P5. A published line from a peer the list does not hold makes the list ask chats.search again.
 //   G4.11, THE CHAT:
 //     C1. One chat; its contact named in the centre pane's own title bar by createContactLabel({key, editable: true}).
 //     C2. Lines drawn as elements carrying data-sent ('1' mine, '0' theirs) and data-seq (NAMED), placed by their
@@ -236,16 +236,13 @@ function mount(opts) {
   // The chatClerver, as the app asks it (api.verb jobs.api).
   function clerver(verb, a) {
     asked.push({ via: 'clerver', verb: verb, body: a || {} });
-    if (verb === 'peers.search') {
+    if (verb === 'chats.search') {
       const rows = [
         { key: PEER, label: JSON.stringify(Object.assign({ peer: PEER, at: T(5), sent: 1, seq: 3, unanswered: 2 }, opts.peerRow || {})) },
         { key: QUIET, label: JSON.stringify({ peer: QUIET, at: T(0), sent: 1, seq: 1, unanswered: 0 }) },
       ].concat(opts.extraPeers || []);
-      // As the real one does: text is found in the key, nowhere else (chatClerver.js peers.search, G4.3). A fake that
-      // ignored text let a build pass that hands the typed name on, which empties the list on a real node
-      // (wsl-claude, 48250df7).
-      const t = String(a.text || '');
-      return { items: rows.filter(function (r) { return !t || r.key.indexOf(t) !== -1; }), more: false };
+      // No arguments since goal/G29.18: every chat, newest first, as the real one answers.
+      return { items: rows, more: false };
     }
     if (verb === 'chat.read') {
       if (a.peer !== PEER) return { items: [], more: false };
@@ -265,11 +262,12 @@ function mount(opts) {
       if (!ask) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-such-server' } });
       const v = Object.keys(ask)[0];
       // AS STRICT AS THE REAL SERVER: a call with any key more or less than the verb's request is refused. A fake that
-      // took short asks let chatter ship peers.search {text} and chat.read {peer}, refused on a real node
+      // took short asks let chatter ship chats.search {text} and chat.read {peer}, refused on a real node
       // (wsl-claude, found on Andy's WSL node).
       const want = REQUEST_KEYS[v];
       const got = Object.keys(ask[v] || {}).sort().join(',');
-      if (!want || got !== want) {
+      // A verb with no arguments (chats.search, goal/G29.18) wants '' — a known verb, not a missing one.
+      if (want === undefined || got !== want) {
         asked.push({ via: 'refused', verb: v, body: ask[v] || {} });
         return Promise.resolve({ status: 400, body: { ok: false, code: 'bad-request', error: v + ' takes ' + want + ', not ' + got } });
       }
@@ -384,14 +382,14 @@ async function main() {
   else test.fail(OWED + 'chatter does not listen to the chatClerver\'s publishes');
 
   // ── G4.10 ──
-  test.subHeading('G4.10 P1-P2: the left pane is the shell\'s peer pane over peers.search, ⌛ for unanswered');
+  test.subHeading('G4.10 P1-P2: the left pane is the shell\'s peer pane over chats.search, ⌛ for unanswered');
   const p = pane(app);
   const st = p && p.options.statuses;
   if (p && Array.isArray(st) && st[0] && st[0].status === 'none' && !st[0].iconKey && st.some(function (s) { return s.status === 'unanswered' && s.iconKey === 'WAITING'; })) test.check('createContactSelector({face: \'pane\', statuses: [none, unanswered WAITING]})');
   else test.fail(OWED10 + 'the pane is ' + (p ? JSON.stringify({ face: p.options.face, statuses: st }) : 'not made'));
-  const searched = app.clerverAsks('peers.search');
-  if (p && typeof p.options.search === 'function' && searched.length && searched[0].body.text === '') test.check('its search asks peers.search {text, since, before}, text \'\' first');
-  else test.fail(OWED10 + 'peers.search asked ' + JSON.stringify(searched));
+  const searched = app.clerverAsks('chats.search');
+  if (p && typeof p.options.search === 'function' && searched.length && !Object.keys(searched[0].body || {}).length) test.check('its search asks chats.search {}, no arguments (goal/G29.18)');
+  else test.fail(OWED10 + 'chats.search asked ' + JSON.stringify(searched));
   const peerRow = p && rowFor(p.root, PEER);
   const quietRow = p && rowFor(p.root, QUIET);
   if (peerRow && quietRow && shown(peerRow).indexOf(ICON.WAITING) !== -1 && shown(quietRow).indexOf(ICON.WAITING) === -1 && shown(peerRow).indexOf(ICON.RED_CIRCLE) === -1) test.check('a peer with unanswered lines shows 🔴, a peer with none does not');
@@ -565,10 +563,10 @@ async function main() {
     if (first && first.body.to === NEWBIE && first.body.text === 'first words') test.check('the first line goes line.write {to: the picked contact}');
     else test.fail(OWED10 + 'the first line went ' + JSON.stringify(first));
   } else test.fail(OWED10 + 'there is no contact pane');
-  const before = app2.clerverAsks('peers.search').length;
+  const before = app2.clerverAsks('chats.search').length;
   app2.publish({ line: Object.assign({ peer: STRANGER }, line({ sent: 0, seq: 1, at: T(9), text: 'hello from nowhere' })) });
   await settled();
-  if (app2.clerverAsks('peers.search').length > before) test.check('a line from a peer the list does not hold makes it ask peers.search again');
+  if (app2.clerverAsks('chats.search').length > before) test.check('a line from a peer the list does not hold makes it ask chats.search again');
   else test.fail(OWED10 + 'a line from a new peer did not refresh the list');
 
   // ── goal/G4.10, reopened: Andy, 2026-10-03, trying chatter live: "and the list doesn't show presence."; "same green

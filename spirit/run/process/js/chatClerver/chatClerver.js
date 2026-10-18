@@ -18,8 +18,8 @@
 //   - No label anywhere: a peer's name is the node's contact book's (G4.8, Andy: "our label for peers should be kept
 //     globally"). The references table is deferred with goal/G4.4.
 //
-// Its verbs come with goal/G4.2 (line.receive, chat.read, the publish), G4.6 and G4.7 (line.write) and G4.3
-// (peers.search).
+// Its verbs come with goal/G4.2 (line.receive, chat.read, the publish), G4.6 and G4.7 (line.write), G4.3
+// (peers.search, chats.search since goal/G29.18) and goal/G29.18 (chat.search).
 
 const fs = require('fs');
 const path = require('path');
@@ -29,7 +29,9 @@ const kernel = require('../../../js/kernel.js');
 const packet = require('../../../js/client/packet.js');
 const limits = require('../../../js/limits.js');
 const appClient = require('../../../js/appClient.js');
-const searchBucket = require('../../../js/searchBucket.js');
+// The probability modules (goal/G29.18): the old graded bucket (searchBucket) is gone from here.
+const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
@@ -160,8 +162,34 @@ function round(to) {
   });
 }
 
-// ── THE PEER LIST'S ROWS (goal/G4.3) ─────────────────────────────────
-// One answer's room, as every search; nothing pages, before brings older rows.
+// ── NEWEST FIRST, CUT BY BYTES, ON THE PROBABILITY BUCKET (goal/G29.18) ──
+// The lists here rank no words: they stand newest first, as offered, and are cut where the room runs out. Each pair is
+// seated with a probability that falls with its place, so the bucket keeps the order offered; the walk stops a little
+// past the room, so a long history is not read whole for an answer that holds a page of it, and serialize makes the
+// exact cut and says more.
+function newestFirst(pairs, room) {
+  const bucket = createProbabilityBucket(Infinity);
+  let bytes = 0;
+  let stopped = false;
+  let i = 0;
+  for (const pair of pairs) {
+    if (bytes > room) { stopped = true; break; }
+    bucket.seatFor(1 / (2 + i), pair);
+    bytes += Buffer.byteLength(JSON.stringify(pair), 'utf8') + 1;
+    i += 1;
+  }
+  const out = bucket.serialize(null, room);
+  return { items: out.items, more: !!out.more || stopped };
+}
+
+// One line of a chat as chat.read and chat.search answer it: its key sent:seq, its label the line as json.
+function linePair(r) {
+  const l = { sent: Number(r.sent), seq: Number(r.seq), at: r.at, text: r.text, receivedAt: r.receivedAt, re: { writer: r.reWriter, seq: Number(r.reSeq) }, refused: r.refused };
+  return { key: l.sent + ':' + l.seq, label: JSON.stringify(l) };
+}
+
+// ── THE CHATS' ROWS (goal/G4.3) ──────────────────────────────────────
+// One answer's room, as every search; nothing pages.
 const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
 const allPeers = db.prepare('SELECT peer FROM peers');
 const newestOf = db.prepare('SELECT sent, seq, at FROM lines WHERE peer = ? ORDER BY at DESC, sent ASC LIMIT 1');
@@ -171,17 +199,14 @@ const allReceived = db.prepare('SELECT COUNT(*) AS n FROM lines WHERE peer = ? A
 // A row is {peer, at, sent, seq, unanswered}: the newest line between this node and the peer by the writer's time,
 // and how many of the peer's lines arrived after the newest line this node sent, by this node's own clock
 // (receivedAt against the sent line's at, both written here), all of them when none was sent. A peer with no line
-// is no row: a record is born by a line (G4.6). Filtered by text in the key, since and before on the row's at;
-// newest first. Derived on each ask, nothing stored: memory.db holds only what was witnessed (G4.8).
-function peerRows(a) {
-  const text = String(a.text || '').toLowerCase();
+// is no row: a record is born by a line (G4.6). Newest first. Derived on each ask, nothing stored: memory.db holds
+// only what was witnessed (G4.8). NO FILTERS (goal/G29.18): the text matched part of a key, and keys are never
+// searched; since and before went with it. A chat is revived by finding the person by name and opening it.
+function peerRows() {
   const out = [];
   allPeers.all().forEach(function (p) {
     const newest = newestOf.get(p.peer);
     if (!newest) return;
-    if (text && String(p.peer).toLowerCase().indexOf(text) === -1) return;
-    if (a.since && !(String(newest.at) >= a.since)) return;
-    if (a.before && !(String(newest.at) < a.before)) return;
     const last = lastSentOf.get(p.peer).at;
     const unanswered = last ? unansweredSince.get(p.peer, last).n : allReceived.get(p.peer).n;
     out.push({ peer: p.peer, at: newest.at, sent: Number(newest.sent), seq: Number(newest.seq), unanswered: Number(unanswered) });
@@ -243,19 +268,17 @@ appServer.serve({
       });
     },
   },
-  // THE PEER LIST (goal/G4.3), bucket 1. Andy, on the suggestions in its box: "agreed."; "unanswered count (45) in
-  // peer/contact row? yes."; (G4.7) "a blocked contact should not be offered to the chatter user at all." A search
-  // over this node's memory, as every list is: one row per peer a line has crossed with, newest line first.
-  'peers.search': {
-    request: { text: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+  // THE CHATS (goal/G4.3, renamed under goal/G29.18). Andy, on the suggestions in its box: "agreed."; "unanswered
+  // count (45) in peer/contact row? yes."; (G4.7) "a blocked contact should not be offered to the chatter user at all."
+  // NOT A PEER SEARCH (Andy, 2026-10-18: "why would charServer do any peerSearch? the UI can have that stuff from the
+  // node?"): the peers and their names are the node's (contact.search). This answers what only this server holds: one
+  // row per peer a line has crossed with, its newest line and its unanswered count, newest first.
+  'chats.search': {
+    request: {}, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a, caller) {
       ownerOnly(caller);
-      const rows = peerRows(a);
-      const bucket = searchBucket.createSearch({
-        query: '**', maxBytes: ANSWER_ROOM,
-        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-        extractKeyAndLabelFromRow: function (pair) { return pair; },
-      });
+      const rows = peerRows();
+      const offered = [];
       // The node's block is the one truth (G4.6): each row is asked of the book before it is offered, and a book that
       // does not answer refuses the search rather than show somebody it may have blocked.
       function offerRow(i) {
@@ -264,11 +287,17 @@ appServer.serve({
           if (r.status !== 200 && r.status !== 404) throw refused('no-answer');
           const person = r.body && r.body.person;
           if (person && person.blocked === true) return offerRow(i + 1);
-          if (!bucket.offer({ key: rows[i].peer, label: JSON.stringify(rows[i]) })) return null;
+          offered.push({ key: rows[i].peer, label: JSON.stringify(rows[i]) });
+          // Past one answer's room nothing more is asked of the book: the cut is made below, and says more.
+          if (Buffer.byteLength(JSON.stringify(offered), 'utf8') > ANSWER_ROOM) return null;
           return offerRow(i + 1);
         });
       }
-      return offerRow(0).then(function () { const res = bucket.getResult(); return { items: res.items, more: res.more }; });
+      return offerRow(0).then(function () {
+        // A walk stopped at the room (or a row blocked) leaves rows unoffered: more says the first.
+        const res = newestFirst(offered, ANSWER_ROOM);
+        return { items: res.items, more: res.more || Buffer.byteLength(JSON.stringify(offered), 'utf8') > ANSWER_ROOM };
+      });
     },
   },
   // A PEER'S LINE ARRIVES (goal/G4.2). The writer is the caller's key, proven by the sealed packet; the door let it
@@ -302,17 +331,33 @@ appServer.serve({
     handler: function (a, caller) {
       ownerOnly(caller);
       const before = String(a.before || '');
-      const bucket = searchBucket.createSearch({
-        query: '**', maxBytes: READ_ROOM,
-        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-        extractKeyAndLabelFromRow: function (pair) { return pair; },
-      });
-      for (const r of chatLines.iterate(String(a.peer), before, before)) {
-        const l = { sent: Number(r.sent), seq: Number(r.seq), at: r.at, text: r.text, receivedAt: r.receivedAt, re: { writer: r.reWriter, seq: Number(r.reSeq) }, refused: r.refused };
-        if (!bucket.offer({ key: l.sent + ':' + l.seq, label: JSON.stringify(l) })) break;
+      const pairs = (function* () { for (const r of chatLines.iterate(String(a.peer), before, before)) yield linePair(r); })();
+      return newestFirst(pairs, READ_ROOM);
+    },
+  },
+  // ONE CHAT, SEARCHED (goal/G29.18). Andy, 2026-10-18: "the chat window itself can then have a search", and "the
+  // chat-history-search should have filters me, other person or both". The owner's alone; that chat's lines ranked by
+  // the probability modules on their text, newest first on a tie; a line that does not match is left out; who is me
+  // (the lines this node wrote), them (the other person's) or both ('' too). Cut by bytes, said by more.
+  'chat.search': {
+    request: { peer: '', text: '', who: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const words = String(a.text || '').trim();
+      const who = String(a.who || '');
+      const bucket = createProbabilityBucket(Infinity);
+      let i = 0;
+      for (const r of chatLines.iterate(String(a.peer), '', '')) {
+        i += 1;
+        if (who === 'me' && Number(r.sent) !== 1) continue;
+        if (who === 'them' && Number(r.sent) !== 0) continue;
+        const p = words ? Number(probabilityStringObjectMatch(words, { text: String(r.text || '') })) || 0 : 1;
+        if (!(p > 0)) continue;
+        // Newest first on a tie: the lines come newest first, the earlier a hair higher.
+        bucket.seatFor(Math.min(1, p * (1 - 1e-6) + 1e-6 / (1 + i)), linePair(r));
       }
-      const out = bucket.getResult();
-      return { items: out.items, more: out.more };
+      const out = bucket.serialize(null, READ_ROOM);
+      return { items: out.items, more: !!out.more };
     },
   },
 // ITS OWN REFUSAL (goal/G16.11): declared here rather than in the shared
