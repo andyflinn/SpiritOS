@@ -1,5 +1,5 @@
 {
- "change": 69918,
+ "change": 69926,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,15 +46,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
-   "excluded": [],
+   "waiting": 4,
+   "excluded": [
+    "ollama agent node"
+   ],
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
-   "working": [
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2304,7 +2302,7 @@
    "title": "the shared list's dropdown mode, contactSelector on it",
    "goal": "goal/G29",
    "status": "done",
-   "with": "ollama agent node",
+   "with": "",
    "buttons": [
     "close",
     "reopen"
@@ -2434,8 +2432,8 @@
     }
    ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -2808,11 +2806,9 @@
    "id": "goal/G29.10",
    "title": "Quick desk fixes before we continue.",
    "goal": "goal/G29",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -2820,12 +2816,12 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
@@ -2838,10 +2834,39 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
-    "ollama agent node": "levant-local",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -2939,6 +2964,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-18T00:03:58.373Z",
      "text": "Levant, give me your input on this item so claude-windows can see what happens to your line..."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:06:56.211Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
