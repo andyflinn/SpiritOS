@@ -1,5 +1,5 @@
 {
- "change": 69926,
+ "change": 70055,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,14 +47,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
-   "excluded": [
+   "waiting": 5,
+   "excluded": [],
+   "live": [
+    "claude-windows",
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows"
+   "working": [
+    "ollama agent node"
    ],
-   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2081,15 +2083,14 @@
    "status": "writing",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29.7"
    ],
-   "blocked": [
-    "goal/G29.10"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -2806,10 +2807,11 @@
    "id": "goal/G29.10",
    "title": "Quick desk fixes before we continue.",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.8"
@@ -2819,21 +2821,37 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskLimbo.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskPhaseRestart.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "f3d18a27",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -2884,6 +2902,24 @@
      "at": "2026-10-17T23:58:27.082Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "Red grant for the limbo item",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T00:16:03.800Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "Red grant for the limbo item",
+     "test": "</parameter>\n</function>\n</tool_call>\n<tool_call>\n<function=desk_chat_add>\n<parameter=id>\ngoal/G29.10",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T00:19:47.401Z"
     }
    ],
    "chat": [
@@ -2970,6 +3006,114 @@
      "key": "",
      "at": "2026-10-18T00:06:56.211Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:07:08.006Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:08:17.911Z",
+     "text": "Taking 1 to 3 now (no limbo posts; your lines in the replies of a phase holder's writes; code from Go to your Done, no JOB offers meanwhile).\nPoint 4: Levant's runner logs why the desk refused its take (the desk refused line.take for goal/G29.7: ...), but that log lives in memory on Levant's node; its deskAgentRemote tab shows it. Could you read me that line, or let me ask it through your owner door?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:09:30.172Z",
+     "text": "just aks 11111 through loopback, i run deskAgentRemote there"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:09:31.036Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:12:41.049Z",
+     "text": "Point 4, from the desk records: none of your four Levant lines (three in G29.7, one here) got a line.take from Levant; meanwhile its desk client took your lines on 14 old items (G27.17 to G29.9), the backlog since its last connect.\nIts runner on 11111 is signed off now, so the take refuses at once and shows nothing.\nShall I connect it (its own connect on 11111) and ask it once here, to see where the take goes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:13:33.004Z",
+     "text": "connect/disconnect levant at your will for diagnostic purposes"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:14:26.015Z",
+     "text": "Levant, comment on this item!"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:14:26.897Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:16:40.479Z",
+     "text": "commit cf326059238f7708c6b5a1acbc7cca020874bb09: goal/G29.10: the red for no limbo posts, his lines in a phase holder's replies, code from Go to Done\n- spirit/test/deskQuickFixes.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:16:42.597Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:16:56.593Z",
+     "text": "Red is in (cf326059, 5 owed). With Levant connected the desk counts two agents, so I may not build my own red: a waive lets me.\nLevant so far: at connect its desk client took your older line here (00:03), so it holds an open take; your new line (00:14) then gets no take of its own, the desk answers that open take instead. Still watching its answer."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:19:24.858Z",
+     "text": "Build is ready on my clone: the red at 9 of 9, deskLimbo and deskPhaseRestart rewritten off the old line and hold. Waive, please.\nLevant, connected: it never posted. It obeyed the limbo line instead (two G checks, a design-complete press) and still holds this item; I disconnected it. Its one desk_chat_add came out of the model garbled into a check text.\nSo point 4 has two causes: an open take from its backlog answers in place of your new line, and its gate compares names (the desk label vs its node name), not keys."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:19:48.547Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:20:54.174Z",
+     "text": "commit f3d18a277c52cc75c391fb439a15e80ddcad1374: goal/G29.10: no limbo posts, a phase holder's writes answer with his lines, code from Go to Done\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskLimbo.js\n- spirit/test/deskPhaseRestart.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:21:06.976Z",
+     "text": "deskVerify: passed, at f3d18a27 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:21:07.831Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:21:15.172Z",
+     "text": "Built and verified: f3d18a27, the red 9 of 9. Files: process desk.js, tests deskLimbo and deskPhaseRestart.\nYour node still runs the old desk until it restarts on this commit.\nPoint 4 (Levant) is not in this build: it needs its own red, for its gate by key and its backlog take."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:21:26.095Z",
+     "text": "deskVerify: passed, at f3d18a27 (pulled). 2 suites ran green."
     }
    ]
   }
