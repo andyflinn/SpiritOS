@@ -38,6 +38,22 @@
 
 (function () {
   var made = 0;
+  // THE ONE MARKING RULE (goal/G29.12; Andy, 2026-10-18, to "both markers live in one shared function": "yes"): every
+  // place each word stands, partial words included, case ignored, as [from, to) index pairs in order. The list marks its
+  // rows with it, and the text view (shell/js/textView.js) marks a file's text with it, so the two never drift apart.
+  function matchRanges(text, words) {
+    var s = String(text == null ? '' : text);
+    var ws = String(words || '').split(/\s+/).filter(Boolean).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!ws.length) return [];
+    var re = new RegExp(ws.join('|'), 'ig');
+    var out = [];
+    var hit;
+    while ((hit = re.exec(s)) !== null) {
+      if (!hit[0]) { re.lastIndex += 1; continue; }
+      out.push([hit.index, hit.index + hit[0].length]);
+    }
+    return out;
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
@@ -139,17 +155,12 @@
     // THE MATCHED PARTS MARKED (goal/G29.9): every word typed wrapped where it stands in the text, the rest escaped.
     function mark(text) {
       var s = String(text == null ? '' : text);
-      var ws = words().split(/\s+/).filter(Boolean).map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
-      if (!ws.length) return esc(s);
-      var re = new RegExp(ws.join('|'), 'ig');
       var out = '';
       var at = 0;
-      var hit;
-      while ((hit = re.exec(s)) !== null) {
-        if (!hit[0]) { re.lastIndex += 1; continue; }
-        out += esc(s.slice(at, hit.index)) + '<mark>' + esc(hit[0]) + '</mark>';
-        at = hit.index + hit[0].length;
-      }
+      matchRanges(s, words()).forEach(function (r) {
+        out += esc(s.slice(at, r[0])) + '<mark>' + esc(s.slice(r[0], r[1])) + '</mark>';
+        at = r[1];
+      });
       return out + esc(s.slice(at));
     }
     // THE PAGE'S OWN ROWS (goal/G29.9, the first tier): rows() answers them; each joins the cache by its key, and one
@@ -365,4 +376,5 @@
 
   window.spiritElements = window.spiritElements || {};
   window.spiritElements.shellCreateListSearch = shellCreateListSearch;
+  window.spiritMatchRanges = matchRanges;
 }());

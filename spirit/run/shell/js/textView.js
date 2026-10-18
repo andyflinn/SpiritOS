@@ -24,7 +24,6 @@
     var dot = name.lastIndexOf('.');
     return dot === -1 ? null : MODES[name.slice(dot + 1).toLowerCase()] || null;
   }
-  function escapeRe(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
   function createTextView(container, options) {
     var o = options || {};
@@ -38,23 +37,18 @@
     });
     var marks = [];
     var firstAt = null;   // where the first match stands, put in view again once the page is drawn
-    // EVERY MATCH MARKED, THE FIRST IN VIEW: each word wherever it stands, case ignored, as the shared list marks it.
+    // EVERY MATCH MARKED, THE FIRST IN VIEW, BY THE LIST'S OWN RULE (window.spiritMatchRanges, listSearch.js): one
+    // marking rule for the list and the text view (goal/G29.12).
     function mark(words) {
       marks.forEach(function (m) { m.clear(); });
       marks = [];
-      var ws = String(words || '').split(/\s+/).filter(Boolean).map(escapeRe);
-      if (!ws.length) return 0;
-      var text = cm.getValue();
-      var re = new RegExp(ws.join('|'), 'ig');
-      var hit;
+      var ranges = typeof window.spiritMatchRanges === 'function' ? window.spiritMatchRanges(cm.getValue(), words) : [];
       var first = null;
-      while ((hit = re.exec(text)) !== null) {
-        if (!hit[0]) { re.lastIndex += 1; continue; }
-        var from = cm.posFromIndex(hit.index);
-        var to = cm.posFromIndex(hit.index + hit[0].length);
-        marks.push(cm.markText(from, to, { className: 'text-view-match' }));
+      ranges.forEach(function (r) {
+        var from = cm.posFromIndex(r[0]);
+        marks.push(cm.markText(from, cm.posFromIndex(r[1]), { className: 'text-view-match' }));
         if (!first) first = from;
-      }
+      });
       firstAt = first;
       if (first) {
         cm.setCursor(first);

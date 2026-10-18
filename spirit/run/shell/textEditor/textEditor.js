@@ -21,17 +21,17 @@ var APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 // it picked, or the one "Open with" handed over, is the one loaded and saved.
 var textEditorPath = '';
 // THE TEXT ON CODEMIRROR (goal/G29.12): the file is edited in the shell's text view, its plain text area gone, and
-// opened with search words marked when it came with some. A file loaded makes a fresh view.
+// shown unmarked: the marks belong to the viewer (Andy, 2026-10-18). A file loaded makes a fresh view.
 var textEditorApi = null;
 var textEditorView = null;
-function textEditorLoadPath(path, words) {
+function textEditorLoadPath(path) {
   var content = spirit.core.fs.loadFile(path);
   textEditorPath = path;
   var pathEl = document.getElementById('editor-path');
   if (pathEl) pathEl.textContent = path;
   var place = document.getElementById('editor-content');
   place.innerHTML = '';
-  textEditorView = textEditorApi.ui.elements.createTextView(place, { text: content == null ? '' : content, words: words || '', path: path });
+  textEditorView = textEditorApi.ui.elements.createTextView(place, { text: content == null ? '' : content, path: path });
   document.getElementById('editor-status').textContent = content == null ? 'not found (or empty) — you can still Save to create it' : 'loaded';
 }
 
@@ -72,15 +72,15 @@ spirit.shell.activateApp({
         .catch(function (err) { statusEl.textContent = 'save failed: ' + err.message; });
     });
 
-    // Arrived via "Open with": loaded at once, with its words; else the starting file, so the editor is never empty.
-    textEditorLoadPath(initialPath, params && params.words);
+    // Arrived via "Open with": loaded at once; else the starting file, so the editor is never empty.
+    textEditorLoadPath(initialPath);
   },
   // Called by the shell when Text Editor is already mounted and gets
   // reopened against a different file — e.g. picked from Text File Launcher's
   // "Open with" a second time. mount() itself won't run again, so without
   // this the newly-picked file would never actually load.
-  loadFile: function (path, params) {
-    textEditorLoadPath(path, params && params.words);
+  loadFile: function (path) {
+    textEditorLoadPath(path);
   },
   render: function () {}, // static once mounted, same as Text File Launcher
 });
