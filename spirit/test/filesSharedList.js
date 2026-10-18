@@ -346,8 +346,10 @@ const TREE = [
     await settle();
     fire(hostOf(before), 'keydown', { key: 'End', target: partOf(before, 'text') || {} });
     await settle();
-    if (!/class="current"/.test((partOf(before, 'list') || { innerHTML: '' }).innerHTML)) test.check('before any up or down, End in the search box moves no row: it is the text cursor\'s');
-    else test.fail(OWED + 'End before any arrow moved the current row');
+    // Andy, 2026-10-18: "Give home and end to the list, same as up and down arrow keys."
+    const endFirst = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec((partOf(before, 'list') || { innerHTML: '' }).innerHTML) || [])[1];
+    if (endFirst === 'shell') test.check('End in the search box goes to the bottom with no arrow before it: Home and End are the list\'s');
+    else test.fail(OWED + 'End as the first key made ' + short(endFirst) + ' current');
     // "is there a reason the dropdown is constrained wo that narrow width? ... can it be the required with to display
     // everything, constrained by page width?"
     const popTag = (/<div[^>]*id="listsearch-\d+-popup"[^>]*>/.exec((hostOf(keyed) || { innerHTML: '' }).innerHTML) || [''])[0];
