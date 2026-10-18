@@ -9,7 +9,7 @@
 //   line; a file's score is the average quality of its matched lines x m / (m + 10), never the file's length.
 //   THE VERB (approved by Andy): fs.search takes contents: yes; the node reads text files up to 1 MB and ranks the
 //   files by their contents score alone, label {path, score, line}. Without it fs.search answers as before.
-//   THE LIST: no found line in the rows; every search on the shared list shows a 10em rank bar as its first column,
+//   THE LIST: no found line in the rows; every search on the shared list shows a 5em weight bar, right adjusted, as its left-most column,
 //   full for the best row and proportional for the others, gone with no words; a press opens the viewer marked, its
 //   first match in view; the editor's picker in contents opens marked.
 //
@@ -132,7 +132,7 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   await settle();
   const ranked = rowsIn(p1.doc.getElementById(pre1 + 'list').innerHTML);
   const widths = ranked.map(function (r) { return barWidth(r.first); });
-  if (widths.length === 3 && widths[0] === 100 && widths.every(function (w, i) { return w !== null && (i === 0 || w <= widths[i - 1]); }) && /width:\s*10em/.test(ranked[0].first)) test.check('words typed: the first column is a 10em bar, full (100%) for the best row, shorter down the list: ' + widths.join(', '));
+  if (widths.length === 3 && widths[0] === 100 && widths.every(function (w, i) { return w !== null && (i === 0 || w <= widths[i - 1]); }) && /width:\s*5em/.test(ranked[0].first) && /margin-left:\s*auto|text-align:\s*right/.test(ranked[0].first)) test.check('words typed: the left-most column is a 5em bar, right adjusted, full (100%) for the best row, shorter down the list: ' + widths.join(', '));
   else test.fail(OWED + 'with words the first cells read ' + short(ranked.map(function (r) { return r.first; })));
 
   // ── 3. the file list ──
