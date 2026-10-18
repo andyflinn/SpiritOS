@@ -1,5 +1,5 @@
 {
- "change": 70798,
+ "change": 70952,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,12 +10,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G29.7"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -46,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -1909,10 +1908,11 @@
    "id": "goal/G29.7",
    "title": "fix search in Grants shell app and UI, too",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29"
@@ -1922,21 +1922,87 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/apiAuth.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/fileServer/fileServer.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/grants/grants.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/apiBranchSelector.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/appServerSelector.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/contactSelector.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/apiBranchSelector.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/appServerSelector.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/grantsApp.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/grantsSharedList.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/jobsAuth.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "4d1256be",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -1974,9 +2040,19 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Grants on the shared list: one line of selectors that filter, a search within them, a table of grants below, the same look as every other search.\n\nTHE LINE\n- One line at the top, nothing stacked: [whose access] [choose a server] [choose a verb] [Grant].\n- The three selectors are dropdowns of the shared list, as the contact selector already is; the server and verb selectors leave their native selects.\n- The verb selector shows only once a server is chosen; it offers that server's verbs.\n- The selectors are filters: each one chosen narrows the list to its choice; one left unchosen means all (every peer, every server, every verb).\n- Grant grants what the line names: the chosen peer the chosen server, one verb when a verb is chosen, all its verbs when none is. It needs a peer and a server.\n- A server that names a bundle (its DEPENDENCIES) offers Grant the bundle on the same line once it is chosen.\n\nTHE SEARCH AND THE TABLE\n- The search bar below the line searches within the line's filters, ranked as every search is, with the rank bar and the marks.\n- Below it the grants in a small table: the peer's name, the path, deprecated when no server serves the path today, and each row's own Revoke.\n- The page holds the grants (jobs.authSearch with no words, bounded as every answer) and ranks them itself, as Files does.\n- jobs.authSearch moves to the new search as well, as every search does one by one: words ranked by the probability modules, best first, each grant answered as a json label {name, key, path}; its old search goes.",
-   "version": 7,
-   "checks": [],
+   "box": "Grants on the shared list: one line of selectors that filter, a search within them, a table of grants below, the same look as every other search.\n\nTHE LINE\n- One line at the top, nothing stacked: [whose access] [choose a server] [choose a verb] [Grant].\n- The three selectors are dropdowns of the shared list, as the contact selector already is; the server and verb selectors leave their native selects.\n- The verb selector shows only once a server is chosen; it offers that server's verbs.\n- The selectors are filters: each one chosen narrows the list to its choice; one left unchosen means all (every peer, every server, every verb).\n- Grant grants what the line names: the chosen peer the chosen server, one verb when a verb is chosen, all its verbs when none is. It needs a peer and a server: until a contact is chosen the line shows Select a contact in its place, and until a server is chosen Select a server; no blanket grant to every peer.\n- A server that names a bundle (its DEPENDENCIES) offers Grant the bundle on the same line once it is chosen.\n\nTHE SEARCH AND THE TABLE\n- The search bar below the line searches within the line's filters, ranked as every search is, with the rank bar and the marks.\n- Below it the grants in a small table: the peer's name, the path, deprecated when no server serves the path today, and each row's own Revoke.\n- The page holds the grants (jobs.authSearch with no words, bounded as every answer) and ranks them itself, as Files does.\n- jobs.authSearch moves to the new search as well, as every search does one by one: words ranked by the probability modules, best first, each grant answered as a json label {name, key, path}; its old search goes.",
+   "version": 8,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/apiAuth.js, spirit/run/js/server.js, spirit/run/shell/grants/grants.js, spirit/run/shell/js/apiBranchSelector.js, spirit/run/shell/js/appServerSelector.js, spirit/run/shell/js/contactSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T05:32:05.948Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -2265,6 +2341,282 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T05:27:49.946Z",
      "text": "Yes, green: no open question, ready for Go."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T05:30:18.627Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:30:20.469Z",
+     "text": "commit 9069ee29bf58b64d9d9a5009ae296f39cec33086: goal/G29.7: the red for Grants on the shared list and jobs.authSearch on the new search\n- spirit/test/grantsSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:30:25.884Z",
+     "text": "Red in: grantsSharedList, 13 owed. Building now; apiAuth.js, server.js and the selectors need your grants when they come up."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:35:05.213Z",
+     "text": "commit 985386ff9754966d8a0e745b9a3763df20fdc43b: goal/G29.7: Grants on the shared list: one line of filtering selectors, a table ranked within them; jobs.authSearch on the new search\n- spirit/run/js/apiAuth.js\n- spirit/run/js/server.js\n- spirit/run/process/js/fileServer/fileServer.js\n- spirit/run/shell/grants/grants.js\n- spirit/run/shell/js/apiBranchSelector.js\n- spirit/run/shell/js/appServerSelector.js\n- spirit/run/shell/js/contactSelector.js\n- spirit/test/grantsApp.js\n- spirit/test/grantsSharedList.js\n- spirit/test/jobsAuth.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:35:15.724Z",
+     "text": "Built and verified: 985386ff, grantsSharedList 15 of 15; grantsApp and jobsAuth amended to the new shapes and green.\nFiles: apiAuth (the new search), server.js, the file server, grants.js, the server and branch selectors (shared-list dropdowns), contactSelector (an all row).\nThe line: [all peers] [all servers] [verb, once a server is chosen] [Grant] [bundle]; the table below ranks within it. I will look at it on your node once deskVerify has pulled it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:35:32.981Z",
+     "text": "deskVerify: passed, at 985386ff (pulled). 5 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:36:27.161Z",
+     "text": "Looked at it on your node at 955 px in my own Chrome: one line [whose access] [choose a server] [Grant], no native selects, the search below, your 7 grants in the table, each with Revoke. Reload to try it; Done is offered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:40:15.196Z",
+     "text": "ARGH! get those two selector, server and verb NEXT to each other, not stacked like humping flies!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:40:34.517Z",
+     "text": "On it: the server and the verb sit side by side in the line (the server selector was a block, so the verb fell below it). Red and build now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:40:56.846Z",
+     "text": "commit 6834582386ff48736be476ab0183d1346ce7b2ff: goal/G29.7: the red for the server and verb selectors side by side\n- spirit/test/grantsSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:41:30.087Z",
+     "text": "commit 6310c5dbbf9b41176630b1f203bf650d97c65909: goal/G29.7: the server and verb selectors side by side in the line\n- spirit/run/shell/js/apiBranchSelector.js\n- spirit/run/shell/js/appServerSelector.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:41:44.215Z",
+     "text": "Built: 6310c5db, the server and verb selectors now one inline row. I will check it on your node with a server chosen once deskVerify has pulled it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:42:00.113Z",
+     "text": "deskVerify: passed, at 6310c5db (pulled). 5 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:42:39.972Z",
+     "text": "Checked on your node at 955 px with desk chosen: one line [whose access] [desk] [all verbs] [Grant] [Grant the bundle], nothing stacked, the table narrowed to desk's 4 grants. Reload to see it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:43:44.420Z",
+     "text": "also: i want to be able to unselect ANY of those selectors, once i select a contact, i neever can show a list anymore of all people that are allowed on the chat server because these selectors don't let me select (none)...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:44:26.119Z",
+     "text": "Each of them can be unselected since 985386ff: its first row is all peers, all servers or all verbs (I just opened them on your node: all peers, then bella...; all servers, then backup...). Picking that row clears the filter. If you have not reloaded since, that is the old page.\nWould you also like a small x on each chosen field that clears it in one press?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:46:31.575Z",
+     "text": "Ah, you smuggled them in like that was a peer-label or a server-label.... Those selection option need to be very different from the rest of the options otherwise they're not recognized...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:46:51.850Z",
+     "text": "Right. The shared list gets it as its own row: pinned first whatever is typed, in italics and dimmer, with a line under it, never ranked like a name: ( all peers ), ( all servers ), ( all verbs ). Every selector uses the same one. Red and build now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:47:03.611Z",
+     "text": "like a [Clear] button...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:47:20.714Z",
+     "text": "commit 83e3704adb1014719c5e7f13bf250bb88b3ddb87: goal/G29.7: the red for the none-row drawn by the shared list itself, set apart\n- spirit/test/grantsSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:47:38.203Z",
+     "text": "Better: no row at all. The open dropdown gets a [Clear] button beside its search, and while nothing is chosen the field itself reads all peers, all servers, all verbs. Same for every selector, in the shared list. Reworking the red to that."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:48:23.329Z",
+     "text": "commit d80cb00295214765e0cc53885e403e61790085c0: goal/G29.7: the red reworked to a [Clear] button and an all-reading field, no stand-in row\n- spirit/test/grantsSharedList.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:48:46.669Z",
+     "text": "NO it's not a SEARCH function, id rather have it at the top of the list as button saying [None] it's not a SEARCH thing....."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:49:00.211Z",
+     "text": "it's a Select-thing"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T05:49:01.167Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:49:10.897Z",
+     "text": "Got it: a [None] button at the top of the list, above the rows, not near the search. Changing it now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:50:42.288Z",
+     "text": "commit 0286cc143745b469e78414ef9978d509ecc3953f: goal/G29.7: a dropdown's [None] at the top of its list chooses nothing, its field then reading all peers, servers or verbs\n- spirit/run/shell/js/apiBranchSelector.js\n- spirit/run/shell/js/appServerSelector.js\n- spirit/run/shell/js/contactSelector.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/grantsSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:50:57.066Z",
+     "text": "Built: 0286cc14. Every dropdown given an all text starts its list with a [None] button (a select thing, not a row, not near the search); chosen, the field reads all peers, all servers or all verbs. grantsSharedList 20 of 20; file listSearch and the three selectors. I will look at it on your node after deskVerify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:51:16.577Z",
+     "text": "deskVerify: passed, at 0286cc14 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:51:54.377Z",
+     "text": "Checked on your node: the fields read all peers and all servers; the server dropdown opens with a [None] button above backup, chatClerver, desk, deskVerify, fileServer. Reload to try it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:53:47.810Z",
+     "text": "in the contact selector, could you left-align the [None] button with the user labels?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:54:11.647Z",
+     "text": "Yes: the shared list will put [None] in the table, in the column the selector names for its labels (after the star and presence columns in the contact selector). Red and build now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:54:40.707Z",
+     "text": "commit c4c7191772d27b6409578356cba81ac03e3d0b1e: goal/G29.7: the red for [None] aligned with the contact labels\n- spirit/test/grantsSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:55:34.760Z",
+     "text": "commit 720d89e3b4f3b018033a5f77cc5eee2fd54f98bc: goal/G29.7: in the contact selector [None] stands in the names' column\n- spirit/run/shell/js/contactSelector.js\n- spirit/run/shell/shared/js/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:55:46.076Z",
+     "text": "Built: 720d89e3. In the contact selector [None] now stands in the names' column, after the star and presence cells. grantsSharedList 21 of 21; files listSearch, contactSelector. Reload after deskVerify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:56:02.830Z",
+     "text": "deskVerify: passed, at 720d89e3 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:58:52.283Z",
+     "text": "i tried to grant search of the official deskVerify to all my friends...\n\n[all peers ▾] [deskVerify ▾] [search ▾] [Grant]\n\nno success, i would understand a warning or an re-arm button....\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:59:13.163Z",
+     "text": "Today Grant needs one peer: with all peers it only writes pick whose access first, in small print under the line, easy to miss.\nTwo ways:\n- a warning you can not miss, and Grant greyed out while no peer or no server is chosen;\n- or all peers means everyone: Grant turns into [Grant to all 9 contacts], a second press confirming, then one grant per contact.\nWhich one: the warning, or grant to all with the confirm?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:59:20.647Z",
+     "text": "Correction: the 9 was an example, not a count; the button would name however many contacts your book holds."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T06:03:37.327Z",
+     "text": "i can see that blanket-grants are a bad idea, but the logic so far implies my attempt made sense.\n\njust don't show the Grant button, show \"Select a contact\".\n\nThe designed restriction makes sense.\n\nI still don't know how \"Bundles\" are managed\", or where they live..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T06:04:20.144Z",
+     "text": "Agreed and in the box: no Grant until a contact is chosen, Select a contact in its place (and Select a server while none is). Red and build now.\nBundles: each server declares its own in its code, appServer.serve(verbs, {dependencies: [...]}), answered by an owner-only verb DEPENDENCIES. Grants asks it when you choose that server and offers Grant the bundle. Today only desk names one (desk, the whole app); backup, deskAgent, appFaceApp and appFaceAppServer name none."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T06:04:54.993Z",
+     "text": "commit 150fd56db7be0769b60bc493c0fad25683d942a3: goal/G29.7: the red for Select a contact in place of Grant\n- spirit/test/grantsSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T06:05:30.075Z",
+     "text": "commit 4d1256be6d1b9c560f6df3b12a064f705142987d: goal/G29.7: no Grant until a contact and a server are chosen; the line says which is missing\n- spirit/run/shell/grants/grants.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T06:05:44.365Z",
+     "text": "Built: 4d1256be. No Grant until a contact and a server are chosen; the line says Select a contact, then Select a server, in its place. grantsSharedList 23 of 23; file grants.js. Reload after deskVerify."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T06:05:47.869Z",
+     "text": "cool. understood."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T06:05:57.976Z",
+     "text": "deskVerify: passed, at 4d1256be (pulled). 5 suites ran green."
     }
    ]
   },
