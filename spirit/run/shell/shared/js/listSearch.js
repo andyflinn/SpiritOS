@@ -248,10 +248,11 @@
     }
     function nameOf(row) { return typeof o.name === 'function' ? String(o.name(row)) : String((row && (row.name || row.key)) || ''); }
     // THE FIELD (dropdown mode): the chosen row's name, or the placeholder.
-    function paintField() {
+    function paintField(showing) {
       var f = el('field');
       if (!f) return;
-      f.innerHTML = esc(self.row ? nameOf(self.row) : (o.placeholder || 'choose…')) + ' ▾';
+      var row = showing || self.row;
+      f.innerHTML = esc(row ? nameOf(row) : (o.placeholder || 'choose…')) + ' ▾';
     }
     // THE POPUP OPENED AND SHUT (goal/G29.9), in dropdown mode only; opened, its search box takes the focus.
     function setOpen(want) {
@@ -260,6 +261,8 @@
       var pop = el('popup');
       if (pop) pop.hidden = !open;
       if (open) { draw(); var box = el('text'); if (box && typeof box.focus === 'function') box.focus(); }
+      // Shut without a pick, the field says the chosen one again.
+      else paintField();
     }
     // A PRESS (goal/G29.9): in dropdown mode a pick; in pane mode details(row) when the list was given one, else a pick.
     function pick(w) {
@@ -288,6 +291,12 @@
       currentKey = shown[next].key;
       setOpen(true);
       draw();
+      // KEPT IN VIEW, AND SAID IN THE FIELD (goal/G29.8; Andy, 2026-10-18: "the drobdown should make sure that the
+      // \"current\" line is visible, and the the current selection is reflected in the dropdown input.").
+      var l = el('list');
+      var cur = l && typeof l.querySelector === 'function' ? l.querySelector('tr.current') : null;
+      if (cur && typeof cur.scrollIntoView === 'function') cur.scrollIntoView({ block: 'nearest' });
+      if (dropdown && byKey[currentKey]) paintField(byKey[currentKey].row);
     }
     container.addEventListener('input', function (e) { var t = e && e.target; if (t && t.id === pre + 'text') typed(); });
     container.addEventListener('keydown', function (e) {
@@ -304,7 +313,10 @@
       }
     });
     if (dropdown && typeof document.addEventListener === 'function') document.addEventListener('click', function (e) {
-      if (open && e && e.target && typeof container.contains === 'function' && !container.contains(e.target)) setOpen(false);
+      // A ROW DRAWN AWAY IS NOT ELSEWHERE (goal/G29.8): a press that redraws the rows (a folder folding) takes its row
+      // off the page before the click reaches the document, so a target no longer on the page shuts nothing.
+      if (!open || !e || !e.target || e.target.isConnected === false) return;
+      if (typeof container.contains === 'function' && !container.contains(e.target)) setOpen(false);
     });
     container.addEventListener('click', function (e) {
       var t = e && e.target;

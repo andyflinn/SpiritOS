@@ -43,7 +43,8 @@ spirit.shell.activateApp({
       '<textarea id="editor-content" class="code-view" rows="24"></textarea>';
 
     var statusEl = document.getElementById('editor-status');
-    var picker = api.ui.elements.createFileSelector({ placeholder: 'open a file…' });
+    // Its text types only (goal/G29.8: "A file dropdown takes a hidden type filter the app configures").
+    var picker = api.ui.elements.createFileSelector({ accept: ['text/', 'application/json', 'application/javascript', '.md'], placeholder: 'open a file…' });
     document.getElementById('editor-picker').appendChild(picker);
     picker.addEventListener('change', function () { if (picker.row && picker.row.kind === 'file') textEditorLoadPath(picker.value); });
 
