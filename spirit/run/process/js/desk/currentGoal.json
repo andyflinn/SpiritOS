@@ -1,5 +1,5 @@
 {
- "change": 71432,
+ "change": 71463,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,16 +46,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -6330,11 +6327,9 @@
    "id": "goal/G29.17",
    "title": "peerSearch",
    "goal": "goal/G29",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -6342,17 +6337,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -6360,15 +6355,107 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
-   "names": {},
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "PEER SEARCH: Contacts' \"Find someone on the network\", both halves.\n\nTHE UI (shell/contacts)\n- The panel's own input, Search button and list go; the panel is the shared list, as every other search in Contacts is.\n\nTHE SEARCH (node and relay)\n- Each relay ranks its members with the probability modules and answers a capped list; the old graded search (peerSearch.js, gradedSearch.js) goes.\n- The node merges the relays' answers with the same modules.\n- peer.search answers the shared shape {items: [{key, label}], more}, so the shared list draws it like every other.\n- A wire change: every relay and node is updated together.",
+   "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T17:49:39.999Z",
+     "text": "i assume this is the lower block in the contacts shell app: \"find peers on the network\" section?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T17:50:04.535Z",
+     "text": "Yes: Contacts' lower block, Find someone on the network, painted from peer.search (contacts.js).\nThe node asks each relay; each relay ranks its members with peerSearch.js (the old graded search, js/gradedSearch.js) and the node merges the answers (hub.js).\nSo moving it to the probability modules touches the relays too: a wire change, every relay and node updated together."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T17:51:22.420Z",
+     "text": "Hmmm do we leave the UI and just change the underlying search in node/relay?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T17:51:48.482Z",
+     "text": "I would change both. The panel still has its own input, Search button and list (contacts.js), so it is the one search box in Contacts not on the shared list, which G29 is about.\nThe relay has to rank too: it holds the members and answers a capped list, so the probability ranking happens there, and the node merges the relays' answers with the same modules.\nThe answer moves to the shared shape {items: [{key, label}], more}, so the panel draws through the shared list like every other.\nOne item, both halves?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T17:52:16.953Z",
+     "text": "agreed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T17:52:56.098Z",
+     "text": "In the box: the panel on the shared list; relays rank with the probability modules, the node merges, peer.search answers {items, more}; the old graded search goes; relays and nodes updated together. Ready on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T17:53:02.032Z",
+     "text": "can you fill the box ?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T17:53:24.133Z",
+     "text": "It is filled (version 1, a minute ago): the UI half and the search half. If your dialog shows it empty, reopening it should show it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T17:53:54.692Z",
+     "text": "so tis is green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T17:54:15.544Z",
+     "text": "Green: settled, nothing open, box current (v1). The label fields of a row (name, key, relay) I name in the red."
+    }
+   ]
   }
  ]
 }
