@@ -210,9 +210,9 @@
         // The number shown is the bar's own: 1.00 for the best row (Andy: "why would the top not be fucking 1.0?").
         // A FIXED 3EM BOX THE BAR SITS IN (Andy, 2026-10-18: "score bars STILL NOT SEEN"): at his window width rows that
         // never wrap squeezed the table and an empty cell gave its width up, every bar 0 px. The box holds it at 3em (Andy: "i'm sure 3em is wide enough").
-        // The bar itself is a solid border in the viewer's soft gold (Andy: "something a little more subtle?"), 0.8em tall, never a background colour alone.
+        // The bar itself is a solid border in the one match colour (--spirit-match, index.html), 0.8em tall, never a background colour alone.
         return '<td class="list-rank" style="width:3em;min-width:3em" title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '">' +
-          '<div style="width:3em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid rgba(255,213,79,0.45)"></div></div></td>';
+          '<div style="width:3em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid var(--spirit-match, rgba(130,180,240,0.55))"></div></div></td>';
       }
       var list = el('list');
       if (list) {

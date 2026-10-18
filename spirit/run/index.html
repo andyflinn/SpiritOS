@@ -350,7 +350,12 @@
          marked as the shared list marks one. */
       .text-view { margin-top: 1em; border-radius: 10px; overflow: hidden; }
       .text-view .CodeMirror { height: auto; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
-      .text-view-match { background: rgba(255, 213, 79, 0.45); border-radius: 2px; }
+      /* THE ONE MATCH COLOUR (goal/G29.11; Andy, 2026-10-18: "i do like to have the same color for the text highlights
+         as the score bar has, try a pastel blue (in the color scheme?)"): the list's marks, the viewer's marks and the
+         rank bar (shell/shared/js/listSearch.js) all take it. */
+      :root { --spirit-match: rgba(130, 180, 240, 0.55); }
+      mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
+      .text-view-match { background: var(--spirit-match); border-radius: 2px; }
 
       .media-view { max-width: 100%; margin-top: 12px; display: block; }
 
