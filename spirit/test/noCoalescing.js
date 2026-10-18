@@ -27,15 +27,16 @@ function code(file) {
 test.startTest('fileTransfer goal/G1.4: appServer publishes every object, no coalescing');
 
 test.subHeading('the coalescing machinery is gone from appServer');
-const appServer = code(path.join(RUN, 'js', 'appServer.js'));
+// publish moved into spirit.core.jobs (kernel.js) under goal/G29.15, so both files are read.
+const appServer = code(path.join(RUN, 'js', 'appServer.js')) + '\n' + code(path.join(RUN, 'js', 'kernel.js'));
 const left = ['PUBLISH_EVERY_MS', 'publishPending', 'publishTimer', 'publishLast'].filter(function (name) {
   return appServer.indexOf(name) !== -1;
 });
-if (!left.length) test.check('appServer.js has no publish interval, pending object or timer');
-else test.fail(OWED + 'appServer.js still has ' + left.join(', '));
+if (!left.length) test.check('neither appServer.js nor kernel.js has a publish interval, pending object or timer');
+else test.fail(OWED + 'appServer.js or kernel.js still has ' + left.join(', '));
 
 test.subHeading('the size cap stays');
-if (/PUBLISH_MAX/.test(appServer) && /publish-too-large/.test(appServer)) test.check('an object over PUBLISH_MAX is still refused out loud');
+if (/PAYLOAD_MAX/.test(appServer) && /publish-too-large/.test(appServer)) test.check('an object over MAX_PAYLOAD is still refused out loud');
 else test.fail(OWED + 'the size cap went with the coalescing');
 
 test.subHeading('no comment still describes the coalescing');

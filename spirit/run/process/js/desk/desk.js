@@ -1736,7 +1736,7 @@ function write(verb, a, check) {
   if (it) out.rows = changedRows(s, after, it.goal ? it.id : it.goalId);
   // An agent's word changes the current goal's row (its working list), and that row travels (goal/G2.3).
   if (verb === 'agent.state' && after.current) out.rows = changedRows(s, after, after.current);
-  appServer.publish(out);
+  appServer.spirit.core.jobs.publish(out);
   nudgeForWrite(after, verb, a);
   writeGoalFile(after, verb, a, Math.max(Number(r.lastInsertRowid), after.change));
   return after;
@@ -2008,7 +2008,7 @@ function pluginDesk(name, manifest) {
   return {
     name: name, goal: goal, manifest: manifest,
     stateDir: path.join(STATE, 'plugins', name),
-    publish: function (data) { return appServer.publish({ plugin: name, data: data }); },
+    publish: function (data) { return appServer.spirit.core.jobs.publish({ plugin: name, data: data }); },
     state: walkState,
     inGoal: function (id) { return inGoalOf(goal, id); },
     write: function (verb, body, check) { body.by = 'desk'; body.key = ''; return write(verb, body, check); },
@@ -2131,7 +2131,7 @@ appServer.serve(withPlugins({
       const r = addLine.run(l.key, String(l.at || ''), String(l.todo || ''), String(l.from || ''), String(l.kind || ''), String(l.text || ''), a.json);
       // A line of Andy's nudges the agent it was for, and nobody else (goal/G3.5).
       // THE LINE TRAVELS (goal/G27.9, S1): "log.add publishes its line", so a page shows it without asking again.
-      if (r.changes === 1) appServer.publish({ log: { key: String(l.key), at: String(l.at || ''), todo: String(l.todo || ''), from: String(l.from || ''), kind: String(l.kind || ''), peer: String(l.peer || ''), text: String(l.text || '') } });
+      if (r.changes === 1) appServer.spirit.core.jobs.publish({ log: { key: String(l.key), at: String(l.at || ''), todo: String(l.todo || ''), from: String(l.from || ''), kind: String(l.kind || ''), peer: String(l.peer || ''), text: String(l.text || '') } });
       if (r.changes === 1 && l.from === 'andy' && l.peer) {
         nudge(nudgeKeys(walkState()).filter(function (k) { return k === String(l.peer); }));
       }
@@ -2673,7 +2673,7 @@ appServer.serve(withPlugins({
       if (fieldWhy('text', a.text, true)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
       addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text));
-      appServer.publish({ rule: key, row: ruleRow(key) });
+      appServer.spirit.core.jobs.publish({ rule: key, row: ruleRow(key) });
       rulesChanged(key, 'added, proposed');
       return { key: key };
     },
@@ -2694,7 +2694,7 @@ appServer.serve(withPlugins({
       if (!newestRule.get(String(a.key))) throw refused('no-such-item');
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       putDraft.run(String(a.key), new Date().toISOString(), fr.normalizeParagraph(a.text));
-      appServer.publish({ rule: String(a.key), row: ruleRow(String(a.key)) });
+      appServer.spirit.core.jobs.publish({ rule: String(a.key), row: ruleRow(String(a.key)) });
       return { key: String(a.key) };
     },
   },
@@ -2708,7 +2708,7 @@ appServer.serve(withPlugins({
       if (RULE_STATUSES.indexOf(a.status) === -1) throw refusedWhy('bad-request', 'a rule status is one of ' + RULE_STATUSES.join(', '));
       if (fr.paragraphProblem(a.text)) throw refusedWhy('bad-request', fieldWhy('text', a.text, true));
       addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text));
-      appServer.publish({ rule: r.key, row: ruleRow(r.key) });
+      appServer.spirit.core.jobs.publish({ rule: r.key, row: ruleRow(r.key) });
       rulesChanged(r.key, 'versioned, ' + a.status);
       return { key: r.key };
     },

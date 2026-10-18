@@ -715,7 +715,71 @@ if (isNode()) {
     fail(error) {
       return spirit.core.jobs.report({ status: 'failed', data: { error: String(error) } });
     },
+
+    // ── PUBLISHING (desk/G2.3), MOVED HERE FROM appServer.js (goal/G29.15) ──
+    //
+    // What every spawned process shares lives here; appServer.js keeps only
+    // what serving needs. The object becomes the job's `app`, and every open
+    // page gets it as job-updated. EVERY OBJECT GOES OUT AS IT IS HANDED IN
+    // (fileTransfer goal/G1.4): no coalescing, no pacing; an app that needs
+    // pacing does it itself. SAID, NOT DROPPED: an object over MAX_PAYLOAD is
+    // not sent, and every page hears that one was lost, with its size and the
+    // limit, so it can ask again.
+    publish(obj) {
+      if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) return false;
+      const max = require('./limits').PAYLOAD_MAX;
+      let size = 0;
+      try { size = Buffer.byteLength(JSON.stringify(obj), 'utf8'); } catch (e) { return false; }
+      const send = function (o) {
+        Promise.resolve(spirit.core.jobs.report({ app: o })).catch(function () { /* not started by a node */ });
+      };
+      if (size > max) {
+        process.stderr.write('publish-too-large: ' + size + ' bytes, the limit is ' + max + '\n');
+        send({ dropped: { bytes: size, max: max } });
+        return false;
+      }
+      send(obj);
+      return true;
+    },
+
+    // ── THE JOB CYCLE, ONE PROGRESS PROTOCOL (goal/G29.15) ───────────────
+    //
+    // A job is start, then progress and app-specific messages, then end, each
+    // published as {job: {state, name, ...}} so every page draws the same bar.
+    // NO PROCESS RUNS MORE THAN ONE JOB AT A TIME (Andy's ruling, the item's
+    // box): a start while a job is open is refused as job-open, and a server
+    // that gets more work while busy queues it itself. A transient process IS
+    // its job: the node marks its start at spawn and its end at exit, so it
+    // only calls progress, which is published under no name. total 0 means
+    // unknown, an indeterminate bar.
+    start(name) {
+      if (openJob !== null) {
+        const err = new Error('a job is open: ' + openJob + '; end it before starting ' + String(name || ''));
+        err.code = 'job-open';
+        return Promise.reject(err);
+      }
+      openJob = String(name || '');
+      return spirit.core.jobs.cycle({ state: 'start', name: openJob });
+    },
+    progress(done, total, text) {
+      return spirit.core.jobs.cycle({ state: 'progress', name: openJob === null ? '' : openJob,
+        done: Number(done) || 0, total: Number(total) || 0, text: String(text || '') });
+    },
+    end(result) {
+      const name = openJob === null ? '' : openJob;
+      openJob = null;
+      const one = { state: 'end', name: name };
+      if (result instanceof Error) one.error = String(result.message || result);
+      else if (result !== undefined) one.result = result;
+      return spirit.core.jobs.cycle(one);
+    },
+    // One cycle message, through publish: its size check holds for these too.
+    cycle(job) {
+      return Promise.resolve(spirit.core.jobs.publish({ job: job }));
+    },
   };
+  // The job this process has open, by name; null between jobs (goal/G29.15).
+  let openJob = null;
 
   // ── THE NODE'S STREAM, READ AS A SERVER (goal/G16.9) ────────────────
   //

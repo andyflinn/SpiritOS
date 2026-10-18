@@ -346,7 +346,7 @@ function runSuite(file, port, onTests, env) {
 // WHAT IT IS DOING, PUBLISHED AS IT HAPPENS (goal/G8.12). Andy, 2026-10-09: "the new tab in desk should listen to real
 // events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress
 // bar", and "it should refresh by itself". So every change of the run is one object down the stream
-// (appServer.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the newest
+// (spirit.core.jobs.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the newest
 // and replaces it. The page asks nothing, as his no-pulling rule requires.
 //   doing     'item' one item's suites, 'goal' an emptied goal's suites, 'full' the whole folder (his button) or the
 //             short loop, 'idle' nothing running
@@ -374,7 +374,11 @@ function say(o) {
     consoleRun: consoleRun, consoleTo: consoleEnd, consoleEnded: consoleEnded,
   };
   lastSaid = one;
-  appServer.publish(one);
+  appServer.spirit.core.jobs.publish(one);
+  // THE SUITE COUNT AS THE JOB'S PROGRESS (goal/G29.15): the one bar every page draws, beside the tab's own object.
+  if (one.doing !== 'idle' && one.of > 0) {
+    spirit.core.jobs.progress(one.index, one.of, one.suite).catch(function () { /* not started by a node */ });
+  }
 }
 function sayIdle(line) {
   say({ doing: 'idle', line: line || (idleState.chores ? 'idle; ' + idleState.chores : 'idle, nothing running'),
@@ -818,6 +822,9 @@ async function drainQueue() {
       // ON FROM HERE, SO A STOP DURING ITS PULL IS ITS STOP (goal/G21.3).
       runningJob = job;
       let outcome = 'ended';
+      // EACH RUN IS ONE JOB (goal/G29.15): started here, ended below however it ended. The queue is why a second
+      // start can never come while one is open: no process runs more than one job at a time.
+      await spirit.core.jobs.start(String(job.kind || 'item') + ' ' + String(job.id || '')).catch(function () { /* not started by a node */ });
       try {
         // A JOB THAT NAMES A COMMIT WAITS FOR IT (goal/G19.13): pulled first, and not run until the tree holds it.
         if (job.commit) {
@@ -855,6 +862,8 @@ async function drainQueue() {
         stopped = false;
         // The console keeps this run's output, ended, until the next run clears it (goal/G22.3).
         consoleDone();
+        // The job ends here, so a wait or a stop that continues above ends it too (goal/G29.15).
+        await spirit.core.jobs.end({ outcome: outcome }).catch(function () { /* not started by a node */ });
       }
       // Reached only by a run that ran (a wait or a stop while pulling continued above, its row already said). The
       // commit it measured at is kept for a run that named none, so a search over runs answers it.

@@ -107,7 +107,7 @@ function lineOf(r) {
 }
 function publishLine(peer, sent, seq, extra) {
   const r = oneLine.get(peer, sent, seq);
-  if (r) appServer.publish(Object.assign({ line: lineOf(r) }, extra || {}));
+  if (r) appServer.spirit.core.jobs.publish(Object.assign({ line: lineOf(r) }, extra || {}));
 }
 // The line a re names, in this record: the writer's key says which side wrote it (G4.2: "the chatClerver is the one
 // who knows what an incoming message may miss, in terms of what it refers to").

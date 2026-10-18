@@ -4,7 +4,7 @@
 //   Andy, 2026-09-30: "would have been diagnosed in an instant had the shell rejected the package", "and downstream
 //   who else didn't do their job. think!", "and , like i said, this needs a test".
 // The contract:
-//   appServer.publish, given an object over its cap, publishes instead a small {dropped: {bytes, max}}, so every page
+//   spirit.core.jobs.publish (goal/G29.15: moved from appServer), given an object over its cap, publishes instead a small {dropped: {bytes, max}}, so every page
 //   hears that an update was lost; the List asks items.search again and an open dialog reloads its item.
 //   A refusal reaches his screen by its name, size and limit: the dialog and the List show the code, and for a size
 //   refusal its bytes and max, never only "did not answer".
@@ -13,7 +13,6 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const kernel = require('../run/js/kernel.js');
-const appServer = require('../run/js/appServer.js');
 
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
@@ -53,7 +52,7 @@ test.startTest('nothing downstream fails silently');
   const reported = [];
   const real = kernel.core.jobs.report;
   kernel.core.jobs.report = function (patch) { reported.push(patch); return Promise.resolve(); };
-  const took = appServer.publish({ big: 'x'.repeat(70 * 1024) });
+  const took = kernel.core.jobs.publish({ big: 'x'.repeat(70 * 1024) });
   await sleep(250);
   kernel.core.jobs.report = real;
   const last = (reported[reported.length - 1] || {}).app || {};

@@ -982,7 +982,7 @@ function models() {
 //   Andy, 2026-10-10: "so deskAgent keeps a state, and publishes changes, it's own api are more like
 //   event-delivery to deskAgent".
 //
-// The state is what state, models and chat.answer answer, in one object, published through appServer.publish
+// The state is what state, models and chat.answer answer, in one object, published through spirit.core.jobs.publish
 // whenever any of it changes: the switch, a load's state, the known list after a refresh, a chat answer. The node
 // hands it to the pages on this node and, on a puppet, streams it to the owner (puppetStream.js); the Remote
 // draws from it and asks nothing. The read verbs stay for a one-shot ask.
@@ -1078,7 +1078,7 @@ function modelsSearch(text, marks) {
   });
 }
 function publishState() {
-  appServer.publish(stateObject());
+  appServer.spirit.core.jobs.publish(stateObject());
 }
 
 // model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:

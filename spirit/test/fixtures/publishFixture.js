@@ -10,8 +10,8 @@ appServer.serve({
 });
 
 setTimeout(function () {
-  if (mode === 'small') appServer.publish({ hello: 'page', n: 1 });
-  if (mode === 'big') appServer.publish({ blob: 'x'.repeat(1024 * 1024) });
-  if (mode === 'burst') for (let i = 0; i < 200; i++) appServer.publish({ n: i });
+  if (mode === 'small') appServer.spirit.core.jobs.publish({ hello: 'page', n: 1 });
+  if (mode === 'big') appServer.spirit.core.jobs.publish({ blob: 'x'.repeat(1024 * 1024) });
+  if (mode === 'burst') for (let i = 0; i < 200; i++) appServer.spirit.core.jobs.publish({ n: i });
 }, 300);
 setInterval(function () {}, 1000);

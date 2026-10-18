@@ -8,7 +8,7 @@
 // The contract the builder follows (one limit, MAX_PAYLOAD, at every stage a payload passes):
 //   1. appServer measures every reply before it leaves; one over the limit is refused by the server itself,
 //      answer-too-large, with extra.bytes and extra.max. Checked on a throwaway server, raw on its pipe.
-//   2. appServer.publish refuses an object over MAX_PAYLOAD (returns false) and says so on stderr, by name.
+//   2. spirit.core.jobs.publish (moved from appServer, goal/G29.15) refuses an object over MAX_PAYLOAD (returns false) and says so on stderr, by name.
 //   3. The node's jobs.update door refuses a body over its limit by name (4xx), and the job keeps its old app.
 //   4. jobs.updateJob refuses an app object over MAX_PAYLOAD: the job is unchanged and no job-updated is emitted,
 //      so nothing oversized is ever written into a page's stream.
@@ -89,10 +89,10 @@ test.startTest('The shared layer refuses an oversized payload, at once and by na
   srv.close();
 
   // ── 2. a server's published object ───────────────────────────────────
-  test.subHeading('2. appServer.publish refuses an object over MAX_PAYLOAD, and says so');
+  test.subHeading('2. spirit.core.jobs.publish refuses an object over MAX_PAYLOAD, and says so');
   const probe = [
-    "const appServer = require(" + JSON.stringify(path.join(__dirname, '..', 'run', 'js', 'appServer.js')) + ");",
-    "const r = appServer.publish({ big: 'm'.repeat(" + (limits.PAYLOAD_MAX + 2048) + ") });",
+    "const spirit = require(" + JSON.stringify(path.join(__dirname, '..', 'run', 'js', 'kernel.js')) + ");",
+    "const r = spirit.core.jobs.publish({ big: 'm'.repeat(" + (limits.PAYLOAD_MAX + 2048) + ") });",
     "process.stdout.write(JSON.stringify({ took: r }));",
   ].join('\n');
   const ran = spawnSync(process.execPath, ['-e', probe], { encoding: 'utf8', env: {} });
