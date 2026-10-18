@@ -9,7 +9,7 @@
 //   line; a file's score is the average quality of its matched lines x m / (m + 10), never the file's length.
 //   THE VERB (approved by Andy): fs.search takes contents: yes; the node reads text files up to 1 MB and ranks the
 //   files by their contents score alone, label {path, score, line}. Without it fs.search answers as before.
-//   THE LIST: no found line in the rows; every search on the shared list shows a 5em weight bar, right adjusted, as its left-most column,
+//   THE LIST: no found line in the rows; every search on the shared list shows a 3em weight bar, right adjusted, as its left-most column,
 //   full for the best row and proportional for the others, gone with no words; a press opens the viewer marked, its
 //   first match in view; the editor's picker in contents opens marked.
 //
@@ -132,14 +132,15 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   await settle();
   const ranked = rowsIn(p1.doc.getElementById(pre1 + 'list').innerHTML);
   const widths = ranked.map(function (r) { return barWidth(r.first); });
-  if (widths.length === 3 && widths[0] === 100 && widths.every(function (w, i) { return w !== null && (i === 0 || w <= widths[i - 1]); }) && /width:\s*5em/.test(ranked[0].first) && /margin-left:\s*auto|text-align:\s*right/.test(ranked[0].first)) test.check('words typed: the left-most column is a 5em bar, right adjusted, full (100%) for the best row, shorter down the list: ' + widths.join(', '));
+  if (widths.length === 3 && widths[0] === 100 && widths.every(function (w, i) { return w !== null && (i === 0 || w <= widths[i - 1]); }) && /width:\s*3em/.test(ranked[0].first) && /margin-left:\s*auto|text-align:\s*right/.test(ranked[0].first)) test.check('words typed: the left-most column is a 3em bar, right adjusted, full (100%) for the best row, shorter down the list: ' + widths.join(', '));
   else test.fail(OWED + 'with words the first cells read ' + short(ranked.map(function (r) { return r.first; })));
   // Andy, 2026-10-18, twice: "i don't see the bars", "score bars STILL NOT SEEN", though the column's tooltips showed. A
   // bar drawn only as a background colour is dropped by contrast themes; the marks, which he sees, are yellow. So the
   // bar is drawn as a solid border, in the marks' yellow, 0.8em tall.
   // Then, at his window width (955 px), every bar measured 0 px: rows that never wrap squeezed the table and the empty
-  // cell gave its width up. The cell holds a fixed 5em box the bar sits in, so it cannot be squeezed.
-  if (/<td[^>]*class="list-rank"[^>]*min-width:\s*5em[^>]*>\s*<div[^>]*style="[^"]*width:\s*5em/.test(ranked[0].first)) test.check('the rank cell holds a fixed 5em box (min-width 5em): no row can squeeze it to nothing');
+  // cell gave its width up. The cell holds a fixed box the bar sits in, so it cannot be squeezed. Andy, 2026-10-18,
+  // seeing them: "i'm sure 3em is wide enough, don't want to waste too much horizontal space".
+  if (/<td[^>]*class="list-rank"[^>]*min-width:\s*3em[^>]*>\s*<div[^>]*style="[^"]*width:\s*3em/.test(ranked[0].first)) test.check('the rank cell holds a fixed 3em box (min-width 3em): no row can squeeze it to nothing');
   else test.fail(OWED + 'the rank cell is ' + short(ranked[0].first));
   const barTag = (/<div[^>]*border-top[^>]*>/.exec(ranked[0].first) || [''])[0];
   if (/border-top:\s*0\.8em\s+solid/.test(barTag) && /rgb\(255,\s*2[0-9]{2},\s*[0-9]+\)|#ff[de][0-9a-f]{3}|yellow/i.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid yellow border, 0.8em tall, no background-only drawing');
