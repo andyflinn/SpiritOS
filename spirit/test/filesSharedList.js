@@ -326,7 +326,9 @@ const TREE = [
     if (/\bmedia\b/.test(fieldText) && !/choose/.test(fieldText)) test.check('the field shows the current row while the keys move it: media');
     else test.fail(OWED + 'after two downs the field reads ' + short(fieldText));
 
-    // Andy, 2026-10-18: "The home and End keys don't work in the dropdown." The open dropdown's focus is its search box.
+    // Andy, 2026-10-18: "The home and End keys don't work in the dropdown.", then "after the user uses up and down arrow
+    // keys the home and end should belong to the list". The open dropdown's focus is its search box; the downs above
+    // moved the current row, so Home and End are the list's now.
     const keyedRows = function () { return keysOf(keyed); };
     fire(hostOf(keyed), 'keydown', { key: 'End', target: partOf(keyed, 'text') || {} });
     await settle();
@@ -335,8 +337,17 @@ const TREE = [
     await settle();
     const atHome = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec((partOf(keyed, 'list') || { innerHTML: '' }).innerHTML) || [])[1];
     const kr = keyedRows();
-    if (atEnd === kr[kr.length - 1] && atHome === kr[0]) test.check('in an open dropdown End and Home move the current row to the bottom and the top, from the search box');
+    if (atEnd === kr[kr.length - 1] && atHome === kr[0]) test.check('after the downs, End and Home move the current row to the bottom and the top, from the search box');
     else test.fail(OWED + 'End made ' + short(atEnd) + ' current, Home ' + short(atHome) + '; rows ' + short(kr));
+    const before = m.make({ files: function () { return TREE; } });
+    await settle();
+    const bField = partOf(before, 'field');
+    if (bField) fire(hostOf(before), 'click', { target: bField });
+    await settle();
+    fire(hostOf(before), 'keydown', { key: 'End', target: partOf(before, 'text') || {} });
+    await settle();
+    if (!/class="current"/.test((partOf(before, 'list') || { innerHTML: '' }).innerHTML)) test.check('before any up or down, End in the search box moves no row: it is the text cursor\'s');
+    else test.fail(OWED + 'End before any arrow moved the current row');
     // "is there a reason the dropdown is constrained wo that narrow width? ... can it be the required with to display
     // everything, constrained by page width?"
     const popTag = (/<div[^>]*id="listsearch-\d+-popup"[^>]*>/.exec((hostOf(keyed) || { innerHTML: '' }).innerHTML) || [''])[0];

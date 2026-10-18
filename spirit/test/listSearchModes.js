@@ -122,8 +122,16 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   const endKey = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
   fire(box, 'keydown', el.text, { key: 'Home' });
   const homeInBox = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
-  if (endKey === 'c' && homeInBox === 'c') test.check('end goes to the bottom; in the search box home stays the text cursor\'s');
-  else test.fail(OWED + 'end made ' + short(endKey) + ' current, home in the box ' + short(homeInBox));
+  // AMENDED BY goal/G29.8 (Andy, 2026-10-18: "after the user uses up and down arrow keys the home and end should belong
+  // to the list"): once up or down moved the current row, home in the search box moves the list too; typing gives
+  // home and end back to the text cursor.
+  if (endKey === 'c' && homeInBox === 'a') test.check('end goes to the bottom; after the arrows, home in the search box goes to the top');
+  else test.fail('OWED by goal/G29.8: end made ' + short(endKey) + ' current, home in the box ' + short(homeInBox));
+  fire(box, 'input', el.text);
+  fire(box, 'keydown', el.text, { key: 'End' });
+  const endAfterTyping = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
+  if (endAfterTyping === 'a') test.check('once the user types, end in the search box is the text cursor\'s again');
+  else test.fail('OWED by goal/G29.8: after typing, end in the box made ' + short(endAfterTyping) + ' current');
   fire(box, 'keydown', el.text, { key: 'ArrowUp' });
   fire(box, 'keydown', el.text, { key: 'Enter' });
   if (details[details.length - 1] === 'b') test.check('up, then enter presses the current row');
