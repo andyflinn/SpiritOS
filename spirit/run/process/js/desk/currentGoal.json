@@ -1,5 +1,5 @@
 {
- "change": 70273,
+ "change": 70334,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
@@ -1913,14 +1912,15 @@
    "status": "planning",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.11"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -1948,8 +1948,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "fs.search is for a person, not for the core. Think like a man: \"where did I put my screwdriver?\"\n\n- Words, never patterns: no special characters and no rules; every search feels the same, all rows, the best matches on top, on the shared list.\n- The words are matched against the path's segments and the file's name.\n- Search inside files is a filter, not syntax: when on, the words are matched in the contents of text files (text/plain, application/text and the like) as well.\n- The core's own folder listings (plugin loaders, an app's folder) are not this search: they move to one folder listing of their own first, in the item before this one.\n\nFIRST CUT\n- The first and only record shown at the start is the run folder; the load is a stream of the root folder's entries, no limit applies there.\n- Every update carries its stat (size, modified), except a delete.\n- With no words, a row is its name behind one square indent for every slash in its path; while words are typed the list switches to list mode and each row shows its full path.\n- Three yes/no filters: files (on by default), contents (off: the words are searched in text files too) and plugins (off: only <name>/<name>.js).\n\nHIGHLIGHTING\n- The list marks the matched parts of what it shows: shellCreateListSearch hands paint a mark(text) that wraps each matched word, so every search gets it.\n- Contents found are shown, never only counted: a row shows its matching line, marked the same way.\n- The text package is CodeMirror 5; the text launcher opens a file with the words, every match marked, the first in view.\n",
-   "version": 3,
+   "box": "fs.search is for a person, not for the core. Think like a man: \"where did I put my screwdriver?\"\n\nSplit into G29.12 (a file display on CodeMirror 5 with the search words marked) and then G29.11 (the words searched inside text files).\n\nDone by G29.8: words never patterns, matched against names and paths; the stream with stats; tree and list modes; the matched parts marked in every list.\nThe plugins filter is moot: Desk finds its plugins in the shell tree.",
+   "version": 4,
    "checks": [],
    "chat": [
     {
@@ -2071,6 +2071,102 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-17T22:39:36.986Z",
      "text": "Agreed and in the box: list-level marking belongs to shellCreateListSearch, which knows the words; it hands paint a mark(text) and every search gets it for free. In-file display is CodeMirror 5's, opened with the words.\nLevant: it answered without taking your line, so the desk refused its post (the take rule), and it planned to build before any Go; that is its brief to fix, not this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:30:36.705Z",
+     "text": "is this about the shell's file search or about the nodes file search?\n\nthis looks exactly like what we've just done...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:31:00.510Z",
+     "text": "Right, most of this box is done by G29.8: words not patterns, name and path matching, the stream with stats, tree and list modes, marked matches.\nWhat is left needs the node, since file contents live there: the contents filter (words searched inside text files, each row showing its matching line, marked), and the text editor on CodeMirror 5 opening a file with the words marked. The plugins filter is moot now that Desk reads the shell tree.\nShall I cut the box down to those two?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:32:13.937Z",
+     "text": "can we break this down? don't we need first a file display where i can see search matches? how else would i know if this works?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:32:32.811Z",
+     "text": "Yes, two items, the display first:\n1. \"File display on CodeMirror 5, search words marked\": the text launcher opens a file with given words, every match marked, the first in view; CodeMirror 5 kept in the tree, no build step.\n2. \"Contents filter: words searched inside text files\": a filter in the file list, the node searching text files, each row showing its matching line marked; a press opens item 1 at that line. Blocked by item 1.\nG29.7 then splits into these two. Say add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:33:47.089Z",
+     "text": "where does codeMirror5 live? where did we put that thing that makes proper fs-watcher events?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:34:08.758Z",
+     "text": "The watcher library is chokidar (with readdirp), copied into the tree under spirit/run/node_modules, committed with its licence (G4.25); only the node uses it.\nCodeMirror 5 lives nowhere yet. It runs in the page, and node_modules is never served to a page, so I would copy it, licence included, into spirit/run/shell/shared/codemirror5/, beside the shared list. Nothing else is vendored for the browser today."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:36:22.801Z",
+     "text": "it prolly belongs in shell/node_modules/ since it is a shell thing, no? and it needs to be fileServable()"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:36:49.958Z",
+     "text": "Agreed: spirit/run/shell/node_modules/codemirror/, a shell thing beside the shell.\nfileServable already serves it: it refuses only relay-state, sidecars and a few named files, never node_modules. The watcher skips every node_modules folder, so it stays out of the tree and Files.\nThe one change: .gitignore keeps all node_modules out except spirit/run/node_modules, so it gains a second exception for spirit/run/shell/node_modules. That goes in item 1."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:37:53.315Z",
+     "text": "hmmm node_modules doesn't show up in \"Files\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:38:11.629Z",
+     "text": "Right, on purpose so far: the tree skips node_modules and .git (kernel scanFolder, and the watcher with it), so a library of a thousand files never floods the stream or the lists. They are still served to a page.\nShould Files show them, for example node_modules folded and listed like any folder?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:39:22.957Z",
+     "text": "no need for \"Files\" to show them. i found them in VSCode...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:39:39.467Z",
+     "text": "Good, Files stays without them. The two items above wait for your add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:39:50.011Z",
+     "text": "so i agree to your location for this codeMirror"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:40:07.322Z",
+     "text": "Noted: spirit/run/shell/node_modules/codemirror/, with its .gitignore exception; it goes into item 1 when you add it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:40:10.886Z",
+     "text": "add it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:41:33.953Z",
+     "text": "Added: G29.12 \"File display on CodeMirror 5, search words marked\" blocks G29.11 \"Contents filter: words searched inside text files\", which blocks this one. Their boxes hold the design; this box now says what is done and where the rest went. G29.12 waits for your Go."
     }
    ]
   },
@@ -3511,6 +3607,155 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T00:22:50.614Z",
      "text": "Done noted. Point 4 (Levant) was not in that build, so it stays open: its gate checks by name, not key, and a backlog take swallows your new line.\nProposed item: \"Levant answers land: gate by key, no backlog takes\". Say add it, and G29.8 next?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.11",
+   "title": "Contents filter: words searched inside text files",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.7"
+   ],
+   "blocked": [
+    "goal/G29.12"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Search inside files: words found in the contents of text files, shown, never only counted.\n\n- A filter in the file list: contents, off by default; on, the words are searched in text files as well (text types: text/*, json, javascript and the like).\n- File contents live on the node, so the node searches them: its fs.search takes the contents filter, bounded in bytes as every answer is.\n- A row found by its contents shows its matching line, the words marked.\n- A press on such a row opens the file in the display of G29.12 with the words marked, at that line.",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G29.12",
+   "title": "File display on CodeMirror 5, search words marked",
+   "goal": "goal/G29",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.11"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/12",
+     "version": 29
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/8",
+     "version": 18
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/2",
+     "version": 12
+    },
+    {
+     "key": "rule/1",
+     "version": 11
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "A file display and the text editor, both on CodeMirror 5: a file opens with given words, every match marked, the first in view; the text editor edits and saves on the same CodeMirror, its plain text area gone.\n\n- CodeMirror 5 is copied, licence included, into spirit/run/shell/node_modules/codemirror/: a shell thing, served as any file (fileServable), kept out of the tree and Files as every node_modules is. No build step.\n- .gitignore keeps every node_modules out except spirit/run/node_modules; it gains a second exception for spirit/run/shell/node_modules.\n- The text launcher takes the words with the path; every match is marked the way the shared list marks a match, and the first is scrolled into view.\n- This display comes first, so the contents search (G29.11) can be seen to work.",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:43:08.038Z",
+     "text": "file display and textEditor."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:43:38.850Z",
+     "text": "In the box: the display and the text editor both on CodeMirror 5; the editor edits and saves on it, its plain text area gone, and opens a file with words marked."
     }
    ]
   }
