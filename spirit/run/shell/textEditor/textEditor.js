@@ -20,17 +20,24 @@ var APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 // exists in textEditor as well, it will be replaced with the dropdown version of our \"Files\" control."). The path
 // it picked, or the one "Open with" handed over, is the one loaded and saved.
 var textEditorPath = '';
-function textEditorLoadPath(path) {
+// THE TEXT ON CODEMIRROR (goal/G29.12): the file is edited in the shell's text view, its plain text area gone, and
+// opened with search words marked when it came with some. A file loaded makes a fresh view.
+var textEditorApi = null;
+var textEditorView = null;
+function textEditorLoadPath(path, words) {
   var content = spirit.core.fs.loadFile(path);
   textEditorPath = path;
   var pathEl = document.getElementById('editor-path');
   if (pathEl) pathEl.textContent = path;
-  document.getElementById('editor-content').value = content == null ? '' : content;
+  var place = document.getElementById('editor-content');
+  place.innerHTML = '';
+  textEditorView = textEditorApi.ui.elements.createTextView(place, { text: content == null ? '' : content, words: words || '', path: path });
   document.getElementById('editor-status').textContent = content == null ? 'not found (or empty) — you can still Save to create it' : 'loaded';
 }
 
 spirit.shell.activateApp({
   mount: function (container, api, params) {
+    textEditorApi = api;
     var initialPath = (params && params.path) || 'shell/textEditor/notes.txt';
     textEditorPath = initialPath;
     container.innerHTML =
@@ -40,7 +47,7 @@ spirit.shell.activateApp({
         '<button type="button" id="editor-save">Save</button>' +
         '<span id="editor-status"></span>' +
       '</div>' +
-      '<textarea id="editor-content" class="code-view" rows="24"></textarea>';
+      '<div id="editor-content" class="text-view"></div>';
 
     var statusEl = document.getElementById('editor-status');
     // Its text types only (goal/G29.8: "A file dropdown takes a hidden type filter the app configures").
@@ -58,21 +65,22 @@ spirit.shell.activateApp({
         statusEl.textContent = 'refusing to save over an app\'s own source (' + path + ') — the server would reject this anyway';
         return;
       }
-      var content = document.getElementById('editor-content').value;
+      var content = textEditorView ? textEditorView.value() : '';
       statusEl.textContent = 'saving…';
       spirit.core.fs.saveFile(path, content)
         .then(function () { statusEl.textContent = 'saved'; })
         .catch(function (err) { statusEl.textContent = 'save failed: ' + err.message; });
     });
 
-    if (params && params.path) textEditorLoadPath(params.path); // arrived via "Open with" — load immediately, don't wait for a manual click
+    // Arrived via "Open with": loaded at once, with its words; else the starting file, so the editor is never empty.
+    textEditorLoadPath(initialPath, params && params.words);
   },
   // Called by the shell when Text Editor is already mounted and gets
   // reopened against a different file — e.g. picked from Text File Launcher's
   // "Open with" a second time. mount() itself won't run again, so without
   // this the newly-picked file would never actually load.
-  loadFile: function (path) {
-    textEditorLoadPath(path);
+  loadFile: function (path, params) {
+    textEditorLoadPath(path, params && params.words);
   },
   render: function () {}, // static once mounted, same as Text File Launcher
 });

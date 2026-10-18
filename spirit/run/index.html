@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SpiritOS</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- CodeMirror 5, the shell's local copy (goal/G29.12): its own look, then the dark theme the text view uses. -->
+    <link rel="stylesheet" href="/shell/node_modules/codemirror/lib/codemirror.css" />
+    <link rel="stylesheet" href="/shell/node_modules/codemirror/theme/material-darker.css" />
     <script src="/js/kernel.js"></script>
     <!-- The isomorphic half of js/ownerBadge.js: the relay rules the
          browser has to obey too (Natter's Remove asks it whether this
@@ -342,7 +345,11 @@
         margin-top: 12px;
       }
 
-      textarea.code-view { width: 100%; box-sizing: border-box; resize: vertical; color: inherit; border: none; }
+      /* The text view (goal/G29.12): CodeMirror as tall as its text, inside the page's rounded tile; a search match
+         marked as the shared list marks one. */
+      .text-view { margin-top: 1em; border-radius: 10px; overflow: hidden; }
+      .text-view .CodeMirror { height: auto; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+      .text-view-match { background: rgba(255, 213, 79, 0.45); border-radius: 2px; }
 
       .media-view { max-width: 100%; margin-top: 12px; display: block; }
 
@@ -1305,6 +1312,14 @@
          element (goal/G2.14). Each adds itself to window.spiritElements; the
          shell hands them to apps as api.ui.elements. Before the shell, and
          the app-server selector before the api-branch one built from it. -->
+    <!-- CodeMirror 5 and the modes the text view picks by extension, before the text view (goal/G29.12). -->
+    <script src="/shell/node_modules/codemirror/lib/codemirror.js"></script>
+    <script src="/shell/node_modules/codemirror/mode/javascript/javascript.js"></script>
+    <script src="/shell/node_modules/codemirror/mode/css/css.js"></script>
+    <script src="/shell/node_modules/codemirror/mode/xml/xml.js"></script>
+    <script src="/shell/node_modules/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+    <script src="/shell/node_modules/codemirror/mode/markdown/markdown.js"></script>
+    <script src="/shell/js/textView.js"></script>
     <script src="/shell/js/iconSelector.js"></script>
     <script src="/shell/js/appHeader/appHeader.js"></script>
     <script src="/shell/js/contactLabel.js"></script>
@@ -1465,7 +1480,8 @@
         // now that apps stay persistently mounted across navigation, so a
         // viewer that doesn't also implement loadFile would keep showing
         // whichever file it first opened, forever.
-        function codeViewerLoadFile(path) {
+        // THE FILE ON CODEMIRROR (goal/G29.12): the text view shows it, the search words marked, the first in view.
+        function codeViewerLoadFile(path, words) {
           setViewerTitle(path);
           var content = spirit.core.fs.loadFile(path);
           document.getElementById('cv-body').innerHTML =
@@ -1480,8 +1496,11 @@
             // viewer's handlers were written into the text viewer's pane.
             '<div id="cv-open-with" class="open-with"></div>' +
             '<div id="job-manifest-form"></div>' +
-            '<pre class="code-view">' + escapeHtml(content == null ? '(could not load file)' : content) + '</pre>' +
+            '<div id="cv-text" class="text-view"></div>' +
             renderAnnotationsSection(path);
+          window.spiritElements.createTextView(document.getElementById('cv-text'), {
+            text: content == null ? '(could not load file)' : content, words: words || '', readOnly: true, path: path,
+          });
           renderAppOfFile(document.getElementById('app-of-file'), path);
           renderOpenWith(document.getElementById('cv-open-with'), 'text-file-launcher', path);
           maybeRenderJobForm(document.getElementById('cv-body'), path);
@@ -1499,10 +1518,10 @@
           type: 'launcher',
           mount: function (container, api, params) {
             container.innerHTML = '<div id="cv-body" class="stack"></div>';
-            codeViewerLoadFile(params.path);
+            codeViewerLoadFile(params.path, params.words);
           },
-          loadFile: function (path) {
-            codeViewerLoadFile(path);
+          loadFile: function (path, params) {
+            codeViewerLoadFile(path, params && params.words);
           },
           render: function () {}, // static between loadFile calls — the file's content doesn't live-update
         });

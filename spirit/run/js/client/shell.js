@@ -1399,6 +1399,8 @@
           createApiBranchSelector: spiritElements.createApiBranchSelector,
           // A file or folder from the shell's one tree, on the shared list (goal/G29.8, shell/js/fileSelector.js).
           createFileSelector: spiritElements.createFileSelector,
+          // A file's text on CodeMirror 5, the search words marked (goal/G29.12, shell/js/textView.js).
+          createTextView: spiritElements.createTextView,
           // The header area an app fills, sticky under the titlebar (goal/G6.1, shell/js/appHeader/appHeader.js).
           createAppHeader: spiritElements.createAppHeader,
         },
@@ -1730,7 +1732,8 @@
       // second chance to pick up a *different* file on a later visit.
       // Optional: only apps that implement loadFile are affected; every
       // other app is untouched.
-      app.loadFile(params.path);
+      // The whole params go along: the text launcher takes the search words with the path (goal/G29.12).
+      app.loadFile(params.path, params);
     }
     app._el.hidden = false;
 
