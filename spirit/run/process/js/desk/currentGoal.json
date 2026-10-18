@@ -1,5 +1,5 @@
 {
- "change": 72159,
+ "change": 72169,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -8262,11 +8261,9 @@
    "id": "goal/G29.22",
    "title": "The last old searches: jobs, boxes, modules",
    "goal": "goal/G29",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -8274,17 +8271,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -8292,7 +8289,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
@@ -8302,7 +8328,20 @@
    "box": "The last searches on the old graded bucket move to the probability modules.\n\n- jobs.search (the node verb behind the Jobs app) ranks jobs by the probability modules, cut by bytes.\n- owner.boxSearch (the box search) ranks by the probability modules, cut by bytes.\n- The module list search (config.searchModules) ranks by the probability modules, cut by bytes.\n- With no user left, the old search is deleted: gradedSearch.js, searchBucket.js and bucket.js, with tests that they are gone. A bounded single-object answer still needed (searchBucket.boundedGet) moves to a home of its own first.",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T23:29:49.514Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:30:16.737Z",
+     "text": "Green: the box is settled, no open question. Go, and I write the red."
+    }
+   ]
   }
  ]
 }
