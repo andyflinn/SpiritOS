@@ -114,10 +114,24 @@ test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use 
   // Andy, 2026-10-18: "remove all the env logic and allow-list crap from it at well", "kill'em all, they will be replaced
   // with from-scratch conforming designs....", "the GROK API key stuff, it all goes....".
   test.subHeading('4. no env secrets, no allow list, no proxy verbs; grokReview and the caption processes gone');
-  const gone = ['js/envSecrets.js', 'js/proxyList.js', 'js/proxy', 'process/js/grokReview', 'process/js/imageCaptionClaude', 'process/js/imageCaptionClaudeBatch']
+  // And all the LM Studio stuff (Andy, 2026-10-18: "delete all LM studio stuff as well. it all goes.").
+  const gone = ['js/envSecrets.js', 'js/proxyList.js', 'js/proxy', 'process/js/grokReview', 'process/js/imageCaptionClaude', 'process/js/imageCaptionClaudeBatch',
+    'process/js/imageCaptionLmStudio', 'process/js/lmStudioLoadModel', 'process/js/lmStudioUnloadModel']
     .filter(function (rel) { return fs.existsSync(path.join(RUN, rel)); });
-  if (!gone.length) test.check('gone: js/envSecrets.js, js/proxyList.js, js/proxy/, process/js/grokReview, imageCaptionClaude, imageCaptionClaudeBatch');
+  if (!gone.length) test.check('gone: js/envSecrets.js, js/proxyList.js, js/proxy/, process/js/grokReview, imageCaptionClaude, imageCaptionClaudeBatch, and every LM Studio process');
   else test.fail(OWED + 'still there: ' + gone.join(', '));
+  const lmCode = [];
+  (function walk(dir) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === 'media' || e.name === 'currentGoal.json') return;
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) walk(full);
+      else if (/\.(js|json|html)$/.test(e.name) && /lm ?studio/i.test(fs.readFileSync(full, 'utf8').replace(/goal\/G29\.20/g, ''))) lmCode.push(path.relative(RUN, full).split(path.sep).join('/'));
+    });
+  })(RUN);
+  const lmLeft = lmCode.filter(function (rel) { return !/LM Studio ones went, and every LM Studio process with them/.test(fs.readFileSync(path.join(RUN, rel), 'utf8')); });
+  if (!lmLeft.length) test.check('no code under spirit/run names LM Studio but the one line saying it went');
+  else test.fail(OWED + 'LM Studio still named in ' + lmLeft.join(', '));
   const suites = ['envSecrets.js', 'proxyList.js', 'grokReview.js'].filter(function (t) { return fs.existsSync(path.join(__dirname, t)); });
   if (!suites.length) test.check('their suites retire: envSecrets.js, proxyList.js, grokReview.js');
   else test.fail(OWED + 'suites still asserting them: ' + suites.join(', '));

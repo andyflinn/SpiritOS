@@ -587,12 +587,12 @@ function handleFsAnnotate(req, res) {
 // net.fetch never reaches this machine (goal/G29.20).
 const netFence = require('./netFence');
 
-// Generic outbound-request proxy — knows nothing about LM Studio, Claude,
-// or any other specific service, unlike the two hardcoded handlers this
-// originally replaced. A local service (LM Studio's included) sends no
-// Access-Control-Allow-Origin header, so a browser fetch() straight to it
-// is silently blocked by CORS even though it's reachable (server-to-server
-// requests aren't subject to CORS at all). The caller supplies the target
+// Generic outbound-request proxy — knows nothing about any specific
+// service, unlike the two hardcoded handlers this originally replaced (the
+// LM Studio ones went, and every LM Studio process with them, under
+// goal/G29.20). A browser fetch() straight to another site is blocked by
+// CORS whenever that site sends no Access-Control-Allow-Origin header;
+// server-to-server requests aren't subject to CORS at all. The caller supplies the target
 // url/method/headers/body/timeout and owns all response-shape parsing —
 // this just forwards and relays back whatever the target actually
 // returned, or a synthesized {error} on timeout/unreachable.
