@@ -1,5 +1,5 @@
 {
- "change": 69699,
+ "change": 69918,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,14 +47,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
-   "excluded": [
+   "waiting": 5,
+   "excluded": [],
+   "live": [
+    "claude-windows",
     "ollama agent node"
    ],
-   "live": [
-    "claude-windows"
+   "working": [
+    "ollama agent node"
    ],
-   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2078,7 +2080,7 @@
    "id": "goal/G29.8",
    "title": "one folder listing for the core's loaders, no fs.search",
    "goal": "goal/G29",
-   "status": "",
+   "status": "writing",
    "with": "",
    "buttons": [
     "close",
@@ -2088,7 +2090,7 @@
     "goal/G29.7"
    ],
    "blocked": [
-    "goal/G29.9"
+    "goal/G29.10"
    ],
    "codeOffered": true,
    "go": false,
@@ -2100,7 +2102,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -2111,7 +2113,8 @@
    "waived": false,
    "rules": [],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "ollama agent node": "levant-local"
    },
    "asks": 0,
    "half": false,
@@ -2300,11 +2303,11 @@
    "id": "goal/G29.9",
    "title": "the shared list's dropdown mode, contactSelector on it",
    "goal": "goal/G29",
-   "status": "deskVerify passed",
-   "with": "",
+   "status": "done",
+   "with": "ollama agent node",
    "buttons": [
-    "done",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.8"
@@ -2314,11 +2317,16 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "spirit/run/shell/chatter/chatter.js",
+     "by": "claude-windows",
+     "core": false
+    },
     {
      "path": "spirit/run/shell/contacts/contacts.js",
      "by": "claude-windows",
@@ -2337,6 +2345,11 @@
     {
      "path": "spirit/run/shell/shared/js/listSearch.js",
      "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "ollama agent node",
      "core": false
     },
     {
@@ -2387,8 +2400,8 @@
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "7121aece",
-   "redCommit": "cc301360",
+   "claimCommit": "713a75a2",
+   "redCommit": "9539b006",
    "waived": true,
    "rules": [
     {
@@ -2421,13 +2434,14 @@
     }
    ],
    "names": {
+    "ollama agent node": "levant-local",
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "Nothing in it is specific to contacts: it makes the search list's pane and its dropdown one system, and puts the features common to lists into the shared element, for one look and feel.\n\nWHAT EXISTS (shellCreateListSearch, shell/shared/js/listSearch.js, today)\n- Rows 1 to 3 in one pane: the filter row (filters declared, each shown only when its when(rows) says so), the search row (box, its clear button inside on the right, the search button), a count line, the list.\n- One keyed cache, an unbounded probabilityBucket; each keystroke ranks it in the page (probabilityStringObjectMatch times every filter's test), all rows shown, the best on top.\n- The server asked through api, server, verb and args: serialized, one request on the wire, no typing pause; the slot lent to the app (list.ask); a publish on its stream asks again.\n- paint(row), press(row), empty; refresh() and redraw().\n- contactSelector holds a dropdown of its own (a button opening the list) and marks its chosen row with a bold name.\n\nWHAT IS NEW\n- Two modes, pane and dropdown. Rows 1 and 2 always stand where they are; only row 3 differs: a pane below them, or a dropdown that opens under the search row when the box is focused or typed into, and closes on a pick or a click outside. In dropdown mode the chosen row's name stands in the search box while closed, or a placeholder.\n- Two tiers, set in the create function: rows the page already holds (a function answering them: the shell's file mirror, a monitor's stream, a caller's own contacts), ranked in the page and never asking the server; and the optional server hook as today, its rows joining the same cache. Most lists use both; Files and the monitors, the page alone.\n- A press on a row: in dropdown mode a pick; in pane mode the optional details(row) hook, which opens the row's dialog (a file's contents, a contact's details); with no hook, a pick there too.\n- Keys: up and down move the current row, home and end go to the top or bottom, enter presses it, escape closes an open dropdown; while the search box has the focus home and end stay the text cursor's.\n- The current row drawn by the list itself, the same everywhere: a slightly brighter background across the whole row.\n- The matched parts marked: the list hands paint a mark(text) that wraps each matched word, so every search gets it.\n- contactSelector drops its own dropdown and its bold name and passes the mode; chatter's new-chat picker and grants follow with no change of their own.\n",
-   "version": 8,
+   "box": "Nothing in it is specific to contacts: it makes the search list's pane and its dropdown one system, and puts the features common to lists into the shared element, for one look and feel.\n\nWHAT EXISTS (shellCreateListSearch, shell/shared/js/listSearch.js, today)\n- Rows 1 to 3 in one pane: the filter row (filters declared, each shown only when its when(rows) says so), the search row (box, its clear button inside on the right, the search button), a count line, the list.\n- One keyed cache, an unbounded probabilityBucket; each keystroke ranks it in the page (probabilityStringObjectMatch times every filter's test), all rows shown, the best on top.\n- The server asked through api, server, verb and args: serialized, one request on the wire, no typing pause; the slot lent to the app (list.ask); a publish on its stream asks again.\n- paint(row), press(row), empty; refresh() and redraw().\n- contactSelector holds a dropdown of its own (a button opening the list) and marks its chosen row with a bold name.\n\nWHAT IS NEW\n- Two modes, pane and dropdown, never both in one place: a list is the one or the other (chatter is a pane). The dropdown is just a pop-up pane: closed, a field showing the chosen row's name, or a placeholder; opened by a click on it, the whole pane pops up under it, rows 1 to 3 exactly as the pane looks, and shuts on a pick, escape or a click outside.\n- In a pane the keys are available wherever the focus is in it, the search box or the list; in an open dropdown alike.\n- Two tiers, set in the create function: rows the page already holds (a function answering them: the shell's file mirror, a monitor's stream, a caller's own contacts), ranked in the page and never asking the server; and the optional server hook as today, its rows joining the same cache. Most lists use both; Files and the monitors, the page alone.\n- A press on a row: in dropdown mode a pick; in pane mode the optional details(row) hook, which opens the row's dialog (a file's contents, a contact's details); with no hook, a pick there too.\n- Keys: up and down move the current row, home and end go to the top or bottom, enter presses it, escape closes an open dropdown; while the search box has the focus home and end stay the text cursor's.\n- The current row drawn by the list itself, the same everywhere: a slightly brighter background across the whole row.\n- The matched parts marked: the list hands paint a mark(text) that wraps each matched word, so every search gets it.\n- contactSelector drops its own dropdown and its bold name and passes the mode; chatter's new-chat picker and grants follow with no change of their own.\n",
+   "version": 9,
    "checks": [
     {
      "number": "G1",
@@ -2625,6 +2639,306 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-17T23:34:09.855Z",
      "text": "deskVerify: passed, at 7121aece (pulled). 8 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:41:29.560Z",
+     "text": "in the contacts app the up-down keys etc... don't work.\n\nin chatter, why does the contact pane look different from contacts? It fails to show proper columns for contacts, it should be all-pane mode there, that would be enough."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:42:39.765Z",
+     "text": "it's either pane or dropdown, never both. chatter is pane..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:43:53.932Z",
+     "text": "in a pane the keys should always be available for navigation. in a dropdown, i understand, but why does the dropdown not just show a \"pane\" exactly like the pane would look?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:43:58.409Z",
+     "text": "commit fa41ddc6e1835694ccbad7374075a5c267bea953: goal/G29.9: the red for a focusable list taking the keys, and chatter's one contact pane over the book\n- spirit/test/chatter.js\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:44:19.937Z",
+     "text": "deskVerify: red confirmed at fa41ddc6: spirit/test/chatter.js, spirit/test/listSearchModes.js. Beside it: spirit/test/contactSelectorPane.js is already green; spirit/test/contacts.js is already green; spirit/test/contactsListSearch.js is already green; spirit/test/deskFallout.js is already green; spirit/test/listSearch.js is already green; spirit/test/shellElements.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:44:20.799Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:44:56.831Z",
+     "text": "the dropdown is just a pop-up pane."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:44:57.665Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:45:10.899Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:45:15.667Z",
+     "text": "commit 2c7e0b51f484a0ef941cc0fbe9038f8be109b306: goal/G29.9: the list is focusable and takes the keys after a press; chatter keeps one contact pane over the book and its chats, the new-chat dropdown gone\n- spirit/run/shell/chatter/chatter.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/chatter.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:45:27.280Z",
+     "text": "Fixed at 2c7e0b51: a press gives the list the focus, so up/down, home/end and enter work in Contacts after a click; chatter has one pane, over your book and its chats, the blocked never offered, the new-chat dropdown gone.\nReload the page once deskVerify has pulled it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:45:41.755Z",
+     "text": "deskVerify: passed, at 2c7e0b51 (pulled). 8 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:46:11.657Z",
+     "text": "Understood, and it changes what I built from your rows line: the dropdown becomes a pop-up pane, a field with the chosen name, and a click pops the whole pane up under it, exactly as the pane looks; chatter is pane only already.\nKeys: in a pane they work wherever the focus is in it, box or list. In the box now; red, then build."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:46:58.090Z",
+     "text": "commit 6c54244cb4fc197ecb41c99cb7337805b2a56103: goal/G29.9: the red for the dropdown as a pop-up pane: a field, the whole pane popping up under it\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:47:18.782Z",
+     "text": "deskVerify: red confirmed at 6c54244c: spirit/test/listSearchModes.js. Beside it: spirit/test/chatter.js is already green; spirit/test/contactSelectorPane.js is already green; spirit/test/contacts.js is already green; spirit/test/contactsListSearch.js is already green; spirit/test/deskFallout.js is already green; spirit/test/listSearch.js is already green; spirit/test/shellElements.js is already green"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:47:43.448Z",
+     "text": "this means that with keystroke navigation in a pane, the Enter key will bring up the detailDialog, or whatever the hook describes."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:47:44.412Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:48:40.936Z",
+     "text": "commit 6b3c39f1ba71dac35d08ba567ec7cbbeb77ab34c: goal/G29.9: the dropdown is a pop-up pane: a field with the chosen name, the very same pane popping up under it\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/contactSelectorPane.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:48:52.712Z",
+     "text": "Built at 6b3c39f1: the dropdown is a field showing the chosen name or the prompt; a click pops the very same pane up under it, filters, search and list, and a pick, escape or a click outside shuts it.\nUsed today by grants' contact picker; chatter and Contacts are panes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:49:07.383Z",
+     "text": "deskVerify: passed, at 6b3c39f1 (pulled). 8 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:49:10.337Z",
+     "text": "Yes: enter presses the current row exactly as a click does, so in a pane it calls the details hook (Fallout: the test history); with no hook it picks, and Contacts opens contactsDetails on that pick, so enter there brings up the details dialog too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:50:20.071Z",
+     "text": "commit 9539b006e5f7295a24a5597a305dc3ada26202cc: goal/G29.9: the red for a solid popup, nothing under it showing through\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:50:39.685Z",
+     "text": "deskVerify: red confirmed at 9539b006: spirit/test/listSearchModes.js. Beside it: spirit/test/chatter.js is already green; spirit/test/contactSelectorPane.js is already green; spirit/test/contacts.js is already green; spirit/test/contactsListSearch.js is already green; spirit/test/deskFallout.js is already green; spirit/test/listSearch.js is already green; spirit/test/shellElements.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-17T23:50:40.672Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:50:46.400Z",
+     "text": "commit 713a75a25fe4684f6434575050e6e976b78eae6c: goal/G29.9: the popup is solid, with a shadow and room for its rows\n- spirit/run/shell/shared/js/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:50:58.767Z",
+     "text": "Checked in a fresh page: chatter is one pane, the same columns as Contacts, Levant starred. In grants the popup let the table under it show through; fixed at 713a75a2: solid, a shadow, at least 24em wide."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:51:13.488Z",
+     "text": "deskVerify: passed, at 713a75a2 (pulled). 8 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.10",
+   "title": "Quick desk fixes before we continue.",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.8"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "ollama agent node": "levant-local",
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Quick desk fixes before we continue.\n\n1. The limbo posts go: the item's row already says where it stands.\n2. A write an agent makes while holding a phase answers with Andy's lines typed since it took the phase, so a small change rides the same cycle.\n3. An item stays in the code phase from its Go until Andy presses Done. The agent's own claim that it is done (a verify pass) leaves it in code; only Andy's Done ends it. Within it the agent runs red, build and verify as often as the finishing takes, the final adjustments included, and Andy's lines reach it without the hold; the desk sends no JOB offer to take a red while the item is being worked on.\n4. Levant's answers reach the desk: asked by name in G29.7 (Levant?), its runner (deskAgent.js) took the line before posting, the take never landed (the lines stand untaken), and the desk refused its answer. The runner's take lands, and the answer is posted under it; telling Levant changes nothing.\n",
+   "version": 5,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Point 3: is the offering you mean the JOB lines the desk sends agents (JOB goal/X red rules: ...), so that an agent takes a phase only on your Go or your line, never on an offer?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-17T23:58:27.082Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:56:00.953Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:56:18.106Z",
+     "text": "Read: 1 the limbo posts go; 2 a report made while holding a phase answers with your lines typed meanwhile; 4 Levant's brief: take the line before answering, never build before a Go.\nTwo questions are on the item as Q1 (point 3) and Q2 (point 5)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:56:48.577Z",
+     "text": "1: yes, the item's row already says where it stands; a post saying it again is noise. 2: yes, every write an agent makes while holding a phase answers with your lines since it took the phase, so a small change rides the same cycle.\n3 (my reading, Q1): the JOB offers go; an agent moves on your Go and your lines, never on an offer, and the phases are its to take."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:56:53.096Z",
+     "text": "4: Levant's brief says take before answering and never build before a Go; the desk already refuses an untaken post, so the brief is what lags.\n5: an adjust phase after the first verify pass, until your Done: your lines go straight to the agent and red, build, verify run inside it without the hold. The second question (how it starts and ends) waits for Q1."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:58:06.144Z",
+     "text": "Q1: Point 3: is the offering you mean the JOB lines the desk sends agents (JOB goal/X red rules: ...), so that an agent takes a phase only on your Go or your line, never on an offer?\n\nyou complained about desk anting you to take a red while you're working on something (an item in its finalization \"phase\", or mabe an item is in the \"code\" phase until i press done. that might be the easiest fix."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:58:38.719Z",
+     "text": "Agreed, the easiest fix, and it answers point 5 too: in the box, an item stays in the code phase from its Go to your Done, red, build and verify as often as the finishing takes, your lines reaching the agent, no JOB offers meanwhile. Q1 answered; no second question needed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-17T23:58:42.067Z",
+     "text": "when you claim 'Done' the item should remain in \"code\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-17T23:59:09.502Z",
+     "text": "In the box, point 3: the agent's own claim that it is done (its verify pass) leaves the item in code; only your Done ends it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:00:40.489Z",
+     "text": "Isn't it Levant's deskClient that must \"take\" a line for Levant, and hold that take so Levant's answer can reach the desk?\n\ni doubt that \"telling\" Levan't anything has any effect."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:01:35.698Z",
+     "text": "Right, and it already is mechanical: Levant's runner (deskAgent.js) takes the line itself when it posts. In G29.7 its post was refused because I had taken your lines first, addressed to me (cw, propose.), and a taken line lets one agent answer.\nSo the real fix is in the runner, not the brief: a line addressed to another agent is never answered by Levant at all. Point 4 rewritten so."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:02:10.721Z",
+     "text": "i asked specifically Levant? so there were lines that were his...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:02:45.764Z",
+     "text": "You are right, I was wrong: your three Levant? lines in G29.7 are still untaken, by Levant or anyone; its runner tried to take before posting, the take never landed, so the desk refused its answer.\nPoint 4 is a fault in Levant's runner, not its brief: rewritten so, and the build starts by finding why its take does not land."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:03:58.373Z",
+     "text": "Levant, give me your input on this item so claude-windows can see what happens to your line..."
     }
    ]
   }
