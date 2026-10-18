@@ -4,7 +4,9 @@
 // goal/G29.14: Jobs searched on the shared list, the shared progressBar, and Jobs Details as a live monitor of the
 // events a job publishes. Red on today's tree; claude-windows writes it and builds it (one agent). The item's box (v9):
 //   JOBS: the shared list, filters on row 1, the search on row 2, then the rows. Words match name, type, module and id;
-//   with no words the newest updated is on top. Kind filter, one choice: all, servers, transient. Status filter: one
+//   with no words the rows are sorted by id and stand still (box v10). Kind filter, one choice: all, node, servers,
+//   transient (node: the node's own jobs). Column headings are the shared list's own; a left-most column holds one green
+//   dot, on the most recent update. Status filter: one
 //   toggle per status the list holds, each in or out (a multi-toggle filter in listSearch.js, usable by every list).
 //   Columns: rank bar, status, name (module, else type), kind, progress, updated.
 //   PROGRESS BAR: progressBar, one shared shell element drawn from (done, total, text); total 0 indeterminate; it knows
@@ -129,7 +131,8 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   [job('job_1', 'server', 'desk', 'running', 5, { module: 'process/js/desk' }),
     job('job_2', 'server', 'deskVerify', 'running', 9, { module: 'process/js/deskVerify' }),
     job('job_3', 'process', 'imageStats', 'completed', 2, { module: 'process/js/imageStats' }),
-    job('job_4', 'process', 'wordpressScanner', 'running', 7, { module: 'process/js/wordpressScanner' })].forEach(function (j) { JOBS.set(j.id, j); });
+    job('job_4', 'process', 'wordpressScanner', 'running', 7, { module: 'process/js/wordpressScanner' }),
+    job('job_10', 'permanent', 'server-stats', 'running', 11)].forEach(function (j) { JOBS.set(j.id, j); });
   const sp = { core: { util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: kernel.core.const.ICON }, jobs: {} },
     shell: { activateApp: function (x) { sp.app = x; }, factRow: function (rows) { return rows.map(function (r) { return '<div>' + r[0] + ': ' + r[1] + '</div>'; }).join(''); } } };
   const heard = [];
@@ -158,28 +161,32 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   const jstrip = function () { return (p.byId[jpre + 'filters'] || {}).innerHTML || ''; };
   const redraw = function () { try { sp.app.render(JOBS); } catch (e) { /* said by the checks */ } };
 
-  if (jpre && order().length === 4) test.check('the jobs stand on the shared list');
+  if (jpre && order().length === 5) test.check('the jobs stand on the shared list');
   else test.fail(OWED + 'no shared list in Jobs, or not every job on it: ' + short(order()));
-  if (order().join() === 'job_2,job_4,job_1,job_3') test.check('with no words the newest updated is on top');
+  if (order().join() === 'job_1,job_2,job_3,job_4,job_10') test.check('with no words the rows are sorted by id, job_10 after job_4');
   else test.fail(OWED + 'with no words the order is ' + short(order()));
-  if (/data-value="[^"]*"[^>]*>[^<]*all/i.test(jstrip()) && /servers/i.test(jstrip()) && /transient/i.test(jstrip())) test.check('the kind filter offers all, servers, transient');
+  if (/data-value="[^"]*"[^>]*>[^<]*all/i.test(jstrip()) && />[^<]*node</i.test(jstrip()) && /servers/i.test(jstrip()) && /transient/i.test(jstrip())) test.check('the kind filter offers all, node, servers, transient');
   else test.fail(OWED + 'the filters read ' + short(jstrip()));
   const kindValue = function (word) { const m = new RegExp('data-filter="([^"]+)" data-value="([^"]*)"[^>]*>[^<]*' + word, 'i').exec(jstrip()); return m ? { 'data-filter': m[1], 'data-value': m[2] } : null; };
   const servers = kindValue('servers');
   if (servers) jobsBox.fire('click', { target: target(servers) });
-  if (order().join() === 'job_2,job_1') test.check('servers shows the two app servers only');
+  if (order().join() === 'job_1,job_2') test.check('servers shows the two app servers only');
   else test.fail(OWED + 'servers shows ' + short(order()));
   const transient = kindValue('transient');
   if (transient) jobsBox.fire('click', { target: target(transient) });
-  if (order().join() === 'job_4,job_3') test.check('transient shows the two processes only');
+  if (order().join() === 'job_3,job_4') test.check('transient shows the two processes only');
   else test.fail(OWED + 'transient shows ' + short(order()));
+  const nodeKind = kindValue('node');
+  if (nodeKind) jobsBox.fire('click', { target: target(nodeKind) });
+  if (order().join() === 'job_10') test.check('node shows the node\'s own job, server-stats, alone');
+  else test.fail(OWED + 'node shows ' + short(order()));
   const all = kindValue('all');
   if (all) jobsBox.fire('click', { target: target(all) });
   const completed = kindValue('completed');
   if (/running/.test(jstrip()) && completed) test.check('a toggle for each status the list holds: running, completed');
   else test.fail(OWED + 'no status toggles in ' + short(jstrip()));
   if (completed) jobsBox.fire('click', { target: target(completed) });
-  if (order().indexOf('job_3') === -1 && order().length === 3) test.check('completed turned off leaves the completed job out');
+  if (order().indexOf('job_3') === -1 && order().length === 4) test.check('completed turned off leaves the completed job out');
   else test.fail(OWED + 'with completed off the rows are ' + short(order()));
   if (completed) jobsBox.fire('click', { target: target(completed) });
 
@@ -192,6 +199,9 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   else test.fail(OWED + 'job_3 gave ' + short(order()));
   if (text) { text.value = ''; jobsBox.fire('input', { target: { id: jpre + 'text' } }); }
 
+  const head = (/<thead>[\s\S]*?<\/thead>/.exec(jlist()) || [''])[0];
+  if (/Status[\s\S]*Name[\s\S]*Kind[\s\S]*Progress[\s\S]*Updated/.test(head)) test.check('the list has column headings: Status, Name, Kind, Progress, Updated');
+  else test.fail(OWED + 'no column headings in the list: ' + short(head || jlist().slice(0, 200)));
   const rowOf = function (id) { return (new RegExp('<tr data-key="' + id + '"[\\s\\S]*?</tr>').exec(jlist()) || [''])[0]; };
   if (/deskVerify/.test(rowOf('job_2')) && /server/.test(rowOf('job_2')) && /running/.test(rowOf('job_2'))) test.check('a row shows its status, its name (the module) and its kind');
   else test.fail(OWED + 'job_2\'s row is ' + short(rowOf('job_2')));
@@ -214,6 +224,18 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   redraw();
   if (/value="3"/.test(rowOf('job_4')) && /page 3/.test(rowOf('job_4'))) test.check('a transient process IS its job: its progress alone draws the bar');
   else test.fail(OWED + 'job_4\'s row is ' + short(rowOf('job_4')));
+  if (order().join() === 'job_1,job_2,job_3,job_4,job_10') test.check('updates moved no row: the order is still by id');
+  else test.fail(OWED + 'after updates the order is ' + short(order()));
+  const dots = (jlist().match(/job-latest/g) || []).length;
+  if (dots === 1 && /job-latest/.test(rowOf('job_4'))) test.check('one green dot, on job_4, the most recent update');
+  else test.fail(OWED + 'dots: ' + dots + ', on job_4 ' + /job-latest/.test(rowOf('job_4')));
+  const stats = JOBS.get('job_10');
+  stats.data = { cpu: 1 };
+  stats.updatedAt += 100;
+  hear(stats);
+  redraw();
+  if ((jlist().match(/job-latest/g) || []).length === 1 && /job-latest/.test(rowOf('job_10'))) test.check('server-stats ticks: the dot hops to its row');
+  else test.fail(OWED + 'after a server-stats tick the dot is not on job_10 alone');
   jobsBox.fire('click', { target: target({}, 'job_4') });
   if (dialogs.length && dialogs[dialogs.length - 1].id === 'shell/jobsDetails' && dialogs[dialogs.length - 1].params.id === 'job_4') test.check('a row still opens its job in Jobs Details');
   else test.fail(OWED + 'a press opened ' + short(dialogs));
@@ -266,6 +288,22 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   dhear(watcher);
   if (/createFile/.test((dp.byId['jd-log'] || {}).innerHTML || '') && /shell\/x\.js/.test((dp.byId['jd-log'] || {}).innerHTML || '')) test.check('fs-watcher\'s events are its tree commands: an agent\'s file changes');
   else test.fail(OWED + 'the watcher\'s command is not in the log: ' + short((dp.byId['jd-log'] || {}).innerHTML));
+  // The node's own jobs report through their data (box v10): server-stats every tick, relay-presence on a change.
+  const ticks = job('job_11', 'permanent', 'server-stats', 'running', 1);
+  JOBS.set('job_11', ticks);
+  dsp.app.open({ id: 'job_11' });
+  [{ cpu: 0.1, rss: 10 }, { cpu: 0.2, rss: 10 }, { cpu: 0.2, rss: 10 }, { cpu: 0.3, rss: 11 }].forEach(function (d) { ticks.data = d; ticks.updatedAt += 1; dhear(ticks); });
+  const statsLog = (dp.byId['jd-log'] || {}).innerHTML || '';
+  if ((statsLog.match(/data-event="/g) || []).length === 3 && /0\.3/.test(statsLog)) test.check('server-stats\' data is its event: three ticks that changed it, three lines (the repeat adds none)');
+  else test.fail(OWED + 'server-stats\' log holds ' + short(statsLog));
+  const presence = job('job_12', 'permanent', 'relay-presence', 'running', 1, { data: { presence: {} } });
+  JOBS.set('job_12', presence);
+  dsp.app.open({ id: 'job_12' });
+  presence.data = { presence: { 'wss://relay.example': { state: 'connected' } } };
+  presence.updatedAt += 1;
+  dhear(presence);
+  if (/relay\.example/.test((dp.byId['jd-log'] || {}).innerHTML || '')) test.check('relay-presence\'s data is its event too');
+  else test.fail(OWED + 'relay-presence\'s change is not in the log');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);
