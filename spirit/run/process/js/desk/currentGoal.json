@@ -1,5 +1,5 @@
 {
- "change": 70481,
+ "change": 70483,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -47,14 +47,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -3661,10 +3663,9 @@
    "id": "goal/G29.12",
    "title": "File display on CodeMirror 5, search words marked",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
