@@ -98,7 +98,8 @@ function createTools(opts) {
     const ns = String(namespace || '');
     const route = routeOf(ns);
     if (!route) return Promise.resolve([]);
-    return route.ask(route.family('introspect'), {}).then(function (r) {
+    // Every verb with a file: introspect is a search since goal/G29.19, and no words ask for all of them.
+    return route.ask(route.family('introspect'), { text: '' }).then(function (r) {
       const items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
       const listed = Object.create(null);
       return items.reduce(function (chain, item) {

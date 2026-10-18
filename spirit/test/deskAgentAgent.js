@@ -166,7 +166,7 @@ async function suite() {
   let up = false;
   for (let i = 0; i < 60 && !up && out.code === null; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.deskAgent && r.body.deskAgent.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
-  const intro = (await client.ask({ deskAgent: { 'AGENTS.introspect': {} } })).body || {};
+  const intro = (await client.ask({ deskAgent: { 'AGENTS.introspect': { text: '' } } })).body || {};
   const listed = (intro.items || []).map(function (i) { return i.key; }).sort();
   if (['commit', 'file.load', 'file.save', 'push'].every(function (v) { return listed.indexOf(v) !== -1; })) test.check('AGENTS.introspect lists file.load, file.save, commit and push: ' + listed.join(', '));
   else test.fail(OWED + 'deskAgent introspection lists ' + short(listed));

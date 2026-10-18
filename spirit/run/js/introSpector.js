@@ -41,6 +41,9 @@
 
 const fs = require('fs');
 const path = require('path');
+// The probability modules (goal/G29.19): AGENTS.introspect ranks with them; the old graded bucket is gone from here.
+const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
 
 const AGENTS_FILE = 'AGENTS.md';
 const INTROSPECT = 'introspect';
@@ -108,26 +111,29 @@ function family(dir, opts) {
     },
   };
 
-  // A LIST IS A SEARCH (puppets/G2): the shared bucket, an empty question, cut
-  // in bytes to one answer, `more` saying so.
+  // A SEARCH ON THE PROBABILITY MODULES (goal/G29.19; Andy, 2026-10-18: "and introSpector will of course search the
+  // verb-description files as well? with lower weight?", then "name 66% description 33%"). With no words every verb
+  // with a file, in name order; with words each verb scores 2/3 by its name and 1/3 by its description file, and one
+  // matching neither is left out. Cut in bytes to one answer, `more` saying so.
   verbs[prefix + 'AGENTS.' + INTROSPECT] = {
-    request: {}, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function () {
-      const bucket = require('./searchBucket').createSearch({
-        // '**', AS log.search ASKS (goal/G24.5): a single '*' never spans a "/", so a verb whose description held one
-        // was dropped silently; item.get, config.searchModules and relay.search were never listed.
-        query: '**', maxBytes: room() - 512,
-        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-        extractKeyAndLabelFromRow: function (pair) { return pair; },
+    request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      const words = String((a && a.text) || '').trim();
+      const bucket = createProbabilityBucket(Infinity);
+      stems.forEach(function (stem, i) {
+        // A tie keeps name order: the earlier name a hair higher.
+        const tie = 1e-9 / (1 + i);
+        if (!words) { bucket.seatFor(0.5 + tie, stem); return; }
+        let description = '';
+        try { description = String((JSON.parse(fs.readFileSync(path.join(dir, folder.files[stem]), 'utf8')) || {}).description || ''); } catch (e) { description = ''; }
+        const p = (2 / 3) * (Number(probabilityStringObjectMatch(words, { name: stem })) || 0) +
+          (1 / 3) * (Number(probabilityStringObjectMatch(words, { description: description })) || 0);
+        if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-6) + tie), stem);
       });
       // NAMES ONLY (goal/G24.4). Andy: "first get the list of verbs ... for the allowed ones it gets the description".
-      // A label carried the verb's whole description, so past about 8 KB of them the listing was cut and the verbs at
-      // its end were lost to a caller that read one answer. The label is the verb's name now, so a family fits one
-      // answer; the description is AGENTS.<verb>'s, asked for each verb the caller keeps.
-      for (const stem of stems) {
-        if (!bucket.offer({ key: prefix + stem, label: stem })) break;
-      }
-      return bucket.getResult();
+      // The label is the verb's name, so a family fits one answer; the description is AGENTS.<verb>'s.
+      const out = bucket.serialize(function (stem) { return { key: prefix + stem, label: stem }; }, room() - 512);
+      return { items: out.items, more: !!out.more };
     },
   };
 

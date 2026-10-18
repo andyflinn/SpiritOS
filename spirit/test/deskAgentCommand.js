@@ -138,7 +138,7 @@ async function suite() {
   let up = false;
   for (let i = 0; i < 60 && !up && out.code === null; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.deskAgent && r.body.deskAgent.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
-  const listed = ((await ask('AGENTS.introspect', {})).body.items || []).map(function (i) { return i.key; });
+  const listed = ((await ask('AGENTS.introspect', { text: '' })).body.items || []).map(function (i) { return i.key; });
   if (listed.indexOf('command.run') !== -1) test.check('AGENTS.introspect lists command.run');
   else test.fail(OWED + 'AGENTS.introspect lists ' + short(listed));
 

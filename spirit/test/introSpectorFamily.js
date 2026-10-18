@@ -101,7 +101,7 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
   else { test.fail('the world: AGENTS answered ' + short(md) + '; the shape of slim/G1.8 moved'); return; }
 
   test.subHeading('2. AGENTS.introspect lists the verbs that have a file, and nothing else');
-  const list = await call('AGENTS.introspect', {});
+  const list = await call('AGENTS.introspect', { text: '' });
   const items = list.body && Array.isArray(list.body.items) ? list.body.items : null;
   if (items) test.check('AGENTS.introspect answers the list form {items, more}');
   else test.fail(OWED + 'AGENTS.introspect answered ' + short(list));

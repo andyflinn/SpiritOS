@@ -147,7 +147,7 @@ async function suite() {
   const st = (await ask('state', {})).body;
   if (st.connected === false) test.check('the world: Levant is disconnected (no recommended model)');
   else test.fail('the world: Levant is connected: ' + short(st));
-  const intro = (await ask('AGENTS.introspect', {})).body;
+  const intro = (await ask('AGENTS.introspect', { text: '' })).body;
   const listed = (intro.items || []).map(function (i) { return i.key; });
   if (listed.indexOf('file.search') !== -1) test.check('deskAgent\'s AGENTS.introspect lists file.search');
   else test.fail(OWED + 'AGENTS.introspect lists ' + short(listed));
