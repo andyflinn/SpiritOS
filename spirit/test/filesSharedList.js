@@ -112,7 +112,7 @@ function load() {
   const byId = {};
   const doc = { createElement: node, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; },
     getElementById: function (id) { if (!byId[id]) { byId[id] = node('div'); byId[id].id = id; } return byId[id]; },
-    addEventListener: function () {}, removeEventListener: function () {}, dispatchEvent: function () { return true; } };
+    listeners: {}, addEventListener: function (t, fn) { (doc.listeners[t] = doc.listeners[t] || []).push(fn); }, removeEventListener: function () {}, dispatchEvent: function () { return true; } };
   DOC = doc;
   const win = {};
   const asked = [];
@@ -130,7 +130,7 @@ function load() {
   });
   new Function('document', 'window', fs.readFileSync(LIST, 'utf8'))(doc, win);
   if (fs.existsSync(FILE)) new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(FILE, 'utf8'))(sp, doc, win, Event, CustomEvent);
-  return { make: win.spiritElements && win.spiritElements.createFileSelector, asked: asked };
+  return { make: win.spiritElements && win.spiritElements.createFileSelector, asked: asked, doc: doc };
 }
 
 const MOD = '2026-10-17T12:00:00.000Z';
@@ -211,10 +211,16 @@ const TREE = [
     else test.fail(OWED + 'fileSelector.js does not call shellCreateListSearch');
     const pane = m.make({ face: 'pane', files: function () { return TREE; } });
     await settle();
+    // AFTER THE FIRST BUILD (Andy, 2026-10-18): "the initial presentation (when search box is empty) should always be
+    // collapsed, as soon as a search string is active, everything is visible (not collapsed)."
+    const start = keysOf(pane);
+    if (JSON.stringify(start) === JSON.stringify(['js', 'media', 'shell'])) test.check('with no words every folder starts folded: only js, media and shell show');
+    else test.fail(OWED + 'with no words the rows are ' + short(start));
+    for (const k of ['shell', 'shell/shared', 'shell/shared/js', 'js', 'media']) { press(pane, k); await settle(); }
     const order = keysOf(pane);
     const want = TREE.map(function (f) { return f.relativePath; });
-    if (JSON.stringify(order) === JSON.stringify(want)) test.check('with no words, every row in path order');
-    else test.fail(OWED + 'with no words the rows are ' + short(order));
+    if (JSON.stringify(order) === JSON.stringify(want)) test.check('pressed open, every row stands in path order');
+    else test.fail(OWED + 'unfolded, the rows are ' + short(order));
     const indents = function (k) { return ((rowFor(pane, k) || { html: '' }).html.match(/class="[^"]*\bfile-selector-indent\b/g) || []).length; };
     if (indents('js') === 0 && indents('js/server.js') === 1 && indents('shell/shared/js/listSearch.js') === 3) test.check('one indent per slash: 0, 1 and 3');
     else test.fail(OWED + 'indents: js ' + indents('js') + ', js/server.js ' + indents('js/server.js') + ', listSearch.js ' + indents('shell/shared/js/listSearch.js'));
@@ -226,6 +232,12 @@ const TREE = [
     const icon = function (r, glyph) { return r && r.html.indexOf(glyph) !== -1 && r.html.indexOf(glyph) < r.html.indexOf(r.key.slice(r.key.lastIndexOf('/') + 1)); };
     if (icon(server, ICON.CODE) && icon(rowFor(pane, 'media/cat.png'), ICON.VIEW)) test.check('the mimetype icon stands before the name: code for server.js, view for cat.png');
     else test.fail(OWED + 'icons: server.js ' + short(server.html) + ' | cat.png ' + short((rowFor(pane, 'media/cat.png') || {}).html));
+    // "Is it possible to have the icons right next to the file name in \"tree\" mode."
+    const deep = (rowFor(pane, 'shell/shared/js/listSearch.js') || { html: '' }).html;
+    const lastIndent = deep.lastIndexOf('file-selector-indent');
+    const iconAt = deep.indexOf(ICON.CODE);
+    if (lastIndent !== -1 && iconAt > lastIndent && iconAt < deep.indexOf('listSearch.js')) test.check('in the tree the icon stands after the indent, right before the name');
+    else test.fail(OWED + 'the deep row draws ' + short(deep));
 
     press(pane, 'shell');
     await settle();
@@ -233,10 +245,17 @@ const TREE = [
     press(pane, 'shell');
     await settle();
     const unfolded = keysOf(pane);
-    if (folded.indexOf('shell') !== -1 && !folded.some(function (k) { return k.indexOf('shell/') === 0; }) && folded.indexOf('js/server.js') !== -1) test.check('a press on a folder row folds the rows under it, and only those');
+    if (folded.indexOf('shell') !== -1 && !folded.some(function (k) { return k.indexOf('shell/') === 0; }) && folded.indexOf('js/server.js') !== -1) test.check('a press on an open folder folds the rows under it, and only those');
     else test.fail(OWED + 'after a press on shell the rows are ' + short(folded));
-    if (unfolded.indexOf('shell/shared/js/listSearch.js') !== -1) test.check('a second press unfolds them');
+    if (unfolded.indexOf('shell/shared/js/listSearch.js') !== -1) test.check('a second press unfolds them as they were');
     else test.fail(OWED + 'after a second press the rows are ' + short(unfolded));
+
+    const fresh = m.make({ face: 'pane', files: function () { return TREE; } });
+    await settle();
+    typeInto(fresh, 'js');
+    await settle();
+    if (keysOf(fresh).indexOf('shell/shared/js/listSearch.js') !== -1) test.check('with words every match shows, though no folder was ever opened');
+    else test.fail(OWED + 'typing js in a folded pane shows ' + short(keysOf(fresh)));
 
     typeInto(pane, 'listsearch');
     await settle();
@@ -272,10 +291,53 @@ const TREE = [
     drop.addEventListener('change', function () { picked += 1; });
     if (field) fire(hostOf(drop), 'click', { target: field });
     await settle();
+    if (drop.value === '' && picked === 0) test.check('the world: opened, nothing picked yet');
+    else test.fail('the world: the dropdown reads ' + short(drop.value) + ', changes ' + picked);
+    // "when i click on a folder in the dropdown, it treats that folder as chosen? when it should just expand/collapse it"
+    press(drop, 'js');
+    await settle();
+    // In a browser the pressed row is gone from the page once the rows are drawn again; the click then reaches document.
+    (m.doc.listeners.click || []).forEach(function (fn) { fn({ target: { isConnected: false, parentNode: null } }); });
+    await settle();
+    const popup = partOf(drop, 'popup');
+    if (popup && !popup.hidden && drop.value === '' && picked === 0 && keysOf(drop).indexOf('js/server.js') !== -1) test.check('a press on a folder in the dropdown unfolds it: the popup stays open, nothing is picked');
+    else test.fail(OWED + 'after a press on the folder js: popup hidden ' + (popup && popup.hidden) + ', value ' + short(drop.value) + ', changes ' + picked + ', rows ' + short(keysOf(drop)));
     press(drop, 'js/server.js');
     await settle();
-    if (drop.value === 'js/server.js' && picked === 1) test.check('opened and picked, its value is the path and one change fires');
+    if (drop.value === 'js/server.js' && picked === 1) test.check('a press on a file picks it: its value is the path and one change fires');
     else test.fail(OWED + 'the dropdown picked ' + short(drop.value) + ', changes ' + picked);
+
+    // "when i scroll outside of view in the dropdown, the drobdown should make sure that the \"current\" line is visible,
+    // and the the current selection is reflected in the dropdown input."
+    const keyed = m.make({ files: function () { return TREE; } });
+    await settle();
+    const kField = partOf(keyed, 'field');
+    if (kField) fire(hostOf(keyed), 'click', { target: kField });
+    await settle();
+    const kList = partOf(keyed, 'list');
+    let scrolled = 0;
+    if (kList) kList.querySelector = function (sel) { return /current/.test(sel) ? { scrollIntoView: function () { scrolled += 1; } } : null; };
+    fire(hostOf(keyed), 'keydown', { key: 'ArrowDown', target: partOf(keyed, 'text') || {} });
+    fire(hostOf(keyed), 'keydown', { key: 'ArrowDown', target: partOf(keyed, 'text') || {} });
+    await settle();
+    const fieldText = kField ? String(kField.innerHTML || kField.textContent || '') : '';
+    if (scrolled > 0) test.check('as the keys move the current row, the list scrolls it into view');
+    else test.fail(OWED + 'the keys moved the current row; nothing was scrolled into view');
+    if (/\bmedia\b/.test(fieldText) && !/choose/.test(fieldText)) test.check('the field shows the current row while the keys move it: media');
+    else test.fail(OWED + 'after two downs the field reads ' + short(fieldText));
+
+    // "it maybe neccessary for file dropdowns to have a hidden mime-type filter that an app can configure"
+    const typed = m.make({ face: 'pane', accept: ['.js'], files: function () { return TREE; } });
+    await settle();
+    typeInto(typed, 's');
+    await settle();
+    const tk = keysOf(typed);
+    if (tk.indexOf('media/cat.png') === -1 && tk.indexOf('js/server.js') !== -1) test.check('accept [.js] keeps cat.png out and server.js in');
+    else test.fail(OWED + 'with accept [.js] the rows are ' + short(tk));
+    typeInto(typed, '');
+    await settle();
+    if (keysOf(typed).indexOf('media') !== -1) test.check('folders always show under a type filter');
+    else test.fail(OWED + 'with accept [.js] the folders are ' + short(keysOf(typed)));
   }
 
   // ── 5. the node's fs.search ──
@@ -309,7 +371,7 @@ const TREE = [
   if (/createFileSelector\s*\(/.test(files) && /face\s*:\s*['"]pane['"]/.test(files) && !/<details/.test(files)) test.check('Files is a container for the fileSelector pane');
   else test.fail(OWED + 'files.js: createFileSelector ' + /createFileSelector\s*\(/.test(files) + ', its own <details> tree ' + /<details/.test(files));
   const editor = code(path.join(RUN, 'shell', 'textEditor', 'textEditor.js'));
-  if (/createFileSelector\s*\(/.test(editor) && !/<input[^>]*id="editor-path"/.test(editor)) test.check('the text editor picks its file with the fileSelector dropdown, its path field gone');
+  if (/createFileSelector\s*\(\s*\{[^}]*accept\s*:/.test(editor) && !/<input[^>]*id="editor-path"/.test(editor)) test.check('the text editor picks its file with the fileSelector dropdown, passing its text types; its path field gone');
   else test.fail(OWED + 'textEditor.js: createFileSelector ' + /createFileSelector\s*\(/.test(editor) + ', path field ' + /<input[^>]*id="editor-path"/.test(editor));
   const desk = code(path.join(RUN, 'shell', 'desk', 'desk.js'));
   if (!/['"]fs\.search['"]/.test(desk)) test.check('Desk\'s plugin finder asks the node nothing: it reads the shell\'s tree');
