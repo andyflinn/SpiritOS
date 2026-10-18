@@ -1,5 +1,5 @@
 {
- "change": 71705,
+ "change": 71766,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -54,9 +53,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -7045,14 +7042,15 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.20"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -7073,12 +7071,196 @@
    "redCommit": "",
    "waived": false,
    "rules": [],
-   "names": {},
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "- introSpector must use new probabilityBuckets etc...",
-   "version": 2,
+   "box": "- introSpector must use new probabilityBuckets etc...\n\nINTROSPECTOR (js/introSpector.js)\n- AGENTS.introspect, on the node and on every process server, becomes a search: {text} -> {items: [{key: verb, label: name}], more}. Names only: the description, request and reply are AGENTS.<verb>'s, asked per verb the caller keeps.\n- With no words it answers every verb with a file, in name order. With words each verb is ranked by the probability modules: its name weighs 2/3, its verb-description file 1/3; a verb matching neither is left out.\n- Cut by bytes to one answer, more saying so, through the probability bucket's serialize. It leaves the old graded bucket (searchBucket.createSearch); introSpector no longer requires searchBucket.\n- deskAgent's tools (tools.js describe) ask it with text '' and read the same items.\n\nONLY WHAT THE CALLER IS GRANTED\n- The node filters by the caller's grants (apiAuth), for its own verbs and every server's: AGENTS.introspect lists only granted verbs, and AGENTS.<verb> describes only a granted verb. The owner sees all.\n- The loopback api on deskAgent's node is granted to it as owner. Per-persona and per-job grants, managed by deskAgent, are out of scope here.",
+   "version": 5,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:43:11.441Z",
+     "text": "can you fill the box please?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:44:03.015Z",
+     "text": "Box filled from the tree: AGENTS.introspect is introSpector's one search. It leaves the graded bucket for the probability bucket's byte cut, verb names in name order, its shape unchanged so deskAgent's tools read it as before.\nDid you mean more than that, a search over the verbs by words, say?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:45:03.105Z",
+     "text": "and introSpector will of course search the verb-description files as well? with lower weight?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:45:44.198Z",
+     "text": "Yes, and in the box: AGENTS.introspect takes {text}; no words is every verb in name order; with words each verb is ranked over its name and its description file, the description lower; deskAgent asks with text empty.\nThe weight I would take: a description match counts half a name match. Half?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:47:31.726Z",
+     "text": "introspector will only search api's that the caller is authorized to use and, even if searching the verb-text, will only return, the verb in a list? the caller then still must fetch the verb-details?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:48:07.383Z",
+     "text": "Names only: yes, already. Each item is the verb's name; the description, request and reply come from AGENTS.<verb>, one ask per verb the caller keeps.\nAuthorized only: not today. It lists every verb with a file to whoever asks. The node holds the grants (apiAuth: has(key, path)), so the node filters the answer by the caller's grants, the owner seeing all; one place, at the door, for the node's verbs and every server's.\nThe same filter on AGENTS.<verb>, so a verb not granted is not described either?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:51:33.626Z",
+     "text": "i remember an earlier issue, where the agent was not given the proxy or web-http interface, because it could be abused by deskAgent to access local ports it has no business interacting with.\n\nand i've been thinking: cannot that call make sure no loopback address is called? so that the agent can start playing owner on local nodes?\n\nthis is peripherally connected to introSpector, but i'd like to discuss it here to see if we make a blocking item to this one, where that problem could be solved."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:52:08.809Z",
+     "text": "It can. net.fetch (server.js handleGenericProxy) checks only that the url is http or https; nothing stops 127.0.0.1:65432, which is why Levant lost net_fetch (G14.8).\nThe fence: net.fetch refuses any target whose ADDRESS is loopback (127.0.0.0/8, ::1, localhost), unspecified (0.0.0.0, ::) or link-local (169.254/16, the cloud metadata door). Checked on the resolved address at connect, so a name that resolves to 127.0.0.1 is refused too; it follows no redirects today, so a redirect cannot get round it.\nOpen: your LAN (192.168/16, 10/8): other machines' nodes. Fence them too, or only this machine?\nThen deskAgent gets net.fetch back. Add a new item for this, blocking G29.19?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:54:27.293Z",
+     "text": "with other nodes on other LAN boxes, the deskAgent wouldn't be recognized as loopback (owner) client, would it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:54:52.626Z",
+     "text": "Right, it would not. A node binds 127.0.0.1 only (server.js BIND_HOST) and refuses any connection not from this machine (403, isLoopbackAddress), so a node on another LAN box cannot even be reached, let alone as owner.\nThe LAN matters only for other things there (a router page, a printer); the nodes are safe. So the fence is this machine: loopback, unspecified, link-local.\nAdd a new item for it, blocking G29.19?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:56:12.280Z",
+     "text": "ok, we block only loopback on the same machine.\n\n(i plan to allow direct node-connects if one can see the other..... oos for now)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:56:35.086Z",
+     "text": "Noted: loopback on this machine only; link-local and the LAN stay open; direct node connects oos.\nOne detail: 0.0.0.0 and :: reach this machine too when dialled, so I count them as loopback.\nThe item waits for your add item; its title would be: net.fetch refuses loopback; deskAgent gets it back."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:57:27.642Z",
+     "text": "add the net.fetch item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:58:06.736Z",
+     "text": "Added goal/G29.20, net.fetch refuses loopback; deskAgent gets it back, blocking G29.19; box filled."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:59:22.844Z",
+     "text": "this item green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:59:43.458Z",
+     "text": "Not yet: two answers owed, then I put them in the box.\n1. A description match counts half a name match?\n2. Introspect lists only what the caller is granted (the node filters, owner sees all), and AGENTS.<verb> describes only a granted verb too? (next, after 1)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T20:02:57.950Z",
+     "text": "name 66%\ndescription 33%\n\n2. Introspect lists only what the caller is granted (the node filters, owner sees all), and AGENTS.<verb> describes only a granted verb too? (next, after 1)\n\ncorrect, but remember, loopback api on the deskAgents node is granted to him as owner, the denials/grants are managed by deskAgent, and will be configured ber persona, job later on. oos here."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T20:03:34.564Z",
+     "text": "In the box: name 2/3, description 1/3; the node filters introspect and AGENTS.<verb> by the caller's grants, owner sees all; per-persona grants oos. Green now; G29.20 (net.fetch) blocks it."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.20",
+   "title": "net.fetch refuses loopback; deskAgent gets it back",
+   "goal": "goal/G29",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.19"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "NET.FETCH (js/server.js, handleGenericProxy)\n- net.fetch refuses a target on this machine: a loopback address (127.0.0.0/8, ::1, localhost) or an unspecified one (0.0.0.0, ::), which reach this machine when dialled. Refused by name, nothing sent.\n- Checked on the address the name resolves to, at connect, so a name that resolves to loopback is refused too. net.fetch follows no redirects, so none can get round it.\n- Link-local and the LAN stay open: a node binds 127.0.0.1 only and refuses any connection not from its own machine, so no other box's node can be reached, let alone as owner. Direct node connects are out of scope.\n\nDESKAGENT\n- Levant gets net.fetch back (it lost net_fetch under goal/G14.8 for exactly this): the node's own verbs and every local server stay out of its reach.",
+   "version": 1,
    "checks": [],
    "chat": []
   }
