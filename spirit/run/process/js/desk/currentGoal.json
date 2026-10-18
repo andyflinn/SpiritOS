@@ -1,5 +1,5 @@
 {
- "change": 70059,
+ "change": 70273,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,16 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
-   "excluded": [],
+   "waiting": 4,
+   "excluded": [
+    "ollama agent node"
+   ],
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
-   "working": [
-    "claude-windows",
-    "ollama agent node"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1914,15 +1913,14 @@
    "status": "planning",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29"
    ],
-   "blocked": [
-    "goal/G29.8"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -2080,10 +2078,11 @@
    "id": "goal/G29.8",
    "title": "one folder listing for the core's loaders, no fs.search",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.7"
@@ -2093,21 +2092,27 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/listSearchModes.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "1c8de61d",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -2145,8 +2150,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Full file-stat streaming and a file-level search in Files, end to end. No contents yet: the next item (G29.7) adds them.\n\nTHE STREAM\n- The node streams the tree to the page as it does, the watcher's updates, now each with its stat: size and modified, for every create and change; a delete carries none.\n- The first load is a stream of the root folder's entries, the run folder the first and only record shown at the start; no list-size limit applies there.\n- The shell holds it (shell.js currentFiles): every path, its kind and its stat.\n\nFILES ON THE SHARED LIST\n- A new shell element, fileSelector (shell/js/fileSelector.js), built as contactSelector is: a wrapper on shellCreateListSearch over the shell's mirror, with a pane face and a dropdown face; the Files app is a container for its pane, and any app picking a file uses its dropdown.\n- The shell holds the rows, its mirror keyed by path; each list keeps its own bucket and bucket state over them, since two open lists rank by different words.\n- Names and paths are searched in the page and never reach the server.\n- Every display has the stat columns: size and modified, right-justified, and the mimetype icon before the name.\n- No words: the tree appearance, rows in path order, one square indent per slash, a folder row folding the rows under it.\n- Words typed: list mode, the rows ranked best first, each with its full path, the matched parts marked, as every search.\n\nTWO MODES IN THE SHARED LIST\n- Pane and dropdown come from G29.9, the item before this one.\n\nTHE CORE'S FOLDER LISTINGS\n- No new verb: an empty search is the whole tree, and the one shared helper is the shell's tree read with no words.\n- Desk's plugin finder keeps the rows plugins/<name>/<name>.js; an app's own folder (kernel's scanDirectory) keeps the rows under its folder; server-side loaders read their own folders as they do.\n\nWHAT GOES\n- fs.search's patterns (* and ?) and gradedSearch with them: no caller asks the node for a folder any more. With names and paths searched in the page, fs.search has no caller left and is deleted; G29.7 brings the node's contents search.\n",
-   "version": 7,
+   "box": "Full file-stat streaming and a file-level search in Files, end to end. No contents yet: the next item (G29.7) adds them.\n\nTHE STREAM\n- The node streams the tree to the page as it does, the watcher's updates, now each with its stat: size and modified, for every create and change; a delete carries none.\n- The first load is a stream of the root folder's entries, the run folder the first and only record shown at the start; no list-size limit applies there.\n- The shell holds it (shell.js currentFiles): every path, its kind and its stat.\n\nFILES ON THE SHARED LIST\n- A new shell element, fileSelector (shell/js/fileSelector.js), built as contactSelector is: a wrapper on shellCreateListSearch over the shell's mirror, with a pane face and a dropdown face; the Files app is a container for its pane, and any app picking a file uses its dropdown.\n- The shell holds the rows, its mirror keyed by path; each list keeps its own bucket and bucket state over them, since two open lists rank by different words.\n- Names and paths are searched in the page and never reach the server.\n- fileSelector replaces pathSelector, the older picker over the same mirror, which is deleted.\n- The text editor picks its file with the fileSelector dropdown in place of its path field.\n- Every display has the stat columns: size and modified, right-justified, and the mimetype icon before the name.\n- No words: the tree appearance, rows in path order, one square indent per slash, a folder row folding the rows under it.\n- Words typed: list mode, the rows ranked best first, each with its full path, the matched parts marked, as every search.\n\nTWO MODES IN THE SHARED LIST\n- Pane and dropdown come from G29.9, the item before this one.\n- The dropdown's field stands inline like any input control; only the pane pops up under it.\n\nTHE CORE'S FOLDER LISTINGS\n- No new verb: an empty search is the whole tree, and the one shared helper is the shell's tree read with no words.\n- Desk's plugin finder keeps the rows plugins/<name>/<name>.js; an app's own folder (kernel's scanDirectory) keeps the rows under its folder; server-side loaders read their own folders as they do.\n\nTHE NODE'S fs.search\n- It stays, on the node's own cached tree (the watcher's), as Files sits on the shell's: the agents' file tool and every caller that is not a page.\n- It ranks words by the same probability modules as the shared list, best first; fs.search's patterns (* and ?) and gradedSearch with them go.\n- G29.7 adds the contents to it.\n\nAFTER THE FIRST BUILD\n- No words: every folder starts folded; a press on a folder unfolds or folds it, in the pane and in the dropdown alike, and is never a pick.\n- Words typed: every match shows, nothing folded.\n- In the tree the icon stands right before the name, after the indent.\n- An open dropdown keeps its current row in view as the keys move it, and its field shows that current row.\n- A file dropdown takes a hidden type filter the app configures (extensions or mimetype prefixes); folders always show. The text editor passes its text types.\n- A folder-picker mode is out of scope here.\n- An open dropdown takes the width its rows need, up to the page width: inside a popup the rows' table takes its own width, and a file name is never cut short.\n- Home and End belong to the list, as up and down do, from the search box too: they move the current row to the top and the bottom. Pane and dropdown alike; the search box's cursor moves with the mouse or left and right.\n- The file list has one filter, words in: names | paths. Names, the default, matches the words against the file name only; paths against the whole path, folders included.\n- A folded folder carries no mark after its name: an ellipsis there reads as a name cut short.",
+   "version": 15,
    "checks": [
     {
      "number": "Q1",
@@ -2158,6 +2163,24 @@
      "at": "2026-10-17T22:44:08.360Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/jobs.js, spirit/run/js/kernel.js, spirit/run/js/nodeSearches.js, spirit/run/shell/files/files.js, spirit/run/shell/js/fileSelector.js, spirit/run/shell/js/pathSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T00:40:34.712Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/fs/search.json, spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T00:43:28.024Z"
     }
    ],
    "chat": [
@@ -2322,6 +2345,348 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-17T23:08:00.456Z",
      "text": "Added: G29.9, the shared list's dropdown mode with contactSelector on it, blocking this one; its box is written, and G29.8's now points at it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:23:14.805Z",
+     "text": "Taking G29.8: red first, starting from the watcher stream, the shell mirror and every fs.search caller."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:25:42.993Z",
+     "text": "Two findings before the red:\n1. A file picker exists already, pathSelector, over the same shell mirror, with no caller left since G10.8. I rebuild it as fileSelector on the shared list and delete pathSelector, as contactSelector replaced its own.\n2. fs.search is also an agent tool (Levant lists it). Deleting it here leaves agents with no file search until G29.7 brings the node search back. Delete it now anyway, or keep the agent tool alive until G29.7?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:31:36.709Z",
+     "text": "there is a problem with the dropdown-selector version of our new search-list-element: \n\n1. GREAT concepts, all the filters, and the search input are inside to popup list, very cool!\n\n2. the dropdown selector itself appears as a popup as well, it should be inline like any normal input control.\n\non the file selector, yes it exists in textEditor as well, it will be replaced with the dropdown version of our \"Files\" control.\n\nam i missing something here?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:32:34.859Z",
+     "text": "2: the field floats because the old dropdown CSS of contactSelector (index.html) still lifts its whole pane; that CSS goes and the field stands inline. In the box, folded here.\nThe text editor path field becomes the fileSelector dropdown: in the box.\nWhat is missing is my question above: fs.search is also the agents file tool; delete it now, or keep that tool until G29.7?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:33:37.884Z",
+     "text": "you mean the fs.search in the node-server?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:33:52.932Z",
+     "text": "Yes, the node verb fs.search. Pages stop needing it here, but deskAgent hands it to its model as its file search tool (fs/search.json), so deleting it leaves Levant without one until G29.7. Delete now, or keep it until G29.7?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:36:21.811Z",
+     "text": "wouldn't it make sense that node nodes fs.search piggybacks on the nodes cached file-system same as the shells Files component piggyback on the shells cached version of the file system?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:37:02.805Z",
+     "text": "Yes, and it nearly does already: fs.search reads the watcher tree the node holds. What changes is the matching: words ranked by the same probability modules as the list, the * and ? patterns gone.\nSo the agents keep their tool and nothing is deleted; in the box. Writing the red now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:37:32.724Z",
+     "text": "i'll give you grants to do it now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:38:04.570Z",
+     "text": "Not yet: the red is tests only. The grants come up when I add the build files (jobs, server, shell, kernel, index), right after the red lands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T00:38:26.092Z",
+     "text": "ok. preceed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:40:14.537Z",
+     "text": "commit d76c161aa9cbb3684812722c8761019b299ac42e: goal/G29.8: the red for Files on the shared list, the tree streamed with its stat, fs.search on words\n- spirit/test/filesSharedList.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T00:40:17.552Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:40:33.429Z",
+     "text": "Red in (d76c161a, 14 owed). Building now; the core grants come up with the file list."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T00:44:12.887Z",
+     "text": "One correction to my red: it also asked that words in any order (js shared search) put listSearch.js first. The probability modules rank js/ higher there, since they grade the shorter string as the query. That is G29.7 (fs.search as a person search), so this red keeps only the box: the same modules, best first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:01:38.447Z",
+     "text": "Built and verified: 38e57280, the red 29 of 29, neighbouring suites green.\nFiles: jobs, shell, kernel, nodeSearches, server, index, fs/search.json, listSearch, the new fileSelector, files, textEditor, desk face; pathSelector deleted; tests everyVerb, natterIntrinsic, deskPluginsGg, deskBindingNick, deskKnownAgents.\nThe text editor saves only to the file it picked or was opened with: making a new file by typing its path went with the path field."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:02:28.907Z",
+     "text": "deskVerify: passed, at 38e57280 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:19:00.756Z",
+     "text": "- chatter: nice how i can navigate contacts and bring their chat into the center pane by hitting return.\n- grants: contact dropdown: the dropdown works mostly fine, but when i scroll outside of view in the dropdown, the drobdown should make sure that the \"current\" line is visible, and the the current selection is reflected in the dropdown input.\n- files: the initial presentation (when search box is empty) should always be collapsed, as soon as a search string is active, everything is visible (not collapsed). so collapsed state is only for non-search mode. Is it possible to have the icons right next to the file name in \"tree\" mode. I'love the dropdowns now!\n- file dropdown: textEditor, when i click on a folder in the dropdown, it treats that folder as chosen? when it should just expand/collapse it, here too, the collapsed state must be the default for folders (in non-search-mode, when search string is empty). this will be most similar to standard file selectors.\n- files dropdown, it maybe neccessary for file dropdowns to have a hidden mime-type filter that an app can configure (known text file extensions or mime types, or an image app might only want to open (jpg,png, bmp etc)\n- and the may have to be a folder-picker mode (oos for now).\n\nGreat work btw. i enjoy the UI getting some orthogonality...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:19:50.264Z",
+     "text": "Thanks. All five in the box under AFTER THE FIRST BUILD, folder picker out of scope; red and build now under this item.\nThe folder in the text editor dropdown: the press folded it, but redrawing the rows took the pressed row off the page, so the outside-click rule shut the popup. That is the fix there."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:22:22.832Z",
+     "text": "commit cec9779f7f97fe59f2f5b07bc54cc327ba1e3af6: goal/G29.8: the red after the first build: folders folded by default, a folder press never a pick, keys keep the current row in view, a type filter\n- spirit/test/filesSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:23:45.022Z",
+     "text": "commit f25e533c77b13de593ce2e048afef1c8eac62ed4: goal/G29.8: folders folded by default and never a pick, the icon by the name, the current row kept in view and in the field, a type filter\n- spirit/run/shell/js/fileSelector.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/run/shell/textEditor/textEditor.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:23:56.888Z",
+     "text": "Built and verified: f25e533c, the red 38 of 38. Files: listSearch, fileSelector, textEditor (red: filesSharedList).\nFolders start folded and a press only opens or shuts them, in pane and dropdown; the icon sits by the name; the keys keep the current row in view and in the field; the text editor shows only its text types."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:24:51.196Z",
+     "text": "deskVerify: passed, at f25e533c (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:36:00.211Z",
+     "text": "is there a reason the dropdown is constrained wo that narrow width? it makes filenames unreadable, for example, can it be the required with to display everything, constrained by page width?\n\nThe home and End keys don't work in the dropdown."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:36:22.952Z",
+     "text": "Width: no reason. The popup hangs off the field, and a box hung off a narrow field shrinks to it. It will take the width its rows need, up to the page width.\nHome and End: G29.9 left them to the text cursor in the search box, and an open dropdown puts the focus there. In a dropdown they will move the list; in a pane the search box keeps them. Red and build now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:37:17.378Z",
+     "text": "commit 2423cace07667da4600cfd0efeea452a2b9617cb: goal/G29.8: the red for a dropdown as wide as its rows, and Home and End in it\n- spirit/test/filesSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:38:00.528Z",
+     "text": "commit 08209003f2ddd36533b339622bf6aa96f9d60a3e: goal/G29.8: the dropdown as wide as its rows up to the page, Home and End in an open dropdown\n- spirit/run/shell/shared/js/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:38:09.493Z",
+     "text": "Built and verified: 08209003, the red 40 of 40. File: listSearch (red: filesSharedList).\nAn open dropdown is as wide as its rows, up to the page width; Home and End move its list, also from the search box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:38:14.162Z",
+     "text": "Home and End: G29.9 left them to the text cursor in the search box, and an open dropdown puts the focus there. In a dropdown they will move the list; in a pane the search box keeps them. Red and build now.\n\nafter the user uses up and down arrow keys the home and end should belong to the list, OR we activate pageUp and page Down for the list, with the current selection following? that's dirtier."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:38:53.870Z",
+     "text": "The first, then: Home and End stay the text cursor until up or down moves the current row; from then on they move the list, until you type again. Pane and dropdown alike; in the box. Red and build now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:39:04.180Z",
+     "text": "deskVerify: passed, at 08209003 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:39:46.346Z",
+     "text": "commit 5f1e3dab2ededf89a271852634b29f4bd2d302f0: goal/G29.8: the red for Home and End belonging to the list after up or down, until the user types\n- spirit/test/filesSharedList.js\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:40:38.957Z",
+     "text": "commit f7ad71d7fd280ff0998160a9ba615b3154bb2a6b: goal/G29.8: Home and End are the list's after up or down, the text cursor's again once the user types\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:40:48.900Z",
+     "text": "Built and verified: f7ad71d7, filesSharedList 41 of 41, listSearchModes 16 of 16. Files: listSearch, listSearchModes (its G29.9 check amended to your rule).\nHome and End stay the text cursor until up or down moves the current row, then move the list until you type again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:40:52.882Z",
+     "text": "deskVerify: passed, at f7ad71d7 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:41:02.548Z",
+     "text": "nah, for a little search string, the user can use the mouse or left and right arrow keys for the search box cursor-positioning. Give home and end to the list, same as up and down arrow keys."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:41:40.710Z",
+     "text": "Done that way: Home and End always the list, as up and down, in pane and dropdown; in the box. Red and build now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:42:27.506Z",
+     "text": "commit ba4e1a758ab20f125fc400148ef2dfea30838f04: goal/G29.8: the red for Home and End always the list's\n- spirit/test/filesSharedList.js\n- spirit/test/listSearchModes.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:43:04.799Z",
+     "text": "commit 4c5fd49f50d412bd12907dd87758e28791b2f9a1: goal/G29.8: Home and End always the list's, as up and down\n- spirit/run/shell/shared/js/listSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:43:16.059Z",
+     "text": "Built and verified: 4c5fd49f, filesSharedList 41 of 41, listSearchModes 16 of 16. File: listSearch.\nHome and End move the list in every list, as up and down."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:43:17.744Z",
+     "text": "deskVerify: passed, at 4c5fd49f (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T01:57:50.069Z",
+     "text": "nice!\n\n- i noticed the mime type restriction in textEditor!\n- still no filters for inclusion of path or filename in search, \n- the file dropdown, it expands only as wide as the search string plus button need, and neglects the width of the table rows, what can we do.\n\nplease discuss before dunning off to code..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T01:58:19.654Z",
+     "text": "Width, two causes in the page CSS: every list table is drawn width 100%, which a popup sizing itself to its rows reads as no width at all; and the name cell is a label-cell, capped at 22 characters with an ellipsis. Proposal: inside a popup the table takes its own width, and the file name cell drops the cap (the pane lets long paths wrap or scroll instead).\nName or path: proposal, one filter in the file list, words in: names | paths. Names matches only the file name; paths matches the whole path, folders included. The shared list draws it like the contact filters.\nWhich should be the default, names or paths?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:01:55.971Z",
+     "text": "let's try your width solution for the dropdown. max width should still be page width though\n\nand the default for your filter should be filename only, (although i try to store my files in a meaningful directory structure."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:02:36.062Z",
+     "text": "Both in the box: the popup as wide as its rows up to the page width, names never cut; the filter words in: names | paths, names the default. Red and build now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:03:25.900Z",
+     "text": "commit 1076602df9b805b15962fcd71cc62a4e971717c5: goal/G29.8: the red for a popup as wide as its rows and the filter words in names or paths\n- spirit/test/filesSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:04:48.827Z",
+     "text": "commit 7183324f04544fa82887d254f2be595b94fdfb2d: goal/G29.8: a popup as wide as its rows, file names never cut, the filter words in names or paths (names the default)\n- spirit/run/shell/js/fileSelector.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/filesSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:04:59.307Z",
+     "text": "Built and verified: 7183324f, filesSharedList 46 of 46. Files: listSearch, fileSelector, filesSharedList.\nThe popup is as wide as its rows up to the page; names are never cut; words in: names | paths, names the default.\nOne correction to my red: misses are not hidden, every list ranks them below the matches (G29.4), so the check reads the ranking."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:05:00.697Z",
+     "text": "deskVerify: passed, at 7183324f (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:08:05.730Z",
+     "text": "width of dropdown still doesn't work, it's still squeezed to the width of search string plus button.\n\nsolutions?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:09:18.305Z",
+     "text": "I measured it on your node just now, in a headless page of my own: with the word desk typed, the text editor popup is 1270 px wide (long paths); folded, its nine top folders fit in its 24em minimum, 384 px.\nSo your page likely still runs the listSearch.js from before 7183324f: a reload (Ctrl+F5) should show it.\nIf the width jumping between folded and searched bothers you, it can keep the widest it has been while open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:16:48.408Z",
+     "text": "nope.\n\nstill as narrow as search input+button, no wider."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:18:01.337Z",
+     "text": "In a real Chrome on your node the popup is exactly as wide as its rows: folded tree 384 px, three folders open 425 px, words typed 1270 px. In the tree the rows are just short names, so the widest row is about the search row; that is why it looks squeezed.\nSo the question is what width you want instead: the app pane width (the whole tile), or a wider minimum such as 48em, still growing with its rows up to the page width?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:24:44.716Z",
+     "text": "commit 5948778157e15a0d57f51d1714b107e8477be891: goal/G29.8: the red for no ellipsis after a folded folder\n- spirit/test/filesSharedList.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:25:15.132Z",
+     "text": "commit 1c8de61d389a774558edebad1723f37fbf7d2d61: goal/G29.8: no ellipsis after a folded folder\n- spirit/run/shell/js/fileSelector.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:25:26.786Z",
+     "text": "From your screenshot in my window: the ellipsis after folded folders is gone. 1c8de61d, filesSharedList 47 of 47; file fileSelector."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:25:28.851Z",
+     "text": "deskVerify: passed, at 1c8de61d (pulled). 1 suite ran green."
     }
    ]
   },
