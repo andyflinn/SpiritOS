@@ -14,6 +14,7 @@
     "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "spirit/run/js/postQueue.js",
     "suites": [
+      "agentOnboard.js",
       "serverSurface.js",
       "everyVerb.js"
     ],
