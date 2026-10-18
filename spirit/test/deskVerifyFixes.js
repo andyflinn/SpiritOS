@@ -193,7 +193,8 @@ async function serverHalf() {
     await sleep(1500);
 
     // 6. AN AGENT TOOL: the verb file is there, so AGENTS.introspect lists it.
-    const intro = await v.call('AGENTS.introspect');
+    // goal/G29.19: introspect is a search, asked {text}; no words lists every verb.
+    const intro = await v.call('AGENTS.introspect', { text: '' });
     const told = took(intro) && ((intro.body.items || []).some(function (i) { return i.key === 'search'; }));
     if (told) test.check('search has a verb file: AGENTS.introspect lists it, so an agent may call it');
     else test.fail(OWED + 'AGENTS.introspect answered ' + short(intro.body));

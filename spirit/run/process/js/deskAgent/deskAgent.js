@@ -1045,10 +1045,13 @@ const MARKS = {
   reasoning: function (m) { return m.reasoning === true; },
   audio: function (m) { return m.audio === true; },
 };
-// THE STANDARD SEARCH (Andy, 2026-10-17: "i sure hope you're useing probability search..."): searchBucket.js, the
-// graded match every list verb uses, ranked by how well an id matches the text and cut in bytes. The marks pressed are
-// an exact filter on the walk. THE LOADED MODEL GOES INTO THE BUCKET FIRST, MATCHING FOR CERTAIN (Andy, 2026-10-17: "the
-// loaded model just get's thrown into the bucket first, with a probability of 1.0"): its matched text is the query itself.
+// THE STANDARD SEARCH (Andy, 2026-10-17: "i sure hope you're useing probability search..."): since goal/G29.21 the
+// probability modules, each model ranked by how well its id and quant match the text, newest-listed first among equals,
+// and cut in bytes. The marks pressed are an exact filter on the walk. THE LOADED MODEL GOES INTO THE BUCKET FIRST, AT
+// PROBABILITY 1 (Andy, 2026-10-17: "the loaded model just get's thrown into the bucket first, with a probability of
+// 1.0"): seated first, nothing seats above it.
+const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 function modelsSearch(text, marks) {
   const wanted = (Array.isArray(marks) ? marks : []).map(String).filter(function (k) { return MARKS[k]; });
   return Promise.resolve(models()).then(function (m) {
@@ -1056,25 +1059,19 @@ function modelsSearch(text, marks) {
     const present = Object.keys(MARKS).filter(function (k) { return all.some(MARKS[k]); });
     const loaded = all.filter(function (x) { return x && x.loaded; });
     const answer = { models: [], more: false, marks: present, active: m.active, activeQuant: m.activeQuant, cached: m.cached, load: m.load, test: m.test };
-    // An empty search is every model: '**', since a single '*' never spans a '/' (gradedSearch.js), and a studio id
-    // holds one (fake/Agent-9B-GGUF), as the desk's own searches do.
-    const query = String(text || '').trim() ? String(text) : '**';
+    // An empty search is every model, in the studio's order: every probability 0.
+    const query = String(text || '').trim();
     const room = SEARCH_ROOM - Buffer.byteLength(JSON.stringify(answer), 'utf8');
-    const bucket = require('../../../js/searchBucket.js').createSearch({
-      query: query,
-      maxBytes: room > 0 ? room : 0,
-      getLabelStringFromIncomingObject: function (x) { return x.loaded && query.trim() ? query : String(x.id || ''); },
-      extractKeyAndLabelFromRow: function (x) { return { key: String(x.id) + '|' + String(x.quant || ''), label: JSON.stringify(x) }; },
-    });
-    loaded.forEach(function (x) { bucket.offer(x); });
+    const bucket = createProbabilityBucket(Infinity);
+    loaded.forEach(function (x) { bucket.seatFor(1, x); });
     for (let i = 0; i < all.length; i++) {
       const x = all[i];
       if (!x || x.loaded || !x.id) continue;
       if (!wanted.every(function (k) { return MARKS[k](x); })) continue;
-      if (!bucket.offer(x)) break;
+      bucket.seatFor(query ? probabilityStringObjectMatch(query, { id: String(x.id), quant: String(x.quant || '') }) : 0, x);
     }
-    const got = bucket.getResult();
-    got.items.forEach(function (p) { try { answer.models.push(JSON.parse(p.label)); } catch (e) { /* a label is always JSON here */ } });
+    const got = room > 0 ? bucket.serialize(null, room) : { items: [], more: all.length > 0 };
+    answer.models = got.items;
     answer.more = !!got.more;
     return answer;
   });

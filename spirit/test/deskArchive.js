@@ -76,7 +76,7 @@ test.startTest('goal/G4.24: an item left out of a session is closed, never delet
     if (two && two.status === 'closed') test.check('a/G1.2, left out, is still on the desk and closed');
     else test.fail(OWED + 'a/G1.2 after the session that left it out: ' + short(two));
     const box = await call('item.box', { id: 'a/G1.2' }, ANDY);
-    const chat = await call('chat.search', { id: 'a/G1.2', text: 'survive', by: '', since: '', before: '' }, ANDY);
+    const chat = await call('chat.search', { id: 'a/G1.2', text: 'survive', by: '', since: '', before: '', scope: '' }, ANDY);
     if ((box.body || {}).box === 'BOX OF G1.2' && ((chat.body || {}).items || []).length === 1) test.check('it keeps its box and its chat');
     else test.fail(OWED + 'a/G1.2 box ' + short((box.body || {}).box || box.body) + ', chat ' + short(chat.body));
     const open = await keys(false);

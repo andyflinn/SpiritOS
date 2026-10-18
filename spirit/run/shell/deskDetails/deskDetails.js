@@ -374,7 +374,12 @@ function ddName(label) {
 }
 function ddChatHtml() {
   // While the search holds text, the lines in the order the desk ranked them.
-  if (ddFound) return ddFound.length ? ddFound.map(ddBubble).join('') : '<div class="job-manifest-note">No lines found.</div>';
+  // goal/G29.21: on a goal they come from its items' chats too; a line said in another item names it, a link that
+  // opens that item.
+  if (ddFound) return ddFound.length ? ddFound.map(function (l) {
+    var from = l.item && l.item !== ddId ? '<a href="#" data-open-item="' + ddEsc(l.item) + '" style="color:#cfe2ff">' + ddEsc(l.item) + '</a>' : '';
+    return from + ddBubble(l);
+  }).join('') : '<div class="job-manifest-note">No lines found.</div>';
   if (!ddChat.length) return '<div class="job-manifest-note">Nothing said here yet.</div>';
   var older = ddChatMore ? '<div class="job-manifest-note">Older lines are not shown.</div>' : '';
   return ddChat.slice().reverse().map(ddBubble).join('') + older;
@@ -430,12 +435,14 @@ function ddTake(obj) {
   ddPaint();
 }
 
-// Asks the desk to rank this item's lines by the text; an answer that comes after the text changed is dropped.
+// Asks the desk to rank this item's lines by the text; an answer that comes after the text changed is dropped. On a
+// goal (goal/G29.21) the scope is items: the goal's chat and its items' chats, ranked together.
 function ddChatSearch() {
   var text = ddValue('dd-chat-search');
   var id = ddId;
   if (!text) { ddFound = null; ddPaint(); return; }
-  ddAsk('chat.search', { id: id, text: text, by: '', since: '', before: '' }).then(function (r) {
+  var scope = ddFacts && ddFacts.goal === '' ? 'items' : '';
+  ddAsk('chat.search', { id: id, text: text, by: '', since: '', before: '', scope: scope }).then(function (r) {
     if (ddId !== id || ddValue('dd-chat-search') !== text) return;
     ddFound = (r.items || []).map(function (p) { try { return JSON.parse(p.label); } catch (e) { return null; } }).filter(Boolean);
     ddPaint();
@@ -569,10 +576,11 @@ spirit.shell.activateApp({
       }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }
       // Leaving for another item: Desk opens it once this one is closed.
-      var link = t && t.closest && t.closest('[data-open]');
-      if (link && link.getAttribute && link.getAttribute('data-open')) {
+      var link = t && t.closest && t.closest('[data-open],[data-open-item]');
+      var to = link && link.getAttribute ? (link.getAttribute('data-open') || link.getAttribute('data-open-item')) : '';
+      if (to) {
         if (event.preventDefault) event.preventDefault();
-        ddApi.closeDialog({ open: link.getAttribute('data-open') });
+        ddApi.closeDialog({ open: to });
         return;
       }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'item') { ddFolded = !ddFolded; ddPaint(); return; }

@@ -118,7 +118,8 @@ async function main() {
   await call('desk', 'profile.set', { agent: OTHER_KEY, name: 'wsl-claude', nick: 'wsl' }, ANDY);
   await call('desk', 'profile.set', { agent: THIRD_KEY, name: 'levant-local', nick: 'lev' }, ANDY);
 
-  // The item this agent creates.
+  // The item this agent creates, under his words (goal/G29.21).
+  await call('desk', 'chat.add', { id: 'a/G1', text: 'add item' }, ANDY);
   const added = await call('desk', 'item.add', { goal: 'a/G1', title: 'made by claude-windows', blocks: '' }, SELF_AT_DESK);
   const made = (added.body || {}).id;
   if (!made) { test.fail('the world: item.add answered ' + short(added.body)); return; }

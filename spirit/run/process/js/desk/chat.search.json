@@ -1,10 +1,11 @@
 {
-  "description": "Search an item's chat lines by text, by, since, before; newest first, more when cut.",
+  "description": "Search an item's chat lines ranked by text, filtered by by, since, before; scope items on a goal searches its items' chats too, each line naming its item; more when cut.",
   "request": {
     "id": "",
     "text": "",
     "by": "",
     "since": "",
-    "before": ""
+    "before": "",
+    "scope": ""
   }
 }

@@ -72,7 +72,7 @@ const call = function (app, verb, args, caller) {
   const b = {}; b[app] = q;
   return client.ask(b, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; });
 };
-const NONE = { id: CHAT, text: '', by: '', since: '', before: '' };
+const NONE = { id: CHAT, text: '', by: '', since: '', before: '', scope: '' };
 const filter = function (f) { return Object.assign({}, NONE, f); };
 // One search, as an agent asks it: { status, code, lines: [{by, at, text}], keys, more }.
 async function search(f, caller) {
@@ -123,7 +123,7 @@ async function main() {
   const tree = await up('desk') || {};
 
   test.subHeading('1. the verb');
-  if (JSON.stringify(tree['chat.search'] || null) !== JSON.stringify({ request: { id: '', text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
+  if (JSON.stringify(tree['chat.search'] || null) !== JSON.stringify({ request: { id: '', text: '', by: '', since: '', before: '', scope: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
     test.fail(OWED + 'the desk server answered chat.search ' + JSON.stringify(tree['chat.search'] || null) + ', where {id, text, by, since, before} -> {items, more} is owed');
     ['2. the chat lines of the item named and nothing else', '3. each line as {by, at, text}, the newest first', '4. the four filters, alone and together', '5. a read',
       '6. brief: cut to fit, and whole through deskClient', '7. narrowing brings the next older lines'].forEach(function (what) { test.fail(OWED + what + ': the desk server has no verb chat.search'); });

@@ -68,6 +68,7 @@ async function facts(id) { const r = await call('item.get', { id: id }, ANDY); r
   const g = await call('goal.add', { title: 'Refusals' }, AGENT);
   const gid = g.body && g.body.id;
   if (!gid) { test.fail('the goal was not minted: ' + short(g.body)); return; }
+  await call('chat.add', { id: gid, text: 'add items' }, ANDY); // goal/G29.21: an agent adds under his words
   const a = await call('item.add', { goal: gid, title: 'The one that waits' }, AGENT);
   const A = a.body && a.body.id;
   const b = await call('item.add', { goal: gid, title: 'The blocker', blocks: A }, AGENT);

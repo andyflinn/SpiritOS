@@ -117,7 +117,7 @@ async function theServer() {
     const line = (await chatOf('b/G1.1')).filter(function (l) { return l.text === 'cw writing'; })[0] || {};
     if (line.key === CW.key && line.name === 'Claude Windows' && line.by === CW.label) test.check('item.chat: the line keeps by, and carries key and name');
     else test.fail(OWED + 'the line reads ' + short(line));
-    const found = await call('chat.search', { id: 'b/G1.1', text: '', by: '', since: '', before: '' }, CW);
+    const found = await call('chat.search', { id: 'b/G1.1', text: '', by: '', since: '', before: '', scope: '' }, CW);
     const hit = (found.items || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return {}; } }).filter(function (l) { return l.text === 'cw writing'; })[0] || {};
     if (hit.key === CW.key && hit.name === 'Claude Windows') test.check('chat.search: the line carries key and name too');
     else test.fail(OWED + 'chat.search\'s line reads ' + short(hit));

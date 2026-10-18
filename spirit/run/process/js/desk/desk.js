@@ -22,15 +22,14 @@
 // are copied out of its text; the text itself is kept whole.
 //
 // NEVER A LIST (Andy: every list is a search). log.search answers what
-// matches, newest first, cut to fit one answer by searchBucket, and says
-// so with more.
+// matches, ranked, newest first among equals, cut to fit one answer by the
+// probability bucket, and says so with more.
 
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
 const appClient = require('../../../js/appClient.js');
-const searchBucket = require('../../../js/searchBucket.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -96,7 +95,7 @@ const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
 //   "from now on the MAX_PAYLOAD applies".
 //
 // A line fits when an answer holding it alone fits the room, measured as
-// searchBucket measures that answer ({items: [{key, label}], more}). The
+// one answer is measured ({items: [{key, label}], more}). The
 // split at start, log.add's refusal and the searches' skip all use this one
 // test: a line the bucket could not send first would stop a read with
 // nothing in it, the stall found on Andy's desk.db (182 such lines).
@@ -292,23 +291,26 @@ function pending(who) {
   return waits.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; }).map(function (w) { return w.item; });
 }
 
-// Offers each object of `walk`, in its order, to one bucket, and answers the
-// bucket's result. One too big to be sent alone is never offered: it would
-// stop the walk with nothing sent (slim/G1.2 T2); skipping it says `more`.
-function walked(walk, pairOf) {
-  const bucket = searchBucket.createSearch({
-    query: '**', maxBytes: ANSWER_ROOM,
-    getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-    extractKeyAndLabelFromRow: function (pair) { return pair; },
-  });
+// Offers each object of `walk`, in its order, to the probability bucket at
+// probability 0, so the walk's order stands (an equal one seats behind), and
+// answers what fits `room` (ANSWER_ROOM unless said). One too big to be sent
+// alone is never offered: it would stop the walk with nothing sent (slim/G1.2
+// T2); skipping it says `more`. The walk stops once the room is passed.
+function walked(walk, pairOf, room) {
+  const limit = room || ANSWER_ROOM;
+  const bucket = createProbabilityBucket(Infinity);
   let skipped = false;
+  let bytes = 0;
   for (const obj of walk) {
+    if (bytes > limit) { skipped = true; break; }
     const pair = pairOf(obj);
-    if (!fitsOneAnswer(pair.key, pair.label)) { skipped = true; continue; }
-    if (!bucket.offer(pair)) break;
+    const one = oneAnswerBytes(pair.key, pair.label);
+    if (one > limit) { skipped = true; continue; }
+    bucket.seatFor(0, pair);
+    bytes += Buffer.byteLength(JSON.stringify(pair), 'utf8') + 1;
   }
-  const r = bucket.getResult();
-  return { items: r.items, more: r.more || skipped };
+  const r = bucket.serialize(null, limit);
+  return { items: r.items, more: !!r.more || skipped };
 }
 
 // ── THE DESK'S SEARCHES RANK BY PROBABILITY (goal/G18.5) ──────────────
@@ -323,7 +325,7 @@ function walked(walk, pairOf) {
 // every item against the search string, gets a probability as result, then drops the (probability,item) combination
 // into the bucket. at the end calls serialize, done."
 //
-// Until this the desk's searches graded nothing: a substring filter, then searchBucket in the walk's order. With no
+// Until this the desk's searches graded nothing: a substring filter, then the graded bucket in the walk's order. With no
 // text every probability is 0 and the bucket keeps the walk's order, so the List reads as it did.
 const probabilityStringMatch = require('../../../js/probabilityStringMatch.js').probabilityStringMatch;
 const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
@@ -611,6 +613,13 @@ function addressOf(s, text) {
   return null;
 }
 
+// AN AGENT ADDS ITEMS ONLY UNDER HIS WORDS (goal/G29.21). Andy, 2026-10-18, decided, in the item's box: Desk lets an
+// agent add items only while his newest Desk line holds "add item" (one item) or "add items" (several) in sequence, and
+// the grant ends with his next line. Proposing items stays free. What his line grants: -1 several, 1 one, 0 none.
+function addGrantOf(text) {
+  if (/\badd\s+items\b/i.test(String(text))) return -1;
+  return /\badd\s+item\b/i.test(String(text)) ? 1 : 0;
+}
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
@@ -780,6 +789,8 @@ function apply(s, r, b, item, goalOf) {
       // EVERY LINE CARRIES ITS WRITER'S KEY (goal/G21.1); the label stays for showing where no name is set.
       const line = { by: r.by, at: r.at, text: String(b.text), taken: '', key: String(r.key || '') };
       it.chat.push(line);
+      // HIS NEWEST LINE GRANTS ITEM ADDS, OR ENDS THE GRANT (goal/G29.21).
+      if (r.by === 'andy') s.addGrant = addGrantOf(b.text);
       if (r.by === 'andy' && Array.isArray(b.to)) {
         // THE BINDING NICK (goal/G21.1): addressed at the write (addressOf), replayed from the record.
         line.to = b.to.map(String);
@@ -975,6 +986,9 @@ function apply(s, r, b, item, goalOf) {
       // WHO CREATED IT (goal/G27.10, R2): its creator posts under it at any time; the first add names it.
       if (!one.creator) { one.creator = r.by; one.creatorKey = String(r.key || ''); }
       if (g.members.indexOf(id) === -1) g.members.push(id);
+      // goal/G29.21: code from the record (the handler decided it); an agent's add spends one of an "add item" grant.
+      if (b.code === true && !one.subGoal) one.code = true;
+      if (r.by !== 'andy' && s.addGrant > 0) s.addGrant -= 1;
       return;
     }
     // HIS DELETE CLOSES IT AS A LEFT-OUT ONE IS CLOSED (goal/G9.7). Andy, 2026-10-07: "the button bar of items will
@@ -2138,8 +2152,7 @@ appServer.serve(withPlugins({
     },
   },
   // THROUGH THE BUCKET (slim/G1.2 T1): the walk is ours (SQL's filters,
-  // newest first), the cut and `more` are searchBucket's. '**' because a
-  // single '*' never spans a '/' (gradedSearch.js), and every line holds one.
+  // newest first), the cut and `more` are the probability bucket's (ranked()).
   'log.search': {
     request: { text: '', todo: '', since: '', kind: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
@@ -2236,20 +2249,12 @@ appServer.serve(withPlugins({
       }
       if (!it) throw refused('no-such-item');
       it = { chat: it.chat.map(function (l) { return shownLine(st, l); }) };
-      const room = CHAT_ROOM;
-      const bucket = searchBucket.createSearch({
-        query: '**', maxBytes: room,
-        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-        extractKeyAndLabelFromRow: function (pair) { return pair; },
-      });
-      // A line too big for the room on its own is never offered, as walked() never offers one: it would close
-      // the bucket with nothing in it (claude-windows's review).
-      for (let i = it.chat.length - 1; i >= 0; i--) {
-        const pair = { key: String(i), label: JSON.stringify(it.chat[i]) };
-        if (chatLineBytes(i, it.chat[i]) > room) continue;
-        if (!bucket.offer(pair)) break;
-      }
-      const chat = bucket.getResult().items.map(function (p) { return JSON.parse(p.label); }).reverse();
+      // goal/G29.21: newest first through walked() in CHAT_ROOM; a line too big for the room on its own is never
+      // offered: it would close the answer with nothing in it (claude-windows's review).
+      const newest = [];
+      for (let i = it.chat.length - 1; i >= 0; i--) newest.push(i);
+      const found = walked(newest, function (i) { return { key: String(i), label: JSON.stringify(it.chat[i]) }; }, CHAT_ROOM);
+      const chat = found.items.map(function (p) { return JSON.parse(p.label); }).reverse();
       return { chat: chat, chatMore: chat.length < it.chat.length };
     },
   },
@@ -2261,24 +2266,43 @@ appServer.serve(withPlugins({
   // The newest lines that match, through the same bucket, in half an answer (SEARCH_ROOM). NOTHING PAGES AND
   // NOTHING IS JOINED: more says there were more, and the agent narrows (before = the oldest time it got).
   // A read: it writes no record.
+  // goal/G29.21: scope '' or 'goal' searches the id's own chat; 'items' on a goal searches the goal's chat and every
+  // one of its items' chats, ranked together. Each line's label carries item, the id it was said in, which the goal
+  // dialog draws as a link to that item; across chats the key is item#index, so keys stay unique.
   'chat.search': {
-    request: { id: '', text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    request: { id: '', text: '', by: '', since: '', before: '', scope: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
       const st = walkState();
-      const it = st.items[String(a.id)];
+      const id = String(a.id);
+      const it = st.items[id];
       if (!it) throw refused('no-such-item');
+      const scope = String(a.scope || '');
+      if (scope && scope !== 'goal' && scope !== 'items') throw refusedWhy('bad-request', 'scope is goal, items or empty');
+      const g = st.goals[id];
+      const chats = [id].concat(scope === 'items' && g ? (g.members || []).filter(function (m) { return m !== id && st.items[m]; }) : []);
+      const across = chats.length > 1;
       // SINCE goal/G18.5 THE TEXT RANKS THE LINES (probabilityStringMatch), the filters still filter; newest first
       // among equals.
       const text = String(a.text || '').trim();
-      const walk = [];
-      for (let i = it.chat.length - 1; i >= 0; i--) {
-        const l = it.chat[i];
-        if (a.by && l.by !== a.by) continue;
-        if (a.since && !(String(l.at) >= a.since)) continue;
-        if (a.before && !(String(l.at) < a.before)) continue;
-        // goal/G21.1: the writer's key and name ride with its label.
-        walk.push({ probability: lineProbability(text, l), pair: { key: String(i), label: JSON.stringify({ by: l.by, key: String(l.key || ''), name: nameOfKey(st, l.key), at: l.at, text: l.text }) } });
-      }
+      const lines = [];
+      chats.forEach(function (c) {
+        const chat = st.items[c].chat;
+        for (let i = chat.length - 1; i >= 0; i--) {
+          const l = chat[i];
+          if (a.by && l.by !== a.by) continue;
+          if (a.since && !(String(l.at) >= a.since)) continue;
+          if (a.before && !(String(l.at) < a.before)) continue;
+          lines.push({ item: c, i: i, l: l });
+        }
+      });
+      if (across) lines.sort(function (x, y) { return x.l.at < y.l.at ? 1 : x.l.at > y.l.at ? -1 : 0; });
+      // goal/G21.1: the writer's key and name ride with its label; with a scope, the item it was said in too.
+      const walk = lines.map(function (x) {
+        const l = x.l;
+        const label = { by: l.by, key: String(l.key || ''), name: nameOfKey(st, l.key), at: l.at, text: l.text };
+        if (scope) label.item = x.item;
+        return { probability: lineProbability(text, l), pair: { key: across ? x.item + '#' + x.i : String(x.i), label: JSON.stringify(label) } };
+      });
       return ranked(walk, SEARCH_ROOM);
     },
   },
@@ -2333,6 +2357,11 @@ appServer.serve(withPlugins({
       if (a.blocks !== undefined && String(a.blocks)) args.blocks = String(a.blocks);
       const r = write('item.add', args, function (st) {
         if (!st.goals[gid] || !st.items[gid]) throw refused('no-such-item');
+        // AN AGENT ADDS UNDER HIS WORDS (goal/G29.21), decided by Andy: see addGrantOf.
+        if (w.by !== 'andy' && !st.addGrant) throw refusedWhy('not-granted', 'an agent adds an item only while Andy\'s newest line says "add item" (one) or "add items" (several); propose it to him instead');
+        // A NEW ITEM IS CODE (goal/G29.21), unless its plugin refuses the code press (a vision item). Carried in the
+        // record, so the items added before this replay as they were.
+        args.code = !PLUGINS.some(function (p) { return !!pluginRefusal(p, 'press', { id: gid, what: 'code' }); });
         if (args.blocks) {
           const b = st.items[args.blocks];
           // Its own goal, or one of that goal's items: an item never blocks across goals.
@@ -2382,16 +2411,9 @@ appServer.serve(withPlugins({
       const it = st.items[from];
       if (!it || it.goal) throw refused('no-such-item');
       const g = st.goals[it.goalId];
-      const bucket = require('../../../js/searchBucket.js').createSearch({
-        query: '**',
-        getLabelStringFromIncomingObject: function (x) { return String(x.title || '') + ' ' + x.id; },
-        extractKeyAndLabelFromRow: function (x) { return { key: x.id, label: String(x.title || '') }; },
-      });
-      ((g && g.members) || []).forEach(function (id) {
-        if (blockWhy(st, from, id)) return;
-        bucket.offer(st.items[id]);
-      });
-      return bucket.getResult();
+      // goal/G29.21: in goal order through the probability bucket (walked).
+      const open = ((g && g.members) || []).filter(function (id) { return st.items[id] && !blockWhy(st, from, id); });
+      return walked(open, function (id) { return { key: id, label: String(st.items[id].title || '') }; });
     },
   },
   // Andy: "the FIRST text wins, all subsequent actions are alterations and
@@ -2729,15 +2751,18 @@ appServer.serve(withPlugins({
   'rules.search': {
     request: { text: '', types: [''], statuses: [''] }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
-      const text = String(a.text || '').toLowerCase();
+      // goal/G29.21: the text ranks the rules by title and text (probabilityStringObjectMatch), the types and statuses
+      // still filter; newest first among equals, so no words reads every rule newest first.
+      const text = String(a.text || '').trim();
       const types = (Array.isArray(a.types) ? a.types : []).filter(Boolean);
       const statuses = (Array.isArray(a.statuses) ? a.statuses : []).filter(Boolean);
-      const hits = newestRules.all().filter(function (r) {
+      const walk = newestRules.all().filter(function (r) {
         if (types.length && types.indexOf(r.type) === -1) return false;
-        if (statuses.length && statuses.indexOf(r.status) === -1) return false;
-        return !text || (r.label + '\n' + r.text).toLowerCase().indexOf(text) !== -1;
+        return !(statuses.length && statuses.indexOf(r.status) === -1);
+      }).map(function (r) {
+        return { probability: text ? probabilityStringObjectMatch(text, { label: String(r.label), text: String(r.text || '') }) : 0, pair: { key: r.key, label: JSON.stringify({ label: r.label, type: r.type, status: r.status }) } };
       });
-      return walked(hits, function (r) { return { key: r.key, label: JSON.stringify({ label: r.label, type: r.type, status: r.status }) }; });
+      return ranked(walk, ANSWER_ROOM);
     },
   },
   'agent.state': {

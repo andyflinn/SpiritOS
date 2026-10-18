@@ -148,7 +148,7 @@ async function serverHalf() {
     const plainOrder = plain.map(function (p) { return p.key; }).filter(function (k) { return /^sr\//.test(k); });
     if (JSON.stringify(plainOrder) === JSON.stringify(['sr/G1', 'sr/G1.1', 'sr/G1.2', 'sr/G1.3'])) test.check('with no text every item is 0 and keeps its order, the goal and then its items, as the List needs');
     else test.fail(OWED + 'items.search with no text answered ' + JSON.stringify(plainOrder));
-    const lines = ((await call('chat.search', { id: 'sr/G1.3', text: 'zebra', by: '', since: '', before: '' }, ANDY)).body || {}).items || [];
+    const lines = ((await call('chat.search', { id: 'sr/G1.3', text: 'zebra', by: '', since: '', before: '', scope: '' }, ANDY)).body || {}).items || [];
     const texts = lines.map(function (p) { return (parse(p.label) || {}).text; });
     if (texts.length === 2 && texts[0] === 'a zebra came by' && texts[1] === 'nothing else') test.check('chat.search ranks the lines by probability, the non-matching one kept, last');
     else test.fail(OWED + 'chat.search for zebra answered ' + JSON.stringify(texts));
@@ -278,7 +278,7 @@ async function dialogHalf() {
   body.fire('input', { target: target });
   await settled(); await sleep(20); await settled();
   const sent = calls.slice(n0).filter(function (c) { return c.verb === 'chat.search'; });
-  if (sent.length && JSON.stringify(sent[sent.length - 1].args) === JSON.stringify({ id: 'lv/G1.2', text: 'zebra', by: '', since: '', before: '' })) test.check('typing in it sends chat.search {id, text} for this item');
+  if (sent.length && JSON.stringify(sent[sent.length - 1].args) === JSON.stringify({ id: 'lv/G1.2', text: 'zebra', by: '', since: '', before: '', scope: '' })) test.check('typing in it sends chat.search {id, text} for this item');
   else test.fail(OWED + 'typing zebra sent ' + short(calls.slice(n0)));
   const shown = doc.getElementById('dd-chat').innerHTML;
   const a = shown.indexOf('a zebra came by');

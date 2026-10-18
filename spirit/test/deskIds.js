@@ -85,6 +85,7 @@ async function currentGoal() {
   const f3 = await facts('goal/G3.3');
   if (f3.goal === 'goal/G3' && f3.title === 'Third' && (f3.blocking || []).join() === 'goal/G3') test.check('goal/G3.3 is goal/G3\'s, titled, and blocks its goal');
   else test.fail(OWED + 'goal/G3.3 reads ' + short({ goal: f3.goal, title: f3.title, blocking: f3.blocking }));
+  await call('chat.add', { id: 'goal/G4', text: 'add items' }, ANDY); // goal/G29.21: an agent adds under his words
   const i2 = await call('item.add', { goal: 'goal/G4', title: 'First of the new goal' }, CW);
   if (took(i2) && i2.body.id === 'goal/G4.1') test.check('the first item of goal/G4 is goal/G4.1, added by an agent');
   else test.fail(OWED + 'item.add in goal/G4 answered ' + i2.status + ' ' + short(i2.body));

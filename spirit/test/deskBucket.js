@@ -139,18 +139,19 @@ const kids = [];
   } else test.fail(OWED + 'keys ' + JSON.stringify(keys2) + ', more ' + JSON.stringify(r2.more));
 
   // ── T1 ──────────────────────────────────────────────────────────────
-  test.subHeading('T1: log.search and pending.get answer through searchBucket.js, with more');
+  test.subHeading('T1: log.search and pending.get answer through the probability bucket, with more');
   for (let i = 0; i < 40; i++) await call('log.add', { json: JSON.stringify(row('t/G1.3', 'filler ' + i + ' ' + 'w'.repeat(300))) });
   const r1 = await call('log.search', Object.assign({}, all, { todo: 't/G1.3' }));
   const p1 = await call('pending.get', { who: 'andy' });
   const bytes = linesOf(r1).reduce(function (s, l) { return s + cost(l); }, 0);
   const src = fs.readFileSync(DESK, 'utf8');
-  const usesBucket = /require\([^)]*searchBucket/.test(src);
+  // Since goal/G29.21 the bucket is the probability bucket (searchBucket left desk.js).
+  const usesBucket = /require\([^)]*probabilityBucket/.test(src);
   const handCut = /ANSWER_ROOM\)\s*\{\s*partial\s*=\s*true/.test(src);
   if (r1.more === true && !('partial' in r1) && typeof p1.more === 'boolean' && !('partial' in p1) && bytes <= ROOM && linesOf(r1).length > 0 && usesBucket && !handCut) {
-    test.check('cut at ' + linesOf(r1).length + ' whole lines within one answer, more says so; pending.get answers more too; desk.js uses searchBucket and cuts nothing itself');
+    test.check('cut at ' + linesOf(r1).length + ' whole lines within one answer, more says so; pending.get answers more too; desk.js uses the probability bucket and cuts nothing itself');
   } else test.fail(OWED + 'more ' + JSON.stringify(r1.more) + ', partial present ' + ('partial' in r1) + ', pending more ' + JSON.stringify(p1.more) +
-    ', bytes ' + bytes + '/' + ROOM + ', requires searchBucket ' + usesBucket + ', hand cut left ' + handCut);
+    ', bytes ' + bytes + '/' + ROOM + ', requires probabilityBucket ' + usesBucket + ', hand cut left ' + handCut);
 
   // ── T4 ──────────────────────────────────────────────────────────────
   test.subHeading('T4: log.add refuses a line too big for one answer, by name');

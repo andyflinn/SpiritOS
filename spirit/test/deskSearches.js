@@ -108,11 +108,11 @@ async function main() {
 
   test.subHeading('4. deskClient and deskAgent rank on the probability modules');
   const client2 = code('process/js/deskClient/deskClient.js');
-  const historyHandler = (/'history\.search': \{[\s\S]*?\n {2}\},\n/.exec(client2) || [''])[0];
+  const historyHandler = (/'history\.search': \{[\s\S]*?\r?\n {2}\},\r?\n/.exec(client2) || [''])[0];
   if (/probabilityStringObjectMatch|probabilityStringMatch/.test(historyHandler)) test.check('deskClient history.search ranks with the probability modules');
   else test.fail(OWED + 'deskClient history.search does not rank with the probability modules');
   const agent = code('process/js/deskAgent/deskAgent.js');
-  const modelsFn = (/function modelsSearch\([\s\S]*?\n\}\n/.exec(agent) || [''])[0];
+  const modelsFn = (/function modelsSearch\([\s\S]*?\r?\n\}\r?\n/.exec(agent) || [''])[0];
   if (/probabilityStringObjectMatch|probabilityStringMatch/.test(modelsFn) && /createProbabilityBucket/.test(modelsFn)) test.check('deskAgent\'s models search ranks with the probability modules');
   else test.fail(OWED + 'deskAgent\'s models search does not rank with the probability modules');
 }

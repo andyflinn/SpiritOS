@@ -41,15 +41,16 @@
 //               statistically and discarded.")
 // THE RECORD IS BOUNDED: the newest historyMax rows are kept, the oldest fall off.
 //
-// NEVER A LIST (Andy: every list is a search). history.search answers what matches, newest first, cut to fit one
-// answer by searchBucket, and says so with more.
+// NEVER A LIST (Andy: every list is a search). history.search answers what matches best, newest first among equals,
+// cut to fit one answer by the probability bucket, and says so with more.
 
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
 const appClient = require('../../../js/appClient.js');
-const searchBucket = require('../../../js/searchBucket.js');
+const createProbabilityBucket = require('../../../js/probabilityBucket.js').createProbabilityBucket;
+const probabilityStringObjectMatch = require('../../../js/probabilityStringObjectMatch.js').probabilityStringObjectMatch;
 const kernel = require('../../../js/kernel.js');
 
 const argv = process.argv;
@@ -668,22 +669,21 @@ appServer.serve({
       return { heard: true };
     },
   },
-  // THE STATISTICS. Each label is one record as JSON; the walk is ours (newest first, the text against the verb
-  // and the outcome), the cut and `more` are searchBucket's.
+  // THE STATISTICS. Each label is one record as JSON; the walk is ours (newest first), the text ranks each record by
+  // its verb and outcome (goal/G29.21, probabilityStringObjectMatch), newest first among equals; the cut and `more`
+  // are the probability bucket's. The record is bounded (historyMax), so every row is weighed.
   'history.search': {
     request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
-      const bucket = searchBucket.createSearch({
-        query: '**', maxBytes: ANSWER_ROOM,
-        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
-        extractKeyAndLabelFromRow: function (pair) { return pair; },
-      });
-      for (const r of findAsks.iterate(a.text, a.text, a.text)) {
+      const text = String(a.text || '').trim();
+      const bucket = createProbabilityBucket(Infinity);
+      for (const r of findAsks.iterate('', '', '')) {
         const label = JSON.stringify({ at: r.at, verb: r.verb, ms: r.ms, outcome: r.outcome, bytes: r.bytes, port: r.port, count: r.count });
-        if (!bucket.offer({ key: String(r.id), label: label })) break;
+        const probability = text ? probabilityStringObjectMatch(text, { verb: String(r.verb), outcome: String(r.outcome) }) : 0;
+        bucket.seatFor(probability, { key: String(r.id), label: label });
       }
-      const r = bucket.getResult();
-      return { items: r.items, more: r.more };
+      const r = bucket.serialize(null, ANSWER_ROOM);
+      return { items: r.items, more: !!r.more };
     },
   },
 // What a peer needs granted here (apiAuth/G1.10): the desk's node, the one verb it nudges with.

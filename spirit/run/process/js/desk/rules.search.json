@@ -1,5 +1,5 @@
 {
-  "description": "Search the desk rules by text, types and statuses (empty filters nothing).",
+  "description": "Search the desk rules ranked by title and text, filtered by types and statuses (empty filters nothing).",
   "request": {
     "text": "",
     "types": [

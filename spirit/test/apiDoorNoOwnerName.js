@@ -58,7 +58,7 @@ function short(x) { return JSON.stringify(x).slice(0, 200); }
 
 (async function () {
   test.subHeading('1. a member\'s ask carrying by andy reaches the server');
-  await arrive({ desk: { 'chat.search': { id: 'goal/G1', text: '', by: 'andy', since: '', before: '' } } });
+  await arrive({ desk: { 'chat.search': { id: 'goal/G1', text: '', by: 'andy', since: '', before: '', scope: '' } } });
   const r1 = replies();
   if (asked.length === 1 && !r1.some(function (b) { return b && b.code === 'not-owner'; })) test.check('a chat.search filtered by andy is answered by the desk, not refused at the door');
   else test.fail(OWED + 'chat.search by andy: asked ' + asked.length + ', replies ' + short(r1));
