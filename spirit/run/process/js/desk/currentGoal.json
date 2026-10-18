@@ -1,5 +1,5 @@
 {
- "change": 71422,
+ "change": 71432,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G29.14"
+    "goal/G29.17"
    ],
    "codeOffered": false,
    "go": false,
@@ -5297,10 +5298,10 @@
    "id": "goal/G29.14",
    "title": "Fix Jobs Search/Monitor and Jobs Details.",
    "goal": "goal/G29",
-   "status": "deskVerify passed",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G29"
@@ -5409,7 +5410,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "JOBS (shell/jobs)\n- The table moves onto the shared list: filters on row 1, the search on row 2, then the rows.\n- Words match the job's name, type, module and id. With no words the rows are sorted by id and stand still: an update never moves a row.\n- Kind filter, one choice: all, node, servers, transient. node is the node's own jobs (server-stats, relay-presence, fs-watcher): neither appServers nor transient.\n- Status filter: one toggle per status the list holds, each in or out. This adds a multi-toggle filter to listSearch.js, usable by every list.\n- Columns, under column headings: a left-most icon column where one green dot hops between rows, always on the most recent update; rank bar (search only), status, name (module, else type), kind, progress, updated.\n- Column headings are the shared list's own, usable by every list.\n\nPROGRESS BAR (shell/shared)\n- progressBar: one shared shell element drawn from (done, total, text); total 0 shows indeterminate. It knows nothing of processes.\n- The shell app hooks it up with the appropriate job/process: Jobs feeds it from each process's {job} events (goal/G29.15), and a server between jobs shows idle, no bar.\n\nJOBS DETAILS (shell/jobsDetails)\n- A real-time monitor of a capturable event stream, never stdout: an agent's file changes through fs-watcher, what each server publishes, and what the node's own jobs report (server-stats, relay-presence: their data, each time it changes). It shows what could be logged; nothing is logged or kept.\n- The window holds the last 256 events the shell receives; the node does no more work.\n- The dialog fills the page, top to bottom, and the page itself does not scroll:\n  1. the header (status, id, kind/type, updated, Cancel or Delete);\n  2. the rolling event log, 1/3 of the page height, one JSON line per event;\n  3. the Extract/analyze box, 1/3 of the page height: the last event clicked, JSON.stringify(object, null, 2) in a read-only CodeMirror textView.\n- The log and the Extract box scroll inside themselves.",
@@ -5810,7 +5811,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G29.14"
+    "goal/G29"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -6324,6 +6325,50 @@
      "text": "deskVerify: passed, at 900c162c (pulled). 4 suites ran green."
     }
    ]
+  },
+  {
+   "id": "goal/G29.17",
+   "title": "peerSearch",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
