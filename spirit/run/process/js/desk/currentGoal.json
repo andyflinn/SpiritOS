@@ -1,5 +1,5 @@
 {
- "change": 70754,
+ "change": 70798,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,16 +46,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1910,13 +1907,11 @@
   },
   {
    "id": "goal/G29.7",
-   "title": "fs.search",
+   "title": "fix search in Grants shell app and UI, too",
    "goal": "goal/G29",
-   "status": "planning",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -1924,17 +1919,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1942,7 +1937,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows",
     "ollama agent node": "levant-local"
@@ -1950,8 +1974,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "fs.search is for a person, not for the core. Think like a man: \"where did I put my screwdriver?\"\n\nSplit into G29.12 (a file display on CodeMirror 5 with the search words marked) and then G29.11 (the words searched inside text files).\n\nDone by G29.8: words never patterns, matched against names and paths; the stream with stats; tree and list modes; the matched parts marked in every list.\nThe plugins filter is moot: Desk finds its plugins in the shell tree.",
-   "version": 4,
+   "box": "Grants on the shared list: one line of selectors that filter, a search within them, a table of grants below, the same look as every other search.\n\nTHE LINE\n- One line at the top, nothing stacked: [whose access] [choose a server] [choose a verb] [Grant].\n- The three selectors are dropdowns of the shared list, as the contact selector already is; the server and verb selectors leave their native selects.\n- The verb selector shows only once a server is chosen; it offers that server's verbs.\n- The selectors are filters: each one chosen narrows the list to its choice; one left unchosen means all (every peer, every server, every verb).\n- Grant grants what the line names: the chosen peer the chosen server, one verb when a verb is chosen, all its verbs when none is. It needs a peer and a server.\n- A server that names a bundle (its DEPENDENCIES) offers Grant the bundle on the same line once it is chosen.\n\nTHE SEARCH AND THE TABLE\n- The search bar below the line searches within the line's filters, ranked as every search is, with the rank bar and the marks.\n- Below it the grants in a small table: the peer's name, the path, deprecated when no server serves the path today, and each row's own Revoke.\n- The page holds the grants (jobs.authSearch with no words, bounded as every answer) and ranks them itself, as Files does.\n- jobs.authSearch moves to the new search as well, as every search does one by one: words ranked by the probability modules, best first, each grant answered as a json label {name, key, path}; its old search goes.",
+   "version": 7,
    "checks": [],
    "chat": [
     {
@@ -2169,6 +2193,78 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T02:41:33.953Z",
      "text": "Added: G29.12 \"File display on CodeMirror 5, search words marked\" blocks G29.11 \"Contents filter: words searched inside text files\", which blocks this one. Their boxes hold the design; this box now says what is done and where the rest went. G29.12 waits for your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:16:22.911Z",
+     "text": "this one makes no sense anymore..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:16:44.283Z",
+     "text": "Right: everything in it was done by G29.8, G29.12 and G29.11, and its box says so. Close is offered."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:20:34.666Z",
+     "text": "one line of selectors at the top, no stacked stuff...\n\n[whose access] [choose a server] [chose a verb, displayed only when a server is chosen ] [grant-button]\n\nbelow it a pretty looking list like all other searches....\n\nthoughts?\n\nre-initialize the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:21:27.717Z",
+     "text": "Box re-initialized to your line and list. My thoughts, in it as statements:\n- the server and verb selectors become shared-list dropdowns like the contact one, so the line looks alike;\n- the bundle a server names keeps its Grant the bundle, on the same line once that server is chosen;\n- a contact chosen narrows the list to their grants; Revoke stays on each row.\nOne thing needs your word: the list searches through the node verb jobs.authSearch, still on the old search. It would move to the probability ranking and answer each grant as a json label {name, path, key}, a changed verb. Yes to that?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:23:42.925Z",
+     "text": "how those selectors are filters (affect the list).\n\nthe selected ones filter the list with their selection, if not selected, the list show \"all (peers,servers,verbs)\n\nthe search bar below that line searches within those set filters.\n\nthe list of grants appears below (in a nice little table)\n\nintegrate the search with the above concepts?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:24:25.801Z",
+     "text": "we're changing EVERYTHING to the new search one-by-one"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:24:31.655Z",
+     "text": "Yes, that fits the shared list well; the box says it now:\n- the three selectors are the filters, unchosen meaning all; the search bar below searches within them; the table below ranks with the bar and the marks;\n- Grant grants what the line names (a peer and a server, one verb or all of them).\nIt also drops my verb question: the page holds the grants and ranks them itself, as Files does, so no node verb changes. Green from my side."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:25:02.791Z",
+     "text": "Right, then jobs.authSearch moves too, in this item: ranked by the probability modules, each grant a json label {name, key, path}, its old search gone. In the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:26:03.828Z",
+     "text": "green?\n\n(grants are forthcoming)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:26:33.960Z",
+     "text": "Green from my side. One more caller found: the file server asks jobs.authSearch for a peer's grants, so it moves with the verb.\nFiles the build touches: shell/grants, the server and api-branch selectors (shell/js), the node verb (server.js, apiAuth.js), the file server, and their tests (grantsApp, jobsAuth, appServerSelector, apiBranchSelector)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T05:27:32.510Z",
+     "text": "yes, green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T05:27:49.946Z",
+     "text": "Yes, green: no open question, ready for Go."
     }
    ]
   },
