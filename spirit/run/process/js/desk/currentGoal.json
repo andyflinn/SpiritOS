@@ -1,5 +1,5 @@
 {
- "change": 71592,
+ "change": 71703,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -15,7 +15,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G29.18",
     "goal/G29.19"
    ],
    "codeOffered": false,
@@ -48,16 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -6725,9 +6722,12 @@
    "id": "goal/G29.18",
    "title": "Clean up chatServer and chatter.",
    "goal": "goal/G29",
-   "status": "red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G29"
    ],
@@ -6736,21 +6736,47 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/chatClerver/chatClerver.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/chatter/chatter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/chatClerverLines.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/chatsSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/chatter.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "81b39228",
+   "redCommit": "bc28230c",
+   "waived": true,
    "rules": [
     {
      "key": "rule/13",
@@ -6795,8 +6821,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "CHATCLERVER (process/js/chatClerver)\n- peers.search becomes chats.search. It never searched peers: the peers and their names come from the node (contact.search). It answers what only chatClerver holds: which peers have a chat, the newest line, the unanswered count. Keys and chat facts only.\n- chats.search takes no text, since or before: text matched part of a key, and keys are never searched; chatter never sent since or before.\n- chats.search and chat.read leave the old graded bucket (searchBucket.createSearch). Neither ranks words: each answers newest first, cut by bytes as now, through the probability bucket's serialize.\n- chatClerver no longer requires searchBucket.\n\nCHATTER (shell/chatter)\n- Already finds names on the shared list (contactSelector over contact.search, on the probability modules since goal/G29.6).\n- It asks chats.search, with no arguments, for the chats and their unanswered counts.",
-   "version": 2,
+   "box": "CHATCLERVER (process/js/chatClerver)\n- peers.search becomes chats.search. It never searched peers: the peers and their names come from the node (contact.search). It answers what only chatClerver holds: which peers have a chat, the newest line, the unanswered count. Keys and chat facts only.\n- chats.search takes no arguments: text matched part of a key, and keys are never searched; since and before go. A chat is revived by finding the person by name (contact.search) and opening it; chat.read reads that chat straight from memory.db.\n- chats.search and chat.read leave the old graded bucket (searchBucket.createSearch). Neither ranks words: each answers newest first, cut by bytes as now, through the probability bucket's serialize.\n- A new verb, chat.search {peer, text, who}: that chat's lines ranked by the probability modules, newest first on a tie, cut by bytes; who is me (my lines), them (the other person's) or both. The chat window searches with it.\n- chat.read takes {peer, before, after}: with after, the lines newer than it, oldest first.\n- chatClerver no longer requires searchBucket.\n\nCHATTER (shell/chatter)\n- Already finds names on the shared list (contactSelector over contact.search, on the probability modules since goal/G29.6).\n- It asks chats.search, with no arguments, for the chats and their unanswered counts.\n- The chat window has a search over its own lines, through chat.search, with a filter: me, the other person, or both. It is a dropdown. Every line a search finds is put into the shown history by its time when missing; the picked line becomes the current line, the one a reply quotes, and the line right before it and the line right after it are put in too (chat.read before and after).",
+   "version": 7,
    "checks": [],
    "chat": [
     {
@@ -6840,6 +6866,174 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T18:53:49.790Z",
      "text": "One flag before I build. before is how a long chat list reaches older chats past one answer (G4.3, chatPeers: \"nothing pages, before brings older ones\"). Chatter never sends it, so with more chats than fit one answer the oldest are unreachable today, and dropping it makes that permanent.\nI would keep before on chats.search and drop only text and since. Keep before?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:06:33.922Z",
+     "text": "put this stuff into a SQLite db and use a search for the most recent chat lines? that way on search can revive a chat without scanning a 500KB file for stuff that nobody want's to know. the chat window itself can then have a search, if y user really want's do quota another one.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:06:58.090Z",
+     "text": "It is SQLite already: chatClerver keeps memory.db (tables peers and lines). No file is scanned; chats.search runs three small queries per peer, and chat.read reads one chat's lines by index.\nWith your idea before can go too: a chat is revived by finding the person by name (contact.search) and opening it, and chat.read reads that chat straight from the db.\nThe chat window search would be a new verb, chat.search {peer, text}: that chat's lines ranked by the probability modules, newest first on a tie.\nShall I add it to this box, with before gone?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:08:59.078Z",
+     "text": "add to the box. before goes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:09:30.417Z",
+     "text": "In the box: before gone, chat.search {peer, text} and the chat window's search. Writing the red."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:09:41.749Z",
+     "text": "the chat-history-search should have filters me, other person or both"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:11:07.488Z",
+     "text": "In the box: chat.search {peer, text, who}, who me, them or both, and the chat window's filter with the same three."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:12:10.018Z",
+     "text": "commit bc28230cc4a9d20296ddbdf2ab0699e850a4f757: goal/G29.18: the red for chats.search, chat.search {peer, text, who} and chatClerver off the graded bucket\n- spirit/test/chatsSearch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T19:12:13.666Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:12:21.716Z",
+     "text": "deskVerify: red confirmed at bc28230c: spirit/test/chatsSearch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T19:12:22.579Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:12:25.884Z",
+     "text": "Red bc28230c: chatsSearch.js, 21 red. Named in it: chat.search answers the lines as chat.read does (key sent:seq), a line that does not match left out, owner only; who '' or both is either writer. chatPeers.js (G4.3) retired into it. Building."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:18:03.273Z",
+     "text": "commit 08c0c6b73d528859f1338dac2c719bcb1cd57b94: goal/G29.18: chatClerver's chats.search (was peers.search, no arguments) and chat.search {peer, text, who}, both lists off the graded bucket; chatter's chat window searches its lines on the shared lis\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/shell/chatter/chatter.js\n- spirit/test/chatPeers.js\n- spirit/test/chatter.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:18:16.888Z",
+     "text": "Committed and verified: 08c0c6b7, chatsSearch 23 of 23.\nchatClerver: chats.search (no arguments) in place of peers.search; chat.search {peer, text, who}; chat.read and both new lists on the probability bucket, searchBucket gone from it.\nchatter: asks chats.search {}; the chat window has a search bar on the shared list with filters both, me, the other; a press puts the line in view.\nFiles: chatClerver.js, chatter.js; tests chatsSearch (new), chatter; chatPeers.js retired. chatClerver needs a restart to serve the new verbs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:18:23.443Z",
+     "text": "deskVerify: passed, at 08c0c6b7 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:25:24.156Z",
+     "text": "can that chat history thing be a dropdown, when a line is selected it inserts it's hole content into the shown chat history, if it's missing, and the selected line becomes the currently selected line in the chat history?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:26:38.866Z",
+     "text": "commit 6c6fcf5ffe6af02b05ed373ce94c29b4979adc2b: goal/G29.18: the chat search is a dropdown; a picked line is put into the history when missing and becomes the current line\n- spirit/run/shell/chatter/chatter.js\n- spirit/test/chatsSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:26:50.550Z",
+     "text": "Yes, done at 6c6fcf5f: the chat search is a dropdown (search this chat…); picking a line puts it into the shown history by its time when missing and makes it the current line. In the box; chatsSearch 24 of 24, chatter 53. A reload loads it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:26:59.814Z",
+     "text": "deskVerify: passed, at 6c6fcf5f (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:28:34.725Z",
+     "text": "all found lines are added to the chat, if they're missing, that won't hurt. the selected line also becomes the \"current\" line in the chat history, the one that is \"quoted\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:29:43.733Z",
+     "text": "commit 8a0e7a55a3ab5afe3d1ea1a6a96c159ff1a9b6e0: goal/G29.18: every line the chat search finds joins the history; the picked one is the current line, the one a reply quotes\n- spirit/run/shell/chatter/chatter.js\n- spirit/test/chatsSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:29:48.183Z",
+     "text": "Done at 8a0e7a55: every line a search finds is put into the history when missing; the picked line becomes current, the one a reply quotes (chSend already quotes the current line). In the box; chatsSearch 25 of 25, chatter 53."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:29:51.403Z",
+     "text": "we might even make sure the lines befor and after the selected one are added to the chat, so that context is visible..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:30:03.791Z",
+     "text": "deskVerify: passed, at 8a0e7a55 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:30:17.723Z",
+     "text": "Can do. The line before is chat.read {peer, before: its time}; the line after has no verb today (chat.read only reads older).\nPlainest: chat.read gains after, so {peer, before, after}: with after, the lines just newer than it, oldest first. On a pick chatter asks one line each side and puts both in.\nchat.read gains after?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:33:19.060Z",
+     "text": "chat.read gains after"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:35:56.031Z",
+     "text": "commit 81b39228cdf79487078205ec891a533808333841: goal/G29.18: chat.read gains after; a picked search line comes with the line before and after it\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/shell/chatter/chatter.js\n- spirit/test/chatClerverLines.js\n- spirit/test/chatsSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T19:36:04.030Z",
+     "text": "Done at 81b39228: chat.read takes {peer, before, after}; picking a found line also puts in the line right before and right after it. In the box; chatsSearch 27 of 27, chatter 53, chatClerverLines 13 (its shape check now includes after). chatClerver needs a restart for after."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T19:36:34.995Z",
+     "text": "deskVerify: passed, at 81b39228 (pulled). 3 suites ran green."
     }
    ]
   },
@@ -6868,7 +7062,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -6882,8 +7076,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "- introSpector must use new probabilityBuckets etc...",
+   "version": 2,
    "checks": [],
    "chat": []
   }
