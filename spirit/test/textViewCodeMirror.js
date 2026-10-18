@@ -103,7 +103,16 @@ function fakeElement() {
   test.subHeading('2. textView marks every match and scrolls to the first');
   const CodeMirror = fakeCodeMirror();
   const win = { CodeMirror: CodeMirror };
+  // As index.html loads them: the shared list, whose marking rule the text view uses, then the text view.
+  new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))({ getElementById: function () { return null; } }, win);
   if (fs.existsSync(VIEW)) new Function('window', 'document', 'spirit', fs.readFileSync(VIEW, 'utf8'))(win, { createElement: fakeElement }, { core: { util: { escapeHtml: kernel.core.util.escapeHtml } } });
+  // Andy, 2026-10-18, to "both markers live in one shared function": "yes". The box: the shared list owns the rule.
+  const viewSrc = code(VIEW);
+  if (typeof win.spiritMatchRanges === 'function' && /spiritMatchRanges/.test(viewSrc) && !/new RegExp/.test(viewSrc)) test.check('one marking rule: the shared list gives window.spiritMatchRanges, and the text view uses it, with no rule of its own');
+  else test.fail(OWED + 'spiritMatchRanges ' + typeof win.spiritMatchRanges + '; textView uses it ' + /spiritMatchRanges/.test(viewSrc) + ', has its own RegExp ' + /new RegExp/.test(viewSrc));
+  const listSrc = code(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'));
+  if ((listSrc.match(/new RegExp/g) || []).length === 1 && /function mark\(text\)[\s\S]{0,400}?(spiritMatchRanges|matchRanges)\(/.test(listSrc)) test.check('the list marks its rows with that same function');
+  else test.fail(OWED + 'listSearch.js: RegExps ' + (listSrc.match(/new RegExp/g) || []).length + ', its mark() uses the shared ranges ' + /function mark\(text\)[\s\S]{0,400}?(spiritMatchRanges|matchRanges)\(/.test(listSrc));
   const make = win.spiritElements && win.spiritElements.createTextView;
   if (typeof make !== 'function') { test.fail(OWED + 'no window.spiritElements.createTextView (shell/js/textView.js)'); }
   else {
@@ -146,6 +155,10 @@ function fakeElement() {
   const editor = code(path.join(RUN, 'shell', 'textEditor', 'textEditor.js'));
   if (/createTextView\s*\(/.test(editor) && !/<textarea/.test(editor) && /\.value\(\)/.test(editor)) test.check('the text editor edits in a textView, its textarea gone, and saves its value()');
   else test.fail(OWED + 'textEditor.js: createTextView ' + /createTextView\s*\(/.test(editor) + ', textarea ' + /<textarea/.test(editor) + ', value() ' + /\.value\(\)/.test(editor));
+  // "we only do it for the text viewer/launcher, if we go from there to \"textEditor\" those highlights will vanish.
+  // correct. (I'm fine with that)"
+  if (!/words/.test(editor)) test.check('the editor opens unmarked: it takes no words');
+  else test.fail(OWED + 'textEditor.js still takes words');
   if (/createTextView\s*:\s*spiritElements\.createTextView/.test(code(path.join(RUN, 'js', 'client', 'shell.js')))) test.check('apps get it as api.ui.elements.createTextView');
   else test.fail(OWED + 'shell.js hands apps no createTextView');
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
