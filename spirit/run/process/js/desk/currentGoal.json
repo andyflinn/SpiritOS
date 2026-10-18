@@ -1,5 +1,5 @@
 {
- "change": 71034,
+ "change": 71160,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -54,9 +53,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5301,14 +5298,15 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G29.15"
+   ],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -5319,7 +5317,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
    "red": "",
    "builder": "",
@@ -5335,8 +5333,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "in the Jobs shell app, i see the following changes:\n\n- Jobs can be searched.\n- Filters (beside, string match for its name/title): Above the search input, appServers or not (transient), include exclude by status,\n\nJobsDetails\n\nThis Dialog is NOT supposed to show the stdout of it's associated job/process, it is supposed to show a windows of the last 256 events published by that job/process.",
-   "version": 2,
+   "box": "JOBS (shell/jobs)\n- The table moves onto the shared list: filters on row 1, the search on row 2, then the rows.\n- Words match the job's name, type, module and id; with no words, the newest updated is on top.\n- Kind filter, one choice: all, servers, transient.\n- Status filter: one toggle per status the list holds, each in or out. This adds a multi-toggle filter to listSearch.js, usable by every list.\n- Columns: rank bar, status, name (module, else type), kind, updated. The progress column comes with goal/G29.15.\n\nJOBS DETAILS (shell/jobsDetails)\n- A real-time monitor of a capturable event stream, never stdout: an agent's file changes through fs-watcher, and what each server publishes. It shows what could be logged; nothing is logged or kept.\n- The window holds the last 256 events the shell receives; the node does no more work.\n- The dialog fills the page, top to bottom, and the page itself does not scroll:\n  1. the header (status, id, kind/type, updated, Cancel or Delete);\n  2. the rolling event log, 1/3 of the page height, one JSON line per event;\n  3. the Extract/analyze box, 1/3 of the page height: the last event clicked, JSON.stringify(object, null, 2) in a read-only CodeMirror textView.\n- The log and the Extract box scroll inside themselves.",
+   "version": 8,
    "checks": [],
    "chat": [
     {
@@ -5344,6 +5342,308 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-18T14:04:56.563Z",
      "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:05:32.810Z",
+     "text": "Jobs: the table moves onto the shared list, matching on name, type and module, with filters above it for server or transient and for each status in or out.\nDetails: what a server publishes is each object it hands appServer.publish. Today the node keeps only the newest one per job, so the dialog can only show events heard while the page is open.\nTo show the last 256 after a reload, the node would keep a ring of 256 per job in js/jobs.js, a core file.\nRing on the node, or a window kept in the page?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:09:12.774Z",
+     "text": "No. the jobsDetails shows only the 256 that the shell receives. We're NOT going to make node do even more work. This allows me to watch an agents file changes though fs-watch. It shows me what my servers \"publish\". That's all. Real-time monitors, same concept as our relayMonitor (which is still stuck in gestation)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:09:49.542Z",
+     "text": "Recorded in the box: the window keeps the last 256 events the shell hears, nothing more on the node. Ready on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:11:40.254Z",
+     "text": "there are \"logs\" that I am UNWILLING to keep, jobsDetails will show me which kind of traffic i \"could\" log if i was so enclined, The show a \"capturable\" event stream. that's all."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:12:20.521Z",
+     "text": "In the box: a capturable event stream, showing what could be logged; nothing is logged or kept."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:13:45.646Z",
+     "text": "the events shown will likely be (correct me if i'm wrong), json-one-liners, if i click on one, it should expand into a string from JSON.stringify(object, null, 2)...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:14:19.492Z",
+     "text": "Right: each event is an object, the one a server publishes or the watcher command {op, path, at}, so a JSON one-liner. Click expands it to stringify(object, null, 2). In the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:15:48.596Z",
+     "text": "I'm not sure if this should be in the box, or in a 2nd single box that shows me a nice codeMirror style version, of the last event i clicked on.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:16:08.224Z",
+     "text": "I would take the second box: the stream keeps moving, so a line expanding in place jumps away as new events push in.\nThe box below is the textView from G29.12 (CodeMirror, already in api.ui.elements), read-only, showing the clicked event pretty-printed; it stays put while the stream runs.\nThe clicked line stays marked in the stream. Shall I put that in the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:18:45.650Z",
+     "text": "so jobsDetails shows\n\n1. the default header stuff\n2. the rolling event log 1/3rd of page height\n3. Extract/analyze box, 1/3rd of page height displaying a codeMirror style version of the last event i clicked on."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:19:15.634Z",
+     "text": "In the box: header, rolling event log at 1/3 height, Extract/analyze box at 1/3 height with the last clicked event pretty-printed in CodeMirror. Ready on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:19:33.022Z",
+     "text": "i kind of like the idea that the dialog page is full, be never/or rarely needs scrolling."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:20:06.673Z",
+     "text": "In the box: the dialog fills the page and the page does not scroll; the log and the Extract box scroll inside themselves."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:23:12.851Z",
+     "text": "any suggestion on the jobs search panel, it's filters etc?\n\nBTW. this is also how i want transient Jobs to report progress, through publishing. one message shared by all of them: progress, this way we can have a standardized progress-bar interface for all apps (like desk) who send of jobs)...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:23:42.653Z",
+     "text": "Panel: the shared list pane, filters on row 1, search on row 2, then the rows.\nKind filter: [all] [servers] [transient], one choice, as Desk and Files filters work today.\nStatus: one toggle per status the list holds (running, pending, completed, failed, cancelled...), each in or out; the shared list only has one-choice filters, so this adds a multi-toggle filter to listSearch.js, usable by every list.\nColumns: rank bar, status icon, name (module, else type), kind, a progress bar, updated. Words match name, type, module and id; with no words, newest updated on top.\nProgress: one published message for all, e.g. {progress: {done, total, text}}, drawn as the same bar in Jobs and any app; I would make that its own item, since it is a shape every server shares.\nWhich of these do you want in the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:29:07.135Z",
+     "text": "a progress bar is a cool idea.\n\nwe have not really discussed the progress \"protocol\", which is kind of a separate items, because it would affect a multitude of appServers AND those transient processes that will remain in SpiritOS. (There's a culling list in my head)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:29:28.300Z",
+     "text": "Agreed, separate. Proposed item: \"Progress protocol: one published progress message for appServers and transient processes, one bar\". Say add it when you want it.\nUntil it exists the bar column would stay empty, so I would leave it out of G29.14 and the progress item adds it.\nThe rest (kind filter, status toggles, columns, newest on top): into the box as written?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:29:53.800Z",
+     "text": "Add it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:30:40.830Z",
+     "text": "Added as goal/G29.15, box filled. Still open here: the panel suggestions into the G29.14 box as written?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:31:22.954Z",
+     "text": "update and cap this box, before going to 29.15"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:32:00.306Z",
+     "text": "Box updated and capped: Jobs (shared list, filters, columns) and Jobs Details (event window, layout). Going to G29.15."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.15",
+   "title": "Progress protocol: one published message, one bar",
+   "goal": "goal/G29",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29.14"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "One progress protocol for every appServer and for the transient processes that remain in SpiritOS, so every app (Jobs, Desk, any that sends off jobs) draws the same progress bar.\nThe Jobs list (goal/G29.14) gets its progress column from this item.\n\nTHE JOB CYCLE\n- A job is: start, then progress and app-specific messages (typically from execution loops), then end.\n- No process runs more than one job at a time. An appServer may run many jobs over its life, one after another.\n- A transient process IS its job.\n\nTHE CALLS, in spirit.core.jobs\n- start(name), progress(done, total, text), end(result or error). Each is published, so the shell sees a job begin, move and finish.\n- total 0 means unknown: the bar shows as indeterminate.\n- A start while a job is open is refused by name. A server that gets more work while busy queues it itself.\n- A transient process only calls progress: the node marks its start at spawn and its end at exit (complete/fail).\n\nWHERE IT LIVES\n- spirit.core.jobs (kernel.js) holds what every spawned process shares: report, log, complete, fail, publish, start, progress, end.\n- publish moves out of appServer.js into spirit.core.jobs, size check with it; appServer.js keeps only what serving needs.\n- appProcess.js is made only when something is unique to transient processes; nothing is yet.\n\nTHE SHELL\n- One shared bar element draws a process's open job; a server between jobs shows idle, no bar.",
+   "version": 3,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:32:40.852Z",
+     "text": "G29.14 box is capped. Here is a shape for progress.\nEvery spawned job, server or transient, already reports through spirit.core.jobs.report in kernel.js; appServer.publish(obj) is a wrapper that sends {app: obj}. So one published object can serve both kinds.\nShape: {progress: {done, total, text}}. done and total are numbers, total 0 means unknown (an indeterminate bar), text is one short line.\nTransient processes get spirit.core.jobs.progress(done, total, text) beside log/complete/fail; servers call appServer.publish({progress: ...}).\nThe bar is one shared shell element that reads the newest progress object of a job. Does that shape suit you?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:34:56.411Z",
+     "text": "Do we already have a standard process object like jst/appServer.js something like js/appProcess.js that provides transient processes with the node's startup loopback-port and the functions that appServers get?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:35:20.589Z",
+     "text": "No js/appProcess.js. A transient process gets spirit.core.jobs from kernel.js: report, log, complete, fail.\nThe node hands it SPIRIT_JOB_ID and SPIRIT_CALLBACK_URL (the loopback door, port included); report() is the only place either is read.\nappServer.js exports spirit, serve, publish, matches. Its publish is only report({app: obj}) with the size check, so a transient process could call it today without serving anything.\nSo a progress call can live in one place both kinds already load: kernel.js spirit.core.jobs, or a new appProcess.js. Which do you want?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:37:46.217Z",
+     "text": "spirit.core.jobs should contain the common stuff, appServer and, if neccessary, appProcess would only contain stuff unique to those two process types....\n\nhow is this organized now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:38:09.595Z",
+     "text": "Now: spirit.core.jobs (kernel.js) holds the common part, report, log, complete and fail, which every spawned process can call.\nappServer.js holds the server-only part (serve, the verb checks, its own error codes, dependencies, agents rules, debug), plus publish. publish is common by your rule: it is only report({app}) with the size check.\nThere is no appProcess.js; the transient ones (wordpressScanner, imageStats, imageCaptionClaude and Batch) call spirit.core.jobs.log/complete/fail directly.\nSo publish moves into spirit.core.jobs, and progress goes beside it; appServer keeps only what serving needs, and appProcess is not needed yet. Agreed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:39:56.805Z",
+     "text": "agreed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:40:29.355Z",
+     "text": "In the box. Next question, the shape: {progress: {done, total, text}}, total 0 meaning unknown?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:44:02.285Z",
+     "text": "one thing: appServers may launch multiple jobs at various times, and where a job has a cycle\n\n1. start\n2. progress messages and app specific messages, produced typically by execution loops.\n3. end.\n\n- no process may run more that 1 job at the time. \n- transient processes ARE the job.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:44:24.597Z",
+     "text": "Then the cycle is the protocol, three calls in spirit.core.jobs: start(name), progress(done, total, text), end(result or error). Each is published, so the shell sees a job begin, move and finish.\nOne at a time is enforced right there: a start while a job is open is refused by name; a server that gets more work while busy queues it itself.\nA transient process is its job: the node already marks its start at spawn and its end at exit (complete/fail), so it only calls progress.\nThe shell draws the bar from the open job of each process; a server between jobs shows idle, no bar.\nThat replaces my {progress: ...} shape. Does it suit you?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:46:23.433Z",
+     "text": "yes, this suits me.\n\nupdate box accordingly."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:46:58.038Z",
+     "text": "Box updated: the job cycle, the three calls, where they live, the shell bar. It touches kernel.js and appServer.js, both core, so the build needs your grant with the Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:47:59.495Z",
+     "text": "i turned on code because i want to fix the core and our current appServers with this little re-factoring\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:48:22.045Z",
+     "text": "Makes sense. The core: kernel.js gains publish, start, progress, end; appServer.js loses publish, with a red that it is gone there.\nThe servers: the six that publish today (desk, deskVerify, deskAgent, fileServer, chatClerver, the stackFrameChecks plugin) switch to spirit.core.jobs.publish.\nWhere a server already runs one piece of work at a time (deskVerify checking a claim, for one), it wraps it in start/progress/end; I will name each one in the red before building.\nGo and the grant for kernel.js and appServer.js when you are ready."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:48:31.764Z",
+     "text": "14 depends on 15"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:48:55.947Z",
+     "text": "Done: G29.15 now blocks G29.14. So G29.15 is built first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:49:09.607Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T14:49:28.056Z",
+     "text": "Green: settled, nothing open, box current (v3). Waiting on Go and the grant for kernel.js and appServer.js."
     }
    ]
   }
