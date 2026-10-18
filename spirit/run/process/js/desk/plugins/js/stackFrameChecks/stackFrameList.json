@@ -37,7 +37,11 @@
     "id": "d4",
     "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "spirit/run/js/relayRequest.js",
-    "suites": [],
+    "suites": [
+      "agentOnboard.js",
+      "serverSurface.js",
+      "everyVerb.js"
+    ],
     "item": "plugin/stackFrameChecks.2"
   }
 ]
