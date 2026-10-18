@@ -17,8 +17,8 @@
 //   1  facts.limbo === true on an item that: has go on record, offers no
 //      Done, has no open G or Q check, and no live agent is working on it
 //      (nobody has item.take without having since answered); facts.limbo
-//      === false otherwise. The desk writes a line by 'desk' under the
-//      item on the transition, so changes carries it.
+//      === false otherwise. Since goal/G29.10 the desk posts no line for
+//      it ("The limbo posts go.").
 //   2  A split sets facts.subGoal === true on the parent: a session.set
 //      that names the parent in split: [id] (goal/G6.8; before it, any
 //      new item blocking the parent marked it). The mark survives on
@@ -79,11 +79,11 @@ test.startTest('goal/G5.4: limbo marker, sub-goal mark on split, sub-goal Go cas
     if (nobody.limbo === true) test.check('L/G1.1: facts.limbo === true (go on record, nothing taken, no asks, no Done)');
     else test.fail(OWED + 'L/G1.1: facts has no limbo field or it is not true: ' + short({ limbo: nobody.limbo, go: nobody.go, buttons: nobody.buttons, asks: nobody.asks, with: nobody.with }));
 
-    // The desk writes a line the moment limbo begins, by 'desk', so changes carries it.
+    // goal/G29.10, point 1: "The limbo posts go." Limbo is a mark in the facts; the desk posts no line for it.
     const limChat = await chatOf('L/G1.1');
     const deskLine = limChat.filter(function (l) { return l.by === 'desk' && /limbo/i.test(l.text || ''); })[0];
-    if (deskLine) test.check('the desk wrote a limbo line under L/G1.1 by `desk`');
-    else test.fail(OWED + 'no limbo line by `desk` on L/G1.1 chat (' + limChat.length + ' lines total)');
+    if (!deskLine) test.check('the desk wrote no limbo line under L/G1.1');
+    else test.fail('OWED by goal/G29.10: the desk posted a limbo line on L/G1.1: ' + short(deskLine.text));
 
     // Negative case: an item an agent took and whose last word is 'working' is NOT in limbo.
     await call('press', { id: 'L/G1.2', what: 'go' }, ANDY);

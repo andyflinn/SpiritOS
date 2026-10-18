@@ -620,7 +620,7 @@ function blank(id, title, goalId) {
     boxTakenKey: '', boxHoldUntil: 0, capOffer: null,
     // goal/G21.4: the keys beside with and phaseWith, so "one task per agent" and its release go by key.
     withKey: '', phaseWithKey: '',
-    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false, heldAt: '',
+    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false, phaseAt: '',
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
     // another's: { '<agent>': ['<path>', ...] }.
@@ -831,6 +831,8 @@ function apply(s, r, b, item, goalOf) {
     case 'phase.take':
       it.with = r.by; it.phaseWith = r.by; it.status = String(b.phase); it.takers[r.by] = true; it.verified = false;
       it.withKey = String(r.key || ''); it.phaseWithKey = String(r.key || '');
+      // goal/G29.10: when it took the phase, so its writes answer with his lines typed since (heardSince).
+      it.phaseAt = String(r.at || '');
       // The key beside the label (goal/G5.9): a label he may rename, a key that stays.
       if (b.phase === 'red') { it.red = r.by; it.redKey = String(r.key || ''); it.phase = 'red'; }
       else if (b.phase === 'build') { it.builder = r.by; it.builderKey = String(r.key || ''); }
@@ -845,8 +847,8 @@ function apply(s, r, b, item, goalOf) {
       it.checked = false;
       if (b.phase === 'red') it.phase = 'build';
       else if (b.phase === 'build') it.phase = 'verify';
-      // goal/G27.20: when the pass lands is when the item starts waiting for his Done, held for him (mayTake).
-      else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; it.heldAt = String(r.at || ''); } else it.phase = 'build'; }
+      // A pass waits for his Done, the item still in code (goal/G29.10): red may be taken again (mayTake).
+      else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
       // THE DESK WRITES THE STATUS WORD ITSELF (goal/G8.12). Andy, 2026-10-09: "the desk should update status in every
       // change it manages....", and "yes" to its being the word on the List rows. An agent's verify pass does not
       // finish a code item: it waits for deskVerify, and the row says so instead of reading like any running item.
@@ -1342,17 +1344,10 @@ function mayTake(s, it, phase, who) {
     // phases as long as 'done' is not pressed", "Just because 'Done' is offered doesn't mean it's fucking done....". A
     // verify pass leaves the phase empty; while the item is not done (checked above) red opens a fresh cycle under the
     // same item, its Go standing, never to the builder unless waived, as the verifier's extension of the red below.
-    // AND ONLY ON HIS WORD (goal/G27.20). Andy, 2026-10-17: "is the 'Done' claim ('Done' waiting for my press) not
-    // enough to indicate that the item now responds only to my chatted instructions, before i press 'Done'.. this is
-    // kind of vital in UI modifications, because i want to hold the item until I'm happy...". An item waiting for his
-    // Done is held for him: its red is offered (work.open) and taken only by an agent that took a line of his in its
-    // chat since its verify pass; without one it is no open work at all.
-    if (!it.phase) {
-      const since = String(it.heldAt || '');
-      const word = it.chat.some(function (l) { return l.by === 'andy' && l.taken === who && String(l.at || '') > since; });
-      if (!word) return 'not-offered';
-      return w || who !== it.builder ? '' : 'not-offered';
-    }
+    // THE ITEM STAYS IN CODE FROM HIS GO TO HIS DONE (goal/G29.10, point 3, which replaced the hold of goal/G27.20):
+    // "The agent's own claim that it is done (a verify pass) leaves it in code", and his lines reach it without a hold.
+    // So red is taken again with no line of his; work.open offers it to nobody (no JOB while it is being worked on).
+    if (!it.phase) return w || who !== it.builder ? '' : 'not-offered';
     if (it.phase === 'verify' && it.verifier && who === it.verifier) return w || who !== it.builder ? '' : 'not-offered';
     return 'not-offered';
   }
@@ -1699,19 +1694,12 @@ function write(verb, a, check) {
     db.exec('ROLLBACK');
     throw e;
   }
-  // THE DESK SAYS SO WHEN AN ITEM ENTERS LIMBO (goal/G5.4), one line by desk under it, so every agent's listener
-  // hears it and one takes it. An item that only slides into limbo as time passes (an agent going stale) is said
-  // on the next write.
+  // NO LIMBO LINE (goal/G29.10, point 1: "The limbo posts go."). Limbo stays a mark in the item's facts; the desk
+  // posts nothing under the item when it enters it.
   const gidW = it ? (it.goal ? it.id : it.goalId)
     : verb === 'session.set' && body.session && body.session.goal ? String(body.session.goal.id) : after.current;
   const gW = after.goals[gidW];
   let saidLimbo = false;
-  if (gW) gW.members.forEach(function (id) {
-    if (limboOf(after, after.items[id]) && !limboOf(s, s.items[id])) {
-      write('chat.add', { id: id, text: 'limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done.', by: 'desk', key: '' });
-      saidLimbo = true;
-    }
-  });
   // A HOLDER GONE STALE (goal/G5.7). Andy: "the deskServer throws a red question." Once per hold: a holder silent past
   // LIVE_MS gets one open red question on its item.
   if (gW) gW.members.forEach(function (id) {
@@ -2077,6 +2065,36 @@ function mountPlugins() {
 // EVERY VERB SEEN FIRST BY THE PLUGINS (goal/G22.3), in mount order: a refusal names the plugin and its goal, and is
 // the desk's not-offered with its why, as every refused press is; a plugin that takes the call answers it. Then the
 // desk's own handler. The plugins' verbs join the table; one that would shadow a desk verb stops the start.
+// HIS LINES IN A PHASE HOLDER'S REPLIES (goal/G29.10, point 2: "A write an agent makes while holding a phase answers
+// with Andy's lines typed since it took the phase."). An agent at work does not listen, so every write it makes under
+// the item whose phase it holds answers with `andy`, his lines there since its phase take, newest kept within
+// HEARD_ROOM bytes. A write is an answer carrying its change.
+const HEARD_ROOM = 8192;
+function heard(a, caller, out) {
+  if (!caller || !a || a.id === undefined) return out;
+  return Promise.resolve(out).then(function (o) {
+    if (!o || typeof o !== 'object' || typeof o.change !== 'number') return o;
+    // The write is done: a caller the desk cannot name gets its answer as it is.
+    let w = null;
+    try { w = writerOf(caller); } catch (e) { return o; }
+    if (w.by === 'andy') return o;
+    const it = walkState().items[String(a.id)];
+    if (!it || !holdsPhase(it, w)) return o;
+    const lines = [];
+    let room = HEARD_ROOM;
+    for (let i = it.chat.length - 1; i >= 0; i--) {
+      const l = it.chat[i];
+      if (String(l.at || '') <= String(it.phaseAt || '')) break;
+      if (l.by !== 'andy') continue;
+      const one = { at: String(l.at), text: String(l.text) };
+      room -= Buffer.byteLength(JSON.stringify(one), 'utf8');
+      if (room < 0) break;
+      lines.unshift(one);
+    }
+    o.andy = lines;
+    return o;
+  });
+}
 function withPlugins(verbs) {
   const all = {};
   Object.keys(verbs).forEach(function (verb) {
@@ -2089,7 +2107,7 @@ function withPlugins(verbs) {
         const took = typeof p.handles === 'function' ? p.handles(verb, a, caller) : undefined;
         if (took !== undefined) return took;
       }
-      return caller === undefined ? v.handler(a) : v.handler(a, caller);
+      return heard(a, caller, caller === undefined ? v.handler(a) : v.handler(a, caller));
     } });
   });
   PLUGINS.forEach(function (p) {
@@ -2631,7 +2649,9 @@ appServer.serve(withPlugins({
         const g = s.goals[gid];
         if (g.abandoned || (s.items[gid] && s.items[gid].closed)) return;
         g.members.forEach(function (id) {
-          ['red', 'build', 'verify'].forEach(function (p) { if (!mayTake(s, s.items[id], p, w.by)) jobs.push({ id: id, phase: p }); });
+          // goal/G29.10: a verified item waiting for his Done is still being worked on, so its red is no job.
+          const m = s.items[id];
+          ['red', 'build', 'verify'].forEach(function (p) { if ((p !== 'red' || (m && m.phase)) && !mayTake(s, m, p, w.by)) jobs.push({ id: id, phase: p }); });
         });
       });
       return walked(jobs, function (j) { return { key: j.id + ':' + j.phase, label: JSON.stringify(j) }; });

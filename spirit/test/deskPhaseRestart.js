@@ -12,8 +12,8 @@
 // pressed", and "Just because 'Done' is offered doesn't mean it's fucking done....".
 //
 // WHAT IS ASSERTED
-//   1  after a verify pass, before Done, red is offered again (work.open) and its take lands: phase red, its taker
-//      recorded, the item no longer verified, so Done is not offered while the new cycle runs.
+//   1  after a verify pass, before Done, red is taken again (no job in work.open since goal/G29.10): phase red, its
+//      taker recorded, the item no longer verified, so Done is not offered while the new cycle runs.
 //   2  the new cycle runs to its end under the same item: build, then verify, then Done is offered again.
 //   3  once he presses Done no phase is offered or taken.
 //   4  his Reopen of a done item lets red be taken again.
@@ -92,29 +92,14 @@ async function cycle(redTaken) {
   if (first.some(function (s) { return s !== 200; }) || (v0.buttons || []).indexOf('done') === -1) { test.fail('the world: the first cycle answered ' + short(first) + ', buttons ' + short(v0.buttons)); return; }
   test.check('the world: one cycle ran to a verify pass, and Done is offered');
 
-  // goal/G27.20. Andy, 2026-10-17: "is the 'Done' claim ('Done' waiting for my press) not enough to indicate that the
-  // item now responds only to my chatted instructions, before i press 'Done'.. this is kind of vital in UI
-  // modifications, because i want to hold the item until I'm happy...". So a verified item waiting for his Done is held:
-  // never open work, and its red is taken again only by an agent that took a line of his in its chat since the pass.
-  test.subHeading('0. an item waiting for his Done is held for him (goal/G27.20)');
-  const heldOpen = await open(CW);
-  const heldTake = await call('phase.take', { id: ID, phase: 'red' }, CW);
-  if (heldOpen.indexOf(ID + ':red') === -1) test.check('work.open does not list it: no listener is handed it as a job');
-  else test.fail('OWED by goal/G27.20: work.open lists ' + short(heldOpen));
-  if (!ok(heldTake)) test.check('without a line of his, its red take is refused');
-  else test.fail('OWED by goal/G27.20: red was taken with no word of his');
-  const word = await call('chat.add', { id: ID, text: 'the button should be blue, not grey' }, ANDY);
-  const took = await call('line.take', { id: ID }, CW);
-  if (!ok(word) || !ok(took)) { test.fail('the world: his line answered ' + word.status + ', its take ' + took.status); return; }
-  // The agent answers what it took, as every agent does: an open take stands until it is answered (goal/G21.1).
-  await call('chat.add', { id: ID, text: 'taking it: the button goes blue' }, CW);
-
-  test.subHeading('1. after a verify pass, before Done, red is offered and taken again on his word');
+  // goal/G29.10 replaced the hold of goal/G27.20: the item stays in code from his Go to his Done, so after a verify
+  // pass its red is no job (work.open) and is taken again with no line of his (deskQuickFixes.js).
+  test.subHeading('1. after a verify pass, before Done, red is taken again');
   const offered = await open(CW);
   const again = await call('phase.take', { id: ID, phase: 'red' }, CW);
   const v1 = await facts(ID);
-  if (offered.indexOf(ID + ':red') !== -1) test.check('with his line taken, work.open offers ' + ID + ' red again');
-  else test.fail(OWED + 'after the verify pass work.open offers ' + short(offered));
+  if (offered.indexOf(ID + ':red') === -1) test.check('work.open does not list it: no listener is handed it as a job');
+  else test.fail('OWED by goal/G29.10: after the verify pass work.open offers ' + short(offered));
   if (ok(again) && v1.phase === 'red' && v1.with === 'claude-windows') test.check('the red take lands: the item is in red again, with claude-windows');
   else test.fail(OWED + 'red after the verify pass answered ' + short(again.body || again.status) + '; phase ' + short(v1.phase) + ', with ' + short(v1.with));
   if ((v1.buttons || []).indexOf('done') === -1) test.check('while the new cycle runs Done is not offered');
@@ -133,10 +118,8 @@ async function cycle(redTaken) {
   if (ok(done) && !ok(afterDone) && openDone.indexOf(ID + ':red') === -1) test.check('after his Done the red take is refused and not offered');
   else test.fail((ok(done) ? OWED : 'the world: ') + 'Done answered ' + done.status + ', red after it ' + afterDone.status + ', offered ' + short(openDone));
 
-  test.subHeading('4. his Reopen lets red be taken again, on his word (goal/G27.20)');
+  test.subHeading('4. his Reopen lets red be taken again');
   const reopen = await call('press', { id: ID, what: 'reopen' }, ANDY);
-  await call('chat.add', { id: ID, text: 'one more change after all' }, ANDY);
-  await call('line.take', { id: ID }, CW);
   const afterReopen = await call('phase.take', { id: ID, phase: 'red' }, CW);
   const v4 = await facts(ID);
   if (ok(reopen) && ok(afterReopen) && v4.phase === 'red') test.check('after his Reopen red is taken again');
