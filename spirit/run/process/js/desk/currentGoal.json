@@ -1,5 +1,5 @@
 {
- "change": 70990,
+ "change": 71032,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G29.13"
+    "goal/G29.14"
    ],
    "codeOffered": false,
    "go": false,
@@ -46,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -5116,10 +5117,11 @@
    "id": "goal/G29.13",
    "title": "Kill/Eliminate process-browser (Job Selector) shell app",
    "goal": "goal/G29",
-   "status": "running",
-   "with": "claude-windows",
+   "status": "done",
+   "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29"
@@ -5129,21 +5131,62 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/group-manager/group-manager.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/process-browser/process-browser.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/process-browser/process-browser.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/fsWatcherCommands.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterIntrinsic.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/processBrowserGone.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "870bf604",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -5182,7 +5225,17 @@
    "full": false,
    "box": "Nothing, absolutely nothing, can be done with the Job Selector (shell/process-browser) that cannot be done through Files. So it goes, completely.\n\nWHAT GOES\n- The app itself: shell/process-browser, its script and its manifest.\n- Every mention that keeps it alive: its place in the Spirit group (index.html), its entry in the shell's intrinsic apps and its old-id rename (js/client/shell.js), and any comment pointing at it as a living app.\n- Its tests: the checks of natterIntrinsic and fsWatcherCommands that name it turn into checks that it is gone.\n\nWHAT STAYS\n- Starting a program: the file viewer's start form for a script under process/, which Files opens like any file.",
    "version": 2,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/group-manager/group-manager.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T13:50:30.496Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -5201,6 +5254,95 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T13:45:00.272Z",
      "text": "Box filled: what goes (the app, its place in the Spirit group, its entries in the shell, its tests turned into it-is-gone checks) and what stays (starting a program from the file viewer). Green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T13:46:52.684Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T13:46:54.587Z",
+     "text": "commit 31a0192d7df8f03d1527d0275619025f266562f9: goal/G29.13: the red for the Job Selector gone, completely\n- spirit/test/processBrowserGone.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T13:49:23.135Z",
+     "text": "Built and green (processBrowserGone 5 of 5, natterIntrinsic 218), but the commit waits on your grant: index.html, shell.js, group-manager.js and the two process-browser files are core. The grant request is on the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T13:51:07.010Z",
+     "text": "commit 870bf6044686f8ff4e68a09ec603621a4e4fedce: goal/G29.13: the Job Selector (shell/process-browser) gone, its CSS, its shell entries and its tests with it\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/shell/group-manager/group-manager.js\n- spirit/run/shell/process-browser/process-browser.js\n- spirit/run/shell/process-browser/process-browser.json\n- spirit/test/fsWatcherCommands.js\n- spirit/test/natterIntrinsic.js\n- spirit/test/processBrowserGone.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T13:51:19.095Z",
+     "text": "Committed and verified: 870bf604. The Job Selector is gone: the app, its CSS, its place in the Spirit group, its shell entries, every comment naming it; natterIntrinsic and fsWatcherCommands now check it is gone. Starting a program stays in the file viewer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T13:51:51.891Z",
+     "text": "deskVerify: passed, at 870bf604 (pulled). 3 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G29.14",
+   "title": "Fix Jobs Search/Monitor and Jobs Details.",
+   "goal": "goal/G29",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "in the Jobs shell app, i see the following changes:\n\n- Jobs can be searched.\n- Filters (beside, string match for its name/title): Above the search input, appServers or not (transient), include exclude by status,\n\nJobsDetails\n\nThis Dialog is NOT supposed to show the stdout of it's associated job/process, it is supposed to show a windows of the last 256 events published by that job/process.",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T14:04:56.563Z",
+     "text": "thoughts?"
     }
    ]
   }
