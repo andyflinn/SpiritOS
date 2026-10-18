@@ -1,5 +1,5 @@
 {
- "change": 70334,
+ "change": 70481,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
@@ -3617,15 +3618,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G29.7"
    ],
-   "blocked": [
-    "goal/G29.12"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -3652,8 +3652,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Search inside files: words found in the contents of text files, shown, never only counted.\n\n- A filter in the file list: contents, off by default; on, the words are searched in text files as well (text types: text/*, json, javascript and the like).\n- File contents live on the node, so the node searches them: its fs.search takes the contents filter, bounded in bytes as every answer is.\n- A row found by its contents shows its matching line, the words marked.\n- A press on such a row opens the file in the display of G29.12 with the words marked, at that line.",
-   "version": 1,
+   "box": "Search inside files: words found in the contents of text files, shown, never only counted.\n\n- A filter in the file list: contents, off by default; on, the words are searched in text files as well (text types: text/*, json, javascript and the like).\n- File contents live on the node, so the node searches them: its fs.search takes the contents filter, bounded in bytes as every answer is.\n- A row found by its contents shows its matching line, the words marked.\n- A press on such a row opens the file in the display of G29.12 with the words marked, at that line.\n- In the text editor: a file picked in its own file picker with contents on opens marked with the picker's words (search the files holding peerPost, then open the top ones). Opened any other way the editor shows no marks.",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -3661,10 +3661,11 @@
    "id": "goal/G29.12",
    "title": "File display on CodeMirror 5, search words marked",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G29.11"
@@ -3674,21 +3675,62 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": ".gitignore",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/textView.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/node_modules/codemirror/lib/codemirror.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/textEditor/textEditor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/textViewCodeMirror.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "f0f34821",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/12",
@@ -3741,9 +3783,19 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "A file display and the text editor, both on CodeMirror 5: a file opens with given words, every match marked, the first in view; the text editor edits and saves on the same CodeMirror, its plain text area gone.\n\n- CodeMirror 5 is copied, licence included, into spirit/run/shell/node_modules/codemirror/: a shell thing, served as any file (fileServable), kept out of the tree and Files as every node_modules is. No build step.\n- .gitignore keeps every node_modules out except spirit/run/node_modules; it gains a second exception for spirit/run/shell/node_modules.\n- The text launcher takes the words with the path; every match is marked the way the shared list marks a match, and the first is scrolled into view.\n- This display comes first, so the contents search (G29.11) can be seen to work.",
-   "version": 2,
-   "checks": [],
+   "box": "A file display and the text editor, both on CodeMirror 5: the display opens a file with given words, every match marked, the first in view; the text editor edits and saves on the same CodeMirror, its plain text area gone, and shows no marks (a file taken from the display into the editor loses them).\n\n- CodeMirror 5 is copied, licence included, into spirit/run/shell/node_modules/codemirror/: a shell thing, served as any file (fileServable), kept out of the tree and Files as every node_modules is. No build step.\n- .gitignore keeps every node_modules out except spirit/run/node_modules; it gains a second exception for spirit/run/shell/node_modules.\n- The text launcher takes the words with the path; every match is marked the way the shared list marks a match, and the first is scrolled into view.\n- This display comes first, so the contents search (G29.11) can be seen to work.\n- Search and replace in the editor and the viewer alike, CodeMirror 5's own add-ons (search, searchcursor, dialog with its css, jump-to-line): Ctrl+F search, Ctrl+G the next match, Shift+Ctrl+F replace, Alt+G go to a line.\n- One marking rule for the list and the text view: the shared list owns it (every place each word stands, partial words included, case ignored) and the text view uses that same function.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/js/textView.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T02:48:11.400Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -3756,6 +3808,258 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T02:43:38.850Z",
      "text": "In the box: the display and the text editor both on CodeMirror 5; the editor edits and saves on it, its plain text area gone, and opens a file with words marked."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T02:46:27.357Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:46:29.150Z",
+     "text": "commit b0428a7fdda53976eeb6cdcade11fced70e7db15: goal/G29.12: the red for the file display and the text editor on CodeMirror 5, the search words marked\n- spirit/test/textViewCodeMirror.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:46:34.991Z",
+     "text": "Red in: textViewCodeMirror, 9 owed. Building: CodeMirror 5.65.21 copied in, one shell element textView used by the text launcher and the text editor. index.html and shell.js need your grants."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:50:30.212Z",
+     "text": "commit 88f8c28926ecd28456fca24f27ceb7d62b61ee3e: goal/G29.12: the file display and the text editor on CodeMirror 5 (the shell's local copy), the search words marked\n- .gitignore\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/shell/js/textView.js\n- spirit/run/shell/node_modules/codemirror/LICENSE\n- spirit/run/shell/node_modules/codemirror/lib/codemirror.css\n- spirit/run/shell/node_modules/codemirror/lib/codemirror.js\n- spirit/run/shell/node_modules/codemirror/mode/css/css.js\n- spirit/run/shell/node_modules/codemirror/mode/htmlmixed/htmlmixed.js\n- spirit/run/shell/node_modules/codemirror/mode/javascript/javascript.js\n- spirit/run/shell/node_modules/codemirror/mode/markdown/markdown.js\n- spirit/run/shell/node_modules/codemirror/mode/xml/xml.js\n- spirit/run/shell/node_modules/codemirror/package.json\n- spirit/run/shell/node_modules/codemirror/theme/material-darker.css\n- spirit/run/shell/textEditor/textEditor.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:50:44.023Z",
+     "text": "deskVerify: not checked, at 88f8c289 (pulled): nothing ran, so this is not a pass. Not run: the item lists no test file."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:50:45.769Z",
+     "text": "Built and verified: 88f8c289, textViewCodeMirror 14 of 14, neighbours green; the real CodeMirror checked in a headless Chrome (colours, match marked, scrolled to).\nFiles: CodeMirror 5.65.21 (lib, the dark theme material-darker, modes js css xml html markdown, licence) in shell/node_modules/codemirror, .gitignore, the new shell/js/textView.js, index.html (the text launcher), shell.js, textEditor.\nThe launcher and the editor take words with the path, e.g. launchApp(text-file-launcher, {path, words}); nothing passes words yet, G29.11 will."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T02:51:18.597Z",
+     "text": "My last item.files.add replaced the list with the CodeMirror file alone, so deskVerify found no test. The list is whole again (textViewCodeMirror among it); verify.again sent."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:51:23.560Z",
+     "text": "deskVerify: passed, at 88f8c289 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T02:59:39.505Z",
+     "text": "- text edit work pretty nicely no complaints yet.\n- when the file viewer/launcher is called, it shows almost nothing, certainsly no js file, or certainly not the same mimetypes as text Editor now edits (that things looks pretty)\n\nreasons?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:00:47.787Z",
+     "text": "Found it on your node: the first open of the viewer draws fine, every later one draws nothing (0 lines). The viewer stays mounted, and the shell hands it the next file while its pane is still hidden; CodeMirror built inside a hidden box measures zero and draws no lines until told to refresh.\nFix: the text view refreshes itself once the page is drawn, which also covers the editor. Red and build now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:01:11.879Z",
+     "text": "commit 29045c457959894b9c50df4eba4cdeb9465b762d: goal/G29.12: the red for a text view drawn after its pane shows\n- spirit/test/textViewCodeMirror.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:01:57.542Z",
+     "text": "commit b967447bfef768443e4668412c0d8e6d166fbbcf: goal/G29.12: the text view refreshes itself once its pane shows, the first match put in view again\n- spirit/run/shell/js/textView.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:02:08.722Z",
+     "text": "Built and verified: b967447b, textViewCodeMirror 15 of 15; in a real Chrome a view built hidden and then shown draws all its lines. File: textView (red: textViewCodeMirror). Reload once deskVerify has pulled it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:02:13.776Z",
+     "text": "deskVerify: passed, at b967447b (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:06:14.174Z",
+     "text": "viewer fixed.\n\ndoes the editor have tools like search, replace?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:06:31.704Z",
+     "text": "Not yet: I copied CodeMirror core and five syntax modes only.\nCodeMirror 5 ships search and replace as add-ons: search, searchcursor, dialog (plus its css) and jump-to-line, four small files beside the ones we have. They give Ctrl+F, Ctrl+G for the next match, Shift+Ctrl+F replace, Alt+G go to line, in the editor and the viewer alike.\nAdd them here?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:07:38.968Z",
+     "text": "add them here."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:08:26.388Z",
+     "text": "commit fca8bce7e851c9fa5cb0f29399ef35a52c60fd9a: goal/G29.12: the red for search and replace in the text view\n- spirit/test/textViewCodeMirror.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:08:39.688Z",
+     "text": "does codeMirror support md files? i see it does html....?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:09:19.924Z",
+     "text": "commit cdf0bfa4f7d5c8ac566c36054bf2ede13ac7a3ff: goal/G29.12: search and replace in the text view, CodeMirror's own add-ons\n- spirit/run/index.html\n- spirit/run/shell/node_modules/codemirror/addon/dialog/dialog.css\n- spirit/run/shell/node_modules/codemirror/addon/dialog/dialog.js\n- spirit/run/shell/node_modules/codemirror/addon/search/jump-to-line.js\n- spirit/run/shell/node_modules/codemirror/addon/search/search.js\n- spirit/run/shell/node_modules/codemirror/addon/search/searchcursor.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:09:30.482Z",
+     "text": "Search and replace built: cdf0bfa4, textViewCodeMirror 17 of 17; in Chrome the find, replace and go-to-line commands are there. Files: the add-ons (dialog with css, searchcursor, search, jump-to-line), index.html.\nMarkdown: yes, .md opens in CodeMirror's markdown mode, already in: headings, emphasis, code and links coloured as source. It is an editor, so it does not render the page; a rendered view would need a markdown renderer beside it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:09:32.603Z",
+     "text": "deskVerify: passed, at cdf0bfa4 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:16:33.217Z",
+     "text": "Hmmm, weird. here's the problem i see, our type of matching strings can't be supported by this kind of editor.\n\ni like the editor, it makes everything look prettier.\n\nbut how are we going to highlight stuff in there,\n\nour list display highlights every token that matches, even partial words etc...\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:16:53.568Z",
+     "text": "It already can: the marks are ours, not CodeMirror search. The text view takes the words and marks every place each word stands, partial words included and case ignored, exactly the rule the list uses (screw marks the screw in screwdriver). CodeMirror only paints the ranges we hand it.\nCtrl+F is CodeMirror own search, a separate tool for you while editing.\nOne thing I would do: both markers live in one shared function, so the list and the text view can never drift apart. Shall I fold that in here?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:18:47.034Z",
+     "text": "yes, and we only do it for the text viewer/launcher, if we go from there to \"textEditor\" those highlights will vanish. correct. (I'm fine with that)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:19:27.308Z",
+     "text": "In the box: one marking rule, owned by the shared list and used by the text view; marks only in the viewer, the editor opens unmarked. Red and build now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:19:52.033Z",
+     "text": "... or is this possible when we search for a file to open (with file-content search) can that be reflected in the editor as well?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:20:08.328Z",
+     "text": "commit 7474f4f997bdec57aba0d2c5d7b63fcf8f417d27: goal/G29.12: the red for one marking rule shared by the list and the text view, the editor unmarked\n- spirit/test/textViewCodeMirror.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:20:26.137Z",
+     "text": "Yes, easily: the editor takes the words today, the same text view marks them, and the marks ride along with the text as you edit. A file opened from a content search (G29.11) would open marked in the editor too.\nThat reverses the line I just put in the box (the editor opens unmarked). Keep the words in the editor, then?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:21:24.929Z",
+     "text": "and we support this kind of  find-in-files feature in node as well? that be pretty freaky...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:21:43.273Z",
+     "text": "Yes, that is G29.11: the node searches the text files themselves (the contents live there), its fs.search answering each file with its matching line, bounded like every answer; the page shows those rows and opens a file marked. The agents get it too, through their fs.search tool.\nStill open from above: keep the words (and marks) in the editor?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:22:24.411Z",
+     "text": "right! and the user then picks which files to load.....\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:22:42.424Z",
+     "text": "Right, the rows are the choice, you pick the file.\nNot green yet: the shared marking rule is built and every list suite passes, but one line waits on you. Your newest word says a file found by contents should open marked in the editor too, which reverses the box line \"the editor opens unmarked\". Say keep the marks and I switch the box and the red to that, then claim."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:24:39.751Z",
+     "text": "... only if i use the file picker in editor to search file contents, that's the situation where this would be really handy, i go to text editor search for files with peerPost in them and them open the top candidates...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:25:12.482Z",
+     "text": "Clear: the editor marks only what its own picker found by contents, and the contents search arrives in G29.11, so that line went into the G29.11 box. Here the editor opens unmarked, as the box says. Finishing the build now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:25:58.494Z",
+     "text": "commit f0f3482163aa2ea0aa9ef4602d2e56c5c575bbe8: goal/G29.12: one marking rule, the list's, used by the text view; the editor opens unmarked\n- spirit/run/shell/js/textView.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/run/shell/textEditor/textEditor.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:26:07.985Z",
+     "text": "Built and verified: f0f34821, textViewCodeMirror 20 of 20, every list suite green; in Chrome screw driver marks both parts of screwdriver. Files: listSearch (the one rule, window.spiritMatchRanges), textView, textEditor (no words)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:26:16.151Z",
+     "text": "deskVerify: passed, at f0f34821 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:27:05.728Z",
+     "text": "the node changes (searching file contents) are already in?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:27:20.522Z",
+     "text": "No, not yet: the node searches names and paths only. Searching file contents is G29.11, next once you press Done here and Go there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T03:30:08.297Z",
+     "text": "oh! at this point we're only marking our result list. i was very happy with that already.\n\ni guess i should press 'Done' then..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T03:30:23.754Z",
+     "text": "Yes: the list marks its rows, and the viewer marks a file when it is handed words; nothing hands it words until G29.11 brings the contents search. Done is offered."
     }
    ]
   }
