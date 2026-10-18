@@ -1,5 +1,5 @@
 {
- "change": 70504,
+ "change": 70505,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -2176,10 +2176,9 @@
    "id": "goal/G29.8",
    "title": "one folder listing for the core's loaders, no fs.search",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -2798,7 +2797,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G29.8"
+    "goal/G29.7"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -3302,7 +3301,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G29.8"
+    "goal/G29.7"
    ],
    "blocked": [],
    "codeOffered": true,
