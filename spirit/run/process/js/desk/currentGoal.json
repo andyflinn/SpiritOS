@@ -1,5 +1,5 @@
 {
- "change": 71231,
+ "change": 71346,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -14,7 +14,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G29.14"
+    "goal/G29.14",
+    "goal/G29.16"
    ],
    "codeOffered": false,
    "go": false,
@@ -46,14 +47,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5295,10 +5298,10 @@
    "id": "goal/G29.14",
    "title": "Fix Jobs Search/Monitor and Jobs Details.",
    "goal": "goal/G29",
-   "status": "running",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "delete"
+    "done"
    ],
    "blocking": [
     "goal/G29"
@@ -5308,21 +5311,72 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/client/shell.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/jobs/jobs.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/jobsDetails/jobsDetails.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/shared/js/progressBar.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/fsWatcherConsole.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/jobsDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/jobsSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterIntrinsic.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "4077e560",
+   "redCommit": "de333a8a",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -5356,12 +5410,22 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "JOBS (shell/jobs)\n- The table moves onto the shared list: filters on row 1, the search on row 2, then the rows.\n- Words match the job's name, type, module and id; with no words, the newest updated is on top.\n- Kind filter, one choice: all, servers, transient.\n- Status filter: one toggle per status the list holds, each in or out. This adds a multi-toggle filter to listSearch.js, usable by every list.\n- Columns: rank bar, status, name (module, else type), kind, progress, updated.\n\nPROGRESS BAR (shell/shared)\n- progressBar: one shared shell element drawn from (done, total, text); total 0 shows indeterminate. It knows nothing of processes.\n- The shell app hooks it up with the appropriate job/process: Jobs feeds it from each process's {job} events (goal/G29.15), and a server between jobs shows idle, no bar.\n\nJOBS DETAILS (shell/jobsDetails)\n- A real-time monitor of a capturable event stream, never stdout: an agent's file changes through fs-watcher, and what each server publishes. It shows what could be logged; nothing is logged or kept.\n- The window holds the last 256 events the shell receives; the node does no more work.\n- The dialog fills the page, top to bottom, and the page itself does not scroll:\n  1. the header (status, id, kind/type, updated, Cancel or Delete);\n  2. the rolling event log, 1/3 of the page height, one JSON line per event;\n  3. the Extract/analyze box, 1/3 of the page height: the last event clicked, JSON.stringify(object, null, 2) in a read-only CodeMirror textView.\n- The log and the Extract box scroll inside themselves.",
-   "version": 9,
-   "checks": [],
+   "box": "JOBS (shell/jobs)\n- The table moves onto the shared list: filters on row 1, the search on row 2, then the rows.\n- Words match the job's name, type, module and id. With no words the rows are sorted by id and stand still: an update never moves a row.\n- Kind filter, one choice: all, node, servers, transient. node is the node's own jobs (server-stats, relay-presence, fs-watcher): neither appServers nor transient.\n- Status filter: one toggle per status the list holds, each in or out. This adds a multi-toggle filter to listSearch.js, usable by every list.\n- Columns, under column headings: a left-most icon column where one green dot hops between rows, always on the most recent update; rank bar (search only), status, name (module, else type), kind, progress, updated.\n- Column headings are the shared list's own, usable by every list.\n\nPROGRESS BAR (shell/shared)\n- progressBar: one shared shell element drawn from (done, total, text); total 0 shows indeterminate. It knows nothing of processes.\n- The shell app hooks it up with the appropriate job/process: Jobs feeds it from each process's {job} events (goal/G29.15), and a server between jobs shows idle, no bar.\n\nJOBS DETAILS (shell/jobsDetails)\n- A real-time monitor of a capturable event stream, never stdout: an agent's file changes through fs-watcher, what each server publishes, and what the node's own jobs report (server-stats, relay-presence: their data, each time it changes). It shows what could be logged; nothing is logged or kept.\n- The window holds the last 256 events the shell receives; the node does no more work.\n- The dialog fills the page, top to bottom, and the page itself does not scroll:\n  1. the header (status, id, kind/type, updated, Cancel or Delete);\n  2. the rolling event log, 1/3 of the page height, one JSON line per event;\n  3. the Extract/analyze box, 1/3 of the page height: the last event clicked, JSON.stringify(object, null, 2) in a read-only CodeMirror textView.\n- The log and the Extract box scroll inside themselves.",
+   "version": 10,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/shell/jobs/jobs.js, spirit/run/shell/jobsDetails/jobsDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T15:25:27.115Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -5530,6 +5594,180 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-18T15:15:26.615Z",
      "text": "In the box: progressBar as a shared element, a progress column in Jobs, and the app hooking it to its job. Green; ready on your Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:19:25.953Z",
+     "text": "commit 9471489bba3fec336c97777ab133a35c55bf602c: goal/G29.14: the red for Jobs on the shared list, the shared progressBar and Jobs Details as a live event monitor\n- spirit/test/jobsSearch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T15:19:29.561Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:19:38.255Z",
+     "text": "Red 9471489b: jobsSearch.js, 33 of 33 red. Named in it: progressBar(done, total, text) in shell/shared/js; a multi: true filter in the shared list, toggles all on at start; Jobs hears events through api.onJobs; an event is the job's published object when it changes, or fs-watcher's tree command. Building; shell.js and index.html are core."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:19:41.219Z",
+     "text": "deskVerify: red confirmed at 9471489b: spirit/test/jobsSearch.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T15:19:42.195Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:24:58.384Z",
+     "text": "Built and green: jobsSearch 32 of 32; jobsDetails, fsWatcherConsole and natterIntrinsic brought to this box (256 lines, never stdout, the shared list). The commit waits on your grant for the core files commitCheck names: js/client/shell.js, shell/jobs/jobs.js, shell/jobsDetails/jobsDetails.js."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:25:13.803Z",
+     "text": "Correction: index.html is on the list too (it loads progressBar.js). Four files: index.html, js/client/shell.js, shell/jobs/jobs.js, shell/jobsDetails/jobsDetails.js."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:26:02.328Z",
+     "text": "commit cc4a4aa651fa8396122c65eb08f26858baf52dfa: goal/G29.14: Jobs on the shared list with kind and status filters and a progress column; the shared progressBar; Jobs Details as a live monitor of the last 256 published events with an Extract box\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/shell/jobs/jobs.js\n- spirit/run/shell/jobsDetails/jobsDetails.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/run/shell/shared/js/progressBar.js\n- spirit/test/fsWatcherConsole.js\n- spirit/test/jobsDetails.js\n- spirit/test/jobsSearch.js\n- spirit/test/natterIntrinsic.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:26:18.625Z",
+     "text": "Committed and verified: cc4a4aa6, jobsSearch 32 of 32.\nJobs: shared list, kind filter, a toggle per status, progress column from each job's events.\nJobs Details: the last 256 published events, one JSON line each; a click puts it pretty-printed in the Extract box.\nFiles: progressBar.js (new), listSearch.js, jobs.js, jobsDetails.js, shell.js, index.html; tests jobsSearch, jobsDetails, fsWatcherConsole, natterIntrinsic.\nA reload of the page loads it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:26:33.386Z",
+     "text": "deskVerify: passed, at cc4a4aa6 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:40:13.568Z",
+     "text": "- server-stats, relay-presence and fs-watcher are neither appServers nor transient. they are something else, \"kernel\" or somthing. it is definitely the 1st category. \n- server-stats events are not visible, and i can see in the stats app that events MUST be arriving very frequently\n- why is the jobs list constantly re-sorting, event if no search value is currently active?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:40:47.247Z",
+     "text": "1. They are the node's own jobs (kind permanent in js/jobs.js). They become a third kind, node, first in the filter: all, node, servers, transient.\n2. server-stats and relay-presence never publish an app object: they update their job's data (stats every tick, presence when it changes). So for a node job the event is its data when it changes; fs-watcher keeps its tree command.\n3. The re-sort is my order: newest updated on top, and server-stats bumps its own time every tick. Instead, with no words rows stand still: grouped by kind (node, servers, transient), then by name; an update never moves a row.\nI fix all three and update the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:45:37.863Z",
+     "text": "3. The re-sort is my order: newest updated on top, and server-stats bumps its own time every tick. Instead, with no words rows stand still: grouped by kind (node, servers, transient), then by name; an update never moves a row.\nI fix all three and update the box?\n\nthe re-sort makes clicking on a line very difficult, just sort them by ID when no search term is active, put column headings ( a flaw in out list-search element?), make a left-most icon column, where a one green dot hops between rows, always showing the most recent update.\n\n2. you have to give me a VERY good reason why i can't see events for relay-presence and stats."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:46:22.059Z",
+     "text": "2: there is no good reason. It is my bug: I counted only what a job publishes, and server-stats and relay-presence report through their data, so I dropped them. Their data, each time it changes, is their event.\nIn the box: sorted by id with no words, column headings as the shared list's own, a left-most column with one green dot on the most recent update, the node kind (all, node, servers, transient), and the node jobs' data as events. Taking it back to build."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:47:11.161Z",
+     "text": "stats and relay?\n\nthey publish normal json-styled events, don't they?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:47:39.204Z",
+     "text": "They do: each change goes out as a job-updated whose data is a plain JSON object (server-stats: the stats, relay-presence: {presence}). They only put it in data where servers put theirs in app, and I read app alone. Building now: their data, each time it changes, is their event line."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:48:02.382Z",
+     "text": "commit de333a8abe862bf0723f4d2d89f822e21d106df8: goal/G29.14: the red for box v10: rows by id, column headings, the green dot, the node kind, the node jobs' data as events\n- spirit/test/jobsSearch.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:48:28.022Z",
+     "text": "deskVerify: red confirmed at de333a8a: spirit/test/jobsSearch.js. Beside it: spirit/test/fsWatcherConsole.js is already green; spirit/test/jobsDetails.js is already green; spirit/test/natterIntrinsic.js is already green"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-18T15:48:28.900Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:50:06.673Z",
+     "text": "commit 4077e56001dcba635a997fd511e168fc7e906dc3: goal/G29.14: box v10: rows by id standing still, the shared list's column headings, one green dot on the latest update, the node kind, the node jobs' data as their events\n- spirit/run/shell/jobs/jobs.js\n- spirit/run/shell/jobsDetails/jobsDetails.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/test/jobsSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T15:50:18.030Z",
+     "text": "Built and verified at 4077e560, jobsSearch 39 of 39.\nJobs: rows by id and still; column headings (the shared list's own, option head); a green dot on the job heard of last; kinds all, node, servers, transient.\nJobs Details: server-stats and relay-presence show their data as events.\nThe dot hops at most once a second on plain updates (the existing redraw throttle). A reload loads it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:50:41.085Z",
+     "text": "deskVerify: passed, at 4077e560 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T15:55:23.444Z",
+     "text": "deskVerify: passed, at 4077e560 (pulled). 4 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T16:05:12.864Z",
+     "text": "nice!\n\nabout the \"running\" filter, i ran a job earlier, \"imageStats\" to make sure that i still can run transient processes via \"Files\" and \"FileViewer\", that worked.\n\nwhat i noticed: the job didn't clean up after itself, and i wonder: \"didn't we decide at some points that transient jobs should \"clean up after themselves?\"\n\nsince we only keep 256 events in the rolling event-box, a log after the fact would be useless (incomplete) after a transient job is done.\n\nso, shouldn't we ensure that all transient jobs automatically remove themselves from the job system, and we only keep the \"failed\" ones, because there might be some instant diagnostic value to leaving them hang around until the next node restart?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T16:05:40.920Z",
+     "text": "We decided it half way, under goal/G4.34: a job started with removeWhenDone is deleted when it exits cleanly, a failed one stays. But it is opt-in per caller (jobs.create removeWhenDone), and only desk and deskClient pass it; the file viewer does not, so imageStats stayed.\nYour rule makes it the default for every transient job: removed on a clean exit, a failed one kept until the node restarts. That deletes the removeWhenDone argument from jobs.create, a change to a node verb, so it needs your yes on the verb.\nIt is core (js/jobs.js, js/server.js), outside this item. Proposed item: Transient jobs remove themselves; only failed ones stay. Say add it.\nOne thing to decide there: a cancelled job, removed or kept?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T16:07:41.711Z",
+     "text": "it shouldn't be opt-in per caller. it should be automatic, and failed jobs remain automatically, and the last filter in the jobs search should be \"failed\" and the \"running\" filter means little?\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T16:08:02.758Z",
+     "text": "Agreed. Automatic: every transient job is removed when it ends, unless it failed; removeWhenDone goes from jobs.create.\nA cancelled job I would remove too: you stopped it yourself, so it holds nothing to diagnose.\nThen the list is node jobs, servers and running transients, all running, plus the failed ones. So the status toggles say little; they become one last filter, failed, that shows the failed jobs alone.\nAll of this as one item: Transient jobs remove themselves; only failed ones stay. Add it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T16:09:04.025Z",
+     "text": "add it. (i support the idea that jobs cancelled by me are also removed automatically)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T16:09:38.229Z",
+     "text": "Added as goal/G29.16, box filled: automatic removal of completed and cancelled transient jobs, failed ones kept until restart, removeWhenDone gone from jobs.create, and the failed filter in place of the status toggles."
     }
    ]
   },
@@ -5845,6 +6083,79 @@
      "text": "deskVerify: passed, at 24e16d96 (pulled). 5 suites ran green."
     }
    ]
+  },
+  {
+   "id": "goal/G29.16",
+   "title": "Transient jobs remove themselves; only failed ones stay",
+   "goal": "goal/G29",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G29"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "TRANSIENT JOBS CLEAN UP AFTER THEMSELVES\n- Automatic, never opt-in per caller: every transient job is removed from the job system when it ends, unless it failed.\n- A job the owner cancels is removed too.\n- A failed job stays until the next node restart, for its instant diagnostic value.\n- The removeWhenDone argument goes from jobs.create (a node verb change, Andy's yes on the verb: \"add it\"), and with it the opt-in of goal/G4.34.\n- Why: Jobs Details keeps only the last 256 events, so a log after the fact would be incomplete anyway.\n\nTHE JOBS LIST\n- The status toggles go: with transient jobs gone once done, almost everything listed is running.\n- In their place one last filter, failed, that shows the failed jobs alone.",
+   "version": 1,
+   "checks": [],
+   "chat": []
   }
  ]
 }
