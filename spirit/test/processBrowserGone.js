@@ -23,6 +23,8 @@ test.startTest('goal/G29.13: the Job Selector (shell/process-browser) is gone, c
 function walk(dir, out) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
     if (e.name === 'node_modules' || e.name === 'relay-state' || e.name === '.git') return;
+    // Desk's own record of the goal (currentGoal.json) quotes this item; it is the record, not the code.
+    if (e.name === 'currentGoal.json') return;
     const full = path.join(dir, e.name);
     if (e.isDirectory()) walk(full, out);
     else if (/\.(js|json|html|md)$/.test(e.name)) out.push(full);

@@ -304,7 +304,6 @@
     stats: 'shell/stats',
     jobs: 'shell/jobs',
     'app-manager': 'shell/apps',
-    'process-browser': 'shell/process-browser',
     files: 'shell/files',
     'group-manager': 'shell/group-manager',
   };
@@ -2939,7 +2938,8 @@
   // this list cannot promote an app, only hurry one that is already
   // intrinsic. Each of the five adds its line here in the same commit as
   // its move, alongside its APP_ID_RENAMES entry.
-  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps', 'process-browser', 'files', 'group-manager', 'contacts', 'info'];
+  // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
+  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps', 'files', 'group-manager', 'contacts', 'info'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {

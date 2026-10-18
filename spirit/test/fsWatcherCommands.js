@@ -171,7 +171,7 @@ test.startTest('goal/G4.25: the file watcher streams tree commands, on a local c
 
   // ── 4. eradicated ──
   test.subHeading('4. nothing reads or sends the whole file list any more');
-  const readers = ['js/jobs.js', 'js/server.js', 'js/nodeSearches.js', 'js/client/shell.js', 'shell/files/files.js', 'shell/process-browser/process-browser.js'];
+  const readers = ['js/jobs.js', 'js/server.js', 'js/nodeSearches.js', 'js/client/shell.js', 'shell/files/files.js'];
   const still = readers.filter(function (r) { return /\bdata\.files\b/.test(code(path.join(RUN, r))); });
   if (!still.length) test.check('no data.files in ' + readers.join(', '));
   else test.fail(OWED + 'data.files still read in ' + still.join(', '));

@@ -394,33 +394,12 @@
       .annotation-raw summary { cursor: pointer; font-size: 13px; opacity: 0.8; }
       .annotation-raw pre { margin: 6px 0 0; }
 
-      /* Only what is particular to it; the look comes from the control
-         rules above. Same for every field below. */
-      /* No margin-bottom: the list below carries its own space above it
-         (§3), and it is a block in the pane's own stack. */
-      #process-search { width: 100%; }
-
       /* The ownership mark: ★ means this node owns that relay, the
          same as in Relay Chat's To list. It is a mark and not a control
          — what opens the row is the row (.natter-openable) — so it takes
          no hit area of its own and the whole width is the target. */
       .natter-star { color: #ffd48a; font-size: 18px; line-height: 1; }
       .natter-openable { cursor: pointer; }
-
-      .process-entry {
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 8px;
-      }
-
-      .process-entry:hover { background: rgba(255, 255, 255, 0.08); }
-      .process-entry-label { font-weight: 600; }
-      /* Reading size, not fine print. This is the sentence that says what
-         a process DOES — the reason the list is worth reading at all — and
-         §2 puts fine print at the foot of a page rather than shrunk in the
-         middle of one. Told apart from its label the way §2 says: same
-         size, different weight, and dimmed rather than shrunk. */
-      .process-entry-desc { font-size: 16px; opacity: 0.75; margin-top: 2px; }
 
       /* One spacing scale: the 12px that separates blocks down a page
          (UI_DESIGN_STYLE.md) is also what separates controls across a
@@ -529,7 +508,7 @@
          page: a rounded box, a dark fill, reading-size text, and a
          target big enough for a thumb.
          This used to be five near-identical copies living beside their
-         own forms — #process-search, .start-job-form, .field-label,
+         own forms — a search box, .start-job-form, .field-label,
          #job-manifest-form and the Relay Chat rows — each 6px padding
          and 6px radius, drifting one edit at a time. Scoped to
          #app-content because that is where an app's own markup lives;
@@ -1609,7 +1588,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['shell/stats', 'shell/process-browser', 'shell/jobs', 'shell/apps', 'shell/files', 'shell/group-manager', 'shell/contacts']
+            renderAppGroup(grid, ['shell/stats', 'shell/jobs', 'shell/apps', 'shell/files', 'shell/group-manager', 'shell/contacts']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });

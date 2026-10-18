@@ -22,12 +22,11 @@
 // Still on spirit.shell, because step 6 did not name them:
 // createGroup / updateGroup / deleteGroup and fileInfoRow. api.listGroups
 // exists and is used. The three writers are the obvious next additions to
-// that surface — app/process-browser carries the same note about the
-// viewer lookup — and they wait for a sitting that opens it rather than
+// that surface, and they wait for a sitting that opens it rather than
 // riding along with a move.
 //
 // `api` arrives at mount and render never gets one, so it is kept here,
-// the same as Files and Processes.
+// the same as Files does.
 
 var groupsEscapeHtml = spirit.core.util.escapeHtml;
 var groupsIcon = spirit.core.const.ICON;

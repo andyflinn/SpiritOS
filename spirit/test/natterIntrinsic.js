@@ -963,14 +963,14 @@ test.subHeading('Jobs has moved out of index.html');
   // discovery has run — the check that would have caught a missed
   // rename, whichever of the five moves next.
   booted.snapshot([NATTER_SCRIPT, 'shell/stats/stats.js', JOBS_SCRIPT]);
-  booted.shell.registerApp({ id: 'process-browser', name: 'Processes', icon: '⚙', hidden: true, mount: function () {}, render: function () {} });
   booted.shell.registerApp({ id: 'app-manager', name: 'Apps', icon: '▦', hidden: true, mount: function () {}, render: function () {} });
   booted.shell.registerApp({ id: 'group-manager', name: 'Groups', icon: '◫', hidden: true, mount: function () {}, render: function () {} });
 
   const memberIds = spiritMemberIds();
   const known = booted.shell.listApps().map(function (a) { return a.id; });
   const missing = memberIds.filter(function (id) { return known.indexOf(id) === -1; });
-  if (memberIds.length === 7 && missing.length === 0) {
+  // Six since goal/G29.13 took the Job Selector out of the Spirit group.
+  if (memberIds.length === 6 && missing.length === 0) {
     test.check('every id in the Spirit member list resolves to a real app');
   } else {
     test.fail('unresolved Spirit members: ' + JSON.stringify(missing) + ' of ' + JSON.stringify(memberIds));
@@ -1455,7 +1455,7 @@ test.subHeading('Apps has moved out of index.html');
   // Same guard as the last move, which is what makes it worth having:
   // every id the Spirit list names must resolve once discovery has run.
   booted.snapshot([NATTER_SCRIPT, 'shell/stats/stats.js', 'shell/jobs/jobs.js', APPS_SCRIPT]);
-  ['process-browser', 'group-manager'].forEach(function (id) {
+  ['group-manager'].forEach(function (id) {
     booted.shell.registerApp({ id: id, name: id, icon: '▦', hidden: true, mount: function () {}, render: function () {} });
   });
   const known = booted.shell.listApps().map(function (a) { return a.id; });
@@ -1467,61 +1467,29 @@ test.subHeading('Apps has moved out of index.html');
   }
 }
 
-test.subHeading('Job Selector has moved out of index.html');
+test.subHeading('The Job Selector is gone (goal/G29.13)');
 
 {
-  const PROCESS_SCRIPT = 'shell/process-browser/process-browser.js';
-  const MOVED_SCRIPTS = [NATTER_SCRIPT, 'shell/stats/stats.js', 'shell/jobs/jobs.js', 'shell/apps/apps.js', PROCESS_SCRIPT];
-  const manifest = JSON.parse(readRun('shell/process-browser/process-browser.json'));
+  // Andy, 2026-10-18: "Nothing, absoultely NOTHING can be done with this shell app, that cannot be done through the
+  // \"files\" shell app. So this app need s to go." (processBrowserGone.js asserts the rest.)
+  const MOVED_SCRIPTS = [NATTER_SCRIPT, 'shell/stats/stats.js', 'shell/jobs/jobs.js', 'shell/apps/apps.js'];
   const html = readRun('index.html');
-
-  if (manifest.intrinsic === true && manifest.owner === 'system') {
-    test.check('shell/process-browser has a manifest, intrinsic and system-owned');
-  } else {
-    test.fail('processes manifest: ' + JSON.stringify(manifest));
-  }
-
-  if (html.indexOf("id: 'process-browser'") === -1 && html.indexOf('function renderProcessList') === -1) {
-    test.check('and index.html no longer registers it, list and all');
-  } else {
-    test.fail('index.html still carries the Job Selector app');
-  }
-
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} }, MOVED_SCRIPTS, true);
 
-  if (booted.shell.APP_ID_RENAMES['process-browser'] === 'shell/process-browser' &&
-      booted.shell.INTRINSIC_APP_FOLDERS.indexOf('process-browser') !== -1) {
-    test.check('the rename map and the boot list both carry it');
+  if (booted.shell.APP_ID_RENAMES['process-browser'] === undefined &&
+      booted.shell.INTRINSIC_APP_FOLDERS.indexOf('process-browser') === -1) {
+    test.check('neither the rename map nor the boot list carries the Job Selector');
   } else {
-    test.fail('lists: ' + JSON.stringify({
-      renames: booted.shell.APP_ID_RENAMES,
-      boot: booted.shell.INTRINSIC_APP_FOLDERS,
-    }));
+    test.fail('lists: ' + JSON.stringify({ renames: booted.shell.APP_ID_RENAMES, boot: booted.shell.INTRINSIC_APP_FOLDERS }));
   }
+  if (spiritGroupLabels(booted).indexOf('Job Selector') === -1) test.check('and it is gone from the Spirit grid');
+  else test.fail('the Spirit grid still shows Job Selector');
 
-  const processes = appById(booted, 'shell/process-browser');
-  const grid = spiritGroupLabels(booted);
-  if (processes && processes.intrinsic === true && grid.indexOf('Job Selector') !== -1) {
-    test.check('it is declared before any snapshot and sits in the Spirit grid');
-  } else {
-    test.fail('processes app: ' + JSON.stringify(processes) + ' grid: ' + grid);
-  }
-
-  // It opens a script through the viewer, and the viewer is what offers
-  // "start as a job" and jumps to Jobs. Both of those launches stay on
-  // spirit.shell until step 6 — what matters here is that the Job Monitor id
-  // they name is the moved one.
+  // Starting a program stays: the viewer offers "start as a job" for a script under process/ and jumps to Jobs.
   if (html.indexOf("launchApp('shell/jobs'") !== -1) {
     test.check("the viewer's start-and-watch launch still names shell/jobs");
   } else {
     test.fail('the launch into Jobs is missing or misnamed');
-  }
-
-  const src = readRun(PROCESS_SCRIPT);
-  if (/\.readProject\(/.test(src) && src.indexOf('spirit.core.fs.loadFile') === -1) {
-    test.check('its unscoped manifest read goes through api.readProject (step 6)');
-  } else {
-    test.fail('the process manifest read is not on the api surface');
   }
 
   booted.snapshot(MOVED_SCRIPTS);
@@ -1534,9 +1502,8 @@ test.subHeading('Job Selector has moved out of index.html');
     test.fail('unresolved: ' + JSON.stringify(missing));
   }
 
-  // Every app that was going to move has moved. What is left registers
-  // itself here because it is not an app in that sense: two viewers with
-  // no icon of their own, and the Spirit grid that holds the others.
+  // What is left registers itself here because it is not an app in that sense: two viewers with no icon of their own,
+  // and the Spirit grid that holds the others.
   const stillInline = (html.match(/registerApp\(\{/g) || []).length;
   if (stillInline === 3) {
     test.check('three registerApp blocks remain: the two viewers and Spirit itself');
@@ -1552,7 +1519,7 @@ test.subHeading('The system-app api surface');
   // honest way to see it is to be mounted: open the tile, let the
   // "script" activate, fire its onload, and keep what mount was given.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'shell/process-browser/process-browser.js'], true);
+    [NATTER_SCRIPT, 'shell/stats/stats.js'], true);
 
   let handed = null;
   booted.shell.launchApp('shell/natter');
@@ -1602,10 +1569,10 @@ test.subHeading('The system-app api surface');
     test.fail('registry methods disagree with the shell');
   }
 
-  // And launchApp actually navigates: opening Job Selector through the api
+  // And launchApp actually navigates: opening Stats through the api
   // fetches its entry script, exactly as a desktop tile would.
   const before = booted.scripts.length;
-  handed.launchApp('shell/process-browser');
+  handed.launchApp('shell/stats');
   if (booted.scripts.length === before + 1) {
     test.check('launchApp through api opens another app');
   } else {
@@ -1948,19 +1915,12 @@ test.subHeading('An app can subscribe, instead of being broadcast at');
     test.fail('visibility: notes ' + lastNotes.visible + ', ledger ' + lastLedger.visible);
   }
 
-  // The proof app. Job Selector kept `lastProcessBrowserJob` to tell its own
-  // job moving from a stats tick; that cache is what onFiles replaces.
-  // Named by what the code does, not by a word that also appears in the
-  // comment explaining why it used to: processFindJob existed only to
-  // find the job behind the identity cache, and render() no longer takes
-  // the job map at all.
-  const proc = readRun('shell/process-browser/process-browser.js');
-  if (proc.indexOf('api.onFiles(') !== -1 &&
-      proc.indexOf('function processFindJob') === -1 &&
-      /render: function \(\)/.test(proc)) {
-    test.check('and Job Selector asks instead of caching a job reference');
+  // The proof app was the Job Selector, gone since goal/G29.13; Desk reads the tree through api.onFiles now.
+  const deskFace = readRun('shell/desk/desk.js');
+  if (deskFace.indexOf('api.onFiles(') !== -1) {
+    test.check('and Desk reads the tree through api.onFiles');
   } else {
-    test.fail('Job Selector still reads the job map');
+    test.fail('Desk does not read the tree through api.onFiles');
   }
 }
 
@@ -3176,56 +3136,6 @@ test.subHeading('Open with is a form like the others');
     test.check('and it is one bubble, not a bubble inside a bubble');
   } else {
     test.fail('panelling: ' + owBody.replace(/\s+/g, ' ').slice(-200));
-  }
-}
-
-test.subHeading('The Job Selector screen offers one control and one list');
-
-{
-  const src = readRun('shell/process-browser/process-browser.js');
-  const css = readRun('index.html');
-
-  // The search box is the one control this screen offers, so it sits in a
-  // panel — the shape the Job Monitor and Groups forms have. Read as an
-  // ordering, because the markup is built by concatenation and a regex
-  // across it would be asserting the source's formatting.
-  const panelAt = src.indexOf('<div class="stat-tile wide">');
-  const searchAt = src.indexOf('id="process-search"');
-  const listAt = src.indexOf('id="process-browser-list"');
-  if (panelAt !== -1 && panelAt < searchAt && searchAt < listAt) {
-    test.check('the search box has a panel of its own, above the list');
-  } else {
-    test.fail('search is not panelled: ' + [panelAt, searchAt, listAt].join(','));
-  }
-
-  // And no caption over it. Jobs needed three, because its placeholders
-  // were the captions and left the moment you typed; one search box is
-  // not ambiguous, and a word that cannot do anything is §1.
-  if (src.indexOf('field-label') === -1) {
-    test.check('and no caption over it — one search box is not ambiguous');
-  } else {
-    test.fail('a caption was added to the search box');
-  }
-
-  // §3: the box does not push the list down. The list is a block in the
-  // pane's stack and carries its own space above it.
-  const searchRule = /#process-search\s*\{([^}]*)\}/.exec(css);
-  if (searchRule && !/margin-bottom/.test(searchRule[1])) {
-    test.check('and pushes nothing down: the list brings its own space');
-  } else {
-    test.fail('#process-search: ' + (searchRule && searchRule[1].replace(/\s+/g, ' ').trim()));
-  }
-
-  // §2: the description is the sentence saying what a process DOES, which
-  // is why the list is worth reading. Fine print belongs at the foot of a
-  // page, not shrunk in the middle of one — so it reads at the size the
-  // titlebar does and is told apart by weight and dimming instead.
-  const desc = /\.process-entry-desc\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
-  const title = /#app-title\s*\{[^}]*font-size:\s*(\d+)px/.exec(css);
-  if (desc && title && desc[1] === title[1]) {
-    test.check('and a process description reads at the size of the titlebar');
-  } else {
-    test.fail('description ' + (desc && desc[1]) + 'px vs title ' + (title && title[1]) + 'px');
   }
 }
 
