@@ -224,7 +224,7 @@ function publishOn(body) {
   try { b = JSON.parse(body); } catch (e) { return; }
   if (!b || b.id !== 'desk/G0.0' || String(b.text || '').trim() !== 'publish' || !NODE_URL || !PORT) return;
   kernel.core.ask('jobs.create', { command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)],
-    type: 'publishData', removeWhenDone: true }, NODE_URL).then(function (r) {
+    type: 'publishData' }, NODE_URL).then(function (r) {
     if (!r || r.status >= 300) console.error('deskClient: the node refused the publish job: ' + (r ? r.text : 'no answer'));
   }, function (e) { console.error('deskClient: the publish job was not asked: ' + ((e && e.message) || e)); });
 }

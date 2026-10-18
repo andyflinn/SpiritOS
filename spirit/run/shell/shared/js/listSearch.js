@@ -198,8 +198,9 @@
     function draw() {
       if (!live) return;
       takePage();
-      // Toggles drawn from the rows held follow the rows (goal/G29.14).
-      if (filters.some(function (f) { return typeof f.choices === 'function'; })) { var fs0 = el('filters'); if (fs0) fs0.innerHTML = filterHtml(); }
+      // THE FILTERS DRAWN WITH THE ROWS (goal/G29.14): toggles drawn from the rows held follow the rows, and a pressed
+      // choice shows pressed, whoever redraws.
+      if (filters.length) { var fs0 = el('filters'); if (fs0) fs0.innerHTML = filterHtml(); }
       bucket.sort(score);
       var rows = bucket.serialize().items;
       shown = rows;

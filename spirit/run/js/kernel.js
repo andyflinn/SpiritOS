@@ -773,9 +773,15 @@ if (isNode()) {
       else if (result !== undefined) one.result = result;
       return spirit.core.jobs.cycle(one);
     },
-    // One cycle message, through publish: its size check holds for these too.
+    // One cycle message. IN ORDER (found by jobCycle.js flaking under goal/G29.16): publish sends and forgets, so a
+    // start and its end could reach the node the wrong way round; a cycle message resolves once the node has it, so a
+    // caller that awaits each call delivers them in order. Its size is the publish cap; one over it is said, not sent.
     cycle(job) {
-      return Promise.resolve(spirit.core.jobs.publish({ job: job }));
+      const one = { job: job };
+      let size = 0;
+      try { size = Buffer.byteLength(JSON.stringify(one), 'utf8'); } catch (e) { return Promise.resolve(false); }
+      if (size > require('./limits').PAYLOAD_MAX) return Promise.resolve(spirit.core.jobs.publish(one));
+      return spirit.core.jobs.report({ app: one }).then(function () { return true; }, function () { return false; });
     },
   };
   // The job this process has open, by name; null between jobs (goal/G29.15).

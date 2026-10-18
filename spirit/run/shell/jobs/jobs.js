@@ -8,8 +8,8 @@
 //
 // ON THE SHARED LIST (goal/G29.14). The item's box: "The table moves onto the shared list: filters on row 1, the search
 // on row 2, then the rows." Words match the job's name, type, module and id; with no words the newest updated is on
-// top. The kind filter is one choice (all, servers, transient); the status filter one toggle per status the list holds,
-// each in or out. Columns: rank bar, status, name (module, else type), kind, progress, updated.
+// top. The kind filter is one choice (all, node, servers, transient, and failed last: goal/G29.16 took the status
+// toggles away). Columns: the green dot, rank bar, status, name (module, else type), kind, progress, updated.
 //
 // ITS PROGRESS (goal/G29.14 on the job cycle of goal/G29.15): each process publishes {job: {state, name, done, total,
 // text}}; the bar is the shared progressBar (shell/shared/js/progressBar.js), fed here from those events. A server
@@ -126,14 +126,11 @@ spirit.shell.activateApp({
     jobsList = window.spiritElements.shellCreateListSearch(container, {
       rows: jobsRows,
       filters: [
-        { name: 'kind', choices: [{ value: 'all', word: 'all' }, { value: 'node', word: 'node' }, { value: 'server', word: 'servers' }, { value: 'transient', word: 'transient' }],
-          test: function (job, v) { return v === 'all' || jobsKind(job) === v; } },
-        { name: 'status', multi: true,
-          choices: function (rows) {
-            return rows.map(function (j) { return String(j.status || ''); }).filter(function (s, i, a) { return s && a.indexOf(s) === i; }).sort()
-              .map(function (s) { return { value: s, icon: STATUS_ICON[s] || '', word: s }; });
-          },
-          test: function (job, off) { return off && off[job.status] ? 0 : 1; } },
+        // FAILED, THE LAST FILTER (goal/G29.16; Andy: "the last filter in the jobs search should be "failed" and the
+        // "running" filter means little?"): a transient job that ends is removed, so what is listed runs, or failed,
+        // and the status toggles went.
+        { name: 'kind', choices: [{ value: 'all', word: 'all' }, { value: 'node', word: 'node' }, { value: 'server', word: 'servers' }, { value: 'transient', word: 'transient' }, { value: 'failed', word: 'failed' }],
+          test: function (job, v) { return v === 'all' || (v === 'failed' ? job.status === 'failed' : jobsKind(job) === v); } },
       ],
       matched: function (job) { return { name: jobsName(job), type: String(job.type || ''), module: String(job.module || ''), id: String(job.id) }; },
       paint: jobsPaint,

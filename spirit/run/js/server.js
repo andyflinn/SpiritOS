@@ -348,8 +348,8 @@ function handleCreateJob(req, res) {
     // The script's manifest decides: a one-shot, or a user-operated server
     // (processes/G1.3, jobs.startJob). The request is unchanged.
     let job = null;
-    // removeWhenDone (goal/G4.34, Andy: "verb granted."): a utility process whose job is deleted once it exits cleanly.
-    try { job = jobs.startJob(body.command, body.args || [], { type: body.type, removeWhenDone: body.removeWhenDone === true }); }
+    // No opt-in to cleaning up (goal/G29.16): every transient job removes itself when it ends, unless it failed.
+    try { job = jobs.startJob(body.command, body.args || [], { type: body.type }); }
     catch (e) {
       // A process this node does not include is refused by name (slim/G1.3).
       if (e && e.refusal === 'process-not-included') {
@@ -1867,7 +1867,7 @@ contactBook.syncMarks(ROOT_DIR);
     'jobs.authRelabel': { request: { key: '', label: '' }, reply: { key: '', label: '' }, handler: authVerb(apiAuth.relabel) },
     'jobs.search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },
     'jobs.get': { request: { key: '' }, reply: { ok: true, key: '', job: JOB }, handler: proxyVerb(function (b) { return nodeSearches.jobsGet(b); }) },
-    'jobs.create': { request: { command: '', args: [''], type: '', removeWhenDone: false }, reply: JOB, handler: handleCreateJob },
+    'jobs.create': { request: { command: '', args: [''], type: '' }, reply: JOB, handler: handleCreateJob },
     'jobs.update': { request: { id: '', status: '', data: {}, logMessage: '', app: {} }, reply: JOB, handler: handleJobUpdate },
     'jobs.cancel': { request: { id: '' }, reply: JOB, handler: handleCancelJob },
     // 204, no body.

@@ -107,6 +107,13 @@ module.exports = function installJobs(spirit, port) {
     }
 
     events.emit('job-updated', job);
+
+    // TRANSIENT JOBS REMOVE THEMSELVES (goal/G29.16; Andy, 2026-10-18: "it shouldn't be opt-in per caller. it should be
+    // automatic, and failed jobs remain automatically", and on a cancelled one: "i support the idea that jobs cancelled
+    // by me are also removed automatically"). A process job that completes, by its exit or by its own word, or that the
+    // owner cancels, is deleted once its last update has gone out; a failed one stays until the node restarts, for
+    // what it can tell. Servers and the node's own jobs are not transient and stay.
+    if (job.kind === 'process' && (job.status === 'completed' || job.status === 'cancelled')) deleteJob(id);
     return job;
   }
 
@@ -297,10 +304,8 @@ module.exports = function installJobs(spirit, port) {
           data: { exitCode: code },
           logMessage: 'process exited with code ' + code,
         });
-        // A UTILITY PROCESS LEAVES NO ROW (goal/G4.34). Andy: "so that that stuff isn't roll-your-own every single
-        // time you need a utility process"; "verb granted.", and to keeping a failed one: "granted." A job started
-        // with removeWhenDone is deleted here once it exited cleanly; a failed one stays in Jobs, to be seen.
-        if (code === 0 && options && options.removeWhenDone === true) deleteJob(job.id);
+        // A clean exit is removed by updateJob itself, a failed one stays (goal/G29.16, which made goal/G4.34's
+        // per-caller opt-in the rule for every transient job).
       }
     });
 

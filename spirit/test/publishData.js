@@ -28,7 +28,7 @@
 //      any other file, or another agent's folder, is checked as today. The agent's name is the one Andy set in its
 //      profile (profile.get), as the folders are named by it.
 //   4  THE TRIGGER: his group-chat line exactly "publish" (Q13) makes the agent's deskClient start publishData.js as a
-//      job of type publishData on its own node, with removeWhenDone; N for that run is 20 (Q14). Any other line starts
+//      job of type publishData on its own node, (a transient job, removed once it ends cleanly, goal/G29.16); N for that run is 20 (Q14). Any other line starts
 //      nothing. Whether the job also passes --asks 20 is the builder's; not asserted.
 //
 // REOPENED 2026-10-05 FOR THE FIRST PUBLISH'S FLAWS (Andy pressed Reopen after "publish" ran on all three boxes; to
@@ -214,7 +214,7 @@ function pointAt(home, url, key) { require('../run/js/relayKeys.js').list(home, 
 
   // ── 4. THE TRIGGER (Q13, Andy: "publish"; Q14, N: "that's a fine number", 20) ──
   // His group-chat line that is exactly "publish" makes the agent's deskClient start publishData.js as a job of type
-  // publishData on its own node, with removeWhenDone (goal/G4.34). Any other line starts nothing. The agent listens as
+  // publishData on its own node, (a transient job: removed once it ends cleanly, goal/G29.16). Any other line starts nothing. The agent listens as
   // a real one does (deskAgentEar running), and the job, once seen, is cancelled here: a whole publish runs the harness,
   // which cannot run inside the harness.
   test.subHeading('4. his "publish" in the group chat starts it, nothing else does');

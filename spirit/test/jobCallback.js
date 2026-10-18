@@ -20,11 +20,14 @@ const FIXTURE_PATH = path.join(__dirname, 'fixtures', 'jobCallbackFixture.js');
 const POLL_INTERVAL_MS = 100;
 const POLL_TIMEOUT_MS = 5000;
 
+// A COMPLETED JOB IS GONE AT ONCE (goal/G29.16: a transient job removes itself unless it failed), so the job as its last
+// update carried it is read from the job-updated events, the way every page sees it.
+const lastSeen = Object.create(null);
 function waitForTerminal(jobs, jobId) {
   return new Promise(function (resolve) {
     const startedAt = Date.now();
     const poll = setInterval(function () {
-      const job = jobs.getJob(jobId);
+      const job = jobs.getJob(jobId) || lastSeen[jobId];
       const isTerminal = job && (job.status === 'completed' || job.status === 'failed');
       if (isTerminal || Date.now() - startedAt > POLL_TIMEOUT_MS) {
         clearInterval(poll);
@@ -75,6 +78,7 @@ function withJobsServer(fn) {
     callbackServer.listen(0, '127.0.0.1', function () {
       const port = callbackServer.address().port;
       jobs = require('../run/js/jobs.js')(spirit, port);
+      jobs.events.on('job-updated', function (j) { lastSeen[j.id] = JSON.parse(JSON.stringify(j)); });
       fn(jobs)
         .then(function (result) { callbackServer.close(); resolve(result); })
         .catch(function (err) { callbackServer.close(); reject(err); });
