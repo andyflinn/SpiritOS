@@ -143,7 +143,9 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   if (/<td[^>]*class="list-rank"[^>]*min-width:\s*3em[^>]*>\s*<div[^>]*style="[^"]*width:\s*3em/.test(ranked[0].first)) test.check('the rank cell holds a fixed 3em box (min-width 3em): no row can squeeze it to nothing');
   else test.fail(OWED + 'the rank cell is ' + short(ranked[0].first));
   const barTag = (/<div[^>]*border-top[^>]*>/.exec(ranked[0].first) || [''])[0];
-  if (/border-top:\s*0\.8em\s+solid/.test(barTag) && /rgb\(255,\s*2[0-9]{2},\s*[0-9]+\)|#ff[de][0-9a-f]{3}|yellow/i.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid yellow border, 0.8em tall, no background-only drawing');
+  // Andy, 2026-10-18: "does it really have to be THAT loud a color.... something a little more subtle?" The viewer's
+  // soft gold for its matches (rgba(255, 213, 79, 0.45), index.html .text-view-match), still a solid bar.
+  if (/border-top:\s*0\.8em\s+solid\s+rgba\(255,\s*213,\s*79,\s*0\.45\)/.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid border in the viewer\'s soft gold, 0.8em tall, no background-only drawing');
   else test.fail(OWED + 'the bar is drawn ' + short(barTag));
 
   // Andy, 2026-10-18: "whenever the search expression changes even by one character, the list (in dropdowns) should
