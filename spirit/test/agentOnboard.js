@@ -106,7 +106,7 @@ function fakeNode(matches) {
       const answers = {
         'relay.get': { ok: true, relay: { claimed: true } },
         'node.card': { publicKey: 'MCowBQYDK2VwAyEAagentOnboardStandInAAAAAAAAAAAAAAAAAAAAA=' },
-        'peer.search': { q: b.q, matches: matches, more: false, asked: 1, remembered: 0, silent: [] },
+        'peer.search': { q: b.q, items: matches.map(function (m) { return { key: m.publicKey, label: JSON.stringify(m) }; }), more: false, asked: 1, remembered: 0, silent: [] },
       };
       const a = answers[b.verb];
       res.writeHead(a ? 200 : 500, { 'Content-Type': 'application/json' });

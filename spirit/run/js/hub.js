@@ -416,7 +416,8 @@ function buildPeople(rootDir) {
 // it changes every tail anybody has already written down, which is a
 // one-time cost worth taking deliberately rather than inside a commit
 // about something else.
-var peerSearch = require('./peerSearch');
+// The peer search's one ranker, on the probability modules, shared with every relay (goal/G29.17).
+var peerRank = require('./peerRank');
 
 // The one key cut is the kernel's (apiAuth/G1.11); hub.js had the original.
 const keyTail = require('./kernel.js').keyTail;
@@ -2111,8 +2112,8 @@ function createHub(rootDir) {
   // Called after the relays: a key any relay answered for is skipped, so a
   // live row always wins and memory only fills in.
   //
-  // THE SAME RANKING, NOT A SECOND ONE. Strangers go through peerSearch —
-  // the graded match every relay runs, with its slot count — and the same
+  // THE SAME RANKING, NOT A SECOND ONE. Strangers go through peerRank —
+  // the match every relay runs (goal/G29.17), with its slot count — and the same
   // absent drop the relay rows get above (`present === false`). "Exactly"
   // was ruled with its cost in view: "everything could hide someone your
   // looking for...."
@@ -2148,8 +2149,8 @@ function createHub(rootDir) {
       else if (r.present !== false) strangers.push(candidate);
     });
 
-    var mine = chosen.length ? peerSearch.search(chosen, q, chosen.length).matches : [];
-    var theirs = peerSearch.search(strangers, q, peerSearch.SLOTS);
+    var mine = chosen.length ? peerRank.rank(chosen, q, chosen.length).rows : [];
+    var theirs = peerRank.rank(strangers, q, peerRank.SLOTS);
 
     function shaped(c) {
       var best = S.get(c.publicKey) || {};
@@ -2171,7 +2172,7 @@ function createHub(rootDir) {
       };
     }
     return {
-      rows: mine.map(shaped).concat(theirs.matches.map(shaped)),
+      rows: mine.map(shaped).concat(theirs.rows.map(shaped)),
       more: theirs.more,
     };
   }
@@ -2390,12 +2391,15 @@ function createHub(rootDir) {
         // and writing it back would stamp it seen today and present — the
         // one thing it is not evidence of.
         list = list.concat(remembered.rows);
-        list.sort(function (a, b) {
-          return String(a.publicLabel).localeCompare(String(b.publicLabel));
-        });
+        // RANKED, NOT ALPHABETICAL (goal/G29.17): the relays' rows and memory's together, best match first, by the
+        // same ranker every relay ran; room for every row, so nothing a relay or the book gave is cut here.
+        var ranked = peerRank.rank(list, q, list.length).rows;
+        // THE SHARED SHAPE (goal/G29.17): {items: [{key, label}], more}, as every search the shared list draws.
+        // The key is the public key; the label the row as built above.
+        var items = ranked.map(function (row) { return { key: row.publicKey, label: JSON.stringify(row) }; });
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
-          q: q, matches: list, more: truncated,
+          q: q, items: items, more: truncated,
           asked: urls.length,
           // How many came from memory rather than a relay. A count, not
           // the store: each row says so itself (`fromMemory`) and how old

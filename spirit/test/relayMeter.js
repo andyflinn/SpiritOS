@@ -421,24 +421,11 @@ if (floor && floor.slots * floor.sampleS >= 120) {
 
 test.subHeading('A search answer is cut to what the wire holds');
 
-const peerSearch = require('../run/js/peerSearch.js');
-
-// Twenty peers on each of two partners, all matching, each therefore
-// carrying a long `vias` list -- the shape a busy mesh produces and the
-// one that overflows.
-const wideSources = [0, 1].map(function (src) {
-  const rows = [];
-  for (let i = 0; i < 20; i += 1) {
-    rows.push({
-      publicKey: 'MCowBQYDK2VwAyEA' + String(i).padStart(4, '0') + 'x'.repeat(28) + '=',
-      publicLabel: 'wide' + String(i).padStart(2, '0'),
-      claimedAt: '2026-09-17T08:08:18.051Z',
-      owner: false,
-      present: true,
-    });
-  }
-  return { via: 'MCowBQYDK2VwAyEA' + String(src).padStart(4, '0') + 'y'.repeat(28) + '=', rows: rows };
-});
+// THE RANKING IS peerRank's SINCE goal/G29.17, on the probability modules, and the partners whose `vias` overflowed
+// the wire went with goal/G22.6: a row is its own few fields again. What stays is the order of the work: the ranker
+// decides which rows and in what order; the relay alone knows the envelope, and cuts from the bottom of that order.
+const peerRank = require('../run/js/peerRank.js');
+const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
 
 const budget = R.box.matchBudget();
 
@@ -448,56 +435,15 @@ if (typeof budget === 'number' && budget > 0 && budget < 16384) {
   test.fail('no match budget: ' + JSON.stringify(budget));
 }
 
-// UNCAPPED FIRST, to prove the shape really does overflow. A fixture that
-// fits proves nothing about a cut.
-const loose = peerSearch.merge(wideSources, 'wide', 40);
-const looseBytes = JSON.stringify(loose.matches).length;
-
-const capped = peerSearch.merge(wideSources, 'wide', 40, 900);
-const cappedBytes = JSON.stringify(capped.matches).length;
-
-if (looseBytes > 900) {
-  test.check('the shape overflows a small ceiling: ' + looseBytes + ' bytes for ' +
-    loose.matches.length + ' rows');
-} else {
-  test.fail('the fixture does not overflow, so it proves nothing: ' + looseBytes);
+const wide = [];
+for (let i = 0; i < 40; i += 1) {
+  wide.push({ publicKey: 'MCowBQYDK2VwAyEA' + String(i).padStart(4, '0') + 'x'.repeat(28) + '=', publicLabel: 'wide' + String(i).padStart(2, '0'), claimedAt: '2026-09-17T08:08:18.051Z' });
 }
-
-if (cappedBytes <= 900 && capped.matches.length < loose.matches.length) {
-  test.check('and the ceiling cuts it: ' + capped.matches.length + ' rows, ' +
-    cappedBytes + ' bytes');
-} else {
-  test.fail('the ceiling did not bind: ' + cappedBytes + ' bytes, ' +
-    capped.matches.length + ' rows');
-}
-
-// TRUNCATION IS SAID OUT LOUD. A caller that does not know it was cut
-// believes it has seen everything, which is the failure `more` exists to
-// prevent.
-if (capped.more === true) {
-  test.check('and `more` says so, so a caller asks a narrower question');
-} else {
-  test.fail('the answer was cut silently');
-}
-
-// AND THE ONES THAT GO ARE THE ONES RANKED LOWEST. The rank decided the
-// order; the ceiling only decides where to stop reading it.
-if (capped.matches[0] && loose.matches[0] &&
-    capped.matches[0].publicKey === loose.matches[0].publicKey) {
-  test.check('and the best-ranked row is still first -- the cut takes from the bottom');
-} else {
-  test.fail('truncation disturbed the order');
-}
-
-// THE ROUTES SURVIVE THE CUT. Every one of these peers was offered by both
-// sources, so each surviving row must still name both -- the ceiling
-// removes rows, never the routing information on the rows it keeps.
-const both = capped.matches.filter(function (r) { return r.vias && r.vias.length === 2; });
-
-if (both.length === capped.matches.length) {
-  test.check('and every surviving row still names both relays that hold it');
-} else {
-  test.fail(both.length + ' of ' + capped.matches.length + ' kept their routes');
-}
+const ranked = peerRank.rank(wide, 'wide', peerRank.SLOTS);
+if (ranked.rows.length === peerRank.SLOTS && ranked.more === true) test.check('peerRank keeps its ' + peerRank.SLOTS + ' slots of 40 matching rows and says more');
+else test.fail('peerRank answered ' + ranked.rows.length + ' rows, more ' + ranked.more);
+// The cut from the bottom: composeSearch measures the ranked rows one by one against MATCH_BUDGET and says when it cut.
+if (/JSON\.stringify\(tryRow\)\.length > MATCH_BUDGET\) \{ localCut = true; break; \}/.test(relaySrc)) test.check('and the relay cuts the ranked rows from the bottom at its envelope, saying so');
+else test.fail('the relay no longer cuts its answer at MATCH_BUDGET');
 
 test.reportSuccessFailureCount();

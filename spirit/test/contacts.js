@@ -103,6 +103,28 @@ function pick(app, key) {
   m.el.fire('click', { target: { getAttribute: function () { return null; }, closest: function (s) { return s === '[data-key]' ? tr : null; } } });
 }
 
+// FIND SOMEONE ON THE NETWORK IS THE SHARED LIST (goal/G29.17): its search box, its Search button and its rows are the
+// list's. seenSearch types the words as a person would; seen reads the rows the list drew and the note under them.
+function seenList(app) {
+  const m = app.made.filter(function (x) { return x.el && x.el.id === 'contacts-seen-list'; }).pop();
+  const pre = m ? (/id="(listsearch-\d+-)text"/.exec(m.el.innerHTML) || [])[1] : '';
+  return { m: m, pre: pre || '' };
+}
+function seenSearch(app, q) {
+  const l = seenList(app);
+  if (!l.m) return;
+  app.doc.getElementById(l.pre + 'text').value = q;
+  l.m.el.fire('input', { target: { id: l.pre + 'text' } });
+}
+function seenAgain(app) {
+  const l = seenList(app);
+  if (l.m) l.m.el.fire('click', { target: { id: l.pre + 'search', getAttribute: function () { return null; } } });
+}
+function seen(app) {
+  const l = seenList(app);
+  return (l.pre ? app.doc.getElementById(l.pre + 'list').innerHTML : '') + app.doc.getElementById('contacts-seen-note').innerHTML;
+}
+
 // What a click hands a delegated listener: the element it landed on,
 // answering closest() for the attribute it carries.
 function target(attr, value, opts) {
@@ -126,7 +148,9 @@ function target(attr, value, opts) {
   });
   node.getAttribute = function (name) {
     const c = name.replace(/^data-/, '').replace(/-([a-z])/g, function (m, ch) { return ch.toUpperCase(); });
-    return node.dataset[c] === undefined ? '' : node.dataset[c];
+    // null for an attribute it does not carry, as a page answers (goal/G29.17: the shared list reads a press on a
+    // filter by its data-filter, and '' would make every press one).
+    return node.dataset[c] === undefined ? null : node.dataset[c];
   };
   return node;
 }
@@ -142,6 +166,8 @@ function mountApp(options) {
       people: opts.people || [],
       selfTail: opts.selfTail || null,
       matches: opts.matches || [],
+      // peer.search's shape since goal/G29.17: items, each label the row as json.
+      items: (opts.matches || []).map(function (m) { return { key: m.publicKey, label: JSON.stringify(m) }; }),
     };
     let status = 200;
     // THE VERB, since the contact namespace folded onto /api/spirit on
@@ -276,7 +302,7 @@ function mountApp(options) {
 
   const picker = loadPicker(doc, shellSpirit);
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-  new Function('spirit', 'document', 'window', 'fetch', src)(shellSpirit, doc, {}, fakeFetch);
+  new Function('spirit', 'document', 'window', 'fetch', src)(shellSpirit, doc, picker.win, fakeFetch);  // the page's window, the shared list on it (goal/G29.17)
 
   const container = fakeElement('container');
   // This app keeps one file of its own now — the stranger policy that
@@ -697,8 +723,9 @@ function listsTheBook() {
         if (n !== cols) wrong.push('table ' + (i + 1) + ': colspan ' + n + ' of ' + cols);
       });
     });
-    if (tables.length && !wrong.length) {
-      test.check('and every colspan spans all of its own table’s columns (' + tables.length + ' tables)');
+    // NO TABLE OF ITS OWN since goal/G29.17: the book and Find someone are the shared list, which draws its own table.
+    if (!wrong.length) {
+      test.check('and every colspan spans all of its own table’s columns (' + tables.length + ' tables of its own)');
     } else {
       test.fail(wrong.length ? wrong.join('; ') : 'no table found in the source');
     }
@@ -940,10 +967,9 @@ function distinctNamesCarryNoKey() {
   });
 
   return settle().then(function () {
-    el(app, 'contacts-seen-q').value = 'r';
-    el(app, 'contacts-seen-go').fire('click');
+    seenSearch(app, 'r');
     return settle().then(function () {
-      const out = el(app, 'contacts-seen-list').innerHTML;
+      const out = seen(app);
 
       if (/bert/.test(out) && /carol/.test(out)) {
         test.check('both are listed by name');
@@ -1001,12 +1027,11 @@ function foundPeopleShowWhetherTheyAreHome() {
   });
 
   return settle().then(function () {
-    el(app, 'contacts-seen-q').value = 'a';
-    el(app, 'contacts-seen-go').fire('click');
+    seenSearch(app, 'a');
 
     return settle().then(settle).then(function () {
       const ICON = spirit.core.const.ICON;
-      const before = el(app, 'contacts-seen-list').innerHTML;
+      const before = seen(app);
 
       // NOTHING KNOWN YET, so the node's own table is silent and the
       // relay's word is what shows. White for the one it called absent —
@@ -1026,10 +1051,11 @@ function foundPeopleShowWhetherTheyAreHome() {
       app.presence({ 'KEY-HERE': true, 'KEY-AWAY': false }, 'snapshot');
 
       return settle().then(function () {
-        el(app, 'contacts-seen-go').fire('click');
+        seenAgain(app);
         return settle().then(settle).then(function () {
-          const out = el(app, 'contacts-seen-list').innerHTML;
-          const rows = out.split('<tr>');
+          const out = seen(app);
+          // The shared list's rows carry attributes and mark the words typed (goal/G29.17): read without the marks.
+          const rows = out.replace(/<\/?mark>/g, '').split(/<tr[\s>]/);
 
           const rowFor = function (name) {
             return rows.filter(function (r) { return r.indexOf('>' + name) !== -1; })[0] || '';
@@ -1106,8 +1132,7 @@ function aFoundPersonCanBeAsked() {
       test.fail('posted before searching: ' + JSON.stringify(app.posts));
     }
 
-    el(app, 'contacts-seen-q').value = 'o';
-    el(app, 'contacts-seen-go').fire('click');
+    seenSearch(app, 'o');
 
     return settle().then(settle).then(function () {
       // A SEARCH ASKS NOBODY (2026-09-21). It used to ask every row it
@@ -1176,7 +1201,7 @@ function aFoundPersonCanBeAsked() {
 
       return null;
     }).then(settle).then(settle).then(function () {
-      const out = el(app, 'contacts-seen-list').innerHTML;
+      const out = seen(app);
 
       // WHAT THEY SAID IS UNDER THEIR NAME, once they have been asked.
       // This read "with nothing pressed" while the sweep existed.
@@ -1400,10 +1425,9 @@ function addsByHandle() {
   });
 
   return settle().then(function () {
-    el(app, 'contacts-seen-q').value = 'bert';
-    el(app, 'contacts-seen-go').fire('click');
+    seenSearch(app, 'bert');
     return settle().then(function () {
-      const out = el(app, 'contacts-seen-list').innerHTML;
+      const out = seen(app);
       // COUNTED BY THE BUTTON'S OWN CLASS. This counted `data-key=`,
       // which was unique to the Add button until the row became a control
       // again and took one as well (2026-09-21) — so two people read as
@@ -1435,7 +1459,8 @@ function addsByHandle() {
       // THE ENDING RIDES THE NAME, on the rows that collide, because a
       // node that will not answer leaves two identical rows and Add
       // writes one of them.
-      if (/bert <span class="muted"[^>]*>…mjowM=<\/span>/.test(out)) {
+      // Read without the marks the shared list puts on the words typed (goal/G29.17).
+      if (/bert <span class="muted"[^>]*>…mjowM=<\/span>/.test(out.replace(/<\/?mark>/g, ''))) {
         test.check('it rides beside the name instead, on the rows that need it');
       } else {
         test.fail('ending is not on the label: ' + out);

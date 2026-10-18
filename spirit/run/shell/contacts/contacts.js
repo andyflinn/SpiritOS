@@ -88,7 +88,7 @@ var CONTACTS_UNKNOWN_LABELS = {
 // search run, its ranking, its filters per state (★ my puppets, blocked, held) and its one request on the wire are the
 // list's; this app says what the status column shows and what a pick does.
 var contactsBook = null;
-// Search results — see contactsSearchSeen. Not a standing list: a
+// Search results — see contactsSeenSource. Not a standing list: a
 // thousand-member relay makes that unreadable and expensive both.
 var contactsSeen = [];
 var contactsSeenMore = false;
@@ -148,7 +148,7 @@ var contactsCards = Object.create(null);
 // row answers for itself.
 
 // Which names in the current answer are worn by more than one row. Built
-// in contactsPaintSeen, read one line later — a variable rather than a
+// in contactsSeenSource, read when a row is drawn — a variable rather than a
 // local only because the rows are mapped in an expression.
 var contactsSeenCollide = Object.create(null);
 
@@ -388,125 +388,42 @@ function contactsSearchBookFor(text, args) {
 // The relay matches over rows it already holds and answers with a capped
 // list. When a relay holds its partners’ members too (tier two) the same
 // request covers partner space and nothing here changes.
-function contactsSearchSeen() {
-  const input = document.getElementById('contacts-seen-q');
-  const q = ((input && input.value) || '').trim();
-  if (!q) { contactsSeenNote('type part of a name, or * for anyone'); return; }
-  contactsSeenNote('searching...');
+// ON THE SHARED LIST (goal/G29.17; the item's box: "The panel's own input, Search button and list go; the panel is the
+// shared list, as every other search in Contacts is"). The list holds the search box, the one request on the wire, the
+// ranking marks and the count; this app says where the rows come from (peer.search, answering {items, more} with each
+// row as its label), what a row shows and what a press does. Nothing is asked while no words are typed: a search with
+// no words would ask every relay for anyone.
+var contactsSeenList = null;
+function contactsSeenSource(text) {
+  var q = String(text || '').trim();
+  if (!q) { contactsSeen = []; contactsSeenSilent = []; contactsPaintSeenNote(); return Promise.resolve({ items: [], more: false }); }
   // A NEW QUESTION, SO NO OLD ANSWERS. The cards are about people and the
   // list is about a question; carrying them over would mean a bubble that
   // opens instantly on somebody whose node went down between searches,
   // which is precisely the fact this is here to report.
   contactsCards = Object.create(null);
-  return contactsAsk('peer.search', { q: q })
-    .then(function (data) {
-      contactsSeen = (data && data.matches) || [];
-      contactsSeenMore = !!(data && data.more);
-      contactsSeenSilent = (data && data.silent) || [];
-      // THE LIST, AND NOBODY ASKED. Names ride the search answer, so the
-      // list is complete as it is painted; a description is fetched when
-      // somebody presses a row and not before (see the row markup).
-      contactsPaintSeen();
-    })
-    .catch(function () {
-      contactsSeen = [];
-      contactsSeenNote('could not search');
-    });
-}
-
-function contactsSeenNote(text) {
-  const box = document.getElementById('contacts-seen-list');
-  if (box) box.innerHTML = '<div class="job-log-empty">' + contactsEscapeHtml(text) + '</div>';
-}
-function contactsPaintSeen() {
-  const box = document.getElementById('contacts-seen-list');
-  if (!box) return;
-
-  if (!contactsSeen.length) {
-    box.innerHTML = '<div class="job-log-empty">nobody found</div>' +
-      (contactsSeenSilent.length
-        ? '<div class="job-manifest-note">' + contactsSeenSilent.length +
-          ' relay(s) could not search: ' + contactsEscapeHtml(contactsSeenSilent.join(', ')) + '</div>'
-        : '');
-    return;
-  }
-
-  // THE ONE THING WORTH SAYING BEFORE A LIST OF NAMES. A label is not an
-  // identity (R1), so two answers can wear one name and something has to
-  // tell them apart.
-  //
-  // WHAT THAT SOMETHING IS HAS CHANGED. It used to be six characters of a
-  // key read down a telephone, and this sentence used to ask for them.
-  // Now a row can be OPENED and that node says who it is in its own words
-  // — which is the thing key endings were standing in for, and the reason
-  // UI_DESIGN_STYLE §6 only ever defended them as the answer when there
-  // was nothing better.
-  //
-  // THE ENDING IS STILL THE FALLBACK, and the sentence keeps it, because
-  // a node that does not answer has no words to offer and two rows are
-  // then still two rows.
-  //
-  // Shown only when there is a decision to make.
-  const ambiguous = contactsSeen.length > 1;
-
-  box.innerHTML =
-    (ambiguous
-      // THE SENTENCE FOLLOWS THE BEHAVIOUR (2026-09-21). It said each node
-      // "has been asked who it is and says so below its name", which was
-      // true while every row was asked on every search and is not any
-      // more. Copy that describes a thing the code stopped doing is worse
-      // than no copy: it tells somebody to look for an answer that is not
-      // coming.
-      ? '<div class="job-manifest-note">More than one answer. Press a row to ask ' +
-        'that node who it is — or ask them what their key ends with, which they ' +
-        'can read in fine print at the foot of their own screen.</div>'
-      : '') +
-    // NO "WHERE" COLUMN. Andy: "The user shouldn't worry about relays."
-    // The relay is still on the row, as `data-url`, because the confirm is
-    // checked against that roll and the contact keeps it as a route —
-    // but it is the node's business and not a column somebody reads.
-    //
-    // AND NO "KEY ENDS" COLUMN EITHER, now that a row can be opened.
-    //
-    //   Andy: "get rid of the keys column (that stuff has to go
-    //   everywhere)" — and, on this one: "word."
-    //
-    // This was the last place in the shell showing a key ending in a
-    // column of its own, and it was the one with an argument: picking the
-    // right key IS the decision here, so something had to distinguish two
-    // rows called john. Something does now, and it is better than six
-    // characters — the node's own sentence about itself, which is what
-    // this whole arc was for.
-    //
-    // WHAT SURVIVES is the ending on a row that COLLIDES, beside the name
-    // rather than in a column: a node that will not answer leaves two
-    // identical rows, and Add writes one of them. Same rule as the
-    // enrolment list on the Natter screen (ndTellApart) and the same one
-    // the book above already follows (contactsNameCell) — say it where
-    // there is a decision to make, and nowhere else.
-    // The dot gets a column of its own and that column has no heading —
-    // the same treatment it gets in the book above, and for the same
-    // reason: there is no word for it, and a mark sharing a cell with a
-    // name pushes every name a glyph to the right or not, depending on
-    // the row.
-    // FOUR CELLS: the dot, the name, Add, and what they said. Neither the
-    // dot nor Add gets a heading — there is no word for either, and the
-    // last one needs none because the cell under it is a whole sentence.
-    '<table class="job-table"><thead><tr>' +
-      '<th></th><th>Name</th><th></th><th></th>' +
-    '</tr></thead><tbody>' +
+  return contactsAsk('peer.search', { q: q }).then(function (data) {
+    var items = (data && Array.isArray(data.items)) ? data.items : [];
+    contactsSeen = items.map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
+    contactsSeenMore = !!(data && data.more);
+    contactsSeenSilent = (data && data.silent) || [];
     // Counted over the whole answer, not over the two rows either side:
     // a list is scanned, and a name is ambiguous if anything else in it
     // reads the same wherever that row happens to sort.
-    (function () {
-      contactsSeenCollide = Object.create(null);
-      contactsSeen.forEach(function (c) {
-        const l = String(c.publicLabel || '');
-        contactsSeenCollide[l] = (contactsSeenCollide[l] || 0) + 1;
-      });
-      return '';
-    })() +
-    contactsSeen.map(function (c) {
+    contactsSeenCollide = Object.create(null);
+    contactsSeen.forEach(function (c) {
+      var l = String(c.publicLabel || '');
+      contactsSeenCollide[l] = (contactsSeenCollide[l] || 0) + 1;
+    });
+    contactsPaintSeenNote();
+    return { items: items, more: contactsSeenMore };
+  });
+}
+
+// FOUR CELLS: the dot, the name, Add, and what they said. Neither the dot
+// nor Add gets a heading — there is no word for either, and the last one
+// needs none because the cell under it is a whole sentence.
+function contactsSeenCells(c, mark) {
       // ALREADY KNOWN IS SAID, NOT HIDDEN. A search is a question about
       // who is out there, and dropping the people you have would make
       // the answer depend on your book — which is how somebody ends up
@@ -537,11 +454,10 @@ function contactsPaintSeen() {
       // screenful of a person's own turns spent before they have asked
       // for anything.
       const alike = (contactsSeenCollide[String(c.publicLabel || '')] || 0) > 1;
-      return '<tr class="contacts-seen-row" data-key="' +
-          contactsEscapeHtml(c.publicKey) + '">' +
+      return '' +
         '<td title="' + contactsEscapeHtml(contactsSeenMarkTitle(c)) + '">' +
           contactsSeenMark(c) + '</td>' +
-        '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') +
+        '<td>' + (c.publicLabel ? mark(c.publicLabel) : '(no label)') +
           (alike
             ? ' <span class="muted" title="more than one answer wears this name">\u2026' +
               contactsEscapeHtml(String(c.tail || '')) + '</span>'
@@ -557,19 +473,49 @@ function contactsPaintSeen() {
             // something it was told.
             ' data-label="' + contactsEscapeHtml(c.publicLabel || '') + '"' +
             ' data-url="' + contactsEscapeHtml(c.relay) + '">Add</button>') + '</td>' +
-        contactsSaidCell(c) +
-      '</tr>';
-    }).join('') +
-    '</tbody></table>' +
+        contactsSaidCell(c);
+}
+
+// What the list does not say itself: more than one answer wearing a name, and the relays that could not search.
+function contactsPaintSeenNote() {
+  var box = document.getElementById('contacts-seen-note');
+  if (!box) return;
+  // THE ONE THING WORTH SAYING BEFORE A LIST OF NAMES. A label is not an
+  // identity (R1), so two answers can wear one name and something has to
+  // tell them apart.
+  //
+  // WHAT THAT SOMETHING IS HAS CHANGED. It used to be six characters of a
+  // key read down a telephone, and this sentence used to ask for them.
+  // Now a row can be OPENED and that node says who it is in its own words
+  // — which is the thing key endings were standing in for, and the reason
+  // UI_DESIGN_STYLE §6 only ever defended them as the answer when there
+  // was nothing better.
+  //
+  // THE ENDING IS STILL THE FALLBACK, and the sentence keeps it, because
+  // a node that does not answer has no words to offer and two rows are
+  // then still two rows.
+  //
+  // Shown only when there is a decision to make.
+  var ambiguous = contactsSeen.length > 1;
+  box.innerHTML =
+    (ambiguous
+      ? '<div class="job-manifest-note">More than one answer. Press a row to ask ' +
+        'that node who it is — or ask them what their key ends with, which they ' +
+        'can read in fine print at the foot of their own screen.</div>'
+      : '') +
     (contactsSeenSilent.length
       ? '<div class="job-manifest-note">' + contactsSeenSilent.length +
         ' relay(s) could not search — they may be running older code: ' +
         contactsEscapeHtml(contactsSeenSilent.join(', ')) + '</div>'
-      : '') +
-    (contactsSeenMore
-      ? '<div class="job-manifest-note">More matched than are shown — type more of the name.</div>'
       : '');
 }
+
+// A card asked or answered: the rows drawn again from what the list holds, nothing asked of the node.
+function contactsPaintSeen() {
+  if (contactsSeenList) contactsSeenList.redraw();
+  contactsPaintSeenNote();
+}
+
 // THE PACKET IS ADDRESSED TO THE BOX, NOT TO AN APP, and the empty app
 // id is how that is said: packet.js omits the field rather than writing
 // `app: ""`, and js/nodeCard.js answers only a packet that carries none.
@@ -993,11 +939,9 @@ spirit.shell.activateApp({
         // "the search box below should indicate that it searches the
         // "network"", beside the book's own box on top, which does not.
         '<summary id="contacts-seen-summary">Find someone on the network</summary>' +
-        '<div class="start-job-form">' +
-          '<input type="text" id="contacts-seen-q" placeholder="their name, or part of it">' +
-          '<button type="button" id="contacts-seen-go">Search</button>' +
-        '</div>' +
+        // The shared list (goal/G29.17), its own search box and count; the note below says what it does not.
         '<div id="contacts-seen-list"></div>' +
+        '<div id="contacts-seen-note"></div>' +
       '</details>' +
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-unknown-section">' +
         '<summary id="contacts-unknown-summary">People who write and are not in this book</summary>' +
@@ -1025,38 +969,52 @@ spirit.shell.activateApp({
 
     // Delegated: the list repaints whole, so a listener bound to a row
     // would go with the next paint.
-    document.getElementById('contacts-seen-go').addEventListener('click', contactsSearchSeen);
-    document.getElementById('contacts-seen-q').addEventListener('keydown', function (event) {
-      if (event.key === 'Enter') contactsSearchSeen();
+    // ADD FIRST. It sits inside the row, so the list's press, which asks for
+    // a description, would run on every Add — and the press that writes a
+    // contact must not also do something else. Bound before the list is
+    // made, so it runs first and stops the list hearing it.
+    var seenHost = document.getElementById('contacts-seen-list');
+    seenHost.addEventListener('click', function (event) {
+      var target = event.target;
+      var btn = target && target.closest ? target.closest('.contacts-seen-add') : null;
+      if (!btn) return;
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+      contactsSeenAdd(btn);
     });
-    document.getElementById('contacts-seen-list').addEventListener('click', function (event) {
-      const target = event.target;
-      if (!target || !target.closest) return;
-
-      // ADD FIRST. It sits inside the row, so a row handler that ran
-      // first would open a bubble every time somebody pressed Add — and
-      // the press that writes a contact must not also do something else.
-      // Add is the only thing on a result row that does anything now.
-      const btn = target.closest('.contacts-seen-add');
-      if (btn) { contactsSeenAdd(btn); return; }
-
+    contactsSeenList = window.spiritElements.shellCreateListSearch(seenHost, {
+      api: {
+        verb: function (name, body) {
+          var args = (body && body.ask && body.ask.node && body.ask.node['peer.search']) || {};
+          return contactsSeenSource(args.q).then(function (answer) {
+            return { status: 200, body: { items: answer.items, more: answer.more, total: answer.items.length } };
+          });
+        },
+        onPublished: function () { return function () {}; },
+      },
+      server: 'node',
+      verb: 'peer.search',
+      args: function (text) { return { q: text }; },
+      // Matched on the name, as the node and every relay match it (peerRank, goal/G29.17), so a row an earlier
+      // search brought stands only while it matches the words; * is anyone, as the node reads it.
+      matched: function (c) { return { name: String((c && c.publicLabel) || '') }; },
+      score: function () { return contactsSeenList && contactsSeenList.words() === '*' ? 1 : null; },
+      paint: contactsSeenCells,
+      head: ['', 'Name', '', ''],
       // THE ROW ITSELF ASKS FOR A DESCRIPTION (2026-09-21). One request,
       // for one person, because somebody wanted to know about them — and
-      // never fifty on the chance they might.
-      //
-      // Add is still tested first: it sits inside the row, and the press
-      // that writes a contact must not also spend a request.
-      const row = target.closest('.contacts-seen-row');
-      if (!row) return;
-      const key = row.getAttribute('data-key') || '';
-      // Already asked, already answered, or asking — pressing again would
-      // spend a turn on something already on screen.
-      if (!key || contactsCards[key]) return;
-      contactsAskCard(key);
-      // Painted now so the bubble says `asking them…` on the press rather
-      // than a round trip later; contactsAskCard paints again when the
-      // answer lands.
-      contactsPaintSeen();
+      // never fifty on the chance they might. Already asked, already
+      // answered, or asking: pressing again would spend a turn on
+      // something already on screen.
+      details: function (c) {
+        var key = String((c && c.publicKey) || '');
+        if (!key || contactsCards[key]) return;
+        contactsAskCard(key);
+        // Painted now so the bubble says `asking them…` on the press rather
+        // than a round trip later; contactsAskCard paints again when the
+        // answer lands.
+        contactsPaintSeen();
+      },
+      empty: 'Type part of a name, or * for anyone.',
     });
 
     // Confirming is what writes the contact. Delegated, because the rows

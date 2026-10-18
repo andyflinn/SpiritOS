@@ -100,7 +100,7 @@ function mountApp(people) {
     },
   };
   const picker = loadPicker(doc, shellSpirit);
-  new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, {}, fakeFetch);
+  new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, picker.win, fakeFetch);  // the page's window, the shared list on it (goal/G29.17)
   const api = {
     verb: function (name, args) {
       const payload = { verb: String(name) };

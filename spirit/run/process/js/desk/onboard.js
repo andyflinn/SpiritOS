@@ -99,7 +99,10 @@ async function main() {
   let found = [];
   for (let i = 0; i < SEARCH_TRIES; i++) {
     const s = await ask('peer.search', { q: deskLabel });
-    const matches = (s && s.body && Array.isArray(s.body.matches)) ? s.body.matches : [];
+    // The shared shape since goal/G29.17: items, each label the row as json.
+    const matches = ((s && s.body && Array.isArray(s.body.items)) ? s.body.items : []).map(function (i) {
+      try { return JSON.parse(i.label); } catch (e) { return null; }
+    });
     found = matches.filter(function (m) { return m && m.publicKey && String(m.publicLabel || '') === deskLabel; });
     if (found.length) break;
     await sleep(1000);

@@ -2188,7 +2188,8 @@ contactBook.syncMarks(ROOT_DIR);
     // `peer.candidates` STOOD BESIDE THIS and answered the same question
     // by downloading every roll on every relay and partner. Deleted
     // 2026-09-17 with no caller — see the tombstone in hub.js.
-    'peer.search': { request: { q: '' }, reply: { q: '', matches: [{}], more: false, asked: 0, remembered: 0, silent: [''] }, handler: function (rq, rs) {
+    // THE SHARED SHAPE (goal/G29.17): items [{key: public key, label: the row as json}], best match first.
+    'peer.search': { request: { q: '' }, reply: { q: '', items: [{ key: '', label: '' }], more: false, asked: 0, remembered: 0, silent: [''] }, handler: function (rq, rs) {
       hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter });
     } },
   }, { wire: true });

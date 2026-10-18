@@ -8,7 +8,8 @@ const invites = require('./invites');
 // same file (js/limits.js). A cap the client pre-checks must be the cap
 // the relay enforces, or the pre-check is a lie.
 const limits = require('./limits.js');
-const peerSearch = require('./peerSearch');
+// The peer search's one ranker, on the probability modules (goal/G29.17), shared with the node.
+const peerRank = require('./peerRank');
 const presence = require('./presence');
 const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
@@ -94,7 +95,7 @@ var SEARCH_PAGE = 1000;
 // WIRE_HEADROOM in BODY_MAX, so they must not be subtracted here.
 // Doing so once reserved room inside the packet for things that are
 // not in it.
-// SEARCH_SLOTS MOVED to peerSearch.SLOTS — the cap is part of the
+// SEARCH_SLOTS MOVED to peerRank.SLOTS (peerSearch.SLOTS until goal/G29.17) — the cap is part of the
 // ranking question, not the relay's, and a second copy here is how
 // the two would disagree about what a page is.
 // DEVICE ENROLMENT WAS REMOVED by goal/G16.2 (Andy: "device WILL be
@@ -978,7 +979,7 @@ function createRelay(rootDir, deps) {
   // A box that ships without one must not invent a caption for itself —
   // the list is the reader's to name until the owner says otherwise,
   // which is what natterDetails' own relayLabel has always done locally.
-// globMatches AND matchRank MOVED to js/peerSearch.js, 2026-09-16.
+// globMatches AND matchRank MOVED to js/peerSearch.js, 2026-09-16; the ranking is js/peerRank.js since goal/G29.17.
 //
 // They were the only judgement in this file about what a person meant by
 // a search, which is a question with no settled answer — Andy: "quality-
@@ -2132,7 +2133,7 @@ function createRelay(rootDir, deps) {
   //   amount of slots, but measure and truncate before returning results."
   //   Andy: "bucket.serialize should take a byte maximum."
   //
-  // `peerSearch.SLOTS` is a RANKING device -- how many candidates are worth
+  // `peerRank.SLOTS` (peerSearch.SLOTS until goal/G29.17) is a RANKING device -- how many candidates are worth
   // offering -- and it was also, by accident, the size limit: a row was a
   // fixed handful of short fields, so 32 of them always fitted. `vias`
   // ended that, and 32 slots is now anywhere from ~4 KB to ~26 KB.
@@ -2515,10 +2516,10 @@ function createRelay(rootDir, deps) {
         //   block separately tested and verified, and give it an
         //   independent evolution path."
         //
-        // So this maps each member into the plain row peerSearch takes and
+        // So this maps each member into the plain row the ranker (peerRank, goal/G29.17) takes and
         // does nothing else. Presence is resolved HERE, into a field,
         // because `presentNow` is a relay concept with a live socket
-        // behind it and peerSearch must stay drivable from a test with
+        // behind it and the ranker must stay drivable from a test with
         // nothing running.
         //
         // What this file is no longer entitled to an opinion about: what
@@ -2848,7 +2849,7 @@ function createRelay(rootDir, deps) {
   //
   // *This supersedes the cycle 3 walk, which paged the whole roll off disc
   // (`store.members.page`) and ranked the present first. Every row found
-  // here is present, so rows carry no `present` and peerSearch weighs no
+  // here is present, so rows carry no `present` and the ranking weighs no
   // presence signal.*
   //
   //   Andy: "the nature of all wire comms is asynchronous. And blocking
@@ -2858,9 +2859,11 @@ function createRelay(rootDir, deps) {
   // a snapshot of the keys: a member arriving mid-walk is simply not seen,
   // one leaving mid-walk is skipped when its row is gone.
   //
-  // `done(result)` gets peerSearch's result.
+  // RANKED ON THE PROBABILITY MODULES (goal/G29.17): the walk gathers the
+  // connected members' rows, and peerRank, the node's ranker too, keeps the
+  // best peerRank.SLOTS of them. `done(result)` gets {matches, more}.
   function walkRoll(q, done) {
-    var bucket = peerSearch.open(q, peerSearch.SLOTS);
+    var rows = [];
     var keys = Object.keys(activeRows);
     var at = 0;
     (function step() {
@@ -2868,14 +2871,18 @@ function createRelay(rootDir, deps) {
       for (; at < end; at += 1) {
         var p = activeRows[keys[at]];
         if (!p || !p.publicKey) continue;
-        bucket.offer({
+        rows.push({
           publicKey: p.publicKey,
           publicLabel: labelOf(p),
           claimedAt: p.claimedAt,
           via: null,
         });
       }
-      if (at >= keys.length) { done(bucket.result()); return; }
+      if (at >= keys.length) {
+        var ranked = peerRank.rank(rows, q, peerRank.SLOTS);
+        done({ matches: ranked.rows, more: ranked.more });
+        return;
+      }
       setImmediate(step);
     })();
   }
