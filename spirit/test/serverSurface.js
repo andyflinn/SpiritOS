@@ -568,6 +568,9 @@ freePort()
       // goal/G16.3. Posted with no key, which it refuses: reachable, and
       // the node's list is left as it was.
       ['POST', '/api/spirit', { verb: 'relay.remove' }],
+      // Posted with no label, which it refuses before anything else (hub.relayAdd): reachable, nothing listed, no
+      // network asked. It was claimed and never posted (red before goal/G29.20; found clearing that item).
+      ['POST', '/api/spirit', { verb: 'relay.add', url: '', label: '' }],
       ['POST', '/api/spirit', { verb: 'relay.get', key: 'https://nowhere.invalid' }],
       // cycle 11's R6. Reads what the node already wrote as reports
       // arrived; reaches no network, so unlike its neighbour it cannot
