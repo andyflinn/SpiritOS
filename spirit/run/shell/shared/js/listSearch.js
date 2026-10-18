@@ -201,13 +201,19 @@
       var searching = !!words();
       var top = 0;
       if (searching) rows.forEach(function (w) { w.rank = Math.max(0, rank(w)); if (w.rank > top) top = w.rank; });
+      // SNAPPED TO THE TOP (goal/G29.11; Andy: "whenever the search expression changes even by one character, the list
+      // ... should snap to the highest ranking (top) row"): after a change of the words the best row is current, until
+      // the user moves it.
+      if (snap && rows.length) currentKey = rows[0].key;
       function bar(w) {
         var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
-        return '<td class="list-rank" style="width:5em" title="' + esc(w.rank.toFixed(3)) + '">' +
+        // The number shown is the bar's own: 1.00 for the best row (Andy: "why would the top not be fucking 1.0?").
+        return '<td class="list-rank" style="width:5em" title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '">' +
           '<div style="width:' + pct + '%;margin-left:auto;height:0.6em;border-radius:3px;background:rgba(120,190,255,0.75)"></div></td>';
       }
       var list = el('list');
       if (list) {
+        if (snap) list.scrollTop = 0;
         list.innerHTML = rows.length
           // IN A POPUP THE TABLE TAKES ITS OWN WIDTH (goal/G29.8): a table at 100% gives a popup sized by its rows nothing
           // to measure; the popup's own max-width keeps it inside the page.
@@ -277,7 +283,8 @@
       return new Promise(function (resolve, reject) { lent.push({ verb: verb, args: args || {}, resolve: resolve, reject: reject }); pump(); });
     }
 
-    function typed() { setOpen(true); draw(); ask(); }
+    var snap = false;   // a change of the words snaps the list to its top until the user moves the current row
+    function typed() { snap = true; setOpen(true); draw(); ask(); }
     function rowOf(target) {
       var tr = target && typeof target.closest === 'function' ? target.closest('[data-key]') : null;
       var key = tr && typeof tr.getAttribute === 'function' ? tr.getAttribute('data-key') : (target && typeof target.getAttribute === 'function' ? target.getAttribute('data-key') : null);
@@ -312,6 +319,7 @@
     }
     function pressRow(w) {
       if (!w) return;
+      snap = false;
       currentKey = w.key;
       if (!dropdown) { var l = el('list'); if (l && typeof l.focus === 'function') l.focus(); }
       if (typeof o.fold === 'function' && o.fold(w.row, w.key) === true) { draw(); return; }
@@ -322,6 +330,7 @@
     // where they are the text cursor's), enter presses it, escape shuts an open dropdown.
     function move(to) {
       if (!shown.length) return;
+      snap = false;
       var at = shown.map(function (w) { return w.key; }).indexOf(currentKey);
       var next = to === 'top' ? 0 : to === 'bottom' ? shown.length - 1
         : Math.max(0, Math.min(shown.length - 1, (at === -1 ? (to > 0 ? -1 : shown.length) : at) + to));

@@ -110,7 +110,9 @@ test.startTest('goal/G29.9: the shared list\'s two modes, and what every list ge
   test.subHeading('4. keys and the current row');
   el.text.value = '';
   fire(box, 'input', el.text);
-  // The press on c above made c the current row; two ups from it reach the top.
+  // AMENDED BY goal/G29.11 (Andy, 2026-10-18: every change of the words snaps the list to its top row): the words just
+  // changed, so c is pressed again after them. The press on c makes c the current row; two ups from it reach the top.
+  press(box, 'c');
   const pressedCur = ((el.list.innerHTML.match(/<tr[^>]*current[^>]*>/) || [''])[0].match(/data-key="([^"]+)"/) || [])[1];
   fire(box, 'keydown', el.text, { key: 'ArrowUp' });
   fire(box, 'keydown', el.text, { key: 'ArrowUp' });
