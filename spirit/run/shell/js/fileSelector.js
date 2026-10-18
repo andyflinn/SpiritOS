@@ -17,10 +17,10 @@
 // A press on a file makes it the root's value (its path) and row, and fires one bubbling change on the root; a press on
 // a folder is never a pick: in the tree it opens or shuts the folder. root.words() answers the words typed.
 //
-// INSIDE THE FILES (goal/G29.11): a contents filter, off by default. On, the words go to the node too (fs.search with
-// contents: yes, the verb change Andy approved), and a file found by its text shows its first matching line, the words
-// marked; its row (root.row) carries line and text. Names and paths stay searched in the page; the node is asked only
-// while contents is on.
+// INSIDE THE FILES (goal/G29.11): words in: names | paths | contents, one of three. In contents the words go to the
+// node (fs.search with contents: yes, the verb change Andy approved) and the files rank by the node's contents score
+// alone; a file found so carries its first matched line in root.row. Names and paths stay searched in the page; the
+// node is asked only in contents.
 //
 // AFTER THE FIRST BUILD (the box): "No words: every folder starts folded; a press on a folder unfolds or folds it, in
 // the pane and in the dropdown alike, and is never a pick."; "Words typed: every match shows, nothing folded."; "In the
@@ -39,7 +39,7 @@
     var byPath = Object.create(null);   // path -> the tree's entry, for paint and pick
     var opened = Object.create(null);   // folder path -> true while its rows show; every folder starts folded
     var list = null;
-    var found = Object.create(null);    // path -> {line, text}: what the node found inside, while contents is on
+    var found = Object.create(null);    // path -> {score, line}: what the node found inside, in contents
 
     var root = document.createElement(isPane ? 'div' : 'span');
     root.className = 'file-selector ' + (isPane ? 'file-selector-face-pane' : 'file-selector-face-dropdown');
@@ -83,7 +83,7 @@
       }).map(function (f) {
         var r = { key: f.relativePath, name: f.name };
         var hit = found[f.relativePath];
-        if (hit && hit.line > 0) { r.line = hit.line; r.text = hit.text; }
+        if (hit) r.line = hit.line;
         return r;
       });
     }
@@ -101,7 +101,7 @@
           (((r && r.body) || {}).items || []).forEach(function (it) {
             var hit = null;
             try { hit = JSON.parse(it.label); } catch (e) { hit = null; }
-            if (hit && hit.line > 0) next[String(hit.path).replace(/\/$/, '')] = { line: Number(hit.line), text: String(hit.text || '') };
+            if (hit) next[String(hit.path).replace(/\/$/, '')] = { score: Number(hit.score) || 0, line: Number(hit.line) || 0 };
           });
           found = next;
           return { status: 200, body: { items: [], more: !!(r && r.body && r.body.more) } };
@@ -121,11 +121,7 @@
       var f = byPath[row.key] || { kind: 'file', name: row.name, relativePath: row.key };
       var m = typeof mark === 'function' ? mark : escapeHtml;
       var name;
-      if (words()) {
-        name = iconOf(f) + ' ' + m(f.relativePath);
-        // FOUND INSIDE: its first matching line under the path, the words marked.
-        if (row.line > 0) name += '<div class="file-selector-line" style="white-space:pre;opacity:0.85">' + row.line + ': ' + m(row.text) + '</div>';
-      }
+      if (words()) name = iconOf(f) + ' ' + m(f.relativePath);
       else {
         var depth = f.relativePath.split('/').length - 1;
         var indent = '';
@@ -145,20 +141,20 @@
       rows: rows,
       // WORDS IN: NAMES | PATHS (goal/G29.8; Andy, 2026-10-18: "the default for your filter should be filename only"):
       // names matches the words against the file name alone, paths against the whole path, folders included.
-      filters: [
-        { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'paths', word: 'paths' }] },
-        { name: 'contents', choices: [{ value: 'off', word: 'contents off' }, { value: 'on', word: 'contents on' }] },
-      ],
-      // A file found inside is matched by its line as well.
-      matched: function (row, values) {
-        var m = values.in === 'paths' ? { name: row.name, path: row.key } : { name: row.name };
-        if (row.line > 0) m.line = row.text;
-        return m;
+      // WORDS IN: NAMES | PATHS | CONTENTS, ONE OF THREE (goal/G29.8, goal/G29.11; Andy: "three mutually exclusive filter
+      // options, that makes most sense."): names the default, contents a find-in-files ranked by the node.
+      filters: [{ name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'paths', word: 'paths' }, { value: 'contents', word: 'contents' }] }],
+      matched: function (row, values) { return values.in === 'paths' ? { name: row.name, path: row.key } : { name: row.name }; },
+      // In contents a file ranks by the node's score alone; one the node did not find scores nothing.
+      score: function (row, values) {
+        if (values.in !== 'contents') return null;
+        var hit = found[row.key];
+        return hit ? hit.score : 0;
       },
       api: api,
       server: 'node',
       verb: 'fs.search',
-      args: function (text, values) { return { q: text, contents: values.contents === 'on' ? 'yes' : '' }; },
+      args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
       paint: paint,
       name: function (row) { return row.key; },
       // A FOLDER IS NEVER A PICK: in the tree its press opens or shuts it; in the list it does nothing.
@@ -170,7 +166,7 @@
       },
       pick: function (row) {
         root.value = row.key;
-        root.row = Object.assign({}, byPath[row.key] || row, row.line > 0 ? { line: row.line, text: row.text } : {});
+        root.row = Object.assign({}, byPath[row.key] || row, row.line > 0 ? { line: row.line } : {});
         root.dispatchEvent(new Event('change', { bubbles: true }));
       },
       empty: o.empty || 'No file matches.',

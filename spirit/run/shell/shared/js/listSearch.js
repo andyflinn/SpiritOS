@@ -15,6 +15,8 @@
 //   paint(row, mark),             one row's cells, html; mark(text) marks the words in a text
 //   matched(row, filters),        what of a row the words are matched against, by the filters' values; the row itself
 //                                 when not given (goal/G29.8: the file list's words in: names | paths)
+//   score(row, filters),          a row's match score from elsewhere, 0 to 1, in place of the words' match; null to
+//                                 match as usual (goal/G29.11: the file list's contents, scored by the node)
 //   rows(),                       the page's own rows, ranked here; with no words they stand in the order rows() gives
 //   fold(row, key),               a press on a row that folds it (a folder in a tree): true when it took the press
 //                                 itself, so it is no pick (goal/G29.8)
@@ -148,8 +150,13 @@
       }
       var text = words();
       if (!text) return f;
-      var against = typeof o.matched === 'function' ? o.matched(w.row, values) : w.row;
-      var m = typeof P.probabilityStringObjectMatch === 'function' ? Number(P.probabilityStringObjectMatch(text, against)) || 0 : 0;
+      var given = typeof o.score === 'function' ? o.score(w.row, values) : null;
+      var m;
+      if (given !== null && given !== undefined) m = Number(given) || 0;
+      else {
+        var against = typeof o.matched === 'function' ? o.matched(w.row, values) : w.row;
+        m = typeof P.probabilityStringObjectMatch === 'function' ? Number(P.probabilityStringObjectMatch(text, against)) || 0 : 0;
+      }
       return Math.max(0, Math.min(1, m)) * f;
     }
     // THE MATCHED PARTS MARKED (goal/G29.9): every word typed wrapped where it stands in the text, the rest escaped.
@@ -187,6 +194,18 @@
       bucket.sort(score);
       var rows = bucket.serialize().items;
       shown = rows;
+      // THE RANKING SHOWN (goal/G29.11; Andy, 2026-10-18: "one column that's only filled in search mode, where the rank
+      // of a file is displayed in a ... horizontal bar, where it shows as 1.0 (full) for the highest ranking row, and
+      // proportionally less for all others", then "the left-most column has a right adjusted weight bar, width 5em"):
+      // in search mode every list's left-most column is that bar; with no words it is gone.
+      var searching = !!words();
+      var top = 0;
+      if (searching) rows.forEach(function (w) { w.rank = Math.max(0, rank(w)); if (w.rank > top) top = w.rank; });
+      function bar(w) {
+        var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
+        return '<td class="list-rank" style="width:5em" title="' + esc(w.rank.toFixed(3)) + '">' +
+          '<div style="width:' + pct + '%;margin-left:auto;height:0.6em;border-radius:3px;background:rgba(120,190,255,0.75)"></div></td>';
+      }
       var list = el('list');
       if (list) {
         list.innerHTML = rows.length
@@ -196,7 +215,7 @@
             // THE CURRENT ROW, DRAWN BY THE LIST, THE SAME EVERYWHERE (goal/G29.9): a slightly brighter background.
             var cur = w.key === currentKey;
             return '<tr data-key="' + esc(w.key) + '"' + (cur ? ' class="current"' : '') + ' style="cursor:pointer' + (cur ? ';background:rgba(255,255,255,0.12)' : '') + '">' +
-              (typeof o.paint === 'function' ? o.paint(w.row, mark) : mark(JSON.stringify(w.row))) + '</tr>';
+              (searching ? bar(w) : '') + (typeof o.paint === 'function' ? o.paint(w.row, mark) : mark(JSON.stringify(w.row))) + '</tr>';
           }).join('') + '</tbody></table>'
           : '<div class="job-manifest-note">' + esc(o.empty || 'Nothing matches.') + '</div>';
       }

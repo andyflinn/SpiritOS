@@ -37,6 +37,7 @@ var path = require('path');
 var searchBucket = require('./searchBucket');
 var limits = require('./limits');
 var probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+var probabilityStringMatch = require('./probabilityStringMatch').probabilityStringMatch;
 var createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
 // THE CONTENTS SEARCH'S BOUND (goal/G29.11, the box: "the node also reads text files up to 1 MB (larger ones are found by
 // name only)"): a file bigger than this is never read.
@@ -86,31 +87,39 @@ function createNodeSearches(opts) {
   // is the whole tree in path order. A folder reads with its trailing slash, so a person can tell the two apart.
   // Bounded by bytes, never by rows: what does not fit says more.
   //
-  // INSIDE THE TEXT FILES TOO (goal/G29.11, the verb change approved by Andy): with contents: yes, every text file up to
-  // CONTENTS_MAX_BYTES is read and a file whose text holds the words is answered by its first matching line, as label
-  // {path, line, text}; a file or folder matched by its name only answers line 0 and no text. A word is found wherever
-  // it stands, partial words included, case ignored, as the page marks it. A file found both ways counts once, by the
-  // better of its two scores.
+  // INSIDE THE TEXT FILES, RANKED BY THEIR CONTENTS (goal/G29.11, the box; the verb change approved by Andy): with
+  // contents: yes, every text file up to CONTENTS_MAX_BYTES is read and the files are ranked by their contents score
+  // alone, never by their names: the three choices (names, paths, contents) mean different things and are not mixed.
+  // The words are one cluster: each line is scored against the whole expression by probabilityStringMatch, and a line
+  // holding any of the words (case ignored, partial words included) is a matched line. A file's score is the average
+  // quality of its matched lines x m / (m + 10), m the number of matched lines, never the file's length. Each file is
+  // answered with label {path, score, line}: the score and its first matched line.
+  var CONTENTS_K = 10;
   function isText(name) {
     var dot = String(name).lastIndexOf('.');
     var mime = String(mimeTypes[dot === -1 ? '' : String(name).slice(dot).toLowerCase()] || '');
     return mime.indexOf('text/') === 0 || /json|javascript/.test(mime);
   }
-  function firstLine(file, ws) {
+  function contentsScore(file, words, ws) {
     var full = path.join(rootDir, file.relativePath);
     var st = null;
     try { st = fs.statSync(full); } catch (e) { return null; }
     if (!st.isFile() || st.size > CONTENTS_MAX_BYTES) return null;
     var text = '';
     try { text = fs.readFileSync(full, 'utf8'); } catch (e) { return null; }
-    var lower = text.toLowerCase();
-    var at = -1;
-    ws.forEach(function (w) { var i = lower.indexOf(w); if (i !== -1 && (at === -1 || i < at)) at = i; });
-    if (at === -1) return null;
-    var start = text.lastIndexOf('\n', at - 1) + 1;
-    var end = text.indexOf('\n', at);
-    var line = text.slice(0, at).split('\n').length;
-    return { line: line, text: text.slice(start, end === -1 ? text.length : end).replace(/\r$/, '').slice(0, 300) };
+    var lines = text.split('\n');
+    var m = 0;
+    var quality = 0;
+    var first = 0;
+    for (var i = 0; i < lines.length; i += 1) {
+      var lower = lines[i].toLowerCase();
+      if (!ws.some(function (w) { return lower.indexOf(w) !== -1; })) continue;
+      m += 1;
+      quality += Number(probabilityStringMatch(words, lines[i].replace(/\r$/, ''))) || 0;
+      if (!first) first = i + 1;
+    }
+    if (!m) return null;
+    return { score: (quality / m) * (m / (m + CONTENTS_K)), line: first };
   }
   function fsSearch(body) {
     var words = String((body && body.q) == null ? '' : body.q).trim();
@@ -121,14 +130,16 @@ function createNodeSearches(opts) {
     for (var i = 0; i < files.length; i += 1) {
       var f = files[i];
       var p = f.relativePath + (f.kind === 'folder' ? '/' : '');
+      if (contents) {
+        var found = f.kind === 'file' && isText(f.name) ? contentsScore(f, words, ws) : null;
+        if (!found || !(found.score > 0)) continue;
+        bucket.seatFor(found.score * (1 - 1e-9) + 1e-9 / (1 + i), { key: p, label: JSON.stringify({ path: p, score: found.score, line: found.line }) });
+        continue;
+      }
       var score = words ? probabilityStringObjectMatch(words, { name: f.name, path: f.relativePath }) : 0;
-      var found = contents && f.kind === 'file' && isText(f.name) ? firstLine(f, ws) : null;
-      // Found inside: as sure as the line holds the words.
-      if (found) score = Math.max(score, probabilityStringObjectMatch(words, { line: found.text }));
       if (words && !(score > 0)) continue;
-      var label = contents ? JSON.stringify({ path: p, line: found ? found.line : 0, text: found ? found.text : '' }) : p;
       // A tie keeps the tree's order: the earlier entry a hair ahead.
-      bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (1 + i) : 1 / (1 + i), { key: p, label: label });
+      bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (1 + i) : 1 / (1 + i), { key: p, label: p });
     }
     var r = bucket.serialize(null, FS_SEARCH_ROOM);
     return { ok: true, status: 200, items: r.items, more: r.more };
