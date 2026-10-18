@@ -130,7 +130,7 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   const JOBS = new Map();
   [job('job_1', 'server', 'desk', 'running', 5, { module: 'process/js/desk' }),
     job('job_2', 'server', 'deskVerify', 'running', 9, { module: 'process/js/deskVerify' }),
-    job('job_3', 'process', 'imageStats', 'completed', 2, { module: 'process/js/imageStats' }),
+    job('job_3', 'process', 'imageStats', 'failed', 2, { module: 'process/js/imageStats' }),
     job('job_4', 'process', 'wordpressScanner', 'running', 7, { module: 'process/js/wordpressScanner' }),
     job('job_10', 'permanent', 'server-stats', 'running', 11)].forEach(function (j) { JOBS.set(j.id, j); });
   const sp = { core: { util: { escapeHtml: kernel.core.util.escapeHtml }, const: { ICON: kernel.core.const.ICON }, jobs: {} },
@@ -182,13 +182,16 @@ const hasBar = loadInto('shell/shared/js/progressBar.js');
   else test.fail(OWED + 'node shows ' + short(order()));
   const all = kindValue('all');
   if (all) jobsBox.fire('click', { target: target(all) });
-  const completed = kindValue('completed');
-  if (/running/.test(jstrip()) && completed) test.check('a toggle for each status the list holds: running, completed');
-  else test.fail(OWED + 'no status toggles in ' + short(jstrip()));
-  if (completed) jobsBox.fire('click', { target: target(completed) });
-  if (order().indexOf('job_3') === -1 && order().length === 4) test.check('completed turned off leaves the completed job out');
-  else test.fail(OWED + 'with completed off the rows are ' + short(order()));
-  if (completed) jobsBox.fire('click', { target: target(completed) });
+  // THE STATUS TOGGLES WENT UNDER goal/G29.16 ("the last filter in the jobs search should be "failed""): a transient
+  // job that ends is removed, so what is listed runs, or failed.
+  const OWED16 = 'OWED by goal/G29.16: ';
+  if (!/data-filter="status"/.test(jstrip())) test.check('no status toggles: what is listed runs, or failed');
+  else test.fail(OWED16 + 'the status toggles are still drawn: ' + short(jstrip()));
+  const failedKind = kindValue('failed');
+  if (failedKind) jobsBox.fire('click', { target: target(failedKind) });
+  if (failedKind && order().join() === 'job_3') test.check('failed, the last filter, shows the failed job alone');
+  else test.fail(OWED16 + 'failed shows ' + short(failedKind ? order() : 'no failed filter'));
+  if (all) jobsBox.fire('click', { target: target(all) });
 
   const text = p.byId[jpre + 'text'];
   if (text) { text.value = 'wordpress'; jobsBox.fire('input', { target: { id: jpre + 'text' } }); }
