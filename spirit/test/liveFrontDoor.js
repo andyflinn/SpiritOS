@@ -223,7 +223,9 @@ async function run() {
     // A BOOLEAN ON EVERY ROW. Not truthy, not absent: a bseenRowser that
     // cannot tell "absent" from "nobody said" draws the wrong dot, and
     // those are the two states the mark exists to keep apart.
-    if (seenRows.length && seenRows.every(function (r) { return typeof r.present === 'boolean'; })) {
+    // A ROW A RELAY ANSWERED, that is: a row memory filled in (fromMemory, R39) says what was last known, and null
+    // when nobody has said (0019) — which is not this check's question.
+    if (seenRows.length && seenRows.filter(function (r) { return !r.fromMemory; }).every(function (r) { return typeof r.present === 'boolean'; })) {
       test.check('and every row says whether the relay sees that peer connected');
     } else {
       test.fail('presence missing from a row: ' + JSON.stringify(seenRows.slice(0, 2)));
@@ -474,19 +476,15 @@ async function run() {
     // Its card, asked on its one door (goal/G22.6 closed GET /api/relay/key).
     const said = await require('./relayDoor').relayKeyOf('http://127.0.0.1:' + relayPort);
     const relayKey = said && said.relayPublicKey;
-    let pins = {};
-    try {
-      pins = JSON.parse(fs.readFileSync(
-        path.join(homeOf(bravo), 'relay-state', 'relayKeys.json'), 'utf8'
-      ));
-    } catch (e) { pins = {}; }
-    const pinnedKeys = Object.keys(pins).map(function (u) { return pins[u].publicKey; });
+    // THE PIN LIVES IN node.db since goal/G19.15 (the relays table, keyed by relay key); relayKeys.json was its file
+    // before, and reading that file read nothing. Asked through relayKeys, the one reader.
+    let pinnedKey = '';
+    try { pinnedKey = require('../run/js/relayKeys').pinned(homeOf(bravo), 'http://127.0.0.1:' + relayPort) || ''; } catch (e) { pinnedKey = ''; }
 
-    if (relayKey && pinnedKeys.indexOf(relayKey) !== -1) {
+    if (relayKey && pinnedKey === relayKey) {
       test.check("bravo pinned the relay's own key by holding a stream to it, before any offer could arrive");
     } else {
-      test.fail('pins: ' + JSON.stringify(Object.keys(pins)) +
-        ' relayKey=' + String(relayKey).slice(-12));
+      test.fail('pinned: ' + String(pinnedKey).slice(-12) + ' relayKey=' + String(relayKey).slice(-12));
     }
 
   } finally {

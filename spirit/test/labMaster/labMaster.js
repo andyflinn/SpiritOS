@@ -778,8 +778,13 @@ function handleCreate(body) {
   if (port === WORK_PORT) return { status: 403, error: '65432 is the work node' };
   if (portTaken(port)) return { status: 409, error: 'port in use in table' };
 
+  // A NEW FIXTURE STARTS EMPTY (goal/G29.17, found digging liveFrontDoor's reds). ensureClone copies a fixture OVER its
+  // old home, which is right for a home that must exist and wrong for a node being created: a delete whose wipe failed
+  // (Windows still holding the dying node's node.db) left lw-alfa's home from 2026-10-15, and every create since booted
+  // on it, its node.db pinning a relay key three runs old, so its stream to the new lab relay never opened. A created
+  // fixture is wiped first, as Recycle wipes; a home that cannot be wiped is an error, never a quiet reuse.
   let home;
-  try { home = ensureClone(id, kind); }
+  try { home = kind === FIXTURE_KIND ? copyTrackedSpirit(id) : ensureClone(id, kind); }
   catch (err) { return { status: 500, error: String(err.message || err) }; }
 
 
