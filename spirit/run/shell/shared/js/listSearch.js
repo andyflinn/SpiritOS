@@ -208,11 +208,11 @@
       function bar(w) {
         var pct = top > 0 ? Math.round((w.rank / top) * 1000) / 10 : 0;
         // The number shown is the bar's own: 1.00 for the best row (Andy: "why would the top not be fucking 1.0?").
-        // A FIXED 5EM BOX THE BAR SITS IN (Andy, 2026-10-18: "score bars STILL NOT SEEN"): at his window width rows that
-        // never wrap squeezed the table and an empty cell gave its width up, every bar 0 px. The box holds it at 5em.
+        // A FIXED 3EM BOX THE BAR SITS IN (Andy, 2026-10-18: "score bars STILL NOT SEEN"): at his window width rows that
+        // never wrap squeezed the table and an empty cell gave its width up, every bar 0 px. The box holds it at 3em (Andy: "i'm sure 3em is wide enough").
         // The bar itself is a solid border in the marks' yellow, 0.8em tall, never a background colour alone.
-        return '<td class="list-rank" style="width:5em;min-width:5em" title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '">' +
-          '<div style="width:5em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid rgb(255,230,0)"></div></div></td>';
+        return '<td class="list-rank" style="width:3em;min-width:3em" title="' + esc((top > 0 ? w.rank / top : 0).toFixed(2)) + '">' +
+          '<div style="width:3em"><div style="width:' + pct + '%;margin-left:auto;height:0;border-top:0.8em solid rgb(255,230,0)"></div></div></td>';
       }
       var list = el('list');
       if (list) {
