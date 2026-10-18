@@ -94,7 +94,8 @@
         var depth = f.relativePath.split('/').length - 1;
         var indent = '';
         for (var i = 0; i < depth; i++) indent += '<span class="file-selector-indent" style="display:inline-block;width:1em"></span>';
-        name = indent + iconOf(f) + ' ' + m(f.name) + (f.kind === 'folder' && !opened[f.relativePath] ? ' …' : '');
+        // No mark after a folded folder: an ellipsis there reads as a name cut short (Andy, 2026-10-18).
+        name = indent + iconOf(f) + ' ' + m(f.name);
       }
       // A NAME IS NEVER CUT SHORT (goal/G29.8): no label-cell cap; the popup is as wide as its rows, up to the page.
       return '<td style="white-space:nowrap">' + name + '</td>' +
