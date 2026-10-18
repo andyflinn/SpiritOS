@@ -326,6 +326,23 @@ const TREE = [
     if (/\bmedia\b/.test(fieldText) && !/choose/.test(fieldText)) test.check('the field shows the current row while the keys move it: media');
     else test.fail(OWED + 'after two downs the field reads ' + short(fieldText));
 
+    // Andy, 2026-10-18: "The home and End keys don't work in the dropdown." The open dropdown's focus is its search box.
+    const keyedRows = function () { return keysOf(keyed); };
+    fire(hostOf(keyed), 'keydown', { key: 'End', target: partOf(keyed, 'text') || {} });
+    await settle();
+    const atEnd = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec((partOf(keyed, 'list') || { innerHTML: '' }).innerHTML) || [])[1];
+    fire(hostOf(keyed), 'keydown', { key: 'Home', target: partOf(keyed, 'text') || {} });
+    await settle();
+    const atHome = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec((partOf(keyed, 'list') || { innerHTML: '' }).innerHTML) || [])[1];
+    const kr = keyedRows();
+    if (atEnd === kr[kr.length - 1] && atHome === kr[0]) test.check('in an open dropdown End and Home move the current row to the bottom and the top, from the search box');
+    else test.fail(OWED + 'End made ' + short(atEnd) + ' current, Home ' + short(atHome) + '; rows ' + short(kr));
+    // "is there a reason the dropdown is constrained wo that narrow width? ... can it be the required with to display
+    // everything, constrained by page width?"
+    const popTag = (/<div[^>]*id="listsearch-\d+-popup"[^>]*>/.exec((hostOf(keyed) || { innerHTML: '' }).innerHTML) || [''])[0];
+    if (/width:\s*max-content/.test(popTag) && /max-width:\s*(calc\()?[0-9.]+vw/.test(popTag)) test.check('the popup takes the width its rows need, up to the page width');
+    else test.fail(OWED + 'the popup is drawn ' + short(popTag));
+
     // "it maybe neccessary for file dropdowns to have a hidden mime-type filter that an app can configure"
     const typed = m.make({ face: 'pane', accept: ['.js'], files: function () { return TREE; } });
     await settle();
