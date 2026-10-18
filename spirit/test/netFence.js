@@ -1,0 +1,109 @@
+'use strict';
+
+// spirit/test/netFence.js
+// goal/G29.20: net.fetch refuses this machine; agents may use it. Red on today's tree; claude-windows writes it and
+// builds it (one agent). The item's box (v2):
+//   - net.fetch refuses a target on this machine: a loopback address (127.0.0.0/8, ::1, localhost) or an unspecified
+//     one (0.0.0.0, ::), which reach this machine when dialled. Refused by name, nothing sent. Checked on the address
+//     the name resolves to, at connect, so a name that resolves to loopback is refused too.
+//   - Link-local and the LAN stay open (a node binds 127.0.0.1 only, so no other box's node can be reached).
+//   - Andy reversed goal/G19.9 and replaced it: "fetch will not be able to reach ports on this machine, and agents may
+//     use it." So js/net/fetch.json and js/net/AGENTS.md describe it, deskAgent lists net among its tool namespaces
+//     again, and netNoAgentTool.js (G19.9's suite) is retired.
+// NAMED HERE where the box names none: js/netFence.js holds the rule, isThisMachine(address) and lookup(hostname,
+// options, callback), a dns.lookup that refuses this machine; a refusal answers 403 with code 'this-machine'.
+// rule/11: through testSupport only; its own node on its own port; never 65432.
+
+const fs = require('fs');
+const os = require('os');
+const net = require('net');
+const http = require('http');
+const path = require('path');
+const { spawn } = require('child_process');
+const test = require('./testSupport.js');
+const { relayRequest } = require('../run/js/relayRequest.js');
+const { setupRelayFakes } = require('./setupRelayFakes');
+
+const OWED = 'OWED by goal/G29.20: ';
+const RUN = path.join(__dirname, '..', 'run');
+const code = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); } catch (e) { return ''; } };
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function freePort() {
+  return new Promise(function (resolve) {
+    const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
+  });
+}
+
+test.startTest('goal/G29.20: net.fetch refuses this machine, and agents may use it');
+
+(async function () {
+  test.subHeading('1. the rule: which addresses are this machine');
+  let fence = null;
+  try { fence = require('../run/js/netFence.js'); } catch (e) { fence = null; }
+  if (fence && typeof fence.isThisMachine === 'function' && typeof fence.lookup === 'function') test.check('js/netFence.js holds isThisMachine and lookup');
+  else test.fail(OWED + 'no js/netFence.js with isThisMachine and lookup');
+  const mine = ['127.0.0.1', '127.8.9.10', '::1', '0.0.0.0', '::', '::ffff:127.0.0.1', 'localhost'];
+  const notMine = ['8.8.8.8', '192.168.1.5', '10.0.0.1', '169.254.169.254', '2001:db8::1'];
+  const is = function (a) { try { return fence.isThisMachine(a); } catch (e) { return null; } };
+  const wrongMine = fence ? mine.filter(function (a) { return is(a) !== true; }) : mine;
+  const wrongNot = fence ? notMine.filter(function (a) { return is(a) !== false; }) : notMine;
+  if (fence && !wrongMine.length) test.check('this machine: ' + mine.join(', '));
+  else test.fail(OWED + 'not counted as this machine: ' + wrongMine.join(', '));
+  if (fence && !wrongNot.length) test.check('not this machine, so open: ' + notMine.join(', ') + ' (the LAN and link-local stay open)');
+  else test.fail(OWED + 'wrongly fenced: ' + wrongNot.join(', '));
+  const looked = fence ? await new Promise(function (resolve) {
+    try { fence.lookup('localhost', {}, function (err) { resolve(err || null); }); } catch (e) { resolve(e); }
+  }) : null;
+  if (looked && looked.code === 'this-machine') test.check('lookup refuses a name that resolves to this machine (localhost), code this-machine');
+  else test.fail(OWED + 'lookup of localhost answered ' + JSON.stringify(looked && { code: looked.code, message: looked.message }));
+
+  test.subHeading('2. net.fetch on a running node refuses this machine, and sends nothing');
+  let hit = 0;
+  const bait = http.createServer(function (req, res) { hit += 1; res.end('reached'); });
+  await new Promise(function (r) { bait.listen(0, '127.0.0.1', r); });
+  const baitPort = bait.address().port;
+  const root = setupRelayFakes('netFence').andy;
+  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  const port = await freePort();
+  const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
+  const post = function (body) {
+    return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
+      let j = null; try { j = JSON.parse(r.text); } catch (e) { j = null; }
+      return { status: r.status, body: j, text: r.text };
+    }, function (e) { return { status: 0, error: String(e && e.message || e) }; });
+  };
+  try {
+    let up = false;
+    for (let i = 0; i < 60 && !up; i++) { await sleep(200); up = (await post({ verb: 'node.info' })).status > 0; }
+    if (!up) test.fail('the node did not boot');
+    const fetch = function (url) { return post({ verb: 'net.fetch', url: url, method: 'GET', headers: {}, body: '', timeoutMs: 3000 }); };
+    for (const url of ['http://127.0.0.1:' + baitPort + '/', 'http://localhost:' + baitPort + '/', 'http://[::1]:' + baitPort + '/', 'http://0.0.0.0:' + baitPort + '/', 'http://127.0.0.1:' + port + '/api/spirit']) {
+      const r = await fetch(url);
+      if (r.status === 403 && r.body && r.body.code === 'this-machine') test.check(url + ' refused 403, this-machine');
+      else test.fail(OWED + url + ' answered ' + r.status + ' ' + String(r.text || r.error).slice(0, 120));
+    }
+    if (hit === 0) test.check('and nothing reached the port on this machine');
+    else test.fail(OWED + 'the bait on this machine was reached ' + hit + ' time(s)');
+  } finally {
+    try { node.kill(); } catch (e) { /* gone */ }
+    bait.close();
+  }
+
+  test.subHeading('3. agents may use it');
+  const netDir = path.join(RUN, 'js', 'net');
+  let described = null;
+  try { described = JSON.parse(fs.readFileSync(path.join(netDir, 'fetch.json'), 'utf8')); } catch (e) { described = null; }
+  if (described && typeof described.description === 'string' && /this machine/i.test(described.description)) test.check('js/net/fetch.json describes net.fetch, saying it cannot reach this machine');
+  else test.fail(OWED + 'js/net/fetch.json missing, or not saying it cannot reach this machine');
+  if (fs.existsSync(path.join(netDir, 'AGENTS.md'))) test.check('js/net/AGENTS.md opens the namespace to agents');
+  else test.fail(OWED + 'no js/net/AGENTS.md');
+  const agent = code('process/js/deskAgent/deskAgent.js');
+  const namespaces = (/const TOOL_NAMESPACES = \[([^\]]*)\]/.exec(agent) || [])[1] || '';
+  if (/'net'/.test(namespaces)) test.check('deskAgent lists net among its tool namespaces: ' + namespaces.trim());
+  else test.fail(OWED + 'deskAgent\'s TOOL_NAMESPACES are ' + namespaces.trim());
+  if (!fs.existsSync(path.join(__dirname, 'netNoAgentTool.js'))) test.check('goal/G19.9\'s netNoAgentTool.js is retired with the ruling it held');
+  else test.fail(OWED + 'spirit/test/netNoAgentTool.js still asserts the reversed ruling');
+})().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
+  test.reportSuccessFailureCount();
+  process.exit(0);
+});
