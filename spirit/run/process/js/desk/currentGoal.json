@@ -1,5 +1,5 @@
 {
- "change": 71589,
+ "change": 71592,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -48,7 +48,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -6343,10 +6343,9 @@
    "id": "goal/G29.17",
    "title": "peerSearch",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
