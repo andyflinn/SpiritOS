@@ -1,5 +1,5 @@
 {
- "change": 70501,
+ "change": 70504,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -2792,10 +2792,9 @@
    "id": "goal/G29.9",
    "title": "the shared list's dropdown mode, contactSelector on it",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
