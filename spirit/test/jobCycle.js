@@ -166,10 +166,11 @@ const cycleOf = function (r) { return appsOf(r).filter(function (a) { return a.j
   // ── 7. deskVerify runs its queue as jobs ─────────────────────────────
   test.subHeading('7. deskVerify: each run of its queue is one job, its suites counted');
   const dv = read('process/js/deskVerify/deskVerify.js');
-  const drain = (/async function drainQueue\(\)[\s\S]*?\n\}\n/.exec(dv) || [''])[0];
+  // A checkout may end its lines with \r\n (his tree on Windows does), so the bodies are cut either way.
+  const drain = (/async function drainQueue\(\)[\s\S]*?\r?\n\}\r?\n/.exec(dv) || [''])[0];
   if (/\.core\.jobs\.start\(/.test(drain) && /\.core\.jobs\.end\(/.test(drain)) test.check('drainQueue starts a job for each run and ends it however the run ended');
   else test.fail(OWED + 'drainQueue does not run start/end');
-  const sayFn = (/function say\(o\) \{[\s\S]*?\n\}\n/.exec(dv) || [''])[0];
+  const sayFn = (/function say\(o\) \{[\s\S]*?\r?\n\}\r?\n/.exec(dv) || [''])[0];
   if (/\.core\.jobs\.progress\(/.test(sayFn)) test.check('what it says while running carries the suite count as progress');
   else test.fail(OWED + 'say() reports no progress');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
