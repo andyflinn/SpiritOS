@@ -145,8 +145,18 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   const barTag = (/<div[^>]*border-top[^>]*>/.exec(ranked[0].first) || [''])[0];
   // Andy, 2026-10-18: "does it really have to be THAT loud a color.... something a little more subtle?" The viewer's
   // soft gold for its matches (rgba(255, 213, 79, 0.45), index.html .text-view-match), still a solid bar.
-  if (/border-top:\s*0\.8em\s+solid\s+rgba\(255,\s*213,\s*79,\s*0\.45\)/.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid border in the viewer\'s soft gold, 0.8em tall, no background-only drawing');
+  // Then: "i do like to have the same color for the text highlights as the score bar has, try a pastel blue (in the
+  // color scheme?)". One colour, --spirit-match, defined once in index.html, for the bar, the list's marks and the
+  // viewer's marks.
+  if (/border-top:\s*0\.8em\s+solid\s+var\(--spirit-match/.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid border in the one match colour, var(--spirit-match), 0.8em tall');
   else test.fail(OWED + 'the bar is drawn ' + short(barTag));
+  const idx = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  const token = (/--spirit-match:\s*([^;]+);/.exec(idx) || [])[1] || '';
+  const rgb = (/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/.exec(token) || []).slice(1).map(Number);
+  if (rgb.length === 3 && rgb[2] > rgb[0] && rgb[2] > rgb[1] && rgb[2] >= 200 && rgb[0] >= 100) test.check('--spirit-match is a pastel blue: ' + token.trim());
+  else test.fail(OWED + 'index.html defines --spirit-match as ' + short(token));
+  if (/(^|[\s,}])mark\s*\{[^}]*background:\s*var\(--spirit-match\)/.test(idx) && /\.text-view-match\s*\{[^}]*background:\s*var\(--spirit-match\)/.test(idx)) test.check('the list\'s marks and the viewer\'s marks take the same colour');
+  else test.fail(OWED + 'mark and .text-view-match do not both use var(--spirit-match)');
 
   // Andy, 2026-10-18: "whenever the search expression changes even by one character, the list (in dropdowns) should
   // snap to the highest ranking (top) row", then "in the dropdown, the list REALLY should snap to the top with every
