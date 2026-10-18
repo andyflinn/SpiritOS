@@ -29,8 +29,8 @@ const kernel = require('../run/js/kernel.js');
 
 const OWED = 'OWED by goal/G29.7: ';
 const RUN = path.join(__dirname, '..', 'run');
-const ALICE = 'MCowBQYDK2VwAyEAgrantsAliceAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=';
-const BOB = 'MCowBQYDK2VwAyEAgrantsBobBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=';
+const ALICE = 'MCowBQYDK2VwAyEAgrantsKeyOneQQQQQQQQQQQQQQQQQQQQQQQQQQQQ=';
+const BOB = 'MCowBQYDK2VwAyEAgrantsKeyTwoZZZZZZZZZZZZZZZZZZZZZZZZZZZZ=';
 
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
 function settle() { return new Promise(function (r) { setTimeout(r, 15); }); }

@@ -110,6 +110,9 @@
           var items = ((answer && answer.items) || []).filter(function (i) { return i && i.key; }).map(function (i) {
             return { key: String(i.key), label: JSON.stringify(parseRow(i)) };
           });
+          // AN "ALL" ROW (goal/G29.7): options.all names a first row with value '', for a selector that filters (Grants:
+          // unchosen means every peer).
+          if (options.all) items.unshift({ key: '', label: JSON.stringify({ key: '', name: String(options.all) }) });
           return { status: 200, body: { items: items, more: !!(answer && answer.more), total: Number(answer && answer.total) || items.length } };
         });
       },

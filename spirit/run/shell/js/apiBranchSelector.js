@@ -23,46 +23,51 @@
   //   selection in the appServer-dropdown", and "the verb dropdown will have
   //   an option ( ** all verbs **)".
   //
-  // The appServer selector (G1.8) inside it; the verbs of the chosen server
-  // from spiritApiTreeIndex.verbs, refilled when the server changes. root.value
-  // is the PATH a grant takes: 'app' when all verbs is chosen, 'app.verb'
-  // otherwise, '' until both are chosen. It fires a bubbling change once set.
+  // ON THE SHARED LIST (goal/G29.7): both halves are dropdowns of shellCreateListSearch, never native selects; the
+  // verb half shows only once a server is chosen (Andy: "[chose a verb, displayed only when a server is chosen ]").
+  // root.server is the chosen server ('' for none), root.verb the chosen verb ('' when none or all verbs is chosen),
+  // and root.value the PATH a grant takes: 'app' when no single verb is chosen, 'app.verb' when one is, '' with no
+  // server. options.all names the server half's first row (unchosen: every server). It fires a bubbling change.
   function createApiBranchSelector(options) {
     options = options || {};
+    var ALL_VERBS = '*';
     var root = document.createElement('div');
     root.className = 'api-branch-selector' + (options.className ? ' ' + options.className : '');
-    var servers = window.spiritElements.createAppServerSelector({ placeholder: options.serverPlaceholder });
-    var verbSelect = document.createElement('select');
+    var servers = window.spiritElements.createAppServerSelector({ placeholder: options.serverPlaceholder, all: options.all });
+    var verbBox = document.createElement('span');
+    verbBox.hidden = true;
     root.appendChild(servers);
-    root.appendChild(verbSelect);
+    root.appendChild(verbBox);
+    root.server = '';
+    root.verb = '';
     root.value = '';
-    var ALL = '** all verbs **';
 
-    function paintVerbs() {
-      var server = servers.value;
-      var verbs = server ? window.spiritApiTreeIndex.verbs(servers.tree, server) : [];
-      verbSelect.innerHTML = server
-        ? '<option value="">choose a verb…</option><option value="*">' + escapeHtml('( ' + ALL + ' )') + '</option>' +
-          verbs.map(function (v) { return '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>'; }).join('')
-        : '<option value="">choose a server first</option>';
+    function verbRows() {
+      var verbs = root.server ? window.spiritApiTreeIndex.verbs(servers.tree, root.server) : [];
+      return [{ key: ALL_VERBS, name: 'all verbs' }].concat(verbs.map(function (v) { return { key: v, name: v }; }));
     }
+    var verbList = window.spiritElements.shellCreateListSearch(verbBox, {
+      mode: 'dropdown',
+      placeholder: 'all verbs',
+      rows: verbRows,
+      paint: function (row, mark) { return '<td style="white-space:nowrap">' + (typeof mark === 'function' ? mark(row.name) : escapeHtml(row.name)) + '</td>'; },
+      name: function (row) { return row.name; },
+      pick: function (row) { root.verb = row.key === ALL_VERBS ? '' : row.key; settle(); },
+      empty: 'No verb matches.',
+    });
     function settle() {
-      var server = servers.value;
-      var verb = verbSelect.value;
-      root.value = !server || !verb ? '' : verb === '*' ? server : server + '.' + verb;
+      root.value = !root.server ? '' : root.verb ? root.server + '.' + root.verb : root.server;
       root.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    // The inner elements' changes stop here; the root speaks for the whole.
     servers.addEventListener('change', function (event) {
-      if (event.stopPropagation) event.stopPropagation();
-      paintVerbs();
+      if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+      if (servers.value === root.server) return;
+      root.server = servers.value || '';
+      root.verb = '';
+      verbBox.hidden = !root.server;
+      verbList.redraw();
       settle();
     });
-    verbSelect.addEventListener('change', function (event) {
-      if (event.stopPropagation) event.stopPropagation();
-      settle();
-    });
-    paintVerbs();
     return root;
   }
 

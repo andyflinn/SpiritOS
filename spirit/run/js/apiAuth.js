@@ -16,7 +16,11 @@
 
 const nodeStore = require('./nodeStore');
 const contacts = require('./contacts');
-const searchBucket = require('./searchBucket');
+const limits = require('./limits');
+const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+// What one search answer may hold: the plaintext room, less its own frame.
+const SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ items: [], more: false }), 'utf8');
 const keyTail = require('./kernel.js').keyTail;
 
 const PATH = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_.-]+)?$/;
@@ -58,20 +62,24 @@ function createApiAuth(opts) {
       return { allowed: store().has(a.key, a.path) };
     },
 
+    // THE NEW SEARCH (goal/G29.7; Andy: "we're changing EVERYTHING to the new search one-by-one"): words ranked by
+    // the probability modules over the peer's name and the words of the path, never the key, best first; no words is
+    // every grant in the table's order. Each grant answers {key: key + newline + path, label: {name, key, path}},
+    // bounded in bytes as every answer is.
     search: function (a) {
       if (typeof a.text !== 'string') return refuse('bad-request');
-      const bucket = searchBucket.createSearch({
-        query: a.text,
-        getLabelStringFromIncomingObject: function (pair) { return pair.match; },
-        extractKeyAndLabelFromRow: function (pair) { return { key: pair.key, label: pair.label }; },
-      });
-      // Matched on the label and the words of the path, never on the key.
+      const words = a.text.trim();
+      const bucket = createProbabilityBucket(Infinity);
+      let i = 0;
       for (const r of store().all()) {
-        const rec = { key: r.key, label: r.label, path: r.path };
-        if (!bucket.offer({ key: r.key + '\n' + r.path, label: JSON.stringify(rec), match: r.label + ' ' + r.path.split('.').join(' ') })) break;
+        i += 1;
+        const score = words ? probabilityStringObjectMatch(words, { name: r.label, path: r.path.split('.').join(' ') }) : 0;
+        if (words && !(score > 0)) continue;
+        bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (1 + i) : 1 / (1 + i),
+          { key: r.key + '\n' + r.path, label: JSON.stringify({ name: r.label, key: r.key, path: r.path }) });
       }
-      const res = bucket.getResult();
-      return { records: res.items.map(function (i) { return JSON.parse(i.label); }), more: !!res.more };
+      const res = bucket.serialize(null, SEARCH_ROOM);
+      return { ok: true, items: res.items, more: !!res.more };
     },
 
     peer: function (a) {

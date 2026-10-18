@@ -1860,7 +1860,7 @@ contactBook.syncMarks(ROOT_DIR);
   const GRANT = { key: '', label: '', path: '' };
   introSpector.claim(loopbackVerbs, 'jobs', 'server.js', {
     'jobs.authQuery': { request: { key: '', path: '' }, reply: { allowed: false }, handler: authVerb(apiAuth.query) },
-    'jobs.authSearch': { request: { text: '' }, reply: { records: [GRANT], more: false }, handler: authVerb(apiAuth.search) },
+    'jobs.authSearch': { request: { text: '' }, reply: LIST, handler: authVerb(apiAuth.search) },
     'jobs.authPeer': { request: { key: '' }, reply: { records: [GRANT] }, handler: authVerb(apiAuth.peer) },
     'jobs.authGrant': { request: { key: '', path: '' }, reply: GRANT, handler: authVerb(apiAuth.grant) },
     'jobs.authRevoke': { request: { key: '', path: '' }, reply: { revoked: true }, handler: authVerb(apiAuth.revoke) },

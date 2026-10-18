@@ -7,22 +7,25 @@
 //   issue or revoke grand rows for that key.", "so we defer pruning to be triggered by the owners
 //   auth app, who can report deprecated branches", and on the name: "YES to your name".
 //
-// Four jobs, nothing else:
-//   - GIVE: a contact (createContactSelector) and a path (createApiBranchSelector), granted
-//     through jobs.authGrant; a server's DEPENDENCIES bundle offered beside it, because an owner
-//     granting an app should see what that app's peer users actually need.
-//   - SEE: a key's grants (jobs.authPeer), found by label or path word (jobs.authSearch).
-//   - REVOKE: each row's own button, jobs.authRevoke. Nothing here writes node.db; every change
-//     goes through the loopback verbs apiAuth.js answers.
-//   - REPORT: a grant whose path spiritApiTreeIndex.serves says is gone (the server suspended or
-//     the verb dropped) is MARKED deprecated, never pruned — pruning is the owner's press, one
-//     revoke at a time (Andy's ruling above).
-
+// ON THE SHARED LIST (goal/G29.7). Andy, 2026-10-18: "one line of selectors at the top, no stacked stuff...
+// [whose access] [choose a server] [chose a verb, displayed only when a server is chosen ] [grant-button] below it a
+// pretty looking list like all other searches", and "the selected ones filter the list with their selection, if not
+// selected, the list show "all (peers,servers,verbs)", the search bar below that line searches within those set
+// filters." So:
+//   - THE LINE: the contact selector, the api-branch selector (server, then verb) and Grant, on one line. Each chosen
+//     selector narrows the table; one left unchosen means all. Grant grants what the line names: the peer the server,
+//     one verb or all of them; a server that names a bundle (its DEPENDENCIES) offers Grant the bundle beside it.
+//   - THE TABLE: every grant, held by the page (jobs.authSearch with no words) and ranked by the shared list within
+//     the line's filters: the peer's name, the path, deprecated when spiritApiTreeIndex.serves says no server serves
+//     it today (a REPORT: pruning is the owner's press, one Revoke at a time), and each row's own Revoke.
+// Nothing here writes node.db; every change goes through the loopback verbs apiAuth.js answers.
 var grApi = null;
 var grTree = null;
-
+var grGrants = [];      // every grant, {name, key, path}, as jobs.authSearch answered with no words
+var grList = null;      // the shared list over them
+var grContact = null;
+var grBranch = null;
 function grEsc(text) { return grApi.escapeHtml(String(text == null ? '' : text)); }
-
 // The owner's api tree, once per paint: what serves() judges against.
 function grLoadTree() {
   return grApi.verb('jobs.api', { ask: 'api' }).then(function (a) {
@@ -30,52 +33,49 @@ function grLoadTree() {
     return grTree;
   });
 }
-
 function grSay(text, isError) {
   var out = document.getElementById('gr-said');
   if (!out) return;
   out.textContent = text;
   out.className = isError ? 'job-refusal' : 'job-manifest-note';
 }
-
 function grRefusal(body) {
   return (body && (body.error || body.code)) || 'refused';
 }
-
-// One key's rows, painted with the deprecation report beside each path.
-function grPaintRows(rows) {
-  var list = document.getElementById('gr-rows');
-  if (!list) return;
-  if (!rows.length) {
-    list.innerHTML = '<div class="job-log-empty">no grants to show</div>';
-    return;
-  }
-  list.innerHTML = rows.map(function (r, i) {
-    var gone = grTree && !window.spiritApiTreeIndex.serves(grTree, r.path);
-    return '<div class="card gr-row" data-i="' + i + '">' +
-      '<span class="gr-label">' + grEsc(r.label) + '</span> ' +
-      '<span class="gr-path">' + grEsc(r.path) + '</span>' +
+// Every grant, held by the page; the shared list ranks them.
+function grLoadGrants() {
+  return grApi.verb('jobs.authSearch', { text: '' }).then(function (a) {
+    if (a.status !== 200) { grSay('the grants could not be read: ' + grRefusal(a.body), true); return; }
+    grGrants = ((a.body && a.body.items) || []).map(function (i) {
+      try { return JSON.parse(i.label); } catch (e) { return null; }
+    }).filter(Boolean);
+    if (a.body && a.body.more) grSay('more grants than fit one answer: the table shows the first');
+    if (grList) grList.redraw();
+  });
+}
+// THE LINE'S FILTERS: a chosen peer, server or verb narrows the table; unchosen means all.
+function grRows() {
+  var peer = grContact ? grContact.value : '';
+  var server = grBranch ? grBranch.server : '';
+  var verb = grBranch ? grBranch.verb : '';
+  return grGrants.filter(function (g) {
+    if (peer && g.key !== peer) return false;
+    var dot = g.path.indexOf('.');
+    var app = dot === -1 ? g.path : g.path.slice(0, dot);
+    if (server && app !== server) return false;
+    if (verb && g.path !== app + '.' + verb) return false;
+    return true;
+  }).map(function (g) { return { key: g.key + '\n' + g.path, name: g.name, path: g.path, peer: g.key }; });
+}
+function grPaint(row, mark) {
+  var m = typeof mark === 'function' ? mark : grEsc;
+  var gone = grTree && !window.spiritApiTreeIndex.serves(grTree, row.path);
+  return '<td style="white-space:nowrap">' + m(row.name) + '</td>' +
+    '<td style="white-space:nowrap">' + m(row.path) +
       // Deprecated is a REPORT: the server is away or the verb is gone,
       // and the grant waits for the owner, intact (suspend/repair, G1.4).
-      (gone ? ' <span class="gr-gone" title="no server serves this path today">deprecated</span>' : '') +
-      ' <button type="button" class="gr-revoke" data-key="' + grEsc(r.key) + '" data-path="' + grEsc(r.path) + '">Revoke</button>' +
-      '</div>';
-  }).join('');
-}
-
-function grShowPeer(key) {
-  return grApi.verb('jobs.authPeer', { key: key }).then(function (a) {
-    if (a.status !== 200) { grSay('could not read the grants: ' + grRefusal(a.body), true); return; }
-    grPaintRows((a.body && a.body.records) || []);
-  });
-}
-
-function grSearch(text) {
-  return grApi.verb('jobs.authSearch', { text: String(text || '') }).then(function (a) {
-    if (a.status !== 200) { grSay('search refused: ' + grRefusal(a.body), true); return; }
-    grPaintRows((a.body && a.body.records) || []);
-    if (a.body && a.body.more) grSay('more rows than fit one answer — narrow the search');
-  });
+      (gone ? ' <span class="gr-gone" title="no server serves this path today">deprecated</span>' : '') + '</td>' +
+    '<td style="text-align:right"><button type="button" class="gr-revoke" data-peer="' + grEsc(row.peer) + '" data-path="' + grEsc(row.path) + '">Revoke</button></td>';
 }
 
 // The chosen server's bundle: its DEPENDENCIES, read through jobs.api,
@@ -89,36 +89,29 @@ function grLoadBundle(server) {
   grApi.verb('jobs.api', { ask: ask }).then(function (a) {
     var paths = (a.body && a.body.paths) || [];
     slot.innerHTML = paths.length
-      ? '<div class="job-manifest-note">' + grEsc(server) + ' says a peer user needs: ' +
-        paths.map(grEsc).join(', ') +
-        ' <button type="button" id="gr-grant-bundle">Grant the bundle</button></div>'
+      ? '<button type="button" id="gr-grant-bundle" title="' + grEsc(server) + ' says a peer user needs: ' + grEsc(paths.join(', ')) + '">Grant the bundle</button>'
       : '';
     var all = document.getElementById('gr-grant-bundle');
     if (all) all.addEventListener('click', function () { grGrantMany(paths); });
   });
 }
 
-function grPickedKey() {
-  var pick = document.querySelector('#gr-contact-slot .contact-selector');
-  return (pick && pick.value) || '';
-}
-
 function grGrant(key, path) {
-  if (!key) { grSay('pick a contact first', true); return Promise.resolve(); }
-  if (!path) { grSay('pick a server or a verb first', true); return Promise.resolve(); }
+  if (!key) { grSay('pick whose access first', true); return Promise.resolve(); }
+  if (!path) { grSay('pick a server first', true); return Promise.resolve(); }
   return grApi.verb('jobs.authGrant', { key: key, path: path }).then(function (a) {
     if (a.status !== 200) { grSay('grant refused: ' + grRefusal(a.body), true); return; }
     grSay('granted ' + ((a.body && a.body.label) || '') + ' ' + path);
-    return grShowPeer(key);
+    return grLoadGrants();
   });
 }
 
 function grGrantMany(paths) {
-  var key = grPickedKey();
-  if (!key) { grSay('pick a contact first', true); return; }
+  var key = grContact ? grContact.value : '';
+  if (!key) { grSay('pick whose access first', true); return; }
   var left = paths.slice();
   (function next() {
-    if (!left.length) { grShowPeer(key); return; }
+    if (!left.length) return;
     grGrant(key, left.shift()).then(next);
   })();
 }
@@ -127,8 +120,7 @@ function grRevoke(key, path) {
   return grApi.verb('jobs.authRevoke', { key: key, path: path }).then(function (a) {
     if (a.status !== 200) { grSay('revoke refused: ' + grRefusal(a.body), true); return; }
     grSay('revoked ' + path);
-    var searched = document.getElementById('gr-search');
-    return grPickedKey() ? grShowPeer(grPickedKey()) : grSearch(searched ? searched.value : '');
+    return grLoadGrants();
   });
 }
 
@@ -140,44 +132,49 @@ spirit.shell.activateApp({
         '<div class="label">Who may call which api</div>' +
         '<div class="job-manifest-note">A member calls only what you have granted: a whole server, ' +
           'or one verb. Denial is the absence of a row, so an empty table means only you.</div>' +
-        '<div class="start-job-form card">' +
-          '<label class="field-label">Contact<span id="gr-contact-slot"></span></label>' +
-          '<label class="field-label">Path<span id="gr-branch-slot"></span></label>' +
-          '<button type="button" id="gr-grant">Grant</button>' +
-          '<span id="gr-bundle"></span>' +
-        '</div>' +
-        '<div class="start-job-form card">' +
-          '<label class="field-label grow">Find grants by label or path word' +
-            '<input type="text" id="gr-search" placeholder="alice, desk, items…"></label>' +
-        '</div>' +
+        // THE LINE, nothing stacked: [whose access] [server] [verb] [Grant] [Grant the bundle].
+        '<div id="gr-line" style="display:flex;flex-wrap:wrap;align-items:center;gap:1em;margin-top:1em"></div>' +
         '<div id="gr-said" class="job-manifest-note"></div>' +
-        '<div id="gr-rows"></div>' +
+        '<div id="gr-list"></div>' +
       '</div>';
 
-    var contact = api.ui.elements.createContactSelector({ placeholder: 'whose access…' });
-    document.getElementById('gr-contact-slot').appendChild(contact);
-    var branch = api.ui.elements.createApiBranchSelector({});
-    document.getElementById('gr-branch-slot').appendChild(branch);
+    var line = document.getElementById('gr-line');
+    line.style.display = 'flex';
+    grContact = api.ui.elements.createContactSelector({ placeholder: 'whose access…', all: 'all peers' });
+    grBranch = api.ui.elements.createApiBranchSelector({ all: 'all servers' });
+    var grant = document.createElement('button');
+    grant.type = 'button';
+    grant.id = 'gr-grant';
+    grant.textContent = 'Grant';
+    var bundle = document.createElement('span');
+    bundle.id = 'gr-bundle';
+    line.appendChild(grContact);
+    line.appendChild(grBranch);
+    line.appendChild(grant);
+    line.appendChild(bundle);
 
-    contact.addEventListener('change', function () {
-      if (contact.value) grShowPeer(contact.value);
+    var listHost = document.createElement('div');
+    document.getElementById('gr-list').appendChild(listHost);
+    // The shared list lives on window.spiritElements, as Fallout reaches it; the shell hands apps the selectors.
+    grList = window.spiritElements.shellCreateListSearch(listHost, {
+      mode: 'pane',
+      rows: grRows,
+      paint: grPaint,
+      matched: function (row) { return { name: row.name, path: row.path.split('.').join(' ') }; },
+      empty: 'No grant matches.',
     });
-    branch.addEventListener('change', function () {
-      // The server half of the path names whose bundle to offer.
-      var server = branch.value ? branch.value.split('.')[0] : '';
-      grLoadBundle(server);
+
+    grContact.addEventListener('change', function () { grList.redraw(); });
+    grBranch.addEventListener('change', function () {
+      grList.redraw();
+      grLoadBundle(grBranch.server);
     });
-    document.getElementById('gr-grant').addEventListener('click', function () {
-      grGrant(grPickedKey(), branch.value);
-    });
-    document.getElementById('gr-search').addEventListener('input', function (event) {
-      grSearch(event.target.value);
-    });
-    document.getElementById('gr-rows').addEventListener('click', function (event) {
+    grant.addEventListener('click', function () { grGrant(grContact.value, grBranch.value); });
+    listHost.addEventListener('click', function (event) {
       var b = event.target && event.target.closest ? event.target.closest('.gr-revoke') : null;
-      if (b) grRevoke(b.getAttribute('data-key'), b.getAttribute('data-path'));
+      if (b) grRevoke(b.getAttribute('data-peer'), b.getAttribute('data-path'));
     });
 
-    grLoadTree().then(function () { return grSearch(''); });
+    grLoadTree().then(grLoadGrants);
   },
 });

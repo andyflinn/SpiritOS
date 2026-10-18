@@ -7,7 +7,8 @@
 // The shapes, from the item's box @ version 20:
 //   A record: { key, label, path }; path is 'app' or 'app.verb', matched exactly.
 //   jobs.authQuery   { key, path }   -> { allowed: true|false }
-//   jobs.authSearch  { text }        -> { records, more }   (text matches a label or a word of a path, never the key)
+//   jobs.authSearch  { text }        -> { items, more }     (goal/G29.7: ranked over the name and the words of the path,
+//                                                            never the key; each label {name, key, path})
 //   jobs.authPeer    { key }         -> { records }         (at most apps + verbs)
 //   jobs.authGrant   { key, path }   -> the record          (label from his contacts, contacts.byPublicKey(...).myLabel;
 //                                                             kernel.keyTail when they know no name — G1.11)
@@ -132,9 +133,11 @@ function down() {
   const s1 = (await ask('jobs.authSearch', { text: 'alice' })).body;
   const s2 = (await ask('jobs.authSearch', { text: 'chat' })).body;
   const s3 = (await ask('jobs.authSearch', { text: KEYB.slice(20, 32) })).body;
-  const hasA = (s1.records || []).some(function (r) { return r.key === KEYA && r.path === 'desk'; });
-  const hasB = (s2.records || []).some(function (r) { return r.key === KEYB && r.path === 'desk.chat.add'; });
-  if (hasA && typeof s1.more === 'boolean' && hasB && Array.isArray(s3.records) && s3.records.length === 0) {
+  // AMENDED BY goal/G29.7: jobs.authSearch is on the new search, answering items whose label is {name, key, path}.
+  const grantsOf = function (s) { return ((s && s.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } }); };
+  const hasA = grantsOf(s1).some(function (r) { return r.key === KEYA && r.path === 'desk'; });
+  const hasB = grantsOf(s2).some(function (r) { return r.key === KEYB && r.path === 'desk.chat.add'; });
+  if (hasA && typeof s1.more === 'boolean' && hasB && Array.isArray(s3.items) && s3.items.length === 0) {
     test.check('search finds alice by label and KEYB\'s row by the path word chat; a cut of the key itself finds nothing');
   } else test.fail(OWED + 'search answered ' + JSON.stringify({ s1: s1, s2: s2, s3: s3 }).slice(0, 300));
 

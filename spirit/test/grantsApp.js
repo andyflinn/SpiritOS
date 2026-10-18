@@ -57,7 +57,9 @@ const parts = {
   'picks a path': /createApiBranchSelector/,
   'grants': /jobs\.authGrant/,
   'revokes': /jobs\.authRevoke/,
-  'shows a key\'s grants': /jobs\.authPeer/,
+  // AMENDED BY goal/G29.7: the page holds every grant and the line's filters narrow it, so a key's grants are the
+  // table filtered by that peer, read through jobs.authSearch (below), not jobs.authPeer.
+  'shows a key\'s grants': /grContact\.value/,
   'finds by label': /jobs\.authSearch/,
   'reads a bundle': /DEPENDENCIES/,
   'marks deprecated grants': /spiritApiTreeIndex\.serves/,

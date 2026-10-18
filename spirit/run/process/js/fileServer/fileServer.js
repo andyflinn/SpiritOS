@@ -401,7 +401,9 @@ function moveGrants(from, to) {
   const ask = function (verb, args) { return require('../../../js/kernel.js').core.ask(verb, args, base).then(function (r) { return (r && r.body) || {}; }); };
   const fromPath = 'fileServer.' + from, toPath = 'fileServer.' + to;
   return ask('jobs.authSearch', { text: from }).then(function (found) {
-    const rows = (found.records || []).filter(function (r) { return r.path === fromPath; });
+    // jobs.authSearch answers the new search's list (goal/G29.7): each grant's label is {name, key, path}.
+    const rows = (found.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } })
+      .filter(function (r) { return r.path === fromPath; });
     return rows.reduce(function (p, r) {
       return p.then(function () { return ask('jobs.authGrant', { key: r.key, path: toPath }); })
         .then(function () { return ask('jobs.authRevoke', { key: r.key, path: fromPath }); });

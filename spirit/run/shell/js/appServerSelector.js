@@ -22,6 +22,9 @@
   //   spiritApiTreeIndex.servers(tree): sorted, a server that did not
   //   answer left out (apiTreeIndex.js decides; this paints).
   //
+  // ON THE SHARED LIST (goal/G29.7): a dropdown of shellCreateListSearch, as the contact selector is, never a native
+  // select. options.all names a first row with value '' (Grants: unchosen means every server).
+  //
   // root.value is the chosen server's name; root.tree the 'api' answer
   // it was painted from, so the api-branch selector (G1.9) can read one
   // server's verbs without asking again. The root fires a bubbling
@@ -30,27 +33,35 @@
     options = options || {};
     var root = document.createElement('div');
     root.className = 'app-server-selector' + (options.className ? ' ' + options.className : '');
-    var select = document.createElement('select');
-    root.appendChild(select);
+    var host = document.createElement('span');
+    root.appendChild(host);
     root.value = '';
     root.tree = null;
 
-    function paint(names) {
-      select.innerHTML = '<option value="">' + escapeHtml(options.placeholder || 'choose a server…') + '</option>' +
-        names.map(function (name) { return '<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>'; }).join('');
+    function rows() {
+      var names = root.tree ? window.spiritApiTreeIndex.servers(root.tree) : [];
+      var out = names.map(function (name) { return { key: name, name: name }; });
+      if (options.all) out.unshift({ key: '', name: String(options.all) });
+      return out;
     }
-    paint([]);
-    select.addEventListener('change', function (event) {
-      // The root speaks for the element: its own change, once value is set.
-      if (event.stopPropagation) event.stopPropagation();
-      root.value = select.value || '';
-      root.dispatchEvent(new Event('change', { bubbles: true }));
+    var list = window.spiritElements.shellCreateListSearch(host, {
+      mode: 'dropdown',
+      placeholder: options.placeholder || 'choose a server…',
+      rows: rows,
+      paint: function (row, mark) { return '<td style="white-space:nowrap">' + (typeof mark === 'function' ? mark(row.name) : escapeHtml(row.name)) + '</td>'; },
+      name: function (row) { return row.name; },
+      pick: function (row) {
+        root.value = row.key || '';
+        root.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      empty: 'No server matches.',
     });
 
     spirit.core.ask('jobs.api', { ask: 'api' }).then(function (a) {
       root.tree = (a && a.body) || null;
-      paint(window.spiritApiTreeIndex.servers(root.tree));
-    }, function () { /* the empty choice stays; the node says why elsewhere */ });
+      list.redraw();
+      root.dispatchEvent(new Event('tree', { bubbles: false }));
+    }, function () { /* the list stays empty; the node says why elsewhere */ });
     return root;
   }
 
