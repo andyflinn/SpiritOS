@@ -1,5 +1,5 @@
 {
- "change": 70055,
+ "change": 70057,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -47,13 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [],
    "live": [
     "claude-windows",
     "ollama agent node"
    ],
    "working": [
+    "claude-windows",
     "ollama agent node"
    ],
    "agents": {
@@ -2807,10 +2808,9 @@
    "id": "goal/G29.10",
    "title": "Quick desk fixes before we continue.",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
