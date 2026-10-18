@@ -175,6 +175,38 @@ function page() {
   const inlineOf = function (el) { return String((el && (el.style.display || el.getAttribute('style'))) || ''); };
   if (/inline-flex|^flex/.test(inlineOf(branchRoot)) && /inline/.test(inlineOf(serverRoot))) test.check('server and verb stand side by side: the branch selector is an inline row, the server half inline');
   else test.fail(OWED + 'the branch selector displays ' + short(inlineOf(branchRoot)) + ', its server half ' + short(inlineOf(serverRoot)));
+  // Andy, 2026-10-18: "Ah, you smuggled them in like that was a peer-label or a server-label.... Those selection option
+  // need to be very different from the rest of the options otherwise they're not recognized....". The shared list
+  // draws the none-row itself (options.all): pinned first whatever is typed, its own class list-all, set apart.
+  const p2 = page();
+  const w2 = {};
+  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
+    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(w2, undefined);
+  });
+  new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(p2.doc, w2);
+  const box2 = p2.node('span');
+  const picks = [];
+  const dd = w2.spiritElements.shellCreateListSearch(box2, { mode: 'dropdown', all: 'all servers',
+    rows: function () { return [{ key: 'desk', name: 'desk' }, { key: 'allServersTool', name: 'all servers tool' }]; },
+    paint: function (row, mark) { return '<td>' + mark(row.name) + '</td>'; }, pick: function (row, key) { picks.push(key); } });
+  const pre2 = (/id="(listsearch-\d+-)field"/.exec(box2.innerHTML) || [])[1];
+  if (pre2) box2.dispatchEvent({ type: 'click', target: p2.byId[pre2 + 'field'] });
+  const t2 = pre2 && p2.byId[pre2 + 'text'];
+  if (t2) { t2.value = 'all servers'; box2.dispatchEvent({ type: 'input', target: t2 }); }
+  await settle();
+  const ddList = pre2 && p2.byId[pre2 + 'list'] ? p2.byId[pre2 + 'list'].innerHTML : '';
+  const firstTr = (/<tr[^>]*>/.exec(ddList) || [''])[0];
+  if (/class="[^"]*\blist-all\b/.test(firstTr) && /data-key=""/.test(firstTr)) test.check('the none-row is the shared list\'s own: first, class list-all, even with words that rank a real row named like it');
+  else test.fail(OWED + 'the first row is ' + short(firstTr) + ' in ' + short(ddList.slice(0, 200)));
+  if (/font-style:\s*italic/.test(ddList.slice(0, 600)) && /border-bottom/.test(ddList.slice(0, 600))) test.check('it is set apart: italic, a line under it');
+  else test.fail(OWED + 'the none-row is drawn ' + short(ddList.slice(0, 300)));
+  box2.dispatchEvent({ type: 'click', target: { id: '', getAttribute: function (k) { return k === 'data-key' ? '' : null; }, closest: function () { return null; } } });
+  await settle();
+  if (picks[picks.length - 1] === '' && typeof dd.value === 'string' && dd.value === '') test.check('a press on it picks the empty value');
+  else test.fail(OWED + 'a press on the none-row picked ' + short(picks));
+  const selSrc = code(path.join(RUN, 'shell', 'js', 'appServerSelector.js')) + code(path.join(RUN, 'shell', 'js', 'contactSelector.js'));
+  if (!/unshift\(\s*\{\s*key:\s*''/.test(selSrc)) test.check('the selectors no longer smuggle the none-row in as a row of their own');
+  else test.fail(OWED + 'a selector still unshifts its own all row');
   const contactRoot = line && line.children[0];
   const pickedAlice = contactRoot ? pick(contactRoot, ALICE) : false;
   await settle(); await settle();
