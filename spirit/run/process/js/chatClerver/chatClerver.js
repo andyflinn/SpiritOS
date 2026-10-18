@@ -98,6 +98,8 @@ const markRefused = db.prepare('UPDATE lines SET refused = ?, refusedAt = ? WHER
 const unsent = db.prepare("SELECT seq, at, text, reWriter, reSeq FROM lines WHERE peer = ? AND sent = 1 AND refused != '' ORDER BY seq");
 const oneLine = db.prepare('SELECT peer, sent, seq, at, text, receivedAt, reWriter, reSeq, refused FROM lines WHERE peer = ? AND sent = ? AND seq = ?');
 const chatLines = db.prepare("SELECT sent, seq, at, text, receivedAt, reWriter, reSeq, refused FROM lines WHERE peer = ? AND (? = '' OR at < ?) ORDER BY at DESC, seq DESC");
+// The lines newer than a time, oldest first: chat.read's after (goal/G29.18).
+const chatLinesAfter = db.prepare('SELECT sent, seq, at, text, receivedAt, reWriter, reSeq, refused FROM lines WHERE peer = ? AND at > ? ORDER BY at ASC, seq ASC');
 
 // ── THE PUBLISH (goal/G4.2) ──────────────────────────────────────────
 // Every kept line, written or received, and every change of a written line's mark, as {line: {...}}. Andy: "the
@@ -326,12 +328,18 @@ appServer.serve({
   // ONE CHAT, READ (goal/G4.2): the owner's alone; both ways, newest first by the writer's time; one bounded
   // answer, cut with more, older lines by before. No paging (Andy: "keep the paging back in the chat window out of
   // this level of design").
+  // AND NEWER LINES BY after (goal/G29.18; Andy, 2026-10-18: "we might even make sure the lines befor and after the
+  // selected one are added to the chat, so that context is visible...", then "chat.read gains after"): with after,
+  // the lines newer than it, oldest first, so the first is the one right after; before is then not read.
   'chat.read': {
-    request: { peer: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    request: { peer: '', before: '', after: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a, caller) {
       ownerOnly(caller);
       const before = String(a.before || '');
-      const pairs = (function* () { for (const r of chatLines.iterate(String(a.peer), before, before)) yield linePair(r); })();
+      const after = String(a.after || '');
+      const pairs = after
+        ? (function* () { for (const r of chatLinesAfter.iterate(String(a.peer), after)) yield linePair(r); })()
+        : (function* () { for (const r of chatLines.iterate(String(a.peer), before, before)) yield linePair(r); })();
       return newestFirst(pairs, READ_ROOM);
     },
   },

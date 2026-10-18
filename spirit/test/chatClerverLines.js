@@ -122,7 +122,7 @@ async function up() {
   return null;
 }
 async function read(peer, before) {
-  const r = await call('chat.read', { peer: peer, before: before || '' }, OWNER);
+  const r = await call('chat.read', { peer: peer, before: before || '', after: '' }, OWNER);
   const items = (r.body && Array.isArray(r.body.items)) ? r.body.items : [];
   return { status: r.status, body: r.body, more: (r.body || {}).more, lines: items.map(function (p) { try { return JSON.parse(p.label); } catch (e) { return {}; } }),
     bytes: Buffer.byteLength(JSON.stringify(r.body || null), 'utf8') };
@@ -142,7 +142,7 @@ async function main() {
 
   test.subHeading('A. line.receive: a peer\'s line kept, once');
   const recvShape = { request: { seq: 0, at: '', text: '', re: { writer: '', seq: 0 } }, reply: { kept: true } };
-  const readShape = { request: { peer: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false } };
+  const readShape = { request: { peer: '', before: '', after: '' }, reply: { items: [{ key: '', label: '' }], more: false } };  // after since goal/G29.18
   if (JSON.stringify(tree['line.receive'] || null) !== JSON.stringify(recvShape) || JSON.stringify(tree['chat.read'] || null) !== JSON.stringify(readShape)) {
     test.fail(OWED + 'the chatClerver answered line.receive ' + JSON.stringify(tree['line.receive'] || null) + ' and chat.read ' + JSON.stringify(tree['chat.read'] || null));
     ['A. received, kept once', 'B. one chat read', 'C. the publish', 'D1. answered within 10 s', 'D2. two writes, two numbers', 'D3. a dark node or a failed grant refuses']
@@ -167,7 +167,7 @@ async function main() {
   if (w1.body && w1.body.seq === 1 && chat.lines.length === 2 && chat.lines[0].sent === 0 && chat.lines[1].sent === 1 && JSON.stringify(chat.lines[0].re) === JSON.stringify({ writer: SELF_KEY, seq: 1 })) {
     test.check('the two lines of the chat, the newest (theirs, re mine) first');
   } else test.fail(OWED + 'chat.read answered ' + JSON.stringify(chat.lines).slice(0, 240));
-  const member = await call('chat.read', { peer: PEER, before: '' }, FROM_PEER);
+  const member = await call('chat.read', { peer: PEER, before: '', after: '' }, FROM_PEER);
   if (member.body && member.body.ok === false && member.body.code === 'not-owner') test.check('a member is refused not-owner');
   else test.fail(OWED + 'a member\'s chat.read answered ' + JSON.stringify(member.body).slice(0, 120));
   const base = Date.parse('2026-10-03T12:00:00.000Z');

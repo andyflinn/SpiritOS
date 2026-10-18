@@ -281,7 +281,7 @@ function chOpen(key) {
   var box = chEl('ch-input');
   if (box) box.disabled = false;
   chSay('');
-  return chAsk('chat.read', { peer: key, before: '' }).then(function (body) {
+  return chAsk('chat.read', { peer: key, before: '', after: '' }).then(function (body) {
     if (mine !== chOpenSeq) return;
     chMore = !!body.more;
     chItemsToLines(body.items).forEach(chUpsert);
@@ -297,7 +297,7 @@ function chOlder() {
   var peer = chPeer;
   var list = chEl('ch-lines');
   var height = list ? list.scrollHeight : 0;
-  chAsk('chat.read', { peer: peer, before: chLines[chOrder[0]].line.at }).then(function (body) {
+  chAsk('chat.read', { peer: peer, before: chLines[chOrder[0]].line.at, after: '' }).then(function (body) {
     chLoadingOlder = false;
     if (peer !== chPeer) return;
     chMore = !!body.more;
@@ -579,10 +579,20 @@ spirit.shell.activateApp({
       // when the window does not hold it (chUpsert), and becomes the current line, the one a reply quotes (chSend).
       mode: 'dropdown',
       placeholder: 'search this chat…',
+      // AND ITS CONTEXT (Andy: "make sure the lines befor and after the selected one are added to the chat, so that
+      // context is visible..."): the line right before it and the line right after, one ask each, one after the other.
       pick: function (l) {
         if (!l) return;
+        var peer = chPeer;
         chUpsert(l);
         chSetCurrent(chKey(l.sent, l.seq));
+        var one = function (body) {
+          var near = chItemsToLines((body && body.items) || [])[0];
+          if (near && peer === chPeer) chUpsert(near);
+        };
+        chAsk('chat.read', { peer: peer, before: String(l.at || ''), after: '' }).then(one)
+          .then(function () { return chAsk('chat.read', { peer: peer, before: '', after: String(l.at || '') }); }).then(one)
+          .catch(function () { /* the picked line stands; its neighbours come with the next read */ });
       },
       empty: 'Type words to search this chat.',
     });

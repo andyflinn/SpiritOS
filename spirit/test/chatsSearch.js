@@ -92,6 +92,8 @@ async function main() {
   // EVERY LINE FOUND JOINS THE HISTORY (Andy, 2026-10-18: "all found lines are added to the chat, if they're missing").
   if (/chItemsToLines\(\(b && b\.items\) \|\| \[\]\)[\s\S]{0,120}chUpsert\(l\)/.test(chatSearchList)) test.check('every line a search finds is put into the history when missing');
   else test.fail(OWED + 'the lines a search finds are not put into the history');
+  if (/chAsk\('chat\.read', \{ peer: peer, before: String\(l\.at[^}]*after: '' \}\)[\s\S]{0,200}chAsk\('chat\.read', \{ peer: peer, before: '', after: String\(l\.at/.test(chatSearchList)) test.check('a pick asks the line right before it and the line right after, one after the other');
+  else test.fail(OWED + 'a pick does not bring the lines around it');
   if (!fs.existsSync(path.join(__dirname, 'chatPeers.js'))) test.check('goal/G4.3\'s chatPeers.js is retired; this suite holds its checks');
   else test.fail(OWED + 'spirit/test/chatPeers.js still asserts peers.search');
 
@@ -114,7 +116,7 @@ async function main() {
     else test.fail(OWED + 'chats.search is ' + JSON.stringify(tree && tree['chats.search'] || null));
     if (tree && JSON.stringify(tree['chat.search'] || null) === JSON.stringify(searchShape)) test.check('chat.search {peer, text, who} -> {items: [{key, label}], more}');
     else test.fail(OWED + 'chat.search is ' + JSON.stringify(tree && tree['chat.search'] || null));
-    if (tree && JSON.stringify((tree['chat.read'] || {}).request || null) === JSON.stringify({ peer: '', before: '' })) test.check('chat.read stays {peer, before}');
+    if (tree && JSON.stringify((tree['chat.read'] || {}).request || null) === JSON.stringify({ peer: '', before: '', after: '' })) test.check('chat.read takes {peer, before, after} (Andy: "chat.read gains after")');
     else test.fail('chat.read changed: ' + JSON.stringify(tree && tree['chat.read'] || null));
 
     const db = new DatabaseSync(path.join(state, 'memory.db'));
@@ -181,6 +183,12 @@ async function main() {
     const both = listed(await call('chat.search', { peer: ANN, text: 'harbour boat', who: 'both' }, OWNER));
     if (both.keys.length === 3 && both.keys.indexOf('1:1') !== -1 && both.keys.indexOf('0:2') !== -1) test.check('who both: either writer, all three');
     else test.fail(OWED + 'who both answered ' + JSON.stringify(both.keys));
+
+    // THE CONTEXT OF A FOUND LINE (Andy: "the lines befor and after the selected one"; "chat.read gains after").
+    const older = listed(await call('chat.read', { peer: ANN, before: '2026-10-03T10:06:00.000Z', after: '' }, OWNER));
+    const newer = listed(await call('chat.read', { peer: ANN, before: '', after: '2026-10-03T10:06:00.000Z' }, OWNER));
+    if (older.keys[0] === '1:1' && newer.keys.join() === '0:3') test.check('around 0:2: before gives 1:1 first, after gives 0:3, oldest first');
+    else test.fail(OWED + 'around 0:2: before ' + JSON.stringify(older.keys) + ', after ' + JSON.stringify(newer.keys));
 
     test.subHeading('4. bounded, both lists');
     for (let i = 0; i < 300; i++) {
