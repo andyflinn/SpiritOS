@@ -1,5 +1,5 @@
 {
- "change": 71975,
+ "change": 72011,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,16 +46,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -7775,11 +7772,9 @@
    "id": "goal/G29.21",
    "title": "ugrade ALL desk related searches to probability method.",
    "goal": "goal/G29",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -7787,17 +7782,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -7805,15 +7800,52 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/13",
+     "version": 31
+    },
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "Every Desk-related search and list leaves the old graded bucket (searchBucket.createSearch) for the probability modules.\n\nDESK (process/js/desk)\n- walked(), the one list cut behind pending.get, work.open and rule.history, and item.chat's cut: the rows stand in the order walked and are cut by bytes through the probability bucket's serialize, more saying so; a row too big for one answer is skipped and said, as now.\n- rules.search ranks its rules by the probability modules over their title and text, best first, in place of the substring filter; no words is every rule, newest first; types and statuses stay filters.\n- chat.search on a goal takes one more filter, scope: goal (the goal's own chat only) or items (the goal's chat and every one of its items' chats, ranked together); by, since and before filter as now; cut by bytes.\n- Each line found carries the id of the item it was said in, so the goal dialog's search draws it as a link that opens that item.\n- block.targets: the goal's items a block may name, in goal order, through the probability bucket.\n\nDESKCLIENT (process/js/deskClient)\n- history.search ranks the records by the probability modules over verb and outcome, newest first on a tie, cut by bytes.\n\nDESKAGENT (process/js/deskAgent)\n- The models search ranks the studio's models by the probability modules over id and quant; loaded models first, as now; no words is every model.\n\n- desk, deskClient and deskAgent no longer require searchBucket.",
+   "version": 2,
    "checks": [],
    "chat": [
     {
@@ -7821,6 +7853,72 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-18T21:18:04.356Z",
      "text": "fill in this box please."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T21:19:00.272Z",
+     "text": "Box filled from the tree: desk (walked lists, item.chat, rules.search, block.targets), deskClient history.search, deskAgent models search, all onto the probability modules; searchBucket gone from the three."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T21:20:06.603Z",
+     "text": "that does \"cut by bytes\" mean?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T21:20:28.001Z",
+     "text": "One answer has a byte ceiling (the answer room, under PAYLOAD_MAX). The rows go in, in their order, until the next one would not fit; the rest are left out and more says so. Nothing pages: a narrower search or an older bound brings the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T21:22:40.717Z",
+     "text": "can all the goals chat's be searched at once?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T21:23:20.653Z",
+     "text": "Not today. chat.search takes one item and ranks its chat (already on the probability modules, G18.5). log.search covers the desk's line log, not the items' chats.\nThe plainest way: chat.search given a goal id ranks the chats of all its items together, each line keyed by its item, same filters (by, since, before), cut by bytes.\nInto this box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T21:24:48.290Z",
+     "text": "can the goals chat search offer filters. goal-only, include-item-chats, and the returns might contain links to items that have the search expression in their chat?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T21:25:07.633Z",
+     "text": "Yes. chat.search on a goal takes one more filter, scope: goal (the goal's own chat only) or items (the goal's chat and every item's chat).\nEach line found carries the id of the item it was said in, so the goal dialog's search draws it as a link that opens that item.\nAll of this, with the goal-wide search, into this box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T21:25:45.388Z",
+     "text": "all of this, in the box. yes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T21:26:25.185Z",
+     "text": "In the box: the goal-wide chat search, its scope filter (goal or items), and each line linking to its item in the goal dialog. Ready on your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T21:29:43.862Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T21:30:03.415Z",
+     "text": "Green: settled, nothing open, box current (v2)."
     }
    ]
   }
