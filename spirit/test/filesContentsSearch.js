@@ -135,6 +135,19 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   if (widths.length === 3 && widths[0] === 100 && widths.every(function (w, i) { return w !== null && (i === 0 || w <= widths[i - 1]); }) && /width:\s*5em/.test(ranked[0].first) && /margin-left:\s*auto|text-align:\s*right/.test(ranked[0].first)) test.check('words typed: the left-most column is a 5em bar, right adjusted, full (100%) for the best row, shorter down the list: ' + widths.join(', '));
   else test.fail(OWED + 'with words the first cells read ' + short(ranked.map(function (r) { return r.first; })));
 
+  // Andy, 2026-10-18: "whenever the search expression changes even by one character, the list (in dropdowns) should
+  // snap to the highest ranking (top) row", then "in the dropdown, the list REALLY should snap to the top with every
+  // change in the search-term." Every list: the best row current, the list scrolled to its top.
+  const list1 = p1.doc.getElementById(pre1 + 'list');
+  list1.scrollTop = 400;
+  t1.value = 'gat';
+  box1.dispatchEvent({ type: 'input', target: t1 });
+  await settle();
+  const snapped = rowsIn(list1.innerHTML);
+  const current = (/<tr[^>]*data-key="([^"]*)"[^>]*class="current"/.exec(list1.innerHTML) || [])[1];
+  if (list1.scrollTop === 0 && snapped.length && current === snapped[0].key) test.check('a change of the words snaps the list: the top row current (' + current + '), scrolled to the top');
+  else test.fail(OWED + 'after a change of the words: scrollTop ' + list1.scrollTop + ', current ' + short(current) + ', top row ' + short(snapped[0] && snapped[0].key));
+
   // ── 3. the file list ──
   test.subHeading('3. the file list: words in names | paths | contents, contents asking the node');
   const p2 = page();
