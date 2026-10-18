@@ -171,13 +171,9 @@ function mountFace(answers) {
     { shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, win);
   b.mount(container, {
     escapeHtml: kernel.core.util.escapeHtml,
+    // goal/G29.8: the plugin folder is read from the shell's one tree, handed over by api.onFiles as the shell does.
+    onFiles: function (fn) { if (Array.isArray(answers.files)) fn(answers.files, { visible: true }); return function () {}; },
     verb: function (name, body) {
-      // goal/G29.5: the node's own fs.search, which lists the plugin folder, is asked by its name.
-      if (name === 'fs.search') {
-        asked.push(['fs.search', body]);
-        const f = answers['fs.search'];
-        return Promise.resolve({ status: 200, body: (typeof f === 'function' ? f(body) : f) || { items: [], more: false } });
-      }
       const ask = body && body.ask && body.ask.desk;
       const v = ask && Object.keys(ask)[0];
       if (v) asked.push([v, ask[v]]);
@@ -586,18 +582,9 @@ function clickTab(el, tab) {
         return { chat: [], chatMore: false };
       },
       // goal/G29.5: THE PLUGIN FOLDER, LISTED. Andy, 2026-10-17: "just search the plugin folder for subfolders, THAT's
-      // the way you find them all." Two plugins there; the ranked search for plugin/ above names only one of them.
-      // The node's own fsSearch answers, over a tree holding two plugin folders and a stray file: a fake that guessed the
-      // pattern's meaning once let a face through that found nothing on his node.
-      'fs.search': function (b) {
-        const root = path.resolve(os.tmpdir(), 'ggTree');
-        const tree = ['shell', 'shell/desk', 'shell/desk/plugins', 'shell/desk/plugins/stackFrameChecks', 'shell/desk/plugins/zzLowRank'].map(function (p) { return { name: path.basename(p), relativePath: p, kind: 'folder' }; })
-          .concat(['shell/desk/plugins/stackFrameChecks/stackFrameChecks.js', 'shell/desk/plugins/zzLowRank/zzLowRank.js', 'shell/desk/plugins/zzLowRank/other.js', 'shell/desk/plugins/readme.md'].map(function (p) { return { name: path.basename(p), relativePath: p, kind: 'file' }; }));
-        const searches = require('../run/js/nodeSearches.js').createNodeSearches({ jobs: { fsTreeEntries: function () { return tree; } }, rootDir: root,
-          fsPath: function (r, raw) { const p = path.resolve(r, raw); return p.indexOf(r) === 0 ? p : null; } });
-        const out = searches.fsSearch(b);
-        return { items: out.items, more: out.more };
-      },
+      // the way you find them all." Since goal/G29.8 it is read from the shell's tree: two plugin folders and a stray file.
+      files: ['shell', 'shell/desk', 'shell/desk/plugins', 'shell/desk/plugins/stackFrameChecks', 'shell/desk/plugins/zzLowRank'].map(function (p) { return { name: path.basename(p), relativePath: p, kind: 'folder' }; })
+        .concat(['shell/desk/plugins/stackFrameChecks/stackFrameChecks.js', 'shell/desk/plugins/zzLowRank/zzLowRank.js', 'shell/desk/plugins/zzLowRank/other.js', 'shell/desk/plugins/readme.md'].map(function (p) { return { name: path.basename(p), relativePath: p, kind: 'file' }; })),
       'item.get': function (a) {
         if (a && a.id === GOAL) return { item: JSON.stringify({ id: GOAL, title: 'Stack-frame checks', goal: '', plugin: 'stackFrameChecks', pluginTab: 'Stacks', status: '', with: '', buttons: [], blocking: [], blocked: [] }) };
         if (a && a.id === 'plugin/zzLowRank') return { item: JSON.stringify({ id: 'plugin/zzLowRank', title: 'Low rank', goal: '', plugin: 'zzLowRank', pluginTab: 'LowRank', status: '', with: '', buttons: [], blocking: [], blocked: [] }) };
@@ -627,12 +614,13 @@ function clickTab(el, tab) {
     // goal/G29.5: THE PLUGINS ARE FOUND BY THEIR FOLDER, never by a ranked search (a long chat ranked Fallout's goal out
     // of a capped answer, and its tab vanished). Andy, 2026-10-17: "just search the plugin folder for subfolders, THAT's
     // the way you find them all."
-    const folderLists = function () { return doc.asked.filter(function (x) { return x[0] === 'fs.search' && x[1] && String(x[1].q).indexOf('shell/desk/plugins/') === 0; }).length; };
+    // goal/G29.8: the plugin folder comes from the shell's tree; a plugin found asks its goal, plugin/<name>, once.
+    const folderLists = function () { return doc.asked.filter(function (x) { return x[0] === 'item.get' && x[1] && String(x[1].id) === 'plugin/zzLowRank'; }).length; };
     const rankedPluginSearches = function () { return doc.asked.filter(function (x) { return x[0] === 'items.search' && x[1] && x[1].text === 'plugin/'; }).length; };
     const before0 = folderLists();
     clickTab(doc.getElementById('desk-tabs'), 'apps');
     await sleep(20);
-    if (before0 === 0 && folderLists() === 1) test.check('the plugins are found when Apps opens, not at mount, by listing shell/desk/plugins/ once');
+    if (before0 === 0 && folderLists() === 1) test.check('the plugins are found when Apps opens, not at mount, from the shell\'s tree of shell/desk/plugins/, once');
     else test.fail('OWED by goal/G29.5: plugin folder listings before Apps opened ' + before0 + ', after ' + folderLists());
     if (rankedPluginSearches() === 0) test.check('no ranked items.search for plugin/ is made any more');
     else test.fail('OWED by goal/G29.5: the face still searches plugin/ ' + rankedPluginSearches() + ' time(s)');

@@ -221,43 +221,29 @@ let said = '';
     }
   }
 
-  // Andy: "/media/*.jpg" is "understood as equal to \"./media/*.jpg\" and
-  // equal to \"media/*.jpg\"", and "a leading \"../\" is illegal in SpiritOS".
+  // goal/G29.8: fs.search takes a person's words, ranked over each name and path of the node's own tree; the patterns
+  // (* and ?) and the path forms they were cleaned through are gone, and so is anything to climb out with.
   {
-    const forms = ['shell/desk/*', './shell/desk/*', '/shell/desk/*', '//shell/desk/*', 'shell/../shell/desk/*'];
-    const answers = [];
-    for (const q of forms) answers.push(keysOf(await ask({ verb: 'fs.search', q: q })));
-    const first = JSON.stringify(answers[0]);
-    const same = answers.every(function (a) { return JSON.stringify(a) === first; });
-    const found = answers[0] && answers[0].indexOf('shell/desk/desk.js') !== -1;
-    if (same && found) {
-      test.check('fs.search reads app/desk/*, ./shell/desk/*, /shell/desk/*, //shell/desk/* and app/../shell/desk/* as '
-        + 'one pattern, and finds app/desk/desk.js with it');
-    } else {
-      test.fail('path forms differ: ' + forms.map(function (f, i) { return f + ' -> ' + JSON.stringify(answers[i]); }).join('; '));
-    }
+    const found = keysOf(await ask({ verb: 'fs.search', q: 'desk.js' }));
+    if (found && found.indexOf('shell/desk/desk.js') !== -1) test.check('fs.search finds shell/desk/desk.js by the words desk.js');
+    else test.fail('fs.search desk.js answered ' + JSON.stringify(found));
   }
   {
-    const refused = [];
-    for (const q of ['../*', 'x/../../*']) {
-      const r = await ask({ verb: 'fs.search', q: q });
-      if (!(r.status === 400 && /outside the run folder/.test(r.text))) refused.push(q + ' -> ' + r.status + ' ' + r.text);
+    const outside = [];
+    for (const q of ['../', 'x/../../', '/etc/passwd']) {
+      const k = keysOf(await ask({ verb: 'fs.search', q: q })) || ['(no answer)'];
+      k.forEach(function (key) { if (/^(\.\.|\/)/.test(key) || key === '(no answer)') outside.push(q + ' -> ' + key); });
     }
-    if (!refused.length) {
-      test.check('a pattern that climbs out of the run folder is refused by name ("path outside the run folder"), '
-        + 'not answered as an empty search');
-    } else {
-      test.fail('climbing out was not refused by name: ' + refused.join('; '));
-    }
+    if (!outside.length) test.check('words that climb name nothing outside the run folder: only the tree\'s own paths come back');
+    else test.fail('fs.search answered outside the tree: ' + outside.join('; '));
   }
   {
-    const secret = keysOf(await ask({ verb: 'fs.search', q: '*secret-probe*' }));
-    // Targeted patterns, not '*': a '*' walk stops once its answer is full,
-    // so a leak further down the tree would never be looked at.
-    const viaLink = keysOf(await ask({ verb: 'fs.search', q: '*linkout*' })) || ['(no answer)'];
-    const leaks = keysOf(await ask({ verb: 'fs.search', q: 'relay-state/*' })) || ['(no answer)'];
-    if (secret && secret.length === 0 && !leaks.length && (!linked || !viaLink.length)) {
-      test.check('fs.search never names a file under relay-state, by name or by folder pattern'
+    const under = function (keys, re) { return (keys || ['(no answer)']).filter(function (k) { return re.test(k) || k === '(no answer)'; }); };
+    const secret = under(keysOf(await ask({ verb: 'fs.search', q: 'secret-probe' })), /secret-probe/);
+    const viaLink = under(keysOf(await ask({ verb: 'fs.search', q: 'linkout' })), /linkout/);
+    const leaks = under(keysOf(await ask({ verb: 'fs.search', q: 'relay-state' })), /^relay-state\//);
+    if (!secret.length && !leaks.length && (!linked || !viaLink.length)) {
+      test.check('fs.search never names a file under relay-state, by name or by folder'
         + (linked ? ', and a link inside app/ pointing there is not followed' : ' (no symlink on this box to test)'));
     } else {
       test.fail('fs.search leaked: secret ' + JSON.stringify(secret) + ', relay-state ' + JSON.stringify(leaks)

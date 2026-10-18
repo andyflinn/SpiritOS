@@ -1827,7 +1827,7 @@ contactBook.syncMarks(ROOT_DIR);
 
   // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
-  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, fsPath: fsPath });
+  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs });
   // jobs.auth (apiAuth/G1.4): the owner's allow-table, loopback only. Andy: "jobs.auth supersedes: "api.auth,
   // sibling to app names";". An answer is the verb's object as is; a refusal is the catalogue's, by name.
   const apiAuth = require('./apiAuth').createApiAuth({

@@ -16,10 +16,15 @@ var APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 // below, can call the same loading logic — mount() only ever runs once
 // per app now (shell.js keeps apps mounted across navigation), so a later
 // "Open with" against a different file has to go through loadFile instead.
+// THE FILE IS PICKED WITH THE FILE SELECTOR'S DROPDOWN (goal/G29.8; Andy, 2026-10-18: "on the file selector, yes it
+// exists in textEditor as well, it will be replaced with the dropdown version of our \"Files\" control."). The path
+// it picked, or the one "Open with" handed over, is the one loaded and saved.
+var textEditorPath = '';
 function textEditorLoadPath(path) {
   var content = spirit.core.fs.loadFile(path);
+  textEditorPath = path;
   var pathEl = document.getElementById('editor-path');
-  if (pathEl) pathEl.value = path;
+  if (pathEl) pathEl.textContent = path;
   document.getElementById('editor-content').value = content == null ? '' : content;
   document.getElementById('editor-status').textContent = content == null ? 'not found (or empty) — you can still Save to create it' : 'loaded';
 }
@@ -27,9 +32,10 @@ function textEditorLoadPath(path) {
 spirit.shell.activateApp({
   mount: function (container, api, params) {
     var initialPath = (params && params.path) || 'shell/textEditor/notes.txt';
+    textEditorPath = initialPath;
     container.innerHTML =
       '<div class="stat-tile wide">' +
-        '<label>Path (relative to project root)<input type="text" id="editor-path" placeholder="e.g. shell/notes/todo.txt" value="' + api.escapeHtml(initialPath) + '"></label>' +
+        '<span id="editor-picker"></span> <span id="editor-path" class="file-path">' + api.escapeHtml(initialPath) + '</span> ' +
         '<button type="button" id="editor-load">Load</button>' +
         '<button type="button" id="editor-save">Save</button>' +
         '<span id="editor-status"></span>' +
@@ -37,13 +43,16 @@ spirit.shell.activateApp({
       '<textarea id="editor-content" class="code-view" rows="24"></textarea>';
 
     var statusEl = document.getElementById('editor-status');
+    var picker = api.ui.elements.createFileSelector({ placeholder: 'open a file…' });
+    document.getElementById('editor-picker').appendChild(picker);
+    picker.addEventListener('change', function () { if (picker.row && picker.row.kind === 'file') textEditorLoadPath(picker.value); });
 
     document.getElementById('editor-load').addEventListener('click', function () {
-      textEditorLoadPath(document.getElementById('editor-path').value.trim());
+      textEditorLoadPath(textEditorPath);
     });
 
     document.getElementById('editor-save').addEventListener('click', function () {
-      var path = document.getElementById('editor-path').value.trim();
+      var path = textEditorPath;
       if (APP_ENTRY_SCRIPT_PATTERN.test(path)) {
         statusEl.textContent = 'refusing to save over an app\'s own source (' + path + ') — the server would reject this anyway';
         return;

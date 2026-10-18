@@ -217,9 +217,6 @@
       #app-container.is-dialog select option { background: #222222; }
       #app-container.is-dialog .icon-selector-rows { background: #222222; }
       #app-container.is-dialog .icon-selector-row.is-active { background: #343434; }
-      #app-container.is-dialog .contact-selector-pane { background: #222222; }
-      #app-container.is-dialog .contact-selector-row.current,
-      #app-container.is-dialog .contact-selector-field:hover { background: #343434; }
 
       #app-container.is-dialog input[type="radio"],
       #app-container.is-dialog input[type="checkbox"] { accent-color: #c3c3c3; }
@@ -331,24 +328,6 @@
          titlebar it echoes: same size, and the weight above does the
          telling apart (§2). */
       .file-path { font-size: 16px; }
-
-      #file-tree summary {
-        cursor: pointer;
-        padding: 4px;
-        border-radius: 6px;
-      }
-
-      #file-tree summary:hover { background: rgba(255, 255, 255, 0.08); }
-
-      .tree-children { margin-left: 20px; }
-
-      .file-row {
-        cursor: pointer;
-        padding: 4px 4px 4px 24px;
-        border-radius: 6px;
-      }
-
-      .file-row:hover { background: rgba(255, 255, 255, 0.08); }
 
       #file-detail { margin-top: 16px; }
 
@@ -752,48 +731,13 @@
       .icon-selector-row:hover,
       .icon-selector-row.is-active { background: #0f3460; }
 
-      /* The contact selector (shell/js/contactSelector.js, goal/G4.14).
-         One list, two faces: the pane, and the dropdown that is the same
-         pane under a button — "The dropDowns should present like the
-         panes." So the dropdown borrows the icon selector's field and
-         floating list, and the pane is that list standing in place. */
-      .contact-selector { position: relative; min-width: 260px; }
-      .contact-selector-field {
-        display: flex; align-items: center; gap: 12px; width: 100%;
-        padding: 6px 12px; border: none; border-radius: 8px;
-        background: #0f3460; color: inherit; font: inherit; font-size: 16px;
-        cursor: pointer; text-align: left;
-      }
-      .contact-selector-field:hover { background: #16487a; }
-      .contact-selector-name { flex: 1; min-width: 0; }
-      .contact-selector-caret { flex: 0 0 auto; opacity: 0.6; font-size: 12px; }
-      .contact-selector-face-dropdown .contact-selector-pane {
-        position: absolute; z-index: 20; left: 0; right: 0; margin-top: 12px;
-        padding: 12px; border-radius: 8px; background: #16213e;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-      }
-      .contact-selector-pane[hidden] { display: none; }
-      /* The open dropdown hides its own button (goal/G4.10); [hidden] alone
-         would lose to the field's display: flex. */
-      .contact-selector-field[hidden] { display: none; }
-      .contact-selector-search { width: 100%; margin-bottom: 12px; font-size: 16px; }
-      .contact-selector-face-dropdown .contact-selector-rows { max-height: 40vh; overflow-y: auto; }
-      .contact-selector-row {
-        display: flex; align-items: center; gap: 12px;
-        padding: 6px 12px; border-radius: 8px; cursor: pointer;
-      }
-      .contact-selector-row:hover { background: #0f3460; }
-      /* The current row a step brighter than a hovered one, so the chat
-         shown is the row that stands out (Andy, goal/G4.10: "slightly
-         brighter background for the currently selected item"). */
-      .contact-selector-row.current { background: #1d5590; }
-      /* The status column is always there, blank or not, so the names
-         line up whether a row is marked or not. */
-      .contact-selector-status { flex: 0 0 24px; text-align: center; }
-      .contact-selector-more { opacity: 0.6; font-size: 13px; }
-      .contact-selector-more:empty { display: none; }
-      /* The presence column, always there: green present, white otherwise. */
-      .contact-selector-presence { flex: 0 0 20px; text-align: center; }
+      /* The contact and file selectors (shell/js/contactSelector.js,
+         shell/js/fileSelector.js) draw through the shared list
+         (shell/shared/js/listSearch.js), which lays out its own field, pane
+         and popup. A dropdown stands inline like any input control; only its
+         pane pops up (goal/G29.8). */
+      .contact-selector, .file-selector { position: relative; }
+      .contact-selector-face-dropdown, .file-selector-face-dropdown { display: inline-block; }
 
       /* The contact label (shell/js/contactLabel.js, goal/G4.13). It takes
          the style of its container, so nothing here sets its face or size;
@@ -1367,9 +1311,9 @@
     <!-- The shared list with its search (goal/G29.4), before the contact selector, its wrapper since goal/G29.6. -->
     <script src="/shell/shared/js/listSearch.js"></script>
     <script src="/shell/js/contactSelector.js"></script>
+    <script src="/shell/js/fileSelector.js"></script>
     <script src="/shell/js/appServerSelector.js"></script>
     <script src="/shell/js/apiBranchSelector.js"></script>
-    <script src="/shell/js/pathSelector.js"></script>
     <script src="/js/client/shell.js"></script>
     <script>
       (function () {

@@ -301,7 +301,7 @@ async function thePage() {
       if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [{ by: CW.label, key: CW.key, name: 'Claude Windows', at: new Date().toISOString(), text: 'hello team', taken: '' }], chatMore: false } });
       return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', chat: [], chatMore: false, change: 1 } });
     },
-    ui: { elements: { createPathSelector: function (o) { const r = node('div'); r.options = o; return r; } } },
+    ui: { elements: {} },
     onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
     peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
     armUntilElsewhere: function () {}, fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },

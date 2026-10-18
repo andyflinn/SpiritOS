@@ -3344,11 +3344,12 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
     test.fail('ungrouped folds: ' + offenders.join('; '));
   }
 
-  // And the exemptions are real rather than assumed: the tree still
-  // builds folds, and they still carry no group.
+  // And the exemption is real rather than assumed: the Files tree carries no
+  // grouped panel fold. Since goal/G29.8 it builds none at all: its folders fold
+  // as rows of the fileSelector pane.
   const tree = fs.readFileSync(path.join(RUN, 'shell', 'files', 'files.js'), 'utf8');
   const treeFolds = (tree.match(/['\"]<details[^>]*>/g) || []);
-  if (treeFolds.length && treeFolds.every(function (t) { return t.indexOf('name=') === -1; })) {
+  if (treeFolds.every(function (t) { return t.indexOf('name=') === -1; })) {
     test.check('and the Files tree is left alone — a folder is not a panel');
   } else {
     test.fail('tree folds: ' + JSON.stringify(treeFolds));

@@ -1,85 +1,19 @@
-// The fifth of the shell apps to leave index.html (CLEANUP-PLAN). Same
-// app: the same tree, the same open folders, the same click that opens a
-// file with whatever handles it. Its id changed with its folder, 'files'
-// to 'shell/files' — see APP_ID_RENAMES and INTRINSIC_APP_FOLDERS in
-// js/client/shell.js, and the Spirit group's member list in index.html,
-// all updated in this same commit. An id that moves without its rename
-// map is an operator's overrides thrown away by pruneStalePreferences.
+// Files: the shell's one file tree, in the fileSelector pane (goal/G29.8). The item's box: "the Files app is a
+// container for its pane". The pane draws the tree with no words and the ranked list with words, each row with its
+// mimetype icon, size and modified; a press on a file opens it with whatever handles it, or says what it is.
 //
-// Intrinsic, so it sits in the Spirit group and its name, icon and place
-// are locked. That is the existing rule for an intrinsic app, not a new
-// one: Files therefore leaves the main desktop and is one tap away
-// inside Spirit, beside Stats, Jobs, Apps and Processes.
+// Intrinsic, so it sits in the Spirit group and its name, icon and place are locked. Its id is 'shell/files' (see
+// APP_ID_RENAMES and INTRINSIC_APP_FOLDERS in js/client/shell.js).
 //
-// The two launchers it opens — text-file-launcher and media-launcher —
-// stay in index.html. This app reaches them through api.launchApp, the
-// doorway step 6 gave a system app, rather than through spirit.shell.
-//
-// Still on spirit.shell, because step 6 did not name them: the viewer
-// lookup itself (mimeTypeForName, classifyMimeType, iconForFile,
-// CATEGORY_APP_HANDLERS) and findJobByType. app/process-browser carries
-// the same list for the same reason — "which app opens this file" is the
-// same kind of question as "open this app" — and they wait for a sitting
-// that opens them.
-//
-// `api` arrives at mount and render never gets one, so it is kept here,
-// exactly as Processes does.
+// The two launchers it opens, text-file-launcher and media-launcher, are reached through api.launchApp. The viewer
+// lookup itself (mimeTypeForName, classifyMimeType, CATEGORY_APP_HANDLERS) is still on spirit.shell.
 
 var filesEscapeHtml = spirit.core.util.escapeHtml;
-var filesIcon = spirit.core.const.ICON;
-var filesApi = null; // handed in at mount, kept for the click handler
-
-// The version of the shell's one file tree this was last drawn from (goal/G4.25): the shell keeps the tree from the
-// watcher's commands, and the version moves only when a command changed it, so a stats tick redraws nothing.
+var filesApi = null;      // handed in at mount, kept for the press
+var filesPane = null;     // the fileSelector pane mounted last
+// The version of the shell's one file tree this was last drawn from (goal/G4.25): it moves only when a command changed
+// the tree, so a stats tick redraws nothing.
 var lastFilesVersion = null;
-
-function filesBuildTree(files) {
-  var byPath = new Map();
-  files.forEach(function (entry) { byPath.set(entry.fullPath, entry); });
-
-  var roots = [];
-  var childrenByPath = new Map();
-
-  files.forEach(function (entry) {
-    if (byPath.has(entry.parentPath)) {
-      if (!childrenByPath.has(entry.parentPath)) childrenByPath.set(entry.parentPath, []);
-      childrenByPath.get(entry.parentPath).push(entry);
-    } else {
-      roots.push(entry);
-    }
-  });
-
-  return { roots: roots, childrenByPath: childrenByPath };
-}
-
-// Which folders were open before the last rebuild, by relative path. A
-// <details> built fresh is a <details> that is closed, so without this
-// every genuine change to the tree — one new file anywhere — costs you
-// every folder you had opened to get where you were. Read off the DOM
-// rather than kept in a variable: the DOM is where the clicks landed.
-function filesOpenTreePaths(treeEl) {
-  var open = new Set();
-  Array.prototype.slice.call(treeEl.querySelectorAll('details[open]')).forEach(function (el) {
-    if (el.dataset.path) open.add(el.dataset.path);
-  });
-  return open;
-}
-
-function filesRenderTreeNode(entry, childrenByPath, openPaths) {
-  if (entry.kind === 'folder') {
-    var kids = childrenByPath.get(entry.fullPath) || [];
-    var kidsHtml = kids.map(function (k) { return filesRenderTreeNode(k, childrenByPath, openPaths); }).join('');
-    var isOpen = openPaths && openPaths.has(entry.relativePath);
-    return '<details data-path="' + filesEscapeHtml(entry.relativePath) + '"' + (isOpen ? ' open' : '') + '>' +
-      '<summary>' + filesIcon.FOLDER + ' ' + filesEscapeHtml(entry.name) + '</summary>' +
-      '<div class="tree-children">' + kidsHtml + '</div></details>';
-  }
-
-  var mimeType = spirit.shell.mimeTypeForName(entry.name);
-  return '<div class="file-row" data-name="' + filesEscapeHtml(entry.name) + '" data-path="' +
-    filesEscapeHtml(entry.relativePath) + '" data-mime="' + filesEscapeHtml(mimeType) + '">' +
-    spirit.shell.iconForFile(mimeType) + ' ' + filesEscapeHtml(entry.name) + '</div>';
-}
 
 function filesShowDetail(name, path, mimeType) {
   var detailEl = document.getElementById('file-detail');
@@ -94,44 +28,27 @@ function filesShowDetail(name, path, mimeType) {
 spirit.shell.activateApp({
   mount: function (container, api) {
     filesApi = api;
-
-    // See the Processes app for why this must reset on every fresh
-    // mount, not just persist: mount() always wipes the tree's DOM, so a
-    // stale cache hit from a previous visit would leave it empty.
-    lastFilesJob = null;
-
-    container.innerHTML = '<div id="file-tree"></div><div id="file-detail"></div>';
-    document.getElementById('file-tree').addEventListener('click', function (event) {
-      var row = event.target.closest('.file-row');
-      if (!row) return;
-      var handlerId = spirit.shell.CATEGORY_APP_HANDLERS[spirit.shell.classifyMimeType(row.dataset.mime)];
-      if (handlerId) {
-        // Through api, not the global: opening another app is exactly
-        // what step 6 gave a system app a doorway for.
-        filesApi.launchApp(handlerId, { path: row.dataset.path });
-        return;
-      }
-      filesShowDetail(row.dataset.name, row.dataset.path, row.dataset.mime);
+    // mount() always wipes the pane, so the next render draws it afresh.
+    lastFilesVersion = null;
+    container.innerHTML = '<div id="file-detail"></div>';
+    filesPane = api.ui.elements.createFileSelector({ face: 'pane' });
+    container.insertBefore(filesPane, container.firstChild);
+    filesPane.addEventListener('change', function () {
+      var path = filesPane.value;
+      var name = path.slice(path.lastIndexOf('/') + 1);
+      var mimeType = spirit.shell.mimeTypeForName(name);
+      var handlerId = spirit.shell.CATEGORY_APP_HANDLERS[spirit.shell.classifyMimeType(mimeType)];
+      // Through api, not the global: opening another app is what step 6 gave a system app a doorway for.
+      if (handlerId) { filesApi.launchApp(handlerId, { path: path }); return; }
+      filesShowDetail(name, path, mimeType);
     });
   },
 
   render: function () {
-    var treeEl = document.getElementById('file-tree');
-    if (!treeEl) return;
-
+    if (!filesPane) return;
     var version = spirit.shell.filesVersion();
-    if (version === lastFilesVersion) return; // unchanged (e.g. an unrelated stats tick) — leave the tree, and its open folders, alone
-    var files = spirit.shell.currentFiles();
-    if (!files) {
-      treeEl.textContent = 'waiting for file list…';
-      return;
-    }
+    if (version === lastFilesVersion) return;
     lastFilesVersion = version;
-
-    var openPaths = filesOpenTreePaths(treeEl);
-    var tree = filesBuildTree(files);
-    treeEl.innerHTML = tree.roots.map(function (r) {
-      return filesRenderTreeNode(r, tree.childrenByPath, openPaths);
-    }).join('') || '(empty)';
+    filesPane.refresh();
   },
 });

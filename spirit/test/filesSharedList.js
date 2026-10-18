@@ -119,7 +119,12 @@ function load() {
   const sp = { core: {
     ask: function (verb, body) { asked.push(verb); return Promise.resolve({ status: 200, body: { items: [], more: false } }); },
     util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes },
-    const: { ICON: ICON, MIME: {} } } };
+    const: { ICON: ICON, MIME: {} } },
+    // The shell's own mimetype lookup, as the page has it on spirit.shell (shell.js mimeTypeForName, iconForFile).
+    shell: {
+      mimeTypeForName: function (name) { const d = name.lastIndexOf('.'); return kernel.core.const.MIME_TYPES[d >= 0 ? name.slice(d).toLowerCase() : ''] || 'application/octet-stream'; },
+      iconForFile: function (mime) { return /^(image|audio|video)\//.test(mime) ? ICON.VIEW : /^text\/|javascript|json/.test(mime) ? ICON.CODE : ICON.FILE; },
+    } };
   ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
     new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
   });
@@ -279,10 +284,14 @@ const TREE = [
     jobs: { fsTreeEntries: function () { return TREE.map(function (f) { return { name: f.name, relativePath: f.relativePath, kind: f.kind }; }); } },
     rootDir: RUN, fsPath: function (r, raw) { const p = path.resolve(r, raw); return p.indexOf(r) === 0 ? p : null; } });
   const keysFor = function (q) { const r = searches.fsSearch({ q: q }); return ((r && r.items) || []).map(function (x) { return x.key; }); };
+  // The box: the same probability modules as the shared list, best first. How well they rank a person's words over
+  // path segments is goal/G29.7's (fs.search as a person's search), not asserted here.
   const words = keysFor('search list');
-  const turned = keysFor('js shared search');
-  if (words[0] === 'shell/shared/js/listSearch.js' && turned[0] === 'shell/shared/js/listSearch.js') test.check('words in any order find shell/shared/js/listSearch.js first');
-  else test.fail(OWED + '"search list" answered ' + short(words) + '; "js shared search" ' + short(turned));
+  if (words[0] === 'shell/shared/js/listSearch.js') test.check('words find shell/shared/js/listSearch.js first');
+  else test.fail(OWED + '"search list" answered ' + short(words));
+  const everything = keysFor('');
+  if (JSON.stringify(everything) === JSON.stringify(TREE.map(function (f) { return f.relativePath + (f.kind === 'folder' ? '/' : ''); }))) test.check('no words: the whole tree in path order, a folder with its slash');
+  else test.fail(OWED + 'no words answered ' + short(everything));
   if (typeof searches.cleanPattern !== 'function' && !/\bcleanPattern\b|\bgradedSearch\b/.test(code(path.join(RUN, 'js', 'nodeSearches.js')))) test.check('the patterns are gone from nodeSearches.js (no cleanPattern, no gradedSearch)');
   else test.fail(OWED + 'nodeSearches.js still holds the patterns');
 
@@ -305,8 +314,11 @@ const TREE = [
   const desk = code(path.join(RUN, 'shell', 'desk', 'desk.js'));
   if (!/['"]fs\.search['"]/.test(desk)) test.check('Desk\'s plugin finder asks the node nothing: it reads the shell\'s tree');
   else test.fail(OWED + 'shell/desk/desk.js still asks fs.search');
-  if (!/\bscanDirectory\b/.test(code(path.join(RUN, 'js', 'kernel.js')))) test.check('kernel.js\'s scanDirectory, which asked fs.search and had no caller, is gone');
-  else test.fail(OWED + 'kernel.js still holds scanDirectory');
+  // The box: "an app's own folder (kernel's scanDirectory) keeps the rows under its folder", from the shell's tree.
+  const kern = code(path.join(RUN, 'js', 'kernel.js'));
+  const scan = (/scanDirectory\s*:\s*function[\s\S]*?\n {6}\},/.exec(kern) || [''])[0];
+  if (scan && !/fs\.search/.test(scan) && /currentFiles/.test(scan)) test.check('kernel.js\'s scanDirectory reads the shell\'s tree, not fs.search');
+  else test.fail(OWED + 'kernel.js\'s scanDirectory: ' + short(scan));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 300);

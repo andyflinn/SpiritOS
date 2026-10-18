@@ -150,7 +150,7 @@ async function thePage(served) {
       if (v === 'profile.get') return Promise.resolve({ status: 200, body: { name: 'ollama-gemma', nick: 'gemma' } });
       return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', chat: [], chatMore: false } });
     },
-    ui: { elements: { createPathSelector: function (o) { const r = node('div'); r.options = o; return r; } } },
+    ui: { elements: {} },
     onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
     peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
     armUntilElsewhere: function () {}, fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },

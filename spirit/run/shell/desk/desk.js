@@ -762,13 +762,15 @@ function deskNotePlugins(rows) {
 }
 // THE PLUGINS, FOUND BY THEIR FOLDER (goal/G29.5). Andy, 2026-10-17: "just search the plugin folder for subfolders,
 // THAT's the way you find them all." A ranked search for plugin/ lost Fallout's goal off a capped answer once its chat
-// grew long. So the node lists shell/desk/plugins/<name>/<name>.js (fs.search: a '*' matches one name, never a folder's
-// contents, so the pattern names the file every plugin folder holds); every such folder is a plugin, and its goal,
-// plugin/<name>, is read for the tab's name (pluginTab). A folder whose goal the desk has not mounted gets no tab.
+// grew long. So every shell/desk/plugins/<name>/<name>.js is a plugin, and its goal, plugin/<name>, is read for the
+// tab's name (pluginTab). A folder whose goal the desk has not mounted gets no tab.
+// THE SHELL'S TREE, NOT THE NODE (goal/G29.8). The item's box: "No new verb: an empty search is the whole tree, and the
+// one shared helper is the shell's tree read with no words"; "Desk's plugin finder keeps the rows
+// plugins/<name>/<name>.js". The paths are the ones api.onFiles last handed over.
+var deskFiles = [];
 function deskFindPlugins() {
-  return Promise.resolve(deskApi.verb('fs.search', { q: DESK_PLUGIN_UI + '*/*.js' })).then(function (r) {
-    var items = (r && r.body && r.body.items) || [];
-    var names = items.map(function (i) { return String((i && i.key) || ''); })
+  return Promise.resolve().then(function () {
+    var names = deskFiles.map(function (f) { return String((f && f.relativePath) || ''); })
       .map(function (k) { var m = /^shell\/desk\/plugins\/([^/]+)\/([^/]+)\.js$/.exec(k); return m && m[1] === m[2] ? m[1] : ''; })
       .filter(function (n) { return /^[A-Za-z][A-Za-z0-9_-]*$/.test(n) && !deskApps.some(function (a) { return a.name === n; }); });
     return Promise.all(names.map(function (n) {
@@ -1534,6 +1536,7 @@ function deskHeader(api) {
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskApi = api;
+    if (typeof api.onFiles === 'function') api.onFiles(function (files) { deskFiles = files || []; });
     // ── THE TABS ───────────────────────────────────────────────────
     //
     //   Andy: "could the be, at the top of the window a set of tabs that

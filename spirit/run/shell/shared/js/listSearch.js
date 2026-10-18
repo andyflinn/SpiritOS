@@ -12,10 +12,12 @@
 //   args(text, filters),          the verb's arguments from the words and the filters' values, by filter name
 //   filters: [{ name, choices: [{ value, icon, word }], test(row, value) }],
 //                                 declared, drawn here; test answers a probability, 0 to 1, that only lowers a row
-//   paint(row),                   one row's cells, html
-//   press(row),                   a press on a row
+//   paint(row, mark),             one row's cells, html; mark(text) marks the words in a text
+//   rows(),                       the page's own rows, ranked here; with no words they stand in the order rows() gives
+//   fold(row, key),               a press on a row that folds it (a folder in a tree): true when it took the press
+//                                 itself, so it is no pick (goal/G29.8)
 //   empty                         the sentence of an empty list
-// }) -> { refresh, ask(verb, args), destroy }      ask: the one slot lent to the app (goal/G29.5)
+// }) -> { refresh, redraw, words(), ask(verb, args), destroy }   ask: the one slot lent to the app (goal/G29.5)
 //
 // WHAT EVERY SEARCH IT CALLS ANSWERS: {items: [{key, label}], more, total}; key is the identity of what the row shows,
 // label the row as json. A row is that json's object; paint, press and test all take it.
@@ -99,13 +101,15 @@
     // does the dropdown not just show a \"pane\" exactly like the pane would look?"): closed, a field with the chosen
     // name or a placeholder; a click on it pops the very same pane up under it.
     container.innerHTML = dropdown
-      ? '<div style="position:relative">' +
-          '<button id="' + pre + 'field" type="button" style="width:100%;text-align:left"></button>' +
+      // INLINE, LIKE ANY INPUT CONTROL (goal/G29.8; Andy, 2026-10-18: "the dropdown selector itself appears as a popup
+      // as well, it should be inline like any normal input control."): the field sits in its line; only the pane pops.
+      ? '<span style="position:relative;display:inline-block">' +
+          '<button id="' + pre + 'field" type="button" style="text-align:left"></button>' +
           // SOLID (seen in grants: the tile's see-through background let the page under it show): the tile's tint over
           // the page's own colour, a shadow, and room for its rows even under a narrow field.
           '<div id="' + pre + 'popup" class="stat-tile wide" style="position:absolute;left:0;min-width:24em;z-index:10;' +
             'background:linear-gradient(rgba(255,255,255,0.06),rgba(255,255,255,0.06)),#1a1a2e;box-shadow:0 6px 24px rgba(0,0,0,0.5)" hidden>' + paneHtml + '</div>' +
-        '</div>'
+        '</span>'
       : paneHtml;
     if (dropdown) { var p0 = el('popup'); if (p0) p0.hidden = true; }
 
@@ -144,17 +148,18 @@
       return out + esc(s.slice(at));
     }
     // THE PAGE'S OWN ROWS (goal/G29.9, the first tier): rows() answers them; each joins the cache by its key, and one
-    // no longer answered leaves the list.
+    // no longer answered leaves the list. THEIR ORDER IS THE PAGE'S (goal/G29.8): a tie stands where rows() put it, so a
+    // file made later still sits in its folder.
     var pageKeys = Object.create(null);
     function takePage() {
       if (typeof o.rows !== 'function') return;
       var now = Object.create(null);
-      (o.rows() || []).forEach(function (r) {
+      (o.rows() || []).forEach(function (r, i) {
         if (!r || r.key == null) return;
         var key = String(r.key);
         now[key] = true;
-        if (byKey[key]) { byKey[key].row = r; byKey[key].gone = false; return; }
-        byKey[key] = { key: key, row: r, at: seated++ };
+        if (byKey[key]) { byKey[key].row = r; byKey[key].gone = false; byKey[key].at = i; return; }
+        byKey[key] = { key: key, row: r, at: i };
         bucket.seatFor(0, byKey[key]);
       });
       Object.keys(pageKeys).forEach(function (k) { if (!now[k] && byKey[k]) byKey[k].gone = true; });
@@ -269,6 +274,7 @@
       if (!w) return;
       currentKey = w.key;
       if (!dropdown) { var l = el('list'); if (l && typeof l.focus === 'function') l.focus(); }
+      if (typeof o.fold === 'function' && o.fold(w.row, w.key) === true) { draw(); return; }
       if (!dropdown && typeof o.details === 'function') { draw(); o.details(w.row, w.key); return; }
       pick(w);
     }
@@ -324,6 +330,8 @@
     // ONE ROW CHANGED BY THE APP, NOT THE SERVER (goal/G29.6: "The app repaints one row when a peer's presence or
     // status changes, without asking the server."): the list drawn again from what it holds.
     self.redraw = function () { draw(); };
+    // THE WORDS AS THEY STAND (goal/G29.8): a list drawn one way with words and another without asks here.
+    self.words = function () { return words(); };
     // THE SLOT LENT TO THE APP (goal/G29.5): another call of the app to the same server, through the same one slot, so
     // nothing of the app's is ever two on the wire; it answers the server's body.
     self.ask = function (verb, args) { return lend(verb, args); };

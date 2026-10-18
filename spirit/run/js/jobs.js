@@ -154,7 +154,7 @@ module.exports = function installJobs(spirit, port) {
   //   "so that s our replacement then. quick and free and maintained by others....", "forget about batching"; and
   //   2026-10-04, "local copy it is" (chokidar under spirit/run/node_modules). His grant G1 on this file.
   //
-  // The watcher keeps the tree (path -> folder|file) and sends what changed, one command per job-updated:
+  // The watcher keeps the tree (path -> {kind, size, modified}) and sends what changed, one command per job-updated:
   // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
   // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
   // commands from fsTreeCommands (server.js). The tree is seeded from scanFolder, so it skips what that skips
@@ -162,27 +162,44 @@ module.exports = function installJobs(spirit, port) {
   // and reports at startup what the seed already holds, which sends nothing.
   const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
   const RUN_ROOT = path.join(__dirname, '..');
-  let fsTree = null; // the tree of the latest watcher this module started: Map relativePath -> 'folder' | 'file'
+  let fsTree = null; // the tree of the latest watcher this module started: Map relativePath -> {kind, size, modified}
+
+  // THE STAT RIDES WITH EVERY CREATE AND CHANGE (goal/G29.8). The item's box: "The node streams the tree to the page as
+  // it does, the watcher's updates, now each with its stat: size and modified, for every create and change; a delete
+  // carries none." A file's size in bytes; modified an ISO time; a folder carries its modified alone. A path gone
+  // before it could be read carries none.
+  function statOf(full, kind) {
+    let st = null;
+    try { st = fs.statSync(full); } catch (e) { return { kind: kind }; }
+    return kind === 'folder' ? { kind: kind, modified: st.mtime.toISOString() } : { kind: kind, size: st.size, modified: st.mtime.toISOString() };
+  }
+  function commandOf(op, p, at, held) {
+    const c = { op: op, path: p, at: at };
+    if (held && held.size !== undefined) c.size = held.size;
+    if (held && held.modified !== undefined) c.modified = held.modified;
+    return c;
+  }
 
   function fsTreeCommands() {
     if (!fsTree) return [];
     const at = new Date().toISOString();
     // A folder sorts before everything inside it: its path is a prefix of theirs.
     return Array.from(fsTree.keys()).sort().map(function (p) {
-      return { op: fsTree.get(p) === 'folder' ? 'createDirectory' : 'createFile', path: p, at: at };
+      const held = fsTree.get(p);
+      return commandOf(held.kind === 'folder' ? 'createDirectory' : 'createFile', p, at, held);
     });
   }
   // The tree as entries {name, relativePath, kind}, for the counts and fs.search, which read it in place.
   function fsTreeEntries() {
     if (!fsTree) return [];
     return Array.from(fsTree.keys()).sort().map(function (p) {
-      return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: fsTree.get(p) };
+      return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: fsTree.get(p).kind };
     });
   }
 
   function startFsWatcherJob(rootDir) {
     const tree = new Map();
-    scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, m.kind); });
+    scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, statOf(m.fullPath, m.kind)); });
     fsTree = tree;
     const job = createJob('permanent', 'fs-watcher', {});
     const relOf = function (full) { return path.relative(rootDir, full).split(path.sep).join('/'); };
@@ -199,16 +216,17 @@ module.exports = function installJobs(spirit, port) {
       if (!op || !rel || rel.indexOf('..') === 0) return;
       if (op === 'createFile' || op === 'createDirectory') {
         const kind = op === 'createDirectory' ? 'folder' : 'file';
-        if (tree.get(rel) === kind) return; // already held: the startup report, or a repeat
-        tree.set(rel, kind);
+        if (tree.has(rel) && tree.get(rel).kind === kind) return; // already held: the startup report, or a repeat
+        tree.set(rel, statOf(full, kind));
       } else if (op === 'deleteFile') {
         if (!tree.has(rel)) return;
         tree.delete(rel);
       } else if (op === 'deleteDirectory') {
         if (!tree.has(rel)) return;
         Array.from(tree.keys()).forEach(function (p) { if (p === rel || p.indexOf(rel + '/') === 0) tree.delete(p); });
-      } else if (!tree.has(rel)) tree.set(rel, 'file'); // a change to a file never seen made it, so it exists
-      updateJob(job.id, { data: { command: { op: op, path: rel, at: new Date().toISOString() } } });
+      } else tree.set(rel, statOf(full, 'file')); // a change: the new stat (a file never seen is made by it)
+      const held = op === 'deleteFile' || op === 'deleteDirectory' ? null : tree.get(rel);
+      updateJob(job.id, { data: { command: commandOf(op, rel, new Date().toISOString(), held) } });
     });
 
     watcher.on('error', function(err) {

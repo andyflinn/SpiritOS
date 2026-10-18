@@ -974,36 +974,18 @@ if (isNode()) {
       saveFile: function(filename, content) { return spirit.core.fs.saveFile(safeName(filename), content); },
       deleteFile: function(filename) { return spirit.core.fs.deleteFile(safeName(filename)); },
       fileStats: function(filename) { return spirit.core.fs.statFile(safeName(filename)); },
-      // Lists this app's own folder — not a new server capability, just a
-      // scoped view of the fs-watcher job's already-live-updated snapshot
-      // (the same data /api/jobs already sends for the Files app and
-      // aiChat's media browser), filtered to this app's own files and
-      // re-rooted so relativePath matches the bare-filename convention
-      // every other method here uses (no leading "shell/<appName>/"). No new
-      // route, no new jail logic — it can only ever narrow an already-safe
-      // listing, never expand what's visible. Async (unlike loadFile),
-      // since it goes over the same /api/jobs fetch every other scan of
-      // this data already uses.
-      // jobs.list is gone (puppets/G2): the app's own folder is a file
-      // search now, '**' so it reaches every depth once '*' stops at a
-      // folder. Bounded like every answer; a folder too big for one answer
-      // comes back partial, and an app that needs less asks narrower.
+      // Lists this app's own folder, re-rooted so relativePath matches the bare-filename convention every other method
+      // here uses (no leading "shell/<appName>/"). FROM THE SHELL'S ONE TREE (goal/G29.8). The item's box: "an app's
+      // own folder (kernel's scanDirectory) keeps the rows under its folder", and "the one shared helper is the shell's
+      // tree read with no words": the node is asked nothing. Async as before; empty until the tree is whole.
       scanDirectory: function() {
-        return spirit.core.ask('fs.search', { q: appRoot + '**' })
-          .then(function (res) { return (res.body && res.body.items) || []; })
-          .then(function (items) {
-            return items
-              .filter(function (i) { return i.key.indexOf(appRoot) === 0 && i.key !== appRoot; })
-              .map(function (i) {
-                var folder = i.key.charAt(i.key.length - 1) === '/';
-                var rel = i.key.slice(appRoot.length, folder ? -1 : undefined);
-                return {
-                  name: rel.slice(rel.lastIndexOf('/') + 1),
-                  kind: folder ? 'folder' : 'file',
-                  relativePath: rel,
-                };
-              });
-          });
+        var all = (spirit.shell && typeof spirit.shell.currentFiles === 'function' && spirit.shell.currentFiles()) || [];
+        return Promise.resolve(all
+          .filter(function (f) { return f.relativePath.indexOf(appRoot) === 0 && f.relativePath.length > appRoot.length; })
+          .map(function (f) {
+            var rel = f.relativePath.slice(appRoot.length);
+            return { name: f.name, kind: f.kind, relativePath: rel };
+          }));
       },
     };
   };

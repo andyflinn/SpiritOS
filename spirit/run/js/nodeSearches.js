@@ -15,21 +15,16 @@
 //                        a collection of its own and searched as one
 //   fs.search   { q }    the files the node will serve, by path
 //
-// ── fs.search's PATTERN IS A PATH, CLEANED THE WAY THE NODE CLEANS PATHS ─
+// ── fs.search's WORDS ARE A PERSON'S, NOT A PATTERN (goal/G29.8) ─────
 //
-//   Andy: "the node internals (filePath()?) clean up the path so
-//   "/media/*.jpg", is understood as equal to "./media/*.jpg" and equal to
-//   "media/*.jpg"", and "a leading "../" is illegal in SpiritOS".
-//
-// The pattern goes through fsPath, the node's one path rule, before it
-// matches anything. A pattern that climbs out of the run folder is refused
-// by name (wsl-claude: an empty answer would say "nothing matched", and
-// the question itself was refused).
-//
+// The words are ranked over each entry's name and path by the probability
+// modules, as the shared list ranks a page's rows; no * or ?, and nothing to
+// climb out with, since only the tree's own entries are ever offered.
+
 // ── WHAT IT CAN LIST IS WHAT THE NODE WOULD SERVE ────────────────────
 //
 // The walk is the file watcher's list, and scanFolder builds that from
-// fileServable alone: a refused folder is not even entered. So no pattern
+// fileServable alone: a refused folder is not even entered. So no words
 // can name relay-state/ or anything else a read would refuse, because
 // nothing outside the servable set is ever offered. Symbolic links are
 // neither file nor folder to scanFolder and are never followed. The limit
@@ -39,12 +34,15 @@
 
 var path = require('path');
 var searchBucket = require('./searchBucket');
+var limits = require('./limits');
+var probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
+var createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
+// What one fs.search answer may hold: the plaintext room, less its own frame.
+var FS_SEARCH_ROOM = limits.PLAINTEXT_MAX - Buffer.byteLength(JSON.stringify({ ok: true, items: [], more: false }), 'utf8');
 
 function createNodeSearches(opts) {
   var o = opts || {};
   var jobs = o.jobs;
-  var rootDir = o.rootDir;
-  var fsPath = o.fsPath;
 
   function jobLabel(j) { return String(j.type || j.id) + ' (' + String(j.status || '') + ')'; }
 
@@ -74,37 +72,29 @@ function createNodeSearches(opts) {
     return searchBucket.boundedGet({ ok: true, status: 200, key: key, job: out });
   }
 
-  // The pattern, cleaned as the node cleans a path; null when it climbs out.
-  function cleanPattern(q) {
-    var raw = q == null ? '' : String(q).trim();
-    // An empty search is the whole tree, at every depth: '**' (the shell
-    // rule, gradedSearch). A '*' typed as such means the top level only.
-    if (raw === '') return '**';
-    if (/^\*+$/.test(raw)) return raw;
-    var resolved = fsPath(rootDir, raw);
-    if (!resolved) return null;
-    return path.relative(rootDir, resolved).split(path.sep).join('/') || '*';
-  }
-
+  // FILES BY WORDS, ON THE NODE'S OWN TREE (goal/G29.8). The item's box: "It stays, on the node's own cached tree (the
+  // watcher's), as Files sits on the shell's: the agents' file tool and every caller that is not a page", and "It
+  // ranks words by the same probability modules as the shared list, best first; fs.search's patterns (* and ?) and
+  // gradedSearch with them go." Each entry is scored by probabilityStringObjectMatch over its name and path; no words
+  // is the whole tree in path order. A folder reads with its trailing slash, so a person can tell the two apart.
+  // Bounded by bytes, never by rows: what does not fit says more.
   function fsSearch(body) {
-    var pattern = cleanPattern(body && body.q);
-    if (pattern === null) return { ok: false, status: 400, error: 'path outside the run folder' };
-    // The watcher's tree, in memory (goal/G4.25), as entries {name, relativePath, kind}.
+    var words = String((body && body.q) == null ? '' : body.q).trim();
     var files = jobs.fsTreeEntries();
-    // A folder reads with its trailing slash, so a person can tell the two
-    // apart and 'shell/desk/' finds the folder itself.
-    var pathOf = function (f) { return f.relativePath + (f.kind === 'folder' ? '/' : ''); };
-    var s = searchBucket.createSearch({
-      query: pattern,
-      getLabelStringFromIncomingObject: pathOf,
-      extractKeyAndLabelFromRow: function (f) { return { key: pathOf(f), label: pathOf(f) }; },
-    });
-    for (var i = 0; i < files.length; i += 1) { if (!s.offer(files[i])) break; }
-    var r = s.getResult();
+    var bucket = createProbabilityBucket(Infinity);
+    for (var i = 0; i < files.length; i += 1) {
+      var f = files[i];
+      var p = f.relativePath + (f.kind === 'folder' ? '/' : '');
+      var score = words ? probabilityStringObjectMatch(words, { name: f.name, path: f.relativePath }) : 0;
+      if (words && !(score > 0)) continue;
+      // A tie keeps the tree's order: the earlier entry a hair ahead.
+      bucket.seatFor(words ? score * (1 - 1e-9) + 1e-9 / (1 + i) : 1 / (1 + i), { key: p, label: p });
+    }
+    var r = bucket.serialize(null, FS_SEARCH_ROOM);
     return { ok: true, status: 200, items: r.items, more: r.more };
   }
 
-  return { jobsSearch: jobsSearch, jobsGet: jobsGet, fsSearch: fsSearch, cleanPattern: cleanPattern };
+  return { jobsSearch: jobsSearch, jobsGet: jobsGet, fsSearch: fsSearch };
 }
 
 module.exports = { createNodeSearches: createNodeSearches };

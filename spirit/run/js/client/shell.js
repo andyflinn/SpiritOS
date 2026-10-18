@@ -1397,8 +1397,8 @@
           createContactLabel: spiritElements.createContactLabel,
           createAppServerSelector: spiritElements.createAppServerSelector,
           createApiBranchSelector: spiritElements.createApiBranchSelector,
-          // A file or folder from the shell's one tree (goal/G4.23, shell/js/pathSelector.js).
-          createPathSelector: spiritElements.createPathSelector,
+          // A file or folder from the shell's one tree, on the shared list (goal/G29.8, shell/js/fileSelector.js).
+          createFileSelector: spiritElements.createFileSelector,
           // The header area an app fills, sticky under the titlebar (goal/G6.1, shell/js/appHeader/appHeader.js).
           createAppHeader: spiritElements.createAppHeader,
         },
@@ -2393,9 +2393,10 @@
   // THE SHELL'S ONE FILE TREE (goal/G4.25). Andy: "so this just needs to bridge the gap, the shell maintains one
   // complete tree, and all apps/file-pickers feed from that?"; his grant G3 on this file. The node sends no file list
   // any more: after each snapshot the fs-watcher sends the tree as create commands and then treeComplete, and every
-  // change after that as one command. This keeps the tree (path -> folder|file) and hands it out as the entries the
-  // apps already read ({name, relativePath, kind, fullPath, parentPath}, the paths relative), rebuilt only when a
-  // command changed something. null until the tree is whole.
+  // change after that as one command. This keeps the tree (path -> {kind, size, modified}) and hands it out as the
+  // entries the apps already read ({name, relativePath, kind, fullPath, parentPath}, the paths relative), with the
+  // stat each command carried (goal/G29.8: size and modified), rebuilt only when a command changed something. null
+  // until the tree is whole.
   var fileTree = new Map();
   var fileTreeReady = false;
   var fileTreeVersion = 0;
@@ -2405,11 +2406,16 @@
 
   function applyFileCommand(c) {
     if (!c || typeof c.path !== 'string' || !c.path) return;
-    if (c.op === 'createDirectory') fileTree.set(c.path, 'folder');
-    else if (c.op === 'createFile' || c.op === 'changeFile') {
-      if (c.op === 'changeFile' && fileTree.get(c.path) === 'file') return; // contents only: the tree is unchanged
-      fileTree.set(c.path, 'file');
-    } else if (c.op === 'deleteFile') fileTree.delete(c.path);
+    var stat = function (kind) {
+      var held = { kind: kind };
+      if (typeof c.size === 'number') held.size = c.size;
+      if (typeof c.modified === 'string') held.modified = c.modified;
+      return held;
+    };
+    if (c.op === 'createDirectory') fileTree.set(c.path, stat('folder'));
+    // A change carries the file's new stat, so it is news to Files even when the tree's shape stands.
+    else if (c.op === 'createFile' || c.op === 'changeFile') fileTree.set(c.path, stat('file'));
+    else if (c.op === 'deleteFile') fileTree.delete(c.path);
     else if (c.op === 'deleteDirectory') {
       Array.from(fileTree.keys()).forEach(function (p) { if (p === c.path || p.indexOf(c.path + '/') === 0) fileTree.delete(p); });
     } else return;
@@ -2422,7 +2428,11 @@
     if (!fileListCache) {
       fileListCache = Array.from(fileTree.keys()).sort().map(function (p) {
         var cut = p.lastIndexOf('/');
-        return { name: p.slice(cut + 1), relativePath: p, kind: fileTree.get(p), fullPath: p, parentPath: cut === -1 ? '' : p.slice(0, cut) };
+        var held = fileTree.get(p);
+        var entry = { name: p.slice(cut + 1), relativePath: p, kind: held.kind, fullPath: p, parentPath: cut === -1 ? '' : p.slice(0, cut) };
+        if (held.size !== undefined) entry.size = held.size;
+        if (held.modified !== undefined) entry.modified = held.modified;
+        return entry;
       });
     }
     return fileListCache;
