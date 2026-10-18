@@ -356,6 +356,33 @@ const TREE = [
     if (/width:\s*max-content/.test(popTag) && /max-width:\s*(calc\()?[0-9.]+vw/.test(popTag)) test.check('the popup takes the width its rows need, up to the page width');
     else test.fail(OWED + 'the popup is drawn ' + short(popTag));
 
+    // Andy, 2026-10-18: "it expands only as wide as the search string plus button need, and neglects the width of the
+    // table rows", and to the proposal: "let's try your width solution for the dropdown. max width should still be page
+    // width though". The rows' table takes its own width in a popup; a name is never cut short (no label-cell cap).
+    const kHtml = (partOf(keyed, 'list') || { innerHTML: '' }).innerHTML;
+    const tableTag = (/<table[^>]*>/.exec(kHtml) || [''])[0];
+    if (/style="[^"]*width:\s*(auto|max-content)/.test(tableTag)) test.check('in a popup the rows\' table takes its own width');
+    else test.fail(OWED + 'the popup\'s table is drawn ' + short(tableTag));
+    if (kHtml && !/label-cell/.test(kHtml)) test.check('a file name cell carries no width cap (no label-cell)');
+    else test.fail(OWED + 'the name cells still carry label-cell: ' + short(kHtml));
+
+    // "and the default for your filter should be filename only" (the box: words in: names | paths, names the default).
+    const named = m.make({ face: 'pane', files: function () { return TREE; } });
+    await settle();
+    typeInto(named, 'shared');
+    await settle();
+    const byName = keysOf(named);
+    const strip = (partOf(named, 'filters') || { innerHTML: '' }).innerHTML;
+    if (/data-filter="in"[^>]*data-value="names"/.test(strip) && /data-value="paths"/.test(strip)) test.check('the file list draws one filter, words in: names | paths');
+    else test.fail(OWED + 'the filter strip reads ' + short(strip));
+    if (byName.indexOf('shell/shared') !== -1 && byName.indexOf('shell/shared/js/listSearch.js') === -1) test.check('by default the words match names only: shared finds the folder shared, not the files under it');
+    else test.fail(OWED + 'with names, shared shows ' + short(byName));
+    fire(hostOf(named), 'click', { target: { id: '', getAttribute: function (k) { return k === 'data-filter' ? 'in' : k === 'data-value' ? 'paths' : null; }, closest: function () { return null; } } });
+    await settle();
+    const byPathKeys = keysOf(named);
+    if (byPathKeys.indexOf('shell/shared/js/listSearch.js') !== -1) test.check('with paths the words match the whole path: shared finds shell/shared/js/listSearch.js');
+    else test.fail(OWED + 'with paths, shared shows ' + short(byPathKeys));
+
     // "it maybe neccessary for file dropdowns to have a hidden mime-type filter that an app can configure"
     const typed = m.make({ face: 'pane', accept: ['.js'], files: function () { return TREE; } });
     await settle();
