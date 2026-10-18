@@ -146,11 +146,24 @@ spirit.shell.activateApp({
     grant.type = 'button';
     grant.id = 'gr-grant';
     grant.textContent = 'Grant';
+    // NO BLANKET GRANTS (Andy, 2026-10-18: "just don't show the Grant button, show \"Select a contact\". The designed
+    // restriction makes sense."): Grant shows only once a contact and a server are chosen; until then the line says
+    // which is missing.
+    var hint = document.createElement('span');
+    hint.id = 'gr-hint';
+    hint.className = 'job-manifest-note';
+    function grLine() {
+      var missing = !grContact.value ? 'Select a contact' : !grBranch.server ? 'Select a server' : '';
+      grant.hidden = !!missing;
+      hint.hidden = !missing;
+      hint.textContent = missing;
+    }
     var bundle = document.createElement('span');
     bundle.id = 'gr-bundle';
     line.appendChild(grContact);
     line.appendChild(grBranch);
     line.appendChild(grant);
+    line.appendChild(hint);
     line.appendChild(bundle);
 
     var listHost = document.createElement('div');
@@ -164,9 +177,10 @@ spirit.shell.activateApp({
       empty: 'No grant matches.',
     });
 
-    grContact.addEventListener('change', function () { grList.redraw(); });
+    grContact.addEventListener('change', function () { grList.redraw(); grLine(); });
     grBranch.addEventListener('change', function () {
       grList.redraw();
+      grLine();
       grLoadBundle(grBranch.server);
     });
     grant.addEventListener('click', function () { grGrant(grContact.value, grBranch.value); });
@@ -175,6 +189,7 @@ spirit.shell.activateApp({
       if (b) grRevoke(b.getAttribute('data-peer'), b.getAttribute('data-path'));
     });
 
+    grLine();
     grLoadTree().then(grLoadGrants);
   },
 });
