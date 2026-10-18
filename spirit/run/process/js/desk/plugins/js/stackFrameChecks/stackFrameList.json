@@ -4,6 +4,7 @@
     "gate": "spirit/run/js/peerPost.js::createPeerPost",
     "endpoint": "spirit/run/js/presenceNode.js",
     "suites": [
+      "agentOnboard.js",
       "serverSurface.js",
       "everyVerb.js"
     ],
