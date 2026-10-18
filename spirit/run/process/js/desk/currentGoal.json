@@ -1,5 +1,5 @@
 {
- "change": 71206,
+ "change": 71207,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -5473,10 +5473,9 @@
    "id": "goal/G29.15",
    "title": "Progress protocol: one published message, one bar",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
