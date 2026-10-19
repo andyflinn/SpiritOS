@@ -1,5 +1,5 @@
 {
- "change": 73661,
+ "change": 73674,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -7,13 +7,15 @@
    "id": "goal/G30",
    "title": "Managing external interface/API providers and keys",
    "goal": "",
-   "status": "",
+   "status": "goal run passed",
    "with": "",
    "buttons": [
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.2"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -49,9 +51,7 @@
     "ollama agent node",
     "wsl-claude"
    ],
-   "live": [
-    "claude-windows"
-   ],
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -439,6 +439,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-19T02:11:37.353Z",
      "text": "Added goal/G30.2, Log-in page on the relay side; G30.1 blocks it (it needs the members row with name and email). Its box holds your ruling and the proposed shape: mailed code, hashed with expiry, memory-only session, mail key in the goal store."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T10:45:29.556Z",
+     "text": "goal run on 6 suites: all green (at d0e62a72, pull failed: fatal: Cannot fast-forward to multiple branches.)"
     }
    ]
   },
@@ -1323,11 +1329,11 @@
    "id": "goal/G30.2",
    "title": "Onboarding a node onto a relay",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "close",
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G30"
@@ -1337,7 +1343,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -1452,7 +1458,7 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Onboarding only: a newly installed node joins a relay by its user's email, in the simplest experience for the user. The only thing typed is the email address, once. An email is never required: invites stay a second way in, for a private network.\n\nTHE LOOP\n1. The user starts the node with its email, node js/server --email <address>, as the README says: the README documents this as the easiest way onto noderoutes.net. While the node holds no seat, it asks to join its kept relay with that email; with a seat, --email does nothing. On stdout the node prints that a mail will arrive shortly to connect the user to the network, or why the join did not start, in a message that names the relay, what went wrong and what the user can do next (a relay without mail: use an invite; the cap: wait a minute; a bad address: correct it; the relay unreachable: check the network), and then the line it listens on, node is listening on 127.0.0.1:<port>. The browser first opens from the mailed link, onto a node already connected. Without --email, the user joins from the email field in Natter, which stays, and which also joins further relays later.\n2. The node sends a signed join request to a relay, any relay it knows: the email and its current port; its public key is the signer. A new node knows noderoutes.net; for testing, that one hard-coded address is spirit.andyflinn.com, the developer relay.\n3. The relay acknowledges and mails the user a link to his own node, http://127.0.0.1:<port>?<code>.\n4. Opening it, the node sends the code back to that relay, signed by the same key. Only the key that asked can finish; a guessed code is worthless.\n5. A right code, within 10 minutes, takes the seat for that key at once. The member's public label is the part of the email before the @, made to fit the label rule and changeable in the info app. The email is never published. The node finds itself a member on its next stream.\n\nON THE RELAY\n- Two new posts a stranger (not yet a member) may make on the relay's door, beside the card ask and the claim, each signed by the node key: join {email, port}, which mails the link, and joinConfirm {code}, which takes the seat. Accepted by Andy, 2026-10-19. The claim's rules hold: a full relay refuses first; a key already seated is told so.\n- On the node, one verb, confirmed by Andy, 2026-10-19: relay.join {url, email, code}, owner only, beside relay.add. With an email it sends join; with a code it sends joinConfirm. The node calls it with the email when started with --email, Natter with the email typed there, and the shell with the code when opened at http://127.0.0.1:<port>?join=<code>.\n- The pending join (email, key, port, a hash of the code) lives 10 minutes in relay memory.\n- The relay mails any address a key asks for, so codes are capped per key, per address and per sending address: at most one a minute and five an hour each.\n- The code is never typed nor pasted, only carried by the link, so it is long and unguessable: 32 random characters (Andy, 2026-10-19). One use, kept only as a hash.\n- The relay's login and join pages built earlier in this item go.\n\nMAIL\n- Mailgun: one HTTPS post per mail to <base URL>/v3/<domain>/messages, user api and the key, from postmaster@<domain>.\n- The relay reads base URL, sending domain and key from relay-state/mail.json, placed by the owner by hand, never in git, a box or a chat. Without it the relay offers no join and still takes members by invite, so anyone can run a relay without a Mailgun account.\n- The developer relay sends from spirit.andyflinn.com (US region, https://api.mailgun.net). noderoutes.net needs its own verified Mailgun domain and its own mail.json.\n\nKNOWN\n- Anyone with many email addresses can sign up many times.\n- The mail link works on the computer the node runs on.\n\nNOT IN THIS ITEM\n- Getting a face slot: the next step, built on this.\n- Logging in to the face: a separate, often repeated loop the relay/face handles.",
@@ -2635,6 +2641,18 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-19T10:43:32.287Z",
      "text": "deskVerify: passed, at d0e62a72 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T10:45:42.169Z",
+     "text": "break time. i need a few hours. thanks. ttyl. signoff."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T10:46:06.284Z",
+     "text": "Enjoy the break.\nFor when you are back: the goal run of G30 was green, but its git pull in your tree failed (cannot fast-forward to multiple branches). The tree was already at d0e62a72, so the result stands; the cause is worth a look later.\nI build nothing meanwhile."
     }
    ]
   }
