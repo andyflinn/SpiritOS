@@ -147,6 +147,96 @@ async function main() {
   const gone = ['spirit/run/js/faceLogin.js', 'spirit/test/faceLogin.js'].filter(function (p) { return fs.existsSync(path.join(ROOT, p)); });
   if (!gone.length && !/faceLogin/.test(relayServer) && !/keepCode|takeCode|loginHash/.test(code('js/relayStore.js'))) test.check('faceLogin.js, its suite, its wiring and the login code columns are gone');
   else test.fail(OWED + 'still there: ' + short(gone.concat(/faceLogin/.test(relayServer) ? ['faceLogin in relayServer'] : []).concat(/keepCode|takeCode|loginHash/.test(code('js/relayStore.js')) ? ['login code in relayStore'] : [])));
+
+  // ── 7. THE NODE STARTED WITH --email (the box, v26) ─────────────────────────────────────────────────
+  // The user starts the node with node js/server.js --email <address>. While the node holds no seat it asks its kept
+  // relay to join with that email and the port it listens on; with a seat, --email does nothing. On stdout it prints
+  // that a mail will arrive shortly, or why the join did not start (the relay named, what went wrong, what to do
+  // next), and then node is listening on 127.0.0.1:<port>. The email is optional; the README documents it as the
+  // easiest way onto noderoutes.net.
+  // NAMED HERE where the box names none:
+  //   - serveCommon.emailFromArgs(argv) reads --email <address> and --email=<address>, '' without one.
+  //   - hub.joinAtStart(email, { router, port, keptUrl }) answers { lines }: the lines to print before the listening
+  //     line, none without an email or with a seat. It asks through relay.join's own path (hub.relayJoin).
+  test.subHeading('7. the node started with --email');
+  let emailFromArgs = null;
+  try { emailFromArgs = require('../run/js/serveCommon').emailFromArgs; } catch (e) { emailFromArgs = null; }
+  const parsed = typeof emailFromArgs === 'function'
+    ? [emailFromArgs(['--email', 'ann@example.org']), emailFromArgs(['--port', '11112', '--email=ann@example.org']), emailFromArgs(['--port', '11112'])]
+    : null;
+  if (parsed && parsed[0] === 'ann@example.org' && parsed[1] === 'ann@example.org' && parsed[2] === '') test.check('--email <address> and --email=<address> are read; no flag gives no email');
+  else test.fail(OWED + 'serveCommon.emailFromArgs answered ' + short(parsed));
+
+  // A node home of its own, its router a thin carrier onto the real relay above, so a join at start mails for real.
+  const os = require('os');
+  const nodeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-joinstart-node-'));
+  const fern = auth.generateIdentity('fern');
+  const KEPT = 'https://kept.example';
+  function carrier(answerOf) {
+    return { join: function (url, email, port, c) { return Promise.resolve(answerOf(url, email, port, c)); }, startStreams: function () { return Promise.resolve(); } };
+  }
+  const real = carrier(function (url, email, port, c) { return c ? relay.joinConfirm(fern.publicKey, c) : relay.join(fern.publicKey, email, port); });
+  let nodeHub = null;
+  try { nodeHub = require('../run/js/hub').createHub(nodeHome); } catch (e) { nodeHub = null; }
+  function atStart(email, router) {
+    if (!nodeHub || typeof nodeHub.joinAtStart !== 'function') return Promise.resolve({ missing: true, lines: [] });
+    return Promise.resolve(nodeHub.joinAtStart(email, { router: router, port: 11112, keptUrl: KEPT })).then(function (r) { return r || { lines: [] }; }, function (e) { return { threw: e.message, lines: [] }; });
+  }
+  clock += 61 * 60 * 1000;
+  const n1 = sent.length;
+  const started = await atStart('fern@example.org', real);
+  const fernMail = sent.slice(n1).filter(function (m) { return m.to === 'fern@example.org'; })[0] || {};
+  const said = (started.lines || []).join('\n');
+  if (/http:\/\/127\.0\.0\.1:11112\?join=/.test(String(fernMail.text)) && /mail/i.test(said) && /shortly/i.test(said) && said.indexOf('fern@example.org') !== -1)
+    test.check('an unseated node started with --email asks its kept relay: the mail goes to its own port 11112, and stdout says a mail to fern@example.org will arrive shortly');
+  else test.fail(OWED + 'a join at start printed ' + short(started) + ', mail ' + short(fernMail));
+  const fernCode = codeOf(fernMail);
+  if (fernCode) await call('joinConfirm', [fern.publicKey, fernCode]);
+
+  const none = await atStart('', real);
+  if (!none.missing && Array.isArray(none.lines) && none.lines.length === 0) test.check('without --email nothing is asked and nothing extra is printed');
+  else test.fail(OWED + 'a start without an email answered ' + short(none));
+
+  let seatedHome = null;
+  try {
+    const rk = require('../run/js/relayKeys');
+    rk.accept(nodeHome, KEPT, 'MCowBQYDK2VwAyEAjoinAtStartKeptRelayKeyAAAAAAAAAAAAAAAAA=');
+    rk.seat(nodeHome, KEPT, 'fern');
+    seatedHome = rk.seatedUrls(nodeHome);
+  } catch (e) { seatedHome = ['threw ' + e.message]; }
+  let askedWhileSeated = 0;
+  const seatedRun = await atStart('fern@example.org', carrier(function () { askedWhileSeated += 1; return { ok: true, status: 200 }; }));
+  if (!seatedRun.missing && askedWhileSeated === 0 && (seatedRun.lines || []).length === 0) test.check('a node that holds a seat ignores --email: nothing asked, nothing printed');
+  else test.fail(OWED + 'with a seat (' + short(seatedHome) + ') a start asked ' + askedWhileSeated + ' times and printed ' + short(seatedRun));
+  try { require('../run/js/relayKeys').unseat(nodeHome, KEPT); } catch (e) { /* the refusals below would then not run */ }
+
+  // EVERY REFUSAL IS A HIGH-QUALITY MESSAGE: the relay named, what went wrong, what to do next.
+  const refusals = [
+    { why: 'a relay without mail', answer: { ok: false, status: 503, error: 'this relay sends no mail, so it takes no join' }, next: /invite/i },
+    { why: 'the cap', answer: { ok: false, status: 429, error: 'a join was asked a moment ago; wait a minute' }, next: /wait a minute/i },
+    { why: 'a bad address', answer: { ok: false, status: 400, error: 'an email is one address with an @' }, next: /correct|check the address|spell/i },
+    { why: 'the relay unreachable', answer: null, next: /network|reach/i },
+  ];
+  for (const r of refusals) {
+    const out = await atStart('fern@example.org', carrier(function () { if (!r.answer) throw new Error('connect ECONNREFUSED'); return r.answer; }));
+    const text = (out.lines || []).join('\n');
+    if (text.indexOf('kept.example') !== -1 && r.next.test(text) && !/shortly/i.test(text)) test.check(r.why + ': stdout names the relay and says what to do next (' + short(text) + ')');
+    else test.fail(OWED + r.why + ' printed ' + short(out));
+  }
+  try { fs.rmSync(nodeHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
+
+  // THE WIRING AND THE WORDS: server.js reads --email, prints the join's lines and then the listening line; --help
+  // names the flag; the README names the command.
+  if (/emailFromArgs\(/.test(server) && /joinAtStart\(/.test(server)) test.check('server.js reads --email and runs the join at start');
+  else test.fail(OWED + 'server.js neither reads --email nor runs a join at start');
+  if (/node is listening on 127\.0\.0\.1:\$\{port\}/.test(server)) test.check('server.js prints node is listening on 127.0.0.1:<port>');
+  else test.fail(OWED + 'server.js prints no "node is listening on 127.0.0.1:<port>" line');
+  if (/--email <address>/.test(server)) test.check('--help names --email <address>');
+  else test.fail(OWED + '--help does not name --email');
+  let readme = '';
+  try { readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8'); } catch (e) { readme = ''; }
+  if (/node js\/server\.js --email /.test(readme) && /noderoutes\.net/.test(readme)) test.check('the README gives node js/server.js --email as the way onto noderoutes.net');
+  else test.fail(OWED + 'the README does not give node js/server.js --email');
 }
 
 main().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
