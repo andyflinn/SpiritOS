@@ -261,8 +261,14 @@ function argMB(flag) {
 // HOW THIS RELAY ASKED A PARTNER (`askPartner`, over its own peerPost)
 // STOOD HERE; partnering as a permission is gone (Andy's decision,
 // goal/G22.6), and a relay makes no outbound request at all.
+// THE RELAY SENDS MAIL THROUGH MAILGUN (goal/G30.2): the join link goes to the user's email. Only when the owner has
+// placed relay-state/mail.json (mailgun.js); without it the relay takes no join.
+const mailgun = require('./mailgun');
+const mailConfig = mailgun.readMailConfig(ROOT_DIR);
+
 const relay = createRelay.createRelay(undefined, {
   config: CONFIG,
+  sendMail: mailConfig ? mailgun.createMailgun(mailConfig).send : null,
 
   // ── THE OWNER'S `config` VERB NEEDS HANDS (cycle 9) ───────────────
   //
@@ -383,52 +389,6 @@ function isRelayPublicPath(method, pathname) {
   return false;
 }
 
-// ── THE LOGIN AND JOIN PAGES (goal/G30.2) ─────────────────────────────
-//
-//   Andy, 2026-10-19: a log-in page on the relay side, by a code mailed to the member's email, and invites the same
-//   way on the parent-domain page. This reopens two pages beside the one door that goal/G22.6 had kept alone, by his
-//   ruling; everything else still answers Not found.
-// Only when the owner has placed relay-state/mail.json (mailgun.js): no mail, no pages. The faces hang under the
-// domain the relay mails from.
-const mailgun = require('./mailgun');
-const mailConfig = mailgun.readMailConfig(ROOT_DIR);
-const faceLogin = mailConfig ? require('./faceLogin').createFaceLogin({
-  domain: mailConfig.domain,
-  byFace: function (name) { return relayStore.open(ROOT_DIR).members.byFace(name); },
-  keepCode: function (name, hash, until) { return relayStore.open(ROOT_DIR).members.keepCode(name, hash, until); },
-  takeCode: function (name) { return relayStore.open(ROOT_DIR).members.takeCode(name); },
-  sendMail: mailgun.createMailgun(mailConfig).send,
-  mintInvite: function (email) { return relay.joinInvite(email); },
-}) : null;
-const FORM_MAX = 2048;
-function readForm(req) {
-  return new Promise(function (resolve) {
-    if (req.method !== 'POST') { resolve({}); return; }
-    let size = 0;
-    const parts = [];
-    req.on('data', function (c) { size += c.length; if (size <= FORM_MAX) parts.push(c); });
-    req.on('end', function () {
-      if (size > FORM_MAX) { resolve({}); return; }
-      const out = {};
-      try { new URLSearchParams(Buffer.concat(parts).toString('utf8')).forEach(function (v, k) { out[k] = v; }); } catch (e) { /* an unreadable form is an empty one */ }
-      resolve(out);
-    });
-    req.on('error', function () { resolve({}); });
-  });
-}
-function serveFace(req, res, pathname) {
-  readForm(req).then(function (form) {
-    return faceLogin.handle({ method: req.method, host: req.headers.host, path: pathname, form: form,
-      cookie: req.headers.cookie || '', visitor: common.clientKeyFor ? common.clientKeyFor(req) : '' });
-  }).then(function (r) {
-    res.writeHead(r.status || 500, r.headers || {});
-    res.end(r.body || '');
-  }, function () {
-    res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Something went wrong');
-  });
-}
-
 const server = http.createServer((req, res) => {
   // NO LOOPBACK OR HOST GATE, which is the node's first line and not this
   // one's: a relay is meant to be reached from the internet, and a
@@ -442,11 +402,6 @@ const server = http.createServer((req, res) => {
   if (!parsed) return;
   const url = parsed.url;
   const pathname = parsed.pathname;
-
-  if (faceLogin && faceLogin.serves(req.method, req.headers.host, pathname)) {
-    serveFace(req, res, pathname);
-    return;
-  }
 
   if (!isRelayPublicPath(req.method, pathname)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });

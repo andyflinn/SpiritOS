@@ -575,6 +575,9 @@ freePort()
       // goal/G30.1. Posted with no name or email, which it refuses before anything else (hub.relayFace): reachable,
       // nothing asked of any relay.
       ['POST', '/api/spirit', { verb: 'relay.face', url: '', name: '', email: '' }],
+      // goal/G30.2. Posted with no url, email or code, which it refuses before anything else (hub.relayJoin):
+      // reachable, nothing asked of any relay.
+      ['POST', '/api/spirit', { verb: 'relay.join', url: '', email: '', code: '' }],
       // cycle 11's R6. Reads what the node already wrote as reports
       // arrived; reaches no network, so unlike its neighbour it cannot
       // time out. With no relay named it answers the list of relays that

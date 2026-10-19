@@ -242,14 +242,6 @@ function open(rootDir) {
     db.exec("CREATE UNIQUE INDEX IF NOT EXISTS members_face ON members (faceName) WHERE faceName <> ''");
   } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
 
-  // A MEMBER'S LOGIN CODE (goal/G30.2). Andy, 2026-10-19: "the token is stored with the member." Only a hash of the
-  // code the relay mailed, and when it stops counting (ms since the epoch); empty and 0 mean none. Taken on use.
-  try {
-    const lcols = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
-    if (lcols.indexOf('loginHash') === -1) db.exec("ALTER TABLE members ADD COLUMN loginHash TEXT NOT NULL DEFAULT ''");
-    if (lcols.indexOf('loginUntil') === -1) db.exec('ALTER TABLE members ADD COLUMN loginUntil INTEGER NOT NULL DEFAULT 0');
-  } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
-
   const hasOwnerColumn = db.prepare('PRAGMA table_info(members)').all()
     .some(function (c) { return c.name === 'owner'; });
   if (hasOwnerColumn) db.exec('ALTER TABLE members DROP COLUMN owner');
@@ -379,18 +371,6 @@ function build(rootDir, db, key) {
       setFace: function (publicKey, name, email) {
         try { return faceStmt('set', 'UPDATE members SET faceName = ?, faceEmail = ? WHERE publicKey = ?').run(String(name || ''), String(email || ''), String(publicKey || '')).changes > 0; }
         catch (e) { if (/UNIQUE/i.test(String(e && e.message))) return false; throw e; }
-      },
-      // The login code of the member who holds a face name (goal/G30.2): kept as a hash with its expiry, and taken
-      // (read and cleared at once) when a code is checked, so a code counts once.
-      keepCode: function (faceName, hash, until) {
-        return faceStmt('keepCode', "UPDATE members SET loginHash = ?, loginUntil = ? WHERE faceName = ? AND faceName <> ''")
-          .run(String(hash || ''), Number(until) || 0, String(faceName || '')).changes > 0;
-      },
-      takeCode: function (faceName) {
-        const row = faceStmt('codeOf', "SELECT loginHash, loginUntil FROM members WHERE faceName = ? AND faceName <> ''").get(String(faceName || ''));
-        if (!row) return null;
-        faceStmt('clearCode', "UPDATE members SET loginHash = '', loginUntil = 0 WHERE faceName = ?").run(String(faceName || ''));
-        return { hash: row.loginHash || '', until: Number(row.loginUntil) || 0 };
       },
     },
 

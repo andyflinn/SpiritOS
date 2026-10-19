@@ -3068,6 +3068,23 @@
   if (nodeNameAsking) nameAsked.then(openBinderIfUnbound);
   else openBinderIfUnbound();
 
+  // ── OPENED FROM THE JOIN MAIL (goal/G30.2) ───────────────────────────
+  //
+  // The relay mailed the user a link to this node, http://127.0.0.1:<port>?join=<code>. Opened here, the node sends
+  // the code back to the relay it asked (relay.join with the code); a right code takes the seat at once. The code
+  // leaves the address bar first, so a reload or a shared screenshot does not carry it.
+  (function joinFromLink() {
+    var code = '';
+    try { code = new URLSearchParams(window.location.search).get('join') || ''; } catch (e) { code = ''; }
+    if (!code) return;
+    try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the code is spent anyway */ }
+    Promise.resolve(spirit.core.ask('relay.join', { url: '', email: '', code: code })).then(function (r) {
+      var b = (r && r.body) || {};
+      window.alert(b.ok ? 'Joined ' + (b.url || 'the relay') + (b.label ? ' as ' + b.label : '') + '.'
+        : 'The join did not finish: ' + (b.error || 'no answer') + '. Ask again with your email.');
+    }, function () { window.alert('The join did not finish: this node did not answer.'); });
+  }());
+
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----
   spirit.core.jobs.subscribe({
     onSnapshot: function (jobs) {

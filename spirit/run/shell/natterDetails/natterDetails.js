@@ -638,6 +638,14 @@ function ndClaimHtml() {
     // phone call, which is precisely the confusion R1 existed to remove
     // (design/cycles/2026-09-15-labels-are-not-identities.md). The word
     // that travels is "Invite name" on both screens now.
+    // JOIN WITH YOUR EMAIL, FIRST (goal/G30.2): the one thing a new user types. The relay mails a link to this node;
+    // opening it takes the seat (shell.js joinFromLink). The invite form below stays for an invite somebody gave you.
+    '<div class="start-job-form card">' +
+    '<label class="field-label grow">Your email' +
+      '<input type="email" class="nd-join-email" placeholder="you@example.org" autocomplete="email"></label>' +
+    '<button type="button" class="nd-join-go">Join</button>' +
+    '</div>' +
+    '<div class="job-manifest-note nd-join-out"></div>' +
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Invite name' +
       '<input type="text" class="nd-claim-invite" placeholder="(the word the owner read out)"></label>' +
@@ -1233,6 +1241,26 @@ function ndRender() {
 // session.json is Natter's file and api.fs here is scoped to this app's
 // own folder. The screen says what the relay agreed to; Natter writes it
 // down against this url.
+// THE JOIN BY EMAIL (goal/G30.2): asks relay.join with the email; the relay mails a link to this node, and opening
+// it takes the seat. Nothing else is typed.
+function ndJoin(button) {
+  var panel = button.closest('.natter-claim');
+  var out = panel.querySelector('.nd-join-out');
+  var email = panel.querySelector('.nd-join-email').value.trim();
+  function say(text, bad) {
+    out.className = 'job-manifest-note nd-join-out ' + (bad ? 'is-error' : 'is-token');
+    out.textContent = text;
+  }
+  if (!/^[^\s@]+@[^\s@]+$/.test(email)) { say('type your email address', true); return; }
+  button.disabled = true;
+  ndPost('relay.join', { url: ndUrl, email: email, code: '' }).then(function (r) {
+    var said = null;
+    try { said = JSON.parse(r.text); } catch (e) { said = null; }
+    if (said && said.ok) say('A link is on its way to ' + email + '. Open it on this computer within 10 minutes.', false);
+    else say((said && said.error) || (r.status + ' ' + r.text), true);
+  }, function (e) { say(String((e && e.message) || e), true); }).then(function () { button.disabled = false; });
+}
+
 function ndClaim(button) {
   var panel = button.closest('.natter-claim');
   var out = panel.querySelector('.nd-claim-out');
@@ -1566,6 +1594,8 @@ spirit.shell.activateApp({
       // with the next repaint — the same reason every control on this
       // screen is delegated.
 
+      var joinBtn = target.closest('.nd-join-go');
+      if (joinBtn) { ndJoin(joinBtn); return; }
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }
 

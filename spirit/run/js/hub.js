@@ -2759,6 +2759,42 @@ function createHub(rootDir) {
     });
   }
 
+  // ── relay.join: THIS NODE JOINS A RELAY BY ITS USER'S EMAIL (goal/G30.2) ──
+  //
+  //   Andy, 2026-10-19, confirmed: relay.join {url, email, code}, owner only, beside relay.add. With an email it
+  //   sends join (the relay mails a link to this node's port); with a code, from that link, it sends joinConfirm and
+  //   the seat is taken at once. The shell calls it with the email on first start, and with the code when it is
+  //   opened at http://127.0.0.1:<port>?join=<code>.
+  // The relay asked last is remembered in memory, so the link's code needs no url; a restart forgets it, and the
+  // code then needs the url again. A seat taken is written down as a claim's is (relay list, seat, streams).
+  var joinAskedOf = '';
+  function relayJoin(body, deps) {
+    var url = String((body && body.url) || '').trim().replace(/\/+$/, '') || (body && body.code ? joinAskedOf : '');
+    var email = String((body && body.email) || '').trim();
+    var code = String((body && body.code) || '').trim();
+    var router = deps && deps.router;
+    if (!url) return Promise.resolve({ ok: false, status: 400, error: 'which relay? give its url' });
+    if (!email && !code) return Promise.resolve({ ok: false, status: 400, error: 'an email to ask with, or the code from the mail' });
+    if (!router || typeof router.join !== 'function') return Promise.resolve({ ok: false, status: 503, error: 'this node has no router to join with' });
+    var port = Number(deps && deps.port) || 0;
+    return router.join(url, email, port, code).then(function (said) {
+      if (!code) {
+        if (said.ok) joinAskedOf = url;
+        return said.ok ? { ok: true, status: 200, url: url } : { ok: false, status: said.status || 502, error: said.error || 'the relay refused' };
+      }
+      if (!said.ok) return { ok: false, status: said.status || 502, error: said.error || 'the relay refused' };
+      var label = String((said.peer && said.peer.publicLabel) || '');
+      try { ownerBadge.addRelay(rootDir, url, '', said.relayPublicKey || ''); } catch (e) { /* the seat stands; listed on the next join */ }
+      try { relayKeys.clearRefusal(rootDir, said.relayPublicKey || url); } catch (e) { /* read again on the next probe */ }
+      try { relayKeys.seat(rootDir, url, label); } catch (e) { /* a boot can still backfill */ }
+      if (deps.probe) { try { router.startStreams(deps.probe); } catch (e) { /* the next boot connects */ } }
+      joinAskedOf = '';
+      return { ok: true, status: 201, url: url, label: label };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
   // ── relay.face: THIS NODE APPLIES TO ONE RELAY FOR A FACE NAME (goal/G30.1) ──
   //
   //   Andy, 2026-10-19: "the node, already connected as member on a relay, applies to the relay for a
@@ -2871,6 +2907,7 @@ function createHub(rootDir) {
     relayRemove: relayRemove,
     relayAdd: relayAdd,
     relayFace: relayFace,
+    relayJoin: relayJoin,
     relayGet: relayGet,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,

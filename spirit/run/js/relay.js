@@ -1206,7 +1206,7 @@ function createRelay(rootDir, deps) {
     };
   }
 
-  function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen, claimedCard) {
+  function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen, claimedCard, joined) {
     var inviteRow = null;
     // ── SIGNED AS SENT, STORED AS NORMALISED ─────────────────────────
     //
@@ -1269,10 +1269,12 @@ function createRelay(rootDir, deps) {
     var ownerClaim = publicKey === ownerKey;
     if (!ownerClaim && seats.fullForMembers()) return seatsFull();
     if (!ownerClaim && discLimit.full()) return discFull();
-    if (!publicKey || !sig) {
+    // A JOIN (goal/G30.2) comes with no claim signature: the key signed the post on the door, and the mailed code
+    // came back under that same key, which together are its proof. Everything else below holds for it as for a claim.
+    if (!publicKey || (!sig && !joined)) {
       return { ok: false, status: 400, error: 'claim needs publicKey and sig' };
     }
-    if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
+    if (!joined && !auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
       return { ok: false, status: 403, error: 'bad claim signature' };
     }
     // THE PER-ADDRESS CLAIM LIMIT (ten a minute) STOOD HERE. Andy's
@@ -1313,7 +1315,8 @@ function createRelay(rootDir, deps) {
     // the install named him, and no invite exists that could. It also
     // keeps a relay whose owner.json outlived its roll (a restore, a lost
     // peer record) from locking its own owner out.
-    if (!ownerClaim) {
+    // A JOIN NEEDS NO INVITE (goal/G30.2): the email loop stands in for it.
+    if (!ownerClaim && !joined) {
       if (!inviteToken) {
         return { ok: false, status: 403, error: 'invite required' };
       }
@@ -1523,10 +1526,10 @@ function createRelay(rootDir, deps) {
     }
   }
 
-  function claim(name, sig, publicKey, clientKey, inviteToken, inviteLabel, card) {
+  function claim(name, sig, publicKey, clientKey, inviteToken, inviteLabel, card, joined) {
     var seen = { gate: false, label: '', invite: '' };
     var out = guardWrite('claim', function () {
-      return claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen, card);
+      return claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen, card, joined === true);
     });
     if (seen.gate) {
       ownerEvent(out && out.ok ? 'claim' : 'claim-refused', {
@@ -2422,7 +2425,17 @@ function createRelay(rootDir, deps) {
   // THE RELAY'S PUBLIC SERVICES: its card and a claim (Andy's decision,
   // goal/G22.6). The only things a key this relay does not hold may ask it.
   function isPublicAsk(plain) {
-    return isCardAsk(plain) || isClaimAsk(plain);
+    return isCardAsk(plain) || isClaimAsk(plain) || isJoinAsk(plain);
+  }
+
+  // A JOIN OR ITS CONFIRM AND NOTHING ELSE (goal/G30.2): one verb, as a claim is.
+  function isJoinAsk(plain) {
+    var parsed = null;
+    try { parsed = JSON.parse(String(plain || '')); }
+    catch (e) { return false; }
+    var body = parsed && parsed.body;
+    if (!body || typeof body !== 'object' || Object.keys(body).length !== 1) return false;
+    return !!((body.join && typeof body.join === 'object') || (body.joinConfirm && typeof body.joinConfirm === 'object'));
   }
 
   // ── A PUBLIC SERVICE, ANSWERED ON ITS OWN POST (goal/G22.6) ────────────
@@ -2438,6 +2451,22 @@ function createRelay(rootDir, deps) {
   // can carry a claim on behalf of a key they do not hold.
   function answerPublic(hash, plain, who) {
     if (isCardAsk(plain)) return sendSelfAnswer(hash, who, relayCard(), { plain: true });
+    // JOIN AND ITS CONFIRM (goal/G30.2): the key that signed the post is the key that joins. Sealed, like a claim's
+    // answer, to the card the post carried.
+    if (isJoinAsk(plain)) {
+      var jb = null;
+      try { jb = JSON.parse(plain).body; } catch (e) { jb = {}; }
+      var asked = jb.join || jb.joinConfirm || {};
+      var jout = jb.join
+        ? join(who.id, asked.email, asked.port, asked.card)
+        : joinConfirm(who.id, asked.code, asked.card);
+      var jcard = typeof asked.card === 'string' ? nodeCard.verify(asked.card) : null;
+      var jseal = jcard && jcard.publicKey === who.id ? jcard.sealKey : '';
+      return sendSelfAnswer(hash, who, {
+        ok: !!(jout && jout.ok), status: (jout && jout.status) || 500,
+        peer: (jout && jout.peer) || undefined, error: jout && !jout.ok ? jout.error : undefined,
+      }, { sealKey: jseal });
+    }
     var claimed = null;
     try { claimed = JSON.parse(plain).body.claim; } catch (e) { claimed = null; }
     var c = claimed || {};
@@ -3874,19 +3903,76 @@ function createRelay(rootDir, deps) {
     return true;
   }
 
-  // AN INVITE FOR WHOEVER PROVED AN EMAIL ON THE PARENT PAGE (goal/G30.2). Andy, 2026-10-19: "so we'll do invites
-  // the same way on the parent-domain page". The same mint the owner's invite verb runs, in the owner's name, so the
-  // seat reservation and the capacity check hold; the spoken label is the email's local part, made speakable.
-  function joinInvite(email) {
-    var local = String(email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
-    var made = mint(ownerLabel(), local || 'guest', 7, '', 'join');
-    return made && made.ok && made.invite ? { token: made.invite.token, label: made.invite.label } : null;
+  // ── A NODE JOINS BY ITS USER'S EMAIL (goal/G30.2, "Onboarding a node onto a relay") ──────────────
+  //
+  // Andy's design, 2026-10-19: the node sends a signed join request, the email and its port, its key the signer;
+  // the relay mails a link to the user's own node, http://127.0.0.1:<port>?join=<code>; the node sends the code
+  // back under the same key, and a right code within 10 minutes takes the seat at once. Only the key that asked can
+  // finish, so a code is worth nothing to anyone else. join and joinConfirm are the two door posts for it, accepted
+  // by Andy; this is what they call, as claim is for a claim.
+  //
+  // KEPT IN MEMORY, 10 minutes: the pending join (email, port, a hash of the code, the card it came with). Nothing
+  // of it reaches the disc, and the email is never published: the seat's public label is the part before the @.
+  var JOIN_MS = 10 * 60 * 1000;
+  var JOIN_GAP_MS = 60 * 1000;
+  var JOIN_PER_HOUR = 5;
+  var pendingJoins = new Map();      // publicKey -> { email, port, hash, until, card }
+  var joinAsks = new Map();          // 'key:<k>' or 'mail:<address>' -> [times]
+  var sendMail = typeof deps.sendMail === 'function' ? deps.sendMail : null;
+  function joinHash(code) { return require('crypto').createHash('sha256').update(String(code)).digest('hex'); }
+  function joinCapped(what) {
+    var t = clock();
+    var times = (joinAsks.get(what) || []).filter(function (x) { return t - x < 60 * 60 * 1000; });
+    if ((times.length && t - times[times.length - 1] < JOIN_GAP_MS) || times.length >= JOIN_PER_HOUR) { joinAsks.set(what, times); return true; }
+    times.push(t);
+    joinAsks.set(what, times);
+    return false;
+  }
+  function joinSweep() {
+    var t = clock();
+    pendingJoins.forEach(function (p, k) { if (p.until < t) pendingJoins.delete(k); });
+    joinAsks.forEach(function (times, k) { if (!times.some(function (x) { return t - x < 60 * 60 * 1000; })) joinAsks.delete(k); });
+  }
+  // The public label a join seats under: the email's part before the @, made to fit the label rule.
+  function labelFromEmail(email) {
+    var local = normalizeName(String(email || '').split('@')[0]).slice(0, 32);
+    return local && !labelProblem(local) ? local : 'member';
+  }
+  function join(publicKey, email, port, card) {
+    joinSweep();
+    var key = String(publicKey || '');
+    var mail = String(email == null ? '' : email).trim().toLowerCase();
+    var p = Number(port);
+    if (!key) return { ok: false, status: 400, error: 'a join needs the key that asks' };
+    if (Buffer.byteLength(mail, 'utf8') > 254 || !/^[^\s@]+@[^\s@]+$/.test(mail)) return { ok: false, status: 400, error: 'an email is one address with an @' };
+    if (!(p >= 1 && p <= 65535 && Math.floor(p) === p)) return { ok: false, status: 400, error: 'a join needs the port of the node' };
+    if (findByKey(key)) return { ok: false, status: 409, error: 'key already claimed', peer: findByKey(key) };
+    if (seats.fullForMembers()) return seatsFull();
+    if (!sendMail) return { ok: false, status: 503, error: 'this relay sends no mail, so it takes no join' };
+    if (joinCapped('key:' + key) || joinCapped('mail:' + mail)) return { ok: false, status: 429, error: 'a join was asked a moment ago; wait a minute' };
+    var code = require('crypto').randomBytes(24).toString('base64url');
+    pendingJoins.set(key, { email: mail, port: p, hash: joinHash(code), until: clock() + JOIN_MS, card: typeof card === 'string' ? card : '' });
+    Promise.resolve(sendMail({
+      to: mail,
+      subject: 'Join this relay',
+      text: 'Open this link on the computer where SpiritOS runs, within 10 minutes:\n\nhttp://127.0.0.1:' + p + '?join=' + code + '\n\nIt counts once.',
+    })).catch(function () { /* the pending join lapses on its own */ });
+    return { ok: true, status: 200 };
+  }
+  function joinConfirm(publicKey, code, card) {
+    joinSweep();
+    var key = String(publicKey || '');
+    var p = pendingJoins.get(key);
+    if (!p || p.until < clock() || !code || joinHash(code) !== p.hash) return { ok: false, status: 403, error: 'no join waits for that code under this key' };
+    pendingJoins.delete(key);
+    return claim(labelFromEmail(p.email), '', key, '', '', '', typeof card === 'string' && card ? card : p.card, true);
   }
 
   return {
     claim: claim,
     forgetPeer: forgetPeer,
-    joinInvite: joinInvite,
+    join: join,
+    joinConfirm: joinConfirm,
     // Where this relay keeps its data. In-process only, for the suites that
     // inspect the roll on disc (test/rollOf.js) — nothing on the wire reads
     // it, and there is no whole-roll read on the relay itself (cycle 3).

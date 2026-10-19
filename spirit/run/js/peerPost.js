@@ -2013,6 +2013,50 @@ function createPeerPost(opts) {
     });
   }
 
+  // ── A JOIN BY EMAIL, ON THE RELAY'S DOOR (goal/G30.2) ───────────────────
+  //
+  // The same stranger post a claim is: sealed to the relay, signed by this node's key, answered on the post. With
+  // an email it asks (join {email, port, card}): the relay mails a link to this node's port. With a code it confirms
+  // (joinConfirm {code, card}): the code from that link, under the same key, takes the seat. The card rides along so
+  // the relay can seal its answer to a node it holds no row for, as a claim's does.
+  function join(relayUrl, email, port, code, known) {
+    var keyed;
+    if (known && typeof known === 'object' && known.relayPublicKey && known.relaySealKey) {
+      keyed = Promise.resolve({ relayPublicKey: String(known.relayPublicKey), relaySealKey: String(known.relaySealKey) });
+    } else {
+      keyed = relayKey(relayUrl);
+    }
+    return keyed.then(function (key) {
+      var mine = me();
+      try { nodeCard.ensureDescription(rootDir); } catch (e) { /* the join still goes */ }
+      var card = nodeCard.describe(rootDir);
+      var body = code
+        ? { joinConfirm: { code: String(code), card: card } }
+        : { join: { email: String(email || ''), port: Number(port) || 0, card: card } };
+      var wrapped = seal.seal(key.relaySealKey, mine.publicKey, key.relayPublicKey, JSON.stringify({ v: 1, body: body }));
+      if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
+      return publicPost(relayUrl, key.relayPublicKey, JSON.stringify(wrapped)).then(function (got) {
+        var pkt = relayAnswer(got, key.relayPublicKey);
+        var plain = pkt.text;
+        if (seal.isSealed(plain)) {
+          var opened = seal.open(mine.sealPrivateKey, key.relayPublicKey, mine.publicKey, plain);
+          if (!opened) throw new Error('the relay\'s answer did not open for this node');
+          plain = opened.text;
+        }
+        var said = null;
+        try { said = JSON.parse(plain).body; } catch (e) { said = null; }
+        if (!said) throw new Error('the relay answered nothing this node can read');
+        return {
+          ok: said.ok === true,
+          status: Number(said.status) || (said.ok ? 200 : 500),
+          peer: said.peer || undefined,
+          error: said.ok ? undefined : String(said.error || 'refused'),
+          relayPublicKey: key.relayPublicKey,
+        };
+      });
+    });
+  }
+
   // ── WHAT THIS NODE HAD PROMISED BEFORE IT STOPPED (cycle R16) ────────
   //
   // Every entry comes back in its old order, its deadline shifted by the
@@ -2092,6 +2136,7 @@ function createPeerPost(opts) {
     // and a claim.
     relayKey: relayKey,
     claim: claim,
+    join: join,
     // What arrived while nobody was home, and what is still outstanding.
     arrived: function () { return arrived.slice(); },
     outstanding: function () { return Object.keys(waiting); },

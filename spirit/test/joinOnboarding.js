@@ -129,6 +129,11 @@ async function main() {
   const shell = code('js/client/shell.js');
   if (/relay\.join/.test(shell) && /[?&]?join=|get\('join'\)/.test(shell)) test.check('the shell asks relay.join and reads ?join= on load');
   else test.fail(OWED + 'the shell neither asks relay.join nor reads ?join=');
+  // THE EMAIL, TYPED ONCE ON FIRST START: an unbound node opens Natter, which opens the claim screen of its relay
+  // (shell.js openBinderIfUnbound); the email field sits there and asks relay.join with the email.
+  const nd = code('shell/natterDetails/natterDetails.js');
+  if (/type="email"|class="nd-join-email"/.test(nd) && /'relay\.join',\s*\{[^}]*email/.test(nd)) test.check('the first-run claim screen (natterDetails) has an email field that asks relay.join with it');
+  else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
   const relayServer = code('js/relayServer.js');
   if (/createRelay\.createRelay\([\s\S]{0,1500}sendMail/.test(relayServer) && /createMailgun/.test(relayServer)) test.check('relayServer hands the Mailgun sender to the relay');
   else test.fail(OWED + 'relayServer hands the relay no mailer');
