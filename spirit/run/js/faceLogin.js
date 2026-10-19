@@ -149,7 +149,10 @@ function createFaceLogin(deps) {
       }
       const made = d.mintInvite(email) || {};
       if (!made.token) return html(503, page('Join ' + domain, '<p>No invite could be made just now. Please try again later.</p>'));
-      return html(200, page('Welcome', '<p>Your invite to ' + esc(domain) + ':</p><pre>' + esc(made.token) + '</pre>' +
+      // BOTH HALVES: a claim is matched on the token AND the invite's label (invites.match), so a page that showed
+      // the token alone gave an invite nobody could claim (found live on spirit-3, 2026-10-19).
+      return html(200, page('Welcome', '<p>Your invite to ' + esc(domain) + ':</p>' +
+        '<p>Name: <b>' + esc(made.label || '') + '</b></p><p>Token:</p><pre>' + esc(made.token) + '</pre>' +
         '<p>Install SpiritOS, then join this relay, https://' + esc(domain) + ', with that invite.</p>'));
     }
     return html(404, page('Not found', '<p>Nothing here.</p>'));

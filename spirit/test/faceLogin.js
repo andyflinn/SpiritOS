@@ -51,7 +51,7 @@ const deps = {
   keepCode: function (name, hash, until) { if (!rows[name]) return false; rows[name].loginHash = hash; rows[name].loginUntil = until; return true; },
   takeCode: function (name) { const r = rows[name]; if (!r) return null; const out = { hash: r.loginHash, until: r.loginUntil }; r.loginHash = ''; r.loginUntil = 0; return out; },
   sendMail: function (m) { sent.push(m); return Promise.resolve({ ok: true }); },
-  mintInvite: function (email) { const t = 'INVITE-' + (invitesMinted.length + 1); invitesMinted.push({ email: email, token: t }); return { token: t }; },
+  mintInvite: function (email) { const t = 'INVITE-' + (invitesMinted.length + 1); invitesMinted.push({ email: email, token: t, label: 'newcomer' }); return { token: t, label: 'newcomer' }; },
   now: function () { return clock; },
   random: function (n) { seed += 1; return Buffer.alloc(n, seed).toString('hex').slice(0, n * 2); },
 };
@@ -129,7 +129,9 @@ async function main() {
   else test.fail(OWED + 'POST /join/code answered ' + jcode.status + ', mail ' + short(jmail));
   const jok = await ask({ method: 'POST', host: DOMAIN, path: '/join/verify', form: { email: 'new@example.org', code: j } });
   const minted = invitesMinted[invitesMinted.length - 1] || {};
-  if (jok.status === 200 && minted.email === 'new@example.org' && String(jok.body).indexOf(minted.token) !== -1) test.check('the right code mints an invite and the page shows the install line with its token');
+  // BOTH HALVES OF THE INVITE: a claim needs the token and the label (invites.match); the page showed the token alone
+  // on spirit-3 on 2026-10-19, an invite nobody could claim.
+  if (jok.status === 200 && minted.email === 'new@example.org' && String(jok.body).indexOf(minted.token) !== -1 && String(jok.body).indexOf(minted.label) !== -1) test.check('the right code mints an invite and the page shows both halves, its name and its token');
   else test.fail(OWED + 'POST /join/verify answered ' + jok.status + ', minted ' + short(minted));
   const badMail = await ask({ method: 'POST', host: DOMAIN, path: '/join/code', form: { email: 'nope' } });
   if (badMail.status === 400) test.check('an address without @ is refused 400');
