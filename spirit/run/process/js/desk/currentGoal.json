@@ -1,5 +1,5 @@
 {
- "change": 72266,
+ "change": 72269,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -8260,10 +8260,9 @@
    "id": "goal/G29.22",
    "title": "The last old searches: jobs, boxes, modules",
    "goal": "goal/G29",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
