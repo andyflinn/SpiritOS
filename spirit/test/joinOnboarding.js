@@ -126,6 +126,11 @@ async function main() {
   const server = code('js/server.js');
   if (/'relay\.join':\s*\{\s*request:\s*\{\s*url:\s*'',\s*email:\s*'',\s*code:\s*''\s*\}/.test(server)) test.check('server.js declares relay.join {url, email, code}');
   else test.fail(OWED + 'server.js declares no relay.join {url, email, code}');
+  // THE PORT THE NODE LISTENS ON (found live, 2026-10-19: a node on 11112 got a mail link to 65432). relay.join hands
+  // the hub the listening port first, never the stored default ahead of it.
+  const joinLine = (server.split('\n').filter(function (l) { return /'relay\.join'/.test(l); })[0]) || '';
+  if (/port:\s*Number\(port\)\s*\|\|/.test(joinLine)) test.check('relay.join hands on the port this node listens on, before any stored default');
+  else test.fail(OWED + 'relay.join hands on ' + short((/port:\s*[^,]+/.exec(joinLine) || [''])[0]) + ', not the listening port first');
   const shell = code('js/client/shell.js');
   if (/relay\.join/.test(shell) && /[?&]?join=|get\('join'\)/.test(shell)) test.check('the shell asks relay.join and reads ?join= on load');
   else test.fail(OWED + 'the shell neither asks relay.join nor reads ?join=');

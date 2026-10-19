@@ -2080,7 +2080,7 @@ contactBook.syncMarks(ROOT_DIR);
     'relay.face': { request: { url: '', name: '', email: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: proxyVerb(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
     // relay.join {url, email, code} (goal/G30.2, confirmed by Andy 2026-10-19): this node joins a relay by its user's
     // email. With an email it asks; with the code from the mailed link it takes the seat.
-    'relay.join': { request: { url: '', email: '', code: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: spirit.core.node.const.SPIRIT_PORT || port, probe: require('./hub').relayKeyAsk(peerRouter) }); }) },
+    'relay.join': { request: { url: '', email: '', code: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.core.node.const.SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) }); }) },
     // WHAT A RELAY HAS SAID OVER TIME, beside what it says now —
     // cycle 11's R6. `relay.status` probes; this reads what was already
     // written as the reports arrived, so it reaches no network at all —
