@@ -1,5 +1,5 @@
 {
- "change": 73110,
+ "change": 73164,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,7 +10,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -55,9 +54,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1328,11 +1325,9 @@
    "id": "goal/G30.2",
    "title": "Log-in page on the relay side",
    "goal": "goal/G30",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -1340,17 +1335,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1358,7 +1353,36 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
@@ -1366,8 +1390,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "A member logs into the relay by a code mailed to the email the relay holds for their face name; no Google, Facebook or other provider.\n\nRULED\n- Andy, 2026-10-19: the relay stores little. The relay sends a token to the email of the login and answers with a form to enter that token; the token creates a session; the token is stored with the member.\n\nPROPOSED (not yet ruled)\n- The page: the relay serves it on the member name (one label under the relay domain). The name in the address is the face name, so the page asks for no name: one button sends the code, and a field takes it.\n- The code: the relay mails a short code to the email the members row holds for that name, and answers with the form for the code. The members row keeps only a hash of the code and its expiry (about 10 minutes, one use).\n- The session: a right code opens a session, a random cookie kept in the relay memory, never on disk; a relay restart means logging in again.\n- Mail: through Postmark (Andy, 2026-10-19): one HTTPS post per mail to its email API with the server token in a header, the token kept in the goal store, the relay owner one. noderoutes.net gets Postmark DKIM and Return-Path DNS records so the mail is trusted.\n- Scope: the mailed code behind both pages: the login and its session on the member name page, and the invite with its install line on the parent domain page. What a logged-in member can do on the face is a later item.\n\nDEPENDS ON\n- goal/G30.1: the members row with face name and email.\n\nRULED, Andy 2026-10-19, on onboarding\n- \"so we'll do invites the same way on the parent-domain page and the face-login in the facename.noderoutes.net page.... got it.\" So: the mailed code behind both; the parent domain page ends in an invite and the install line, the member name page in a session.\n\nMAIL PROVIDER: Mailgun, Andy's account (2026-10-19), sandbox domain for now, base URL https://api.mailgun.net; one HTTPS post per mail. The API key lives only in the relay owner node secrets file, never in this box or the chat; the one pasted in chat is to be rotated once that file exists.",
-   "version": 5,
+   "box": "A member logs into the relay by a code mailed to the email the relay holds for their face name; no Google, Facebook or other provider.\n\nRULED\n- Andy, 2026-10-19: the relay stores little. The relay sends a token to the email of the login and answers with a form to enter that token; the token creates a session; the token is stored with the member.\n\nPROPOSED (not yet ruled)\n- The page: the relay serves it on the member name (one label under the relay domain). The name in the address is the face name, so the page asks for no name: one button sends the code, and a field takes it.\n- The code: the relay mails a short code to the email the members row holds for that name, and answers with the form for the code. The members row keeps only a hash of the code and its expiry (about 10 minutes, one use).\n- The session: a right code opens a session, a random cookie kept in the relay memory, never on disk; a relay restart means logging in again.\n- Scope: the mailed code behind both pages: the login and its session on the member name page, and the invite with its install line on the parent domain page. What a logged-in member can do on the face is a later item.\n\nDEPENDS ON\n- goal/G30.1: the members row with face name and email.\n\nRULED, Andy 2026-10-19, on onboarding\n- \"so we'll do invites the same way on the parent-domain page and the face-login in the facename.noderoutes.net page.... got it.\" So: the mailed code behind both; the parent domain page ends in an invite and the install line, the member name page in a session.\n\nMAIL PROVIDER: Mailgun, Andy's account (2026-10-19), one HTTPS post per mail; free plan, 100 mails a day. Sending domain spirit.andyflinn.com, verified in Mailgun (SPF and DKIM live). The domain is in the US region (Andy, 2026-10-19), so the base URL is https://api.mailgun.net.\n- The key (Andy, 2026-10-19, \"relay-state/mail.json ... sure.\"): the relay sends the mail, so the relay reads the key from relay-state/mail.json on the relay box, with base URL, sending domain and key, placed there by the owner by hand, never in git, this box or the chat. The goal general secrets store is not built yet; this file is its first, narrow case. One HTTPS post per mail to <base URL>/v3/<domain>/messages, user api and the key, with from, to, subject and text; from is postmaster@<domain>.\n- A cap on codes: one code per address per few minutes and a handful per hour, per address and per visitor, so a stranger on the parent page cannot burn the 100 a day.",
+   "version": 9,
    "checks": [],
    "chat": [
     {
@@ -1507,6 +1531,102 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-19T02:41:02.640Z",
      "text": "Plenty for logins: one mail per login. The one risk is the parent page, where a stranger can ask for codes: someone could burn the 100 a day. A cap per address and per visitor (say one code per address per few minutes, a handful per hour) keeps it for real members."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:47:45.263Z",
+     "text": "this one still green? or do we note that we use https://api.eu.mailgun.net?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:48:36.511Z",
+     "text": "Not green yet; fixed in the box (v6):\n- the old Postmark line is gone, Mailgun with the EU URL https://api.eu.mailgun.net stands;\n- a sandbox domain only mails addresses you authorized in Mailgun, so members need a verified domain of yours there;\n- the cap on codes is in.\nOne real gap: the relay sends the mail, so the key must sit on the relay box, and the goal secrets store is not built. My proposal: a file relay-state/mail.json on spirit-3 (URL, domain, key) that you place by hand, never in git.\nIs that file where the relay reads the key?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T04:12:42.464Z",
+     "text": "i've been trying to get mailgun verification, it wants be to set this DNS record for \"DMARC\" verification:\n\nTXT (DMARC)\t\n_dmarc.spirit.andyflinn.com\nv=DMARC1; p=none; pct=100; fo=1; ri=3600; rua=mailto:cb5f0f38@dmarc.mailgun.org,mailto:xte3zzuu4wc@inbox.ondmarc.com; ruf=mailto:cb5f0f38@dmarc.mailgun.org,mailto:xte3zzuu4wc@inbox.ondmarc.com;\n\nso i created it, and still nothing it' check status button still says \"unable to check domain\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T04:13:18.929Z",
+     "text": "Your DMARC record is right and live: Google DNS answers it for _dmarc.spirit.andyflinn.com exactly as Mailgun wants.\nWhat I find missing for spirit.andyflinn.com: no SPF TXT on the name itself, no DKIM record (a TXT under ..._domainkey.spirit), no MX records. Mailgun verifies by SPF and DKIM above all; DMARC alone does not verify a domain.\nIn the Mailgun page for the domain, under DNS records, it lists each with its exact host and value: add the SPF TXT and the DKIM TXT the same way you added DMARC (the MX pair only if you want mail back). \"Unable to check\" may also be Mailgun itself; give it a few minutes after the records."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T04:30:57.523Z",
+     "text": "i set these up manually and still can't verify\n\nType\n\nHost\n\nValue\n\nPriority\n\nTXT(SPF)\t\nspirit.andyflinn.com\nv=spf1 include:mailgun.org ~all\nTXT(DKIM)\t\nk1._domainkey.spirit.andyflinn.com\nk=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDmLAew6cCsr4G03Uy+B1VE86VReMs3JnXxQqkPB2aK0yD6Lf7lxaaTkiQicIUq1soK+ecq71/rTOlrVeWJafwlVdJqMxVvoA5VNFrtN2oEts0u9a5tKbxEysOwqDtbyc3ZXaKZe7i4uqQTv94cXqfTJFHXcNywgNZgCdVJQNlXIQIDAQAB\nMX\t\nspirit.andyflinn.com\nmxa.mailgun.org\n10\nMX\t\nspirit.andyflinn.com\nmxb.mailgun.org\n10\nCNAME\t\nemail.spirit.andyflinn.com\nmailgun.org\nTXT (DMARC)\t\n_dmarc.spirit.andyflinn.com\nv=DMARC1; p=none; pct=100; fo=1; ri=3600; rua=mailto:cb5f0f38@dmarc.mailgun.org,mailto:xte3zzuu4wc@inbox.ondmarc.com; ruf=mailto:cb5f0f38@dmarc.mailgun.org,mailto:xte3zzuu4wc@inbox.ondmarc.com;"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T04:31:31.524Z",
+     "text": "Your SPF and DKIM records are live and exact, on Google DNS and on DreamHost itself, so the DNS side is done for sending. The MX pair and the email CNAME do not show yet; sending does not need them.\nOne thing stands out: the values Mailgun gave you are its US ones (mxa.mailgun.org, CNAME mailgun.org; the EU ones are mxa.eu.mailgun.org and eu.mailgun.org). So this domain was likely created in the US region. Then its API address is https://api.mailgun.net, not the EU one, and the key of the account region it lives in.\nIf Check status keeps saying unable to check with SPF and DKIM in place, that is Mailgun side; their support or a retry later."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T04:43:58.194Z",
+     "text": "mailgun domain settings DNS records are marked as verified"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T04:44:33.595Z",
+     "text": "Good, in the box: sending domain spirit.andyflinn.com, verified.\nTwo things left before the red: which region Mailgun shows for that domain (US or EU, top of its page), and my question above: is relay-state/mail.json on spirit-3, placed by you, where the relay reads the key?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T04:45:12.067Z",
+     "text": "that domain shows US (dreamhost)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T04:45:51.277Z",
+     "text": "In the box: US region, base URL https://api.mailgun.net. If the key you have came with the EU address, it belongs to an EU domain; for this domain use the key Mailgun shows under the US one.\nLast open point: the relay reads the key from relay-state/mail.json on spirit-3, a file you place by hand. Yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T04:48:40.988Z",
+     "text": "can't figure out how to find anything on that site, it says: send a production email like this:\n\nimport FormData from \"form-data\"; // form-data v4.0.1\nimport Mailgun from \"mailgun.js\"; // mailgun.js v11.1.0\n\nasync function sendSimpleMessage() {\n  const mailgun = new Mailgun(FormData);\n  const mg = mailgun.client({\n    username: \"api\",\n    key: process.env.API_KEY || \"API_KEY\",\n    // When you have an EU-domain, you must specify the endpoint:\n    // url: \"https://api.eu.mailgun.net\"\n  });\n  try {\n    const data = await mg.messages.create(\"spirit.andyflinn.com\", {\n      from: \"Mailgun Sandbox <postmaster@spirit.andyflinn.com>\",\n      to: [\"ANDREAS THUT <countinn@gmail.com>\"],\n      subject: \"Hello ANDREAS THUT\",\n      text: \"Congratulations ANDREAS THUT, you just sent an email with Mailgun! You are truly awesome!\",\n    });\n\n    console.log(data); // logs response data\n  } catch (error) {\n    console.log(error); //logs any error\n  }\n}"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T04:49:02.720Z",
+     "text": "That snippet settles it: the EU address is commented out, so your domain is US and https://api.mailgun.net is right. Nothing more to find on their site.\nThe relay will not use their library; it does the same in one HTTPS post: to https://api.mailgun.net/v3/spirit.andyflinn.com/messages, user api and the key, with from, to, subject and text. The from can be postmaster@spirit.andyflinn.com, as in their example.\nStill one yes from you: the relay reads the key from relay-state/mail.json on spirit-3, a file you place by hand."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T04:51:03.761Z",
+     "text": "relay-state/mail.json\n\nsure."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T04:51:43.320Z",
+     "text": "In the box. G30.2 is green from my side now: the mail path is settled end to end. What is still marked proposed (code hashed with a 10-minute expiry, the session in relay memory, the cap on codes) your Go accepts with it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T04:53:30.833Z",
+     "text": "u there?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T04:53:48.815Z",
+     "text": "Here. G30.2 is green and waits for your Go; on it I write the red, then build."
     }
    ]
   }
