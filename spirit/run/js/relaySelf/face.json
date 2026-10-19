@@ -1,0 +1,7 @@
+{
+  "description": "Apply for a face name and register an email with this relay.",
+  "request": {
+    "name": "",
+    "email": ""
+  }
+}

@@ -1,0 +1,3 @@
+{
+  "description": "Hand this relay your node card, so it can seal its answers to you: the argument is the card's text itself, {card: \"<the card>\"}. Only a card newer than the one on file is taken."
+}

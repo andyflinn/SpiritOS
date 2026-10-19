@@ -1,0 +1,6 @@
+{
+  "description": "Leave this relay (your own key); the owner may remove any member.",
+  "request": {
+    "key": ""
+  }
+}

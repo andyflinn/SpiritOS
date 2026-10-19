@@ -1,0 +1,7 @@
+{
+  "description": "Turn the owner monitor stream on or off, with an optional filter.",
+  "request": {
+    "on": false,
+    "filter": {}
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "description": "Search the members connected to this relay by label; an empty query lists who is around.",
+  "request": {
+    "q": ""
+  }
+}

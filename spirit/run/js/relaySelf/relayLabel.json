@@ -1,0 +1,6 @@
+{
+  "description": "Change the public label of this relay.",
+  "request": {
+    "label": ""
+  }
+}

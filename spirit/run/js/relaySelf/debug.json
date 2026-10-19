@@ -1,0 +1,6 @@
+{
+  "description": "Read or set the relay debug switch.",
+  "request": {
+    "on": false
+  }
+}

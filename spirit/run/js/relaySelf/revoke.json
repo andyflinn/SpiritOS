@@ -1,0 +1,6 @@
+{
+  "description": "Take back an unclaimed invite by its label.",
+  "request": {
+    "label": ""
+  }
+}

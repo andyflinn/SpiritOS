@@ -1,0 +1,8 @@
+{
+  "description": "Read the relay configuration (empty ask) or set its limits; applies at the next start, or now with restart.",
+  "request": {
+    "ramLimitMB": 0,
+    "discLimitMB": 0,
+    "restart": false
+  }
+}

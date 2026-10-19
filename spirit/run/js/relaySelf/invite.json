@@ -1,0 +1,8 @@
+{
+  "description": "Mint an invite for a new member, by label, for some days.",
+  "request": {
+    "label": "",
+    "days": 0,
+    "token": ""
+  }
+}

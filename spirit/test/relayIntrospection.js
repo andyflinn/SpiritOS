@@ -10,16 +10,17 @@
 //     calls introSpector.family on it and answers AGENTS, AGENTS.introspect and AGENTS.<verb> as self posts, beside
 //     its existing verbs, which stay dispatched as they are. Everything stays synchronous.
 //   - Categories, not grants: the relay holds the one table of which category may call which verbs, owner all of
-//     them, member a short list. It cuts AGENTS.introspect and AGENTS.<verb> to the caller's category, and refuses a
-//     member an owner verb not-granted, where today it answers 404 no such peer. The category question is wholly
-//     internal to the relay.
+//     them, member a short list. It cuts AGENTS.introspect and AGENTS.<verb> to the caller's category. A member asking
+//     an owner verb is refused: with DEBUG on, not-granted with the reason; with DEBUG off, the plain no such peer a
+//     verb nobody declared gets (Andy, 2026-10-20: "give good information in DEBUG mode, otherwise just refuse").
+//     The category question is wholly internal to the relay.
 //   - A stranger has no introspection; it keeps the card and the four public posts.
 //   - Otherwise no behaviour change: the existing relay suites stay green.
 // NAMED HERE where the box names none:
 //   - The folder is spirit/run/js/relaySelf/ (js/relay/ is the node's own relay verbs).
 //   - The member verbs are card, face, removePeer, rename and search; the owner's are those and config, debug,
 //     invite, monitor, relayLabel and revoke.
-//   - The not-granted refusal is { ok: false, status: 403, code: 'not-granted', error }.
+//   - The DEBUG refusal is { ok: false, status: 403, code: 'not-granted', error }.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -67,24 +68,32 @@ if (typeof intro.text === 'string' && intro.text.length) test.check('AGENTS answ
 else test.fail(OWED + 'AGENTS answered ' + short(intro));
 const ownerInvite = ask(owner, { 'AGENTS.invite': {} });
 const annInvite = ask(ann, { 'AGENTS.invite': {} });
-if (ownerInvite && typeof ownerInvite.description === 'string' && annInvite.ok === false && annInvite.code === 'not-granted')
-  test.check('AGENTS.invite gives the owner its description and refuses a member not-granted');
+if (ownerInvite && typeof ownerInvite.description === 'string' && annInvite.ok === false && annInvite.status === 404 && !annInvite.code)
+  test.check('AGENTS.invite gives the owner its description and a member, with DEBUG off, a plain refusal');
 else test.fail(OWED + 'AGENTS.invite answered the owner ' + short(ownerInvite) + ', a member ' + short(annInvite));
 
 test.subHeading('3. the gate');
+ask(owner, { debug: { on: false } });
 const minted = ask(ann, { invite: { label: 'carol', days: 7 } });
-if (minted.ok === false && minted.status === 403 && minted.code === 'not-granted') test.check('a member asking an owner verb (invite) is refused not-granted (403)');
-else test.fail(OWED + 'a member asking invite answered ' + short(minted));
-const renamed = ask(ann, { rename: { label: 'annie' } });
-if (renamed.ok === true) test.check('a member\'s own verb still answers in the same call (rename to annie)');
-else test.fail(OWED + 'ann renaming herself answered ' + short(renamed));
-const evict = ask(ann, { removePeer: { key: bob.publicKey } });
+if (minted.ok === false && minted.status === 404 && minted.error === 'no such peer' && !minted.code) test.check('with DEBUG off, a member asking an owner verb (invite) gets the plain no such peer an unknown verb gets');
+else test.fail(OWED + 'with DEBUG off, a member asking invite answered ' + short(minted));
+ask(owner, { debug: { on: true } });
+const told = ask(ann, { invite: { label: 'carol', days: 7 } });
+const toldAgents = ask(ann, { 'AGENTS.invite': {} });
+ask(owner, { debug: { on: false } });
+if (told.ok === false && told.status === 403 && told.code === 'not-granted' && toldAgents.code === 'not-granted') test.check('with DEBUG on, the same asks are refused not-granted, with the reason');
+else test.fail(OWED + 'with DEBUG on, a member asking invite answered ' + short(told) + ', AGENTS.invite ' + short(toldAgents));
+// bob from here: the relay answers one member only so many asks in a short window, and ann has used hers.
+const renamed = ask(bob, { rename: { label: 'bobby' } });
+if (renamed.ok === true) test.check('a member\'s own verb still answers in the same call (rename to bobby)');
+else test.fail(OWED + 'bob renaming himself answered ' + short(renamed));
+const evict = ask(bob, { removePeer: { key: ann.publicKey } });
 if (evict.ok === false && evict.status === 404) test.check('a member removing somebody else is refused as before (404)');
-else test.fail(OWED + 'ann removing bob answered ' + short(evict));
+else test.fail(OWED + 'bob removing ann answered ' + short(evict));
 const ownerMint = ask(owner, { invite: { label: 'carol', days: 7 } });
 if (ownerMint.ok === true) test.check('the owner\'s invite still answers in the same call');
 else test.fail(OWED + 'the owner minting answered ' + short(ownerMint));
-const two = world.ask(L.box, ann, { rename: { label: 'ann' }, search: { q: 'a' } }) || {};
+const two = world.ask(L.box, bob, { rename: { label: 'ann' }, search: { q: 'a' } }) || {};
 if ((two.sent && two.sent.ok === false && two.sent.status === 400) || (two.answer && two.answer.ok === false)) test.check('a body naming two verbs is still refused (one verb per request)');
 else test.fail(OWED + 'two verbs in one body answered ' + short(two));
 
