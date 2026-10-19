@@ -1,5 +1,5 @@
 {
- "change": 73674,
+ "change": 73786,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,12 +10,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G30.2"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -51,7 +50,9 @@
     "ollama agent node",
     "wsl-claude"
    ],
-   "live": [],
+   "live": [
+    "claude-windows"
+   ],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -1329,11 +1330,11 @@
    "id": "goal/G30.2",
    "title": "Onboarding a node onto a relay",
    "goal": "goal/G30",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30"
@@ -1343,7 +1344,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -1369,6 +1370,16 @@
      "core": true
     },
     {
+     "path": "spirit/run/js/mailgun.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/ownerBadge.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
      "path": "spirit/run/js/peerPost.js",
      "by": "claude-windows",
      "core": true
@@ -1385,6 +1396,16 @@
     },
     {
      "path": "spirit/run/js/relayStore.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/sendMail.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/sendMail/mailgun.js",
      "by": "claude-windows",
      "core": true
     },
@@ -1421,7 +1442,7 @@
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "d0e62a72",
+   "claimCommit": "29e53116",
    "redCommit": "88b960be",
    "waived": true,
    "rules": [
@@ -1458,11 +1479,11 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 1,
-   "half": false,
+   "asks": 0,
+   "half": true,
    "full": false,
-   "box": "Onboarding only: a newly installed node joins a relay by its user's email, in the simplest experience for the user. The only thing typed is the email address, once. An email is never required: invites stay a second way in, for a private network.\n\nTHE LOOP\n1. The user starts the node with its email, node js/server --email <address>, as the README says: the README documents this as the easiest way onto noderoutes.net. While the node holds no seat, it asks to join its kept relay with that email; with a seat, --email does nothing. On stdout the node prints that a mail will arrive shortly to connect the user to the network, or why the join did not start, in a message that names the relay, what went wrong and what the user can do next (a relay without mail: use an invite; the cap: wait a minute; a bad address: correct it; the relay unreachable: check the network), and then the line it listens on, node is listening on 127.0.0.1:<port>. The browser first opens from the mailed link, onto a node already connected. Without --email, the user joins from the email field in Natter, which stays, and which also joins further relays later.\n2. The node sends a signed join request to a relay, any relay it knows: the email and its current port; its public key is the signer. A new node knows noderoutes.net; for testing, that one hard-coded address is spirit.andyflinn.com, the developer relay.\n3. The relay acknowledges and mails the user a link to his own node, http://127.0.0.1:<port>?<code>.\n4. Opening it, the node sends the code back to that relay, signed by the same key. Only the key that asked can finish; a guessed code is worthless.\n5. A right code, within 10 minutes, takes the seat for that key at once. The member's public label is the part of the email before the @, made to fit the label rule and changeable in the info app. The email is never published. The node finds itself a member on its next stream.\n\nON THE RELAY\n- Two new posts a stranger (not yet a member) may make on the relay's door, beside the card ask and the claim, each signed by the node key: join {email, port}, which mails the link, and joinConfirm {code}, which takes the seat. Accepted by Andy, 2026-10-19. The claim's rules hold: a full relay refuses first; a key already seated is told so.\n- On the node, one verb, confirmed by Andy, 2026-10-19: relay.join {url, email, code}, owner only, beside relay.add. With an email it sends join; with a code it sends joinConfirm. The node calls it with the email when started with --email, Natter with the email typed there, and the shell with the code when opened at http://127.0.0.1:<port>?join=<code>.\n- The pending join (email, key, port, a hash of the code) lives 10 minutes in relay memory.\n- The relay mails any address a key asks for, so codes are capped per key, per address and per sending address: at most one a minute and five an hour each.\n- The code is never typed nor pasted, only carried by the link, so it is long and unguessable: 32 random characters (Andy, 2026-10-19). One use, kept only as a hash.\n- The relay's login and join pages built earlier in this item go.\n\nMAIL\n- Mailgun: one HTTPS post per mail to <base URL>/v3/<domain>/messages, user api and the key, from postmaster@<domain>.\n- The relay reads base URL, sending domain and key from relay-state/mail.json, placed by the owner by hand, never in git, a box or a chat. Without it the relay offers no join and still takes members by invite, so anyone can run a relay without a Mailgun account.\n- The developer relay sends from spirit.andyflinn.com (US region, https://api.mailgun.net). noderoutes.net needs its own verified Mailgun domain and its own mail.json.\n\nKNOWN\n- Anyone with many email addresses can sign up many times.\n- The mail link works on the computer the node runs on.\n\nNOT IN THIS ITEM\n- Getting a face slot: the next step, built on this.\n- Logging in to the face: a separate, often repeated loop the relay/face handles.",
-   "version": 26,
+   "box": "Onboarding only: a newly installed node joins a relay by its user's email, in the simplest experience for the user. The only thing typed is the email address, once. An email is never required: invites stay a second way in, for a private network.\n\nTHE LOOP\n1. The user starts the node with its email, node js/server --email <address>, as the README says: the README documents this as the easiest way onto noderoutes.net. While the node holds no seat, it asks to join its kept relay with that email; with a seat, --email does nothing. On stdout the node prints that a mail will arrive shortly to connect the user to the network, or why the join did not start, in a message that names the relay, what went wrong and what the user can do next (a relay without mail: use an invite; the cap: wait a minute; a bad address: correct it; the relay unreachable: check the network), and then the line it listens on, node is listening on 127.0.0.1:<port>. The browser first opens from the mailed link, onto a node already connected. Without --email, the user joins from the email field in Natter, which stays, and which also joins further relays later.\n2. The node sends a signed join request to a relay, any relay it knows: the email and its current port; its public key is the signer. A new node knows noderoutes.net; for testing, that one hard-coded address is spirit.andyflinn.com, the developer relay.\n3. The relay acknowledges and mails the user a link to his own node, http://127.0.0.1:<port>?<code>.\n4. Opening it, the node sends the code back to that relay, signed by the same key. Only the key that asked can finish; a guessed code is worthless.\n5. A right code, within 10 minutes, takes the seat for that key at once. The member's public label is the part of the email before the @, made to fit the label rule and changeable in the info app. The email is never published. The node finds itself a member on its next stream.\n\nON THE RELAY\n- Two new posts a stranger (not yet a member) may make on the relay's door, beside the card ask and the claim, each signed by the node key: join {email, port}, which mails the link, and joinConfirm {code}, which takes the seat. Accepted by Andy, 2026-10-19. The claim's rules hold: a full relay refuses first; a key already seated is told so.\n- On the node, one verb, confirmed by Andy, 2026-10-19: relay.join {url, email, code}, owner only, beside relay.add. With an email it sends join; with a code it sends joinConfirm. The node calls it with the email when started with --email, Natter with the email typed there, and the shell with the code when opened at http://127.0.0.1:<port>?join=<code>.\n- The pending join (email, key, port, a hash of the code) lives 10 minutes in relay memory.\n- The relay mails any address a key asks for, so codes are capped per key, per address and per sending address: at most one a minute and five an hour each.\n- The code is never typed nor pasted, only carried by the link, so it is long and unguessable: 32 random characters (Andy, 2026-10-19). One use, kept only as a hash.\n- The relay's login and join pages built earlier in this item go.\n\nMAIL\n- Mailgun: one HTTPS post per mail to <base URL>/v3/<domain>/messages, user api and the key, from postmaster@<domain>.\n- The relay reads base URL, sending domain and key from relay-state/mail.json, placed by the owner by hand, never in git, a box or a chat. Without it the relay offers no join and still takes members by invite, so anyone can run a relay without a Mailgun account.\n- The developer relay sends from spirit.andyflinn.com (US region, https://api.mailgun.net). noderoutes.net needs its own verified Mailgun domain and its own mail.json.\n- No vendor in core: js/sendMail.js reads relay-state/mail.json and loads its driver from js/sendMail/<driver>.js, the name checked against that folder; mailgun.js is the first driver there, and Mailgun is named nowhere else in core. mail.json names its driver, \"driver\": \"mailgun\", added by the owner by hand (on spirit-3 too); a mail.json without one sends no mail, with no fallback in core.\n\nTHE CARD\n- The relay card carries services: { sendMail: true|false, face: true|false }, an object of switches so a later one is a new key. sendMail is true when a driver loaded with valid settings; face is true while the relay answers the face verb. Unsigned, as payloadMax is. A key a node does not know is ignored; a missing key means false.\n- Natter shows the email field only when the relay card says sendMail; the --email start reads the same card and, without it, prints the use-an-invite message without asking.\n\nKNOWN\n- Anyone with many email addresses can sign up many times.\n- The mail link works on the computer the node runs on.\n\nNOT IN THIS ITEM\n- Getting a face slot: the next step, built on this.\n- Logging in to the face: a separate, often repeated loop the relay/face handles.",
+   "version": 28,
    "checks": [
     {
      "number": "G1",
@@ -1499,6 +1520,42 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-19T10:35:13.097Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: js/ownerBadge.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T18:47:33.921Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: js/sendMail.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T18:47:36.329Z"
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: js/sendMail/mailgun.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T18:47:39.967Z"
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/faceLogin.js, spirit/run/js/hub.js, spirit/run/js/mailgun.js, spirit/run/js/ownerBadge.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/relayStore.js, spirit/run/js/sendMail.js, spirit/run/js/sendMail/mailgun.js, spirit/run/js/serveCommon.js, spirit/run/js/server.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T18:48:12.527Z"
     }
    ],
    "chat": [
@@ -2653,6 +2710,180 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-19T10:46:06.284Z",
      "text": "Enjoy the break.\nFor when you are back: the goal run of G30 was green, but its git pull in your tree failed (cannot fast-forward to multiple branches). The tree was already at d0e62a72, so the result stands; the cause is worth a look later.\nI build nothing meanwhile."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:25:00.083Z",
+     "text": "Problem: App/Site specific code in core.\n\nOne little issue: the core (relay-side) must have a generic js/sendMail.js with a folder sendMail/ to go with it, where we put a mailGun.js driver.\n\nI love the design of this item. It violates the no-app-specific code rule...\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:25:38.611Z",
+     "text": "Agreed, and it is a small move: relay.js already knows only a generic sendMail({to, subject, text}). Mailgun leaks in two places: relayServer requires mailgun.js by name, and mail.json has Mailgun's shape.\nShape: js/sendMail.js reads relay-state/mail.json and loads js/sendMail/<driver>.js by the name in the file; mailgun.js moves there unchanged and exports create(settings) giving {send}. Core then names no vendor; a red checks that Mailgun appears nowhere outside sendMail/.\nThe driver name is checked against the folder, so mail.json cannot load an arbitrary file.\nOne choice is yours: mail.json gains \"driver\": \"mailgun\", which you add by hand on spirit-3, or a missing driver falls back to mailgun, which keeps the vendor named in core.\nMy lean: the line by hand, no fallback."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:34:12.412Z",
+     "text": "thing is: relay has to report in it's \"card\" if it has a valid/configured sendMail driver (sendMail:true) so natter can hide that interface from a user, if no sendMail is configured.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:34:41.591Z",
+     "text": "Yes. The card already carries what the relay will do (payloadMax), so sendMail: true sits beside it, one line in the relay card, true when a driver loaded with valid settings.\nNo signature needed, as for payloadMax: a forged true only earns the 503 a join already gets, a forged false only hides a field.\nNatter shows the email field only when the relay card it pinned says sendMail; --email at start can read the same card and print the use-an-invite message without asking.\nTrue means configured, not proven: a revoked key still says true until a send fails, and the join refusal covers that.\nNo flag day: a node that does not know the field ignores it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:36:41.097Z",
+     "text": "and this \"card\" element should anticipate the following\n\npeople (later) may want to turn off face-support, too the \"card\" idea might be an object { sendMail:true|false,face:true|false,...}"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:37:05.732Z",
+     "text": "Good: one object of switches in the card, so the next one is a key, not a new card field. I would call it services: { sendMail: true|false, face: true|false }.\nToday face is always true, since the relay answers the face verb; a switch to turn it off is relay config, a later item, and the card just reports it.\nA key a node does not know is ignored, and a missing key means false, so an old relay reads as offering nothing extra.\npayloadMax stays where it is: it is a number, not an on/off."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:37:39.816Z",
+     "text": "services is a perfect name."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:38:19.855Z",
+     "text": "In the box: sendMail with drivers, no vendor in core, and the card services object.\nOne question left: mail.json names its driver with a line you add by hand on spirit-3, \"driver\": \"mailgun\", with no fallback in core. Agreed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:39:03.104Z",
+     "text": "mail.json names its driver with a line you add by hand on spirit-3, \"driver\": \"mailgun\", with no fallback in core.\n\nagreed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:40:00.340Z",
+     "text": "In the box (v28): mail.json names its driver by hand, no fallback.\nGaps checked: the face switch stays a later item; Natter reads services from the card it already pins, so no new verb; relay.js keeps its generic sendMail, so no wire change beyond the card key.\nThe build: sendMail.js and its folder with mailgun.js moved in, services in the card, Natter hiding the field, --email reading the card. On spirit-3 it needs a new tag and your driver line in mail.json before the update. Your Go starts it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:41:23.136Z",
+     "text": "go"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:43:33.530Z",
+     "text": "commit fdc303b6db155e34d66d54cb6f28291cd9310622: goal/G30.2: the red for sendMail drivers (no vendor in core, the driver named in mail.json, no fallback) and services { sendMail, face } in the relay card, read by Natter and the --email start\n- spirit/test/joinOnboarding.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:47:29.070Z",
+     "text": "Built and green: joinOnboarding 38 of 38; serverSurface, faceApply, invites, relayStrangerDoor, rollNarrow and publishData green too.\nThe commit waits on your grant for three core files: the new sendMail module, its mailgun driver (the old file moved), and ownerBadge, which now keeps the card services on each relay row.\nThe grant request is under the item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:48:02.793Z",
+     "text": "commit 7883d0ce9b643cfbb1503ebf01a7d0b8443873d5: goal/G30.2: no vendor in core: js/sendMail.js loads the driver mail.json names from js/sendMail/ (mailgun.js moved there), no fallback; the relay card carries services { sendMail, face }, kept on ever\n- spirit/run/js/hub.js\n- spirit/run/js/mailgun.js\n- spirit/run/js/ownerBadge.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayServer.js\n- spirit/run/js/sendMail.js\n- spirit/run/js/sendMail/mailgun.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/joinOnboarding.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:48:32.664Z",
+     "text": "Pushed at 7883d0ce, claimed, verify passed by me: joinOnboarding 38 of 38. deskVerify checks it next.\nBefore spirit-3 takes this code: add \"driver\": \"mailgun\" to its mail.json, or it stops sending mail. Then it needs a new tag; I cut one on your word."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:48:50.135Z",
+     "text": "deskVerify: passed, at 7883d0ce (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:55:37.511Z",
+     "text": "tag?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:56:10.782Z",
+     "text": "i checked with a new onBoarder, the email interface is now hidden."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:56:13.636Z",
+     "text": "Tagged v-2026-10-19-20-55 at 7883d0ce, pushed.\nOn spirit-3, first add \"driver\": \"mailgun\" to relay-state/mail.json, then ./bash/update. On start the relay prints which mail driver it loaded, or that it has none.\nWire: one new card key, services; old nodes ignore it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:56:34.015Z",
+     "text": "Hidden is right in two cases: spirit-3 still runs the old tag, whose card has no services and so reads as no mail; or the relay is not on that node's list yet, so there is no row to read.\nOnce spirit-3 runs v-2026-10-19-20-55 with the driver line in mail.json, the field shows on its panel for an unseated node.\nIs spirit-3 already updated? If so, the hidden field is a bug and I look at it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T18:56:50.960Z",
+     "text": "can you give me the altered shape of mail.json?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T18:57:10.819Z",
+     "text": "The same three fields, plus driver:\n{ \"driver\": \"mailgun\", \"url\": \"https://api.mailgun.net\", \"domain\": \"spirit.andyflinn.com\", \"key\": \"<your key, unchanged>\" }\nOnly driver is new; keep your key as it is in the file and never in chat."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T19:03:14.768Z",
+     "text": "i updated spirit-3, check\n\ni re-ran onBoarder (11112) but the mail interface did not show up."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T19:04:09.375Z",
+     "text": "My bug: Natter reads its relay rows from the node's relay summary, which is built from local state and never asks the card. I put services on a different path, the probe, and my red tested that path instead of what you see.\nFix under the same Go, no design change: the summary carries each relay's card services, asking the card once per relay and keeping the answer in memory. The red is rewritten to assert the row Natter actually gets.\nI post when it is ready to pull."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T19:09:26.310Z",
+     "text": "commit 29e531167dadf28d7f889e2f7b9584f1cfc586e0: goal/G30.2: services reach the row Natter reads: peerPost keeps what each relay card said (servicesOf), and relay.get's row carries it without asking any relay (goal/G22.4); the probe-only path and it\n- spirit/run/js/hub.js\n- spirit/run/js/ownerBadge.js\n- spirit/run/js/peerPost.js\n- spirit/test/joinOnboarding.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T19:10:04.038Z",
+     "text": "deskVerify: passed, at 29e53116 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T19:10:16.663Z",
+     "text": "Fixed at 29e53116, claimed and verified by me, joinOnboarding 40 of 40. Node side only: spirit-3 needs no new tag.\nThe node now remembers what each relay card said when it asks the card at start, and the relay row Natter reads carries it; the list still asks no relay.\nTo see it: pull D:/onBoarder to master, restart it, open spirit-3 in Natter."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T19:15:06.971Z",
+     "text": "great! onboarder (11112) sees two relays, one has mail (spirit) and shows the interface, which works (tested again), and the other (noderoutes) does not show the email interface."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T19:15:22.960Z",
+     "text": "Exactly as designed: spirit has mail and offers the field, noderoutes has no mail.json yet and does not. G30.2 waits only for your Done."
     }
    ]
   }
