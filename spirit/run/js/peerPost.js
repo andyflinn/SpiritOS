@@ -1906,6 +1906,14 @@ function createPeerPost(opts) {
   // signed by the key it names and the statement verifies (relayKeySigned).
   // Self-signed, so it settles tampering, not introduction: the pin does the
   // rest (answerRelay.js, relayKeys.js).
+  // WHAT EACH RELAY OFFERS, AS ITS LAST CARD SAID (goal/G30.2): kept here because peerPost owns every contact with a
+  // relay and the relay list asks none (goal/G22.4); the boot probe and relay.add ask every listed relay's card, so
+  // the list reads this without a call. In memory only; a restart asks again.
+  var servicesByUrl = Object.create(null);
+  function servicesOf(relayUrl) {
+    var s = servicesByUrl[String(relayUrl || '').replace(/\/+$/, '')];
+    return { sendMail: !!(s && s.sendMail), face: !!(s && s.face) };
+  }
   function relayKey(relayUrl) {
     var ask = JSON.stringify({ v: 1, body: { card: true } });
     return publicPost(relayUrl, '', ask).then(function (got) {
@@ -1916,6 +1924,8 @@ function createPeerPost(opts) {
           !auth.relayKeySigned(said.relayPublicKey, said.relaySealKey, said.relayLabel, said.keySig)) {
         throw new Error('that relay does not answer with a signed key — it may be running older code');
       }
+      var services = { sendMail: !!(said.services && said.services.sendMail === true), face: !!(said.services && said.services.face === true) };
+      servicesByUrl[String(relayUrl || '').replace(/\/+$/, '')] = services;
       return {
         relayPublicKey: String(said.relayPublicKey),
         relaySealKey: String(said.relaySealKey || ''),
@@ -1925,7 +1935,7 @@ function createPeerPost(opts) {
         ownerLabel: String(said.ownerLabel || ''),
         payloadMax: typeof said.payloadMax === 'number' ? said.payloadMax : undefined,
         // What the relay offers (goal/G30.2): only true switches are kept, so a missing or odd one reads as false.
-        services: { sendMail: !!(said.services && said.services.sendMail === true), face: !!(said.services && said.services.face === true) },
+        services: services,
       };
     });
   }
@@ -2137,6 +2147,8 @@ function createPeerPost(opts) {
     // A relay's public services on its one door (goal/G22.6): its card,
     // and a claim.
     relayKey: relayKey,
+    // What a relay's last card offered (goal/G30.2), read without a call.
+    servicesOf: servicesOf,
     claim: claim,
     join: join,
     // What arrived while nobody was home, and what is still outstanding.

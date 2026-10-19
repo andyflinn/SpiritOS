@@ -385,9 +385,6 @@ function probe(rootDir, request, myKey) {
           // downstream (natter.natterCheckBinding), and it still does.
           status: Number(answer && answer.status) || 0,
           owned: ownedBy(said && said.ownerKey, myKey),
-          // WHAT THE RELAY OFFERS (goal/G30.2), on every row it answered for, claimed or not: Natter's claim screen
-          // shows the email field only when services.sendMail is true. A missing switch reads as false.
-          services: { sendMail: !!(said && said.services && said.services.sendMail === true), face: !!(said && said.services && said.services.face === true) },
         };
 
         // OWNING IMPLIES CLAIMING — the owner holds a peer row from first

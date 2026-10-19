@@ -307,20 +307,43 @@ async function main() {
     test.check('the relay card carries services: sendMail true with a mailer and false without; face true');
   else test.fail(OWED + 'the card with a mailer is ' + short(withMail && withMail.services) + ', without ' + short(without && without.services));
 
-  // The node keeps services on each relay row it probes, claimed or not, so Natter's claim screen can read it.
-  const probeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-services-node-'));
-  let probed = null;
+  // THE ROW NATTER GETS (found live, 2026-10-19: an unseated onBoarder never showed the field against spirit-3 running
+  // this code). Natter's rows are relay.get's (kernel relays.status), built by hub.relaySummary from local state; the
+  // card's services must be on that row, claimed or not. The list asks no relay (goal/G22.4): it reads what peerPost
+  // already knows from the cards it asked (the boot probe, relay.add), router.servicesOf(url).
+  const rowHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-services-row-'));
+  let mailRow = null;
+  let plainRow = null;
+  const cardAsks = {};
   try {
     const badgeMod = require('../run/js/ownerBadge');
-    const keptUrl = badgeMod.KEPT_RELAY.url;
-    badgeMod.ensureRelays(probeHome);
-    const cardText = JSON.stringify({ relayPublicKey: badgeMod.KEPT_RELAY.key, ownerKey: 'someone', ownerLabel: 'o', relayLabel: 'r', services: { sendMail: true, face: true } });
-    const summary = await badgeMod.probe(probeHome, function () { return Promise.resolve({ status: 200, text: cardText }); }, fern.publicKey);
-    probed = ((summary && summary.rows) || []).filter(function (r) { return r.url === keptUrl; })[0] || summary;
-  } catch (e) { probed = { threw: e.message }; }
-  try { fs.rmSync(probeHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
-  if (probed && probed.services && probed.services.sendMail === true && probed.claimed === false) test.check('an unclaimed relay row carries the card\'s services (sendMail true)');
-  else test.fail(OWED + 'the probed row is ' + short(probed));
+    badgeMod.ensureRelays(rowHome);
+    badgeMod.addRelay(rowHome, 'https://mail.example', 'mail', 'MCowBQYDK2VwAyEAservicesRowMailRelayKeyAAAAAAAAAAAAAAAAAA=');
+    badgeMod.addRelay(rowHome, 'https://plain.example', 'plain', 'MCowBQYDK2VwAyEAservicesRowPlainRelayKeyAAAAAAAAAAAAAAAAA=');
+    const rowHub = require('../run/js/hub').createHub(rowHome);
+    const cardRouter = {
+      relayKey: function (url) {
+        cardAsks[url] = (cardAsks[url] || 0) + 1;
+        return Promise.resolve({ relayPublicKey: 'k', services: { sendMail: url === 'https://mail.example', face: true } });
+      },
+      servicesOf: function (url) { return { sendMail: url === 'https://mail.example', face: true }; },
+    };
+    await rowHub.relayGet({ key: 'https://mail.example' }, { router: cardRouter });
+    mailRow = ((await rowHub.relayGet({ key: 'https://mail.example' }, { router: cardRouter })) || {}).relay;
+    plainRow = ((await rowHub.relayGet({ key: 'https://plain.example' }, { router: cardRouter })) || {}).relay;
+  } catch (e) { mailRow = { threw: e.message }; }
+  try { fs.rmSync(rowHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
+  if (mailRow && mailRow.services && mailRow.services.sendMail === true && mailRow.claimed === false &&
+      plainRow && plainRow.services && plainRow.services.sendMail === false)
+    test.check('relay.get\'s row for an unseated relay carries its card\'s services: sendMail true where it sends mail, false where not');
+  else test.fail(OWED + 'relay.get rows: mail ' + short(mailRow) + ', plain ' + short(plainRow));
+  if (!Object.keys(cardAsks).length) test.check('the list asks no relay for it: no card ask during relay.get (goal/G22.4)');
+  else test.fail(OWED + 'relay.get asked cards: ' + short(cardAsks));
+  // peerPost keeps what each card said, and hands it back without a call.
+  const ppNow = code('js/peerPost.js');
+  const relayKeyBody = (ppNow.split('function relayKey(')[1] || '').split('\n  function ')[0];
+  if (/servicesByUrl\[[^\]]+\]\s*=/.test(relayKeyBody) && /servicesOf:\s*servicesOf/.test(ppNow)) test.check('peerPost keeps each card\'s services when it asks the card, and answers servicesOf(url) without a call');
+  else test.fail(OWED + 'peerPost does not keep the card\'s services');
   const pp = code('js/peerPost.js');
   const relayKeyFn = (pp.split('function relayKey(')[1] || '').split('\n  function ')[0];
   if (/services/.test(relayKeyFn)) test.check('peerPost.relayKey hands the card\'s services on');
