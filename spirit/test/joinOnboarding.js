@@ -173,7 +173,9 @@ async function main() {
   const fern = auth.generateIdentity('fern');
   const KEPT = 'https://kept.example';
   function carrier(answerOf) {
-    return { join: function (url, email, port, c) { return Promise.resolve(answerOf(url, email, port, c)); }, startStreams: function () { return Promise.resolve(); } };
+    return { join: function (url, email, port, c) { return Promise.resolve(answerOf(url, email, port, c)); }, startStreams: function () { return Promise.resolve(); },
+      // The card of a relay that sends mail (section 8: the start reads it first).
+      relayKey: function () { return Promise.resolve({ relayPublicKey: relay.relayPublicKey(), services: { sendMail: true, face: true } }); } };
   }
   const real = carrier(function (url, email, port, c) { return c ? relay.joinConfirm(fern.publicKey, c) : relay.join(fern.publicKey, email, port); });
   let nodeHub = null;
@@ -237,6 +239,107 @@ async function main() {
   try { readme = fs.readFileSync(path.join(ROOT, 'README.md'), 'utf8'); } catch (e) { readme = ''; }
   if (/node js\/server\.js --email /.test(readme) && /noderoutes\.net/.test(readme)) test.check('the README gives node js/server.js --email as the way onto noderoutes.net');
   else test.fail(OWED + 'the README does not give node js/server.js --email');
+
+  // ── 8. NO VENDOR IN CORE, AND THE CARD SAYS WHAT THE RELAY OFFERS (the box, v28) ─────────────────────
+  // js/sendMail.js reads relay-state/mail.json and loads its driver from js/sendMail/<driver>.js, the name checked
+  // against that folder; mailgun.js is the first driver there and Mailgun is named nowhere else in core. mail.json
+  // names its driver by hand; without one the relay sends no mail, no fallback. The relay card carries
+  // services: { sendMail, face }; Natter shows the email field only when the card says sendMail; the --email start
+  // reads the same card and, without it, prints the use-an-invite message without asking.
+  // NAMED HERE where the box names none:
+  //   - sendMail.createSender(rootDir, { fetch }) answers { driver, send } or null; a driver exports
+  //     create(settings, fetch) answering { send }.
+  //   - relay.relayCard() is exported, as the card a card ask is answered with.
+  //   - ownerBadge.probe puts the card's services on every relay row it answers for (row.services).
+  //   - joinAtStart asks the card first through router.relayKey(url), the card ask relay.add already uses.
+  test.subHeading('8. sendMail drivers, and services in the card');
+  const JS = path.join(RUN, 'js');
+  const moved = !fs.existsSync(path.join(JS, 'mailgun.js')) && fs.existsSync(path.join(JS, 'sendMail.js')) && fs.existsSync(path.join(JS, 'sendMail', 'mailgun.js'));
+  if (moved) test.check('js/mailgun.js is gone; js/sendMail.js and js/sendMail/mailgun.js stand');
+  else test.fail(OWED + 'the mail files are not in place: mailgun.js ' + fs.existsSync(path.join(JS, 'mailgun.js')) + ', sendMail.js ' + fs.existsSync(path.join(JS, 'sendMail.js')) + ', sendMail/mailgun.js ' + fs.existsSync(path.join(JS, 'sendMail', 'mailgun.js')));
+
+  let sendMailMod = null;
+  try { sendMailMod = require('../run/js/sendMail'); } catch (e) { sendMailMod = null; }
+  const mailHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-sendmail-'));
+  fs.mkdirSync(path.join(mailHome, 'relay-state'), { recursive: true });
+  function withMailJson(v) { fs.writeFileSync(path.join(mailHome, 'relay-state', 'mail.json'), JSON.stringify(v)); }
+  function sender(v, fetchImpl) {
+    withMailJson(v);
+    if (!sendMailMod || typeof sendMailMod.createSender !== 'function') return { missing: true };
+    try { return sendMailMod.createSender(mailHome, { fetch: fetchImpl }); } catch (e) { return { threw: e.message }; }
+  }
+  const posts = [];
+  const fakeFetch = function (url, opts) { posts.push({ url: url, body: String(opts && opts.body || '') }); return Promise.resolve({ ok: true, status: 200 }); };
+  const good = sender({ driver: 'mailgun', url: 'https://api.mail.example', domain: 'relay.example', key: 'k-123' }, fakeFetch);
+  let goodSent = null;
+  if (good && typeof good.send === 'function') goodSent = await good.send({ to: 'ann@example.org', subject: 's', text: 't' });
+  if (goodSent && goodSent.ok === true && posts.length === 1 && posts[0].url === 'https://api.mail.example/v3/relay.example/messages' && /to=ann%40example\.org/.test(posts[0].body))
+    test.check('mail.json naming the mailgun driver gives a sender that posts to <url>/v3/<domain>/messages');
+  else test.fail(OWED + 'a mailgun sender answered ' + short(good) + ', sent ' + short(goodSent) + ', posts ' + short(posts));
+  const noDriver = sender({ url: 'https://api.mail.example', domain: 'relay.example', key: 'k-123' }, fakeFetch);
+  const climbs = sender({ driver: '../relay', url: 'https://api.mail.example', domain: 'relay.example', key: 'k-123' }, fakeFetch);
+  const unknown = sender({ driver: 'nosuch', url: 'https://api.mail.example', domain: 'relay.example', key: 'k-123' }, fakeFetch);
+  if (sendMailMod && noDriver === null && climbs === null && unknown === null) test.check('no driver, a driver name that leaves the folder, or one that is not there: no sender, no fallback');
+  else test.fail(OWED + 'no driver gave ' + short(noDriver) + ', ../relay gave ' + short(climbs) + ', nosuch gave ' + short(unknown));
+  try { fs.rmSync(mailHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
+
+  // Mailgun is named nowhere in core outside js/sendMail/: code and comments alike.
+  const named = [];
+  (function walk(dir) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (d) {
+      const p = path.join(dir, d.name);
+      if (d.isDirectory()) { if (d.name !== 'node_modules' && p !== path.join(JS, 'sendMail')) walk(p); return; }
+      if (/\.js$/.test(d.name) && /mailgun/i.test(fs.readFileSync(p, 'utf8'))) named.push(path.relative(RUN, p));
+    });
+  }(JS));
+  if (!named.length) test.check('Mailgun is named nowhere in spirit/run/js outside sendMail/');
+  else test.fail(OWED + 'Mailgun is still named in ' + short(named));
+
+  // The card: services { sendMail, face }.
+  const cardOf = function (r) { try { return r && typeof r.relayCard === 'function' ? r.relayCard() : null; } catch (e) { return { threw: e.message }; } };
+  let bare = null;
+  try { bare = require('../run/js/relay').createRelay(home, { now: function () { return clock; } }); } catch (e) { bare = null; }
+  const withMail = cardOf(relay);
+  const without = cardOf(bare);
+  if (withMail && withMail.services && withMail.services.sendMail === true && withMail.services.face === true &&
+      without && without.services && without.services.sendMail === false && without.services.face === true)
+    test.check('the relay card carries services: sendMail true with a mailer and false without; face true');
+  else test.fail(OWED + 'the card with a mailer is ' + short(withMail && withMail.services) + ', without ' + short(without && without.services));
+
+  // The node keeps services on each relay row it probes, claimed or not, so Natter's claim screen can read it.
+  const probeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-services-node-'));
+  let probed = null;
+  try {
+    const badgeMod = require('../run/js/ownerBadge');
+    const keptUrl = badgeMod.KEPT_RELAY.url;
+    badgeMod.ensureRelays(probeHome);
+    const cardText = JSON.stringify({ relayPublicKey: badgeMod.KEPT_RELAY.key, ownerKey: 'someone', ownerLabel: 'o', relayLabel: 'r', services: { sendMail: true, face: true } });
+    const summary = await badgeMod.probe(probeHome, function () { return Promise.resolve({ status: 200, text: cardText }); }, fern.publicKey);
+    probed = ((summary && summary.rows) || []).filter(function (r) { return r.url === keptUrl; })[0] || summary;
+  } catch (e) { probed = { threw: e.message }; }
+  try { fs.rmSync(probeHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
+  if (probed && probed.services && probed.services.sendMail === true && probed.claimed === false) test.check('an unclaimed relay row carries the card\'s services (sendMail true)');
+  else test.fail(OWED + 'the probed row is ' + short(probed));
+  const pp = code('js/peerPost.js');
+  const relayKeyFn = (pp.split('function relayKey(')[1] || '').split('\n  function ')[0];
+  if (/services/.test(relayKeyFn)) test.check('peerPost.relayKey hands the card\'s services on');
+  else test.fail(OWED + 'peerPost.relayKey drops services from the card');
+
+  if (/services[^\n]{0,80}sendMail/.test(nd) && /nd-join-email/.test(nd)) test.check('natterDetails draws the email field only when the relay row says services.sendMail');
+  else test.fail(OWED + 'natterDetails draws the email field without reading services.sendMail');
+
+  // The --email start reads the card first: a relay without mail is answered without asking it to join.
+  let joinAsked = 0;
+  const noMailCard = { join: function () { joinAsked += 1; return Promise.resolve({ ok: true, status: 200 }); }, relayKey: function () { return Promise.resolve({ relayPublicKey: 'x', services: { sendMail: false, face: true } }); }, startStreams: function () { return Promise.resolve(); } };
+  const nodeHome2 = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-joinstart-card-'));
+  let hub2 = null;
+  try { hub2 = require('../run/js/hub').createHub(nodeHome2); } catch (e) { hub2 = null; }
+  let cardRun = null;
+  try { cardRun = hub2 && typeof hub2.joinAtStart === 'function' ? await hub2.joinAtStart('fern@example.org', { router: noMailCard, port: 11112, keptUrl: KEPT }) : null; } catch (e) { cardRun = { threw: e.message }; }
+  try { fs.rmSync(nodeHome2, { recursive: true, force: true }); } catch (e) { /* busy */ }
+  const cardSaid = ((cardRun && cardRun.lines) || []).join('\n');
+  if (joinAsked === 0 && /invite/i.test(cardSaid) && cardSaid.indexOf('kept.example') !== -1) test.check('--email at a relay whose card says no sendMail prints the use-an-invite message and asks no join');
+  else test.fail(OWED + 'with a card saying no sendMail the start asked ' + joinAsked + ' joins and printed ' + short(cardRun));
 }
 
 main().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
