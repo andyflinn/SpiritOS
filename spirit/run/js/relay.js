@@ -3874,9 +3874,19 @@ function createRelay(rootDir, deps) {
     return true;
   }
 
+  // AN INVITE FOR WHOEVER PROVED AN EMAIL ON THE PARENT PAGE (goal/G30.2). Andy, 2026-10-19: "so we'll do invites
+  // the same way on the parent-domain page". The same mint the owner's invite verb runs, in the owner's name, so the
+  // seat reservation and the capacity check hold; the spoken label is the email's local part, made speakable.
+  function joinInvite(email) {
+    var local = String(email || '').split('@')[0].toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24);
+    var made = mint(ownerLabel(), local || 'guest', 7, '', 'join');
+    return made && made.ok && made.invite ? { token: made.invite.token, label: made.invite.label } : null;
+  }
+
   return {
     claim: claim,
     forgetPeer: forgetPeer,
+    joinInvite: joinInvite,
     // Where this relay keeps its data. In-process only, for the suites that
     // inspect the roll on disc (test/rollOf.js) — nothing on the wire reads
     // it, and there is no whole-roll read on the relay itself (cycle 3).
