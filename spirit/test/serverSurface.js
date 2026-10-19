@@ -572,6 +572,9 @@ freePort()
       // network asked. It was claimed and never posted (red before goal/G29.20; found clearing that item).
       ['POST', '/api/spirit', { verb: 'relay.add', url: '', label: '' }],
       ['POST', '/api/spirit', { verb: 'relay.get', key: 'https://nowhere.invalid' }],
+      // goal/G30.1. Posted with no name or email, which it refuses before anything else (hub.relayFace): reachable,
+      // nothing asked of any relay.
+      ['POST', '/api/spirit', { verb: 'relay.face', url: '', name: '', email: '' }],
       // cycle 11's R6. Reads what the node already wrote as reports
       // arrived; reaches no network, so unlike its neighbour it cannot
       // time out. With no relay named it answers the list of relays that

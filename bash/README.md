@@ -21,8 +21,7 @@ cd /root/SpiritOS
 ## Never on this box
 
 - `node spirit/test/labMaster/labMaster.js`
-- personal-node mode (`node js/server.js` without `--relay`), except the
-  one face node that `./bash/face-install` puts in its own clone
+- personal-node mode (`node js/server.js` without `--relay`)
 - Jobs, App Builder, LM Studio, the desktop shell
 - extra Node processes “just to check”
 
@@ -51,8 +50,7 @@ labMaster. Kill it.
 | `./bash/cron-remove` | Take that cron line out. |
 | `./bash/firewall` | Publish 22, 80, 443. Do not publish 65430. |
 | `./bash/tls` | Install Caddy + site file for `$SPIRIT_RELAY_DOMAIN`. |
-| `./bash/face-install` | The face node: its own clone, owned by your node, serving `*.face.<domain>`. Idempotent. See [FACE.md](FACE.md). |
-| `./bash/face-tls` | Caddy site for `face.<domain>` and `*.face.<domain>`, certificates on demand. Run by `face-install`. |
+| `./bash/face-tls` | Caddy site for `face.<domain>` and `*.face.<domain>`, certificates on demand. Kept as a bone for the fold of relay and face: `face-install` and the appFaceApp it ran are gone (goal/G30.1). |
 | `./bash/http-to-https` | Move Node off public :80 onto localhost :65430, enable TLS + redirect. |
 | `./bash/logs` | Last 100 lines of the relay unit. |
 

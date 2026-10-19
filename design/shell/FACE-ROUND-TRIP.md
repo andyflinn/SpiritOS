@@ -1,3 +1,5 @@
+> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay is to serve the face pages itself (not built). Passages below that describe those processes are history, kept as bones for the fold.
+
 # The face round trip: browser to app-server process and back
 
 Andy, 2026-09-27, in Desk under puppets/G10: *"so we all need to understand

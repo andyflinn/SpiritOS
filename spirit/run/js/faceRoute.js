@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/process/js/appFaceApp/faceRoute.js
+// spirit/run/js/faceRoute.js
 // WHERE A FACE NAME LIVES — public-app-server/G17, THE ROUTE.
 //
 //   Andy, 2026-09-27, in Desk under G17, "go.": the face domain one level
@@ -45,7 +45,14 @@ function nameOf(host, faceDomain) {
   var suffix = '.' + d;
   if (h.length <= suffix.length || h.slice(h.length - suffix.length) !== suffix) return null;
   var label = h.slice(0, h.length - suffix.length);
-  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(label) ? label : null;
+  return faceLabel(label);
+}
+
+// ONE FACE NAME BY THE RULE THE HOST PARSER USES, and the one a relay accepts when a member applies for it
+// (goal/G30.1): a single DNS label, a-z 0-9 and hyphen, at most 63, lowercased, else null. andy and Andy are one name.
+function faceLabel(name) {
+  var l = String(name == null ? '' : name).trim().toLowerCase();
+  return /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(l) ? l : null;
 }
 
 // An hour: a name taken back stops routing within it. A "no such route"
@@ -128,6 +135,6 @@ function createRouteCache(opts) {
 }
 
 module.exports = {
-  nameOf: nameOf,
+  nameOf: nameOf, faceLabel: faceLabel,
   createRouteCache: createRouteCache, ROUTE_MS: ROUTE_MS, NONE_MS: NONE_MS,
 };

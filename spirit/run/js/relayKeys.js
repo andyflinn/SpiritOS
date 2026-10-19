@@ -252,6 +252,27 @@ function seat(rootDir, url, label, atMs) {
   return true;
 }
 
+// THE FACE NAME THIS NODE APPLIED FOR ON A RELAY, with the relay's signed answer kept whole (goal/G30.1). Andy,
+// 2026-10-19: "the information belongs into relay-state somewhere, it's part of the node identity"; it goes on the
+// same row as the seat, one relay, one record. `reply` is the answer exactly as the relay sent it, never rebuilt,
+// so it can be shown later as the relay's own word. A url with no record has nothing to file under: false.
+function keepFace(rootDir, url, name, email, reply) {
+  var rel = table(rootDir);
+  var row = rel.byUrl(normalizeUrl(url));
+  if (!row) return false;
+  row.faceName = String(name || '');
+  row.faceEmail = String(email || '');
+  row.faceReply = String(reply || '');
+  rel.put(row);
+  return true;
+}
+
+// What this node kept of its face application on a relay: { name, email, reply }, or null.
+function faceOf(rootDir, url) {
+  var row = table(rootDir).byUrl(normalizeUrl(url));
+  return row && row.faceName ? { name: row.faceName, email: row.faceEmail, reply: row.faceReply } : null;
+}
+
 // Where this node holds a seat — the question `probe` used to answer by
 // reading a roll.
 //
@@ -405,6 +426,10 @@ function accept(rootDir, url, publicKey, atMs) {
     // says, the refusal with the seat.
     refusal: base.refusal || (other && other.refusal) || '',
     refusedAt: base.refusal ? base.refusedAt : ((other && other.refusedAt) || ''),
+    // The face name and email kept for this relay and its signed answer (goal/G30.1), merged like the seat.
+    faceName: base.faceName || (other && other.faceName) || '',
+    faceEmail: base.faceEmail || (other && other.faceEmail) || '',
+    faceReply: base.faceReply || (other && other.faceReply) || '',
   };
   nodeStore.open(rootDir).transaction(function () {
     if (here && here.key !== given) rel.del(here.key);
@@ -503,6 +528,8 @@ function assertSeeds(rootDir, seeds, atMs) {
 module.exports = {
   keysPath: keysPath,
   normalizeUrl: normalizeUrl,
+  keepFace: keepFace,
+  faceOf: faceOf,
   load: load,
   pinned: pinned,
   check: check,

@@ -400,6 +400,7 @@ function createPeerPost(opts) {
     noteOutcome(hash, slot, answer);
     if (slot.askedCard) keepCard(slot, answer);
     if (slot.renameTo) keepRename(slot, answer);
+    if (slot.faceTo) keepFaceAnswer(slot, answer);
     slot.resolve(answer);
     pump();
     return true;
@@ -485,6 +486,23 @@ function createPeerPost(opts) {
     try {
       relayTable().renameSeat(rootDir, slot.toKey, String(said.label || slot.renameTo));
     } catch (e) { /* the relay renamed; the row catches up on the next rename */ }
+  }
+
+  // ── A FACE NAME THE RELAY ACCEPTED, KEPT ON ITS ROW (goal/G30.1) ──────
+  //
+  // relay.face posts {face: {name, email}} through this door like any post. When the relay says yes, the pair it
+  // confirmed and its answer WHOLE, as received (the opened text, the hash and the signature over them), go on that
+  // relay's row beside the seat. Andy, 2026-10-19: "the information belongs into relay-state somewhere, it's part
+  // of the node identity." Never rebuilt: the signature is the relay's own word and can be shown as proof.
+  function keepFaceAnswer(slot, answer) {
+    if (!answer || !answer.ok || typeof answer.text !== 'string') return;
+    var info = arrivals.envelopeOf(answer.text) || arrivals.relayWordOf(answer.text);
+    var said = info && info.body;
+    if (!said || said.ok !== true || !said.name) return;
+    try {
+      relayTable().keepFace(rootDir, slot.relayUrl, String(said.name), String(said.email || ''),
+        JSON.stringify({ hash: answer.hash, from: answer.from, text: answer.text, sig: answer.sig || '' }));
+    } catch (e) { /* the relay confirmed; the row catches up when the pair is asked again */ }
   }
 
   // ── WHAT MAY BE TRIED AGAIN ──────────────────────────────────────────
@@ -593,6 +611,13 @@ function createPeerPost(opts) {
     var info = arrivals.envelopeOf(text) || arrivals.relayWordOf(text);
     var rename = info && info.body && info.body.rename;
     return rename && typeof rename.label === 'string' ? rename.label : '';
+  }
+
+  // Whether an outgoing text is a face application, and what it asked for, or null.
+  function faceAsked(text) {
+    var info = arrivals.envelopeOf(text) || arrivals.relayWordOf(text);
+    var face = info && info.body && info.body.face;
+    return face && typeof face === 'object' && typeof face.name === 'string' ? { name: face.name, email: String(face.email || '') } : null;
   }
 
   // An attempt is over. Either the intent survives to be tried again, or
@@ -1090,6 +1115,7 @@ function createPeerPost(opts) {
         // where the request is gone.
         askedCard: nodeCard.asks(text),
         renameTo: renameAsked(text),
+        faceTo: faceAsked(text),
         at: Date.now(),
         timer: null,
         seq: 0,

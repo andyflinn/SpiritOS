@@ -3,7 +3,7 @@
 // spirit/test/appClient.js
 // THE NODE'S SIDE OF ITS SERVER PROCESSES (js/appClient.js).
 //
-// Where each pipe is, the named refusals, and one real knock: appFaceAppServer
+// Where each pipe is, the named refusals, and one real knock: a one-verb server built on appServer.js (goal/G30.1: the face servers are gone)
 // started on a pipe the way the node starts it, asked its tree and its one
 // verb. Since goal/G13.2 there is no face half here: no readServers, no
 // startAll, no toLocalApp; a face is a process/js server like any other, and
@@ -97,8 +97,9 @@ function refusalsByName() {
   });
 }
 
-// ONE REAL KNOCK. appFaceAppServer, started the way the node starts a process,
-// on a pipe, asked its tree and its one verb.
+// ONE REAL KNOCK. A one-verb server built on appServer.js (written into the run folder below, since the face
+// servers that used to serve here went with goal/G30.1), started the way the node starts a process, on a pipe,
+// asked its tree and its one verb.
 function aRealKnock() {
   test.subHeading('A real server on a pipe: its tree, its verb, and its end with the node');
   // ITS OWN RUN FOLDER, NOT THE CHECKOUT'S. The pipe name comes from the
@@ -106,35 +107,36 @@ function aRealKnock() {
   // on it: the first version of this asked Andy's live server and passed for
   // the wrong reason.
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hop-'));
-  fs.cpSync(path.join(RUN, 'process', 'js', 'appFaceAppServer'), path.join(root, 'process', 'js', 'appFaceAppServer'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'process', 'js', 'knockServer'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'process', 'js', 'knockServer', 'knockServer.js'),
+    "'use strict';\nconst appServer = require('../../../js/appServer.js');\n" +
+    "appServer.serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } }, { dependencies: [] });\n");
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
-  const state = path.join(root, 'relay-state', 'process', 'appFaceAppServer');
+  const state = path.join(root, 'relay-state', 'process', 'knockServer');
   fs.mkdirSync(state, { recursive: true });
-  const pipe = appClient.pipePathFor(root, 'appFaceAppServer', process.platform, 'process');
+  const pipe = appClient.pipePathFor(root, 'knockServer', process.platform, 'process');
   const s = appClient.createAppClient({ rootDir: root, log: function () {} });
-  s.register('appFaceAppServer', pipe);
+  s.register('knockServer', pipe);
   const child = childProcess.spawn(process.execPath,
-    [path.join(root, 'process', 'js', 'appFaceAppServer', 'appFaceAppServer.js'), '{}', '--pipe', pipe, '--state', state],
+    [path.join(root, 'process', 'js', 'knockServer', 'knockServer.js'), '{}', '--pipe', pipe, '--state', state],
     { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   function ready(tries) {
     return s.ask('api').then(function (r) {
-      const up = r.body && r.body.appFaceAppServer && r.body.appFaceAppServer.ok !== false;
+      const up = r.body && r.body.knockServer && r.body.knockServer.ok !== false;
       if (up || tries <= 0) return r;
       return new Promise(function (res) { setTimeout(res, 250); }).then(function () { return ready(tries - 1); });
     });
   }
   return ready(40).then(function (tree) {
-    const branch = tree.body && tree.body.appFaceAppServer;
-    if (branch && branch.serve && branch.DEBUG) test.check('ask \'api\': its tree names serve, with DEBUG on it like every server\'s');
+    const branch = tree.body && tree.body.knockServer;
+    if (branch && branch.ping && branch.DEBUG) test.check('ask \'api\': its tree names ping, with DEBUG on it like every server\'s');
     else test.fail('ask api: ' + JSON.stringify(tree).slice(0, 200));
-    return s.ask({ appFaceAppServer: { serve: { host: 'join.face.test', method: 'POST', path: '/api/spirit', body: '{"verb":"app.state"}', type: 'application/json' } } });
+    return s.ask({ knockServer: { ping: {} } });
   }).then(function (verb) {
-    let said = null;
-    try { said = JSON.parse(verb.body && verb.body.body); } catch (e) { said = null; }
-    if (verb.status === 200 && verb.body && verb.body.status === 200 && /json/.test(verb.body.type) && said && said.ok === true && said.app === 'appFaceAppServer') {
-      test.check('serve answers a json ask with the proof, typed json, as the verb\'s own reply');
+    if (verb.status === 200 && verb.body && verb.body.pong === true) {
+      test.check('ping answers as the verb\'s own reply');
     } else {
-      test.fail('serve: ' + JSON.stringify(verb).slice(0, 300));
+      test.fail('ping: ' + JSON.stringify(verb).slice(0, 300));
     }
     // THE SERVER ENDS WITH ITS NODE: closing the channel is the node dying.
     return new Promise(function (resolve) {
@@ -145,7 +147,7 @@ function aRealKnock() {
   }).then(function (ended) {
     if (ended) test.check('a server exits when the channel to its node closes, so a dead node leaves no orphan on the pipe');
     else { test.fail('the server outlived its node\'s channel'); child.kill(); }
-    return s.ask({ appFaceAppServer: { serve: { host: '', method: 'GET', path: '/', body: '', type: '' } } });
+    return s.ask({ knockServer: { ping: {} } });
   }).then(function (after) {
     if (after.status === 503 && after.body && after.body.code === 'app-not-running') {
       test.check('with nothing on the pipe, the node answers app-not-running at once');

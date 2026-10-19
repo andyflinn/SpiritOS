@@ -1,3 +1,5 @@
+> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay is to serve the face pages itself (not built). Passages below that describe those processes are history, kept as bones for the fold.
+
 # The public app server — and `join` as its first app
 
 > 2026-10-13 (goal/G22.6): `relay.html` (the relay brochure) and `POST /api/relay/claim`, named below, are gone with the relay's public door. A claim is a post on the relay's one door, through peerPost.

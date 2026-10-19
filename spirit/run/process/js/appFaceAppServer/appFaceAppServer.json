@@ -1,7 +1,0 @@
-{
-  "label": "appFaceAppServer",
-  "description": "The face owner's side of appFaceApp: answers a visitor's json ask on /api/spirit itself, the proof that the route from the face reached the owner of the name.",
-  "kind": "server",
-  "operated": "node",
-  "args": []
-}

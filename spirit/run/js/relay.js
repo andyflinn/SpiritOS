@@ -15,6 +15,7 @@ const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
 // The relay's data on disc (cycle 3): members and invites.
 const relayStore = require('./relayStore');
+const faceRoute = require('./faceRoute');
 // The same validation the file gets at boot, so the owner's `config` verb
 // (reconfigure) cannot accept a figure a restart would then refuse.
 const relayConfig = require('./relayConfig');
@@ -1919,6 +1920,34 @@ function createRelay(rootDir, deps) {
     return { ok: true, status: 200, label: next, was: was };
   }
 
+  // A MEMBER APPLIES FOR A FACE NAME AND AN EMAIL (goal/G30.1). Andy, 2026-10-19: "the node, already connected as
+  // member on a relay, applies to the relay for a DNS-segment-name, with a call that includes the asked-for
+  // face-name and an email, this is a normal peerPost to the relay itself, and it succeeds or not." Like rename,
+  // an own-row verb with no owner path: the name belongs to the key that asked. It succeeds with the pair, which
+  // routeReply signs with the rest of the answer ("the success-reply is a confirmation of the face-email pair"),
+  // or it is refused: 400 for a name that is not one DNS label (faceRoute.faceLabel, the rule the Host parser
+  // uses) or an email that is not one address, 409 for a name another member holds. The name is lowercased, so
+  // andy and Andy are one. Asking again replaces the pair. The email is NOT verified here: the login provider
+  // does that at the face sign-in (Andy: "the email is verified be the auth-provider"), which is not built yet.
+  // The name is freed when the member leaves, because it is a column of the member's row (forgetPeer).
+  function faceSelf(who, wanted, mail) {
+    if (!who || !who.publicKey) return { ok: false, status: 403, error: 'no such peer' };
+    var name = faceRoute.faceLabel(wanted);
+    if (!name) return { ok: false, status: 400, error: 'a face name is one label of letters, digits and hyphens' };
+    var email = String(mail == null ? '' : mail).trim();
+    if (Buffer.byteLength(email, 'utf8') > 254 || !/^[^\s@]+@[^\s@]+$/.test(email)) {
+      return { ok: false, status: 400, error: 'an email is one address with an @' };
+    }
+    if (!findByKey(who.publicKey)) return { ok: false, status: 404, error: 'no such peer' };
+    var holder = store.members.byFace(name);
+    if (holder && holder.publicKey !== who.publicKey) return { ok: false, status: 409, error: 'that face name is held by another member' };
+    var wrote = guardWrite('face name', function () { return store.members.setFace(who.publicKey, name, email); });
+    if (wrote && wrote.ok === false) return wrote;
+    if (!wrote) return { ok: false, status: 409, error: 'that face name is held by another member' };
+    refreshActive(who.publicKey);
+    return { ok: true, status: 200, name: name, email: email };
+  }
+
   // FORGETTING SOMEBODY — the act, with no opinion about who asked.
   //
   // Split out of removePeer so the two ways in can prove themselves
@@ -2732,6 +2761,11 @@ function createRelay(rootDir, deps) {
     // minted their invite, permanently.
     if (body && body.rename) {
       out = renameSelf(who, String(body.rename.label || ''), hash);
+    }
+
+    // REGISTERING A FACE NAME AND EMAIL, own row, no owner path (goal/G30.1; faceSelf above).
+    if (body && body.face && typeof body.face === 'object') {
+      out = faceSelf(who, body.face.name, body.face.email);
     }
 
     // TAKING ONE BACK, by label — the only handle an unclaimed invite

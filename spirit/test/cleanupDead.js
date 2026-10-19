@@ -46,11 +46,11 @@ else test.fail(OWED + 'shell/fixList is still there');
 if (!/fixList/i.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8'))) test.check('.gitignore names no fixList');
 else test.fail(OWED + '.gitignore still names fixList');
 
-// Removed, not opened: the face answers a name only from grantFace's word (route), never from
-// a list of keys beside it. The grant verb of the old shell app is gone with it.
-test.subHeading('appFaceApp\'s grant path is removed, not opened');
-const face = (function () { try { return code(path.join(RUN, 'process', 'js', 'appFaceApp', 'appFaceApp.js')); } catch (e) { return ''; } })();
-if (face && !/grants\.json|allow\.json|'grant'|"grant"/.test(face) && /grantFace/.test(face)) test.check('the face reads no grants.json and no allow.json, and grants nothing: it asks grantFace');
-else test.fail(OWED + 'the face still carries a grant path of its own');
+// Removed, not opened: the face processes went whole with goal/G30.1, and a name now lives on the relay's own
+// members row, so no grant path of a face is left to carry. Nothing replaced them here.
+test.subHeading('the face processes and their grant path are gone, not opened');
+const faceGone = ['appFaceApp', 'appFaceAppServer', 'grantFace'].filter(function (n) { return fs.existsSync(path.join(RUN, 'process', 'js', n)); });
+if (!faceGone.length) test.check('appFaceApp, appFaceAppServer and grantFace are gone, and with them the face\'s grant path');
+else test.fail(OWED + 'still there: ' + faceGone.join(', '));
 
 test.reportSuccessFailureCount();

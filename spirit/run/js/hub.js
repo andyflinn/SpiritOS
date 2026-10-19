@@ -2755,6 +2755,35 @@ function createHub(rootDir) {
     });
   }
 
+  // ── relay.face: THIS NODE APPLIES TO ONE RELAY FOR A FACE NAME (goal/G30.1) ──
+  //
+  //   Andy, 2026-10-19: "the node, already connected as member on a relay, applies to the relay for a
+  //   DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost
+  //   to the relay itself, and it succeeds or not." and "i agree to the node side verb as well."
+  // The post leaves by the one door (sendPacket). The relay's answer is kept whole on that relay's row by
+  // peerPost.js (keepFaceAnswer) before it comes back here, so this only reports it. Asking again replaces the pair.
+  function relayFace(body, deps) {
+    var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
+    var name = String((body && body.name) || '').trim();
+    var email = String((body && body.email) || '').trim();
+    if (!url || !name || !email) return Promise.resolve({ ok: false, status: 400, error: 'a relay url, a face name and an email are required' });
+    if (!deps || !deps.router) return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
+    var row = relayKeys.byUrl(rootDir, url);
+    if (!row) return Promise.resolve({ ok: false, status: 404, error: 'that relay is not on this node\'s list' });
+    var made = packet.encode('relay', { face: { name: name, email: email } });
+    if (!made || !made.ok) return Promise.resolve({ ok: false, status: 500, error: 'the application could not be encoded' });
+    return sendPacket(deps.router, row.url, row.key, made.text).then(function (answer) {
+      if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
+      var said = null;
+      try { said = (packet.decode(answer.text) || {}).body; } catch (e) { said = null; }
+      if (!said || typeof said !== 'object') return { ok: false, status: 502, error: 'the relay answered something this node cannot read' };
+      if (said.ok !== true) return { ok: false, status: said.status || 400, error: said.error || 'the relay refused' };
+      return { ok: true, status: 200, url: row.url, name: said.name, email: said.email };
+    }, function (e) {
+      return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
   function relayGet(body, deps) {
     var key = String((body && body.key) || '');
     if (!key) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
@@ -2837,6 +2866,7 @@ function createHub(rootDir) {
     relaySearch: relaySearch,
     relayRemove: relayRemove,
     relayAdd: relayAdd,
+    relayFace: relayFace,
     relayGet: relayGet,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,

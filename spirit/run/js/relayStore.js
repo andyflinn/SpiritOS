@@ -230,6 +230,18 @@ function open(rootDir) {
     }
   } catch (e) { /* a brand-new database already has it, from the CREATE above */ }
 
+  // A MEMBER'S FACE NAME AND EMAIL (goal/G30.1). The name a member asked for under the relay's domain and the email
+  // it was asked with; empty means none. The name is unique when set, by a partial index, so two members with no
+  // name do not collide. Both go with the row when a member leaves, which is how the name is freed (Andy,
+  // 2026-10-19: "when the member leaves the relay"). The relay does not verify the email: the login provider
+  // does, at the face sign-in, which is not built here.
+  try {
+    const fcols = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
+    if (fcols.indexOf('faceName') === -1) db.exec("ALTER TABLE members ADD COLUMN faceName TEXT NOT NULL DEFAULT ''");
+    if (fcols.indexOf('faceEmail') === -1) db.exec("ALTER TABLE members ADD COLUMN faceEmail TEXT NOT NULL DEFAULT ''");
+    db.exec("CREATE UNIQUE INDEX IF NOT EXISTS members_face ON members (faceName) WHERE faceName <> ''");
+  } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
+
   const hasOwnerColumn = db.prepare('PRAGMA table_info(members)').all()
     .some(function (c) { return c.name === 'owner'; });
   if (hasOwnerColumn) db.exec('ALTER TABLE members DROP COLUMN owner');
@@ -268,6 +280,11 @@ function build(rootDir, db, key) {
     inviteSweep: db.prepare('DELETE FROM invites WHERE expiresAt < ?'),
   };
 
+  // The face statements are prepared on first use: a read-only store opened on a relay.db from before the face
+  // columns cannot add them, and preparing a statement that names a missing column would throw at open.
+  const faceQ = {};
+  function faceStmt(name, sql) { return faceQ[name] || (faceQ[name] = db.prepare(sql)); }
+
   function member(row) {
     if (!row) return null;
     return {
@@ -278,6 +295,9 @@ function build(rootDir, db, key) {
       // this row is filed under, so the relay keeping it is not the relay
       // being trusted with it.
       card: row.card || '',
+      // The face name and email the member applied for (goal/G30.1); empty when none.
+      faceName: row.faceName || '',
+      faceEmail: row.faceEmail || '',
     };
   }
 
@@ -343,6 +363,14 @@ function build(rootDir, db, key) {
       },
       remove: function (publicKey) {
         return q.memberDel.run(String(publicKey || '')).changes > 0;
+      },
+      // Who holds a face name (already lowercased by the caller), or null.
+      byFace: function (name) { return member(faceStmt('byFace', 'SELECT * FROM members WHERE faceName = ? LIMIT 1').get(String(name || ''))); },
+      // The face name and email of one member. True when written; false when the name is held by another member
+      // (the unique index refuses it) or the member is not on the roll.
+      setFace: function (publicKey, name, email) {
+        try { return faceStmt('set', 'UPDATE members SET faceName = ?, faceEmail = ? WHERE publicKey = ?').run(String(name || ''), String(email || ''), String(publicKey || '')).changes > 0; }
+        catch (e) { if (/UNIQUE/i.test(String(e && e.message))) return false; throw e; }
       },
     },
 

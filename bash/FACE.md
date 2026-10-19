@@ -1,3 +1,8 @@
+> **OUT OF DATE since goal/G30.1 (2026-10-19).** `bash/face-install`, the appFaceApp process, appFaceAppServer and
+> grantFace are deleted. A name now lives on the relay's own members row (a node asks for it with `relay.face`), and
+> the relay is to serve the face pages itself, which is not built yet. This page is kept as a bone for that fold, for
+> its Caddy and certificate parts; the steps below no longer run.
+
 # The face on spirit-3: `*.face.spirit.andyflinn.com`
 
 What this sets up is step 1 of G17 (Andy, 2026-09-27: *"build and prove the

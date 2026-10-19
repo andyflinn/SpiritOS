@@ -1,3 +1,5 @@
+> **appFaceApp, appFaceAppServer, grantFace and faceProof are deleted (goal/G30.1, 2026-10-19).** A face name is now a column of the relay's members row, asked for with the node verb `relay.face`; the relay is to serve the face pages itself (not built). Passages below that describe those processes are history, kept as bones for the fold.
+
 # Processes — what a node runs besides itself
 
 **A snapshot for ideas, not a spec.** Andy, 2026-09-30: *"a lot of this spec is out of date, and it only servers as a snapshot reference for ideas. we're already building on a different branch. Do not take this document for gospel!"* Written 2026-09-28 for G19.1 (1e3703a5), reverted with G19 (6630efb5), restored here only so its ideas can be looked up. What rules is desk/G2's Desk items and the section **Rulings of 2026-09-30** at the end. Lines marked *(stale)* describe code that no longer exists; *(not built)* were never built.

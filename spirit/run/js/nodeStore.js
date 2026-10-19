@@ -501,6 +501,11 @@ function open(rootDir, opts) {
     const cols = db.prepare('PRAGMA table_info(relays)').all().map(function (c) { return c.name; });
     if (cols.indexOf('refusal') === -1) db.exec("ALTER TABLE relays ADD COLUMN refusal TEXT NOT NULL DEFAULT ''");
     if (cols.indexOf('refusedAt') === -1) db.exec("ALTER TABLE relays ADD COLUMN refusedAt TEXT NOT NULL DEFAULT ''");
+    // The face name and email this node applied for on that relay, and the relay's signed answer kept whole, as
+    // received (goal/G30.1). Empty means none was asked or kept.
+    if (cols.indexOf('faceName') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceName TEXT NOT NULL DEFAULT ''");
+    if (cols.indexOf('faceEmail') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceEmail TEXT NOT NULL DEFAULT ''");
+    if (cols.indexOf('faceReply') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceReply TEXT NOT NULL DEFAULT ''");
   }());
 
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
@@ -639,7 +644,7 @@ function open(rootDir, opts) {
     relByKey: db.prepare('SELECT * FROM relays WHERE key = ?'),
     relByUrl: db.prepare('SELECT * FROM relays WHERE url = ?'),
     relPut: db.prepare(`INSERT OR REPLACE INTO relays (key, url, label, listed, pos, firstSeen, acceptedAt, replaced,
-      seatLabel, seatClaimedAt, refusal, refusedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+      seatLabel, seatClaimedAt, refusal, refusedAt, faceName, faceEmail, faceReply) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
     relDel: db.prepare('DELETE FROM relays WHERE key = ?'),
     relMaxPos: db.prepare('SELECT COALESCE(MAX(pos), -1) AS n FROM relays WHERE listed = 1'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
@@ -766,6 +771,7 @@ function open(rootDir, opts) {
       firstSeen: r.firstSeen, acceptedAt: r.acceptedAt, replaced: r.replaced,
       seatLabel: r.seatLabel, seatClaimedAt: r.seatClaimedAt,
       refusal: r.refusal, refusedAt: r.refusedAt,
+      faceName: r.faceName || '', faceEmail: r.faceEmail || '', faceReply: r.faceReply || '',
     };
   }
   function routeRow(r) {
@@ -1309,7 +1315,8 @@ function open(rootDir, opts) {
         q.relPut.run(String(r.key), String(r.url), String(r.label || ''), r.listed ? 1 : 0, Number(r.pos) || 0,
           String(r.firstSeen || ''), String(r.acceptedAt || ''), String(r.replaced || ''),
           String(r.seatLabel || ''), String(r.seatClaimedAt || ''),
-          String(r.refusal || ''), String(r.refusedAt || ''));
+          String(r.refusal || ''), String(r.refusedAt || ''),
+          String(r.faceName || ''), String(r.faceEmail || ''), String(r.faceReply || ''));
       },
       del: function (key) { return q.relDel.run(String(key || '')).changes > 0; },
       nextPos: function () { return q.relMaxPos.get().n + 1; },

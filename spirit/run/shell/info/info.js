@@ -202,6 +202,7 @@ function infoDrawRelays() {
     // nothing to distribute to, and a heading over nothing is a thing to
     // read and dismiss.
     box.innerHTML = '';
+    infoDrawFace();
     return;
   }
 
@@ -233,6 +234,63 @@ function infoDrawRelays() {
         '</tr>';
     }).join('') +
     '</tbody></table>';
+  infoDrawFace();
+}
+
+// ── A FACE NAME AND AN EMAIL, FOR ONE RELAY ──────────────────────────
+//
+// One relay chosen from the seats this node holds, a name, an email, and the relay's answer. relay.face does the
+// asking and the node keeps the signed answer; this page only draws the form and says what came back. The relay
+// does not verify the email: the login provider does, at a face sign-in that is not built yet, so a wrong address
+// simply never signs in and is corrected by applying again.
+var infoFaceSaid = '';
+function infoDrawFace() {
+  var box = document.getElementById('info-face');
+  if (!box) return;
+  var escape = infoApi && infoApi.escapeHtml ? infoApi.escapeHtml : function (s) { return String(s); };
+  var seats = infoSeats();
+  if (!seats.length) { box.innerHTML = ''; return; }
+  // What the user has typed or chosen survives a redraw of the table.
+  var keep = { relay: '', name: '', email: '' };
+  ['relay', 'name', 'email'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el) keep[k] = el.value; });
+  box.innerHTML =
+    '<div class="label">A face name on one relay</div>' +
+    '<div class="job-manifest-note">Ask one relay for a name under its domain, with the email that will sign in to it. ' +
+      'The relay answers yes or no; asking again changes the pair.</div>' +
+    '<div class="start-job-form card">' +
+      '<label class="field-label">Relay<select id="info-face-relay">' +
+        seats.map(function (row) { return '<option value="' + escape(row.url) + '">' + escape(row.label || row.url) + '</option>'; }).join('') +
+      '</select></label>' +
+      '<label class="field-label grow">Face name<input type="text" id="info-face-name" placeholder="one word, letters and digits"></label>' +
+      '<label class="field-label grow">Email<input type="text" id="info-face-email" placeholder="you@example.org"></label>' +
+      '<button type="button" id="info-face-save">Ask</button>' +
+    '</div>' +
+    '<div id="info-face-error" class="job-start-error"></div>';
+  ['relay', 'name', 'email'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el && keep[k]) el.value = keep[k]; });
+  document.getElementById('info-face-save').addEventListener('click', infoSaveFace);
+  document.getElementById('info-face-email').addEventListener('keydown', function (e) { infoOnKey(e, infoSaveFace); });
+  if (infoFaceSaid) infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
+}
+
+function infoSaveFace() {
+  var relay = document.getElementById('info-face-relay');
+  var name = document.getElementById('info-face-name');
+  var email = document.getElementById('info-face-email');
+  if (!relay || !name || !email || infoBusy) return Promise.resolve();
+  if (!name.value.trim() || !email.value.trim()) {
+    infoFaceSaid = { text: 'a name and an email are both needed', bad: true };
+    infoSay('info-face-error', infoFaceSaid.text, true);
+    return Promise.resolve();
+  }
+  infoBusy = true;
+  infoSay('info-face-error', 'asking the relay…', false);
+  return infoApi.verb('relay.face', { url: relay.value, name: name.value, email: email.value }).then(function (r) {
+    var said = (r && r.body) || {};
+    infoFaceSaid = said.ok
+      ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
+      : { text: said.error || (r && r.error) || 'the relay did not answer', bad: true };
+    infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
+  }).then(function () { infoBusy = false; }, function () { infoBusy = false; });
 }
 
 function infoLoad() {
@@ -428,6 +486,14 @@ spirit.shell.activateApp({
       // lands, and empty for good on a node that is on no relay, which is
       // a panel that draws nothing rather than a heading over nothing.
       '<div class="stat-tile wide" id="info-relays"></div>' +
+
+      // ── A FACE NAME ON ONE RELAY (goal/G30.1) ──────────────────────
+      //
+      //   Andy, 2026-10-19: "for this a little section in the info-app will be enough." and "this UI section in info
+      //   will have to address ONE relay specifically."
+      //
+      // Drawn from the same relay rows as the table above, so it appears only when there is a seat to apply on.
+      '<div class="stat-tile wide" id="info-face"></div>' +
 
       // ── THE FOOT, WHICH IS THE PART NOBODY EDITS ────────────────────
       //

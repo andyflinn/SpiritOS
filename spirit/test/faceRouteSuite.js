@@ -16,7 +16,7 @@
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 // Beside the face since goal/G13.2: the cache is appFaceApp's own, not the node's.
-const fr = require('../run/process/js/appFaceApp/faceRoute');
+const fr = require('../run/js/faceRoute');
 
 // THE OWNER'S SIGNER IS THE TEST'S OWN SINCE goal/G19.10. Andy, 2026-10-12:
 // "there shall be no test helpers inside node." answerRoute had no caller in
