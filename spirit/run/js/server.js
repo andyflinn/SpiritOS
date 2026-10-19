@@ -59,15 +59,18 @@ const STARTED_AT = new Date().toISOString();
 // alongside every other startup mistake.
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(
-    'Usage: node js/server.js [--port <number>]\n\n' +
+    'Usage: node js/server.js [--port <number>] [--email <address>]\n\n' +
     '  Runs a personal node: loopback HTTP only. A public relay is\n' +
     '  js/relayServer.js (`node js/server.js --relay` still starts one).\n\n' +
     '  --port <number>   Listen on this port instead of the default (' + spirit.core.node.const.DEFAULT_SPIRIT_PORT + ').\n' +
     '                    Same effect as the PORT environment variable; --port wins if both are given.\n' +
+    '  --email <address> Join the kept relay by your email while this node holds no seat: a mail\n' +
+    '                    arrives with a link that connects the node. Optional; ignored once seated.\n' +
     '  --help, -h        Show this message and exit.\n\n' +
     'Examples:\n' +
     '  node js/server.js\n' +
     '  node js/server.js --port 65431\n' +
+    '  node js/server.js --email you@example.org\n' +
     '  PORT=65431 node js/server.js\n\n' +
     'Must be run from spirit/run/ (this directory\'s parent must be named "spirit") — see the startup check in serveCommon.js if that fails.'
   );
@@ -2239,6 +2242,14 @@ function markRecord(kind) {
   process.on('SIGINT', function () { goodbye('SIGINT'); });
 }
 
+// THE JOIN AT START (goal/G30.2): node js/server.js --email <address>. An unseated node asks its kept relay to join;
+// what came of it is printed first, then the listening line (the box: "and then the line it listens on").
+const startEmail = common.emailFromArgs(process.argv.slice(2));
 server.listen(port, BIND_HOST, () => {
-  console.log(`Server listening on http://localhost:${port}`);
+  hub.joinAtStart(startEmail, { router: peerRouter, port: Number(port) || spirit.core.node.const.SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) })
+    .catch(function (e) { return { lines: ['The join at start broke: ' + ((e && e.message) || e) + '. Join from Natter instead.'] }; })
+    .then(function (r) {
+      (r.lines || []).forEach(function (line) { console.log(line); });
+      console.log(`node is listening on 127.0.0.1:${port}`);
+    });
 });

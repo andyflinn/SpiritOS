@@ -2777,7 +2777,8 @@ function createHub(rootDir) {
     if (!email && !code) return Promise.resolve({ ok: false, status: 400, error: 'an email to ask with, or the code from the mail' });
     if (!router || typeof router.join !== 'function') return Promise.resolve({ ok: false, status: 503, error: 'this node has no router to join with' });
     var port = Number(deps && deps.port) || 0;
-    return router.join(url, email, port, code).then(function (said) {
+    // A router that throws before it answers (no route to the relay) is the same refusal as one that never answers.
+    return Promise.resolve().then(function () { return router.join(url, email, port, code); }).then(function (said) {
       if (!code) {
         if (said.ok) joinAskedOf = url;
         return said.ok ? { ok: true, status: 200, url: url } : { ok: false, status: said.status || 502, error: said.error || 'the relay refused' };
@@ -2792,6 +2793,38 @@ function createHub(rootDir) {
       return { ok: true, status: 201, url: url, label: label };
     }, function (e) {
       return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
+    });
+  }
+
+  // ── THE JOIN AT START: node js/server.js --email <address> (goal/G30.2) ──
+  //
+  // The box: while the node holds no seat it asks its kept relay to join with that email and the port it listens on;
+  // with a seat, --email does nothing. An email is never required (invites stay a way in). It answers the lines
+  // server.js prints before its listening line: that a mail will arrive shortly, or why the join did not start, in a
+  // message that names the relay, what went wrong and what to do next (Andy: "i prefer high-quality error messages").
+  // It asks by relayJoin, the path relay.join takes, so the link's code finishes the join as it does from Natter.
+  var JOIN_NEXT = {
+    400: 'Correct the address and start the node again with --email <address>.',
+    409: 'This node already holds a seat there; start it without --email.',
+    429: 'Wait a minute, then start the node again.',
+    502: 'Check the network, then start the node again.',
+    503: 'This relay takes no join by email: ask its owner for an invite and claim a seat with it in Natter.',
+    507: 'Ask its owner for room, or join another relay from Natter.',
+  };
+  function joinAtStart(email, deps) {
+    var mail = String(email || '').trim();
+    if (!mail) return Promise.resolve({ lines: [] });
+    var seated = [];
+    try { seated = relayKeys.seatedUrls(rootDir); } catch (e) { seated = []; }
+    if (seated.length) return Promise.resolve({ lines: [] });
+    var url = String((deps && deps.keptUrl) || ownerBadge.KEPT_RELAY.url).replace(/\/+$/, '');
+    var host = url.replace(/^https?:\/\//, '');
+    return relayJoin({ url: url, email: mail }, deps).then(function (said) {
+      if (said.ok) {
+        return { lines: ['A mail to ' + mail + ' will arrive shortly from ' + host + '. Open its link on this computer within 10 minutes to connect this node to the network.'] };
+      }
+      var next = JOIN_NEXT[said.status] || 'Start the node again, or join a relay from Natter.';
+      return { lines: [host + ' did not start the join: ' + (said.error || 'it refused') + '. ' + next] };
     });
   }
 
@@ -2908,6 +2941,7 @@ function createHub(rootDir) {
     relayAdd: relayAdd,
     relayFace: relayFace,
     relayJoin: relayJoin,
+    joinAtStart: joinAtStart,
     relayGet: relayGet,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,

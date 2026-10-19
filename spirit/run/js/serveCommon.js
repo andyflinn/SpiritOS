@@ -77,6 +77,16 @@ function portFromArgs(argv) {
   return null;
 }
 
+// --email <address> / --email=<address>: the user's email, given once at start, so an unseated node joins its kept
+// relay by it (goal/G30.2). Optional: '' without the flag.
+function emailFromArgs(argv) {
+  const eqArg = argv.find((arg) => arg.startsWith('--email='));
+  if (eqArg) return eqArg.slice('--email='.length).trim();
+  const flagIndex = argv.indexOf('--email');
+  if (flagIndex !== -1 && argv[flagIndex + 1] !== undefined) return String(argv[flagIndex + 1]).trim();
+  return '';
+}
+
 function sendFile(res, filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const type = MIME_TYPES[ext] || 'application/octet-stream';
@@ -327,6 +337,7 @@ module.exports = {
   bodyBytes: bodyBytes,
   verifyStartupCwd: verifyStartupCwd,
   portFromArgs: portFromArgs,
+  emailFromArgs: emailFromArgs,
   sendFile: sendFile,
   readJsonBody: readJsonBody,
   clientKeyFor: clientKeyFor,
