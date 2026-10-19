@@ -1,5 +1,5 @@
 {
- "change": 72203,
+ "change": 72266,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -10,12 +10,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G29.22"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -46,16 +45,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -8263,9 +8260,12 @@
    "id": "goal/G29.22",
    "title": "The last old searches: jobs, boxes, modules",
    "goal": "goal/G29",
-   "status": "build",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G29"
    ],
@@ -8274,25 +8274,95 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
     {
+     "path": "spirit/run/js/boxes.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/bucket.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/gradedSearch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/includeList.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/limits.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeSearches.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/searchBucket.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/includeLists.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/moduleIds.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
      "path": "spirit/test/oldSearchGone.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/probabilityStringMatch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/searchMemory.js",
      "by": "claude-windows",
      "core": false
     }
    ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "7f2b07cf",
    "redCommit": "172fa7b5",
    "waived": true,
    "rules": [
@@ -8331,9 +8401,127 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "The last searches on the old graded bucket move to the probability modules.\n\n- jobs.search (the node verb behind the Jobs app) ranks jobs by the probability modules, cut by bytes.\n- owner.boxSearch (the box search) ranks by the probability modules, cut by bytes.\n- The module list search (config.searchModules) ranks by the probability modules, cut by bytes.\n- With no user left, the old search is deleted: gradedSearch.js, searchBucket.js and bucket.js, with tests that they are gone. A bounded single-object answer still needed (searchBucket.boundedGet) moves to a home of its own first.",
-   "version": 1,
-   "checks": [],
+   "box": "The last searches on the old graded bucket move to the probability modules.\n\n- jobs.search (the node verb behind the Jobs app) ranks jobs by the probability modules, cut by bytes.\n- owner.boxSearch (the box search) ranks by the probability modules, cut by bytes.\n- The module list search (config.searchModules) ranks by the probability modules, cut by bytes.\n- With no user left, the old search is deleted: gradedSearch.js, searchBucket.js and bucket.js, with tests that they are gone. A bounded single-object answer still needed (searchBucket.boundedGet) moves to a home of its own first.\n- Folded in from G29.23: every comment that describes the old search, and every reference in the design documents to its files and functions, goes too.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/boxes.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:11.947Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/bucket.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:15.905Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/gradedSearch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:19.982Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: js/hub.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:23.670Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: js/includeList.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:32.020Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: js/limits.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:35.366Z"
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: js/nodeSearches.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:39.199Z"
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: js/peerRank.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:43.292Z"
+    },
+    {
+     "number": "G9",
+     "kind": "G",
+     "words": "core grant: js/probabilityBucket.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:56.720Z"
+    },
+    {
+     "number": "G10",
+     "kind": "G",
+     "words": "core grant: js/probabilityStringMatch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:57:59.957Z"
+    },
+    {
+     "number": "G11",
+     "kind": "G",
+     "words": "core grant: js/searchBucket.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:58:03.991Z"
+    },
+    {
+     "number": "G12",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:58:09.128Z"
+    },
+    {
+     "number": "G13",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/boxes.js, spirit/run/js/bucket.js, spirit/run/js/gradedSearch.js, spirit/run/js/hub.js, spirit/run/js/includeList.js, spirit/run/js/limits.js, spirit/run/js/nodeSearches.js, spirit/run/js/searchBucket.js, spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-18T23:58:50.539Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -8388,6 +8576,36 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-18T23:39:31.182Z",
      "text": "let the deletion stay here, i'll remove the new item"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:40:13.581Z",
+     "text": "In the box: G29.23 folded in, so comments and design-document references to the old search go too. Deleting now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:56:48.795Z",
+     "text": "Built; the red is green and the suites that touch jobs, boxes and modules are green. The commit needs your grant on 12 core files, requested under this item: the three deleted modules, the three searches moved (jobs, boxes, modules), limits (the single-answer size check moves there), hub and server (they call it), and peerRank and the two probability modules (comments only).\nTwo things for you to know: four comments and one design document lose words of yours that named a deleted file (use the bucket.js, like bucket.js, the logic from gradedSearch); and two old records, the 10-10 code review and the 09-21 cycle document, now say the old graded search where they named its files."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:58:40.259Z",
+     "text": "commit 7f2b07cfc701a5f8b50baf92399929c262904d72: goal/G29.22: jobs, box and module searches ranked by probability; the old graded search deleted (gradedSearch, searchBucket, bucket), boundedGet in limits, comments and design documents cleaned\n- DICTIONARY.md\n- design/andy/NODE_AND_RELAY_DEPENDENCIES.md\n- design/cycles/2026-09-21-filling-the-gaps-request-budget.md\n- design/principles/NODE-AND-RELAY.md\n- design/principles/PUPPETS.md\n- design/relay/CAPACITY.md\n- design/reviews/claude-clowd/2026-10-10-code-review.md\n- spirit/run/js/boxes.js\n- spirit/run/js/bucket.js\n- spirit/run/js/gradedSearch.js\n- spirit/run/js/hub.js\n- spirit/run/js/includeList.js\n- spirit/run/js/limits.js\n- spirit/run/js/nodeSearches.js\n- spirit/run/js/peerRank.js\n- spirit/run/js/probabilityBucket.js\n- spirit/run/js/probabilityStringMatch.js\n- spirit/run/js/searchBucket.js\n- spirit/run/js/server.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/shell/desk/desk.js\n- spirit/test/bucket.js\n- spirit/test/chatsSearch.js\n- spirit/test/contactSelector.js\n- spirit/test/deskBucket.js\n- spirit/test/deskClientAsk.js\n- spirit/test/deskFake.js\n- spirit/test/deskSearches.js\n- spirit/test/includeLists.js\n- spirit/test/introspectSearch.js\n- spirit/test/moduleIds.js\n- spirit/test/oldSearchGone.js\n- spirit/test/oneDoor.js\n- spirit/test/peerSearchShared.js\n- spirit/test/probabilityBucket.js\n- spirit/test/probabilityStringMatch.js\n- spirit/test/puppetsPending.js\n- spirit/test/relayListIsNodeState.js\n- spirit/test/relaySearch.js\n- spirit/test/relaySearchMatcher.js\n- spirit/test/searchMemory.js\n- spirit/test/sharedSearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-18T23:58:57.848Z",
+     "text": "Claimed at 7f2b07cf, pushed. On the item: the three moved searches, limits, hub, server, deskVerify, the three deleted modules, and the suites that check them (oldSearchGone, includeLists, moduleIds, searchMemory, probabilityStringMatch).\nAlso in the commit, not listed: comments in 10 code files and 18 suites, DICTIONARY and 6 design documents."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-18T23:59:27.525Z",
+     "text": "deskVerify: passed, at 7f2b07cf (pulled). 5 suites ran green."
     }
    ]
   },
