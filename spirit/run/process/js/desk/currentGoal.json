@@ -1,5 +1,5 @@
 {
- "change": 72269,
+ "change": 72271,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -7,17 +7,17 @@
    "id": "goal/G29",
    "title": "FIX: search in general then everywhere",
    "goal": "",
-   "status": "goal run passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done",
-    "close"
+    "close",
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "codeOffered": false,
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -52,7 +52,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
