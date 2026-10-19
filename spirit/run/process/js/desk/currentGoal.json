@@ -1,20 +1,21 @@
 {
- "change": 73790,
+ "change": 73796,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
   {
    "id": "goal/G30",
-   "title": "Managing external interface/API providers and keys",
+   "title": "Design/Implement on-boarding and a relay giving \"face\"",
    "goal": "",
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.1"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -45,7 +46,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -453,10 +454,11 @@
    "id": "goal/G30.1",
    "title": "Negotiating face-name and email between node and relay",
    "goal": "goal/G30",
-   "status": "closed",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G30"
@@ -466,7 +468,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -586,7 +588,7 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 0,
+   "asks": 1,
    "half": true,
    "full": false,
    "box": "Added on Andy, 2026-10-19: \"add item: negotiating face-name and email-address between node and relay.\"\n\nSCOPE, Andy 2026-10-19: \"this item only implements the relay, node and shell-app changes, that facilitate registering a face/email combination with the relay.\" No face transaction and no face traffic is built here.\n\nRULED, Andy 2026-10-19\n- \"this will kill grantFace. the node, already connected as member on a relay, applies to the relay for a DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost to the relay itself, and it succeeds or not.\"\n- \"the success-reply is a confirmation of the face-email pair.\"\n- \"for this a little section in the info-app will be enough.\" \"that's where we already change the label to all relays\"\n- \"this UI section in info will have to address ONE relay specifically.\"\n- \"for now, we delete grantFace, appFaceApp, and appFaceAppServer. that will eliminate the old notions for good. the rest of the bones we'll pick for useful bits later.\"\n- \"ok, for now: the email is verified be the auth-provider, if the node-user supplies a bad one, it simply won't work, and we already specified that the email can be changed/corrected later.\"\n- Q1, when is a face name freed on the relay: \"when the member leaves the relay.\"\n- On the deletions: \"just don't delete important stuff like appClient etc... the rest is up to you.\" \"delete as much as is safe, keep what is valuable.\"\n- On the verbs, Andy 2026-10-19: yes to the relay verb face {name, email} (peer-reviewed), and \"i agree to the node side verb as well\": relay.face {url, name, email}, owner only, beside relay.add. \"the information belongs into relay-state somewhere, it's part of the node identity.\"\n\nTHE THREE CHANGES\n- Relay: one more self verb, the application, name and email in, success or refusal out; the members row gains faceName (unique when set, by a partial unique index) and faceEmail, by the same ALTER TABLE step that added card. The name is one DNS label by the rule faceRoute.nameOf already applies (a-z, 0-9, hyphen, at most 63), lowercased, refused otherwise, so andy and Andy are one name. The name is freed when its member leaves the relay, with the members row. A new relay verb and a new row shape: review and Andy's yes on each.\n- Node: new verb relay.face {url, name, email}, owner only, beside relay.add: it posts the application to that relay and keeps the signed answer whole, as received, in node.db on that relay row (relays gains faceName, faceEmail, faceReply, by the PRAGMA step); a repeated call replaces them. Where it keeps it is a new persist shape on the node (node.db or a relay-state file) and takes the same review as the relay row.\n- Shell app: one section in the info app beside the label push, addressing one relay chosen from its relay table: the name asked for, the email, that relay's answer.\n- The info app shows the face name and email this node holds for the selected relay, also after a node restart and for the relay selected when the app opens (Andy, 2026-10-19). The node reads them from its relays row (relayKeys.faceOf) into each relay row relay.get already answers; relay.get's declared shape does not change (its relay is an open object).\n- Deleted: the three processes grantFace, appFaceApp and appFaceAppServer (their folders under process/js), and the suites that test only them (appFaceGrant, appFaceProcess, faceAppGates, faceNoIdentity, grantFace, memberFacePending). In the shared suites (puppetsPending, where only its face door part goes, grantsApp, apiBranchSelector, appServerSelector, arrivals, cleanupDead, debugSwitch, deskVerifyModes, oneDoor, appClient) only the lines that would break go.\n- Also deleted: the faceProof state folder (Andy: \"and faceProof\") and bash/face-install, whose one job is to run appFaceApp (its header).\n- Kept as bones for the fold: bash/face-tls (the Caddy and wildcard part), systemd/spirit-face.service, FACE.md and the design pages (PROCESSES.md, PUPPETS.md, FACE-ROUND-TRIP.md, PUBLIC-APP-SERVER.md), each marked that appFaceApp is gone.\n- faceRoute.js lives in the appFaceApp folder: it moves out before that folder goes (to js/faceRoute.js), with its suite faceRouteSuite, because the relay uses its name rule.\n\nFACTS FROM THE TREE\n- A post addressed to the relay's own key is already a sealed self-ask answered by answerSelf (relay.js routePost). The relay's reply is signed over the hash and the text (routeReply).\n- The info app already posts rename {label} to every relay by peerPost (shell/info/info.js, infoPush) and draws one row per relay.\n- Today a face name is a grantFace slot, name to key; the relay holds per member only key, label and signed card (relayStore.js members). In the core files (server.js, apiAuth.js, apiDoor.js, appClient.js, appServer.js, hub.js, relayRequest.js, shellMove.js) the face processes appear in comment lines only.",
