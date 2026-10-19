@@ -2408,6 +2408,11 @@ function createRelay(rootDir, deps) {
       ownerKey: own.ownerKey,
       ownerLabel: own.ownerLabel,
       payloadMax: limits.PAYLOAD_MAX,
+      // WHAT THIS RELAY OFFERS (goal/G30.2): an object of switches, so the next one is a key and not a new card field.
+      // sendMail: a mail driver loaded, so it takes a join by email; face: it answers the face verb. Unsigned, as
+      // payloadMax is: a forged true earns only the join's refusal, a forged false only hides a field. A node
+      // ignores a key it does not know, and reads a missing one as false.
+      services: { sendMail: !!sendMail, face: true },
     };
   }
 
@@ -3973,6 +3978,8 @@ function createRelay(rootDir, deps) {
     forgetPeer: forgetPeer,
     join: join,
     joinConfirm: joinConfirm,
+    // The card a card ask is answered with (goal/G30.2: its services read in-process by the suites).
+    relayCard: relayCard,
     // Where this relay keeps its data. In-process only, for the suites that
     // inspect the roll on disc (test/rollOf.js) — nothing on the wire reads
     // it, and there is no whole-roll read on the relay itself (cycle 3).

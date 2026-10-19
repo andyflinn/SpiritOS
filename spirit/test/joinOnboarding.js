@@ -140,7 +140,8 @@ async function main() {
   if (/type="email"|class="nd-join-email"/.test(nd) && /'relay\.join',\s*\{[^}]*email/.test(nd)) test.check('the first-run claim screen (natterDetails) has an email field that asks relay.join with it');
   else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
   const relayServer = code('js/relayServer.js');
-  if (/createRelay\.createRelay\([\s\S]{0,1500}sendMail/.test(relayServer) && /createMailgun/.test(relayServer)) test.check('relayServer hands the Mailgun sender to the relay');
+  // Through the driver loader since the box's v28 (no vendor in core).
+  if (/createRelay\.createRelay\([\s\S]{0,1500}sendMail/.test(relayServer) && /require\('\.\/sendMail'\)\.createSender/.test(relayServer)) test.check('relayServer hands the relay the sender sendMail.js made from mail.json');
   else test.fail(OWED + 'relayServer hands the relay no mailer');
 
   test.subHeading('6. the first round\'s pages are gone');

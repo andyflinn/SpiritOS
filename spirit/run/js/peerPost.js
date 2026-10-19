@@ -1924,6 +1924,8 @@ function createPeerPost(opts) {
         ownerKey: String(said.ownerKey || ''),
         ownerLabel: String(said.ownerLabel || ''),
         payloadMax: typeof said.payloadMax === 'number' ? said.payloadMax : undefined,
+        // What the relay offers (goal/G30.2): only true switches are kept, so a missing or odd one reads as false.
+        services: { sendMail: !!(said.services && said.services.sendMail === true), face: !!(said.services && said.services.face === true) },
       };
     });
   }

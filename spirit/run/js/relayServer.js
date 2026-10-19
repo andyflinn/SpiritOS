@@ -261,14 +261,15 @@ function argMB(flag) {
 // HOW THIS RELAY ASKED A PARTNER (`askPartner`, over its own peerPost)
 // STOOD HERE; partnering as a permission is gone (Andy's decision,
 // goal/G22.6), and a relay makes no outbound request at all.
-// THE RELAY SENDS MAIL THROUGH MAILGUN (goal/G30.2): the join link goes to the user's email. Only when the owner has
-// placed relay-state/mail.json (mailgun.js); without it the relay takes no join.
-const mailgun = require('./mailgun');
-const mailConfig = mailgun.readMailConfig(ROOT_DIR);
+// THE RELAY SENDS MAIL THROUGH A DRIVER (goal/G30.2): the join link goes to the user's email. Only when the owner has
+// placed relay-state/mail.json naming its driver (sendMail.js); without it the relay takes no join, and its card says
+// services.sendMail false.
+const mailSender = require('./sendMail').createSender(ROOT_DIR);
+console.log(mailSender ? 'mail: sent through the ' + mailSender.driver + ' driver' : 'mail: none (no relay-state/mail.json naming a driver), so no join by email');
 
 const relay = createRelay.createRelay(undefined, {
   config: CONFIG,
-  sendMail: mailConfig ? mailgun.createMailgun(mailConfig).send : null,
+  sendMail: mailSender ? mailSender.send : null,
 
   // ── THE OWNER'S `config` VERB NEEDS HANDS (cycle 9) ───────────────
   //

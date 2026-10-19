@@ -620,6 +620,9 @@ function ndClaimHtml() {
   if (!ndUnlisted) {
     if (!ndBadge || ndBadge.owned || ndBadge.claimed) return '';
   }
+  // ONLY WHERE THE RELAY SENDS MAIL (goal/G30.2): its card says services.sendMail, which the node keeps on the row.
+  // An unlisted relay has no row yet, so it offers the invite form alone.
+  var joinByMail = !!(ndBadge && ndBadge.services && ndBadge.services.sendMail === true);
   return ndPanel('claim', ndIcon.POINTRIGHT, 'Claim a seat on this relay',
     // ── THE ORDER IS THE ORDER OF THE PHONE CALL ────────────────────
     //
@@ -640,12 +643,13 @@ function ndClaimHtml() {
     // that travels is "Invite name" on both screens now.
     // JOIN WITH YOUR EMAIL, FIRST (goal/G30.2): the one thing a new user types. The relay mails a link to this node;
     // opening it takes the seat (shell.js joinFromLink). The invite form below stays for an invite somebody gave you.
-    '<div class="start-job-form card">' +
-    '<label class="field-label grow">Your email' +
-      '<input type="email" class="nd-join-email" placeholder="you@example.org" autocomplete="email"></label>' +
-    '<button type="button" class="nd-join-go">Join</button>' +
-    '</div>' +
-    '<div class="job-manifest-note nd-join-out"></div>' +
+    (joinByMail ?
+      '<div class="start-job-form card">' +
+      '<label class="field-label grow">Your email' +
+        '<input type="email" class="nd-join-email" placeholder="you@example.org" autocomplete="email"></label>' +
+      '<button type="button" class="nd-join-go">Join</button>' +
+      '</div>' +
+      '<div class="job-manifest-note nd-join-out"></div>' : '') +
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Invite name' +
       '<input type="text" class="nd-claim-invite" placeholder="(the word the owner read out)"></label>' +

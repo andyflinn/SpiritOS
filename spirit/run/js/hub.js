@@ -2819,13 +2819,27 @@ function createHub(rootDir) {
     if (seated.length) return Promise.resolve({ lines: [] });
     var url = String((deps && deps.keptUrl) || ownerBadge.KEPT_RELAY.url).replace(/\/+$/, '');
     var host = url.replace(/^https?:\/\//, '');
-    return relayJoin({ url: url, email: mail }, deps).then(function (said) {
-      if (said.ok) {
-        return { lines: ['A mail to ' + mail + ' will arrive shortly from ' + host + '. Open its link on this computer within 10 minutes to connect this node to the network.'] };
-      }
-      var next = JOIN_NEXT[said.status] || 'Start the node again, or join a relay from Natter.';
-      return { lines: [host + ' did not start the join: ' + (said.error || 'it refused') + '. ' + next] };
+    function refusedLine(status, why) { return { lines: [host + ' did not start the join: ' + why + '. ' + (JOIN_NEXT[status] || 'Start the node again, or join a relay from Natter.')] }; }
+    // THE CARD FIRST (goal/G30.2): a relay whose card does not say services.sendMail takes no join by email, so the
+    // node says so without asking it to join.
+    var router = deps && deps.router;
+    var card = router && typeof router.relayKey === 'function'
+      ? Promise.resolve().then(function () { return router.relayKey(url); })
+      : Promise.resolve(null);
+    return card.then(function (c) {
+      if (c && !(c.services && c.services.sendMail === true)) return refusedLine(503, 'this relay sends no mail, so it takes no join');
+      return askJoin();
+    }, function (e) {
+      return refusedLine(502, 'no answer from that relay: ' + ((e && e.message) || 'no answer'));
     });
+    function askJoin() {
+      return relayJoin({ url: url, email: mail }, deps).then(function (said) {
+        if (said.ok) {
+          return { lines: ['A mail to ' + mail + ' will arrive shortly from ' + host + '. Open its link on this computer within 10 minutes to connect this node to the network.'] };
+        }
+        return refusedLine(said.status, said.error || 'it refused');
+      });
+    }
   }
 
   // ── relay.face: THIS NODE APPLIES TO ONE RELAY FOR A FACE NAME (goal/G30.1) ──
