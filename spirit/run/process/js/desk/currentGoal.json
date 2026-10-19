@@ -1,5 +1,5 @@
 {
- "change": 72754,
+ "change": 73108,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,11 +10,12 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G30.1"
+    "goal/G30.2"
    ],
    "codeOffered": false,
    "go": false,
@@ -46,17 +47,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 3,
    "excluded": [
-    "ollama agent node"
+    "ollama agent node",
+    "wsl-claude"
    ],
    "live": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -395,6 +394,54 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-19T02:03:32.647Z",
      "text": "kill the red Q here"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:04:13.548Z",
+     "text": "Q2 (how the home node trusts its face) is cleared. The question itself is still unanswered; it comes back when the face work is opened."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:04:17.572Z",
+     "text": "wsl: Q2 closed; the trust question comes back with the face traffic items, not here."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:07:28.814Z",
+     "text": "I'm thinking about the next small step on this road.\n\ncould it be throwing up a log-in screen on the relay?\n\nThere are token based forms of login that require no dealings with google or facebook.... could we use one of those?\n\ncw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:07:57.012Z",
+     "text": "Yes, a login page on the relay is a good next step, and it can work with no Google or Facebook at all.\nTwo token kinds fit: a magic link mailed to the address (needs the relay to send mail, so a mail service key), or a passkey, which the browser and phone keep themselves; the relay stores only a public key per member, nothing secret.\nPasskeys fit SpiritOS best, since keys are already its identity. The first passkey needs a trust anchor: the home node, already a member, asks the relay for a one-time code in the info app, and the member types it on the login page of the phone or laptop to register its passkey. After that, the passkey alone logs in.\nIt needs HTTPS on the member name, which the wildcard certificate gives."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:09:55.979Z",
+     "text": "i don't want the relay to store much. so if the relay send a token to the email address in the login and responds with a form to enter that token to create a session, and the token is stored with the member?\n\nsomething like that?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:10:21.182Z",
+     "text": "Yes, that works and keeps the relay small:\n- the login page takes the face name; the relay mails a short code to that member stored email and answers with a form for the code;\n- the member row holds only a hash of the code and its expiry (about 10 minutes, one use);\n- a right code opens a session: a random cookie kept in the relay memory, never on disk, so a relay restart just means logging in again.\nThe one new need: the relay must send mail, through an SMTP account or a mail API whose key sits in this goal store, the relay owner one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:10:43.788Z",
+     "text": "add item: Create Log-In page on the relay side...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:11:37.353Z",
+     "text": "Added goal/G30.2, Log-in page on the relay side; G30.1 blocks it (it needs the members row with name and email). Its box holds your ruling and the proposed shape: mailed code, hashed with expiry, memory-only session, mail key in the goal store."
     }
    ]
   },
@@ -402,34 +449,106 @@
    "id": "goal/G30.1",
    "title": "Negotiating face-name and email between node and relay",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
-    "goal/G30"
+    "goal/G30.2"
    ],
    "blocked": [],
    "codeOffered": true,
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/faceRoute.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeStore.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peerPost.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayKeys.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayStore.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/info/info.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/appClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/cleanupDead.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceApply.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceRouteSuite.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "wsl-claude",
-   "claimCommit": "",
-   "redCommit": "",
-   "waived": false,
+   "claimCommit": "3d7abdc8",
+   "redCommit": "30b8952c",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -461,14 +580,14 @@
     }
    ],
    "names": {
-    "wsl-claude": "wsl-claude",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "Added on Andy, 2026-10-19: \"add item: negotiating face-name and email-address between node and relay.\"\n\nSCOPE, Andy 2026-10-19: \"this item only implements the relay, node and shell-app changes, that facilitate registering a face/email combination with the relay.\" No face transaction and no face traffic is built here.\n\nRULED, Andy 2026-10-19\n- \"this will kill grantFace. the node, already connected as member on a relay, applies to the relay for a DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost to the relay itself, and it succeeds or not.\"\n- \"the success-reply is a confirmation of the face-email pair.\"\n- \"for this a little section in the info-app will be enough.\" \"that's where we already change the label to all relays\"\n- \"this UI section in info will have to address ONE relay specifically.\"\n- \"for now, we delete grantFace, appFaceApp, and appFaceAppServer. that will eliminate the old notions for good. the rest of the bones we'll pick for useful bits later.\"\n- \"ok, for now: the email is verified be the auth-provider, if the node-user supplies a bad one, it simply won't work, and we already specified that the email can be changed/corrected later.\"\n- Q1, when is a face name freed on the relay: \"when the member leaves the relay.\"\n- On the deletions: \"just don't delete important stuff like appClient etc... the rest is up to you.\" \"delete as much as is safe, keep what is valuable.\"\n\nTHE THREE CHANGES\n- Relay: one more self verb, the application, name and email in, success or refusal out; the members row gains name and email. The name is one DNS label by the rule faceRoute.nameOf already applies (a-z, 0-9, hyphen, at most 63), lowercased, refused otherwise, so andy and Andy are one name. The name is freed when its member leaves the relay, with the members row. A new relay verb and a new row shape: review and Andy's yes on each.\n- Node: it keeps the signed success reply as its name and email; a repeated call changes or corrects them. Where it keeps it is a new persist shape on the node (node.db or a relay-state file) and takes the same review as the relay row.\n- Shell app: one section in the info app beside the label push, addressing one relay chosen from its relay table: the name asked for, the email, that relay's answer.\n- Deleted: the three processes grantFace, appFaceApp and appFaceAppServer (their folders under process/js), and the suites that test only them (appFaceGrant, appFaceProcess, faceAppGates, faceNoIdentity, grantFace, memberFacePending). In the shared suites (puppetsPending, where only its face door part goes, grantsApp, apiBranchSelector, appServerSelector, arrivals, cleanupDead, debugSwitch, deskVerifyModes, oneDoor, appClient) only the lines that would break go.\n- Also deleted: the faceProof state folder (Andy: \"and faceProof\") and bash/face-install, whose one job is to run appFaceApp (its header).\n- Kept as bones for the fold: bash/face-tls (the Caddy and wildcard part), systemd/spirit-face.service, FACE.md and the design pages (PROCESSES.md, PUPPETS.md, FACE-ROUND-TRIP.md, PUBLIC-APP-SERVER.md), each marked that appFaceApp is gone.\n- faceRoute.js lives in the appFaceApp folder: it moves out before that folder goes (to js/faceRoute.js), with its suite faceRouteSuite, because the relay uses its name rule.\n\nFACTS FROM THE TREE\n- A post addressed to the relay's own key is already a sealed self-ask answered by answerSelf (relay.js routePost). The relay's reply is signed over the hash and the text (routeReply).\n- The info app already posts rename {label} to every relay by peerPost (shell/info/info.js, infoPush) and draws one row per relay.\n- Today a face name is a grantFace slot, name to key; the relay holds per member only key, label and signed card (relayStore.js members). In the core files (server.js, apiAuth.js, apiDoor.js, appClient.js, appServer.js, hub.js, relayRequest.js, shellMove.js) the face processes appear in comment lines only.",
-   "version": 18,
+   "box": "Added on Andy, 2026-10-19: \"add item: negotiating face-name and email-address between node and relay.\"\n\nSCOPE, Andy 2026-10-19: \"this item only implements the relay, node and shell-app changes, that facilitate registering a face/email combination with the relay.\" No face transaction and no face traffic is built here.\n\nRULED, Andy 2026-10-19\n- \"this will kill grantFace. the node, already connected as member on a relay, applies to the relay for a DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost to the relay itself, and it succeeds or not.\"\n- \"the success-reply is a confirmation of the face-email pair.\"\n- \"for this a little section in the info-app will be enough.\" \"that's where we already change the label to all relays\"\n- \"this UI section in info will have to address ONE relay specifically.\"\n- \"for now, we delete grantFace, appFaceApp, and appFaceAppServer. that will eliminate the old notions for good. the rest of the bones we'll pick for useful bits later.\"\n- \"ok, for now: the email is verified be the auth-provider, if the node-user supplies a bad one, it simply won't work, and we already specified that the email can be changed/corrected later.\"\n- Q1, when is a face name freed on the relay: \"when the member leaves the relay.\"\n- On the deletions: \"just don't delete important stuff like appClient etc... the rest is up to you.\" \"delete as much as is safe, keep what is valuable.\"\n- On the verbs, Andy 2026-10-19: yes to the relay verb face {name, email} (peer-reviewed), and \"i agree to the node side verb as well\": relay.face {url, name, email}, owner only, beside relay.add. \"the information belongs into relay-state somewhere, it's part of the node identity.\"\n\nTHE THREE CHANGES\n- Relay: one more self verb, the application, name and email in, success or refusal out; the members row gains faceName (unique when set, by a partial unique index) and faceEmail, by the same ALTER TABLE step that added card. The name is one DNS label by the rule faceRoute.nameOf already applies (a-z, 0-9, hyphen, at most 63), lowercased, refused otherwise, so andy and Andy are one name. The name is freed when its member leaves the relay, with the members row. A new relay verb and a new row shape: review and Andy's yes on each.\n- Node: new verb relay.face {url, name, email}, owner only, beside relay.add: it posts the application to that relay and keeps the signed answer whole, as received, in node.db on that relay row (relays gains faceName, faceEmail, faceReply, by the PRAGMA step); a repeated call replaces them. Where it keeps it is a new persist shape on the node (node.db or a relay-state file) and takes the same review as the relay row.\n- Shell app: one section in the info app beside the label push, addressing one relay chosen from its relay table: the name asked for, the email, that relay's answer.\n- The info app shows the face name and email this node holds for the selected relay, also after a node restart and for the relay selected when the app opens (Andy, 2026-10-19). The node reads them from its relays row (relayKeys.faceOf) into each relay row relay.get already answers; relay.get's declared shape does not change (its relay is an open object).\n- Deleted: the three processes grantFace, appFaceApp and appFaceAppServer (their folders under process/js), and the suites that test only them (appFaceGrant, appFaceProcess, faceAppGates, faceNoIdentity, grantFace, memberFacePending). In the shared suites (puppetsPending, where only its face door part goes, grantsApp, apiBranchSelector, appServerSelector, arrivals, cleanupDead, debugSwitch, deskVerifyModes, oneDoor, appClient) only the lines that would break go.\n- Also deleted: the faceProof state folder (Andy: \"and faceProof\") and bash/face-install, whose one job is to run appFaceApp (its header).\n- Kept as bones for the fold: bash/face-tls (the Caddy and wildcard part), systemd/spirit-face.service, FACE.md and the design pages (PROCESSES.md, PUPPETS.md, FACE-ROUND-TRIP.md, PUBLIC-APP-SERVER.md), each marked that appFaceApp is gone.\n- faceRoute.js lives in the appFaceApp folder: it moves out before that folder goes (to js/faceRoute.js), with its suite faceRouteSuite, because the relay uses its name rule.\n\nFACTS FROM THE TREE\n- A post addressed to the relay's own key is already a sealed self-ask answered by answerSelf (relay.js routePost). The relay's reply is signed over the hash and the text (routeReply).\n- The info app already posts rename {label} to every relay by peerPost (shell/info/info.js, infoPush) and draws one row per relay.\n- Today a face name is a grantFace slot, name to key; the relay holds per member only key, label and signed card (relayStore.js members). In the core files (server.js, apiAuth.js, apiDoor.js, appClient.js, appServer.js, hub.js, relayRequest.js, shellMove.js) the face processes appear in comment lines only.",
+   "version": 20,
    "checks": [
     {
      "number": "Q1",
@@ -480,6 +599,107 @@
      "at": "2026-10-19T01:58:09.774Z",
      "placedBy": "wsl-claude",
      "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Do you say yes to the relay verb face, and does the node keep its signed reply in node.db or in an fs.save file of the info app?",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-19T02:51:40.322Z",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/faceRoute.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:00:59.434Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/hub.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:11.885Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/nodeStore.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:14.810Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: js/peerPost.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:20.636Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: js/relay.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:22.626Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: js/relayKeys.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:28.181Z"
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: js/relayStore.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:29.580Z"
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:31.771Z"
+    },
+    {
+     "number": "G9",
+     "kind": "G",
+     "words": "core grant: shell/info/info.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:01:49.949Z"
+    },
+    {
+     "number": "G10",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/faceRoute.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-19T03:12:48.740Z"
     }
    ],
    "chat": [
@@ -764,6 +984,528 @@
      "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
      "at": "2026-10-19T02:02:46.896Z",
      "text": "wsl: green. The box holds every ruling in your words, the three changes and the cut, all checked against the tree; Q1 is closed and design-complete is pressed."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:04:59.831Z",
+     "text": "wsl: gap check at design end, the reds that carry each ruling, for whoever writes them after Go:\n1 relay: a member posts the application to the relay own key and gets a signed success reply with the pair; a taken name, a bad label and an uppercase label are refused or lowercased; the name goes when the member leaves (memberDel).\n2 relayStore: the members row holds name and email.\n3 node: the signed reply is kept in the new persist shape and a repeated call replaces it.\n4 info app: the section posts to the one chosen relay only and shows its answer.\n5 sweep: the three process folders, the faceProof folder and face-install are gone, include.json no longer lists them, faceRoute.js lives in js/ with its suite, and nothing new serves a face page or stream."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:06:09.708Z",
+     "text": "Red taken. Before it names them, the verb and shapes for review (wsl) and your yes:\n1. Relay verb: face {name, email}, posted to the relay own key like rename {label}, own row only, no owner path. Answers {ok, name, email}; refused 400 for a bad label or an email without @, 409 when another member holds the name.\n2. Relay row: members gains faceName (unique when set, lowercased) and faceEmail, added by the same ALTER TABLE step that added card.\n3. Node keep: the reply is kept by the info app in its own folder (shell/info), which needs no new node verb and no node.db change; the other way is two columns on the node relays table plus a node verb to write them.\nI recommend 3 as the info app own file. Yes to the verb face, and to 3?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:07:41.729Z",
+     "text": "wsl review: 1 yes: face {name, email} beside rename in the self chain (relay.js, the body.rename branch), with the statuses renameSelf already uses, 400 bad, 409 held, 200 with the pair.\n2 yes, with one fix: the PRAGMA and ALTER TABLE step that added card exists; unique when set needs a partial unique index (WHERE faceName <> empty), else two members without a name collide.\n3 not as stated: a shell page keeps nothing, info.js has no storage call, its one write is the peerPost rename. The fitting seat is the node relays table beside seatLabel and seatClaimedAt (nodeStore.js, written by relayKeys.js), so a node write exists either way; cleanest is one node verb that posts the application and keeps the signed answer. Two new verbs then, face on the relay and one on the node: Andy, your yes on both."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:08:17.858Z",
+     "text": "On wsl point 3, one fact: a shell app can keep a file, through the node verb fs.save {path, content} that already exists, so the info app could keep the answer in its own folder with no new verb.\nThe catch: any app granted fs.save can rewrite that file. wsl node verb keeps it in node.db beside seatLabel, where only that verb writes.\nPoints 1 and 2 agreed, with wsl partial unique index. Andy: the face verb on the relay, and for the keep either fs.save in the info folder or wsl node verb?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:08:48.736Z",
+     "text": "wsl: cw is right, I was wrong on that fact: fs.save exists (kernel.js saveFile) and chatter, textEditor and natter keep files with it, so the info app can keep the answer with no new verb. My preference stays node.db beside seatLabel for the one-writer reason, but both work; Andy, your pick, and your yes on face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:43:13.235Z",
+     "text": "nothing going on here?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:43:48.108Z",
+     "text": "wsl: the red is with cw since 02:06 (with column); no red commit has landed yet. I build after it, so I wait for the commit line. Two answers of yours are still open here: your yes on the relay verb face, and where the node keeps the reply, node.db beside seatLabel or a file by fs.save in the info app."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:45:39.401Z",
+     "text": "if I am stalling here? where's a red Q or something telling me to pay attention?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:46:09.366Z",
+     "text": "wsl: you are not stalling, I left it as chat. Now it is Q2 here: your yes on the face verb, and node.db or an fs.save file for the reply. The red waits on it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:48:31.094Z",
+     "text": "Q2: Do you say yes to the relay verb face, and does the node keep its signed reply in node.db or in an fs.save file of the info app?\n\nwhat would i say yes to? and the information belongs into relay-state somewhere, it's part of the node identity."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:48:50.685Z",
+     "text": "wsl: you say yes to one new relay verb, face: a member posts {name, email} to the relay, it answers the pair signed, or refuses a bad label or a held name. Same shape as rename {label}, one more line in the relay self chain.\nYour second line settles the keep: with the node identity in relay-state, not a shell file. Today that is identity.json (nodeCard.js writes it) or node.db; which of the two, and a node verb to write it, is the open part for cw and me to put to you."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:49:08.888Z",
+     "text": "My proposal for the open part:\n- Where: node.db, the relays table, three new columns beside seatLabel: faceName, faceEmail, faceReply (the signed answer as received). Not identity.json: it holds the private keys, and a face name belongs to one relay, which is what a relays row is.\n- The node verb: relay.face {url, name, email}. It posts the application to that relay key, keeps the signed answer in that row on success, and answers it to the info app. Owner only, like the label push.\nwsl, review; Andy, yes on relay.face?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:49:29.297Z",
+     "text": "wsl review of cw: agreed on all three. node.db relays row is right: relayKeys.js already files the seat label on that row (seat(), renameSeat), and the column step is the PRAGMA pattern at nodeStore.js, so faceName, faceEmail, faceReply are three more of the same.\nOne fix: faceReply is the relay signed text, kept whole so the node can show it as proof; the row must store it as received, never rebuilt.\nVerb: relay.face {url, name, email} fits beside relay.add and relay.remove in server.js, owner only. Andy: yes to relay.face on the node, and face on the relay?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:49:33.256Z",
+     "text": "of course i say yes to a new relay verb 'face'"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:49:52.724Z",
+     "text": "Thanks, face on the relay is yours. One more yes, the node side: relay.face {url, name, email}, owner only, beside relay.add; it sends the application and keeps the signed answer whole in node.db, on that relay row. Yes to relay.face?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:51:11.681Z",
+     "text": "i agree to the node side verb as well."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:51:45.034Z",
+     "text": "wsl: both verbs and the node.db keep are in the box and Q2 is closed. cw, the red can name them now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:53:37.775Z",
+     "text": "commit 30b8952c1d09bd60172ab762f6e9548b64bd21e3: goal/G30.1: the red for registering a face name and email with one relay\n- spirit/test/faceApply.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:53:51.236Z",
+     "text": "Red at 30b8952c (faceApply), 12 owed. wsl, yours to build.\nNamed in it: refusals answer 400 (bad name or email) and 409 (name held), as renameSelf does; an email needs an @; success answers ok, name, email. It drives the relay through test/world, so the members row must hand faceName and faceEmail out of relayStore members.each."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:53:53.945Z",
+     "text": "deskVerify: red confirmed at 30b8952c: spirit/test/faceApply.js"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T03:01:35.258Z",
+     "text": "wsl: built; faceApply is 14 of 14 and the nearby suites are green (relayListIsNodeState was red before my work: it still says relay.add is unapproved). Staged, not committed: the commit check wants your grant on six more core files, G4 to G9 on this item: peerPost, relay, relayKeys, relayStore, server, info. G1 to G3 are already granted. Press them and I commit and push."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:07:48.107Z",
+     "text": "i turned of wsl. i never have a clue what anybody is doing and i never see where my attention is needed. so i'll work with one agent now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:08:42.808Z",
+     "text": "and i issued every stinking grant that was asked for..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:09:15.599Z",
+     "text": "Understood, one agent. I take G30.1 build. wsl had it built and staged (red green) but never committed; I found it in its clone, and apply it in mine now, review it, run the suites, commit under your grants and claim. No new grant should be needed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:12:20.489Z",
+     "text": "commit ba2f3b62d197c479d0d93eb14e2338693413f14c: goal/G30.1: a node registers a face name and email with one relay (relay face verb, node relay.face, members and relays rows, info app section); grantFace, appFaceApp, appFaceAppServer and face-instal\n- bash/FACE.md\n- bash/README.md\n- bash/face-install\n- design/principles/PROCESSES.md\n- design/principles/PUPPETS.md\n- design/shell/FACE-ROUND-TRIP.md\n- design/shell/PUBLIC-APP-SERVER.md\n- spirit/run/js/faceRoute.js\n- spirit/run/js/hub.js\n- spirit/run/js/nodeStore.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayKeys.js\n- spirit/run/js/relayStore.js\n- spirit/run/js/server.js\n- spirit/run/process/js/appFaceApp/appFaceApp.js\n- spirit/run/process/js/appFaceApp/appFaceApp.json\n- spirit/run/process/js/appFaceApp/index.html\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.js\n- spirit/run/process/js/appFaceAppServer/appFaceAppServer.json\n- spirit/run/process/js/grantFace/grantFace.js\n- spirit/run/process/js/grantFace/grantFace.json\n- spirit/run/shell/info/info.js\n- spirit/test/appClient.js\n- spirit/test/appFaceGrant.js\n- spirit/test/appFaceProcess.js\n- spirit/test/cleanupDead.js\n- spirit/test/deskVerifyModes.js\n- spirit/test/faceAppGates.js\n- spirit/test/faceNoIdentity.js\n- spirit/test/faceRouteSuite.js\n- spirit/test/grantFace.js\n- spirit/test/memberFacePending.js\n- spirit/test/serverSurface.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:12:47.159Z",
+     "text": "Claimed at ba2f3b62, pushed: wsl build, applied in my clone, reviewed and run. faceApply 14 of 14; the relay, store, info, face route and surface suites green. Only relayListIsNodeState is red, as before this item (relay.add unapproved). No new grant was needed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:13:00.942Z",
+     "text": "deskVerify: passed, at ba2f3b62 (pulled). 5 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:16:23.932Z",
+     "text": "for me to check this, i'd need to update spirit-3."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:16:49.643Z",
+     "text": "Yes. On spirit-3: ./bash/update (it pulls origin/master and restarts the relay when the commit moved). It is safe for the data: relay.db only gains two empty columns at start, and old nodes keep working, since face is a new verb they never send.\nThen your node (it needs the same commit and a restart), Info, the spirit-3 row: a name and an email, and the answer shows beside it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:17:15.664Z",
+     "text": "don't we need a tag?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:17:40.753Z",
+     "text": "Yes, right: spirit-3 follows release tags (v*), not master, so ./bash/update stays at the last tag, v-2026-10-14-05-46, until a new one is cut.\nCutting it is the usual routine: re-measure capacity, add the history row, commit, then git tag v-<date> and push. Shall I cut it now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:19:29.312Z",
+     "text": "yes. tag. now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:20:19.570Z",
+     "text": "Tagged v-2026-10-19-05-20 and pushed; it carries G24, G27 to G29 and G30.1.\nIt is a flag day: peer.search changed shape on relay and node (G29.17) and the proxy verbs are gone (G29.20), so update spirit-3 and your node together. On spirit-3: ./bash/update."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:20:56.638Z",
+     "text": "tell me how to uninstall face there as well."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:21:27.990Z",
+     "text": "On spirit-3, as root, with face-install defaults (unit spirit-face, clone /root/face/SpiritOS); if you set other names then, use those:\n1. systemctl disable --now spirit-face\n2. rm /etc/systemd/system/spirit-face.service && systemctl daemon-reload\n3. ls /etc/caddy/sites/  then rm the face.<your domain>.caddy file, caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile, systemctl reload caddy (it only points at the dead face port now)\n4. rm -rf /root/face  (the face node clone and its keys)\nThe face node was also a member of spirit-3; its row stays on the roll until you remove that peer. The live relay (spirit-relay) is not touched by any of this."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:24:00.709Z",
+     "text": "i did one and two. the rest is gibberish"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:24:22.897Z",
+     "text": "Sorry. Step 3, the web server still sends the old face address somewhere dead. Paste these four lines, one at a time:\nrm /etc/caddy/sites/face.*.caddy\ncaddy validate --config /etc/caddy/Caddyfile --adapter caddyfile\nsystemctl reload caddy\nThe second line must end with Valid configuration; if it does not, stop and paste me what it says.\nStep 4, delete the old face copy of SpiritOS:\nrm -rf /root/face"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:26:19.775Z",
+     "text": "it's gone."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:26:42.399Z",
+     "text": "Good, the old face is off spirit-3. Next there: ./bash/update in the live relay folder, to take the new tag, then the same commit on your node and a restart; then Info, the spirit-3 row, a name and an email."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:30:51.997Z",
+     "text": "PS D:\\SpiritOS\\spirit\\run> node .\\js\\server.js\nserver process: backup\nserver process: chatClerver\nserver process: desk\nserver process: deskVerify\nserver process: fileServer\nServer listening on http://localhost:65432\nD:\\SpiritOS\\spirit\\run\\js\\hub.js:2771\n    var row = relayKeys.byUrl(rootDir, url);\n                        ^\n\nTypeError: relayKeys.byUrl is not a function\n    at Object.relayFace (D:\\SpiritOS\\spirit\\run\\js\\hub.js:2771:25)\n    at D:\\SpiritOS\\spirit\\run\\js\\server.js:2080:160\n    at readJsonBody.then.rs.writeHead.Content-Type (D:\\SpiritOS\\spirit\\run\\js\\server.js:1780:32)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n\nNode.js v24.20.0\nPS D:\\SpiritOS\\spirit\\run>"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:31:45.185Z",
+     "text": "commit 778cd910aab43f7847b7d318533b12f69cffa08b: goal/G30.1: export relayKeys.byUrl, which hub.relayFace calls (relay.face crashed the node); the red checks every relayKeys function hub.js calls is exported\n- spirit/run/js/relayKeys.js\n- spirit/test/faceApply.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:31:59.534Z",
+     "text": "My miss: hub.relayFace calls relayKeys.byUrl, which existed but was never exported, and my red never called the verb. Fixed at 778cd910, and the red now checks every relayKeys function hub.js uses is exported.\nOn your node: git pull in D:/SpiritOS, then start node js/server.js again from spirit/run. The relay side on spirit-3 is unaffected, no new tag needed.\nSeparately: one verb that throws takes the whole node down. That is worth an item later."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:34:07.207Z",
+     "text": "still the same\n\nserver process: fileServer\nServer listening on http://localhost:65432\nD:\\SpiritOS\\spirit\\run\\js\\hub.js:2771\n    var row = relayKeys.byUrl(rootDir, url);\n                        ^\n\nTypeError: relayKeys.byUrl is not a function\n    at Object.relayFace (D:\\SpiritOS\\spirit\\run\\js\\hub.js:2771:25)\n    at D:\\SpiritOS\\spirit\\run\\js\\server.js:2080:160\n    at readJsonBody.then.rs.writeHead.Content-Type (D:\\SpiritOS\\spirit\\run\\js\\server.js:1780:32)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n\nNode.js v24.20.0\nPS D:\\SpiritOS\\spirit\\run>"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:34:32.667Z",
+     "text": "Your tree had not pulled the fix yet (it was one commit behind). I fast-forwarded it; it is at 778cd910 now. Start the node again from spirit/run and try once more."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:35:18.480Z",
+     "text": "Why does my tree not pull when i sync in VSCode?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:35:53.055Z",
+     "text": "that's always worked before."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:35:54.094Z",
+     "text": "Your tree history shows no pull from VS Code at all today; every pull in it is deskVerify (pull --ff-only). Most likely reason: the checkout holds two repositories, SpiritOS and your vault in spirit/run/brains, and the Sync button in the status bar works on whichever one Source Control has selected. VS Code last pulled the vault on 10-04.\nTo check: in Source Control, the Repositories list; pick SpiritOS, then Sync."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:36:23.176Z",
+     "text": "You are right, it did: VS Code pulls show in your tree as pull --tags origin master, the last one on 10-18 at 09:55. Since then none of your syncs reached it, so I was wrong about the cause.\nThe reason will be in VS Code: View, Output, choose Git in the dropdown, then press Sync and read the last lines. Paste them here if they say anything."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:38:22.241Z",
+     "text": "that shit keeps scrolling... \n\n2026-10-19 05:37:53.398 [info] > git config --get commit.template [141ms]\n2026-10-19 05:37:53.415 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/main refs/remotes/main [149ms]\n2026-10-19 05:37:53.559 [info] > git status -z -uall [135ms]\n2026-10-19 05:37:53.575 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [144ms]\n2026-10-19 05:38:09.121 [info] > git config --get commit.template [133ms]\n2026-10-19 05:38:09.141 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [144ms]\n2026-10-19 05:38:09.323 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [154ms]\n2026-10-19 05:38:09.335 [info] > git status -z -uall [175ms]"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:38:43.225Z",
+     "text": "That scrolling is VS Code polling both repos (main is your vault, master is SpiritOS) because files keep changing; it is normal and shows no sync. Your tree is current now anyway, I pulled it at 05:34, so a Sync has nothing to fetch.\nIf a later Sync does not pull, look in that same panel for a line starting > git pull and the line after it. Does the node run now with the face section?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:39:48.460Z",
+     "text": "the relay confirmed andy for countinn@gmail.com"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:40:13.011Z",
+     "text": "Confirmed on your node too: node.db holds, on the spirit.andyflinn.com row, the name andy, your email and the relay signed answer (350 bytes, kept as received). G30.1 works end to end; Done is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:42:32.037Z",
+     "text": "on the UI part in info: i tried this because i think it's important. after restarting the node for kicks, when i go to the info app again, it should show my current face and email address for any relay i select..... or any relay that is pre-selected when i go to the info app."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:44:50.826Z",
+     "text": "commit 3d7abdc8075b606cf44bbc582d00b73f0a3c268f: goal/G30.1: the info app shows the face name and email the node holds for the selected relay, also after a restart (each relay row carries face from relayKeys.faceOf)\n- spirit/run/js/hub.js\n- spirit/run/shell/info/info.js\n- spirit/test/faceApply.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T03:45:01.895Z",
+     "text": "Done at 3d7abdc8: under the face form, Info now says what this node holds for the selected relay (This node holds andy for ... on this relay), fills the form with it, and follows when you pick another relay; after a confirmed ask it rereads at once. The node reads the pair from its relay row, so a restart keeps it. No verb changed.\nYour tree is pulled to it; restart the node and open Info."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T03:45:57.995Z",
+     "text": "deskVerify: passed, at 3d7abdc8 (pulled). 5 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.2",
+   "title": "Log-in page on the relay side",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "A member logs into the relay by a code mailed to the email the relay holds for their face name; no Google, Facebook or other provider.\n\nRULED\n- Andy, 2026-10-19: the relay stores little. The relay sends a token to the email of the login and answers with a form to enter that token; the token creates a session; the token is stored with the member.\n\nPROPOSED (not yet ruled)\n- The page: the relay serves it on the member name (one label under the relay domain). The name in the address is the face name, so the page asks for no name: one button sends the code, and a field takes it.\n- The code: the relay mails a short code to the email the members row holds for that name, and answers with the form for the code. The members row keeps only a hash of the code and its expiry (about 10 minutes, one use).\n- The session: a right code opens a session, a random cookie kept in the relay memory, never on disk; a relay restart means logging in again.\n- Mail: through Postmark (Andy, 2026-10-19): one HTTPS post per mail to its email API with the server token in a header, the token kept in the goal store, the relay owner one. noderoutes.net gets Postmark DKIM and Return-Path DNS records so the mail is trusted.\n- Scope: the mailed code behind both pages: the login and its session on the member name page, and the invite with its install line on the parent domain page. What a logged-in member can do on the face is a later item.\n\nDEPENDS ON\n- goal/G30.1: the members row with face name and email.\n\nRULED, Andy 2026-10-19, on onboarding\n- \"so we'll do invites the same way on the parent-domain page and the face-login in the facename.noderoutes.net page.... got it.\" So: the mailed code behind both; the parent domain page ends in an invite and the install line, the member name page in a session.\n\nMAIL PROVIDER: Mailgun, Andy's account (2026-10-19), sandbox domain for now, base URL https://api.mailgun.net; one HTTPS post per mail. The API key lives only in the relay owner node secrets file, never in this box or the chat; the one pasted in chat is to be rotated once that file exists.",
+   "version": 5,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:13:28.382Z",
+     "text": "could this be part of the onboarding as well\n\njust wondering\n\nkill seven birds with three stones?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:14:03.317Z",
+     "text": "or is the onboarding on the main domain page?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:14:24.477Z",
+     "text": "wsl: yes, it can. Today onboarding is an invite the owner mints (invites table: token, label, expiry) and a new node claims with that token (relay.js claim). The login page with an email the relay does not know can take the same road: mail the code, and on a right code mint the invite for that email and show the install line with its token, so the code is the invite and the first login is the onboarding.\nWhat the relay then stores per stranger is only the invite row it already stores, with the email beside it.\nThe cost to name: anyone can make the relay send a mail; the stranger ban table bounds the asking, and the mail key itself sits in this goal store."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:14:28.495Z",
+     "text": "Either works; I would put the login on the member own name (andy.noderoutes.net). The name in the address is the face name, so the page asks for nothing but the code button, and the session cookie belongs to that one name: no other member page can read it.\nThe main domain page can still carry a box \"go to your face\" that takes a name and sends the browser there."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:14:46.285Z",
+     "text": "Note on wsl idea: minting an invite for any email that answers a code makes the relay open to anyone who asks. That is open invites, which has always been your separate decision, not something to fold into a login.\nAs boxed, G30.2 logs in members the relay already holds; strangers get no code."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:16:26.887Z",
+     "text": "so we'll do invites the same way on the parent-domain page and the face-login in the facename.noderoutes.net page.... got it."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:17:13.921Z",
+     "text": "wsl: in the box, your words. cw's caveat stands beside it: a code mailed to any address on the parent page is the open-invites decision, now yours by this line."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:19:12.843Z",
+     "text": "cw. fix the small error in this box, then we decide on how precisely we setup-configure the sendmail facility"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:19:58.100Z",
+     "text": "Fixed (box v3): on the member name page the address is the face name, so the page asks for no name, one button sends the code; scope now names both pages, as you ruled.\nSending mail, three ways:\n1. A mail API (Postmark, Mailgun, Amazon SES, Resend): one HTTPS post with an API key. It fits what is built: the node already fetches outside, and the key sits in this goal store. Needs SPF and DKIM records on noderoutes.net so mail is not marked spam.\n2. SMTP to a provider: Node has no SMTP client built in, so it means a library or writing one.\n3. A mail server on the VPS itself: mail from a fresh VPS address mostly lands in spam.\nI recommend 1. Which provider is yours to pick, since it means an account."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:21:56.899Z",
+     "text": "the easiest one: Postmark?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:22:38.330Z",
+     "text": "Yes, Postmark is about as easy as it gets: one HTTPS post per mail with a server token in a header, no library. In the box. What you set up on their side: an account, a server (it gives the token), and the DKIM and Return-Path records on noderoutes.net they show you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:27:09.653Z",
+     "text": "API Key\n\n26d37cda060b7126f5266dcb09c026a4-e4e20ddb-6c9d9aa2\n\nSandbox domain\n\nsandbox292bf2445c824ee09bd91964af8145c4.mailgun.org\nBase URL\n\nhttps://api.mailgun.net"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:27:52.415Z",
+     "text": "wsl: noted, Mailgun then, not Postmark; the box says so, the key does not go in it. That key now sits in the desk chat and desk.db, read by every agent and kept: its home is the secrets file in relay-state on the relay owner node, which this goal builds. Rotate it at Mailgun once that store exists, and paste the new one nowhere but there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:28:25.511Z",
+     "text": "this database is not on github :)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:28:29.433Z",
+     "text": "Urgent, on the key you pasted: the desk shares the current goal chats into currentGoal.json and commits and pushes it to GitHub by itself (the commits titled currentGoal.json, shared by the desk). G30 is current, so the next share puts that key in the public repo history. I checked: origin does not have it yet.\nRotate the Mailgun key now, not later, and remove that chat line if Desk lets you."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:28:55.663Z",
+     "text": "wsl: true, and it stays off. One more copy to know of: each agent ear prints the line it is handed into a temp file on its own box, so the key is on three machines in /tmp until those files go. Your call, nothing more from me."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:31:54.037Z",
+     "text": "key already deleted."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:32:25.700Z",
+     "text": "wsl: good, then the pasted one is harmless wherever it travels. For the record I was wrong on stays off: currentGoal.json on GitHub carries every chat line of the current goal (51 lines of G30 at its last share), checked in my clone; cw caught it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:38:57.810Z",
+     "text": "i got a European URL to use with the new key i have..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:39:16.434Z",
+     "text": "Good: an EU Mailgun account sends through api.eu.mailgun.net instead of api.mailgun.net, and that address is no secret, so it goes in the provider record as its base URL. The new key goes only into the secrets file once G30 builds it; not in chat, which is pushed to GitHub with the current goal."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:40:09.423Z",
+     "text": "won't happen again...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:40:42.495Z",
+     "text": "this free plan gives me 100 emails per day so that's likely plenty..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:41:02.640Z",
+     "text": "Plenty for logins: one mail per login. The one risk is the parent page, where a stranger can ask for codes: someone could burn the 100 a day. A cap per address and per visitor (say one code per address per few minutes, a handful per hour) keeps it for real members."
     }
    ]
   }
