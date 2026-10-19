@@ -100,7 +100,25 @@ const usedByHub = Array.from(new Set((code('js/hub.js').match(/relayKeys\.([A-Za
 const missing = usedByHub.filter(function (n) { return typeof relayKeysApi[n] !== 'function'; });
 if (usedByHub.indexOf('byUrl') !== -1 && !missing.length) test.check('every relayKeys function hub.js calls is exported (' + usedByHub.length + ', byUrl among them)');
 else test.fail(OWED + 'hub.js calls relayKeys functions that are not exported: ' + short(missing));
+// SHOWN AGAIN AFTER A RESTART (Andy, 2026-10-19): "after restarting the node for kicks, when i go to the info app
+// again, it should show my current face and email address for any relay i select..... or any relay that is
+// pre-selected". The node keeps the pair on the relay's row; each relay row relay.get answers carries it as face.
+const keptHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-faceapply-keep-'));
+let keptFace = null;
+try {
+  relayKeysApi.accept(keptHome, 'https://relay.example', 'MCowBQYDK2VwAyEAfaceApplyKeptRelayKeyAAAAAAAAAAAAAAAAAA=');
+  relayKeysApi.keepFace(keptHome, 'https://relay.example', 'harbour', 'ann@example.org', '{"text":"signed"}');
+  keptFace = relayKeysApi.faceOf(keptHome, 'https://relay.example');
+} catch (e) { keptFace = { threw: e.message }; }
+try { fs.rmSync(keptHome, { recursive: true, force: true }); } catch (e) { /* busy */ }
+if (keptFace && keptFace.name === 'harbour' && keptFace.email === 'ann@example.org') test.check('the node reads back the face it kept for a relay (relayKeys.faceOf), across a fresh open');
+else test.fail(OWED + 'relayKeys.faceOf answered ' + short(keptFace));
+const hubSrc = code('js/hub.js');
+if (/row\.face\s*=/.test(hubSrc) && /faceOf\(/.test(hubSrc)) test.check('each relay row the node answers carries its kept face (hub.js sets row.face from faceOf)');
+else test.fail(OWED + 'hub.js puts no kept face on the relay rows relay.get answers');
 const info = code('shell/info/info.js');
+if (/\.face\b/.test(info.split('function infoDrawFace')[1] || '') && /addEventListener\('change'/.test(info.split('function infoDrawFace')[1] || '')) test.check('the info app draws the kept face of the selected relay and follows a change of selection');
+else test.fail(OWED + 'the info app does not show the kept face of the selected relay');
 if (/relay\.face/.test(info)) test.check('the info app asks relay.face');
 else test.fail(OWED + 'the info app never asks relay.face');
 

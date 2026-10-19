@@ -2651,6 +2651,10 @@ function createHub(rootDir) {
           myLabel: seatLabel,
         };
         row.claimedLabel = seatLabel;
+        // THE FACE THIS NODE HOLDS ON THAT RELAY (goal/G30.1), read from its row, so the info app shows it again after
+        // a restart (Andy, 2026-10-19). Empty when none was confirmed.
+        var face = relayKeys.faceOf(rootDir, url);
+        row.face = face ? { name: face.name, email: face.email } : { name: '', email: '' };
       } else {
         row.error = 'no row here';
       }

@@ -265,8 +265,26 @@ function infoDrawFace() {
       '<label class="field-label grow">Email<input type="text" id="info-face-email" placeholder="you@example.org"></label>' +
       '<button type="button" id="info-face-save">Ask</button>' +
     '</div>' +
+    '<div id="info-face-now" class="job-manifest-note"></div>' +
     '<div id="info-face-error" class="job-start-error"></div>';
   ['relay', 'name', 'email'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el && keep[k]) el.value = keep[k]; });
+  // WHAT THIS NODE HOLDS ON THE SELECTED RELAY (goal/G30.1; Andy, 2026-10-19: "it should show my current face and
+  // email address for any relay i select..... or any relay that is pre-selected"). The node reads it from the relay's
+  // row into each relay row (row.face); picking a relay fills the form with it, and a form he has typed in is kept.
+  function infoFaceShow(fill) {
+    var pick = document.getElementById('info-face-relay');
+    var row = seats.filter(function (r) { return pick && r.url === pick.value; })[0] || {};
+    var face = row.face || {};
+    var now = document.getElementById('info-face-now');
+    if (now) now.textContent = face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.';
+    if (!fill) return;
+    var n = document.getElementById('info-face-name');
+    var m = document.getElementById('info-face-email');
+    if (n) n.value = face.name || '';
+    if (m) m.value = face.email || '';
+  }
+  infoFaceShow(!keep.name && !keep.email);
+  document.getElementById('info-face-relay').addEventListener('change', function () { infoFaceSaid = ''; infoSay('info-face-error', '', false); infoFaceShow(true); });
   document.getElementById('info-face-save').addEventListener('click', infoSaveFace);
   document.getElementById('info-face-email').addEventListener('keydown', function (e) { infoOnKey(e, infoSaveFace); });
   if (infoFaceSaid) infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
@@ -290,6 +308,8 @@ function infoSaveFace() {
       ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
       : { text: said.error || (r && r.error) || 'the relay did not answer', bad: true };
     infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
+    // The node now holds the new pair: read the rows again so the line under the form says so.
+    if (said.ok) return infoLoadRelays();
   }).then(function () { infoBusy = false; }, function () { infoBusy = false; });
 }
 
