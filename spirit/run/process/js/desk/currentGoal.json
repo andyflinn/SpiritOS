@@ -1,5 +1,5 @@
 {
- "change": 73786,
+ "change": 73790,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -44,8 +44,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 2,
+   "design": true,
+   "waiting": 1,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -459,7 +459,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G30.2"
+    "goal/G30"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -1330,10 +1330,9 @@
    "id": "goal/G30.2",
    "title": "Onboarding a node onto a relay",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
