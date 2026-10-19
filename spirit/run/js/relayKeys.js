@@ -530,6 +530,8 @@ module.exports = {
   normalizeUrl: normalizeUrl,
   keepFace: keepFace,
   faceOf: faceOf,
+  // One relay's row by its address (goal/G30.1: hub.relayFace finds the relay it applies to).
+  byUrl: byUrl,
   load: load,
   pinned: pinned,
   check: check,

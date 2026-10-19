@@ -93,6 +93,13 @@ test.subHeading('5. the node verb and the info app section');
 const server = code('js/server.js');
 if (/'relay\.face':\s*\{\s*request:\s*\{\s*url:\s*'',\s*name:\s*'',\s*email:\s*''\s*\}/.test(server)) test.check('server.js declares relay.face {url, name, email}');
 else test.fail(OWED + 'server.js declares no relay.face {url, name, email}');
+// Every relayKeys function hub.js calls is one relayKeys exports: relay.face crashed Andy's node on 2026-10-19
+// because hub.relayFace called relayKeys.byUrl, which existed but was not exported.
+const relayKeysApi = require('../run/js/relayKeys.js');
+const usedByHub = Array.from(new Set((code('js/hub.js').match(/relayKeys\.([A-Za-z]+)\(/g) || []).map(function (m) { return m.slice(10, -1); })));
+const missing = usedByHub.filter(function (n) { return typeof relayKeysApi[n] !== 'function'; });
+if (usedByHub.indexOf('byUrl') !== -1 && !missing.length) test.check('every relayKeys function hub.js calls is exported (' + usedByHub.length + ', byUrl among them)');
+else test.fail(OWED + 'hub.js calls relayKeys functions that are not exported: ' + short(missing));
 const info = code('shell/info/info.js');
 if (/relay\.face/.test(info)) test.check('the info app asks relay.face');
 else test.fail(OWED + 'the info app never asks relay.face');
