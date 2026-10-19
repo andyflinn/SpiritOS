@@ -1,5 +1,5 @@
 {
- "change": 72271,
+ "change": 72272,
  "line": 8510,
  "goal": "goal/G29",
  "items": [
@@ -7,10 +7,9 @@
    "id": "goal/G29",
    "title": "FIX: search in general then everywhere",
    "goal": "",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [],
@@ -45,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "excluded": [
     "ollama agent node"
    ],
