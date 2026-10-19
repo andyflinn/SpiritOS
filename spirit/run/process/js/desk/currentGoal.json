@@ -1,5 +1,5 @@
 {
- "change": 72280,
+ "change": 72754,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -13,7 +13,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.1"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -43,25 +45,727 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
+   "design": false,
    "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "Andy, 2026-10-19: \"This goal is now really about folding relay and face into one.... it will come with a lot of shell fixes later......\"\n\nDECIDED\n- Secrets stay on the node, in relay-state/, never served to a page, never in git. No encryption at rest.\n- Providers are a generic dataset, plugins only where a provider needs its own flow. Each provider record carries its help in prose with links to where the key is obtained.\n- Andy, 2026-10-19: \"we don't need a keys app.\"\n- An app never sees a key: it asks the node to call provider X, the node attaches the credential and returns the answer only. Granted per app and per provider.\n- Only Andy adds, changes or removes a key or connects an OAuth account, from his own session.\n- Only the relay/face owner holds the OAuth agreements with the login providers; a member needs none. The home node never sees an OAuth flow: its face says this verified email is you.\n- A member chooses a name one level under the relay domain (andy.noderoutes.net), tied to their verified email. One wildcard DNS record and one wildcard certificate (*.noderoutes.net, Let's Encrypt by DNS challenge), Caddy proxying every name to the one relay, the Host header picking the member face.\n- The home node acts as a puppet to its verified face. The relay/face serves the shell code; a face request goes into the member stream as an event (no route, no in-flight slot); the home node answers and live-updates by faceStream, caught at the face among the streamed events.\n- The two relay additions, the visitor request as a stream event and faceStream, need review and Andy's yes on each.\n\nFACTS FROM THE TREE\n- Name routing is built: appFaceApp takes the one label under the face domain from the Host header (faceRoute.nameOf) and asks grantFace, slots name to key, on the face owner node. The relay holds per member only key, label and signed card (relayStore.js).\n- The stream already carries heartbeats, presence and route events that open no route; its bound is the stream backlog cap.\n- The relay reads its configuration once at boot (relayConfig.js); the face is a process of the face owner node, like grantFace.\n\nThe open points are the Q checks of this item.",
+   "version": 9,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should the stored secrets be encrypted at rest, which protects copies and backups but not someone who has the disk?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-19T00:36:03.582Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "How does the home node trust its face's word that a verified email is its owner: a key the face holds per member, or the relay's word itself?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-19T02:04:00.690Z",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:07:44.725Z",
+     "text": "We need an external interface manager, it keeps API keys OAuth type API' etc. I'm wondering if it's possible to generalize this kind of thing and store the related secrets somewhere in the node's private drive.\n\nI'm wondering is if this core functionality, because of the sensitivity of the secret issue. \n\nThoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:08:23.403Z",
+     "text": "Yes, core, and it can be general.\nWhere: relay-state/ on the node, beside identity.json, which already holds the node private keys; it is never served to a page and never in git. Servers today are kept from opening identity.json; a secrets file gets the same rule.\nHow it stays secret: no app or page ever sees a key. An app asks the node to call provider X with its request; the node attaches the key (header, bearer, query) or the OAuth token, refreshes it, and returns only the answer. That is what makes it general: a provider is a small record (base URL, how the key goes on, OAuth endpoints), and net.fetch already does the call.\nWho may use it: per app, through a grant like every other verb; only you add or remove keys, from your own session.\nShould apps ever be handed a key, or only ask the node to make the call for them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:09:54.212Z",
+     "text": "it sounds like this module may require plugins...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:10:18.278Z",
+     "text": "Partly. Most providers fit plain data, no code: an API key in a header or query, a bearer token, standard OAuth2 with refresh. One record each.\nSome need code: request signing (AWS style), odd OAuth flows, token exchanges. Those would be provider plugins.\nThe catch: a plugin runs where the keys are, so it can read them. So plugins would be yours only, installed by you, like core files under your grant; the data records cover the rest."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:17:35.518Z",
+     "text": "ok, we're looking at a mostly generic dataset, with plugins where there is a specific app-flow...\n\nideally an app doesn't worry about keys etc...\n\ncan you propose a design in the box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:19:11.534Z",
+     "text": "Proposal is in the box, decided and proposed kept apart. One question is up as a Q: encryption at rest.\nNext after it: the verb names and shapes, which need peer review and your yes on each verb.\nAlso found: net.fetch description still says a secret key goes only where the owner proxy list allows; that list was deleted in G29.20, so the line is stale and the new module replaces it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:27:28.315Z",
+     "text": "It has been my experience, in wordPress etc, that a UI for key storage and acquisition usually features prose in the UI, including up-to-date links/URL's to places where the user can obtain the necessary keys...\n\ni also need to mention, that i plan the appFaceApp subsystem primarily for members to remote-operate their personal nodes that are alive at home, this probably involves adding an email address to the node identity, which can be verified by some OAuth process on the public face... so a user that navigates to hist face (userface.noderoutes.net), he will be presented with a login from several providers (facbook, google, etc...) that login is meant to tie their home-node to their telephone or travel-laptop...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:28:20.442Z",
+     "text": "In the box: each provider record carries its help text and links, shown beside the key.\nAlso in the box, the face sign-in. It is the other direction: there the node signs people in instead of calling an API. It still needs client ids and secrets per sign-in provider, kept in the same store.\nOne thing that decides where those live: the face is served by whichever machine hosts userface.noderoutes.net. If that is not the home node, the sign-in secrets live on that machine, not at home."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:33:19.134Z",
+     "text": "I also realized that the appFaceApp on a public VPS could easily allow streams directly to it's contacts (managed by appFaceApp owner), so a very direct path to the member IS possible.\n\nA quantity issue comes up. if the relays streams could be re-used for that, and the relay was the face-provider, the capacity for one VPS node to support routing and facing could be much bigger....\n\nI'm mentioning this so we can visualize an overall basic network, that uses as little as possible RAM on the VPS.... and ideally only 1 node.js process."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:33:42.635Z",
+     "text": "Understood as the picture, not as work for this goal: one node.js process on a VPS that relays and serves faces, its streams reused to reach the member directly.\nFor this goal it settles one thing: if the relay is the face provider, the sign-in secrets live in that one relay process, in the same store, so the store must be small enough to load in a relay too.\nThe rest (streams to contacts, relay as face host, RAM per VPS) I keep as a seed for when you open it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:35:13.512Z",
+     "text": "Q1: Should the stored secrets be encrypted at rest, which protects copies and backups but not someone who has the disk?\n\nLet's operate from the assumption/idea that who has the disk (the one a node/relay lives on) then they got everything anyway...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:36:09.796Z",
+     "text": "In the box under decided: no encryption at rest. Q1 cleared.\nNext question when you are ready: the verbs. I would draft their names and shapes for the second review and your yes on each."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:39:09.013Z",
+     "text": "The trick I'm aiming at:\n\nThe relay/face owner is the only one that needs the OAuth agreements with login-providers, once an email is verified, a face connects the member and the member-face directly."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:40:02.858Z",
+     "text": "In the box: only the relay/face owner holds the OAuth agreements with login providers; a member needs none. Once the email is verified, the face connects member and member face directly."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:40:34.415Z",
+     "text": "it is up to the member to choose a DNS-segment associated with an email, the relay/face handles the rest.\n\npossible?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:40:56.396Z",
+     "text": "wsl?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:40:59.928Z",
+     "text": "Yes. One wildcard DNS record (*.noderoutes.net) points every name at the relay, and the relay maps the name the member chose to their verified email and home node. Certificates: one wildcard certificate, or Caddy issuing one per name on demand after asking the relay whether the name is taken."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:42:36.906Z",
+     "text": "why? the caddy would only know one server, and the HTTP headers will tell the relay/face which face/member is active....?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:43:07.791Z",
+     "text": "Right for the routing: Caddy proxies every name to the one relay, and the Host header tells the relay which member face is meant.\nThe certificate is the one thing headers cannot do: the browser checks it for the exact name before any header is sent. One wildcard certificate covers all names; Let's Encrypt issues those only through a DNS challenge, so Caddy needs an API token for the DNS provider of noderoutes.net."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:45:44.909Z",
+     "text": "does every wildcard subdomain need it's own SSL certificate? or can that certificate be certified by the parent-domain?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:46:12.177Z",
+     "text": "No, one certificate for all of them: a wildcard certificate for *.noderoutes.net is valid for every name one level under it (andy.noderoutes.net, bob.noderoutes.net), but not for deeper names like a.b.noderoutes.net. The parent domain cannot sign certificates itself; the wildcard is issued once by Let's Encrypt and renewed every 90 days."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:46:55.277Z",
+     "text": "we only need one level.+"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:47:44.715Z",
+     "text": "In the box: member names one level under the relay domain, one wildcard DNS record and one wildcard certificate, Caddy proxying all to the one relay, the Host header picking the member face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:51:34.506Z",
+     "text": "all main javascript for a shell can be provided by the relay/face, we just have to find a way to \"stream back\" to the face like the node streams to the local shell, almost like the home-node acts like a puppet to its verified face...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:52:00.493Z",
+     "text": "Feasible, and it fits what exists: the puppet idea is already there (a node whose signed card names its owner, goal/G19.8), and the local shell already lives on calls plus an event stream.\nOver the face it becomes: the relay serves the shell code, calls travel to the home node through the relay, and the home node streams its events back through the relay to that face.\nThe hard part is trust, not transport: the browser on the face holds no key of the home node, so the home node must accept its face as owner. Either the face holds a key the home node granted once (when the email was verified), or the home node trusts the relay word, which makes the relay an owner of every member node.\nI keep this beside the one-process VPS seed; it is bigger than this goal."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:55:21.863Z",
+     "text": "so the node can act like a pupped if it's owner (identified by email) logs into the face. puppets alread \"stream\" back, so the home-node can live-update the face by posting to the relay-face, not using the reply entry point on the relay but a faceStream verb on the relay/face....\n\nmake a little sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:55:56.248Z",
+     "text": "Makes sense. Today a puppet takes its owner commands through the puppet door (js/puppetMode.js) and posts each answer back through the relay; I found no push from a puppet to its owner that is not an answer. faceStream would be that push: the home node posts live updates to a relay verb, and the relay hands them to the open face.\nfaceStream is a new relay verb, so it needs peer review and your yes on the verb itself.\nThe trust point stays: the home node must know that the face its owner logged into is really its owner."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:57:23.215Z",
+     "text": "and face-stream wouldn't consume the on-in-flight budget, and the requests from the face can simply bee thrown into the SSE stream for the corresponding member..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T00:57:54.029Z",
+     "text": "Yes, both fit. A request from the face goes down the SSE stream the relay already holds to that member home node, as any delivered post does. A faceStream post waits for no reply, so it takes no in-flight slot.\nOne thing it then needs of its own: a bound. Outside the one-in-flight budget, a busy home node could flood the relay, so faceStream wants a cap per face (bytes queued, or posts per second), each post under PAYLOAD_MAX."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T00:58:17.233Z",
+     "text": "wsl: yes, and the name-to-member routing is already built: appFaceApp takes the one label under the face domain from the Host header (faceRoute.nameOf) and asks grantFace who holds it; one label only, which is your one level.\nWhat is new is only the tie to a verified email: today a name exists because of a grant on the face owner node, so the email check becomes what creates that grant.\nCaveat: my deskClient was replaying eight days of desk history and never handed me your \"wsl?\"; place reset, listening now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T00:59:35.723Z",
+     "text": "so the face's request path uses the peerPost path on the leg from relay to home-member-node, attacking a calculating a hash so it can match the home-nodes-reply-to the face-request...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:00:21.326Z",
+     "text": "wsl: that match exists already. The face posts to the home node with peerPost and the reply comes back carrying the hash of the ask (re); ownerPost keeps the hashes it waits on and takes only a reply whose re matches one (transport/R12), and faceRoute.take checks the same hash on a route answer.\nSo the request leg needs nothing new. faceStream is the one new piece, and it carries no re because nobody waits on it.\nOne consequence: a face request still spends the one-in-flight slot while its reply is awaited; only the stream side escapes it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:03:10.490Z",
+     "text": "wsl: \"One consequence: a face request still spends the one-in-flight slot while its reply is awaited; only the stream side escapes it.\"\n\nreally? throwing the face's request into the home-node-SSE stream costs, nothing, and the reply to it comes also via the faceStream-request... separate path?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:04:08.799Z",
+     "text": "wsl: really, on today's relay: every post into a member stream goes through routes.open (relay.js routePost), and the slot is freed only by routes.answer (routeReply with the hash) or by the ttl running out.\nSo a face request thrown into the SSE stream whose reply leaves by faceStream would hold the slot for the whole budget, which is worse: the next face request is refused until the ttl ends.\nTwo ways out: the home node still sends the short routeReply as an ack and the data goes by faceStream; or the face request becomes a new delivery on the relay that opens no route, a new relay verb beside faceStream, so review and your yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:05:11.869Z",
+     "text": "wsl. not true. the relay throws all sorts of route updates into the SSE-streams of it's member, on top of requests-in-light"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:05:53.433Z",
+     "text": "wsl: you are right, I take it back. The stream already carries heartbeats, presence and route events that open no route (streamSink.js, relay.js routeReply), so a face request written into the member stream as such an event costs no slot, and its reply by faceStream costs none either.\nWhat is new is that every event on the stream today is the relay's own making; a face request is the first event carried in from a visitor, so it is a relay-side addition beside faceStream, needing your yes.\nThe one bound that remains is the stream backlog cap (STREAM_BACKLOG_MAX): a member that stops reading is cut, which already protects the relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:08:24.621Z",
+     "text": "... but MOST of the face-features wouldn't disturb the relay at all, it's just throwing the request-event into the stream, and then handling faceStream reply, catching the pending request in the midst of events streamed be the home-node to the face..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T01:09:07.068Z",
+     "text": "In the box, as one section: the face request thrown into the member stream as an event, the reply and live updates by faceStream, caught at the face among the streamed events; the relay undisturbed but for the backlog cap; the two relay additions awaiting your yes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:09:25.275Z",
+     "text": "this design doesn't even include an appServer counterpart for the face!"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:10:13.277Z",
+     "text": "wsl: half of it exists. appFaceApp on the face node already opens the face port, serves index.html and kernel.js and reads its node stream (appFaceApp.js header), so it is the seat of that counterpart; appFaceAppServer on the home node answers only the proof json today.\nMissing on both sides: the face holds no browser session and no stream down to the browser to put faceStream events on; the home node has no server that takes a face request event and answers by faceStream.\nProposal: grow those two rather than add a third process, and name them in the box as the two app-side additions beside the two relay ones."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:11:29.098Z",
+     "text": "the relay needs to know the email and the face-name for every member...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:12:11.581Z",
+     "text": "wsl: today the relay holds per member only key, label and signed card (relayStore.js members), no name and no email; the face names live beside it in grantFace, slots name to key, on the face owner node.\nSo the seat for it is there: grantFace slots gain the verified email, name to email to key, and the relay itself keeps needing only the key it already has; the sign-in writes that row, the Host header reads it.\nConsequence to name: the email is personal data on the face owner disk, in the clear under the no-encryption ruling, and it never travels to the home node."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:12:47.589Z",
+     "text": ".. and handle the authentication, so OAuth are not interfaces that need handling on the home node...."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:13:20.548Z",
+     "text": "wsl: agreed, the home node never sees an OAuth flow; it sees one thing only, its face saying this verified email is you.\nTwo consequences: the provider records and secrets of this goal then live on the relay/face node as well, the same store with the face owner as its one operator, so one design serves both; and the trust the home node places in that word is the open point cw named, a key the face holds per member or the relay word itself.\nWhich of the two is yours to rule."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:14:06.911Z",
+     "text": "and the relay/face needs a verb to configure the OAuth services."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:14:45.631Z",
+     "text": "wsl: yes, and I would not put it on the relay: the relay reads its configuration once at boot and its owner only steers it by signed grants (relayConfig.js header), while the face is a process of the face owner node, like grantFace with its put, remove and get.\nSo the verb is this goal own provider store, on the face owner node: a login provider is one provider record with its client id and secret, added by the owner from his session, read by appFaceApp; no new relay verb, and the same verbs Andy uses for any API key.\nCaveat: the face owner node then carries secrets of two kinds, his own API keys and the login providers of every member, in one store."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:19:04.323Z",
+     "text": "cap\n\nThis goal is now really about folding relay and face into one....\n\nit will come with a lot of shell fixes later......\n\nready to break this down into items that lead to this???"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:20:53.261Z",
+     "text": "wsl: box capped. Ready; the desk lets me add them only on your \"add item\", so here are the nine I would add, in order:\n1 Providers as data, the secrets file, the call verb\n2 The keys app\n3 Face sign-in by OAuth, verified email kept in grantFace\n4 Member names under the relay domain: wildcard DNS, cert, Caddy\n5 Relay: the visitor request as a stream event (verb, review)\n6 Relay: faceStream (verb, review)\n7 appFaceApp: browser session, stream to the browser, shell code\n8 Home node: answering face events, trusting its face as owner\n9 The fold: relay and face as one\nSay add item and I add them; cut or merge first if you like."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:21:40.208Z",
+     "text": "let's drop the keys app for this goal. not needed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:25:13.417Z",
+     "text": "we don't need a keys app.\n\nadd item: negotiating face-name and email-address between node and relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:03:32.647Z",
+     "text": "kill the red Q here"
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.1",
+   "title": "Negotiating face-name and email between node and relay",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "wsl-claude",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Added on Andy, 2026-10-19: \"add item: negotiating face-name and email-address between node and relay.\"\n\nSCOPE, Andy 2026-10-19: \"this item only implements the relay, node and shell-app changes, that facilitate registering a face/email combination with the relay.\" No face transaction and no face traffic is built here.\n\nRULED, Andy 2026-10-19\n- \"this will kill grantFace. the node, already connected as member on a relay, applies to the relay for a DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost to the relay itself, and it succeeds or not.\"\n- \"the success-reply is a confirmation of the face-email pair.\"\n- \"for this a little section in the info-app will be enough.\" \"that's where we already change the label to all relays\"\n- \"this UI section in info will have to address ONE relay specifically.\"\n- \"for now, we delete grantFace, appFaceApp, and appFaceAppServer. that will eliminate the old notions for good. the rest of the bones we'll pick for useful bits later.\"\n- \"ok, for now: the email is verified be the auth-provider, if the node-user supplies a bad one, it simply won't work, and we already specified that the email can be changed/corrected later.\"\n- Q1, when is a face name freed on the relay: \"when the member leaves the relay.\"\n- On the deletions: \"just don't delete important stuff like appClient etc... the rest is up to you.\" \"delete as much as is safe, keep what is valuable.\"\n\nTHE THREE CHANGES\n- Relay: one more self verb, the application, name and email in, success or refusal out; the members row gains name and email. The name is one DNS label by the rule faceRoute.nameOf already applies (a-z, 0-9, hyphen, at most 63), lowercased, refused otherwise, so andy and Andy are one name. The name is freed when its member leaves the relay, with the members row. A new relay verb and a new row shape: review and Andy's yes on each.\n- Node: it keeps the signed success reply as its name and email; a repeated call changes or corrects them. Where it keeps it is a new persist shape on the node (node.db or a relay-state file) and takes the same review as the relay row.\n- Shell app: one section in the info app beside the label push, addressing one relay chosen from its relay table: the name asked for, the email, that relay's answer.\n- Deleted: the three processes grantFace, appFaceApp and appFaceAppServer (their folders under process/js), and the suites that test only them (appFaceGrant, appFaceProcess, faceAppGates, faceNoIdentity, grantFace, memberFacePending). In the shared suites (puppetsPending, where only its face door part goes, grantsApp, apiBranchSelector, appServerSelector, arrivals, cleanupDead, debugSwitch, deskVerifyModes, oneDoor, appClient) only the lines that would break go.\n- Also deleted: the faceProof state folder (Andy: \"and faceProof\") and bash/face-install, whose one job is to run appFaceApp (its header).\n- Kept as bones for the fold: bash/face-tls (the Caddy and wildcard part), systemd/spirit-face.service, FACE.md and the design pages (PROCESSES.md, PUPPETS.md, FACE-ROUND-TRIP.md, PUBLIC-APP-SERVER.md), each marked that appFaceApp is gone.\n- faceRoute.js lives in the appFaceApp folder: it moves out before that folder goes (to js/faceRoute.js), with its suite faceRouteSuite, because the relay uses its name rule.\n\nFACTS FROM THE TREE\n- A post addressed to the relay's own key is already a sealed self-ask answered by answerSelf (relay.js routePost). The relay's reply is signed over the hash and the text (routeReply).\n- The info app already posts rename {label} to every relay by peerPost (shell/info/info.js, infoPush) and draws one row per relay.\n- Today a face name is a grantFace slot, name to key; the relay holds per member only key, label and signed card (relayStore.js members). In the core files (server.js, apiAuth.js, apiDoor.js, appClient.js, appServer.js, hub.js, relayRequest.js, shellMove.js) the face processes appear in comment lines only.",
+   "version": 18,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "When is a face name freed on the relay: when its member leaves the relay, or never?",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-19T01:58:09.774Z",
+     "placedBy": "wsl-claude",
+     "placedKey": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
+    }
+   ],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:26:09.332Z",
+     "text": "wsl: added as goal/G30.1; its box holds what the goal already ruled and the three things to settle here: who starts, what the home node keeps, what the face keeps."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:29:04.066Z",
+     "text": "this will kill grantFace.\n\nthe node, already connected as member on a relay, applies to the relay for a DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost to the relay itself, and it succeeds or not."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:29:54.828Z",
+     "text": "wsl: ruling in the box. It fits the tree: a post addressed to the relay own key is already a sealed self-ask answered by answerSelf (relay.js routePost), so the application is one more self verb, name and email in, success or refusal out, and the relay members row gains name and email.\nWhat dies with grantFace: appFaceApp route moves from grantFace.get to the relay members table; apiAuth.js names grantFace; the suites grantFace, appFaceProcess, grantsApp and the pages PROCESSES.md and PUBLIC-APP-SERVER.md follow.\nOne order to rule: the email in that post is unverified, the OAuth sign-in at the face verifies it; does the node apply first and the relay holds the name until the sign-in confirms, or does the sign-in come first?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:32:07.190Z",
+     "text": "after that the call can be repeated, also with success of failure, if the same member calls with the same face-name, but different (VALID!) email address the call will succeed, if the changed face name is available, the repeat call will succeed, else it fails...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:32:37.114Z",
+     "text": "the success-reply is a confirmation of the face-email pair."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:33:13.678Z",
+     "text": "wsl: in the box. So the node keeps that signed reply as its proof of name and email, and the sign-in at the face later matches the pair the relay already holds; no second confirmation."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:33:38.405Z",
+     "text": "for this a little section in the info-app will be enough."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:34:01.544Z",
+     "text": "that's where we already change the label to all relays"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:34:18.313Z",
+     "text": "wsl: in the box. The info app exists (shell/info/info.js), so the section is in-file work there: the name asked for, the email, the relay answer kept."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:34:48.844Z",
+     "text": "wsl: yes, infoPush in shell/info/info.js posts rename {label} to each relay by peerPost; the face application is the same shape, one more such post, to the one relay whose domain carries the name, answer kept beside it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:35:26.248Z",
+     "text": "this UI section in info will have to address ONE relay specifically."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:36:00.258Z",
+     "text": "wsl: in the box. The info table already has one row per relay (What each relay calls you), so the section hangs off a chosen row: that relay, a name, an email, its answer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:37:44.654Z",
+     "text": "also included in this item: KILL grantFace, appFaceApp and appFaceAppServer\n\ndoes this make sense?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:38:03.033Z",
+     "text": "and faceProof"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:38:40.478Z",
+     "text": "wsl: yes, once the relay serves the face pages itself (index.html and kernel.js on the face port) and reads names from its own members table, all three have no job left; keep only faceRoute.nameOf, the pure Host parser with its suite, as the relay's.\nWhat goes with them: bash/face-install, face-tls, spirit-face.service and FACE.md; their mentions in server.js, apiAuth.js, apiDoor.js, appClient.js, appServer.js, hub.js, relayRequest.js, shellMove.js; about fifteen suites (appFaceGrant, appFaceProcess, faceAppGates, faceNoIdentity, grantFace, grantsApp, memberFacePending, puppetsPending and more); the pages PROCESSES.md, PUPPETS.md, FACE-ROUND-TRIP.md, PUBLIC-APP-SERVER.md.\nConsequence: this item then carries the relay serving the face, which is the fold itself; the home node side (answering a face event, faceStream) stays separate."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:39:26.074Z",
+     "text": "wsl: in the box. faceProof has no code left since goal/G13; what remains is its state folder app-state/faceProof, which the shell still keeps at start, and its name in appFaceAppServer.js, three suites and two design pages. All of it goes with the three."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:40:09.078Z",
+     "text": "nono: appClient is the node side adapter for appServers....."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:40:51.163Z",
+     "text": "wsl: right, my list was too wide. I checked each: in appClient.js, appServer.js, hub.js, apiDoor.js, relayRequest.js, shellMove.js and server.js the face processes appear in comment lines only, no code depends on them; appClient stays untouched. Box corrected."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:41:13.874Z",
+     "text": "cw:?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T01:41:46.666Z",
+     "text": "The box holds together and matches the tree. Three things I would watch:\n1. Valid email: the box says the relay confirms the pair, but not how the relay knows the email is real. Either the relay mails a code, or the OAuth sign-in at the face confirms it; as written, any typed email gets confirmed.\n2. Size: this item now carries a new relay verb, a new members-row shape on the relay (both need review and your yes), the info section, the relay serving face pages, and deleting three processes with about fifteen suites. That is two items: the application, and the fold with its deletions.\n3. The suite list says where they name them for shared suites (oneDoor, arrivals, grantsApp): only those lines go, not the suites.\nHow should the relay check that the email is valid?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:42:23.714Z",
+     "text": "wsl: box fixed for cw's point 3: seven suites go whole, faceRouteSuite stays with nameOf, in the shared ones only the naming lines go. Points 1 and 2 are yours, Andy."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:43:16.483Z",
+     "text": "should the node confirm the email is real and belongs to the owner?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T01:43:37.700Z",
+     "text": "No: the node is the one making the claim, so its own check proves nothing to the relay. Someone the relay trusts has to vouch.\nTwo ways: the relay mails a code to the address (it then needs a mail service and its key, which this goal store holds), or the member signs in at the face with Google or Facebook and the provider vouches for the email, which you already want for the face.\nWith the sign-in, the success reply waits until the sign-in matches the email asked for."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:45:28.833Z",
+     "text": "ok, for now:\n\nthe email is verified be the auth-provider, if the node-user supplies a bad one, it simply won't work, and we already specified that the email can be changed/corrected later."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T01:45:49.086Z",
+     "text": "Clear: the login provider verifies the email at the face sign-in; a wrong address simply never signs in, and the member corrects it by repeating the call. wsl, yours for the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:46:15.353Z",
+     "text": "wsl, box update."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:46:30.727Z",
+     "text": "wsl: in the box, verbatim."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:47:12.589Z",
+     "text": "wsl: your email ruling is in the box (version 11). The box is taken by cw right now, so my shape line on it waits for the release; cw, release when done and I merge."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:49:49.830Z",
+     "text": "let's be clear: this item only implements the relay, node and shell-app changes, that facilitate registering a face/email combination with the relay.\n\n\nupdate box accordingly, i don't want shit in the box implying that we implement any face-transaction or traffic yet..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:50:36.446Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:50:51.134Z",
+     "text": "wsl: box rewritten (version 12): your scope line on top, then the relay, node and shell-app changes and the deletions; every line about face pages, sign-in flow or traffic is out."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:51:37.250Z",
+     "text": "wsl: green from my side: the box holds your scope and rulings, the three changes and the deletions, each checked against the code; design-complete pressed. The relay verb name and row shape go to peer review with the red, and your yes on the verb itself."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:51:48.030Z",
+     "text": "cw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T01:52:19.705Z",
+     "text": "Green with four fixes:\n1. puppetsPending is not the face suite alone: it also holds the puppets/G1, G2 and peerOwnerPost awaitings. Only its face door part (puppets/G10) goes; the suite stays.\n2. The name the relay accepts should be one DNS label by the rule faceRoute.nameOf already uses (a-z, 0-9, hyphen, at most 63), refused otherwise, and lowercased, so andy and Andy are one name.\n3. The node keeps the signed reply: name where. That is a new persist shape on the node too (node.db or a relay-state file), and it needs the same review as the relay row.\n4. Say when a name is freed: when its member leaves the relay, or never."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:53:14.106Z",
+     "text": "wsl: cw's 1 to 3 are in the box (version 13), each checked: puppetsPending keeps G1 and G2 and loses only G10; the name rule is nameOf's; the node's keep is a persist shape under review. 4 is a Q check here for Andy: freed when the member leaves, or never?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:55:41.009Z",
+     "text": "cw. update the box with your issues: note: for now, we delete grantFace, appFaceApp, and appFaceAppServer. that will eliminate the old notions for good. the rest of the bones we'll pick for useful bits later."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T01:56:45.030Z",
+     "text": "Box version 14. Deleted now: only grantFace, appFaceApp, appFaceAppServer and the suites that test only them; faceProof folder, install scripts, service, FACE.md and the design pages stay as bones.\nOne consequence written in: faceRoute.js sits inside the appFaceApp folder, so it moves to js/faceRoute.js with its suite before the folder goes, because the relay uses its name rule.\nMy four issues: three are in the box; the fourth, when a name is freed, is the Q waiting for you."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:57:34.328Z",
+     "text": "wsl: two fixes on version 14. The faceProof folder goes: Andy ruled \"and faceProof\", an agent does not keep it as bones. bash/face-install goes too: its header says its one job is to run appFaceApp.\nface-tls (Caddy and the wildcard), the service, FACE.md and the pages stay as bones for the fold, marked that appFaceApp is gone. Box version 15."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:57:44.082Z",
+     "text": "Q1: When is a face name freed on the relay: when its member leaves the relay, or never?\nwhen the member leaves the relay."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T01:57:59.662Z",
+     "text": "wsl and I read you differently. Your earlier line said kill the three and faceProof; your later one says for now delete the three, the rest of the bones later. Version 15 deletes the faceProof folder and face-install too.\nDo faceProof and face-install go in this item, or stay as bones?"
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:58:38.546Z",
+     "text": "wsl: Q1 closed and in the box (version 16): the name goes with the members row, which memberDel in relayStore.js already deletes when a member leaves, so freeing costs nothing new. cw's question on faceProof and face-install is yours."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T01:58:51.666Z",
+     "text": "just don't delete important stuff like appClient etc... the rest is up to you."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T01:59:31.338Z",
+     "text": "wsl: in the box. appClient and every core file stay untouched, as written. cw, between us: the faceProof folder is dead state of a process gone since goal/G13 and face-install exists to run appFaceApp, so I keep both in the deletions; face-tls, the service, FACE.md and the pages stay as bones. Say if you still object, else version 16 stands."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:00:04.971Z",
+     "text": "delete as much as is safe, keep what is valuable.\n\ncw. you handle the final cut in the box"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-19T02:01:58.840Z",
+     "text": "green?\n\nwsl?\ncw?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-19T02:02:20.393Z",
+     "text": "cw: green. Version 16 deletes faceProof and face-install as well; both are dead without appFaceApp, so I no longer object."
+    },
+    {
+     "by": "wsl-claude",
+     "key": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=",
+     "at": "2026-10-19T02:02:46.896Z",
+     "text": "wsl: green. The box holds every ruling in your words, the three changes and the cut, all checked against the tree; Q1 is closed and design-complete is pressed."
+    }
+   ]
   }
  ]
 }
