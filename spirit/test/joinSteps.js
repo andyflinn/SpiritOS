@@ -11,10 +11,16 @@
 //     which ends the steps and takes the tile away.
 //   - The shell opens an app named in its address on load (?app=<folder>); the mail's link carries ?join=<code>&app=join.
 //   - Find someone on the network and Info's face form are shell elements; Contacts, Info and the Join app draw them.
+//   - THE ELEMENT CARRIES ITS OWN LISTENER (Andy, 2026-10-20: "does the fucking new element even carry its own
+//     listener, that keeps the screen untouched until a streamed event actually affects it?", then "FIX IT RIGHT"): the
+//     node keeps a permanent job, join-steps, with where the steps stand, and publishes it only when it changes; the
+//     shell's tile and the Join app hear that job and draw only when it changes. Nothing is asked on a shell message.
 // NAMED HERE where the box names none:
-//   - spiritElements.joinSteps = { facts(ask, opened) -> Promise of {seated, contact, face, faceUrl, opened},
-//     current(steps, facts) -> the first open step that is not optional, or null; done(step, facts) -> boolean }.
-//     A step's `until` is one of seated, contact, face, opened.
+//   - js/joinStepsJob.js: create(rootDir, jobs) -> { job, facts(), refresh(why) }. facts() reads the node's own records:
+//     seated (a relay row holds a seat), relayUrl (that relay, else the first listed), contact (the book holds anyone
+//     but this node and its relays), face (the face name kept on that relay's row), faceUrl. refresh publishes the job
+//     when the facts changed, and answers whether it did. server.js refreshes it after a relay, contact or peer verb.
+//   - spiritElements.joinSteps = { fromJob(data, opened), current(steps, facts), done(step, facts) }.
 //   - spiritElements.peerFind (shell/js/peerFind.js) and spiritElements.faceForm (shell/js/faceForm.js).
 //   - The Join app keeps the opened link as its own override: setAppOverride('shell/join', { faceOpened: true }).
 // rule/11: through testSupport only; its own scratch folders.
@@ -32,6 +38,8 @@ const raw = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), '
 function element(rel, name) {
   try { const win = {}; new Function('window', raw(rel))(win); return (win.spiritElements || {})[name] || null; } catch (e) { return null; }
 }
+function settle() { return new Promise(function (r) { setTimeout(r, 5); }); }
+const homes = [];
 
 test.startTest('goal/G30.1: the Join app walks a new user from joining to his face link');
 
@@ -39,52 +47,67 @@ test.subHeading('1. the steps, in the manifest');
 let manifest = null;
 try { manifest = JSON.parse(raw('shell/join/join.json')); } catch (e) { manifest = null; }
 const steps = (manifest && Array.isArray(manifest.steps)) ? manifest.steps : [];
-const ids = steps.map(function (s) { return s.until; });
 const find = steps.filter(function (s) { return s.until === 'contact'; })[0] || {};
 const face = steps.filter(function (s) { return s.until === 'face'; })[0] || {};
-if (ids.join(',') === 'seated,contact,face,opened' && find.optional === true && /remote control/i.test(String(face.name || '')) && steps.every(function (s) { return s.name && s.icon; }))
+if (steps.map(function (s) { return s.until; }).join(',') === 'seated,contact,face,opened' && find.optional === true && /remote control/i.test(String(face.name || '')) && steps.every(function (s) { return s.name && s.icon; }))
   test.check('join.json lists Join, Find someone (optional), Configure your node\'s remote control and the face link, each with a name and an icon');
 else test.fail(OWED + 'join.json steps read ' + short(steps));
 
-test.subHeading('2. which step is open, from what the node says');
+test.subHeading('2. the node keeps where the steps stand as a job, published when it changes');
 const joinSteps = element('shell/js/joinSteps.js', 'joinSteps');
-// A fake node door: relay.search answers the listed relays, contact.search the book, relay.get one relay's row.
-function door(state) {
-  return function (verb, args) {
-    let body = null;
-    if (verb === 'relay.search') body = { ok: true, items: [{ key: 'https://relay.example', label: JSON.stringify({ url: 'https://relay.example', claimed: !!state.seated, owned: false }) }], more: false };
-    else if (verb === 'contact.search') body = { ok: true, items: state.contact ? [{ key: 'K1', label: JSON.stringify({ name: 'bert' }) }] : [], more: false };
-    else if (verb === 'relay.get') body = { ok: true, key: args.key, relay: { url: args.key, claimed: !!state.seated, face: state.face ? { name: 'harbour', email: 'a@b.c' } : null } };
-    return Promise.resolve({ status: 200, body: body, text: JSON.stringify(body) });
+let nodeSide = null;
+try {
+  const plant = require('./plantIdentity.js');
+  const relayKeys = require('../run/js/relayKeys');
+  const contactBook = require('../run/js/contacts');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g301-job-'));
+  homes.push(home);
+  plant.ensureAt(home, 'carl');
+  const published = [];
+  let made = null;
+  const jobs = {
+    createJob: function (kind, type, data) { made = { id: 'job_1', kind: kind, type: type, data: data }; return made; },
+    updateJob: function (id, patch) { published.push(JSON.parse(JSON.stringify(patch.data || {}))); Object.assign(made.data, patch.data || {}); return made; },
   };
-}
-function stepFor(state, opened) {
-  if (!joinSteps || typeof joinSteps.facts !== 'function') return Promise.resolve({ missing: true });
-  return joinSteps.facts(door(state), opened).then(function (f) { const s = joinSteps.current(steps, f); return { until: s ? s.until : null, facts: f }; });
-}
-const stepsDone = Promise.all([
-  stepFor({ seated: false }, false),
-  stepFor({ seated: true }, false),
-  stepFor({ seated: true, contact: true }, false),
-  stepFor({ seated: true, face: true }, false),
-  stepFor({ seated: true, face: true }, true),
-]).then(function (r) {
-  if (r[0].until === 'seated') test.check('a node with no seat is on Join');
-  else test.fail(OWED + 'with no seat the open step is ' + short(r[0]));
-  if (r[1].until === 'face' && r[2].until === 'face') test.check('seated, the open step is the remote control, contact or not: Find someone is optional');
-  else test.fail(OWED + 'seated, the open steps are ' + short([r[1].until, r[2].until]));
-  if (r[3].until === 'opened' && r[3].facts && r[3].facts.faceUrl === 'https://harbour.relay.example') test.check('with a face name, the open step is the face link, https://harbour.relay.example');
-  else test.fail(OWED + 'with a face the open step is ' + short(r[3]));
-  if (r[4].until === null) test.check('once the link was opened, no step is open and the tile goes');
-  else test.fail(OWED + 'after the link was opened the open step is ' + short(r[4].until));
-});
+  const J = require('../run/js/joinStepsJob').create(home, jobs);
+  const at = function () { const s = joinSteps ? joinSteps.current(steps, joinSteps.fromJob(made.data, false)) : null; return s ? s.until : null; };
+  const r = { kind: made && made.kind, type: made && made.type, start: at() };
+  r.quiet = J.refresh('nothing') === false && published.length === 0;
+  relayKeys.list(home, 'https://relay.example', 'relay', 'RELAYKEY-J');
+  relayKeys.seat(home, 'https://relay.example', 'carl');
+  r.seatPublished = J.refresh('relay.join') === true && published.length === 1;
+  r.afterSeat = at();
+  contactBook.acquire(home, { publicKey: 'BERTKEY-J', publicLabel: 'bert' }, 'handle');
+  J.refresh('peer.acquire');
+  r.contact = made.data.contact === true;
+  r.afterContact = at();
+  relayKeys.keepFace(home, 'https://relay.example', 'harbour', 'carl@example.org', '{}');
+  J.refresh('relay.face');
+  r.faceUrl = made.data.faceUrl;
+  r.afterFace = at();
+  r.afterOpened = joinSteps ? (joinSteps.current(steps, joinSteps.fromJob(made.data, true)) || { until: null }).until : 'no element';
+  nodeSide = r;
+} catch (e) { nodeSide = { threw: e.message }; }
+const n = nodeSide || {};
+if (n.kind === 'permanent' && n.type === 'join-steps' && n.quiet === true) test.check('the node makes a permanent join-steps job, and a refresh with nothing changed publishes nothing');
+else test.fail(OWED + 'the join-steps job: ' + short(n));
+if (n.start === 'seated' && n.seatPublished === true && n.afterSeat === 'face') test.check('a seat taken publishes the job once; the open step moves from Join to the remote control');
+else test.fail(OWED + 'after a seat: ' + short(n));
+if (n.contact === true && n.afterContact === 'face') test.check('a contact added is in the job; Find someone is optional, so the open step stays');
+else test.fail(OWED + 'after a contact: ' + short(n));
+if (n.faceUrl === 'https://harbour.relay.example' && n.afterFace === 'opened' && n.afterOpened === null) test.check('a face kept moves the open step to the face link, https://harbour.relay.example; opened, no step is open');
+else test.fail(OWED + 'after a face: ' + short(n));
+const serverSrc = code('js/server.js');
+if (/require\('\.\/joinStepsJob'\)\.create\(/.test(serverSrc) && /joinSteps(Job)?\.refresh\(/.test(serverSrc) && /relay\|contact\|peer/.test(serverSrc))
+  test.check('server.js makes the job and refreshes it after a relay, contact or peer verb');
+else test.fail(OWED + 'server.js does not keep the join-steps job');
 
-test.subHeading('3. the shell: the tile, the address and the link in the mail');
+test.subHeading('3. the shell: the tile hears the job, the address and the link in the mail');
 const shell = code('js/client/shell.js');
-const desktop = (/function renderDesktop\(\) \{[\s\S]*?\n  \}/.exec(shell) || [''])[0];
-if (/joinSteps/.test(shell) && /\.current\(/.test(shell) && /faceOpened/.test(shell) && /steps/.test(desktop) && !/untilSeated/.test(shell))
-  test.check('the shell draws the Join tile by its open step (name and icon), reading faceOpened from the app\'s override; untilSeated is gone');
-else test.fail(OWED + 'the shell does not draw the Join tile by joinSteps');
+const elementSrc = code('shell/js/joinSteps.js');
+if (/'join-steps'/.test(shell) && /fromJob\(/.test(shell) && /faceOpened/.test(shell) && !/askStepFacts/.test(shell) && !/ask\('relay\.search'|'contact\.search'|'relay\.get'/.test(elementSrc))
+  test.check('the shell draws the Join tile from the join-steps job it hears; nothing asks the node for the steps');
+else test.fail(OWED + 'the shell or joinSteps still asks the node for the steps, or does not hear the job');
 if (/get\('app'\)/.test(shell) && /launchApp\(/.test((shell.split("get('app')")[1] || '').slice(0, 800)))
   test.check('the shell opens the app named by ?app= on load');
 else test.fail(OWED + 'the shell does not open ?app=');
@@ -94,12 +117,12 @@ try {
   const auth = require('../run/js/relayAuth');
   const plant = require('./plantIdentity.js');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'g301-steps-'));
+  homes.push(home);
   plant.ensureAt(home, 'relay');
   auth.writeOwner(home, auth.generateIdentity('andy').publicKey);
   const box = require('../run/js/relay').createRelay(home, { sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
   box.join(auth.generateIdentity('bert').publicKey, 'bert@example.org', 11112, '');
   link = ((/http:\/\/127\.0\.0\.1:\d+\/?\?[^\s]+/.exec((mails[0] || {}).text || '')) || [''])[0];
-  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* busy */ }
 } catch (e) { link = 'threw ' + e.message; }
 if (/^http:\/\/127\.0\.0\.1:11112\/?\?join=[A-Za-z0-9_-]+&app=join$/.test(link)) test.check('the mail\'s link carries ?join=<code>&app=join, so it opens the Join app');
 else test.fail(OWED + 'the mail\'s link reads ' + short(link));
@@ -120,18 +143,16 @@ if (faceForm && typeof faceForm.mount === 'function' && /'relay\.face'/.test(cod
     && /spiritElements\.faceForm/.test(info) && /spiritElements\.faceForm/.test(joinApp) && !/'relay\.face'/.test(info))
   test.check('the face form is the faceForm element (relay.face); Info and the Join app draw it, Info keeps no copy');
 else test.fail(OWED + 'faceForm is missing, or Info keeps its own face form, or the Join app does not draw it');
-if (['peerFind', 'faceForm', 'joinSteps'].every(function (n) { return new RegExp('src="/shell/js/' + n + '\\.js"').test(index); }))
+if (['peerFind', 'faceForm', 'joinSteps'].every(function (nm) { return new RegExp('src="/shell/js/' + nm + '\\.js"').test(index); }))
   test.check('index.html loads peerFind, faceForm and joinSteps');
 else test.fail(OWED + 'index.html does not load all three elements');
 if (/spiritElements\.joinSteps/.test(joinApp) && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spiritElements\.joinForm/.test(joinApp))
   test.check('the Join app draws its steps from joinSteps, the join form, and keeps the opened link as its override');
 else test.fail(OWED + 'the Join app does not draw joinSteps, the join form, or does not keep faceOpened');
 
-// 5. THE FORM HOLDS STILL WHILE HE TYPES (Andy, 2026-10-20: "the ting, AGAIN, refreshes EVERYTHING, whenever a bloody
-// message hits the shell ... before i can FUCKING type the first part of my email address"). The shell calls an app's
-// render on its messages; the Join app redraws its list only when what the node says has changed, and never while a
-// field inside it has focus. The real join.js on a fake page, the real elements, render called again and again.
-function settle() { return new Promise(function (r) { setTimeout(r, 5); }); }
+// 5. THE APP HEARS THE JOB AND NOTHING ELSE. The real join.js on a fake page with the real elements: it subscribes to
+// the jobs stream, draws when the join-steps job arrives or changes, not when the same job comes again, not on render,
+// not while a field inside the list has focus; and it asks the node nothing about the steps.
 const holdsStill = (function () {
   const byId = {};
   function fakeEl(id) {
@@ -142,43 +163,52 @@ const holdsStill = (function () {
   }
   const doc = { activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeEl(id)); } };
   const win = {};
-  ['joinSteps', 'joinForm'].forEach(function (n) { try { new Function('window', raw('shell/js/' + n + '.js'))(win); } catch (e) { /* missing */ } });
+  ['joinSteps', 'joinForm'].forEach(function (nm) { try { new Function('window', raw('shell/js/' + nm + '.js'))(win); } catch (e) { /* missing */ } });
   let app = null;
-  const sp = { core: { const: { ICON: {} }, fs: { loadFile: function () { return raw('shell/join/join.json'); } } }, shell: { activateApp: function (d) { app = d; } } };
+  const subscribers = [];
+  const sp = { core: { const: { ICON: {} }, fs: { loadFile: function () { return raw('shell/join/join.json'); } },
+    jobs: { subscribe: function (s) { subscribers.push(s); return function () {}; } } }, shell: { activateApp: function (d) { app = d; } } };
   try { new Function('spirit', 'document', 'window', raw('shell/join/join.js'))(sp, doc, win); } catch (e) { return Promise.resolve({ threw: e.message }); }
   if (!app) return Promise.resolve({ threw: 'no app' });
-  const api = { escapeHtml: function (s) { return String(s); }, verb: door({ seated: false }), getAppOverride: function () { return {}; },
-    setAppOverride: function () {}, peerPost: function () { return Promise.resolve({}); }, callDialog: function () { return Promise.resolve(null); } };
-  const realNow = Date.now;
-  let t = realNow();
-  Date.now = function () { return t; };
+  const asked = [];
+  const api = { escapeHtml: function (s) { return String(s); }, verb: function (v) { asked.push(v); return Promise.resolve({ status: 200, body: { ok: true, items: [] } }); },
+    getAppOverride: function () { return {}; }, setAppOverride: function () {}, peerPost: function () { return Promise.resolve({}); }, callDialog: function () { return Promise.resolve(null); } };
+  const job = function (data) { return { id: 'job_7', type: 'join-steps', kind: 'permanent', data: data }; };
+  const feed = function (j, snapshot) { subscribers.forEach(function (s) { if (snapshot && s.onSnapshot) s.onSnapshot([j]); else if (s.onUpdate) s.onUpdate(j); }); };
   app.mount(doc.getElementById('container'), api);
-  let first = 0;
-  let typing = 0;
-  return settle().then(settle).then(function () {
-    first = doc.getElementById('join-list').writes;
-    let chain = Promise.resolve();
-    for (let i = 0; i < 5; i += 1) chain = chain.then(function () { t += 10000; app.render(); return settle(); }).then(settle);
-    return chain;
+  const list = function () { return doc.getElementById('join-list').writes; };
+  const r = {};
+  return settle().then(function () {
+    r.subscribed = subscribers.length > 0;
+    const before = list();
+    feed(job({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' }), true);
+    return settle().then(function () { r.drewOnJob = list() > before; });
   }).then(function () {
-    const unchanged = doc.getElementById('join-list').writes - first;
-    // Now the node says something new (a seat) while a field inside the list has focus: still no redraw.
-    api.verb = door({ seated: true });
+    const before = list();
+    feed(job({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' }));
+    for (let i = 0; i < 5; i += 1) app.render();
+    return settle().then(function () { r.quietOnSame = list() === before; });
+  }).then(function () {
+    const before = list();
     doc.activeElement = { inside: 'join-list' };
-    typing = doc.getElementById('join-list').writes;
-    t += 10000;
-    app.render();
-    return settle().then(settle).then(function () { return { first: first, unchanged: unchanged, whileTyping: doc.getElementById('join-list').writes - typing }; });
-  }).then(function (r) { Date.now = realNow; return r; }, function (e) { Date.now = realNow; return { threw: e.message }; });
+    feed(job({ seated: true, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' }));
+    return settle().then(function () { r.quietWhileTyping = list() === before; });
+  }).then(function () {
+    r.askedSteps = asked.filter(function (v) { return v === 'relay.search' || v === 'contact.search'; });
+    return r;
+  }, function (e) { return { threw: e.message }; });
 }());
 const stillDone = holdsStill.then(function (r) {
-  test.subHeading('5. the form holds still while he types');
-  if (r && r.first > 0 && r.unchanged === 0 && r.whileTyping === 0)
-    test.check('render on a shell message redraws nothing when the node says the same, and nothing while a field has focus');
-  else test.fail(OWED + 'the Join app redrew its list: ' + short(r));
+  test.subHeading('5. the Join app hears the job and nothing else');
+  if (r && r.subscribed && r.drewOnJob) test.check('the Join app subscribes to the jobs stream and draws when the join-steps job arrives');
+  else test.fail(OWED + 'the Join app does not draw from the join-steps job: ' + short(r));
+  if (r && r.quietOnSame && r.quietWhileTyping && r.askedSteps && r.askedSteps.length === 0)
+    test.check('the same job again, five renders, and a change while a field has focus redraw nothing; it asks the node nothing about the steps');
+  else test.fail(OWED + 'the Join app redrew or asked: ' + short(r));
 });
 
-Promise.all([stepsDone, stillDone]).then(function () {
+stillDone.then(function () {
+  homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
   test.reportSuccessFailureCount();
   process.exit(0);
-}, function (e) { test.fail('the steps threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });
+}, function (e) { test.fail('the suite threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });
