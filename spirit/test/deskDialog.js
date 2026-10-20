@@ -11,7 +11,8 @@
 //   (The desk server publishes box and chat that way; its half is part of this item.)
 //   Buttons come from item.buttons only. A press goes to the server as press {id, what} (no by since apiAuth/G1.13: the desk takes the owner from his caller); the screen
 //   does not change until the server publishes. A C check is ticked by pressing it: check.set {id, check, state:
-//   'passed'}. The yellow strip shows the C checks only while item.buttons offers 'done'.
+//   'passed'}. The yellow strip that showed the C checks while item.buttons offered 'done' is gone (goal/G30.8): the
+//   C checks are in the red Qs' panel (❌).
 //   On a goal, dd-abandon arms on the first press and sends press abandon on the second.
 //   No #dd-blurb, no #dd-decide; no ready flag, go rule or local done in deskDetails.js.
 
@@ -85,7 +86,7 @@ function dialog(answer) {
   const page = function () { return Object.keys(doc.all).map(function (k) { return doc.all[k].innerHTML; }).concat(titles.slice(-1)).join('\n'); };
   const click = function (id, attrs) { doc.getElementById('dd-body').fire('click', { target: target(id, attrs), preventDefault: function () {} }); };
   const publish = function (obj) { published.forEach(function (fn) { fn(obj); }); };
-  return { dd: dd, asked: asked, page: page, click: click, publish: publish, published: published, servers: servers };
+  return { dd: dd, doc: doc, asked: asked, page: page, click: click, publish: publish, published: published, servers: servers };
 }
 
 const facts = function (over) {
@@ -120,11 +121,18 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   if (d.servers.indexOf('desk') !== -1) test.check('it listens to the desk server by name');
   else test.fail('the dialog listens as itself, so the desk server changes never reach it: ' + JSON.stringify(d.servers));
 
-  test.subHeading('buttons and the yellow strip come from item.buttons');
+  // SINCE goal/G30.8 the yellow strip is gone: the C checks are the red Qs' panel's (❌), drawn into #dd-panel when its
+  // icon is pressed, and the item opens on its box.
+  test.subHeading('buttons come from item.buttons; the C checks are in the red Qs\' panel');
   if (p0.indexOf('id="dd-done"') !== -1 && p0.indexOf('id="dd-go"') === -1) test.check('buttons [done]: Done shows, Go! does not');
   else test.fail(OWED + 'with buttons [done] the page has done ' + (p0.indexOf('id="dd-done"') !== -1) + ', go ' + (p0.indexOf('id="dd-go"') !== -1));
-  if (p0.indexOf('LOOK-AT-IT') !== -1) test.check('while Done is offered, the yellow strip lists the C checks');
-  else test.fail(OWED + 'the yellow strip does not show C1 while Done is offered');
+  if (p0.indexOf('id="dd-strip"') === -1 && p0.indexOf('LOOK-AT-IT') === -1) test.check('no yellow strip: the C checks are not on the page while the box is shown');
+  else test.fail('goal/G30.8: the yellow strip or its C1 is still on the box\'s page');
+  d.click('', { 'data-panel': 'qs' });
+  await settled();
+  const qs = d.doc.getElementById('dd-panel').innerHTML;
+  if (/data-check="C1"[^>]*>C1<\/button> LOOK-AT-IT/.test(qs)) test.check('the red Qs\' panel lists the C checks, each a button to press');
+  else test.fail(OWED + 'the red Qs\' panel does not show C1: ' + qs.slice(0, 300));
   const e = dialog(answerFor({ buttons: ['go'] }));
   e.dd.open({ id: 't/G1.2' });
   await settled();
@@ -145,6 +153,9 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   const ticked = d.asked.filter(function (a) { return a.verb === 'check.set'; })[0];
   if (ticked && ticked.args.check === 'C1' && ticked.args.state === 'passed' && ticked.args.by === undefined) test.check('pressing C1 sends check.set {check: C1, state: passed}, no by (apiAuth/G1.13)');
   else test.fail(OWED + 'pressing C1 sent ' + JSON.stringify(ticked || null));
+  // Back to the box, so the publishes below are read where they paint.
+  d.click('', { 'data-panel': 'box' });
+  await settled();
 
   test.subHeading('it repaints from what the server publishes, and asks nothing more');
   d.publish({ change: 8, verb: 'press', item: JSON.parse(facts({ buttons: ['close', 'reopen'], status: 'done' })) });

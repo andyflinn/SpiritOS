@@ -1458,6 +1458,9 @@ const ICON = spirit.core.const.ICON = {
     SEARCH: '🔍',
     GLASSES: '👓',
     END: '🔚',
+    // The item details' strip (goal/G30.8): the box and the blocks.
+    PAGE: '📃',
+    PLUNGER: '🪠',
 };
 
 const MIME_TYPES = spirit.core.const.MIME_TYPES = {

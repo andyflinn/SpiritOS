@@ -54,7 +54,8 @@ if (!desk || !dd) {
   test.fail(OWED + 'the shells are owed: desk.js ' + !!desk + ', deskDetails.js ' + !!dd);
 } else {
   [['desk', desk, 'desk-goal', 'desk-bars', '<div id="desk-root">'],
-    ['deskDetails', dd, 'dd-head', 'dd-bars', '<div class="stat-tile wide" id="dd-box">']].forEach(function (a) {
+    // Since goal/G30.8 what follows the header is the upper half's stylesheet, then #dd-upper (#dd-box before it).
+    ['deskDetails', dd, 'dd-head', 'dd-bars', '<style>.dd-icon']].forEach(function (a) {
     const name = a[0]; const src = a[1]; const bubble = a[2]; const bars = a[3]; const after = a[4];
 
     test.subHeading(name + ': 1. the title bubble is gone');

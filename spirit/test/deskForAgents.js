@@ -89,7 +89,8 @@ function mountPage(file, answers) {
   return { doc: doc, app: b, sent: sent };
 }
 // What a box element shows and wears: its markup and its inline style, together.
-function boxLook(doc) { const el = doc.all['dd-box']; return el ? el.innerHTML + ' ' + JSON.stringify(el.style) : ''; }
+// The box is the panel every open shows first (#dd-panel, goal/G30.8; #dd-box before it).
+function boxLook(doc) { const el = doc.all['dd-panel']; return el ? el.innerHTML + ' ' + JSON.stringify(el.style) : ''; }
 function itemFacts(over) {
   return Object.assign({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'running', with: 'wsl-claude',
     buttons: [], blocking: ['t/G1'], blocked: [], alone: false, star: false, half: false, full: false }, over || {});

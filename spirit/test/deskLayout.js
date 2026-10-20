@@ -212,7 +212,7 @@ settle().then(function () {
 }).then(function () {
   // ── The dialog ──────────────────────────────────────────────────────
   // Since desk/G2.7 the dialog paints the desk server's item.get: the rulings below stand, on the new parts
-  // (#dd-name-row, #dd-strip, #dd-box, #dd-links).
+  // (#dd-name-row, then #dd-panel in #dd-upper since goal/G30.8, where #dd-strip, #dd-box and #dd-links stood).
   const ddDoc = fakeDocument();
   const dd = load(DETAILS, ddDoc);
   let screenTitle = '';
@@ -225,40 +225,50 @@ settle().then(function () {
     peerPost: function () { return Promise.resolve({ ok: true }); },
     verb: function () { return Promise.resolve({ status: 200, body: answer }); } });
   dd.open({ id: 't/G1.2' });
+  // SINCE goal/G30.8 the yellow strip is gone and the rest is one upper half (#dd-upper) under the header: an icon
+  // strip (#dd-icons) and one panel (#dd-panel) at a time, the box on open; the C checks are the red Qs' panel's (❌),
+  // Blocked by the blocks panel's (🪠).
+  const panelClick = function (key) { ddDoc.getElementById('dd-body').fire('click', { target: clickTarget(null, { 'data-panel': key }), preventDefault: function () {} }); return settle().then(settle); };
+  const seen = {};
   return settle().then(settle).then(function () {
+    seen.box = ddDoc.getElementById('dd-panel').innerHTML;
+    return panelClick('qs');
+  }).then(function () {
+    seen.qs = ddDoc.getElementById('dd-panel').innerHTML;
+    return panelClick('blocks');
+  }).then(function () {
+    seen.links = ddDoc.getElementById('dd-panel').innerHTML;
     const body = ddDoc.getElementById('dd-body').innerHTML;
     const at = function (id) { return body.indexOf('id="' + id + '"'); };
     const nameRow = ddDoc.getElementById('dd-name-row').innerHTML;
-    const strip = ddDoc.getElementById('dd-strip').innerHTML;
-    const box = ddDoc.getElementById('dd-box').innerHTML;
+    const box = seen.box;
 
     test.subHeading("T3: a dialog's title starts with the item's id");
     if (/^\s*t\/G1\.2\b/.test(screenTitle) && /Second/.test(screenTitle)) test.check('the screen title reads ' + JSON.stringify(screenTitle));
     else test.fail(OWED + 'the screen title is ' + JSON.stringify(screenTitle));
 
-    test.subHeading('T4: your buttons sit before Rename, the check line right under them');
+    test.subHeading('T4: your buttons sit before Rename; the checks are in the red Qs\' panel');
     const goAt = nameRow.search(/id="dd-go"/);
     const renameAt = nameRow.search(/id="dd-rename"/);
-    if (goAt !== -1 && renameAt !== -1 && goAt < renameAt && /CHECK-TEXT/.test(strip) && !/CHECK-TEXT/.test(box) && at('dd-strip') > at('dd-name-row')) {
-      test.check('Go! stands before Rename on one line; How you check it follows it, outside the box');
-    } else test.fail(OWED + 'name row ' + nameRow.slice(0, 160) + ' | strip ' + strip.slice(0, 80));
+    if (goAt !== -1 && renameAt !== -1 && goAt < renameAt && /data-check="C1"[^>]*>C1<\/button> CHECK-TEXT/.test(seen.qs) && !/CHECK-TEXT/.test(box) && !/CHECK-TEXT/.test(nameRow) && at('dd-upper') > at('dd-name-row')) {
+      test.check('Go! stands before Rename on one line; How you check it is in the red Qs\' panel below, outside the box');
+    } else test.fail(OWED + 'name row ' + nameRow.slice(0, 160) + ' | red Qs\' panel ' + seen.qs.slice(0, 120));
 
     test.subHeading('T5 in the dialog: the box shows at once, and empty groups draw nothing');
-    const links = ddDoc.getElementById('dd-links').innerHTML;
+    const links = seen.links;
     // And each id a way there (Andy: "the blocked and blocks lists link to the respective items").
     if (/ITEM-TEXT/.test(box) && !/Blocked by/.test(links) && /data-open="t\/G1"/.test(links)) test.check('the box shows its text, no Blocked by heading shows for an item nothing blocks, and its blocking id is a link');
-    else test.fail(OWED + 'box ' + box.slice(0, 120) + ' | Blocked by shown ' + /Blocked by/.test(links));
+    else test.fail(OWED + 'box ' + box.slice(0, 120) + ' | Blocked by shown ' + /Blocked by/.test(links) + ' | blocks panel ' + links.slice(0, 120));
 
-    test.subHeading('T13: in a dialog, his buttons and the check line are pinned in one sticky block');
+    test.subHeading('T13: in a dialog, his buttons are pinned in one sticky block, above the upper half');
     // SINCE goal/G6.1 the app header pins it, as the List's bars: the block is #dd-bars, deskDetails.js moves it into
     // createAppHeader(), and no tag of its own markup sticks.
     const ownSticky = /<div[^>]*position:\s*sticky[^>]*>/.test(body);
     const stickyAt = !ownSticky && /createAppHeader/.test(fs.readFileSync(DETAILS, 'utf8')) ? at('dd-bars') : -1;
-    const closeAt = body.indexOf('</div>', at('dd-strip') + 1);
-    if (stickyAt !== -1 && stickyAt < at('dd-name-row') && at('dd-name-row') < at('dd-strip') &&
-        at('dd-strip') < at('dd-box') && closeAt < at('dd-box')) {
-      test.check('one block, pinned by the app header, holds the button row and the check line, above the box');
-    } else test.fail(OWED + 'sticky at ' + stickyAt + ', buttons at ' + at('dd-name-row') + ', strip at ' + at('dd-strip') + ', box at ' + at('dd-box'));
+    const header = stickyAt !== -1 && at('dd-upper') !== -1 ? body.slice(stickyAt, at('dd-upper')) : '';
+    if (/id="dd-name-row"/.test(header) && !/id="dd-panel"/.test(header) && at('dd-upper') < at('dd-panel') && at('dd-panel') < at('dd-say')) {
+      test.check('one block, pinned by the app header, holds the button row, above the upper half and its panel');
+    } else test.fail(OWED + 'sticky at ' + stickyAt + ', buttons at ' + at('dd-name-row') + ', upper half at ' + at('dd-upper') + ', panel at ' + at('dd-panel'));
 
     // SINCE goal/G9.6 the title line is the shell's title bar itself ("the deskDetail has the title already in the
     // shells title bar"); #dd-head is gone, and the status it carried rides in the title.
@@ -266,10 +276,10 @@ settle().then(function () {
     if (!/id="dd-head"/.test(body) && /Second/.test(screenTitle) && /running/.test(screenTitle)) test.check('the title bar reads ' + JSON.stringify(screenTitle) + ', and no #dd-head is drawn');
     else test.fail(OWED + 'the title bar reads ' + JSON.stringify(screenTitle) + '; #dd-head drawn ' + /id="dd-head"/.test(body));
 
-    test.subHeading('T11: the yellow check stands apart, with clear space around it');
-    const tag = (strip.match(/<div[^>]*background:#fff3c4[^>]*>/) || [''])[0];
-    const margin = (tag.match(/margin:\s*(\d+)px/) || [0, 0])[1];
-    if (Number(margin) >= 12) test.check('the check line keeps ' + margin + 'px clear above and below');
-    else test.fail(OWED + 'the check line has ' + margin + 'px of space around it: ' + tag.slice(0, 120));
+    // T11 asked the yellow check line to stand apart; goal/G30.8 removed the line ("the yellow bubble gone").
+    test.subHeading('T11, since goal/G30.8: the yellow check line is gone');
+    const anywhere = body + nameRow + seen.box + seen.qs + seen.links;
+    if (!/id="dd-strip"/.test(anywhere) && !/fff3c4/i.test(anywhere) && !/How you check it/.test(anywhere)) test.check('no yellow "How you check it" line is drawn');
+    else test.fail('goal/G30.8: the yellow check line is still drawn');
   });
 }).catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });

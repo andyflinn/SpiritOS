@@ -164,12 +164,18 @@ async function openDialog(facts) {
   });
   dd.open({ id: facts.id, agents: {} });
   await settled();
-  return { doc: doc, calls: calls, page: function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); } };
+  // The blocks are the blocks panel's since goal/G30.8: pressing its icon (🪠) shows them and asks block.targets.
+  const blocksPanel = async function () { doc.getElementById('dd-body').fire('click', clickOn({ 'data-panel': 'blocks' })); await settled(); };
+  return { doc: doc, calls: calls, blocksPanel: blocksPanel, page: function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); } };
 }
 
 async function faceHalf() {
   test.subHeading('R7. the dialog: the item\'s own blocks with a delete, blocked-by read-only, the add drop-down');
   const d = await openDialog({ id: I(1), title: 'item 1', goal: G, status: '', with: '', buttons: [], blocking: [I(2)], blocked: [I(8)], asks: 0, go: false });
+  const targetsAsked = function () { return d.calls.filter(function (c) { return c.verb === 'block.targets'; }).length; };
+  if (targetsAsked() === 0) test.check('block.targets is not asked on open (goal/G30.8: only when the blocks icon is pressed)');
+  else test.fail(OWED + 'block.targets was asked ' + targetsAsked() + ' times on open, before the blocks icon');
+  await d.blocksPanel();
   const html = d.page();
   if (/data-unblock="bk\/G1\.2"/.test(html) && !/data-unblock="bk\/G1\.8"/.test(html)) test.check('a delete on its block of item 2, none on item 8 that blocks it');
   else test.fail(OWED + 'the dialog reads ' + short(html.slice(0, 600)));
@@ -192,7 +198,8 @@ async function faceHalf() {
   if (un && un.args.id === I(1) && un.args.blocks === I(2)) test.check('its delete sends unblock {id: item 1, blocks: item 2}');
   else test.fail(OWED + 'the delete sent ' + short(d.calls.slice(n1)));
   const g = await openDialog({ id: I(5), title: 'item 5', goal: G, status: '', with: '', buttons: [], blocking: [G], blocked: [], asks: 0, go: false });
-  if (!/data-unblock=/.test(g.page())) test.check('an item that only blocks the goal shows no delete');
+  await g.blocksPanel();
+  if (/id="dd-block-add"/.test(g.page()) && !/data-unblock=/.test(g.page())) test.check('an item that only blocks the goal shows no delete');
   else test.fail(OWED + 'the goal fallback shows a delete');
 }
 

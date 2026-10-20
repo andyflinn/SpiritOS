@@ -15,7 +15,8 @@
 //   item.files.add {id, paths}: the caller's whole list for that item, replacing its own entries and leaving others'.
 //   item.get carries it as facts.files, [{path, by, core}], core read from js/coreFiles.js isCore (never a second list).
 //   A list holding any core file puts ONE open G check on the item for all of them, not one per file.
-//   The Details draws the list in #dd-files, a core path marked data-core="1". The List never draws Delete.
+//   The Details draws the list in its files panel (#dd-panel with 📂 pressed, goal/G30.8; #dd-files before it), a core
+//   path marked data-core="1". The List never draws Delete.
 // NOT ASSERTED: a file added after the grant turning the grant red again (both agents proposed it, he has not ruled),
 // and Done waiting on every grant (goal/G8.5 builds that).
 
@@ -163,13 +164,16 @@ async function pages() {
   });
   dd.open({ id: 't/G1.2', agents: {} });
   for (let i = 0; i < 6; i++) await sleep(20);
-  const files = doc.getElementById('dd-files').innerHTML;
-  if (files.indexOf(CORE) !== -1 && files.indexOf(PLAIN) !== -1) test.check('#dd-files lists both paths');
-  else test.fail(OWED + '#dd-files reads ' + short(files));
+  // The files are the files panel's since goal/G30.8 (#dd-files before it): its icon (📂) is pressed first.
+  doc.getElementById('dd-body').fire('click', { target: { getAttribute: function (n) { return n === 'data-panel' ? 'files' : null; }, closest: function () { return null; } }, preventDefault: function () {} });
+  for (let i = 0; i < 3; i++) await sleep(20);
+  const files = doc.getElementById('dd-panel').innerHTML;
+  if (files.indexOf(CORE) !== -1 && files.indexOf(PLAIN) !== -1) test.check('the files panel lists both paths');
+  else test.fail(OWED + 'the files panel reads ' + short(files));
   const coreTag = (files.match(new RegExp('<[^>]*data-core="1"[^>]*>[^<]*' + CORE.replace(/[./]/g, '\\$&'))) || [''])[0];
   const plainCore = new RegExp('data-core="1"[^>]*>[^<]*' + PLAIN.replace(/[./]/g, '\\$&')).test(files);
   if (coreTag && !plainCore) test.check('the core file carries data-core="1", the plain one does not');
-  else test.fail(OWED + 'core marks in #dd-files: ' + short(files));
+  else test.fail(OWED + 'core marks in the files panel: ' + short(files));
 
   test.subHeading('6. the List never draws Delete; the Details still does');
   const fake = require('./deskFake.js').create([]);

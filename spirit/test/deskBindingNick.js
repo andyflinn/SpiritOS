@@ -385,8 +385,15 @@ async function theDialog() {
   else test.fail(OWED + 'the dialog\'s chat: ' + short((/<b>[^<]*<\/b>[^<]*<span[^>]*>[^<]*<\/span> in the dialog/.exec(html) || ['no line'])[0]));
   if (/title="Claude Windows is changing this box"/.test(html)) test.check('the red box names its taker by name');
   else test.fail(OWED + 'the box taker: ' + short((/title="[^"]*changing this box"/.exec(html) || ['none'])[0]));
-  if (/\(Claude Windows\)/.test(html)) test.check('the files list names the writer by name');
-  else test.fail(OWED + 'the files list: ' + short((/data-file="a.js"[^\n]*/.exec(html) || ['none'])[0]));
-  if (html.indexOf(CW.key) === -1) test.check('no key in the dialog');
+  // The files touched are the files panel's since goal/G30.8: its icon (📂) is pressed first.
+  const icon = node('button');
+  icon.setAttribute('data-panel', 'files');
+  doc.getElementById('dd-body').appendChild(icon);
+  bubble(icon, { type: 'click', bubbles: true, preventDefault: function () {}, stopPropagation: function () {} });
+  await settled();
+  const files = doc.getElementById('dd-panel').innerHTML;
+  if (/data-file="a\.js"[^\n]*\(Claude Windows\)/.test(files)) test.check('the files list names the writer by name');
+  else test.fail(OWED + 'the files list: ' + short((/data-file="a.js"[^\n]*/.exec(files) || ['none'])[0]));
+  if (html.indexOf(CW.key) === -1 && files.indexOf(CW.key) === -1) test.check('no key in the dialog');
   else test.fail(OWED + 'a key is in the dialog');
 }

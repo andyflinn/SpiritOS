@@ -48,7 +48,7 @@ function fakeDocument() {
 }
 function load(script, doc) {
   let behavior = null;
-  new Function('spirit', 'document', 'window', fs.readFileSync(script, 'utf8'))({ shell: { activateApp: function (b) { behavior = b; } } }, doc, {});
+  new Function('spirit', 'document', 'window', fs.readFileSync(script, 'utf8'))({ shell: { activateApp: function (b) { behavior = b; } }, core: spirit.core }, doc, {});
   return behavior;
 }
 function settle() {

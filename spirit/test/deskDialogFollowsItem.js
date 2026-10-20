@@ -211,7 +211,8 @@ function bootPage(desk) {
     stack: function () { return shellSpirit.shell.navStackIds(); },
     title: function () { return doc.getElementById('app-title').textContent; },
     buttons: function () { return doc.getElementById('dd-name-row').innerHTML; },
-    box: function () { return doc.getElementById('dd-box').innerHTML; },
+    // The box is the panel every open shows first (#dd-panel, goal/G30.8; #dd-box before it).
+    box: function () { return doc.getElementById('dd-panel').innerHTML; },
     press: function (button) { doc.getElementById('dd-body').fire('click', clickOn(button)); },
   };
 }

@@ -34,7 +34,8 @@
 //      it, his Done verifications) and T. check.set gains two states: granted (a G, Andy alone; an agent is refused
 //      not-owner) and answered (a Q, an agent's). facts gain asks: the number of open G, open Q, and open C
 //      while Done is offered. The List row shows ICON.ERROR exactly while asks > 0 — so an item that offers
-//      Close alone (design mode) shows none. The dialog draws #dd-waiting between #dd-box and #dd-say:
+//      Close alone (design mode) shows none. The dialog draws them above #dd-say (#dd-waiting until goal/G30.8,
+//      now the files panel for G and the red Qs' panel for Q, their icons blinking while one is open):
 //      an open G a red arm-button data-grant="G1" (first click arms, second sends check.set state granted),
 //      a granted G green with data-granted="G1", an open Q red text data-question="Q1" with its number and words;
 //      a click on it appends "Q1: <words>" as a line of its own to #dd-say. An answered Q is not drawn.
@@ -311,15 +312,24 @@ test.startTest('goal/G4.20: Desk for Andy');
   ];
   const dw = dialog(FACTS({ asks: 2 }), CHECKS);
   await settled();
+  // SINCE goal/G30.8 the waiting list is two panels of the upper half, above his input: the red Qs (❌) and the files
+  // with their grants (📂), each drawn into #dd-panel when its icon is pressed, and each icon blinks while one waits.
   const body = dw.html('dd-body');
   const at = function (s) { return body.indexOf(s); };
-  if (at('id="dd-waiting"') > at('id="dd-box"') && at('id="dd-waiting"') < at('id="dd-say"') && at('id="dd-box"') !== -1) test.check('#dd-waiting sits between the box and his input');
-  else test.fail(OWED + 'no #dd-waiting between #dd-box and #dd-say');
-  const waiting = dw.html('dd-waiting');
-  if (/data-grant="G1"/.test(waiting) && !/data-grant="G2"/.test(waiting) && /data-granted="G2"/.test(waiting)) test.check('open G1 is an arm-button (data-grant); granted G2 is drawn green (data-granted)');
-  else test.fail(OWED + 'grants in #dd-waiting: ' + short(waiting));
+  const icons = dw.html('dd-icons');
+  const blinks = function (key) { return new RegExp('data-panel="' + key + '" class="[^"]*dd-blink').test(icons); };
+  if (at('id="dd-panel"') !== -1 && at('id="dd-panel"') < at('id="dd-say"') && /id="dd-box-input"/.test(dw.html('dd-panel')) && blinks('qs') && blinks('files') && !blinks('box')) test.check('the box shows above his input, and the red Qs\' and files\' icons blink while a Q and a grant wait');
+  else test.fail(OWED + 'the panel at ' + at('id="dd-panel"') + ', his input at ' + at('id="dd-say"') + '; icons ' + short(icons));
+  dw.click({ 'data-panel': 'files' });
+  await settled();
+  const grants = dw.html('dd-panel');
+  if (/data-grant="G1"/.test(grants) && !/data-grant="G2"/.test(grants) && /data-granted="G2"/.test(grants)) test.check('open G1 is an arm-button (data-grant); granted G2 is drawn green (data-granted)');
+  else test.fail(OWED + 'grants in the files panel: ' + short(grants));
+  dw.click({ 'data-panel': 'qs' });
+  await settled();
+  const waiting = dw.html('dd-panel');
   if (/data-question="Q1"/.test(waiting) && waiting.indexOf('Which port?') !== -1 && waiting.indexOf('Already answered') === -1) test.check('open Q1 is drawn with its words; answered Q2 is not');
-  else test.fail(OWED + 'questions in #dd-waiting: ' + short(waiting));
+  else test.fail(OWED + 'questions in the red Qs\' panel: ' + short(waiting));
   dw.click({ 'data-question': 'Q1' });
   await settled();
   const say = dw.doc.getElementById('dd-say');
@@ -330,6 +340,8 @@ test.startTest('goal/G4.20: Desk for Andy');
   // Since goal/G21.2 the question arrives followed by two newlines, so his answer stands apart below it.
   if (first === 'Q1: Which port?\n\n' && say.value === 'my answer\nQ1: Which port?\n\n') test.check('a click on Q1 appends "Q1: Which port?" to his input, on a line of its own, then two newlines');
   else test.fail(OWED + 'after clicks on Q1 the input held ' + short(first) + ' then ' + short(say.value));
+  dw.click({ 'data-panel': 'files' });
+  await settled();
   dw.click({ 'data-grant': 'G1' });
   await settled();
   const armedOnly = dw.sent('check.set').length;
@@ -343,8 +355,9 @@ test.startTest('goal/G4.20: Desk for Andy');
   test.subHeading('9. a taken box shows red in the dialog');
   const db = dialog(FACTS({ boxTaken: 'claude-windows' }));
   await settled();
-  if (/data-taken="claude-windows"/.test(db.html('dd-box'))) test.check('boxTaken: the box carries data-taken="claude-windows"');
-  else test.fail(OWED + 'the taken box: ' + short(db.html('dd-box')));
+  // The box is the panel every open shows first (#dd-panel, goal/G30.8; #dd-box before it).
+  if (/data-taken="claude-windows"/.test(db.html('dd-panel'))) test.check('boxTaken: the box carries data-taken="claude-windows"');
+  else test.fail(OWED + 'the taken box: ' + short(db.html('dd-panel')));
 
   // ── THE LIST ──
   test.subHeading('10-11. ICON.ERROR on the row exactly while asks > 0');

@@ -76,13 +76,17 @@ function ddFrame() {
     // "no rounded corners", "no margins and no padding". The status the bubble carried rides in the title bar.
     '<div id="dd-bars">' +
       '<div id="dd-name-row" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
-      '<div id="dd-strip"></div>' +
     '</div>' +
-    '<div class="stat-tile wide" id="dd-box"></div>' +
-    '<div id="dd-waiting"></div>' +
-    '<div id="dd-links"></div>' +
-    // The files touched (goal/G8.8), under the links and above his add-blocking form.
-    '<div id="dd-files"></div>' +
+    // THE UPPER HALF (goal/G30.8; Andy, 2026-10-20: "an Icon strip down the left side of the detail panel. and an upper
+    // and a lower half"): fixed at 30% of the page, so nothing arriving late moves the page; the icons down its left
+    // edge, one panel at a time to their right. The yellow "How you check it" bubble that stood in the header is gone.
+    // A waiting icon blinks; the open one is marked.
+    '<style>.dd-icon{font-size:20px;padding:4px 6px;opacity:.55}.dd-icon-on{opacity:1;outline:1px solid currentColor}' +
+      '.dd-blink{opacity:1;animation:ddBlink 1s step-start infinite}@keyframes ddBlink{50%{opacity:.2}}</style>' +
+    '<div id="dd-upper" style="display:flex;gap:8px;height:30vh;overflow:hidden">' +
+      '<div id="dd-icons" style="display:flex;flex-direction:column;gap:6px"></div>' +
+      '<div style="flex:1;overflow:auto">' +
+        '<div id="dd-panel"></div>' +
     // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "there will be a new section bubble, immediately following the
     // \"Blocked by/Blocking\" section, and right before the users chat input... \"Title\" [Title String, subject to
     // label rules] [add-button]. When the user presses the [add-button], The desk will add a blocking item with the
@@ -92,6 +96,8 @@ function ddFrame() {
       '<input type="text" id="dd-add-title" data-field="label" placeholder="an item this one waits on"></label>' +
       '<span class="job-manifest-note" id="dd-add-title-left"></span>' +
       '<button type="button" id="dd-add">Add blocking item</button></div>' +
+      '</div>' +
+    '</div>' +
     // THE CHAT SEARCH (goal/G18.5). Andy: "chats for items/goals are searchable in the UI, right above the chat input
     // box.", then "yes, add it here." The desk ranks the lines (chat.search); while it holds text they replace the chat.
     '<div class="start-job-form card"><label class="field-label grow">Search the chat' +
@@ -193,16 +199,58 @@ function ddButtonsHtml() {
 // THE YELLOW STRIP IS "HOW YOU CHECK IT", offered only while Done is (Andy:
 // "the yellow box should only be offered when the agents claim 'done'"). Each
 // C check is pressed to tick it; "it inspires diligence".
-function ddStripHtml() {
-  var f = ddFacts || {};
-  if ((f.buttons || []).indexOf('done') === -1) return '';
-  var cs = ddChecks.filter(function (c) { return c.kind === 'C'; });
-  return '<div style="margin:12px 0;padding:6px 10px;background:#fff3c4;color:#000;border-radius:6px">' +
-    '<b>How you check it:</b>' + (cs.length ? '<ul style="margin:6px 0 0 18px">' + cs.map(function (c) {
-      var done = c.state === 'passed';
-      return '<li><button type="button" data-check="' + ddEsc(c.number) + '"' + (done ? ' disabled' : '') + '>' +
-        (done ? '✓ ' : '') + ddEsc(c.number) + '</button> ' + ddEsc(c.words) + '</li>';
-    }).join('') + '</ul>' : ' <span>no checks written yet.</span>') + '</div>';
+// THE STRIP AND ITS PANELS (goal/G30.8). Andy, 2026-10-20: "when i click on the box icon the box appears in the upper
+// panel", "click on red Q's icon, it's the red Q's in the upper half", "click on the files icon, it'll be the file list and
+// grants", "one for the blocks", and "the icons on the left will blink if grants, or red Q's need my attention, i won't
+// have to scroll around, and dialog elements can lazy-load". The box shows on open; the blocks ask block.targets when
+// their icon is pressed. A blinking icon (dd-blink) is read from the checks: an open red Q, an open grant.
+var ddPanelSel = 'box';
+var DD_PANELS = [
+  { key: 'box', icon: 'PAGE', title: 'the box' },
+  { key: 'qs', icon: 'NO', title: 'red Qs and checks' },
+  { key: 'blocks', icon: 'PLUNGER', title: 'blocks' },
+  { key: 'files', icon: 'OPENFOLDER', title: 'files and grants' },
+];
+function ddWaits(kind) { return ddChecks.some(function (c) { return c.kind === kind && c.state === 'open'; }); }
+function ddIconsHtml() {
+  var ICON = spirit.core.const.ICON;
+  var blink = { qs: ddWaits('Q'), files: ddWaits('G') };
+  return DD_PANELS.map(function (p) {
+    var cls = (p.key === ddPanelSel ? 'dd-icon dd-icon-on' : 'dd-icon') + (blink[p.key] ? ' dd-blink' : '');
+    return '<button type="button" data-panel="' + p.key + '" class="' + cls + '" title="' + ddEsc(p.title) + '">' + ICON[p.icon] + '</button>';
+  }).join('');
+}
+// The red Qs open on this item, each with his remove (his clear, "Q1: clear", desk clearOf), and the checks (C) to press.
+function ddQsHtml() {
+  var qs = ddChecks.filter(function (c) { return c.kind === 'Q' && c.state === 'open'; }).map(function (c) {
+    return '<div><span data-question="' + ddEsc(c.number) + '" style="color:#d00;cursor:pointer" title="answer it below">' + ddEsc(c.number) + ': ' + ddEsc(c.words) + '</span> ' +
+      '<button type="button" data-qclear="' + ddEsc(c.number) + '" title="remove this red Q">remove</button></div>';
+  }).join('');
+  var cs = ddChecks.filter(function (c) { return c.kind === 'C'; }).map(function (c) {
+    var done = c.state === 'passed';
+    return '<div><button type="button" data-check="' + ddEsc(c.number) + '"' + (done ? ' disabled' : '') + '>' + (done ? '✓ ' : '') + ddEsc(c.number) + '</button> ' + ddEsc(c.words) + '</div>';
+  }).join('');
+  return (qs || '<div class="job-manifest-note">No red Q is open.</div>') + cs;
+}
+// The grants, open ones as his armed button, given ones in green, under the files they cover.
+function ddGrantsHtml() {
+  return ddChecks.map(function (c) {
+    if (c.kind === 'G' && c.state === 'granted') {
+      return '<div data-granted="' + ddEsc(c.number) + '" style="color:#1a7f37" title="granted ' + ddEsc(c.at) + '">✓ ' + ddEsc(c.number) + ' ' + ddEsc(c.words) + '</div>';
+    }
+    if (c.kind === 'G' && c.state === 'open') {
+      var armed = ddArmed === 'grant:' + c.number;
+      return '<div><button type="button" data-grant="' + ddEsc(c.number) + '"' + (armed ? ' data-armed="1"' : '') +
+        ' style="background:#c00;color:#fff">' + (armed ? 'Grant ' + ddEsc(c.number) + ': sure?' : 'Grant ' + ddEsc(c.number)) + '</button> ' + ddEsc(c.words) + '</div>';
+    }
+    return '';
+  }).join('');
+}
+function ddPanelHtml() {
+  if (ddPanelSel === 'qs') return ddQsHtml();
+  if (ddPanelSel === 'blocks') return ddLinksHtml() || '<div class="job-manifest-note">A goal blocks nothing.</div>';
+  if (ddPanelSel === 'files') return (ddFilesHtml() || '<div class="job-manifest-note">No files touched yet.</div>') + ddGrantsHtml();
+  return ddBoxHtml();
 }
 
 // THE ONE BOX. An item with no text yet says so; an agent writes it.
@@ -253,23 +301,8 @@ function ddBoxHtml() {
 // on the first click and is granted on the second; a granted one stays, green. An open question shows its number and
 // words ("the questions number and the text (for me)"); a click puts "Q1: <words>" in his input; the agent marks it
 // answered and it goes.
-function ddWaitingHtml() {
-  var html = ddChecks.map(function (c) {
-    if (c.kind === 'G' && c.state === 'granted') {
-      return '<div data-granted="' + ddEsc(c.number) + '" style="color:#1a7f37" title="granted ' + ddEsc(c.at) + '">✓ ' + ddEsc(c.number) + ' ' + ddEsc(c.words) + '</div>';
-    }
-    if (c.kind === 'G' && c.state === 'open') {
-      var armed = ddArmed === 'grant:' + c.number;
-      return '<div><button type="button" data-grant="' + ddEsc(c.number) + '"' + (armed ? ' data-armed="1"' : '') +
-        ' style="background:#c00;color:#fff">' + (armed ? 'Grant ' + ddEsc(c.number) + ': sure?' : 'Grant ' + ddEsc(c.number)) + '</button> ' + ddEsc(c.words) + '</div>';
-    }
-    if (c.kind === 'Q' && c.state === 'open') {
-      return '<div data-question="' + ddEsc(c.number) + '" style="color:#d00;cursor:pointer" title="answer it below">' + ddEsc(c.number) + ': ' + ddEsc(c.words) + '</div>';
-    }
-    return '';
-  }).join('');
-  return html ? '<div class="stat-tile wide">' + html + '</div>' : '';
-}
+// ddWaitingHtml STOOD HERE: the open grants and red Qs under the box. They are the files panel's and the red Qs' panel's
+// now (goal/G30.8).
 // A question clicked goes into his input as a line of its own, followed by two newlines (goal/G21.2). Andy, in the
 // item's box: "A red Q clicked into Andy's chat box arrives followed by two newlines, so the question stands apart from
 // the answer he writes below it."
@@ -391,12 +424,12 @@ function ddPaint() {
   ddSet('dd-name-row', ddButtonsHtml());
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
-  ddSet('dd-strip', ddStripHtml());
-  // NOT WHILE HE IS IN IT (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
-  if (!ddBoxFocused) ddSet('dd-box', ddBoxHtml());
-  ddSet('dd-waiting', ddWaitingHtml());
-  ddSet('dd-links', ddLinksHtml());
-  ddSet('dd-files', ddFilesHtml());
+  ddSet('dd-icons', ddIconsHtml());
+  // NOT WHILE HE IS IN THE BOX (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
+  if (!(ddPanelSel === 'box' && ddBoxFocused)) ddSet('dd-panel', ddPanelHtml());
+  // The add-blocking form stands in the frame, so what he types survives; it shows with the blocks panel only.
+  var addRow = document.getElementById('dd-add-row');
+  if (addRow && addRow.style) addRow.style.display = ddPanelSel === 'blocks' ? '' : 'none';
   ddSet('dd-chat', ddChatHtml());
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
@@ -544,8 +577,8 @@ function ddLoad() {
     ddVersion = Number(got.version) || 0;
     ddLastChange = Number(got.change) || ddLastChange;
     ddPaint();
+    // block.targets is the blocks panel's, asked when 🪠 is pressed (goal/G30.8).
     return Promise.all([
-      ddLoadTargets(),
       ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddBoxLoaded = true; ddPaint(); }),
       ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
@@ -572,6 +605,21 @@ spirit.shell.activateApp({
         if (to) ddWrite('block', { id: ddId, blocks: to }).then(ddLoadTargets);
         return;
       }
+      // THE STRIP (goal/G30.8): an icon shows its panel; the blocks ask their targets then. A red Q's remove is his clear.
+      var attr = function (name) {
+        if (t && t.getAttribute && t.getAttribute(name) != null) return t.getAttribute(name);
+        var up = t && t.closest ? t.closest('[' + name + ']') : null;
+        return up && up.getAttribute ? up.getAttribute(name) : null;
+      };
+      var panel = attr('data-panel');
+      if (panel) {
+        ddPanelSel = panel;
+        ddPaint();
+        if (panel === 'blocks') ddLoadTargets();
+        return;
+      }
+      var qclear = attr('data-qclear');
+      if (qclear) { ddWrite('chat.add', { id: ddId, text: qclear + ': clear' }); return; }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'blocks') { ddBlocksFolded = !ddBlocksFolded; ddPaint(); return; }
       // Leaving for another item: Desk opens it once this one is closed.
       var link = t && t.closest && t.closest('[data-open],[data-open-item]');
@@ -666,6 +714,8 @@ spirit.shell.activateApp({
   // Every call: which item this is. Nothing stale from the last one.
   open: function (params) {
     ddId = String((params && params.id) || '');
+    // Every item opens on its box (goal/G30.8).
+    ddPanelSel = 'box';
     ddFacts = null;
     ddBox = '';
     ddBoxLoaded = false;

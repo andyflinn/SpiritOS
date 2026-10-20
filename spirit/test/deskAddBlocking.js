@@ -15,7 +15,8 @@
 // since built item.add {goal, title}. So item.add gains one optional argument, `blocks`, the id the new item blocks,
 // an item of that goal or the goal itself, the goal when left out. One verb, nothing renamed. The title obeys the label
 // rules (js/fieldRules.js problem: 64 bytes at most, among others); the box starts empty.
-// The dialog's section: an input dd-add-title and a button dd-add (the red writer's names), after #dd-links and before
+// The dialog's section: an input dd-add-title and a button dd-add (the red writer's names), after the blocks panel
+// (#dd-panel with 🪠 pressed, goal/G30.8; #dd-links before it) and before
 // the chat input #dd-say; the button sends item.add with the dialog's own item as `blocks`, and the Blocked by part
 // shows the new id without waiting for anything else.
 
@@ -145,9 +146,18 @@ async function dialog() {
   const all = Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n');
   if (/<input[^>]*id="dd-add-title"/.test(all) && /<button[^>]*id="dd-add"/.test(all)) test.check('the dialog draws the title input dd-add-title and the button dd-add');
   else test.fail(OWED + 'no dd-add-title input and dd-add button in the dialog');
+  // SINCE goal/G30.8 Blocked by is the blocks panel's (🪠), drawn into #dd-panel when its icon is pressed; the add row
+  // stands in the frame right after #dd-panel, inside #dd-upper, and shows with the blocks panel only.
   const sectionAt = Math.min.apply(null, ['dd-add-title', 'dd-add-row', 'dd-add'].map(at).filter(function (n) { return n !== -1; }).concat([Number.MAX_SAFE_INTEGER]));
-  if (at('dd-links') !== -1 && sectionAt > at('dd-links') && at('dd-say') !== -1 && sectionAt < at('dd-say')) test.check('it comes after #dd-links and before #dd-say');
-  else test.fail(OWED + 'links at ' + at('dd-links') + ', the section at ' + (sectionAt === Number.MAX_SAFE_INTEGER ? -1 : sectionAt) + ', chat input at ' + at('dd-say'));
+  if (at('dd-panel') !== -1 && sectionAt > at('dd-panel') && at('dd-say') !== -1 && sectionAt < at('dd-say')) test.check('it comes after the panel that holds Blocked by (#dd-panel) and before #dd-say');
+  else test.fail(OWED + 'panel at ' + at('dd-panel') + ', the section at ' + (sectionAt === Number.MAX_SAFE_INTEGER ? -1 : sectionAt) + ', chat input at ' + at('dd-say'));
+  const hiddenOnBox = doc.getElementById('dd-add-row').style.display === 'none';
+  doc.getElementById('dd-body').fire('click', { target: { getAttribute: function (n) { return n === 'data-panel' ? 'blocks' : null; }, closest: function () { return null; } }, preventDefault: function () {} });
+  await settled();
+  const shownOnBlocks = doc.getElementById('dd-add-row').style.display === '';
+  const panelNow = doc.getElementById('dd-panel').innerHTML;
+  if (hiddenOnBox && shownOnBlocks && /Blocked by|Also blocks/.test(panelNow)) test.check('the section shows with the blocks panel (🪠) only, beside its Blocked by');
+  else test.fail(OWED + 'add row hidden on the box ' + hiddenOnBox + ', shown on the blocks ' + shownOnBlocks + ', the panel reads ' + short(panelNow));
 
   test.subHeading('4. the button adds a blocking item and Blocked by shows it at once');
   doc.getElementById('dd-add-title').value = 'Do this first';
@@ -157,7 +167,7 @@ async function dialog() {
   const sent = calls.filter(function (c) { return c.verb === 'item.add'; })[0];
   if (sent && sent.args.goal === 't/G1' && sent.args.blocks === 't/G1.2' && sent.args.title === 'Do this first' && sent.args.id === undefined) test.check('it sent item.add {goal: t/G1, title, blocks: t/G1.2}, naming no id');
   else test.fail(OWED + 'the button sent ' + short(sent));
-  const links = doc.getElementById('dd-links').innerHTML;
+  const links = doc.getElementById('dd-panel').innerHTML;
   if (/t\/G1\.7/.test(links)) test.check('Blocked by now shows t/G1.7');
   else test.fail(OWED + 'after the add the links read ' + short(links));
 }
