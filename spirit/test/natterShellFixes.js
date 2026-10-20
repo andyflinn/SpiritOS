@@ -157,8 +157,11 @@ else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to n
 // book, with a relay filter, and a relay row opens natterDetails.
 test.subHeading('6b. relays in the contact list');
 const selector = code('shell/js/contactSelector.js');
-if (/name: 'relay'/.test(selector) && /'owned', 'blocked', 'held', 'relay'/.test(selector)) test.check('the contact selector has a relay filter, shown when its rows hold relays');
-else test.fail(OWED + 'the contact selector has no relay filter');
+// Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays] where all 3 are mutually exclusive": one filter,
+// one row of choices, all first; a kind is offered when the list holds any.
+if (/name: 'show'/.test(selector) && /value: 'relay', word: 'relays'/.test(selector) && /value: 'owned'/.test(selector) && !/name: 'owned'|name: 'relay'/.test(selector))
+  test.check('the contact selector has one row of mutually exclusive choices: all, my puppets, relays (and blocked, held when present)');
+else test.fail(OWED + 'the contact selector has no relay filter, or still two all buttons');
 const contactsCode = code('shell/contacts/contacts.js');
 if (/function contactsSearchBookFor[\s\S]{0,900}relay\.search/.test(contactsCode) && /contactsRelayUrls\[contactsBook\.value\][\s\S]{0,200}shell\/natterDetails/.test(contactsCode))
   test.check('the contact list adds this node\'s relays (relay.search) and a relay row opens natterDetails');

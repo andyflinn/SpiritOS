@@ -168,9 +168,11 @@ const listHtml = function (p, m) {
   const hf2 = listHtml(p2, p2.made[0]).filters;
   if (!/⭐/.test(hf2) && !/blocked/i.test(hf2) && !/held|waiting/i.test(hf2)) test.check('a list holding none of them shows none of those filters');
   else test.fail(OWED + 'a plain list shows filters ' + short(hf2));
-  const fOwned = (m.cfg.filters || []).filter(function (f) { return f.name === 'owned'; })[0];
-  const argsOn = m.cfg.args('', { owned: 'yes' });
-  if (fOwned && fOwned.test({ owned: true }, 'yes') === 1 && fOwned.test({ owned: false }, 'yes') === 0 && argsOn && argsOn.owned === 'yes') test.check('the ★ filter passes puppets only, and asks contact.search with owned: yes');
+  // One row of mutually exclusive choices since goal/G30.7 (Andy: "Gimme 3 Buttons ... where all 3 are mutually
+  // exclusive"): the filter is 'show', and my puppets is its value 'owned'.
+  const fOwned = (m.cfg.filters || []).filter(function (f) { return f.name === 'show'; })[0];
+  const argsOn = m.cfg.args('', { show: 'owned' });
+  if (fOwned && fOwned.test({ owned: true }, 'owned') === 1 && fOwned.test({ owned: false }, 'owned') === 0 && argsOn && argsOn.owned === 'yes') test.check('the ★ choice passes puppets only, and asks contact.search with owned: yes');
   else test.fail(OWED + 'the owned filter ' + short(fOwned) + ', args ' + short(argsOn));
 
   test.subHeading('7. presence and status repaint one row, without asking the node');

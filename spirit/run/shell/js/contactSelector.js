@@ -120,7 +120,6 @@
         return function () { if (typeof document.removeEventListener === 'function') document.removeEventListener('contact.rename', fn); };
       },
     };
-    var yes = function (name) { return function (row, value) { return !value || row[name] === true ? 1 : 0; }; };
     var any = function (name) { return function (all) { return all.some(function (r) { return r && r[name] === true; }); }; };
     list = window.spiritElements.shellCreateListSearch(pane, {
       mode: isPane ? 'pane' : 'dropdown',
@@ -131,16 +130,25 @@
       verb: 'contact.search',
       args: function (text, filters) {
         var a = { q: text };
-        ['owned', 'blocked', 'held', 'relay'].forEach(function (n) { if (filters[n] === 'yes') a[n] = 'yes'; });
+        if (filters.show && filters.show !== 'all') a[filters.show] = 'yes';
         return a;
       },
-      filters: [
-        { name: 'owned', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.STAR || '★', word: 'my puppets' }], test: yes('owned'), when: any('owned') },
-        { name: 'blocked', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.NO || '', word: 'blocked' }], test: yes('blocked'), when: any('blocked') },
-        { name: 'held', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.WAITING || '', word: 'held' }], test: yes('held'), when: any('held') },
-        // RELAYS ARE PEERS (goal/G30.7): shown only when a caller's rows hold relays (Contacts' own search adds them).
-        { name: 'relay', choices: [{ value: '', word: 'all' }, { value: 'yes', word: 'relays' }], test: yes('relay'), when: any('relay') },
-      ],
+      // ONE ROW, MUTUALLY EXCLUSIVE (goal/G30.7; Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays] where
+      // all 3 are mutually exclusive"): all, then each kind the list holds any of. Blocked and held join the same row.
+      filters: [{
+        name: 'show',
+        choices: function (all) {
+          var out = [{ value: 'all', word: 'all' }];
+          if (any('owned')(all)) out.push({ value: 'owned', icon: ICON.STAR || '★', word: 'my puppets' });
+          if (any('blocked')(all)) out.push({ value: 'blocked', icon: ICON.NO || '', word: 'blocked' });
+          if (any('held')(all)) out.push({ value: 'held', icon: ICON.WAITING || '', word: 'held' });
+          if (any('relay')(all)) out.push({ value: 'relay', word: 'relays' });
+          return out;
+        },
+        test: function (row, value) { return !value || value === 'all' || (row && row[value] === true) ? 1 : 0; },
+        // Drawn only when there is a kind to pick beside all.
+        when: function (all) { return ['owned', 'blocked', 'held', 'relay'].some(function (n) { return any(n)(all); }); },
+      }],
       paint: paint,
       pick: function (row) { pick(row); },
       details: typeof options.details === 'function' ? options.details : undefined,

@@ -72,7 +72,8 @@
     // A MULTI FILTER (goal/G29.14) is a row of toggles, every one on at the start: its value is the object of the
     // values turned off, which its test is handed. Its choices may be a function of the rows held ("one toggle per
     // status the list holds").
-    filters.forEach(function (f) { values[f.name] = f.multi ? {} : (f.choices && f.choices.length ? f.choices[0].value : ''); });
+    // Choices given as a function of the rows (goal/G30.7, the contact list's one row) start at '' — nothing picked, all.
+    filters.forEach(function (f) { values[f.name] = f.multi ? {} : (Array.isArray(f.choices) && f.choices.length ? f.choices[0].value : ''); });
     function choicesOf(f) { return (typeof f.choices === 'function' ? f.choices(cachedRows()) : f.choices) || []; }
     var bucket = P.createProbabilityBucket(Infinity);
     var byKey = Object.create(null);   // key -> { key, row }, the one object the bucket holds for it
