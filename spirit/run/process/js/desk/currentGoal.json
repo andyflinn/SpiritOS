@@ -1,5 +1,5 @@
 {
- "change": 75260,
+ "change": 75360,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -45,8 +45,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 3,
+   "design": false,
+   "waiting": 2,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -6304,10 +6304,9 @@
    "id": "goal/G30.7",
    "title": "Fix Shell problems related to face-name and email first",
    "goal": "goal/G30",
-   "status": "",
-   "with": "",
+   "status": "running",
+   "with": "claude-windows",
    "buttons": [
-    "close",
     "delete"
    ],
    "blocking": [
@@ -6315,17 +6314,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -6333,15 +6332,245 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
-   "names": {},
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "# Natter\n- has no search\n- Managing my relay: Public label of this relay: This input field must show the current public label of this relay, otherwise i won't even know what I'm changing.\n- Peers 0, Connected 1: Does this mean that noderoutes knows me as owner, but has no actual seat for me?\n- What this relay says: owner (none?/unknown?).... undefined — allowing undefined (floor 1, ceiling 4096)??\n\n# Info\nName: Andy Flinn: Save: saved here — 1 of 2 relay(s) did not take it: is this the problem i see in natter (peers 0, Connected 1)?\n\n",
-   "version": 11,
-   "checks": [],
-   "chat": []
+   "box": "# Natter\n- has no search\n- Managing my relay: Public label of this relay: This input field must show the current public label of this relay, otherwise i won't even know what I'm changing.\n- Peers 0, Connected 1: Does this mean that noderoutes knows me as owner, but has no actual seat for me?\n- What this relay says: owner (none?/unknown?).... undefined — allowing undefined (floor 1, ceiling 4096)??\n\n# Info\nName: Andy Flinn: Save: saved here — 1 of 2 relay(s) did not take it: is this the problem i see in natter (peers 0, Connected 1)?\n\nSHAPE\n- Natter: the relay list is built on the shared list search, with its search field; relay.search answers each row as JSON, as the other searches do.\n- The public label field shows the relay's current label: the node keeps the label from the relay card beside its services, and relay.get's row carries it.\n- natterDetails reads lever.value, as relayMonitor does, instead of position and allowed.\n- First-run defaults live in serveCommon, called at boot by the node (server.js) and the relay (relayServer.js) alike: an identity with no description gets the first description (moved from nodeCard ensureDescription, worded for a node or a relay), and a relay with no public label gets a first one.\n- On boot, if the owner (relay-state/owner.json) has no seat, the relay creates one: label owner. The owner's node renames it like any seat (Info on Save). A member row holds no description; the owner's description travels on his node card, which the relay keeps once his node hands it over. A node's owner (a puppet's) has no seat table on the node, so the seat is the relay's alone.\n\nRELAYS ARE PEERS\n- A relay is a peer in the shadow (seenPeers) like a node: its key, its label, and its route, which is its own URL. Each row carries kind, node or relay.\n- The peer search (contact.search) finds both; the contact list and the contact selector gain a relay filter, and a click on a relay opens natterDetails for it.\n- Apps that talk node to node need no change: what a party can do is what its api answers, and a relay offers no chat api when introspected.\n- The seeded relay, noderoutes.net (ownerBadge SEED_RELAYS, asserted by key at every boot, never removable), also enters the shadow at boot as a relay peer, so a new node finds it in the peer search.\n- Membership stays in the relays table: a relay holds a seat for this node, a node does not.\n\nOUT OF SCOPE\n- Retiring the Natter app, leaving natterDetails as the dialog; its Add a relay form and bind note need a new home first.",
+   "version": 17,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should a relay give its owner (allow.json) a member row automatically when the owner connects, so Peers, Owner and rename work for the owner?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-20T08:21:30.702Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:12:54.337Z",
+     "text": "?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:13:06.627Z",
+     "text": "Taken. I am tracing each point in the code (Natter search, the label field, Peers/Connected, the undefined sentence, Info's 1 of 2), and I will post each one's cause with its fix here."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:13:21.822Z",
+     "text": "Reading the code behind your five points now; the causes follow here within minutes, one point per line."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:15:30.153Z",
+     "text": "The causes, one per point:\n\n- No search: Natter's relay list is a plain table and never uses the shared list search. Fix: build it on that search; relay.search answers a plain string label, so it must answer a JSON row as the others do.\n- Public label empty: the node always hands Natter an empty relayLabel (hub.js relaySummary). The relay does send its label on its card, but the node keeps only services from the card. Fix: keep the label beside services and fill the field from it.\n- Peers 0, Connected 1: Peers counts rows in the relay's member table, Connected counts open streams (your node). On noderoutes you are the owner by allow.json but have no member row.\n- undefined — allowing undefined: Natter reads lever.position and lever.allowed, but the relay sends lever.value (the relay monitor already reads value). Fix: read value.\n- Info 1 of 2: almost surely noderoutes. Rename looks your key up in the member table, finds no row and answers no such peer. Same root as Peers 0 and Owner (none). Info's relay table shows the reason in its third column.\n\nFor the missing owner row: should the relay give its owner a member row automatically, when the owner connects?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:20:24.106Z",
+     "text": "shouldn't the relay:\n\n- on boot, like a node, make sure it has a default, description (serverCommon.js?),\n- on boot, ensure that the owner has a row?\n\nthose are the simple solutions i can think of...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:21:34.940Z",
+     "text": "Yes to both, and they are in the box:\n\n- The node does exactly that: nodeCard ensureDescription writes a first description at boot. The relay gets the same for its public label.\n- At boot the relay knows its owner's key (owner.json), but not his name. So the owner row starts with the key alone, and your node names it with rename, as Info does on Save.\n\nGreen: the box is current, nothing open."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:22:27.591Z",
+     "text": "if the owner has no seat/row yet at boot time, create a seat: label: owner, description: like the default node description....\n\nand doesn't that kind of stuff belong in serverCommon? (nodes can have owners, too)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:23:21.008Z",
+     "text": "In the box:\n\n- The owner seat is created at boot with the label owner.\n- The first-run defaults move into serveCommon, which node and relay both load at boot: the first description, and the relay's first public label.\n- A member row has no description field; your description already travels on your node card, which the relay keeps once your node hands it over.\n- A node's owner (a puppet's) has no seat table on the node, so only the relay seats its owner."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:24:06.358Z",
+     "text": "PS: why are relays not in the Shadowlist of peers? are they incompatible with that? they just have a different (small) api?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:24:49.186Z",
+     "text": "Not incompatible. They live in another table.\n\n- The shadow (seenPeers) answers one question: through which relay do I reach key K? For a relay the answer is always itself, so it would be a row pointing at its own door.\n- Relays are kept in the node's relays table (node.db: url, key, seat, face, services), which Natter lists. A post to a relay's key already goes straight to it.\n- And yes, a relay has a different, small api: card, face, removePeer, rename, search for members, plus the owner verbs.\n\nIf you want relays in the peer lists (contacts, the contact selector), that is a merge of the two searches at the list, as introSpector's party list already does; the shadow itself need not change."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:24:56.679Z",
+     "text": "and the contact/peer search would have a \"relay\" filter, and clicking on them would open the natterDetails dialog?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:25:18.780Z",
+     "text": "Yes, that fits what is there.\n\n- The contact list already has yes-filters (owned, blocked, held). A relay filter is one more, and its rows come from relay.search.\n- Clicking a relay row opens natterDetails for that relay, the same dialog Natter opens.\n- No verb changes: the merge happens in the list.\n\nShould this go into this item's box, or into a new item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:26:38.164Z",
+     "text": "the have ID's, they have api introspection, they have a route (direct), i see little difference...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:27:04.803Z",
+     "text": "Agreed, the difference is small. What really differs:\n\n- The route: a relay is reached at its own URL, a node through a relay. That is one more kind of route, not another kind of party.\n- Membership: a relay can hold a seat for this node, a node cannot. That stays in the relays table, as it does now.\n\nSo the plainest form is: relays are peers in the shadow too, each row marked relay, its route its own URL. One peer search then finds both, the relay filter is that mark, and a click on a relay opens natterDetails.\n\nShould that go into this item's box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:28:16.060Z",
+     "text": "The route: a relay is reached at its own URL, a node through a relay. That is one more kind of route, not another kind of party.\n\nnot really, the relays route is just it's own URL, that's all"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:28:37.075Z",
+     "text": "Right: a route is a relay URL either way. For a node it is the relay it sits on, for a relay its own. Same shape, nothing new.\nShould relays as peers in the shadow go into this item's box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:32:16.566Z",
+     "text": "Should relays as peers in the shadow go into this item's box?\n\nyes. i think so. they share more with nodes than we might admit. from a software point of view, they are spoken to almost the same, the only difference is: the offer an SSE-stream....\n\nthoughts? are we missing something? will this throw off lot's of other components?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:33:02.797Z",
+     "text": "What the shadow feeds, and what a relay row does there:\n\n- Routing (hub, routes of a key): a relay row's route is its own URL, which is how a post to a relay key goes already. Nothing breaks.\n- The peer search (contact.search reads the shadow): relays would show up among peers. That is the point, with a relay mark so the list can filter.\n- Apps that talk node to node: chatter (a line to a relay is refused), Grants (granting to a relay key means nothing), adding a contact. These show nodes only by default, or they stay usable but pointless with a relay.\n- Presence and capacity: unchanged. A node knows few relays, so the room is not an issue.\n\nSo it is small if each row carries kind (node or relay), and the node-to-node apps ask for kind node. I am putting that into the box now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:34:42.469Z",
+     "text": "Apps that talk node to node: chatter (a line to a relay is refused), Grants (granting to a relay key means nothing), adding a contact. These show nodes only by default, or they stay usable but pointless with a relay.\n- the relay offers no chat API when introspected, so no change there either...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:35:18.115Z",
+     "text": "True. What a party can do is what its api answers, so no kind filter is needed in those apps. The box line now says that (v15); the relay mark stays for the list filter alone."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:36:39.988Z",
+     "text": "it's like me sending chat lines to ubi-claude, it does nothing.... (or does ubi-claude then save those requests in its log?) likely it should refuse a request for which it features no api...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:37:09.791Z",
+     "text": "It already refuses, on two gates (apiDoor, then appClient):\n\n- If ubu-claude never granted your key chatClerver.line.receive, the gate answers not-granted before anything runs.\n- If it did grant it but runs no chatClerver, appClient answers app-not-served (404).\n\nEither way the refusal goes back to your node and no app sees the line. A relay does the same for a verb it does not have: no such peer, or not-granted with DEBUG on. So no change is needed for that either."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:41:55.926Z",
+     "text": "is this all in the box?\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:42:16.778Z",
+     "text": "Yes, all in the box (v15): the five fixes, the owner seat and first-run defaults in serveCommon, and relays as peers. The two refusals need no change, so they are not in it.\nGreen: settled, open none, box current (v15)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:42:58.491Z",
+     "text": "and do we make sure that a newly installed node knows noderoutes.net as a relay/peer?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:43:42.230Z",
+     "text": "As a relay, yes, already: every node asserts noderoutes.net with its key at every boot and cannot remove it (ownerBadge.js, SEED_RELAYS, goal/G19.15).\nAs a peer, not yet. In the box (v16): the same seed puts it into the shadow at boot as a relay peer, so a new node finds it in the peer search."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:44:44.753Z",
+     "text": "because this looks like we can soon get rid of Natter and only have natterDetails left as a dialog...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:45:07.972Z",
+     "text": "Agreed. Once relays are in the peer list, Natter's list duplicates it. What Natter still holds of its own is the Add a relay form (join by URL and invite) and the bind note, and those need a new home first (the contacts list's add, or Info). That is for a later item; nothing of it is in this box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:45:52.798Z",
+     "text": "claude-windows 10:45 Agreed. Once relays are in the peer list, Natter's list duplicates it. What Natter still holds of its own is the Add a relay form (join by URL and invite) and the bind note, and those need a new home first (the contacts list's add, or Info). That is for a later item; nothing of it is in this box.\n\nagreed. oos for now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:52:04.984Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:52:23.071Z",
+     "text": "Green: settled, open none, box current (v17)."
+    }
+   ]
   }
  ]
 }
