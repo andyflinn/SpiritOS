@@ -150,7 +150,7 @@ async function main() {
 
   test.subHeading('7. the prose names this listener, not the deleted one');
   const read = function (rel) { try { return fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch (e) { return ''; } };
-  const agentsMd = read('spirit/run/process/js/desk/AGENTS.md');
+  const agentsMd = read('spirit/run/process/js/desk/desk.family/AGENTS.md'); // <module>.family since goal/G30.4
   const claudeMd = read('CLAUDE.md');
   const agentMd = read('AGENT.md');
   const stale = [];
@@ -158,7 +158,7 @@ async function main() {
   // suite that spelled the path whole would be the last thing in spirit/ still naming it.
   const OLD = 'process/js/' + 'agents';
   const NEW = 'process/js/desk/deskAgentEar.js';
-  if (/agents\.js/.test(agentsMd) || agentsMd.indexOf(OLD) !== -1 || agentsMd.indexOf(NEW) === -1) stale.push('process/js/desk/AGENTS.md');
+  if (/agents\.js/.test(agentsMd) || agentsMd.indexOf(OLD) !== -1 || agentsMd.indexOf(NEW) === -1) stale.push('process/js/desk/desk.family/AGENTS.md');
   if (claudeMd.indexOf(OLD + '/') !== -1 || claudeMd.indexOf(NEW) === -1) stale.push('CLAUDE.md');
   if (agentMd.indexOf(OLD + '/deskAgentEar.js') !== -1 || agentMd.indexOf(NEW) === -1) stale.push('AGENT.md');
   if (!stale.length) test.check('AGENTS.md, CLAUDE.md and AGENT.md name process/js/desk/deskAgentEar.js and no longer the agents app\'s listener');

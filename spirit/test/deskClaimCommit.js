@@ -14,7 +14,7 @@
 //   1. THE DESK: one new verb, claim {id, phase, commit}. phase build is the press claim-done, with its refusals, and the
 //      item keeps the claimed commit (item.get claimCommit); phase red is taken on a code item with his Go only and the
 //      item keeps it (redCommit). A commit is 7 to 40 hex characters, or '' for a plain item's build claim. Every refusal
-//      says why. The api lists claim and its verb file (AGENTS.claim).
+//      says why. The api lists claim and its verb file (claim.json, read by FS.loadJsonValue since goal/G30.4).
 //   2. deskVerify: a build claim whose commit the tree lacks gets one "not checked, waiting for <short>" line, no pass and
 //      no reject, quietly while it waits, and is checked once the commit arrives; a red claim runs the item's suites and
 //      each must be red: "red confirmed" naming them, or "red not confirmed" naming every green one, never a pass, a
@@ -98,8 +98,11 @@ async function deskHalf() {
     d.start();
     if (!await d.up()) { test.fail('the desk server did not start'); return; }
     const api = await d.api();
-    if (api.claim && api['AGENTS.claim']) test.check('the api lists claim, and its verb file tells the agents of it (AGENTS.claim)');
-    else test.fail(OWED + 'the api lists ' + short(Object.keys(api).filter(function (k) { return /claim/.test(k); })));
+    // The verb file is read through the family's FS since goal/G30.4 (it was AGENTS.claim).
+    const claimFile = await d.call('FS.loadJsonValue', { path: 'claim.json' });
+    const described = claimFile.body && claimFile.body.value && typeof claimFile.body.value.description === 'string';
+    if (api.claim && described) test.check('the api lists claim, and its verb file tells the agents of it (claim.json, read by FS.loadJsonValue)');
+    else test.fail(OWED + 'the api lists ' + short(Object.keys(api).filter(function (k) { return /claim/.test(k); })) + ', claim.json read as ' + short(claimFile.body));
 
     // goal/G29.21: an agent's session creates no goal, so the owner writes the world.
     await d.call('session.set', { json: JSON.stringify({ goal: { id: 'cc/G1', title: 'Claims' }, items: [

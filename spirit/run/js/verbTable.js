@@ -138,10 +138,11 @@ function createVerbTable() {
   // claim() above refuses an uppercase verb from a module (VERB_RE), and
   // that is now the rule's reason: an uppercase verb is always the system's,
   // told apart by the name alone. This is the one way such a verb reaches
-  // the table, and only the AGENTS family of a namespace already claimed:
-  // ns.AGENTS, ns.AGENTS.introspect, ns.AGENTS.<verb>. introSpector.js calls
-  // it; a module has no business to.
-  var FAMILY_RE = /^[a-z][a-z0-9]*\.AGENTS(\.[a-z_][A-Za-z0-9_-]*)?$/;
+  // the table, and only the system family of a namespace already claimed:
+  // since goal/G30.4 the owner's ns.FS.<name>, which introSpector supplies
+  // for every family folder (the AGENTS family that stood here is gone).
+  // mount below calls it; a module has no business to.
+  var FAMILY_RE = /^[a-z][a-z0-9]*\.FS\.[a-zA-Z]+$/;
   function reserve(namespace, group) {
     var ns = String(namespace || '');
     if (!owner[ns]) {
@@ -152,7 +153,7 @@ function createVerbTable() {
     }
     Object.keys(group).forEach(function (verb) {
       if (!FAMILY_RE.test(verb) || verb.slice(0, ns.length + 1) !== ns + '.') {
-        throw new Error('verbTable: ' + verb + ' is not of the AGENTS family of ' + ns);
+        throw new Error('verbTable: ' + verb + ' is not of the system families of ' + ns);
       }
       if (typeof group[verb] !== 'function') {
         throw new Error('verbTable: ' + verb + ' is not a function');
@@ -194,13 +195,163 @@ function createVerbTable() {
     });
   }
 
+  // ── THE MOUNTER (goal/G30.4) ─────────────────────────────────────────
+  //
+  //   Andy, 2026-10-20: "a module shouldn't know who mounted it, and what it's name/address is in the mounters
+  //   name-Space.... this is similar to a git-project-folder, it has no need to know it's name in the parent
+  //   directory." And on claim, which stood in introSpector: "it does NOT belong in introSpector. a namespace
+  //   container is not known by the namespace."
+  //
+  // mount(family, dir, declarations, opts): a module hands its verbs BARE, {stat: {request, reply, handler}}, and its
+  // folder; the table gives them the family name (family.stat), puts the folder's FS verbs beside them through
+  // introSpector.family, and keeps their shapes for tree(). The handlers are the (req, res) functions the loopback door
+  // calls, unchanged.
+  var shapes = Object.create(null);  // family -> {verb: {request, reply}}
+  function mount(family, dir, declarations, opts) {
+    var ns = String(family || '');
+    if (!declarations || typeof declarations !== 'object') throw new Error('verbTable: ' + ns + ' declared nothing');
+    var group = {};
+    var prefixed = {};
+    var shape = {};
+    Object.keys(declarations).forEach(function (v) {
+      var d = declarations[v];
+      if (!d || typeof d !== 'object' || typeof d.handler !== 'function' || !d.request || typeof d.request !== 'object' || !('reply' in d)) {
+        throw new Error('verbTable: verb "' + v + '" of ' + ns + ' needs request (an object), reply and handler');
+      }
+      group[ns + '.' + v] = d.handler;
+      prefixed[ns + '.' + v] = d;
+      shape[v] = { request: d.request, reply: d.reply };
+    });
+    claim(ns, (opts && opts.by) || ns, group, opts);
+    var made = require('./introSpector').family(String(dir || ''), { declared: Object.keys(declarations), prefix: ns + '.', declarations: prefixed });
+    made.stale.forEach(function (file) {
+      console.error('verbTable: ' + file + ' in the folder of ' + ns + ' names a verb it does not declare');
+    });
+    var reserved = {};
+    Object.keys(made.verbs).forEach(function (name) {
+      reserved[name] = asDoorHandler(name, made.verbs[name]);
+      shape[name.slice(ns.length + 1)] = { request: made.verbs[name].request, reply: made.verbs[name].reply };
+    });
+    if (Object.keys(reserved).length) reserve(ns, reserved);
+    shapes[ns] = shape;
+    return true;
+  }
+
+  // What this table mounted, {family: {verb: {request, reply}}}: the node's own half of the flat table.
+  function tree() {
+    var out = {};
+    Object.keys(shapes).sort().forEach(function (ns) { out[ns] = Object.assign({}, shapes[ns]); });
+    return out;
+  }
+
+  // ── ONE CALL, IN-PROCESS (goal/G30.4) ────────────────────────────────
+  //
+  // The handler a loopback call reaches, called without the network: the body in as a request stream, the answer
+  // caught off the response. This was puppetMode's private shim; a granted peer call runs the same way now (Andy:
+  // "1 handler, grant-system covers all"), so it lives with the handlers. A handler can fail twice, at once or later
+  // in the promise it returns; both resolve as handler-failed, once.
+  function call(verb, args) {
+    return new Promise(function (resolve) {
+      var handler = handlerFor(verb);
+      if (!handler) { resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: verb }); return; }
+      var text = JSON.stringify(Object.assign({}, args && typeof args === 'object' ? args : {}, { verb: verb }));
+      var req = require('stream').Readable.from([text]);
+      req.headers = { 'content-type': 'application/json', 'content-length': String(Buffer.byteLength(text, 'utf8')) };
+      var status = 200;
+      var res = {
+        writeHead: function (code) { status = Number(code) || 200; return res; },
+        setHeader: function () {},
+        write: function () { return true; },
+        end: function (body) {
+          var parsed = null;
+          try { parsed = JSON.parse(String(body || '')); } catch (e) { parsed = null; }
+          resolve({ ok: status < 400, status: status, body: parsed, text: parsed ? undefined : String(body || '') });
+        },
+      };
+      var failed = function () { resolve({ ok: false, status: 500, code: 'handler-failed', error: 'the handler failed', verb: verb }); };
+      var ran = null;
+      try { ran = handler(req, res); } catch (e) { failed(); return; }
+      if (ran && typeof ran.then === 'function') ran.then(null, failed);
+    });
+  }
+
+  // ── THE ONE DOOR TO THE FLAT TABLE (goal/G30.4) ──────────────────────
+  //
+  // door(apps) answers what apiDoor and jobs.api ask: 'api' is one flat object, this node's families and its apps'
+  // side by side (Andy: "the apiDoor only responds with it's flat list of families. it doesn't include the
+  // app-client branch at all anymore"); {family: {verb: {args}}} runs a node family through call and hands anything
+  // else to the apps (jobs.api stays the way app families join). It gates nothing: the gate is apiDoor's.
+  function door(apps) {
+    return {
+      ask: function (body, caller) {
+        if (body === 'api') {
+          return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask('api', caller) : { status: 200, body: {} }).then(function (r) {
+            var flat = Object.assign({}, (r && r.body && typeof r.body === 'object') ? r.body : {});
+            var own = tree();
+            Object.keys(own).forEach(function (ns) { flat[ns] = own[ns]; });
+            return { status: 200, body: flat };
+          });
+        }
+        var isObj = body && typeof body === 'object' && !Array.isArray(body);
+        var ns = isObj && Object.keys(body).length === 1 ? Object.keys(body)[0] : '';
+        if (ns && owner[ns]) {
+          var inner = body[ns];
+          if (!inner || typeof inner !== 'object' || Array.isArray(inner) || Object.keys(inner).length !== 1) {
+            return Promise.resolve({ status: 400, body: { ok: false, code: 'bad-request', error: 'one verb, as {family: {verb: {args}}}' } });
+          }
+          var v = Object.keys(inner)[0];
+          return call(ns + '.' + v, inner[v]).then(function (a) {
+            return { status: a.status, body: a.body !== null && a.body !== undefined ? a.body : { ok: a.ok, code: a.code, error: a.error || a.text } };
+          });
+        }
+        return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask(body, caller) : { status: 404, body: { ok: false, code: 'app-not-served' } });
+      },
+    };
+  }
+
   return {
     claim: claim,
     reserve: reserve,
+    mount: mount,
+    call: call,
+    tree: tree,
+    door: door,
     handlerFor: handlerFor,
     verbs: verbs,
     needsWire: needsWire,
     namespaces: namespaces,
+  };
+}
+
+// THE BODY THE DOOR ALREADY READ: the loopback door peeks the verb through serveCommon.readJsonBody, which keeps its
+// promise on the request, so the same call here answers at once. A second reader on the stream would wait for an end
+// that has already passed (found on a planted node, 2026-10-09: every family ask hung and the client saw no answer).
+// Moved here from introSpector with mount (goal/G30.4).
+function readBody(rq) {
+  return require('./serveCommon').readJsonBody(rq);
+}
+
+// A system family verb (FS) as the loopback door calls one: the body in, the verb's own fields alone to the handler, its
+// answer out as JSON; a refusal the catalogue knows by its code and status.
+function asDoorHandler(name, decl) {
+  return function (rq, rs) {
+    function send(status, body) {
+      rs.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+      rs.end(JSON.stringify(body));
+    }
+    return readBody(rq).then(function (body) {
+      var args = {};
+      if (body && typeof body === 'object' && !Array.isArray(body)) Object.keys(body).forEach(function (k) { if (k !== 'verb') args[k] = body[k]; });
+      return Promise.resolve().then(function () { return decl.handler(args); });
+    }).then(function (reply) {
+      send(200, reply);
+    }, function (e) {
+      var errors = require('./spiritErrors');
+      var known = e && typeof e.refusal === 'string' ? errors.byCode(e.refusal) : null;
+      if (known) return send(known.status, Object.assign({ ok: false, code: e.refusal, error: known.text, verb: name }, e.extra && typeof e.extra === 'object' ? { extra: e.extra } : {}));
+      if (e instanceof SyntaxError) return send(400, { ok: false, code: 'bad-request', error: 'Invalid JSON body', verb: name });
+      send(500, { ok: false, code: 'handler-failed', error: 'the handler failed', verb: name });
+    });
   };
 }
 

@@ -100,32 +100,22 @@ function answer(servers, ask, caller) {
   }
   // A call runs only when its app or its exact app.verb is granted; a
   // granted app's missing verb is the server's to answer, never the gate's.
-  // THE AGENTS FAMILY BY WHAT IT DESCRIBES (goal/G29.19; Andy, 2026-10-18: "introspector will only search api's that
-  // the caller is authorized to use"): AGENTS and AGENTS.introspect are open to a member granted any path of the app,
-  // AGENTS.<verb> as <verb> itself is, and introspect's answer keeps only the verbs the member is granted.
+  // THE AGENTS SPECIAL CASE STOOD HERE (goal/G29.19): AGENTS and AGENTS.introspect opened by any grant in the app and
+  // introspect's answer cut to the granted verbs. The AGENTS verbs are gone (goal/G30.4); a family's folder is read
+  // through its FS verbs, each granted like any other verb.
   const apps = (ask && typeof ask === 'object' && !Array.isArray(ask)) ? Object.keys(ask) : [];
   const grantedVerb = function (app, verb) { return paths.indexOf(app) !== -1 || paths.indexOf(app + '.' + verb) !== -1; };
-  const grantsIn = function (app) { return paths.some(function (p) { return p === app || p.indexOf(app + '.') === 0; }); };
   let named = 0;
-  let introspected = null;
   for (const app of apps) {
     const verbs = ask[app];
     if (!verbs || typeof verbs !== 'object') return Promise.resolve(refusal('not-granted', String(app) + ' asks nothing grantable'));
     for (const verb of Object.keys(verbs)) {
       named += 1;
-      let ok = grantedVerb(app, verb);
-      if (!ok && (verb === 'AGENTS' || verb === 'AGENTS.introspect')) ok = grantsIn(app);
-      else if (!ok && verb.indexOf('AGENTS.') === 0) ok = grantedVerb(app, verb.slice('AGENTS.'.length));
-      if (!ok) return Promise.resolve(refusal('not-granted', app + '.' + verb + ' is not granted to this key'));
-      if (verb === 'AGENTS.introspect' && paths.indexOf(app) === -1) introspected = app;
+      if (!grantedVerb(app, verb)) return Promise.resolve(refusal('not-granted', app + '.' + verb + ' is not granted to this key'));
     }
   }
   if (!named) return Promise.resolve(refusal('not-granted', 'the ask names no app.verb'));
-  return Promise.resolve(servers.ask(ask, who)).then(function (r) {
-    if (!introspected || !r || !r.body || !Array.isArray(r.body.items)) return r;
-    const items = r.body.items.filter(function (i) { return i && grantedVerb(introspected, String(i.key || '')); });
-    return Object.assign({}, r, { body: Object.assign({}, r.body, { items: items }) });
-  });
+  return Promise.resolve(servers.ask(ask, who));
 }
 
 // opts: { servers: {ask}, post(relay, toKey, text), encode, decode, isKnown(key), auth: {pathsOf(key)}, log }

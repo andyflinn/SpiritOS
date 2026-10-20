@@ -80,7 +80,12 @@ async function main() {
   else test.fail(OWED + 'FS.search answered ' + short(found));
   const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cleanup-bare-'));
   const bareFam = intro.family(bare, { declared: [] });
-  if (bareFam.verbs['FS.loadFile'] && !bareFam.verbs['AGENTS']) test.check('FS is there even where the folder has no AGENTS.md (and so no AGENTS verbs)');
+  // THE AGENTS VERBS GO (Andy, 2026-10-20: "cannot the agent simply use FS to retrieve the AGENTS.md file of the
+  // verb.json files?", then "fold it into this item and proceed."): family answers FS alone, AGENTS.md or not.
+  const agentsKeys = Object.keys(fam.verbs).filter(function (k) { return /(^|\.)AGENTS(\.|$)/.test(k); });
+  if (!agentsKeys.length) test.check('family(folder) answers no AGENTS verb even where the folder has AGENTS.md: FS reads it');
+  else test.fail(OWED + 'family(folder) still answers ' + short(agentsKeys));
+  if (bareFam.verbs['FS.loadFile'] && !bareFam.verbs['AGENTS']) test.check('FS is there even where the folder has no AGENTS.md');
   else test.fail(OWED + 'a folder without AGENTS.md answered ' + short(Object.keys(bareFam.verbs)));
   try { fs.rmSync(bare, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
@@ -92,8 +97,8 @@ async function main() {
   } } };
   let mounted = false;
   try { mounted = typeof table.mount === 'function' && table.mount('xfs', dir, decl, { wire: false }); } catch (e) { mounted = 'threw ' + e.message; }
-  if (mounted === true && typeof table.handlerFor('xfs.stat') === 'function' && typeof table.handlerFor('xfs.AGENTS.introspect') === 'function')
-    test.check('mount(\'xfs\', folder, {stat}) puts xfs.stat and xfs.AGENTS.introspect on the table: the module declared stat bare');
+  if (mounted === true && typeof table.handlerFor('xfs.stat') === 'function' && typeof table.handlerFor('xfs.FS.loadFile') === 'function' && !table.handlerFor('xfs.AGENTS.introspect'))
+    test.check('mount(\'xfs\', folder, {stat}) puts xfs.stat and xfs.FS.* on the table, and no AGENTS verb: the module declared stat bare');
   else test.fail(OWED + 'mount answered ' + short(mounted));
   let called = null;
   try { called = typeof table.call === 'function' ? await table.call('xfs.stat', { path: 'a' }) : null; } catch (e) { called = { threw: e.message }; }
@@ -164,6 +169,19 @@ async function main() {
   if (/FS\.loadFile/.test(grants) && /\.warning\.txt/.test(grants) && !/'AGENTS\.' \+ verb/.test(grants)) test.check('the grants app reads <verb>.warning.txt through the family\'s FS and shows it before the grant');
   else test.fail(OWED + 'the grants app does not read warnings through FS');
 
+  test.subHeading('7b. deskAgent reads the table, AGENTS.md and each verb file through FS; nothing asks AGENTS');
+  const tools = code('process/js/deskAgent/tools.js');
+  const agentJs = code('process/js/deskAgent/deskAgent.js');
+  const apiDoorJs = code('js/apiDoor.js');
+  const noAgents = ['js/apiDoor.js', 'js/appServer.js', 'js/verbTable.js', 'process/js/deskAgent/tools.js', 'process/js/deskAgent/deskAgent.js']
+    .filter(function (f) { return /AGENTS\.introspect|'AGENTS\.'\s*\+|\.AGENTS\.|'AGENTS'/.test(code(f)); });
+  // The route names the FS verb (fs('loadJsonValue') becomes ns.FS.loadJsonValue or FS.loadJsonValue).
+  if (/fs\('loadJsonValue'\)/.test(tools) && /\.FS\.'/.test(tools) && /'api'/.test(tools) && /FS\.loadFile/.test(agentJs) && !noAgents.length)
+    test.check('tools.js describes a family from the api table and FS.loadJsonValue of each verb file; deskAgent reads AGENTS.md by FS.loadFile; no product file asks an AGENTS verb');
+  else test.fail(OWED + 'AGENTS verbs still asked in ' + short(noAgents) + (/fs\('loadJsonValue'\)/.test(tools) ? '' : '; tools.js reads no verb file by FS'));
+  if (!/AGENTS\.introspect/.test(door)) test.check('apiDoor has no AGENTS special case');
+  else test.fail(OWED + 'apiDoor still cuts AGENTS.introspect');
+
   test.subHeading('8. app family folders hold no code');
   const APPS = ['desk', 'deskAgent', 'deskVerify'];
   const wrong = APPS.filter(function (a) {
@@ -177,9 +195,19 @@ async function main() {
   const appServerJs = code('js/appServer.js');
   if (/'\.family'/.test(appServerJs)) test.check('appServer reads the AGENTS family (and FS) from <script>.family');
   else test.fail(OWED + 'appServer still reads the AGENTS family from the script\'s own folder');
+  // The picker lists spiritApiTreeIndex.servers of the jobs.api 'api' answer, which is now the flat table.
+  let listed = null;
+  try {
+    global.window = global.window || {};
+    delete require.cache[require.resolve('../run/js/client/apiTreeIndex.js')];
+    require('../run/js/client/apiTreeIndex.js');
+    const idx = (global.window && global.window.spiritApiTreeIndex) || require('../run/js/client/apiTreeIndex.js');
+    listed = idx.servers({ fs: { stat: {} }, jobs: { authGrant: {} }, desk: { items: {} } });
+  } catch (e) { listed = { threw: e.message }; }
   const picker = code('shell/js/appServerSelector.js');
-  if (!/jobs\.api/.test(picker) || /every family|whole table/.test(picker)) test.check('the picker reads the whole flat table');
-  else test.fail(OWED + 'the picker still reads the apps\' branch only');
+  if (Array.isArray(listed) && listed.join(',') === 'desk,fs,jobs' && /jobs\.api/.test(picker) && /'api'/.test(picker))
+    test.check('the picker lists every family of the flat table, the node\'s (fs, jobs) beside the apps\' (desk)');
+  else test.fail(OWED + 'the picker lists ' + short(listed));
 }
 
 main().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {

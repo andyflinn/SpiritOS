@@ -96,9 +96,39 @@ function grLoadBundle(server) {
   });
 }
 
+// THE WARNINGS BEFORE A GRANT (goal/G30.4; Andy, 2026-10-20: "the grant screen warns when a grant reaches a verb that
+// carries a warning"). A warning is a file in the family's folder, <verb>.warning.txt, read through that family's FS
+// (FS.loadFile); nothing about it is opened to agents. A grant of a whole family reaches every verb in it, so each
+// one's is read. Asked through the one flat door, node families and apps alike.
+function grWarnings(path) {
+  var dot = path.indexOf('.');
+  var family = dot === -1 ? path : path.slice(0, dot);
+  var verbs = dot === -1
+    ? Object.keys((grTree && grTree[family]) || {}).filter(function (v) { return v.indexOf('AGENTS') !== 0 && v.indexOf('FS.') !== 0; })
+    : [path.slice(dot + 1)];
+  return Promise.all(verbs.map(function (verb) {
+    var ask = {};
+    ask[family] = { 'FS.loadFile': { path: verb + '.warning.txt' } };
+    return grApi.verb('jobs.api', { ask: ask }).then(function (a) {
+      var w = a && a.body && typeof a.body.text === 'string' ? a.body.text.trim() : '';
+      return w ? family + '.' + verb + ': ' + w : '';
+    }, function () { return ''; });
+  })).then(function (all) { return all.filter(Boolean); });
+}
+
 function grGrant(key, path) {
   if (!key) { grSay('pick whose access first', true); return Promise.resolve(); }
   if (!path) { grSay('pick a server first', true); return Promise.resolve(); }
+  return grWarnings(path).then(function (warnings) {
+    if (warnings.length && !window.confirm('Before you grant ' + path + ':\n\n' + warnings.join('\n\n') + '\n\nGrant it anyway?')) {
+      grSay('not granted: ' + path);
+      return null;
+    }
+    return grGrantNow(key, path);
+  });
+}
+
+function grGrantNow(key, path) {
   return grApi.verb('jobs.authGrant', { key: key, path: path }).then(function (a) {
     if (a.status !== 200) { grSay('grant refused: ' + grRefusal(a.body), true); return; }
     grSay('granted ' + ((a.body && a.body.label) || '') + ' ' + path);

@@ -4,7 +4,7 @@
 // goal/G24.4. Red on today's code; claude-windows wrote it and builds it (one agent). The item's box is the record,
 // with Andy's ruling on the shape:
 //   introspect lists names only (labels no longer carry descriptions), so a family always fits one answer;
-//   deskAgent may withhold verbs after reading the list, then asks AGENTS.<verb> for each kept verb's details;
+//   deskAgent may withhold verbs after reading the list, then asks for each kept verb's details;
 //   no paging; a listing that still says more fails loudly in a census.
 //
 // WHERE, READ AT 1a77dee0: introSpector.js's AGENTS.introspect offers each verb file's description as its label, in
@@ -12,13 +12,15 @@
 // AGENTS.<verb> for every listed verb, and has no way to withhold one.
 //
 // THE WITHHOLD HOOK PROPOSED (this suite fixes it): createTools({..., withhold: ['<namespace>.<verb>', ...]}): a verb
-// named there is not offered, and its AGENTS.<verb> is never asked.
+// named there is not offered, and its file is never asked.
+// SINCE goal/G30.4 the listing is the family folder's FS.search (file names) and the details its FS.loadJsonValue of
+// <verb>.json; each point below asks the same of those.
 //
 // WHAT IS ASSERTED
-//   1. a scratch family of 40 verbs with 400-byte descriptions (together far past one answer): AGENTS.introspect lists
+//   1. a scratch family of 40 verbs with 400-byte descriptions (together far past one answer): FS.search lists
 //      every name, more false, and no label carries its verb's description.
-//   2. tools.js describe over that family offers every verb, each with its description (from AGENTS.<verb>).
-//   3. withhold: with withhold ['scratch.v07', 'scratch.v33'] those two are not offered and their AGENTS.<verb> is
+//   2. tools.js describe over that family offers every verb, each with its description (from FS.loadJsonValue).
+//   3. withhold: with withhold ['scratch.v07', 'scratch.v33'] those two are not offered and their verb file is
 //      never asked; the other 38 are offered.
 //   4. the census: every real family (process/js/<server>/ and js/<namespace>/ with an AGENTS.md): its listing says
 //      more false and lists every verb file.
@@ -45,23 +47,26 @@ function verbFiles(dir, manifest) {
     try { const p = JSON.parse(fs.readFileSync(path.join(dir, n), 'utf8')); return p && typeof p === 'object' && !Array.isArray(p) && typeof p.description === 'string'; } catch (e) { return false; }
   }).map(function (n) { return n.slice(0, -5); }).sort();
 }
+// The folder's listing (FS.search with no words, goal/G30.4): its .json files, each key the verb stem.
 async function introspect(made, prefix) {
-  const h = made.verbs[prefix + 'AGENTS.introspect'];
+  const h = made.verbs[prefix + 'FS.search'];
   if (!h) return null;
-  const r = await h.handler({});
-  return { items: (r && r.items) || [], keys: ((r && r.items) || []).map(function (i) { return i.key; }), more: !!(r && r.more) };
+  const r = await h.handler({ q: '' });
+  const items = ((r && r.items) || []).filter(function (i) { return /\.json$/.test(String(i.key)); }).map(function (i) { return { key: String(i.key).slice(0, -5), label: i.label }; });
+  return { items: items, keys: items.map(function (i) { return i.key; }), more: !!(r && r.more) };
 }
 function routeOver(made, asks) {
   return {
-    ask: function (verb) {
-      asks.push(verb);
+    ask: function (verb, args) {
+      // An ask of a verb file is recorded by its file: FS.loadJsonValue v07.json.
+      asks.push(verb + (args && args.path ? ' ' + args.path : ''));
       const h = made.verbs[verb];
       let body = null;
-      try { body = h ? h.handler({}) : { ok: false, code: 'no-such-verb' }; } catch (e) { body = { ok: false, code: 'refused' }; }
+      try { body = h ? h.handler(args || {}) : { ok: false, code: 'no-such-verb' }; } catch (e) { body = { ok: false, code: 'refused' }; }
       return Promise.resolve(body).then(function (b) { return { status: b && b.ok === false ? 404 : 200, body: b, text: JSON.stringify(b) }; });
     },
     verb: function (stem) { return stem; },
-    family: function (name) { return 'AGENTS.' + name; },
+    fs: function (name) { return 'FS.' + name; },
   };
 }
 
@@ -81,7 +86,7 @@ async function suite() {
       DESC[stem] = d.slice(0, 400);
       fs.writeFileSync(path.join(scratch, stem + '.json'), JSON.stringify({ description: DESC[stem], request: { id: '' } }));
     }
-    const made = introSpector.family(scratch, { declared: STEMS, manifest: 'scratch.json' });
+    const made = introSpector.family(scratch, { declared: STEMS });
     const total = STEMS.reduce(function (s, v) { return s + Buffer.byteLength(DESC[v]); }, 0);
 
     test.subHeading('1. the listing is names only, whole, more false');
@@ -89,8 +94,8 @@ async function suite() {
     else test.fail('the world: the descriptions are only ' + total + ' bytes');
     const got = await introspect(made, '');
     const missing = STEMS.filter(function (s) { return got.keys.indexOf(s) === -1; });
-    if (!missing.length && got.more === false) test.check('AGENTS.introspect lists all 40 names, more false');
-    else test.fail(OWED + 'AGENTS.introspect listed ' + got.keys.length + ' of 40, more ' + got.more + '; missing ' + short(missing));
+    if (!missing.length && got.more === false) test.check('FS.search lists all 40 verb files, more false');
+    else test.fail(OWED + 'FS.search listed ' + got.keys.length + ' of 40, more ' + got.more + '; missing ' + short(missing));
     const carrying = got.items.filter(function (i) { return DESC[i.key] && String(i.label || '').indexOf(DESC[i.key].slice(0, 40)) !== -1; }).map(function (i) { return i.key; });
     if (got.items.length && !carrying.length) test.check('no label carries its verb\'s description');
     else test.fail(OWED + carrying.length + ' label(s) carry the description, e.g. ' + short(got.items[0]));
@@ -115,8 +120,8 @@ async function suite() {
     const names2 = (described2 || []).map(function (t) { return t.function.name; });
     const kept = STEMS.filter(function (s) { return s !== 'v07' && s !== 'v33'; });
     const keptMissing = kept.filter(function (s) { return names2.indexOf('scratch_' + s) === -1; });
-    if (names2.indexOf('scratch_v07') === -1 && names2.indexOf('scratch_v33') === -1 && asks2.indexOf('AGENTS.v07') === -1 && asks2.indexOf('AGENTS.v33') === -1 && !keptMissing.length && names2.length === 38) test.check('v07 and v33 are withheld and never asked; the other 38 are offered');
-    else test.fail(OWED + 'with withhold [scratch.v07, scratch.v33]: v07 offered ' + (names2.indexOf('scratch_v07') !== -1) + ', asked ' + (asks2.indexOf('AGENTS.v07') !== -1) + '; v33 offered ' + (names2.indexOf('scratch_v33') !== -1) + ', asked ' + (asks2.indexOf('AGENTS.v33') !== -1) + '; ' + names2.length + ' offered, kept ones missing ' + short(keptMissing));
+    if (names2.indexOf('scratch_v07') === -1 && names2.indexOf('scratch_v33') === -1 && asks2.indexOf('FS.loadJsonValue v07.json') === -1 && asks2.indexOf('FS.loadJsonValue v33.json') === -1 && !keptMissing.length && names2.length === 38) test.check('v07 and v33 are withheld and never asked; the other 38 are offered');
+    else test.fail(OWED + 'with withhold [scratch.v07, scratch.v33]: v07 offered ' + (names2.indexOf('scratch_v07') !== -1) + ', asked ' + (asks2.indexOf('FS.loadJsonValue v07.json') !== -1) + '; v33 offered ' + (names2.indexOf('scratch_v33') !== -1) + ', asked ' + (asks2.indexOf('FS.loadJsonValue v33.json') !== -1) + '; ' + names2.length + ' offered, kept ones missing ' + short(keptMissing));
   } finally {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   }
@@ -124,21 +129,23 @@ async function suite() {
   test.subHeading('4. the census: no real family\'s listing says more');
   const folders = [];
   fs.readdirSync(path.join(RUN, 'process', 'js')).forEach(function (n) {
-    const dir = path.join(RUN, 'process', 'js', n);
-    if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n, dir: dir, manifest: n + '.json', prefix: '' });
+    // <module>.family beside <module>.js since goal/G30.4: the family folder holds no code and no manifest.
+    const dir = path.join(RUN, 'process', 'js', n, n + '.family');
+    if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n + '/' + n + '.family', dir: dir, manifest: '', prefix: '' });
   });
   fs.readdirSync(path.join(RUN, 'js')).forEach(function (n) {
     const dir = path.join(RUN, 'js', n);
     if (fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'js/' + n, dir: dir, manifest: '', prefix: n + '.' });
   });
-  if (folders.some(function (f) { return f.name === 'process/js/desk'; }) && folders.length > 3) test.check('the world: ' + folders.length + ' families found');
+  if (folders.some(function (f) { return f.name === 'process/js/desk/desk.family'; }) && folders.length > 3) test.check('the world: ' + folders.length + ' families found');
   else test.fail('the world: the families found are ' + short(folders.map(function (f) { return f.name; })));
   for (const f of folders) {
     const stems = verbFiles(f.dir, f.manifest);
     if (!stems.length) continue;
     const made = introSpector.family(f.dir, { declared: stems, manifest: f.manifest, prefix: f.prefix });
     const got = await introspect(made, f.prefix);
-    const missing = stems.filter(function (s) { return !got || got.keys.indexOf(f.prefix + s) === -1; });
+    // FS.search names the files unprefixed, on the node as on a process server.
+    const missing = stems.filter(function (s) { return !got || got.keys.indexOf(s) === -1; });
     if (got && got.more === false && !missing.length) test.check(f.name + ': ' + stems.length + ' verbs listed, more false');
     else test.fail('CENSUS: ' + f.name + ' lists ' + (got ? got.keys.length : 0) + ' of ' + stems.length + ' verbs with more ' + (got && got.more) + ': a listing must fit one answer; missing ' + short(missing));
   }

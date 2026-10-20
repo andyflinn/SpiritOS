@@ -48,15 +48,17 @@ function puppetNode(id) {
     id: id, ran: ran, deliverAnswer: null,
     door: null,
   };
+  // The one handler on a verb table, called through the table's call as server.js hands it the door (goal/G30.4).
+  const table = require('../run/js/verbTable').createVerbTable();
+  table.claim('contact', 'ownerPost.js', {
+    'contact.list': function (req, res) {
+      let t = ''; req.on('data', function (c) { t += c; });
+      req.on('end', function () { ran.push('contact.list'); res.writeHead(200); res.end(JSON.stringify({ ok: true, got: JSON.parse(t) })); });
+    },
+  }, { wire: false });
   node.door = puppetMode.puppetDoor({
     rootDir: root,
-    handlerFor: function (verb) {
-      if (verb !== 'contact.list') return null;
-      return function (req, res) {
-        let t = ''; req.on('data', function (c) { t += c; });
-        req.on('end', function () { ran.push(verb); res.writeHead(200); res.end(JSON.stringify({ ok: true, got: JSON.parse(t) })); });
-      };
-    },
+    call: function (verb, args) { return table.call(verb, args); },
     post: function (relay, to, text) { node.deliverAnswer(to, text); return Promise.resolve({ ok: true }); },
     encode: packet.encode, auth: auth,
     selfKey: function () { return id.publicKey; },

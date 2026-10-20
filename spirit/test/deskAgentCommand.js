@@ -18,7 +18,7 @@
 // The suite's commands are `node -e "..."` alone, with single quotes inside, so any shell runs them the same.
 //
 // WHAT IS ASSERTED
-//   1. command.run.json: request command, timeoutMs; AGENTS.introspect lists command.run.
+//   1. command.run.json: request command, timeoutMs; FS.search of the family folder lists it (goal/G30.4).
 //   2. a command that prints and exits 3: exit 3, the text in output, cut false, timedOut false; stderr is in output.
 //   3. its working folder is the clone root.
 //   4. ~100 KB of output: the reply under ANSWER_MAX, cut true, the output its last whole lines, the final line kept.
@@ -39,6 +39,7 @@ const OWED = 'OWED by goal/G23.8: ';
 const ROOT = path.join(__dirname, '..', '..');
 const DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent');
 const AGENT = path.join(DIR, 'deskAgent.js');
+const FAMILY = path.join(DIR, 'deskAgent.family'); // the verb files, <module>.family since goal/G30.4
 const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-GGUF', answerTokens: 100, bytesPerToken: 4 };
 const ANSWER_MAX = appClient.ANSWER_MAX;
@@ -89,8 +90,9 @@ const node = http.createServer(function (req, res) {
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient && ask.deskClient.desk) {
       const v = String(ask.deskClient.desk.verb);
-      if (v === 'AGENTS') return answer(200, { text: 'Rules for agents.' });
-      if (v === 'AGENTS.introspect') return answer(200, { items: [], more: false });
+      // The desk's family folder through its FS (goal/G30.4): its AGENTS.md, and no verb files.
+      if (v === 'FS.loadFile') return answer(200, { text: 'Rules for agents.' });
+      if (v === 'FS.search') return answer(200, { items: [], more: false });
       return answer(200, { change: 1 });
     }
     if (ask && ask.deskAgent && client) return client.ask({ deskAgent: ask.deskAgent }).then(function (r) { answer(r.status || 200, r.body || {}); }, function (e) { answer(500, { ok: false, error: String(e) }); });
@@ -117,7 +119,7 @@ async function chatOnce(text) {
 async function suite() {
   test.subHeading('1. the verb file and introspection');
   let file = null;
-  try { file = JSON.parse(fs.readFileSync(path.join(DIR, 'command.run.json'), 'utf8')); } catch (e) { file = null; }
+  try { file = JSON.parse(fs.readFileSync(path.join(FAMILY, 'command.run.json'), 'utf8')); } catch (e) { file = null; }
   const req = (file && file.request) || {};
   if (JSON.stringify(Object.keys(req).sort()) === JSON.stringify(['command', 'timeoutMs']) && String(file.description || '').length) test.check('command.run.json: request command, timeoutMs, with a description');
   else test.fail(OWED + 'command.run.json reads ' + short(file));
@@ -138,9 +140,10 @@ async function suite() {
   let up = false;
   for (let i = 0; i < 60 && !up && out.code === null; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.deskAgent && r.body.deskAgent.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
-  const listed = ((await ask('AGENTS.introspect', { text: '' })).body.items || []).map(function (i) { return i.key; });
-  if (listed.indexOf('command.run') !== -1) test.check('AGENTS.introspect lists command.run');
-  else test.fail(OWED + 'AGENTS.introspect lists ' + short(listed));
+  // Its family folder's listing names the verb file (FS.search, goal/G30.4).
+  const listed = ((await ask('FS.search', { q: '' })).body.items || []).map(function (i) { return i.key; });
+  if (listed.indexOf('command.run.json') !== -1) test.check('FS.search lists command.run.json');
+  else test.fail(OWED + 'FS.search lists ' + short(listed));
 
   test.subHeading('2. the exit code and the output, stderr included');
   const r1 = await run('node -e "console.log(\'HELLO-OUT\'); console.error(\'HELLO-ERR\'); process.exit(3)"');

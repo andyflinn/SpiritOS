@@ -72,9 +72,13 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // since its list of doors (goal/G22.3) stackFrameChecks.doors, the list read back; since Andy's "RUN the show"
 // (goal/G22.3, 2026-10-13) make takes {gate, endpoint, paths, suites}, and update, remove, run and runState join; stop
 // went when the runs became deskVerify's (Andy, 2026-10-13: "every run here should report to deskVerify.").
-function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('AGENTS.') !== 0 || k === 'AGENTS.introspect'; }).sort(); }
-function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('AGENTS.') === 0 && k !== 'AGENTS.introspect'; }).every(function (k) { return VERBS.indexOf(k.slice(7)) !== -1; }); }
-const VERBS = ['AGENTS', 'AGENTS.introspect', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'stackFrameChecks.doors', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update','state.get', 'state.set', 'unblock', 'verify.again', 'verify.pass', 'verify.regress', 'verify.reject', 'work.open'];
+// SINCE goal/G30.4 the AGENTS family is gone: every server carries its family folder's FS verbs instead (FS.loadFile,
+// FS.search ...; introSpector.js), the verb files read through them. So the verbs are compared without the FS set, and
+// the FS set is checked to be exactly introSpector's, nothing more.
+const FS_VERBS = ['FS.annotateFile', 'FS.deleteFile', 'FS.fileExists', 'FS.getAnnotations', 'FS.loadFile', 'FS.loadJsonValue', 'FS.saveFile', 'FS.saveJsonValue', 'FS.search', 'FS.statFile'];
+function verbsOf(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') !== 0; }).sort(); }
+function familyNamesVerbs(tree) { return Object.keys(tree || {}).filter(function (k) { return k.indexOf('FS.') === 0; }).sort().join(',') === FS_VERBS.join(','); }
+const VERBS = ['DEBUG', 'DEPENDENCIES', 'agent.state', 'block', 'block.targets', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'claim', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.release', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'seen.get', 'seen.set', 'session.set', 'signoff', 'stackFrameChecks.doors', 'stackFrameChecks.make', 'stackFrameChecks.remove', 'stackFrameChecks.run', 'stackFrameChecks.runState', 'stackFrameChecks.update','state.get', 'state.set', 'unblock', 'verify.again', 'verify.pass', 'verify.regress', 'verify.reject', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');
@@ -131,7 +135,7 @@ function line(key, todo, text, extra) {
   let kid = start();
   const up = kid ? await waitFor(function () { return ask('api').then(function (r) { return r.body && r.body.desk && r.body.desk.ok !== false; }); }) : false;
   const tree = up ? (await ask('api')).body.desk : null;
-  if (tree && verbsOf(tree).join(',') === VERBS.join(',') && familyNamesVerbs(tree)) test.check('api lists exactly ' + VERBS.join(', ') + ', and each AGENTS.<verb> names one of them');
+  if (tree && verbsOf(tree).join(',') === VERBS.join(',') && familyNamesVerbs(tree)) test.check('api lists exactly ' + VERBS.join(', ') + ', and the family folder\'s FS verbs beside them');
   else test.fail(OWED + 'api answered ' + JSON.stringify(tree));
 
   // ── T2 ──────────────────────────────────────────────────────────────

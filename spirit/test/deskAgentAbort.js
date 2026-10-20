@@ -82,10 +82,11 @@ const node = http.createServer(function (req, res) {
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
     // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskAgent: ...}, and
-    // the node answers them here as it answered fs.load before (recorded as verb file.load / AGENTS.introspect).
+    // the node answers them here as it answered fs.load before (recorded as verb file.load / FS.search). Since
+    // goal/G30.4 the tools are described from the family folder: FS.search lists file.load.json, FS.loadJsonValue reads it.
     const du = b.verb === 'jobs.api' && b.ask && b.ask.deskAgent;
-    if (du && du['AGENTS.introspect']) { nodeAsks.push({ verb: 'deskAgent.AGENTS.introspect' }); return answer(200, { items: [{ key: 'file.load', label: 'load a file' }], more: false }); }
-    if (du && du['AGENTS.file.load']) return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
+    if (du && du['FS.search']) { nodeAsks.push({ verb: 'deskAgent.FS.search' }); return answer(200, { items: [{ key: 'file.load.json', label: 'file.load.json' }], more: false }); }
+    if (du && du['FS.loadJsonValue'] && du['FS.loadJsonValue'].path === 'file.load.json') return answer(200, { value: { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } } });
     if (du && du['file.load']) {
       const p = String(du['file.load'].path || '');
       nodeAsks.push({ verb: 'file.load', path: p });
@@ -99,8 +100,8 @@ const node = http.createServer(function (req, res) {
     if (dc.desk) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
       const v = String(dc.desk.verb || '');
-      if (v === 'AGENTS') return answer(200, { text: 'the rules' });
-      if (v === 'AGENTS.introspect') return answer(200, { items: [], more: false });
+      if (v === 'FS.loadFile' && args.path === 'AGENTS.md') return answer(200, { text: 'the rules' });
+      if (v === 'FS.search') return answer(200, { items: [], more: false });
       if (v === 'item.get') return answer(200, { item: JSON.stringify({ id: args.id, title: 't', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: true }), version: 1, change: 1 });
       if (v === 'item.box') return answer(200, { box: 'the box', version: 1 });
       if (v === 'item.chat') return answer(200, { chat: [], chatMore: false });
@@ -211,10 +212,14 @@ async function serverHalf() {
   const idleWhy = String((idle.extra && idle.extra.why) || '');
   if (idle.ok === false && idle.code !== 'no-such-verb' && /not working|nothing/i.test(idleWhy)) test.check('abort with the model idle is refused, saying why: ' + idleWhy);
   else test.fail(OWED + 'abort with the model idle answered ' + short(idle));
+  // The family folder is deskAgent.family since goal/G30.4, read through FS: no abort.json there, no description.
+  const FAMILY_DIR = path.join(CODE, 'deskAgent.family');
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(CODE, { declared: ['abort', 'file.load', 'file.save', 'commit', 'push'], manifest: 'deskAgent.json' }); } catch (e) { family = null; }
-  if (family && !family.verbs['AGENTS.abort'] && !fs.existsSync(path.join(CODE, 'abort.json'))) test.check('abort has no verb file: the family never describes it, so it is no tool of Levant\'s');
-  else test.fail(OWED + 'abort is described to agents: ' + short(family && Object.keys(family.verbs)));
+  try { family = require('../run/js/introSpector.js').family(FAMILY_DIR, { declared: ['abort', 'file.load', 'file.save', 'commit', 'push'] }); } catch (e) { family = null; }
+  const abortFile = family && family.verbs['FS.loadJsonValue'] ? family.verbs['FS.loadJsonValue'].handler({ path: 'abort.json' }).value : 'no FS';
+  const loadFile = family && family.verbs['FS.loadJsonValue'] ? family.verbs['FS.loadJsonValue'].handler({ path: 'file.load.json' }).value : null;
+  if (family && abortFile === null && loadFile && !fs.existsSync(path.join(FAMILY_DIR, 'abort.json'))) test.check('abort has no verb file: the family never describes it, so it is no tool of Levant\'s');
+  else test.fail(OWED + 'abort is described to agents: ' + short(abortFile));
 
   respond = function (body) { return /hang the chat/.test(asked(body)) ? { hang: true } : { text: 'answered' }; };
   published.length = 0;
@@ -337,12 +342,12 @@ async function serverHalf() {
   const req = load && load.function.parameters && load.function.parameters.required;
   if (Array.isArray(req) && req.join(',') === 'path') test.check('a tool declares its request\'s keys required: deskAgent_file_load requires path');
   else test.fail(OWED + 'deskAgent_file_load declares required ' + short(req));
-  const introBefore = nodeAsks.filter(function (a) { return a.verb === 'deskAgent.AGENTS.introspect'; }).length;
+  const introBefore = nodeAsks.filter(function (a) { return a.verb === 'deskAgent.FS.search'; }).length;
   const s2 = await ask('chat.send', { lines: [{ role: 'user', text: 'second please' }] });
   await answerOf(s2.id, 8000);
-  const introAfter = nodeAsks.filter(function (a) { return a.verb === 'deskAgent.AGENTS.introspect'; }).length;
+  const introAfter = nodeAsks.filter(function (a) { return a.verb === 'deskAgent.FS.search'; }).length;
   if (introAfter === introBefore) test.check('the tools are not described again for the next answer');
-  else test.fail(OWED + 'the next answer described the tools again: deskAgent AGENTS.introspect asked ' + (introAfter - introBefore) + ' more time(s)');
+  else test.fail(OWED + 'the next answer described the tools again: deskAgent FS.search asked ' + (introAfter - introBefore) + ' more time(s)');
 
   // One chat's record is its own: a tool of chat A finishing after chat B is never published under B's id.
   respond = function (body) {

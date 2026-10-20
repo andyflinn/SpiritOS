@@ -53,8 +53,13 @@ try { fs.symlinkSync(path.join(root, 'relay-state'), path.join(root, 'shell', 'd
 catch (e) { linked = false; }
 
 const serverSrc = fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8');
-// doorContract.js's pattern: every claim line, whatever its value is.
-const VERBS = [...serverSrc.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(function (m) { return m[1]; });
+// doorContract.js's pattern: every claim line, whatever its value is. SINCE goal/G30.4 a family is mounted with its
+// verbs bare (loopbackVerbs.mount('fs', dir, {'stat': ...})), and the table names them fs.stat: so each mount block
+// gives its family, and each of its four-space keys a verb of that family.
+const VERBS = [];
+for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)',[\s\S]*?\n {2}\}, \{ wire:/g)) {
+  for (const m of block[0].matchAll(/^ {4}'([a-z][a-zA-Z0-9]*)':/gm)) VERBS.push(block[1] + '.' + m[1]);
+}
 
 // ── THE VERBS THAT ANSWER WITH A LIST, until each becomes a search ─────
 //
@@ -147,7 +152,8 @@ let said = '';
   // node api" (G7) is a second list that can drift. Read from the source,
   // because the owner door needs a relay to be driven live.
   const loopbackDoor = /const run = loopbackVerbs\.handlerFor\(verb\);/.test(serverSrc);
-  const ownerDoor = /puppetDoor\(\{[\s\S]{0,300}?handlerFor: function \(verb\) \{ return loopbackVerbs\.handlerFor\(verb\); \}/
+  // Since goal/G30.4 the owner door is handed the table's call, which looks the verb up by loopbackVerbs.handlerFor.
+  const ownerDoor = /puppetDoor\(\{[\s\S]{0,300}?call: function \(verb, args\) \{ return loopbackVerbs\.call\(verb, args\); \}/
     .test(serverSrc);
   if (loopbackDoor && ownerDoor) {
     test.check('the loopback door and the owner door both look verbs up in loopbackVerbs, so every verb here '

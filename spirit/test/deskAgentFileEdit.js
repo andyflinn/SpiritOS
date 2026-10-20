@@ -18,7 +18,7 @@
 // several answers long. A stand-in model asks for deskAgent_file_edit when it is offered it.
 //
 // WHAT IS ASSERTED
-//   1. file.edit.json: request path, old, new, all; deskAgent's AGENTS.introspect lists file.edit.
+//   1. file.edit.json: request path, old, new, all; deskAgent's FS.search lists it (goal/G30.4).
 //   2. an edit in the ~30 KB file lands: replaced 1, the file byte-exact the original with that one piece replaced.
 //   3. old not found: refused, the reason naming it; the file unchanged.
 //   4. old found twice without all: refused, the reason saying it is found more than once; the file unchanged.
@@ -40,6 +40,7 @@ const OWED = 'OWED by goal/G23.7: ';
 const ROOT = path.join(__dirname, '..', '..');
 const DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent');
 const AGENT = path.join(DIR, 'deskAgent.js');
+const FAMILY = path.join(DIR, 'deskAgent.family'); // the verb files, <module>.family since goal/G30.4
 const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-GGUF', answerTokens: 100, bytesPerToken: 4 };
 const MINE = 'spirit/test/zzMine.js';
@@ -95,8 +96,9 @@ const ITEMS = [
   { id: 'ag/G1.2', title: 'Theirs', goal: 'ag/G1', status: 'building', with: 'claude-windows', go: true, files: [{ path: THEIRS, by: 'claude-windows', core: false }] },
 ];
 function deskAnswer(verb, a) {
-  if (verb === 'AGENTS') return { text: 'Rules for agents.' };
-  if (verb === 'AGENTS.introspect') return { items: [], more: false };
+  // The desk's family folder through its FS (goal/G30.4): its AGENTS.md, and no verb files.
+  if (verb === 'FS.loadFile') return { text: 'Rules for agents.' };
+  if (verb === 'FS.search') return { items: [], more: false };
   if (verb === 'items.search') return { items: ITEMS.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false };
   return { change: 1 };
 }
@@ -140,7 +142,7 @@ async function chatOnce(text) {
 async function suite() {
   test.subHeading('1. the verb file and introspection');
   let file = null;
-  try { file = JSON.parse(fs.readFileSync(path.join(DIR, 'file.edit.json'), 'utf8')); } catch (e) { file = null; }
+  try { file = JSON.parse(fs.readFileSync(path.join(FAMILY, 'file.edit.json'), 'utf8')); } catch (e) { file = null; }
   const req = (file && file.request) || {};
   if (JSON.stringify(Object.keys(req).sort()) === JSON.stringify(['all', 'new', 'old', 'path']) && typeof req.all === 'boolean' && String(file.description || '').length) test.check('file.edit.json: request path, old, new, all (a boolean), with a description');
   else test.fail(OWED + 'file.edit.json reads ' + short(file));
@@ -164,9 +166,10 @@ async function suite() {
   for (let i = 0; i < 60 && !up && out.code === null; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.deskAgent && r.body.deskAgent.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
   test.check('the world: ' + MINE + ' is ' + Buffer.byteLength(BIG) + ' bytes; one answer is ' + appClient.ANSWER_MAX);
-  const listed = ((await ask('AGENTS.introspect', { text: '' })).body.items || []).map(function (i) { return i.key; });
-  if (listed.indexOf('file.edit') !== -1) test.check('AGENTS.introspect lists file.edit');
-  else test.fail(OWED + 'AGENTS.introspect lists ' + short(listed));
+  // Its family folder's listing names the verb file (FS.search, goal/G30.4).
+  const listed = ((await ask('FS.search', { q: '' })).body.items || []).map(function (i) { return i.key; });
+  if (listed.indexOf('file.edit.json') !== -1) test.check('FS.search lists file.edit.json');
+  else test.fail(OWED + 'FS.search lists ' + short(listed));
 
   test.subHeading('2. an edit in a file several answers long lands');
   const e1 = await edit({ path: MINE, old: 'MARK-A', new: 'MARK-A-EDITED', all: false });

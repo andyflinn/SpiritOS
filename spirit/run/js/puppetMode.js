@@ -167,37 +167,8 @@ function puppetDoor(opts) {
       say('puppet door: the answer to ' + String(message.hash).slice(0, 8) + ' could not be sent: ' + e.message);
     });
   }
-  function shim(verb, body) {
-    return new Promise(function (resolve) {
-      const handler = o.handlerFor(verb);
-      if (!handler) { resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: verb }); return; }
-      const text = JSON.stringify(Object.assign({}, body, { verb: verb }));
-      const req = require('stream').Readable.from([text]);
-      req.headers = { 'content-type': 'application/json', 'content-length': String(Buffer.byteLength(text, 'utf8')) };
-      let status = 200;
-      const res = {
-        writeHead: function (code) { status = Number(code) || 200; return res; },
-        setHeader: function () {},
-        write: function () { return true; },
-        end: function (text) {
-          let parsed = null;
-          try { parsed = JSON.parse(String(text || '')); } catch (e) { parsed = null; }
-          resolve({ ok: status < 400, status: status, body: parsed, text: parsed ? undefined : String(text || '') });
-        },
-      };
-      // A HANDLER CAN FAIL TWICE: at once, or later in the promise it returns.
-      // wsl-claude found the second escaping: no answer to the owner, and an
-      // unhandled rejection, which stops a Node 24 process. Both land here,
-      // and resolve settles only once.
-      const failed = function () {
-        resolve({ ok: false, status: 500, code: 'handler-failed', error: 'the handler failed', verb: verb });
-      };
-      let ran = null;
-      try { ran = handler(req, res); }
-      catch (e) { failed(); return; }
-      if (ran && typeof ran.then === 'function') ran.then(null, failed);
-    });
-  }
+  // THE SHIM STOOD HERE: the in-process call of a loopback handler. It is the table's own now, verbTable call
+  // (goal/G30.4), because a granted peer call runs the same way; o.call is that function.
   return function (message) {
     const p = puppet();
     if (!p.puppet || !p.owner) return;
@@ -211,7 +182,7 @@ function puppetDoor(opts) {
       ownerKey: p.owner, selfKey: o.selfKey(), auth: o.auth,
     });
     if (!got.ok) { reply(message, p.owner, got); return; }
-    shim(got.verb, got.body).then(function (answer) {
+    o.call(got.verb, got.body).then(function (answer) {
       reply(message, p.owner, Object.assign({ verb: got.verb }, answer));
     });
   };

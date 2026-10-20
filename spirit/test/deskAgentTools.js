@@ -58,7 +58,9 @@ async function until(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < (
 // ── THE FAKE NODE: the net family, net.fetch, jobs.update, deskClient ────
 const PAGE = '<html><head><title>Example Domain</title><style>body{margin:0}</style></head><body><h1>Example Domain</h1>\n<p>This domain is for use in illustrative examples in documents.</p>\n<script>var x = 1;</script></body></html>';
 const BIG_PAGE = '<html><body>' + 'A long paragraph of the page, repeated so it overflows the tool room. '.repeat(400) + '</body></html>';
-let introspectItems = [{ key: 'net.fetch', label: FETCH_DESCRIPTION }];
+// The node's part of the flat verb table for net (goal/G30.4: tools.js names the node's verbs from jobs.api 'api').
+const NET_TABLE = { fetch: { request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} } };
+let netVerbs = NET_TABLE;
 const nodeAsks = [];
 const published = [];
 let nextQueue = [];
@@ -73,8 +75,9 @@ const node = http.createServer(function (req, res) {
     // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskAgent: ...}, and
     // the node answers them here as it answered fs.load before (recorded as verb file.load), so the loop is the same.
     const du = b.verb === 'jobs.api' && b.ask && b.ask.deskAgent;
-    if (du && du['AGENTS.introspect']) return answer(200, { items: [{ key: 'file.load', label: LOAD_DESCRIPTION }], more: false });
-    if (du && du['AGENTS.file.load']) return answer(200, { description: LOAD_DESCRIPTION, request: { path: '' }, reply: { path: '', text: '' } });
+    // Described from the family folder since goal/G30.4: FS.search lists file.load.json, FS.loadJsonValue reads it.
+    if (du && du['FS.search']) return answer(200, { items: [{ key: 'file.load.json', label: 'file.load.json' }], more: false });
+    if (du && du['FS.loadJsonValue'] && du['FS.loadJsonValue'].path === 'file.load.json') return answer(200, { value: { description: LOAD_DESCRIPTION, request: { path: '' }, reply: { path: '', text: '' } } });
     if (du && du['file.load']) {
       const p = String(du['file.load'].path || '');
       nodeAsks.push({ verb: 'file.load', path: p });
@@ -82,8 +85,9 @@ const node = http.createServer(function (req, res) {
       return answer(200, { path: p, text: /big\.test/.test(p) ? BIG_PAGE : PAGE });
     }
     if (du) return answer(404, { ok: false, code: 'no-such-verb' });
-    if (b.verb === 'net.AGENTS.introspect') return answer(200, { items: introspectItems, more: false });
-    if (b.verb === 'net.AGENTS.fetch') return answer(200, { description: FETCH_DESCRIPTION, request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} });
+    // The node's verbs from the flat table (jobs.api 'api'), each verb's file through its family's FS (goal/G30.4).
+    if (b.verb === 'jobs.api' && b.ask === 'api') return answer(200, { net: Object.assign({ 'FS.loadJsonValue': { request: { path: '' }, reply: {} } }, netVerbs) });
+    if (b.verb === 'net.FS.loadJsonValue' && b.path === 'fetch.json') return answer(200, { value: { description: FETCH_DESCRIPTION, request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} } });
     if (b.verb === 'net.fetch') {
       if (!b.url) return answer(400, { error: 'url is required' });
       if (/closed\.test/.test(b.url)) return answer(403, { error: 'closed.test is closed by the owner', closed: true });
@@ -98,7 +102,7 @@ const node = http.createServer(function (req, res) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
       deskWords.push({ verb: String(dc.desk.verb || ''), args: args });
       const v = dc.desk.verb;
-      if (v === 'AGENTS') return answer(200, { text: 'rules' });
+      if (v === 'FS.loadFile' && args.path === 'AGENTS.md') return answer(200, { text: 'rules' });
       if (v === 'item.get') return answer(200, { item: JSON.stringify({ id: args.id, title: 't', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: true }), version: 1, change: 1 });
       if (v === 'item.box') return answer(200, { box: 'the box', version: 1 });
       if (v === 'item.chat') return answer(200, { chat: [{ by: 'andy', at: 't', text: 'levant: what is on example.com', taken: '' }], chatMore: false });
@@ -191,7 +195,9 @@ async function suite() {
   test.subHeading('1. net.fetch is described to agents again');
   let family = null;
   try { family = require('../run/js/introSpector.js').family(path.join(RUN, 'js', 'net'), { declared: ['fetch'], prefix: 'net.' }); } catch (e) { family = null; }
-  if (fs.existsSync(path.join(RUN, 'js', 'net', 'fetch.json')) && family && family.verbs['net.AGENTS.fetch'] && !family.stale.length) test.check('js/net/fetch.json, and the family of js/net carries net.AGENTS.fetch');
+  // Since goal/G30.4 the family carries FS, and fetch.json is read through net.FS.loadJsonValue.
+  const fetchFile = family && family.verbs['net.FS.loadJsonValue'] ? family.verbs['net.FS.loadJsonValue'].handler({ path: 'fetch.json' }).value : null;
+  if (fs.existsSync(path.join(RUN, 'js', 'net', 'fetch.json')) && fetchFile && typeof fetchFile.description === 'string' && !family.stale.length) test.check('js/net/fetch.json, and the family of js/net reads it through net.FS.loadJsonValue');
   else test.fail('goal/G29.20: the net family does not describe fetch: ' + short(family && { verbs: Object.keys(family.verbs), stale: family.stale }));
 
   // ── 2. THE OBJECT ───────────────────────────────────────────────────────
@@ -216,14 +222,14 @@ async function suite() {
         && props && props.url && props.url.type === 'string' && props.method && props.method.type === 'string' && props.headers && props.headers.type === 'object' && props.timeoutMs && props.timeoutMs.type === 'number' && t0.function.parameters.type === 'object') {
       test.check('describe(net) gives one OpenAI tool: net_fetch, the file\'s description, parameters typed from the request\'s examples (url string, headers object, timeoutMs number)');
     } else test.fail(OWED + 'describe answered ' + short(described));
-    const nodeAsked = nodeAsks.filter(function (a) { return a.verb === 'net.AGENTS.introspect' || a.verb === 'net.AGENTS.fetch'; }).map(function (a) { return a.verb; });
-    if (nodeAsked.indexOf('net.AGENTS.introspect') !== -1 && nodeAsked.indexOf('net.AGENTS.fetch') !== -1) test.check('it asked the node net.AGENTS.introspect and net.AGENTS.fetch, nothing hand-written');
+    const nodeAsked = nodeAsks.filter(function (a) { return (a.verb === 'jobs.api' && a.ask === 'api') || (a.verb === 'net.FS.loadJsonValue' && a.path === 'fetch.json'); }).map(function (a) { return a.verb; });
+    if (nodeAsked.indexOf('jobs.api') !== -1 && nodeAsked.indexOf('net.FS.loadJsonValue') !== -1) test.check('it asked the node its verb table (jobs.api \'api\') and net.FS.loadJsonValue of fetch.json, nothing hand-written');
     else test.fail(OWED + 'describe asked the node ' + short(nodeAsked));
-    introspectItems = [];
+    netVerbs = {};
     const none = await tools.describe('net');
-    introspectItems = [{ key: 'net.fetch', label: FETCH_DESCRIPTION }];
+    netVerbs = NET_TABLE;
     if (Array.isArray(none) && none.length === 0) test.check('nothing listed, no tools');
-    else test.fail(OWED + 'with an empty introspection describe answered ' + short(none));
+    else test.fail(OWED + 'with an empty verb table describe answered ' + short(none));
     await tools.describe('net');
     const before = nodeAsks.length;
     const r1 = await tools.run(toolCall('c1', 'net_fetch', { url: 'https://example.test/', method: 'GET', extra: 'not declared' }));

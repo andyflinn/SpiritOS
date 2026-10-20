@@ -126,9 +126,11 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   // goal/G16.3: the node's relay list is node state, relay-state/relays.json.
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
-  const claimed = new RegExp("^ {4}'node\\.debug':", 'm').test(fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8'));
-  if (claimed) test.check('node.debug is claimed in server.js, so the owner door reaches it too');
-  else test.fail(OWED + 'node.debug is not claimed in server.js');
+  // Mounted since goal/G30.4: the node family's block declares its verbs bare ('debug'), the table names it node.debug.
+  const nodeBlock = /loopbackVerbs\.mount\('node',[\s\S]*?\n {2}\}, \{ wire:/.exec(fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8'));
+  const claimed = !!nodeBlock && new RegExp("^ {4}'debug':", 'm').test(nodeBlock[0]);
+  if (claimed) test.check('node.debug is mounted in server.js, so the owner door reaches it too');
+  else test.fail(OWED + 'node.debug is not mounted in server.js');
   const boot = async function () {
     const port = await freePort();
     const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });

@@ -36,7 +36,7 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by goal/G24.2: ';
 const ROOT = path.join(__dirname, '..', '..');
 const AGENT = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'deskAgent.js');
-const CHAT_ADD = JSON.parse(fs.readFileSync(path.join(ROOT, 'spirit', 'run', 'process', 'js', 'desk', 'chat.add.json'), 'utf8'));
+const CHAT_ADD = JSON.parse(fs.readFileSync(path.join(ROOT, 'spirit', 'run', 'process', 'js', 'desk', 'desk.family', 'chat.add.json'), 'utf8'));
 const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-GGUF', answerTokens: 100, bytesPerToken: 4 };
 
@@ -80,9 +80,10 @@ const taken = {};
 const writes = [];   // {verb, id, ok, text}, in order
 let nextQueue = [];
 function deskAnswer(verb, a) {
-  if (verb === 'AGENTS') return { text: 'Rules for agents.' };
-  if (verb === 'AGENTS.introspect') return { items: [{ key: 'chat.add', label: 'chat.add' }], more: false };
-  if (verb === 'AGENTS.chat.add') return CHAT_ADD;
+  // The desk's family folder (desk.family since goal/G30.4) through its FS: AGENTS.md, the listing, the verb file.
+  if (verb === 'FS.loadFile' && a.path === 'AGENTS.md') return { text: 'Rules for agents.' };
+  if (verb === 'FS.search') return { items: [{ key: 'chat.add.json', label: 'chat.add.json' }], more: false };
+  if (verb === 'FS.loadJsonValue') return { value: a.path === 'chat.add.json' ? CHAT_ADD : null };
   if (verb === 'items.search') return { items: [], more: false };
   const it = ITEMS[a.id];
   if (verb === 'item.get') return it ? { item: JSON.stringify(it), version: 1, change: 1 } : { ok: false, code: 'no-such-item' };

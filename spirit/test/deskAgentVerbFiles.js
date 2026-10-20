@@ -2,8 +2,8 @@
 
 // spirit/test/deskAgentVerbFiles.js
 // goal/G24.1. Red on today's code; claude-windows wrote it and builds it (one agent). The item's box is the record:
-//   Levant's desk tools are the desk verbs that have a description file beside desk.js
-//   (spirit/run/process/js/desk/<verb>.json). The ones cw uses daily had none.
+//   Levant's desk tools are the desk verbs that have a description file in desk.js's family folder
+//   (spirit/run/process/js/desk/desk.family/<verb>.json since goal/G30.4). The ones cw uses daily had none.
 //   Each of these gets its description file, and with it becomes his tool: line.take, item.release, box.take,
 //   box.release, item.add, goal.add, phase.take, phase.done, phase.may, changes, chat.search, log.search, items.find,
 //   rule.get, rules.search, profile.get, pending.get.
@@ -15,11 +15,11 @@
 // entry `'<verb>': {` in the served table, then its `request: {...}` literal, balanced braces, evaluated as a literal.
 //
 // WHAT IS ASSERTED
-//   1. for each of the seventeen: desk/<verb>.json exists, parses, has a description, and its request's keys equal
+//   1. for each of the seventeen: desk/desk.family/<verb>.json exists, parses, has a description, and its request's keys equal
 //      the keys desk.js declares for the verb.
 //   2. none of the excluded verbs has a file.
-//   3. the family of the desk's folder (introSpector.family, as the desk serves it) lists each of the seventeen in
-//      AGENTS.introspect and answers AGENTS.<verb> with its request.
+//   3. the family of the desk's folder (introSpector.family, as the desk serves it) lists each of the seventeen by
+//      FS.search and answers FS.loadJsonValue of <verb>.json with its request (goal/G30.4).
 //   4. deskAgent's tools.js, describing the desk through a route answered by that family, offers desk_<verb> for
 //      each of the seventeen.
 // rule/11: through testSupport only; reads files, starts nothing.
@@ -32,6 +32,7 @@ const OWED = 'OWED by goal/G24.1: ';
 const ROOT = path.join(__dirname, '..', '..');
 const DESK_DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'desk');
 const DESK_JS = path.join(DESK_DIR, 'desk.js');
+const FAMILY_DIR = path.join(DESK_DIR, 'desk.family'); // the verb files, <module>.family since goal/G30.4
 const TOOLS = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'tools.js');
 
 const SEVENTEEN = ['line.take', 'item.release', 'box.take', 'box.release', 'item.add', 'goal.add', 'phase.take', 'phase.done', 'phase.may', 'changes', 'chat.search', 'log.search', 'items.find', 'rule.get', 'rules.search', 'profile.get', 'pending.get'];
@@ -58,7 +59,7 @@ function declaredRequest(verb) {
   }
   try { return Function('return (' + source.slice(from, i + 1) + ');')(); } catch (e) { return null; }
 }
-function fileOf(verb) { try { return JSON.parse(fs.readFileSync(path.join(DESK_DIR, verb + '.json'), 'utf8')); } catch (e) { return null; } }
+function fileOf(verb) { try { return JSON.parse(fs.readFileSync(path.join(FAMILY_DIR, verb + '.json'), 'utf8')); } catch (e) { return null; } }
 
 async function suite() {
   test.subHeading('1. the seventeen have their files, each request the declared one');
@@ -71,35 +72,36 @@ async function suite() {
   });
 
   test.subHeading('2. the excluded verbs get no file');
-  const present = EXCLUDED.filter(function (v) { return fs.existsSync(path.join(DESK_DIR, v + '.json')); });
+  const present = EXCLUDED.filter(function (v) { return fs.existsSync(path.join(FAMILY_DIR, v + '.json')); });
   if (!present.length) test.check('none of ' + EXCLUDED.join(', ') + ' has a file');
   else test.fail('files for verbs that get none: ' + present.join(', '));
 
   test.subHeading('3. the desk\'s family lists the seventeen with their requests');
-  const existing = fs.readdirSync(DESK_DIR).filter(function (f) { return /\.json$/.test(f) && f !== 'desk.json' && f !== 'currentGoal.json'; }).map(function (f) { return f.replace(/\.json$/, ''); });
+  const existing = fs.readdirSync(FAMILY_DIR).filter(function (f) { return /\.json$/.test(f) && f !== 'desk.json' && f !== 'currentGoal.json'; }).map(function (f) { return f.replace(/\.json$/, ''); });
   const declared = existing.concat(SEVENTEEN.filter(function (v) { return existing.indexOf(v) === -1; }));
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: declared, manifest: 'desk.json' }); } catch (e) { family = null; }
+  try { family = require('../run/js/introSpector.js').family(FAMILY_DIR, { declared: declared }); } catch (e) { family = null; }
   if (!family) { test.fail('the world: introSpector.family threw on the desk folder'); return; }
+  // Since goal/G30.4 the folder is read through its FS: FS.search names the files, FS.loadJsonValue reads each.
   let listed = [];
-  try { const r = await family.verbs['AGENTS.introspect'].handler({}); listed = ((r && r.items) || []).map(function (i) { return i.key; }); } catch (e) { listed = []; }
+  try { const r = await family.verbs['FS.search'].handler({ q: '' }); listed = ((r && r.items) || []).map(function (i) { return String(i.key); }).filter(function (k) { return /\.json$/.test(k); }).map(function (k) { return k.slice(0, -5); }); } catch (e) { listed = []; }
   const unlisted = SEVENTEEN.filter(function (v) { return listed.indexOf(v) === -1; });
-  if (!unlisted.length) test.check('AGENTS.introspect lists all seventeen');
-  else test.fail(OWED + 'AGENTS.introspect does not list ' + unlisted.join(', '));
-  const unanswered = SEVENTEEN.filter(function (v) { const h = family.verbs['AGENTS.' + v]; let a = null; try { a = h && h.handler({}); } catch (e) { a = null; } return !a || !a.request || !sameKeys(a.request, declaredRequest(v)); });
-  if (!unanswered.length) test.check('AGENTS.<verb> answers each with its request');
-  else test.fail(OWED + 'AGENTS.<verb> answers no matching request for ' + unanswered.join(', '));
+  if (!unlisted.length) test.check('FS.search lists all seventeen verb files');
+  else test.fail(OWED + 'FS.search does not list ' + unlisted.join(', '));
+  const unanswered = SEVENTEEN.filter(function (v) { const h = family.verbs['FS.loadJsonValue']; let a = null; try { a = h && h.handler({ path: v + '.json' }).value; } catch (e) { a = null; } return !a || !a.request || !sameKeys(a.request, declaredRequest(v)); });
+  if (!unanswered.length) test.check('FS.loadJsonValue answers each verb file with its request');
+  else test.fail(OWED + 'FS.loadJsonValue answers no matching request for ' + unanswered.join(', '));
 
   test.subHeading('4. deskAgent offers each as a desk tool');
   const deskRoute = {
-    ask: function (verb) {
+    ask: function (verb, args) {
       const h = family.verbs[verb];
       let body = null;
-      try { body = h ? h.handler({}) : { ok: false, code: 'no-such-verb' }; } catch (e) { body = { ok: false, code: 'refused' }; }
+      try { body = h ? h.handler(args || {}) : { ok: false, code: 'no-such-verb' }; } catch (e) { body = { ok: false, code: 'refused' }; }
       return Promise.resolve(body).then(function (b) { return { status: b && b.ok === false ? 404 : 200, body: b, text: JSON.stringify(b) }; });
     },
     verb: function (stem) { return stem; },
-    family: function (name) { return 'AGENTS.' + name; },
+    fs: function (name) { return 'FS.' + name; },
   };
   const tools = require(TOOLS).createTools({ routes: { desk: deskRoute }, room: 4000 });
   const described = await tools.describe('desk');

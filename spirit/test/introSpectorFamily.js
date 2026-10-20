@@ -13,12 +13,13 @@
 // may already be dotted and up to 64 characters (appServer.js:47), so the family needs no new mechanism, which is
 // why the item's box says so.
 //
-// WHAT IS ASSERTED, on a scratch process server of this suite's own:
-//   1. AGENTS {} still answers the AGENTS.md (the world, unchanged).
-//   2. AGENTS.introspect lists the verbs that have a file, in the list form {items: [{key, label}], more}, and
-//      nothing else: a declared verb with no file is not listed.
-//   3. AGENTS.<verb> answers that verb's file as it stands on disc.
-//   4. A verb with no file is closed to the family (the world check: it is refused, today for want of the verb).
+// WHAT IS ASSERTED, on a scratch process server of this suite's own. SINCE goal/G30.4 the AGENTS verbs are gone and
+// the family folder (<script>.family beside the script) is read through its FS verbs, so each point asks FS:
+//   1. FS.loadFile {path: 'AGENTS.md'} answers the AGENTS.md, and AGENTS is no verb any more.
+//   2. FS.search {q: ''} lists the folder's files in the list form {items: [{key, label}], more}: the verb that has a
+//      file is there as <verb>.json, a declared verb with no file is not.
+//   3. FS.loadJsonValue {path: '<verb>.json'} answers that verb's file as it stands on disc.
+//   4. A verb with no file is closed to the family: its FS.loadJsonValue has no value.
 //   5. A verb file naming a verb the server never declared is said at boot.
 // The node's own namespaces are the sibling suite's (introSpectorNode.js).
 
@@ -51,7 +52,7 @@ const SERVER_JS = [
   '',
 ].join('\n');
 
-test.startTest('goal/G10.5: the AGENTS family on a process server');
+test.startTest('goal/G10.5: the family folder on a process server, read through FS (goal/G30.4)');
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-introspectorfamily-'));
 const dir = path.join(scratch, 'probe');
@@ -60,10 +61,13 @@ fs.mkdirSync(dir, { recursive: true });
 fs.mkdirSync(state, { recursive: true });
 const script = path.join(dir, 'probe.js');
 fs.writeFileSync(script, SERVER_JS);
-fs.writeFileSync(path.join(dir, 'AGENTS.md'), AGENTS_MD);
-// One file per allowed verb, in the server's own folder, the verb name as the file name (the box's FILE NAMES).
-fs.writeFileSync(path.join(dir, 'item.add.json'), JSON.stringify(ADD_FILE, null, 2) + '\n');
-fs.writeFileSync(path.join(dir, 'ghost.walk.json'), JSON.stringify(GHOST_FILE, null, 2) + '\n');
+// The family folder is probe.family beside probe.js (goal/G30.4).
+const familyDir = path.join(dir, 'probe.family');
+fs.mkdirSync(familyDir, { recursive: true });
+fs.writeFileSync(path.join(familyDir, 'AGENTS.md'), AGENTS_MD);
+// One file per allowed verb, in the server's family folder, the verb name as the file name (the box's FILE NAMES).
+fs.writeFileSync(path.join(familyDir, 'item.add.json'), JSON.stringify(ADD_FILE, null, 2) + '\n');
+fs.writeFileSync(path.join(familyDir, 'ghost.walk.json'), JSON.stringify(GHOST_FILE, null, 2) + '\n');
 
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'probe', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
@@ -95,34 +99,37 @@ function stop() { return new Promise(function (r) { if (!kid) return r(); kid.on
 
   if (!await start()) { test.fail('the probe server did not start: ' + short(boot)); return; }
 
-  test.subHeading('1. AGENTS {} still answers the file beside the script');
-  const md = await call('AGENTS', {});
-  if (md.body && String(md.body.text || '').indexOf('Probe: rules for agents') !== -1) test.check('the world: AGENTS answers the AGENTS.md (appServer.js withAgents)');
-  else { test.fail('the world: AGENTS answered ' + short(md) + '; the shape of slim/G1.8 moved'); return; }
+  test.subHeading('1. FS.loadFile answers the AGENTS.md in the family folder');
+  const md = await call('FS.loadFile', { path: 'AGENTS.md' });
+  if (md.body && String(md.body.text || '').indexOf('Probe: rules for agents') !== -1) test.check('the world: FS.loadFile answers the AGENTS.md (appServer.js withAgents)');
+  else { test.fail('the world: FS.loadFile answered ' + short(md) + '; the shape of goal/G30.4 moved'); return; }
+  const gone = await call('AGENTS', {});
+  if (gone.body && gone.body.code === 'no-such-verb') test.check('AGENTS is no verb any more (goal/G30.4)');
+  else test.fail(OWED + 'AGENTS still answered ' + short(gone));
 
-  test.subHeading('2. AGENTS.introspect lists the verbs that have a file, and nothing else');
-  const list = await call('AGENTS.introspect', { text: '' });
+  test.subHeading('2. FS.search lists the folder\'s files: the verb with a file, not the one without');
+  const list = await call('FS.search', { q: '' });
   const items = list.body && Array.isArray(list.body.items) ? list.body.items : null;
-  if (items) test.check('AGENTS.introspect answers the list form {items, more}');
-  else test.fail(OWED + 'AGENTS.introspect answered ' + short(list));
+  if (items) test.check('FS.search answers the list form {items, more}');
+  else test.fail(OWED + 'FS.search answered ' + short(list));
   const keys = (items || []).map(function (x) { return x && x.key; });
-  if (items && keys.indexOf('item.add') !== -1) test.check('it lists item.add, the verb that has a file');
-  else if (items) test.fail(OWED + 'it lists ' + short(keys) + ', without item.add');
-  if (items && keys.indexOf('secret.burn') === -1) test.check('it leaves out secret.burn, declared with no file');
-  else if (items) test.fail(OWED + 'it lists secret.burn, which has no verb file: ' + short(keys));
+  if (items && keys.indexOf('item.add.json') !== -1) test.check('it lists item.add.json, the verb that has a file');
+  else if (items) test.fail(OWED + 'it lists ' + short(keys) + ', without item.add.json');
+  if (items && keys.indexOf('secret.burn.json') === -1) test.check('it leaves out secret.burn, declared with no file');
+  else if (items) test.fail(OWED + 'it lists secret.burn.json, which has no verb file: ' + short(keys));
   if (items && (items[0] || {}).label) test.check('each entry carries its label');
   else if (items) test.fail(OWED + 'the entries carry no label: ' + short(items));
 
-  test.subHeading('3. AGENTS.<verb> answers that verb\'s file as it stands');
-  const one = await call('AGENTS.item.add', {});
-  if (one.body && JSON.stringify(one.body).indexOf('Add one row to the probe') !== -1) test.check('AGENTS.item.add answers the file, its description with it');
-  else test.fail(OWED + 'AGENTS.item.add answered ' + short(one));
+  test.subHeading('3. FS.loadJsonValue answers that verb\'s file as it stands');
+  const one = await call('FS.loadJsonValue', { path: 'item.add.json' });
+  if (one.body && one.body.value && String(one.body.value.description || '').indexOf('Add one row to the probe') !== -1) test.check('FS.loadJsonValue of item.add.json answers the file, its description with it');
+  else test.fail(OWED + 'FS.loadJsonValue of item.add.json answered ' + short(one));
 
   test.subHeading('4. a declared verb with no file is closed to the family');
-  const closed = await call('AGENTS.secret.burn', {});
-  const refused = !closed.body || closed.body.ok === false || closed.thrown;
-  if (refused) test.check('the world: AGENTS.secret.burn is refused (today for want of the verb itself)');
-  else test.fail(OWED + 'AGENTS.secret.burn answered ' + short(closed) + ', although no file allows it');
+  const closed = await call('FS.loadJsonValue', { path: 'secret.burn.json' });
+  const noFile = closed.body && closed.body.value == null;
+  if (noFile) test.check('secret.burn has no verb file: FS.loadJsonValue of secret.burn.json has no value, so nothing describes it');
+  else test.fail(OWED + 'FS.loadJsonValue of secret.burn.json answered ' + short(closed) + ', although no file allows it');
 
   test.subHeading('5. a verb file naming a verb nobody declared is said at boot');
   if (/ghost\.walk/.test(boot)) test.check('the boot names ghost.walk.json, the stale file');

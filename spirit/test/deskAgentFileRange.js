@@ -19,7 +19,7 @@
 //
 // WHAT IS ASSERTED
 //   1. file.load.json: its request has offset and limit, its description names offset and limit; and deskAgent's
-//      AGENTS.file.load (what tools.js reads into the model's tool) carries the same.
+//      FS.loadJsonValue of file.load.json (what tools.js reads into the model's tool, goal/G30.4) carries the same.
 //   2. a small file with no range reads whole as {path, text}, the text exact.
 //   3. offset 5, limit 3 on the small file: lines 5..7 numbered, lines = its count, next = 8.
 //   4. a file about 3 x ANSWER_MAX in many lines, read from offset 1 with a limit past its end and then from each
@@ -40,6 +40,7 @@ const OWED = 'OWED by goal/G23.3: ';
 const ROOT = path.join(__dirname, '..', '..');
 const DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent');
 const AGENT = path.join(DIR, 'deskAgent.js');
+const FAMILY = path.join(DIR, 'deskAgent.family'); // the verb files, <module>.family since goal/G30.4
 const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-GGUF', answerTokens: 100, bytesPerToken: 4 };
 const ANSWER_MAX = appClient.ANSWER_MAX;
@@ -95,7 +96,7 @@ function numbered(text) {
 async function suite() {
   test.subHeading('1. the tool tells the model to read a large file part by part');
   let file = null;
-  try { file = JSON.parse(fs.readFileSync(path.join(DIR, 'file.load.json'), 'utf8')); } catch (e) { file = null; }
+  try { file = JSON.parse(fs.readFileSync(path.join(FAMILY, 'file.load.json'), 'utf8')); } catch (e) { file = null; }
   const req = (file && file.request) || {};
   const desc = String((file && file.description) || '');
   if ('offset' in req && 'limit' in req && /offset/.test(desc) && /limit/.test(desc)) test.check('file.load.json: request has offset and limit, the description names them');
@@ -119,10 +120,11 @@ async function suite() {
   if (!up) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
   test.check('the world: the big file is ' + bytes(BIG) + ' bytes in ' + BIG_LINES.length + ' lines; one answer is ' + ANSWER_MAX);
 
-  const intro = (await client.ask({ deskAgent: { 'AGENTS.file.load': {} } })).body || {};
+  // The verb file through the family's FS (goal/G30.4: AGENTS.file.load is gone), as tools.js reads it.
+  const intro = ((await client.ask({ deskAgent: { 'FS.loadJsonValue': { path: 'file.load.json' } } })).body || {}).value || {};
   const ireq = intro.request || {};
-  if ('offset' in ireq && 'limit' in ireq && /offset/.test(String(intro.description || '')) && /limit/.test(String(intro.description || ''))) test.check('AGENTS.file.load, what the model\'s tool is made from, carries offset and limit');
-  else test.fail(OWED + 'AGENTS.file.load answers ' + short(intro));
+  if ('offset' in ireq && 'limit' in ireq && /offset/.test(String(intro.description || '')) && /limit/.test(String(intro.description || ''))) test.check('FS.loadJsonValue of file.load.json, what the model\'s tool is made from, carries offset and limit');
+  else test.fail(OWED + 'FS.loadJsonValue of file.load.json answers ' + short(intro));
 
   test.subHeading('2. a small file with no range reads whole, as today');
   const whole = await load({ path: 'files/small.txt' });

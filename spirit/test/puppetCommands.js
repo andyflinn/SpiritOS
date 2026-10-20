@@ -70,9 +70,13 @@ function world() {
     // G3: a handler that reaches for the socket fails alone, now as before.
     'jobs.socket': function (req, res) { res.end(String(req.socket.remoteAddress)); },
   };
+  // THE HANDLERS RUN AS THE NODE RUNS THEM (goal/G30.4): claimed on a verb table and called through the table's
+  // call, which server.js hands the door; the shim these checks describe is that call now.
+  const table = require('../run/js/verbTable').createVerbTable();
+  table.claim('jobs', 'puppetCommands.js', handlers, { wire: false });
   const door = puppetMode.puppetDoor({
     rootDir: root,
-    handlerFor: function (verb) { return handlers[verb] || null; },
+    call: function (verb, args) { return table.call(verb, args); },
     post: function (relay, to, text) { sent.push({ to: to, reply: packet.decode(text) }); return Promise.resolve({ ok: true }); },
     encode: packet.encode,
     auth: auth,

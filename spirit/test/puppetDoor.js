@@ -75,9 +75,15 @@ function world(puppetJson) {
       res.end(JSON.stringify({ ok: true, rows: 'x'.repeat(40000) }));
     },
   };
+  // THE HANDLERS RUN AS THE NODE RUNS THEM (goal/G30.4): claimed on a verb table, one namespace each, and called
+  // through the table's call, which server.js hands the door.
+  const table = require('../run/js/verbTable').createVerbTable();
+  const byNs = {};
+  Object.keys(handlers).forEach(function (v) { const ns = v.split('.')[0]; (byNs[ns] = byNs[ns] || {})[v] = handlers[v]; });
+  Object.keys(byNs).forEach(function (ns) { table.claim(ns, 'puppetDoor.js', byNs[ns], { wire: false }); });
   const door = puppetMode.puppetDoor({
     rootDir: root,
-    handlerFor: function (verb) { return handlers[verb] || null; },
+    call: function (verb, args) { return table.call(verb, args); },
     post: function (relay, to, text) { sent.push({ relay: relay, to: to, reply: packet.decode(text) }); return Promise.resolve({ ok: true }); },
     encode: packet.encode,
     auth: auth,

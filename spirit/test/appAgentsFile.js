@@ -11,13 +11,15 @@
 //   appServer".
 //
 // THE CONTRACT:
-//   T1 a server whose script has an AGENTS.md beside it lists AGENTS in its
-//      api, {request: {}, reply: {text: ''}}, and AGENTS {} answers the file
+//   T1 a server whose family folder (<script>.family) has an AGENTS.md lists
+//      FS.loadFile in its api, and FS.loadFile {path: 'AGENTS.md'} answers
+//      the file (goal/G30.4: the AGENTS verb is gone, FS reads the folder)
 //   T2 read per ask: an edit to the file is the next answer, no restart
-//   T3 no AGENTS.md, no verb: api does not list it, and asking it is
-//      no-such-verb, as any verb the server lacks
+//   T3 no AGENTS.md: still no AGENTS verb (asking it is no-such-verb), and
+//      FS.loadFile of AGENTS.md answers no text
 //   T4 bounded: a file too big for one answer is refused by name, never cut
-//   T5 the desk server has one (process/js/desk/AGENTS.md), and answers it
+//   T5 the desk server has one (process/js/desk/desk.family/AGENTS.md), and
+//      answers it through FS.loadFile
 
 const fs = require('fs');
 const os = require('os');
@@ -42,7 +44,8 @@ function plant(name, agentsText) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, name + '.js'),
     'require(' + JSON.stringify(HELPER) + ').serve({ ping: { request: {}, reply: { pong: true }, handler: function () { return { pong: true }; } } });\n');
-  if (agentsText != null) fs.writeFileSync(path.join(dir, 'AGENTS.md'), agentsText);
+  // The family folder is <module>.family beside the script since goal/G30.4.
+  if (agentsText != null) { fs.mkdirSync(path.join(dir, name + '.family'), { recursive: true }); fs.writeFileSync(path.join(dir, name + '.family', 'AGENTS.md'), agentsText); }
   return dir;
 }
 async function start(name, script, extra) {
@@ -55,6 +58,7 @@ async function start(name, script, extra) {
   }
   return false;
 }
+const AGENTS_MD = { path: 'AGENTS.md' };
 function ask(name, verb, args) { const b = {}; b[verb] = args || {}; const q = {}; q[name] = b; return client.ask(q); }
 
 (async function () {
@@ -66,45 +70,47 @@ function ask(name, verb, args) { const b = {}; b[verb] = args || {}; const q = {
   await start('bigrules', path.join(bigDir, 'bigrules.js'));
   const api = (await client.ask('api')).body || {};
 
-  test.subHeading('T1: an AGENTS.md beside the script: AGENTS is in its api, and answers the file');
-  const listed = api.withrules && api.withrules.AGENTS;
-  const r1 = await ask('withrules', 'AGENTS');
-  if (listed && JSON.stringify(listed) === JSON.stringify({ request: {}, reply: { text: '' } }) &&
+  test.subHeading('T1: an AGENTS.md in the family folder: FS.loadFile is in its api, and answers the file');
+  const listed = api.withrules && api.withrules['FS.loadFile'];
+  const r1 = await ask('withrules', 'FS.loadFile', AGENTS_MD);
+  if (listed && JSON.stringify(listed.request) === JSON.stringify({ path: '' }) && !api.withrules.AGENTS &&
       r1.status === 200 && r1.body && r1.body.text === 'RULE-ONE: say READY TO CLOSE first.\n') {
-    test.check('api lists AGENTS {} -> {text}, and AGENTS answers the file word for word');
-  } else test.fail(OWED + 'api lists ' + JSON.stringify(listed) + ', AGENTS answered ' + r1.status + ' ' + JSON.stringify(r1.body).slice(0, 120));
+    test.check('api lists FS.loadFile {path} and no AGENTS, and FS.loadFile answers AGENTS.md word for word');
+  } else test.fail(OWED + 'api lists ' + JSON.stringify(listed) + ', FS.loadFile answered ' + r1.status + ' ' + JSON.stringify(r1.body).slice(0, 120));
 
   test.subHeading('T2: read per ask: an edit is the next answer');
-  fs.writeFileSync(path.join(withDir, 'AGENTS.md'), 'RULE-TWO: edited.\n');
-  const r2 = await ask('withrules', 'AGENTS');
+  fs.writeFileSync(path.join(withDir, 'withrules.family', 'AGENTS.md'), 'RULE-TWO: edited.\n');
+  const r2 = await ask('withrules', 'FS.loadFile', AGENTS_MD);
   if (r2.status === 200 && r2.body && r2.body.text === 'RULE-TWO: edited.\n') test.check('the edited file came back, no restart');
-  else test.fail(OWED + 'after an edit AGENTS answered ' + JSON.stringify(r2.body).slice(0, 120));
+  else test.fail(OWED + 'after an edit FS.loadFile answered ' + JSON.stringify(r2.body).slice(0, 120));
 
-  test.subHeading('T3: no AGENTS.md, no verb');
+  test.subHeading('T3: no AGENTS.md: no AGENTS verb, and FS finds no file');
   const r3 = await ask('norules', 'AGENTS');
-  if (api.norules && !api.norules.AGENTS && api.norules.ping && r3.body && r3.body.code === 'no-such-verb') {
-    test.check('its api lists ping and no AGENTS, and asking AGENTS is no-such-verb');
-  } else test.fail(OWED + 'api ' + JSON.stringify(api.norules) + ', AGENTS answered ' + JSON.stringify(r3.body).slice(0, 120));
+  const r3fs = await ask('norules', 'FS.loadFile', AGENTS_MD);
+  if (api.norules && !api.norules.AGENTS && api.norules.ping && r3.body && r3.body.code === 'no-such-verb' &&
+      r3fs.status === 200 && r3fs.body && r3fs.body.text == null) {
+    test.check('its api lists ping and no AGENTS, asking AGENTS is no-such-verb, and FS.loadFile of AGENTS.md has no text');
+  } else test.fail(OWED + 'api ' + JSON.stringify(api.norules) + ', AGENTS answered ' + JSON.stringify(r3.body).slice(0, 120) + ', FS.loadFile ' + JSON.stringify(r3fs.body).slice(0, 80));
 
   test.subHeading('T4: a file too big for one answer is refused by name, never cut');
-  const r4 = await ask('bigrules', 'AGENTS');
+  const r4 = await ask('bigrules', 'FS.loadFile', AGENTS_MD);
   const text4 = r4.body && typeof r4.body.text === 'string' ? r4.body.text : '';
-  // Not vacuous: the verb exists for this server (it has the file), so the
-  // refusal must be for its size, not no-such-verb.
-  if (api.bigrules && api.bigrules.AGENTS && r4.body && r4.body.ok === false && typeof r4.body.code === 'string' &&
+  // Not vacuous: the verb exists for this server (every server has FS), so
+  // the refusal must be for its size, not no-such-verb.
+  if (api.bigrules && api.bigrules['FS.loadFile'] && r4.body && r4.body.ok === false && typeof r4.body.code === 'string' &&
       r4.body.code && r4.body.code !== 'no-such-verb' && !text4) {
     test.check('refused as ' + r4.body.code + ', no partial text');
   } else test.fail(OWED + 'a too-big AGENTS.md answered ' + r4.status + ' ' + JSON.stringify(r4.body).slice(0, 120));
 
-  test.subHeading('T5: the desk server has its AGENTS.md, and answers it');
-  const deskFile = path.join(path.dirname(DESK), 'AGENTS.md');
+  test.subHeading('T5: the desk server has its AGENTS.md, and answers it through FS');
+  const deskFile = path.join(path.dirname(DESK), 'desk.family', 'AGENTS.md'); // <module>.family since goal/G30.4
   const state = path.join(scratch, 'deskstate');
   fs.mkdirSync(state, { recursive: true });
   const up = await start('desk', DESK, ['{}', '--state', state]);
-  const r5 = up ? await ask('desk', 'AGENTS') : { status: 0 };
+  const r5 = up ? await ask('desk', 'FS.loadFile', AGENTS_MD) : { status: 0 };
   let onDisk = null;
   try { onDisk = fs.readFileSync(deskFile, 'utf8'); } catch (e) { onDisk = null; }
-  if (onDisk && onDisk.trim() && r5.status === 200 && r5.body && r5.body.text === onDisk) test.check('process/js/desk/AGENTS.md exists and the desk server answers it');
+  if (onDisk && onDisk.trim() && r5.status === 200 && r5.body && r5.body.text === onDisk) test.check('process/js/desk/desk.family/AGENTS.md exists and the desk server answers it through FS.loadFile');
   else test.fail(OWED + 'desk AGENTS.md ' + (onDisk ? onDisk.length + ' bytes' : 'missing') + ', desk answered ' + r5.status + ' ' + JSON.stringify(r5.body).slice(0, 100));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });

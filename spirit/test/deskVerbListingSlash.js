@@ -21,6 +21,9 @@
 //      does), offers desk_item_get.
 //   4. the census: every folder that has an AGENTS.md (process/js/<server>/, served by appServer's withAgents, and
 //      js/<namespace>/, claimed on the node), every verb file in it is listed by its AGENTS.introspect.
+// SINCE goal/G30.4 the AGENTS verbs are gone: a family folder is listed by its FS.search {q: ''} (file names, a verb
+// file as <verb>.json), the desk's folder is process/js/desk/desk.family, and tools.js reads each verb file through
+// FS.loadJsonValue. Each point above asks the same of the FS listing.
 // rule/11: through testSupport only; reads files and a scratch folder, starts nothing.
 
 const fs = require('fs');
@@ -30,7 +33,7 @@ const test = require('./testSupport.js');
 
 const OWED = 'OWED by goal/G24.5: ';
 const RUN = path.join(__dirname, '..', 'run');
-const DESK_DIR = path.join(RUN, 'process', 'js', 'desk');
+const DESK_DIR = path.join(RUN, 'process', 'js', 'desk', 'desk.family'); // <module>.family since goal/G30.4
 const TOOLS = path.join(RUN, 'process', 'js', 'deskAgent', 'tools.js');
 const introSpector = require('../run/js/introSpector.js');
 
@@ -47,11 +50,13 @@ function verbFiles(dir, manifest) {
     try { const p = JSON.parse(fs.readFileSync(path.join(dir, n), 'utf8')); return p && typeof p === 'object' && !Array.isArray(p) && typeof p.description === 'string'; } catch (e) { return false; }
   }).map(function (n) { return n.slice(0, -5); }).sort();
 }
+// The folder's listing (FS.search with no words), as the verb stems its .json file names give.
 async function introspect(made, prefix) {
-  const h = made.verbs[prefix + 'AGENTS.introspect'];
+  const h = made.verbs[prefix + 'FS.search'];
   if (!h) return null;
-  const r = await h.handler({});
-  return { keys: ((r && r.items) || []).map(function (i) { return i.key; }), more: !!(r && r.more) };
+  const r = await h.handler({ q: '' });
+  const files = ((r && r.items) || []).map(function (i) { return String(i.key); });
+  return { keys: files.filter(function (k) { return /\.json$/.test(k); }).map(function (k) { return k.slice(0, -5); }), more: !!(r && r.more) };
 }
 function slashed(dir, stem) {
   try { return /\//.test(JSON.parse(fs.readFileSync(path.join(dir, stem + '.json'), 'utf8')).description); } catch (e) { return false; }
@@ -73,33 +78,33 @@ async function suite() {
     else test.fail('the world: the scratch family listed ' + short(got));
     ['item.get', 'path.read'].forEach(function (v) {
       if (got && got.keys.indexOf(v) !== -1) test.check(v + ', whose description holds a "/", is listed');
-      else test.fail(OWED + v + ', whose description holds a "/", is not listed by AGENTS.introspect; it lists ' + short(got && got.keys) + ' (introSpector.js queries the bucket with "*")');
+      else test.fail(OWED + v + ', whose description holds a "/", is not listed by FS.search; it lists ' + short(got && got.keys) + ' (introSpector.js queries the bucket with "*")');
     });
     if (got && got.keys.length === 3) test.check('all three are listed');
-    else test.fail(OWED + 'AGENTS.introspect listed ' + (got ? got.keys.length : 0) + ' of 3, with more ' + (got && got.more) + ': the drop is silent');
+    else test.fail(OWED + 'FS.search listed ' + (got ? got.keys.length : 0) + ' of 3, with more ' + (got && got.more) + ': the drop is silent');
   } finally {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
   }
 
   test.subHeading('2. the desk\'s own folder lists item.get');
-  const deskStems = verbFiles(DESK_DIR, 'desk.json');
-  if (deskStems.indexOf('item.get') !== -1 && slashed(DESK_DIR, 'item.get')) test.check('the world: desk/item.get.json is a verb file, and its description holds a "/"');
-  else test.fail('the world: desk/item.get.json ' + (deskStems.indexOf('item.get') === -1 ? 'is no verb file' : 'holds no "/"'));
-  const desk = introSpector.family(DESK_DIR, { declared: deskStems, manifest: 'desk.json' });
+  const deskStems = verbFiles(DESK_DIR, '');
+  if (deskStems.indexOf('item.get') !== -1 && slashed(DESK_DIR, 'item.get')) test.check('the world: desk.family/item.get.json is a verb file, and its description holds a "/"');
+  else test.fail('the world: desk.family/item.get.json ' + (deskStems.indexOf('item.get') === -1 ? 'is no verb file' : 'holds no "/"'));
+  const desk = introSpector.family(DESK_DIR, { declared: deskStems });
   const deskList = await introspect(desk, '');
-  if (deskList && deskList.keys.indexOf('item.get') !== -1) test.check('the desk\'s AGENTS.introspect lists item.get');
-  else test.fail(OWED + 'the desk\'s AGENTS.introspect does not list item.get');
+  if (deskList && deskList.keys.indexOf('item.get') !== -1) test.check('the desk\'s FS.search lists item.get.json');
+  else test.fail(OWED + 'the desk\'s FS.search does not list item.get.json');
 
   test.subHeading('3. item.get is offered to Levant');
   const deskRoute = {
-    ask: function (verb) {
+    ask: function (verb, args) {
       const h = desk.verbs[verb];
       let body = null;
-      try { body = h ? h.handler({}) : { ok: false, code: 'no-such-verb' }; } catch (e) { body = { ok: false, code: 'refused' }; }
+      try { body = h ? h.handler(args || {}) : { ok: false, code: 'no-such-verb' }; } catch (e) { body = { ok: false, code: 'refused' }; }
       return Promise.resolve(body).then(function (b) { return { status: b && b.ok === false ? 404 : 200, body: b, text: JSON.stringify(b) }; });
     },
     verb: function (stem) { return stem; },
-    family: function (name) { return 'AGENTS.' + name; },
+    fs: function (name) { return 'FS.' + name; },
   };
   const tools = require(TOOLS).createTools({ routes: { desk: deskRoute }, room: 4000 });
   const described = await tools.describe('desk');
@@ -110,21 +115,23 @@ async function suite() {
   test.subHeading('4. the census: every verb file of every family is listed');
   const folders = [];
   fs.readdirSync(path.join(RUN, 'process', 'js')).forEach(function (n) {
-    const dir = path.join(RUN, 'process', 'js', n);
-    if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n, dir: dir, manifest: n + '.json', prefix: '' });
+    // <module>.family beside <module>.js since goal/G30.4: the family folder holds no code and no manifest.
+    const dir = path.join(RUN, 'process', 'js', n, n + '.family');
+    if (fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'process/js/' + n + '/' + n + '.family', dir: dir, manifest: '', prefix: '' });
   });
   fs.readdirSync(path.join(RUN, 'js')).forEach(function (n) {
     const dir = path.join(RUN, 'js', n);
     if (fs.statSync(dir).isDirectory() && fs.existsSync(path.join(dir, 'AGENTS.md'))) folders.push({ name: 'js/' + n, dir: dir, manifest: '', prefix: n + '.' });
   });
-  if (folders.some(function (f) { return f.name === 'process/js/desk'; }) && folders.length > 3) test.check('the world: ' + folders.length + ' families found: ' + folders.map(function (f) { return f.name; }).join(', '));
+  if (folders.some(function (f) { return f.name === 'process/js/desk/desk.family'; }) && folders.length > 3) test.check('the world: ' + folders.length + ' families found: ' + folders.map(function (f) { return f.name; }).join(', '));
   else test.fail('the world: the families found are ' + short(folders.map(function (f) { return f.name; })));
   for (const f of folders) {
     const stems = verbFiles(f.dir, f.manifest);
     if (!stems.length) continue;
     const made = introSpector.family(f.dir, { declared: stems, manifest: f.manifest, prefix: f.prefix });
     const got = await introspect(made, f.prefix);
-    const missing = stems.filter(function (s) { return !got || got.keys.indexOf(f.prefix + s) === -1; });
+    // FS.search names the files, never prefixed: the verb file stem.json, on the node as on a process server.
+    const missing = stems.filter(function (s) { return !got || got.keys.indexOf(s) === -1; });
     if (!missing.length) test.check(f.name + ': all ' + stems.length + ' verb files listed');
     else if (got && got.more) test.fail(f.name + ': ' + missing.length + ' of ' + stems.length + ' unlisted with more true (past one answer, not the "/"): ' + missing.join(', '));
     else test.fail(OWED + f.name + ': ' + missing.length + ' of ' + stems.length + ' verb files unlisted, silently: ' + missing.map(function (s) { return s + (slashed(f.dir, s) ? ' ("/")' : ''); }).join(', '));

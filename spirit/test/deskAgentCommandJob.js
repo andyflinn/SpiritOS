@@ -26,6 +26,7 @@ const appClient = require('../run/js/appClient.js');
 const ROOT = path.join(__dirname, '..', '..');
 const DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent');
 const AGENT = path.join(DIR, 'deskAgent.js');
+const FAMILY = path.join(DIR, 'deskAgent.family'); // the verb files, <module>.family since goal/G30.4
 const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-GGUF', answerTokens: 100, bytesPerToken: 4 };
 
@@ -73,8 +74,8 @@ async function resultUntilDone(id, ms) {
 async function suite() {
   test.subHeading('1. the verb files');
   let res = null, run = null;
-  try { res = JSON.parse(fs.readFileSync(path.join(DIR, 'command.result.json'), 'utf8')); } catch (e) { res = null; }
-  try { run = JSON.parse(fs.readFileSync(path.join(DIR, 'command.run.json'), 'utf8')); } catch (e) { run = null; }
+  try { res = JSON.parse(fs.readFileSync(path.join(FAMILY, 'command.result.json'), 'utf8')); } catch (e) { res = null; }
+  try { run = JSON.parse(fs.readFileSync(path.join(FAMILY, 'command.run.json'), 'utf8')); } catch (e) { run = null; }
   if (res && JSON.stringify(Object.keys(res.request || {})) === '["id"]' && String(res.description || '').length) test.check('command.result.json: request id, with a description');
   else test.fail('command.result.json reads ' + short(res));
   if (run && /command_result/.test(String(run.description))) test.check('command.run.json tells the model to call command_result while it runs');

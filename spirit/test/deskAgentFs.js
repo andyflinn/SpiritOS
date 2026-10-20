@@ -13,7 +13,7 @@
 //
 // WHAT IS ASSERTED (the box)
 //   1. THE VERB FILES: spirit/run/js/fs/load.json and save.json describe fs.load and fs.save; the fs AGENTS.md no
-//      longer says the writes wait; the family then lists both (introSpector.family against the real folder).
+//      longer says the writes wait; the family's FS then reads both (introSpector.family against the real folder).
 //   2. THE NODE: fs.load {path} answers {path, text} for a served file and 404 for none or for relay-state; the
 //      gate is open: fs.save writes an app's entry script and its manifest under shell as any other file there,
 //      and still refuses js/, relay-state and a sidecar. On a real node booted from the harness fakes, never the
@@ -97,19 +97,20 @@ const fake = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     nodeAsks.push(b);
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); }
-    if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: 'load' }, { key: 'fs.save', label: 'save' }], more: false });
-    if (b.verb === 'fs.AGENTS.load') return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
-    if (b.verb === 'fs.AGENTS.save') return answer(200, { description: 'save a file', request: { path: '', content: '' }, reply: {} });
-    if (b.verb === 'net.AGENTS.introspect') return answer(200, { items: [{ key: 'net.fetch', label: 'fetch' }], more: false });
-    if (b.verb === 'net.AGENTS.fetch') return answer(200, { description: 'fetch', request: { url: '' }, reply: {} });
+    // The node's verbs as goal/G30.4 describes them: the flat table from jobs.api 'api', each verb file through its
+    // family's FS.loadJsonValue. The process must reach none of them (point 4).
+    if (b.verb === 'jobs.api' && b.ask === 'api') return answer(200, { fs: { load: { request: { path: '' }, reply: {} }, save: { request: { path: '', content: '' }, reply: {} } }, net: { fetch: { request: { url: '' }, reply: {} } } });
+    if (b.verb === 'fs.FS.loadJsonValue' && b.path === 'load.json') return answer(200, { value: { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } } });
+    if (b.verb === 'fs.FS.loadJsonValue' && b.path === 'save.json') return answer(200, { value: { description: 'save a file', request: { path: '', content: '' }, reply: {} } });
+    if (b.verb === 'net.FS.loadJsonValue' && b.path === 'fetch.json') return answer(200, { value: { description: 'fetch', request: { url: '' }, reply: {} } });
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
     const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
     if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + b.verb });
     if (dc.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (dc.desk) {
       const v = dc.desk.verb;
-      if (v === 'AGENTS') return answer(200, { text: 'rules' });
-      if (v === 'AGENTS.introspect') return answer(200, { items: [], more: false });
+      if (v === 'FS.loadFile') return answer(200, { text: 'rules' });
+      if (v === 'FS.search') return answer(200, { items: [], more: false });
       if (v === 'item.get') return answer(200, { item: JSON.stringify({ id: 'goal/G14.8', title: 't', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: true }), version: 1, change: 1 });
       if (v === 'item.box') return answer(200, { box: 'the box', version: 1 });
       if (v === 'item.chat') return answer(200, { chat: [], chatMore: false });
@@ -189,18 +190,22 @@ async function suite() {
   else test.fail(OWED + 'the fs AGENTS.md still says the writes wait, or does not name load and save');
   let family = null;
   try { family = require('../run/js/introSpector.js').family(path.join(RUN, 'js', 'fs'), { declared: ['search', 'stat', 'annotations', 'save', 'delete', 'annotate', 'load'], prefix: 'fs.' }); } catch (e) { family = null; }
-  if (family && family.verbs['fs.AGENTS.load'] && family.verbs['fs.AGENTS.save'] && !family.stale.length) test.check('the family of js/fs carries fs.AGENTS.load and fs.AGENTS.save, with no stale file');
-  else test.fail(OWED + 'the fs family: ' + short(family && { verbs: Object.keys(family.verbs), stale: family.stale }));
+  // Since goal/G30.4 the family is FS: the two verb files are read through fs.FS.loadJsonValue.
+  const readJson = function (p) { try { return family.verbs['fs.FS.loadJsonValue'].handler({ path: p }).value; } catch (e) { return null; } };
+  const loadDesc = family && readJson('load.json'), saveDesc = family && readJson('save.json');
+  if (loadDesc && typeof loadDesc.description === 'string' && saveDesc && typeof saveDesc.description === 'string' && !family.stale.length) test.check('the family of js/fs reads load.json and save.json through fs.FS.loadJsonValue, with no stale file');
+  else test.fail(OWED + 'the fs family: ' + short(family && { verbs: Object.keys(family.verbs), stale: family.stale, load: loadDesc, save: saveDesc }));
 
   // ── 2. THE NODE ─────────────────────────────────────────────────────────
   test.subHeading('2. the node: fs.load answers a served file, the gate is open to an app\'s own source');
   const port = await freePort();
   await bootNode(port);
   const DOOR = 'http://127.0.0.1:' + port + '/api/spirit';
-  const listed = await post(DOOR, { verb: 'fs.AGENTS.introspect' });
+  // The family folder's listing on the node, fs.FS.search (goal/G30.4), names each verb file.
+  const listed = await post(DOOR, { verb: 'fs.FS.search', q: '' });
   const keys = listed.body && Array.isArray(listed.body.items) ? listed.body.items.map(function (i) { return i.key; }) : [];
-  if (keys.indexOf('fs.load') !== -1 && keys.indexOf('fs.save') !== -1 && keys.indexOf('fs.search') !== -1) test.check('fs.AGENTS.introspect on the node lists fs.load, fs.save and fs.search');
-  else test.fail(OWED + 'fs.AGENTS.introspect listed ' + short(keys) + lastWords());
+  if (keys.indexOf('load.json') !== -1 && keys.indexOf('save.json') !== -1 && keys.indexOf('search.json') !== -1) test.check('fs.FS.search on the node lists load.json, save.json and search.json');
+  else test.fail(OWED + 'fs.FS.search listed ' + short(keys) + lastWords());
   const manifestOnDisk = fs.readFileSync(path.join(nodeRoot, MANIFEST), 'utf8');
   const loaded = await post(DOOR, { verb: 'fs.load', path: MANIFEST });
   if (loaded.status === 200 && loaded.body && loaded.body.path === MANIFEST && loaded.body.text === manifestOnDisk) test.check('fs.load {path} answers {path, text}, the file as it is on disk');

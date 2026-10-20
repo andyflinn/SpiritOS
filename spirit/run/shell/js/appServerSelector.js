@@ -21,6 +21,10 @@
   //   itself from the node verb jobs.api with ask 'api', and lists
   //   spiritApiTreeIndex.servers(tree): sorted, a server that did not
   //   answer left out (apiTreeIndex.js decides; this paints).
+  //   SINCE goal/G30.4 that answer is the whole flat table, the node's own
+  //   families (fs, jobs, relay ...) beside the apps', so the picker lists
+  //   every family the grant system sees (Andy, 2026-10-20: "the grant system
+  //   looks at apiDoors whole damn table of families and verbs").
   //
   // ON THE SHARED LIST (goal/G29.7): a dropdown of shellCreateListSearch, as the contact selector is, never a native
   // select. options.all is what the field reads while nothing is chosen, and the dropdown's Clear sets it back

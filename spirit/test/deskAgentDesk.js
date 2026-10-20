@@ -11,9 +11,9 @@
 //    item.status, check.add, work.open.
 //
 // WHAT IS ASSERTED (the box)
-//   1. THE VERB FILES: process/js/desk/<verb>.json for the ten, each a description and the request as the desk
+//   1. THE VERB FILES: process/js/desk/desk.family/<verb>.json for the ten, each a description and the request as the desk
 //      declares it; the family of the desk's folder lists them (introSpector.family against the real folder).
-//   2. THE OBJECT with a desk route: describe(desk) asks AGENTS.introspect and AGENTS.<verb> through the route and
+//   2. THE OBJECT with a desk route: describe(desk) asks FS.search and FS.loadJsonValue (goal/G30.4) through the route and
 //      gives ten tools named desk_<verb with underscores>, parameters typed from the files; run reads the name
 //      back, asks the route the bare verb with the model's arguments, hands a json answer back as json and a
 //      refusal in the desk's words; a name never listed reaches nothing.
@@ -35,7 +35,7 @@ const ROOT = path.join(__dirname, '..', '..');
 const RUN = path.join(ROOT, 'spirit', 'run');
 const AGENT = path.join(RUN, 'process', 'js', 'deskAgent', 'deskAgent.js');
 const TOOLS = path.join(RUN, 'process', 'js', 'deskAgent', 'tools.js');
-const DESK_DIR = path.join(RUN, 'process', 'js', 'desk');
+const DESK_DIR = path.join(RUN, 'process', 'js', 'desk', 'desk.family'); // <module>.family since goal/G30.4
 const TEN = ['items.search', 'item.get', 'item.box', 'item.checks', 'item.chat', 'chat.add', 'item.take', 'item.status', 'check.add', 'work.open'];
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant, a genius', model: 'fake/Levant-Test-GGUF', answerTokens: 100, bytesPerToken: 4 };
 
@@ -49,9 +49,10 @@ const ITEMS = { 'x/G1': { id: 'x/G1', title: 'The item Levant reads', goal: 'x/G
 const deskAsks = [];
 function deskAnswer(verb, args) {
   deskAsks.push({ verb: verb, args: args });
-  if (verb === 'AGENTS') return { text: 'the rules' };
-  if (verb === 'AGENTS.introspect') return { items: TEN.filter(function (s) { return fileOf(s); }).map(function (s) { return { key: s, label: String(fileOf(s).description) }; }), more: false };
-  if (verb.indexOf('AGENTS.') === 0) { const f = fileOf(verb.slice(7)); return f || { ok: false, code: 'no-such-verb', error: 'no such verb' }; }
+  // The desk's family folder through its FS (goal/G30.4): AGENTS.md, the listing of the ten's files, each file.
+  if (verb === 'FS.loadFile' && args.path === 'AGENTS.md') return { text: 'the rules' };
+  if (verb === 'FS.search') return { items: TEN.filter(function (s) { return fileOf(s); }).map(function (s) { return { key: s + '.json', label: s + '.json' }; }), more: false };
+  if (verb === 'FS.loadJsonValue') { const stem = String(args.path || '').replace(/\.json$/, ''); return { value: TEN.indexOf(stem) !== -1 ? fileOf(stem) : null }; }
   if (verb === 'item.get') { const it = ITEMS[args.id]; return it ? { item: JSON.stringify(it), version: 2, change: 7 } : { ok: false, code: 'no-such-item', error: 'no such item' }; }
   if (verb === 'item.box') return ITEMS[args.id] ? { box: 'THE BOX of ' + args.id + ': read me.', version: 2 } : { ok: false, code: 'no-such-item', error: 'no such item' };
   if (verb === 'item.chat') return { chat: [{ by: 'andy', at: 't', text: 'levant: what does the box of x/G1 say', taken: '' }], chatMore: false };
@@ -73,7 +74,7 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
-    if (b.verb === 'net.AGENTS.introspect') return answer(200, { items: [], more: false });
+    if (b.verb === 'jobs.api' && b.ask === 'api') return answer(200, {});
     const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
     if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + b.verb });
     if (dc.next) { if (nextQueue.length) return answer(200, { lines: nextQueue.shift() }); return setTimeout(function () { answer(200, { lines: [] }); }, 100); }
@@ -164,9 +165,20 @@ async function suite() {
     // goal/G27.5, R9: agents arrange dependencies, so block, unblock and block.targets are described to them too.
     'block', 'unblock', 'block.targets']);
   let family = null;
-  try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: ALL, manifest: 'desk.json' }); } catch (e) { family = null; }
-  const listed = family ? Object.keys(family.verbs).filter(function (n) { return n.indexOf('AGENTS.') === 0 && n !== 'AGENTS.introspect'; }).map(function (n) { return n.slice(7); }).sort() : [];
-  if (family && !family.stale.length && listed.join(',') === ALL.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the thirty-three, no stale file (desk.json and currentGoal.json left alone)');
+  try { family = require('../run/js/introSpector.js').family(DESK_DIR, { declared: ALL }); } catch (e) { family = null; }
+  // Since goal/G30.4 the folder is listed by its FS.search, and a verb is described when its file reads with a
+  // description through FS.loadJsonValue, as tools.js offers it.
+  const listed = [];
+  try {
+    family.verbs['FS.search'].handler({ q: '' }).items.forEach(function (i) {
+      const k = String(i.key);
+      if (!/\.json$/.test(k)) return;
+      const v = family.verbs['FS.loadJsonValue'].handler({ path: k }).value;
+      if (v && typeof v.description === 'string') listed.push(k.slice(0, -5));
+    });
+  } catch (e) { /* listed stays as far as it got */ }
+  listed.sort();
+  if (family && !family.stale.length && listed.join(',') === ALL.slice().sort().join(',')) test.check('the family of the desk\'s folder lists exactly the thirty-three, no stale file (desk.json and currentGoal.json stay beside the script)');
   else test.fail(OWED + 'the family lists ' + listed.join(',') + '; stale ' + short(family && family.stale));
 
   // ── 2. THE OBJECT WITH A DESK ROUTE ─────────────────────────────────────
@@ -179,7 +191,7 @@ async function suite() {
     const deskRoute = {
       ask: function (verb, args) { routeAsks.push({ verb: verb, args: args }); const a = deskAnswer(verb, args || {}); return Promise.resolve({ status: a && a.ok === false ? 404 : 200, body: a, text: JSON.stringify(a) }); },
       verb: function (stem) { return stem; },
-      family: function (name) { return 'AGENTS.' + name; },
+      fs: function (name) { return 'FS.' + name; },
     };
     let tools = null;
     try { tools = mod.createTools({ routes: { desk: deskRoute }, room: 4000 }); } catch (e) { tools = null; }
@@ -194,7 +206,7 @@ async function suite() {
       const props = search && search.function.parameters && search.function.parameters.properties;
       if (props && props.text && props.text.type === 'string' && props.currentGoalOnly && props.currentGoalOnly.type === 'boolean' && /goal/i.test(search.function.description)) test.check('desk_items_search carries the file\'s description and parameters typed from its request (text string, currentGoalOnly boolean)');
       else test.fail(OWED + 'desk_items_search reads ' + short(search));
-      if (routeAsks.some(function (a) { return a.verb === 'AGENTS.introspect'; }) && routeAsks.some(function (a) { return a.verb === 'AGENTS.item.get'; })) test.check('it asked the route AGENTS.introspect and AGENTS.item.get, the bare family of a process server');
+      if (routeAsks.some(function (a) { return a.verb === 'FS.search'; }) && routeAsks.some(function (a) { return a.verb === 'FS.loadJsonValue' && a.args && a.args.path === 'item.get.json'; })) test.check('it asked the route FS.search and FS.loadJsonValue of item.get.json, the bare FS of a process server');
       else test.fail(OWED + 'the route was asked ' + short(routeAsks.map(function (a) { return a.verb; })));
       routeAsks.length = 0;
       const r1 = await tools.run(toolCall('d1', 'desk_item_get', { id: 'x/G1', extra: 1 }));

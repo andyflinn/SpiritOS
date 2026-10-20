@@ -1,0 +1,1 @@
+Granting this lets that peer grant itself, and anyone else, any verb on this node: in effect it hands over control of your node. Grant it only to someone you would trust with the whole machine.

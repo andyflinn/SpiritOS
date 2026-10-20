@@ -323,12 +323,11 @@ function shape(v) {
 //   code", "i can live with the AGENTS.md auto-detection mechanism in
 //   appServer", "there is a file-size-limit (MAX_PAYLOAD)".
 //
-// An AGENTS.md beside the server's script, there when it starts, gives it
-// the verb AGENTS {} -> {text}: the file, read on every ask, so an edit is
-// the next answer. No file, no verb. An answer that would not fit one
-// answer is refused by name (answer-too-large), never cut. An app that
-// declares AGENTS itself keeps its own.
-const AGENTS_FILE = 'AGENTS.md';
+// SINCE goal/G30.4 THERE IS NO AGENTS VERB: an app's AGENTS.md lives in its
+// family folder (<script>.family beside the script) and is read through the
+// family's FS (FS.loadFile {path: "AGENTS.md"}), an edit being the next read.
+// (Andy, 2026-10-20: "cannot the agent simply use FS to retrieve the
+// AGENTS.md file of the verb.json files?")
 // DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
 // {} reads, {on: true|false} sets; both answer {debug} with the state that resulted. It flips this
 // process's kernel DEBUG. A member never reaches it (apiDoor refuses it by name).
@@ -377,15 +376,16 @@ function withDependencies(verbs, paths) {
   return all;
 }
 
-// THE WHOLE FAMILY SINCE goal/G10.5 (introSpector.js): AGENTS, AGENTS.introspect
-// and one AGENTS.<verb> per verb file beside the script, all read on every
-// ask. No AGENTS.md, no family. A verb file naming a verb this server never
-// declared is said at boot. A server that declares a name itself keeps its own.
+// THE FAMILY FOLDER'S VERBS (introSpector.js): since goal/G30.4 its FS verbs alone, on every server, AGENTS.md or
+// not. A verb file naming a verb this server never declared is said at boot. A server that declares a name itself
+// keeps its own.
+// THE FAMILY FOLDER IS <script>.family, BESIDE THE SCRIPT (goal/G30.4; Andy, 2026-10-20: "the family folder should be
+// the same name as the <module>.js it represents <module>.family", "a sibling"): a family folder never holds code,
+// and introSpector's FS reaches nothing above it. The manifest stays with the script, so none is in the folder.
 function withAgents(verbs, script) {
   const resolved = path.resolve(String(script || ''));
-  const made = require('./introSpector').family(path.dirname(resolved), {
+  const made = require('./introSpector').family(path.join(path.dirname(resolved), path.basename(resolved, '.js') + '.family'), {
     declared: Object.keys(verbs),
-    manifest: path.basename(resolved, '.js') + '.json',
   });
   made.stale.forEach(function (file) {
     console.error('appServer: ' + file + ' names a verb this server does not declare');

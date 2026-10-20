@@ -25,9 +25,9 @@
 // wsl-claude to build against). No core module is touched: not kernel.js, server.js, hub.js, jobs.js,
 // appServer.js, appClient.js or apiDoor.js.
 //
-//   A. THE RULES ARE SERVED. The six sentences head process/js/desk/AGENTS.md verbatim, in his order, before the
-//      file's first "## " section, so the desk server's AGENTS verb (appServer, slim/G1.8) hands them to every
-//      agent at the start of a sitting.
+//   A. THE RULES ARE SERVED. The six sentences head process/js/desk/desk.family/AGENTS.md verbatim, in his order,
+//      before the file's first "## " section, so the desk server's FS.loadFile (appServer, goal/G30.4; the AGENTS
+//      verb of slim/G1.8 before it) hands them to every agent at the start of a sitting.
 //   B. THE DESK (process/js/desk/desk.js).
 //      1. An item's facts (item.get, items.search) carry go: true once HE pressed go or go-all on it, false before;
 //         an agent's claim-done never sets it.
@@ -84,7 +84,7 @@ const OWED = 'OWED by goal/G3.9: ';
 const OWED19 = 'owed by goal/G4.19: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
-const AGENTS_MD = path.join(RUN, 'process', 'js', 'desk', 'AGENTS.md');
+const AGENTS_MD = path.join(RUN, 'process', 'js', 'desk', 'desk.family', 'AGENTS.md'); // <module>.family since goal/G30.4
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
 const PAGE = path.join(RUN, 'shell', 'desk', 'desk.js');
@@ -301,14 +301,15 @@ async function main() {
   const nodeUrl = 'http://127.0.0.1:' + node.address().port;
   kids.push(spawn(process.execPath, [DESK, '{}', '--pipe', deskPipe, '--state', deskState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] }));
   await up('desk');
-  const served = await desk('AGENTS', {}, SELF_AT_DESK);
+  // The AGENTS verb is gone (goal/G30.4): the desk's family folder is read through FS.loadFile.
+  const served = await desk('FS.loadFile', { path: 'AGENTS.md' }, SELF_AT_DESK);
   const text = (served.body && typeof served.body.text === 'string') ? served.body.text : '';
   const onDisk = fs.existsSync(AGENTS_MD) ? fs.readFileSync(AGENTS_MD, 'utf8') : '';
   const at = RULES.map(function (r) { return text.indexOf(r); });
   const firstSection = text.indexOf('\n## ');
   const inOrder = at.every(function (i, n) { return i !== -1 && (n === 0 || i > at[n - 1]); });
-  if (served.status === 200 && text === onDisk && inOrder && (firstSection === -1 || at[0] < firstSection)) test.check('AGENTS {} serves process/js/desk/AGENTS.md, and the six sentences head it in his order');
-  else test.fail(OWED + 'AGENTS served ' + served.status + ', the file matched: ' + (text === onDisk) + ', sentences found at ' + JSON.stringify(at) + ', first section at ' + firstSection);
+  if (served.status === 200 && text === onDisk && inOrder && (firstSection === -1 || at[0] < firstSection)) test.check('FS.loadFile serves process/js/desk/desk.family/AGENTS.md, and the six sentences head it in his order');
+  else test.fail(OWED + 'FS.loadFile of AGENTS.md served ' + served.status + ', the file matched: ' + (text === onDisk) + ', sentences found at ' + JSON.stringify(at) + ', first section at ' + firstSection);
 
   test.subHeading('B. the desk: go is his press; a claim before Go is refused; Close before Go');
   // goal/G29.21: an agent's session creates no goal, so the owner writes the world.

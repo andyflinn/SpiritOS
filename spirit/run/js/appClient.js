@@ -172,6 +172,11 @@ function createAppClient(opts) {
     register: function (name, pipe) {
       const n = String(name || '');
       if (!APP_RE.test(n) || !pipe) return false;
+      // NO APP NAMED LIKE A NODE FAMILY (goal/G30.4): the node's families and its apps sit side by side in one flat
+      // table, so an app named fs would shadow the node's fs. The mounter says which names are taken (opts.reserved);
+      // this knows nothing of the node.
+      const taken = typeof o.reserved === 'function' ? (o.reserved() || []) : [];
+      if (taken.indexOf(n) !== -1) { log('server process: ' + n + ' refused, the name is a node family'); return false; }
       table[n] = { app: n, pipe: String(pipe), job: null };
       log('server process: ' + n);
       return true;

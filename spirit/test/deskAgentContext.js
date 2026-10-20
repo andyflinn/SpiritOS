@@ -87,7 +87,8 @@ let nextQueue = [];     // answers to next, each a lines array; empty queue answ
 let nextCount = 0;
 function deskAnswer(verb, args) {
   const it = desk.items[String(args.id || '')];
-  if (verb === 'AGENTS') return { text: AGENTS_TEXT };
+  // The desk's AGENTS.md through its family's FS (goal/G30.4: the AGENTS verb is gone).
+  if (verb === 'FS.loadFile' && args.path === 'AGENTS.md') return { text: AGENTS_TEXT };
   if (verb === 'items.search') return { items: Object.keys(desk.items).map(function (k) { return { key: k, label: JSON.stringify(facts(desk.items[k])) }; }), more: false };
   if (!it) return { status: 404, body: { ok: false, code: 'no-such-item', error: 'no such item' } };
   if (verb === 'item.get') return { item: JSON.stringify(facts(it)), version: it.version, change: 9 };

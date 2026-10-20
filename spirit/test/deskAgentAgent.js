@@ -13,7 +13,7 @@
 // WHAT IS ASSERTED
 //   1. the desk has a verb file for box.write, press, check.set, item.files.add and verify.again, each with a
 //      description and the request keys desk.js declares.
-//   2. deskAgent lists file.load, file.save, commit and push in its own AGENTS.introspect.
+//   2. deskAgent lists file.load, file.save, commit and push in its own family folder (FS.search, goal/G30.4).
 //   3. every change: a desk change that is not addressed to Levant still reaches the model, the change in the call;
 //      its own change does not; an empty answer posts nothing. The call's tools include the new desk verbs and
 //      deskAgent's file.save.
@@ -33,7 +33,7 @@ const appClient = require('../run/js/appClient.js');
 
 const OWED = 'OWED by goal/G10.8: ';
 const ROOT = path.join(__dirname, '..', '..');
-const DESK_DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'desk');
+const DESK_DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'desk', 'desk.family'); // <module>.family since goal/G30.4
 const AGENT = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent', 'deskAgent.js');
 const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'fake/Levant-GGUF', answerTokens: 100, bytesPerToken: 4 };
@@ -83,9 +83,10 @@ const ITEMS = [
 ];
 function deskAnswer(verb, a) {
   const verbs = deskVerbFiles();
-  if (verb === 'AGENTS') return { text: 'Rules for agents.' };
-  if (verb === 'AGENTS.introspect') return { items: Object.keys(verbs).map(function (v) { return { key: v, label: verbs[v].description }; }), more: false };
-  if (verb.indexOf('AGENTS.') === 0) return verbs[verb.slice(7)] || { ok: false, code: 'no-such-verb' };
+  // The desk's family folder through its FS (goal/G30.4): AGENTS.md, the listing, and each verb file.
+  if (verb === 'FS.loadFile' && a.path === 'AGENTS.md') return { text: 'Rules for agents.' };
+  if (verb === 'FS.search') return { items: Object.keys(verbs).map(function (v) { return { key: v + '.json', label: v + '.json' }; }), more: false };
+  if (verb === 'FS.loadJsonValue') return { value: verbs[String(a.path || '').replace(/\.json$/, '')] || null };
   if (verb === 'items.search') return { items: ITEMS.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false };
   const it = ITEMS.filter(function (i) { return i.id === a.id; })[0];
   if (verb === 'item.get') return it ? { item: JSON.stringify(it), version: 1, change: 1 } : { ok: false, code: 'no-such-item' };
@@ -166,9 +167,10 @@ async function suite() {
   let up = false;
   for (let i = 0; i < 60 && !up && out.code === null; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.deskAgent && r.body.deskAgent.ok !== false); } catch (e) { /* not yet */ } }
   if (!up) { test.fail('the world: deskAgent did not start: ' + short(out.stderr)); return; }
-  const intro = (await client.ask({ deskAgent: { 'AGENTS.introspect': { text: '' } } })).body || {};
-  const listed = (intro.items || []).map(function (i) { return i.key; }).sort();
-  if (['commit', 'file.load', 'file.save', 'push'].every(function (v) { return listed.indexOf(v) !== -1; })) test.check('AGENTS.introspect lists file.load, file.save, commit and push: ' + listed.join(', '));
+  // Its family folder's listing, FS.search, names the verb files (goal/G30.4).
+  const intro = (await client.ask({ deskAgent: { 'FS.search': { q: '' } } })).body || {};
+  const listed = (intro.items || []).map(function (i) { return String(i.key); }).filter(function (k) { return /\.json$/.test(k); }).map(function (k) { return k.slice(0, -5); }).sort();
+  if (['commit', 'file.load', 'file.save', 'push'].every(function (v) { return listed.indexOf(v) !== -1; })) test.check('FS.search lists the verb files of file.load, file.save, commit and push: ' + listed.join(', '));
   else test.fail(OWED + 'deskAgent introspection lists ' + short(listed));
 
   test.subHeading('3. every desk change reaches the model; its own does not; an empty answer posts nothing');

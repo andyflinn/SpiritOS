@@ -106,9 +106,11 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   else test.fail(OWED + 'without contents fs.search answered ' + short(plain && plain.items));
   try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 
+  // Since goal/G30.4 the fs family is mounted with its verbs bare: search inside loopbackVerbs.mount('fs', ...).
   const server = code(path.join(RUN, 'js', 'server.js'));
-  if (/'fs\.search':\s*\{\s*request:\s*\{\s*q:\s*''\s*,\s*contents:\s*''\s*\}/.test(server)) test.check('the node declares fs.search {q, contents}');
-  else test.fail(OWED + 'server.js declares fs.search as ' + short((/'fs\.search':[^\n]*/.exec(server) || [''])[0]));
+  const fsMount = (/loopbackVerbs\.mount\('fs',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
+  if (/'search':\s*\{\s*request:\s*\{\s*q:\s*''\s*,\s*contents:\s*''\s*\}/.test(fsMount)) test.check('the node declares fs.search {q, contents}');
+  else test.fail(OWED + 'server.js declares fs.search as ' + short((/'search':[^\n]*/.exec(fsMount) || [''])[0]));
   if (/createNodeSearches\(\{[^}]*rootDir[^}]*mimeTypes/.test(server)) test.check('the node hands the searches its run folder and the kernel\'s mimetypes');
   else test.fail(OWED + 'server.js makes the searches as ' + short((/createNodeSearches\([^\n]*/.exec(server) || [''])[0]));
   const tool = parse(fs.readFileSync(path.join(RUN, 'js', 'fs', 'search.json'), 'utf8')) || {};

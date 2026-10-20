@@ -701,9 +701,13 @@ freePort()
       // invisible here, and proxy.allow and proxy.remove were never called
       // while this said "the sweep names every verb" (wsl-claude, writing
       // everyVerb.js). doorContract.js's pattern.
-      const claimRe = /^ {4}'([a-z]+\.[a-zA-Z]+)':/gm;
-      let m;
-      while ((m = claimRe.exec(serverSrc)) !== null) claimed.push(m[1]);
+      // SINCE goal/G30.4 a family is mounted with its verbs bare
+      // (loopbackVerbs.mount('fs', dir, {'stat': ...})) and the table
+      // names them fs.stat: the family from each mount block, the verbs
+      // from its four-space keys.
+      for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)',[\s\S]*?\n {2}\}, \{ wire:/g)) {
+        for (const m of block[0].matchAll(/^ {4}'([a-z][a-zA-Z0-9]*)':/gm)) claimed.push(block[1] + '.' + m[1]);
+      }
 
       // Named ANYWHERE in this suite: the proxy verbs are driven by their
       // own cases above, with arguments, rather than by the bare sweep.

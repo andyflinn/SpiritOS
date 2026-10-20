@@ -104,8 +104,9 @@ const node = http.createServer(function (req, res) {
     // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskAgent: ...}, and the
     // node answers them as it answered fs.load before.
     const du = ask && ask.deskAgent;
-    if (du && du['AGENTS.introspect']) return answer(200, { items: [{ key: 'file.load', label: 'load a file' }], more: false });
-    if (du && du['AGENTS.file.load']) return answer(200, { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } });
+    // Described from the family folder since goal/G30.4: FS.search lists file.load.json, FS.loadJsonValue reads it.
+    if (du && du['FS.search']) return answer(200, { items: [{ key: 'file.load.json', label: 'file.load.json' }], more: false });
+    if (du && du['FS.loadJsonValue'] && du['FS.loadJsonValue'].path === 'file.load.json') return answer(200, { value: { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } } });
     if (du && du['file.load']) { const p = String(du['file.load'].path || ''); return answer(200, { path: p, text: p === 'shell/long.txt' ? LONG : SMALL_RESULT }); }
     if (du) return answer(404, { ok: false, code: 'no-such-verb' });
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);

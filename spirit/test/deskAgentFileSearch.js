@@ -16,7 +16,7 @@
 //
 // WHAT IS ASSERTED
 //   1. file.search.json: request pattern, text, path; its description names all three. deskAgent's own
-//      AGENTS.introspect lists file.search.
+//      FS.search of its family folder lists file.search.json (goal/G30.4).
 //   2. a name search: '**/*.js' gives every .js file of the clone, none under .git, in repository paths; with path
 //      'spirit/run' only those under it.
 //   3. a text search: 'NEEDLE' gives each matching line with its path and line number, none under .git; a regular
@@ -39,6 +39,7 @@ const OWED = 'OWED by goal/G23.6: ';
 const ROOT = path.join(__dirname, '..', '..');
 const DIR = path.join(ROOT, 'spirit', 'run', 'process', 'js', 'deskAgent');
 const AGENT = path.join(DIR, 'deskAgent.js');
+const FAMILY = path.join(DIR, 'deskAgent.family'); // the verb files, <module>.family since goal/G30.4
 const NODE_NAME = 'ollama agent node';
 const CONFIGURATION = { persona: 'Levant', preamble: 'you are Levant', model: 'plain-x', answerTokens: 100, bytesPerToken: 4 };
 const ANSWER_MAX = appClient.ANSWER_MAX;
@@ -124,7 +125,7 @@ function pathsOf(matches) { return (matches || []).map(function (m) { return m.p
 async function suite() {
   test.subHeading('1. the verb file and introspection');
   let file = null;
-  try { file = JSON.parse(fs.readFileSync(path.join(DIR, 'file.search.json'), 'utf8')); } catch (e) { file = null; }
+  try { file = JSON.parse(fs.readFileSync(path.join(FAMILY, 'file.search.json'), 'utf8')); } catch (e) { file = null; }
   const req = (file && file.request) || {};
   const desc = String((file && file.description) || '');
   if (JSON.stringify(Object.keys(req).sort()) === JSON.stringify(['path', 'pattern', 'text']) && /pattern/.test(desc) && /text/.test(desc) && /path/.test(desc)) test.check('file.search.json: request pattern, text, path, each named in the description');
@@ -147,10 +148,11 @@ async function suite() {
   const st = (await ask('state', {})).body;
   if (st.connected === false) test.check('the world: Levant is disconnected (no recommended model)');
   else test.fail('the world: Levant is connected: ' + short(st));
-  const intro = (await ask('AGENTS.introspect', { text: '' })).body;
+  // Its family folder's listing names the verb file (FS.search, goal/G30.4).
+  const intro = (await ask('FS.search', { q: '' })).body;
   const listed = (intro.items || []).map(function (i) { return i.key; });
-  if (listed.indexOf('file.search') !== -1) test.check('deskAgent\'s AGENTS.introspect lists file.search');
-  else test.fail(OWED + 'AGENTS.introspect lists ' + short(listed));
+  if (listed.indexOf('file.search.json') !== -1) test.check('deskAgent\'s FS.search lists file.search.json');
+  else test.fail(OWED + 'FS.search lists ' + short(listed));
 
   test.subHeading('2. a search by name');
   const n1 = await search({ pattern: '**/*.js', text: '', path: '' });

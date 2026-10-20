@@ -11,8 +11,8 @@
 //
 // ONE OBJECT, TWO METHODS, NO PER-TOOL CODE.
 //
-//   describe(namespace)  the OpenAI tools of one namespace: its AGENTS.introspect lists the verbs the owner
-//                        described with a file (introSpector.js, goal/G10.5), AGENTS.<verb> gives each file. One
+//   describe(namespace)  the OpenAI tools of one namespace: its verbs from the verb table (or, where a route holds
+//                        no table, the folder's FS.search), each verb's file by FS.loadJsonValue (goal/G30.4). One
 //                        tool per verb: name = namespace and verb with every dot written as an underscore (OpenAI
 //                        allows letters, digits, underscore and dash in a tool name), description = the file's,
 //                        parameters = a JSON Schema object with one property per request key, typed by its example.
@@ -25,10 +25,10 @@
 //                        instead of guessing. A name describe never listed is refused here and reaches nothing.
 //
 // THE ROUTES (goal/G14.7): a namespace is reached one way and that way is the route's, not this file's: the node's
-// namespaces (net) through the loopback door, the verb prefixed with the namespace and the family under
-// ns.AGENTS; the desk through this node's deskClient.desk {verb, json}, the verb bare and the family under AGENTS
-// (a process server's family carries no prefix). A route is {ask(verb, args), verb(stem), family(name)}; a plain
-// {ask} alone is the node's route for every namespace, as goal/G14.6 built it.
+// namespaces (net) through the loopback door, the verb and its FS prefixed with the namespace, and its part of the
+// flat table from jobs.api; the desk through this node's deskClient.desk {verb, json}, the verb bare and its FS as
+// FS.<name> (a process server's family carries no prefix). A route is {ask(verb, args), verb(stem), fs(name),
+// table()?}; a plain {ask} alone is the node's route for every namespace, as goal/G14.6 built it.
 
 function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 function bytes(s) { return Buffer.byteLength(String(s), 'utf8'); }
@@ -66,12 +66,16 @@ function cutTo(text, room) {
   return head + ' [cut: ' + bytes(head) + ' of ' + whole + ' bytes shown]';
 }
 
-// The node's route for a namespace: the loopback ask, the verb and the family prefixed with the namespace.
+// The node's route for a namespace: the loopback ask, the verb and its FS prefixed with the namespace, and the
+// namespace's part of the flat verb table (goal/G30.4: jobs.api asked 'api').
 function nodeRoute(ask, ns) {
   return {
     ask: ask,
     verb: function (stem) { return ns + '.' + stem; },
-    family: function (name) { return ns + '.AGENTS.' + name; },
+    fs: function (name) { return ns + '.FS.' + name; },
+    table: function () {
+      return ask('jobs.api', { ask: 'api' }).then(function (r) { return (r && r.body && isPlain(r.body[ns])) ? r.body[ns] : {}; });
+    },
   };
 }
 
@@ -98,24 +102,35 @@ function createTools(opts) {
     const ns = String(namespace || '');
     const route = routeOf(ns);
     if (!route) return Promise.resolve([]);
-    // Every verb with a file: introspect is a search since goal/G29.19, and no words ask for all of them.
-    return route.ask(route.family('introspect'), { text: '' }).then(function (r) {
-      const items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
+    // THE VERBS, THEN THEIR FILES (goal/G30.4; Andy, 2026-10-20: "once it has the verb table there's no real reason to
+    // 'introspect', the allowed verbs are known, and their verb.json file can be fetched directly from that"). A route
+    // that holds the table names the verbs from it, with their request shapes; one that can only ask verbs (the desk,
+    // reached through deskClient) names them from the family folder through FS.search. Each verb's file is read by
+    // FS.loadJsonValue; a verb with no file is not offered, so the file stays the allow mark.
+    const tableOf = typeof route.table === 'function' ? route.table() : Promise.resolve(null);
+    return tableOf.then(function (table) {
+      if (table) {
+        return { table: table, stems: Object.keys(table).filter(function (v) { return !/^FS\./.test(v) && v !== 'DEBUG' && v !== 'DEPENDENCIES'; }) };
+      }
+      return route.ask(route.fs('search'), { q: '' }).then(function (r) {
+        const items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
+        return { table: {}, stems: items.map(function (i) { return String((i && i.key) || ''); }).filter(function (k) { return /\.json$/.test(k); }).map(function (k) { return k.slice(0, -5); }) };
+      });
+    }).then(function (found) {
       const listed = Object.create(null);
-      return items.reduce(function (chain, item) {
+      return found.stems.reduce(function (chain, stem) {
         return chain.then(function (tools) {
-          const key = String((item && item.key) || '');
-          if (!key) return tools;
-          // The node lists net.fetch, a process server lists item.get: the stem is what follows the namespace.
-          const stem = key.indexOf(ns + '.') === 0 ? key.slice(ns.length + 1) : key;
+          if (!stem) return tools;
           // WITHHELD BEFORE ITS DETAILS ARE ASKED (goal/G24.4). Andy: "first get the list of verbs ... for the allowed
           // ones it gets the description". A verb named in withhold ('<namespace>.<verb>') is not offered, and its
-          // AGENTS.<verb> is never asked.
+          // file is never read.
           if (withhold.indexOf(ns + '.' + stem) !== -1) return tools;
-          return route.ask(route.family(stem), {}).then(function (f) {
-            const file = f && isPlain(f.body) ? f.body : {};
-            const description = String(file.description || item.label || '');
-            const request = isPlain(file.request) ? file.request : {};
+          return route.ask(route.fs('loadJsonValue'), { path: stem + '.json' }).then(function (f) {
+            const file = f && f.body && isPlain(f.body.value) ? f.body.value : null;
+            if (!file || typeof file.description !== 'string') return tools;
+            const description = file.description;
+            const shape = isPlain(found.table[stem]) ? found.table[stem] : {};
+            const request = isPlain(file.request) ? file.request : (isPlain(shape.request) ? shape.request : {});
             const properties = {};
             Object.keys(request).forEach(function (k) { properties[k] = propertyOf(request[k]); });
             const name = toolName(ns + '.' + stem);

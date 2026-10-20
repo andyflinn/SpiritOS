@@ -89,9 +89,11 @@ function page() {
   } catch (e) {
     test.fail(OWED + 'the store could not be searched: ' + (e && e.message || e));
   } finally { try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
+  // Since goal/G30.4 the jobs family is mounted with its verbs bare: authSearch inside loopbackVerbs.mount('jobs', ...).
   const server = code(path.join(RUN, 'js', 'server.js'));
-  if (/'jobs\.authSearch':\s*\{\s*request:\s*\{\s*text:\s*''\s*\},\s*reply:\s*LIST/.test(server)) test.check('server.js declares jobs.authSearch {text} answering LIST');
-  else test.fail(OWED + 'server.js declares ' + short((/'jobs\.authSearch':[^\n]*/.exec(server) || [''])[0]));
+  const jobsMount = (/loopbackVerbs\.mount\('jobs',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
+  if (/'authSearch':\s*\{\s*request:\s*\{\s*text:\s*''\s*\},\s*reply:\s*LIST/.test(jobsMount)) test.check('server.js declares jobs.authSearch {text} answering LIST');
+  else test.fail(OWED + 'server.js declares ' + short((/'authSearch':[^\n]*/.exec(jobsMount) || [''])[0]));
   const fileServer = code(path.join(RUN, 'process', 'js', 'fileServer', 'fileServer.js'));
   if (/jobs\.authSearch[\s\S]{0,400}\.items/.test(fileServer) && !/found\.records/.test(fileServer)) test.check('the file server reads the new answer (items) when it moves grants');
   else test.fail(OWED + 'fileServer.js still reads records from jobs.authSearch');

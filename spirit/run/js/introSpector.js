@@ -1,52 +1,28 @@
 'use strict';
 
 // spirit/run/js/introSpector.js
-// THE AGENTS FAMILY, ON BOTH DOORS — goal/G10.5.
+// ONE FAMILY FOLDER, READ AND WRITTEN BY ITS OWNER (goal/G10.5, made FS alone by goal/G30.4).
 //
-//   Andy, 2026-10-09: "the verb-file should be readable/fetchable by the
-//   loopback client through a multiplexed AGENTS interface"; "plus one verb
-//   AGENTS.introspect that will return only the verbs available?"; ".. and if
-//   there's no AGENTS.md the verb is closed for the agent, period."; "this way
-//   we can slowly add verbs that are agent-safe"; "that is a decision. make
-//   it so."
+//   A family folder holds AGENTS.md and one description file per verb (<verb>.json), and whatever its consumers
+//   place there (verb.design.md, README.md, <verb>.warning.txt). It never holds code: the node's families are
+//   js/<family>/, an app's is <module>.family beside its <module>.js.
 //
-// ONE FOLDER PER MODULE holds AGENTS.md and one file per allowed verb. The
-// file is the description AND the allow mark: no AGENTS.md, or no file for a
-// verb, and that verb is closed to agents, never listed. The owner keeps
-// every verb; nothing here gates a call (routing and handlers are untouched,
-// by his decision). What this adds is what an agent may be TOLD:
+//   family(folder) answers the folder's FS verbs, FS.<name> with the kernel's fs names and a search, scoped to the
+//   folder. The AGENTS verbs that stood here (AGENTS, AGENTS.introspect, AGENTS.<verb>) are gone: an agent reads
+//   AGENTS.md and the verb files through FS (Andy, 2026-10-20: "cannot the agent simply use FS to retrieve the
+//   AGENTS.md file of the verb.json files?"). The verb file is still the allow mark: deskAgent offers a model only
+//   a verb that has one.
 //
-//   AGENTS             {} -> {text}: the AGENTS.md, read on every ask
-//   AGENTS.introspect  {} -> {items: [{key: verb, label: description}], more}:
-//                      the verbs that have a file, through the shared bucket
-//   AGENTS.<verb>      {} -> the verb's file as it stands on disc, read on
-//                      every ask; on the node joined with the declaration's
-//                      request and reply prototypes (point 4 of the box)
-//
-// ON A PROCESS SERVER the folder is the script's own, the verb name is the
-// file name as is (item.add.json -> AGENTS.item.add), and the server adds the
-// family at start, as it adds DEBUG and DEPENDENCIES (withAgents). ON THE
-// NODE the namespace is the folder (js/fs/) and the file name has no dot
-// (stat.json -> fs.AGENTS.stat): claim() below takes a namespace in the
-// declaration form, hands the lowercase handlers to verbTable as before, and
-// alone adds the uppercase set, which no module can claim (verbTable's rule).
-// So an uppercase verb is always the system's, told apart by the name.
-//
-// WHICH .json FILES ARE VERB FILES: one whose name is a verb name, that is
-// not the server's manifest (<script>.json), and that parses to an object
-// with a string `description`. A folder holds other json (currentGoal.json
-// beside the desk, loop.json beside an agent, package.json), and none of
-// those is a verb. A verb file naming a verb nobody declared is said at
-// boot, by file name, so a typo is found the day it is made.
+// WHICH .json FILES ARE VERB FILES: one whose name is a verb name, that is not the server's manifest, and that
+// parses to an object with a string description. A verb file naming a verb nobody declared is said at boot.
 
 const fs = require('fs');
 const path = require('path');
-// The probability modules (goal/G29.19): AGENTS.introspect ranks with them; the old graded bucket is gone from here.
+// The probability modules (goal/G29.19): FS.search ranks with them.
 const createProbabilityBucket = require('./probabilityBucket').createProbabilityBucket;
 const probabilityStringObjectMatch = require('./probabilityStringObjectMatch').probabilityStringObjectMatch;
 
 const AGENTS_FILE = 'AGENTS.md';
-const INTROSPECT = 'introspect';
 // A verb name as the server takes it, without the family's own uppercase.
 const STEM_RE = /^[a-z_][A-Za-z0-9_.-]{0,63}$/;
 
@@ -92,143 +68,90 @@ function readFolder(dir, declared, manifest) {
 //                 per-verb answer; a process server's file answers as is
 // Answers { verbs: {name: declaration}, stale: [fileName] }; no AGENTS.md,
 // no verbs at all, and nothing is said of the folder.
+// ── FS: THE FAMILY FOLDER, TO ITS OWNER (goal/G30.4) ─────────────────────
+//
+//   Andy, 2026-10-20: "introSpector will ALWAYS supply the following owner-VERB: FS: it will be a spirit.fs object,
+//   scoped to the introSpectors folder", "it will allow any introSpector consumer to place it's on remarks into that
+//   folder, for example verb.design.md, README.md for the family", "the exact names that kernel.js has in the fs
+//   section, scoped to the family folder in the same way that the kernel equivalents are scoped to spirit/run/", and
+//   on listing, "then put a search in there."
+//
+// One owner verb, multiplexed as AGENTS is: FS.<name>, with the kernel's own names. A path is inside the folder or
+// refused; nothing above it is ever reached. A family folder holds no code (an app's is <module>.family beside its
+// <module>.js), so the folder needs no fence of its own. Annotations are the kernel's sidecars, so those two go
+// through the kernel, for a folder under spirit/run.
+function fsVerbs(dir, prefix) {
+  const root = path.resolve(String(dir || ''));
+  function inside(p) {
+    const rel = String(p == null ? '' : p);
+    if (!rel || path.isAbsolute(rel)) throw refusal('bad-request', { why: 'a path inside the family folder' });
+    const full = path.resolve(root, rel);
+    if (full.indexOf(root + path.sep) !== 0) throw refusal('bad-request', { why: 'nothing above the family folder' });
+    return full;
+  }
+  function underRun(full) {
+    const k = require('./kernel.js');
+    const rel = path.relative(k.core.node.const.ROOT_DIR, full);
+    if (!rel || rel.indexOf('..') === 0 || path.isAbsolute(rel)) throw refusal('bad-request', { why: 'annotations live under spirit/run' });
+    return { k: k, rel: rel.split(path.sep).join('/') };
+  }
+  function read(full) { try { return fs.readFileSync(full, 'utf8'); } catch (e) { return null; } }
+  function write(full, text) {
+    fs.mkdirSync(path.dirname(full), { recursive: true });
+    fs.writeFileSync(full, String(text == null ? '' : text), 'utf8');
+    return { saved: true };
+  }
+  const v = {};
+  v[prefix + 'FS.loadFile'] = { request: { path: '' }, reply: {}, handler: function (a) { return { text: read(inside(a.path)) }; } };
+  v[prefix + 'FS.saveFile'] = { request: { path: '', content: '' }, reply: { saved: true }, handler: function (a) { return write(inside(a.path), a.content); } };
+  v[prefix + 'FS.deleteFile'] = { request: { path: '' }, reply: { deleted: false }, handler: function (a) {
+    const full = inside(a.path);
+    try { fs.unlinkSync(full); return { deleted: true }; } catch (e) { return { deleted: false }; }
+  } };
+  v[prefix + 'FS.statFile'] = { request: { path: '' }, reply: {}, handler: function (a) {
+    try { const s = fs.statSync(inside(a.path)); return { size: s.size, mtimeMs: s.mtimeMs, birthtimeMs: s.birthtimeMs }; } catch (e) { if (e && e.refusal) throw e; return {}; }
+  } };
+  v[prefix + 'FS.fileExists'] = { request: { path: '' }, reply: { exists: false }, handler: function (a) { return { exists: fs.existsSync(inside(a.path)) }; } };
+  v[prefix + 'FS.loadJsonValue'] = { request: { path: '' }, reply: {}, handler: function (a) {
+    const text = read(inside(a.path));
+    try { return { value: text == null ? null : JSON.parse(text) }; } catch (e) { return { value: null }; }
+  } };
+  v[prefix + 'FS.saveJsonValue'] = { request: { path: '', value: {} }, reply: { saved: true }, handler: function (a) { return write(inside(a.path), JSON.stringify(a.value, null, 2)); } };
+  v[prefix + 'FS.getAnnotations'] = { request: { path: '' }, reply: {}, handler: function (a) { const u = underRun(inside(a.path)); return u.k.core.fs.getAnnotations(u.rel); } };
+  v[prefix + 'FS.annotateFile'] = { request: { path: '', payload: {} }, reply: { saved: true }, handler: function (a) { const u = underRun(inside(a.path)); const r = u.k.core.fs.annotateFile(u.rel, a.payload); return { saved: !!(r && r.ok) }; } };
+  // NO LIST, A SEARCH (Andy's rule: "no lists, only searches"): the folder's file names ranked against the words,
+  // every file in name order with none, cut in bytes to one answer with `more`.
+  v[prefix + 'FS.search'] = { request: { q: '' }, reply: { items: [{ key: '', label: '' }], more: false }, handler: function (a) {
+    const words = String((a && a.q) || '').trim();
+    let names = [];
+    try { names = fs.readdirSync(root).sort(); } catch (e) { names = []; }
+    const bucket = createProbabilityBucket(Infinity);
+    names.forEach(function (name, i) {
+      const tie = 1e-9 / (1 + i);
+      if (!words) { bucket.seatFor(0.5 + tie, name); return; }
+      const p = Number(probabilityStringObjectMatch(words, { name: name })) || 0;
+      if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-6) + tie), name);
+    });
+    const out = bucket.serialize(function (name) { return { key: name, label: name }; }, room() - 512);
+    return { items: out.items, more: !!out.more };
+  } };
+  return v;
+}
+
 function family(dir, opts) {
   const o = opts || {};
   const prefix = String(o.prefix || '');
-  const agentsFile = path.join(dir, AGENTS_FILE);
-  const verbs = Object.create(null);
-  if (!fs.existsSync(agentsFile)) return { verbs: verbs, stale: [] };
-  const folder = readFolder(dir, o.declared || [], o.manifest || '');
-  const stems = Object.keys(folder.files).sort();
-
-  verbs[prefix + 'AGENTS'] = {
-    request: {}, reply: { text: '' },
-    handler: function () {
-      const text = fs.readFileSync(agentsFile, 'utf8');
-      // Refused by name, never cut (slim/G1.8 T4).
-      if (Buffer.byteLength(JSON.stringify({ text: text }), 'utf8') > room()) throw refusal('answer-too-large');
-      return { text: text };
-    },
-  };
-
-  // A SEARCH ON THE PROBABILITY MODULES (goal/G29.19; Andy, 2026-10-18: "and introSpector will of course search the
-  // verb-description files as well? with lower weight?", then "name 66% description 33%"). With no words every verb
-  // with a file, in name order; with words each verb scores 2/3 by its name and 1/3 by its description file, and one
-  // matching neither is left out. Cut in bytes to one answer, `more` saying so.
-  verbs[prefix + 'AGENTS.' + INTROSPECT] = {
-    request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function (a) {
-      const words = String((a && a.text) || '').trim();
-      const bucket = createProbabilityBucket(Infinity);
-      stems.forEach(function (stem, i) {
-        // A tie keeps name order: the earlier name a hair higher.
-        const tie = 1e-9 / (1 + i);
-        if (!words) { bucket.seatFor(0.5 + tie, stem); return; }
-        let description = '';
-        try { description = String((JSON.parse(fs.readFileSync(path.join(dir, folder.files[stem]), 'utf8')) || {}).description || ''); } catch (e) { description = ''; }
-        const p = (2 / 3) * (Number(probabilityStringObjectMatch(words, { name: stem })) || 0) +
-          (1 / 3) * (Number(probabilityStringObjectMatch(words, { description: description })) || 0);
-        if (p > 0) bucket.seatFor(Math.min(1, p * (1 - 1e-6) + tie), stem);
-      });
-      // NAMES ONLY (goal/G24.4). Andy: "first get the list of verbs ... for the allowed ones it gets the description".
-      // The label is the verb's name, so a family fits one answer; the description is AGENTS.<verb>'s.
-      const out = bucket.serialize(function (stem) { return { key: prefix + stem, label: stem }; }, room() - 512);
-      return { items: out.items, more: !!out.more };
-    },
-  };
-
-  stems.forEach(function (stem) {
-    const file = path.join(dir, folder.files[stem]);
-    const decl = o.declarations && isPlain(o.declarations[prefix + stem]) ? o.declarations[prefix + stem] : null;
-    verbs[prefix + 'AGENTS.' + stem] = {
-      request: {}, reply: {},
-      handler: function () {
-        let parsed = null;
-        try { parsed = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { parsed = null; }
-        if (!isPlain(parsed)) throw refusal('handler-failed', { why: folder.files[stem] + ' is no longer a verb file' });
-        const answer = Object.assign({}, parsed);
-        if (decl) {
-          if (!('request' in answer)) answer.request = decl.request;
-          if (!('reply' in answer)) answer.reply = decl.reply;
-        }
-        if (Buffer.byteLength(JSON.stringify(answer), 'utf8') > room()) throw refusal('answer-too-large');
-        return answer;
-      },
-    };
-  });
-  return { verbs: verbs, stale: folder.stale };
+  // FS IS ALL THERE IS (goal/G30.4): the AGENTS verbs went (Andy, 2026-10-20: "cannot the agent simply use FS to
+  // retrieve the AGENTS.md file of the verb.json files?"), so the folder is read through FS alone. A verb file naming
+  // a verb nobody declared is still said at boot (stale).
+  const verbs = Object.assign(Object.create(null), fsVerbs(dir, prefix));
+  const stale = o.declared ? readFolder(dir, o.declared, o.manifest || '').stale : [];
+  return { verbs: verbs, stale: stale };
 }
 
-// ── THE NODE: A NAMESPACE IN THE DECLARATION FORM ───────────────────────
-//
-// claim(table, namespace, by, declarations, opts) replaces the registration
-// of core-module verbs (the box, point 1): each verb is {request, reply,
-// handler}, the handler the (req, res) function it always was, handed to
-// verbTable.claim unchanged so routing is untouched. Then the family of
-// js/<namespace>/ is added through verbTable.reserve, the one way an
-// uppercase verb reaches the table, as a (req, res) handler each: the
-// loopback door calls every handler alike.
-function checkDeclarations(namespace, declarations) {
-  if (!isPlain(declarations)) throw new Error('introSpector: ' + namespace + ' declared nothing');
-  Object.keys(declarations).forEach(function (name) {
-    const d = declarations[name];
-    if (!isPlain(d) || typeof d.handler !== 'function' || !isPlain(d.request) || !('reply' in d)) {
-      throw new Error('introSpector: verb "' + name + '" needs request (an object), reply and handler');
-    }
-  });
-}
+// claim(table, namespace, by, declarations) STOOD HERE (goal/G10.5). It signed a module's verbs up on the node's
+// table and wrapped their AGENTS verbs for the web door: the node's wiring, not introspection. It moved into
+// verbTable as mount (goal/G30.4; Andy, 2026-10-20: "it does NOT belong in introSpector. a namespace container is not
+// known by the namespace.").
 
-// THE BODY THE DOOR ALREADY READ: the loopback door peeks the verb through serveCommon.readJsonBody, which keeps its
-// promise on the request, so the same call here answers at once. A second reader on the stream would wait for an end
-// that has already passed (found on a planted node, 2026-10-09: every family ask hung and the client saw no answer).
-function readBody(rq) {
-  return require('./serveCommon').readJsonBody(rq);
-}
-
-// A declaration's handler as the loopback door calls one: the body in, the
-// verb's own fields alone to the handler, its answer out as JSON; a refusal
-// the catalogue knows by its code and status.
-function asDoorHandler(name, decl) {
-  return function (rq, rs) {
-    function send(status, body) {
-      rs.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-      rs.end(JSON.stringify(body));
-    }
-    return readBody(rq).then(function (body) {
-      const args = {};
-      if (isPlain(body)) Object.keys(body).forEach(function (k) { if (k !== 'verb') args[k] = body[k]; });
-      return Promise.resolve().then(function () { return decl.handler(args); });
-    }).then(function (reply) {
-      send(200, reply);
-    }, function (e) {
-      const errors = require('./spiritErrors');
-      const known = e && typeof e.refusal === 'string' ? errors.byCode(e.refusal) : null;
-      if (known) return send(known.status, Object.assign({ ok: false, code: e.refusal, error: known.text, verb: name }, e.extra && isPlain(e.extra) ? { extra: e.extra } : {}));
-      if (e instanceof SyntaxError) return send(400, { ok: false, code: 'bad-request', error: 'Invalid JSON body', verb: name });
-      send(500, { ok: false, code: 'handler-failed', error: 'the handler failed', verb: name });
-    });
-  };
-}
-
-function claim(table, namespace, by, declarations, opts) {
-  const ns = String(namespace || '');
-  checkDeclarations(ns, declarations);
-  const group = {};
-  Object.keys(declarations).forEach(function (name) { group[name] = declarations[name].handler; });
-  table.claim(ns, by, group, opts);
-
-  const dir = path.join(__dirname, ns);
-  const declared = Object.keys(declarations).map(function (name) { return name.slice(ns.length + 1); });
-  const made = family(dir, { declared: declared, prefix: ns + '.', declarations: declarations });
-  made.stale.forEach(function (file) {
-    console.error('introSpector: js/' + ns + '/' + file + ' names a verb this node does not claim');
-  });
-  const names = Object.keys(made.verbs);
-  if (!names.length) return true;
-  const reserved = {};
-  names.forEach(function (name) { reserved[name] = asDoorHandler(name, made.verbs[name]); });
-  table.reserve(ns, reserved);
-  return true;
-}
-
-module.exports = { family: family, claim: claim, AGENTS_FILE: AGENTS_FILE };
+module.exports = { family: family, AGENTS_FILE: AGENTS_FILE };

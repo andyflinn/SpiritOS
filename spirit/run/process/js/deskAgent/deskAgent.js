@@ -313,7 +313,8 @@ function chatOf(id) {
   return desk('item.chat', { id: id }).then(function (b) { return Array.isArray(b.chat) ? b.chat : []; });
 }
 function agentsText() {
-  return desk('AGENTS', {}).then(function (b) { return String(b.text || ''); }, function () { return ''; });
+  // The desk's AGENTS.md through its family's FS (goal/G30.4: the AGENTS verbs are gone; FS reads the folder).
+  return desk('FS.loadFile', { path: 'AGENTS.md' }).then(function (b) { return String((b && b.text) || ''); }, function () { return ''; });
 }
 
 // THE CURRENT GOAL, ASKED FOR EVERY CALL (goal/G24.3): Andy saw Levant answer about G23 after G24 was made current;
@@ -533,6 +534,8 @@ const TOOL_NAMESPACES = ['desk', 'deskAgent', 'net'];
 // disconnected, as the node's fs reads were before his file tools became his own; file.save, commit and push stay
 // refused.
 const READS_OFF_THE_DESK = ['file.load', 'file.search'];
+// The tools' descriptions are still read while disconnected: the family folder's FS reads (goal/G30.4), never a write.
+const FS_READS = /^FS\.(loadFile|loadJsonValue|search|statFile|fileExists)$/;
 function offTheDesk(verb) {
   const body = { ok: false, code: 'not-offered', error: 'disconnected', extra: { why: PERSONA + ' is disconnected from the desk, so ' + verb + ' is not run' } };
   return { status: 400, body: body, text: JSON.stringify(body) };
@@ -541,16 +544,16 @@ const tools = require('./tools').createTools({
   routes: {
     desk: {
       ask: function (verb, args) {
-        if (!connected && String(verb).indexOf('AGENTS') !== 0) return Promise.resolve(offTheDesk(verb));
+        if (!connected && !FS_READS.test(String(verb))) return Promise.resolve(offTheDesk(verb));
         return askNode({ deskClient: { desk: { verb: String(verb), json: JSON.stringify(args || {}) } } })
           .then(function (body) { return { status: body && body.ok === false ? 400 : 200, body: body, text: JSON.stringify(body) }; });
       },
       verb: function (stem) { return stem; },
-      family: function (name) { return 'AGENTS.' + name; },
+      fs: function (name) { return 'FS.' + name; },
     },
     deskAgent: {
       ask: function (verb, args) {
-        if (!connected && String(verb).indexOf('AGENTS') !== 0 && READS_OFF_THE_DESK.indexOf(String(verb)) === -1) return Promise.resolve(offTheDesk(verb));
+        if (!connected && !FS_READS.test(String(verb)) && READS_OFF_THE_DESK.indexOf(String(verb)) === -1) return Promise.resolve(offTheDesk(verb));
         const one = {}; one[String(verb)] = args || {};
         return spirit.core.ask('jobs.api', { ask: { deskAgent: one } }, NODE_URL).then(function (r) {
           const body = (r && r.body) || {};
@@ -558,7 +561,7 @@ const tools = require('./tools').createTools({
         });
       },
       verb: function (stem) { return stem; },
-      family: function (name) { return 'AGENTS.' + name; },
+      fs: function (name) { return 'FS.' + name; },
     },
   },
   room: toolRoom,

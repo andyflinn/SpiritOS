@@ -2519,8 +2519,9 @@ function createRelay(rootDir, deps) {
   //   below, a member the member verbs. Nothing is stored per member, and an asker learns nothing of why its answer
   //   is the one it gets ("for the relay the category question is 100% internal").
   //
-  // The introspection is introSpector's family of js/relaySelf/ (AGENTS.md and one description file per verb):
-  // AGENTS, AGENTS.introspect and AGENTS.<verb>, plain synchronous handlers, cut here to the caller's category.
+  // The relay's folder js/relaySelf/ (AGENTS.md and one description file per verb) is read through introSpector's FS
+  // verbs (goal/G30.4: the AGENTS verbs are gone). FS is an owner verb like the others below; members get nothing of
+  // it (Andy, 2026-10-20: "don't build shit nobody asked for.").
   var MEMBER_VERBS = ['card', 'face', 'removePeer', 'rename', 'search'];
   var OWNER_VERBS = ['config', 'debug', 'invite', 'monitor', 'relayLabel', 'revoke'];
   // A REFUSAL SAYS WHY ONLY IN DEBUG (Andy, 2026-10-20: "give good information in DEBUG mode, otherwise just
@@ -2539,19 +2540,11 @@ function createRelay(rootDir, deps) {
     }
     return selfFamily;
   }
-  function mayCall(owner, verb) { return owner || MEMBER_VERBS.indexOf(verb) !== -1; }
-  function answerAgents(name, args, owner) {
+  function answerFs(name, args) {
     var family = relaySelfFamily();
     if (!Object.prototype.hasOwnProperty.call(family, name)) return { ok: false, status: 404, error: 'no such verb' };
-    var stem = name.indexOf('AGENTS.') === 0 ? name.slice('AGENTS.'.length) : '';
-    if (stem && stem !== 'introspect' && !mayCall(owner, stem)) return notGranted();
-    var out;
-    try { out = family[name].handler(args || {}); }
-    catch (e) { return { ok: false, status: 500, error: (e && e.refusal) || 'the introspection failed' }; }
-    if (name === 'AGENTS.introspect' && out && Array.isArray(out.items)) {
-      out = Object.assign({}, out, { items: out.items.filter(function (i) { return i && mayCall(owner, String(i.key || '')); }) });
-    }
-    return out;
+    try { return family[name].handler(args || {}); }
+    catch (e) { return { ok: false, status: e && e.refusal ? 400 : 500, error: (e && e.refusal) || 'the folder could not be read' }; }
   }
 
   function answerSelfInner(hash, text, who) {
@@ -2562,11 +2555,12 @@ function createRelay(rootDir, deps) {
     var out = { ok: false, status: 404, error: 'no such peer' };
     var owner = isOwner(who);
 
-    // THE INTROSPECTION AND THE GATE come first (goal/G30.3): an AGENTS ask is answered from the family, and a verb
-    // outside the caller's category is refused not-granted before any verb below can see it.
+    // THE GATE comes first (goal/G30.3): a verb outside the caller's category is refused before any verb below can see
+    // it. FS.* is an owner verb (goal/G30.4), answered from the folder.
     var only = body && typeof body === 'object' && !Array.isArray(body) && Object.keys(body).length === 1 ? Object.keys(body)[0] : '';
-    if (only === 'AGENTS' || only.indexOf('AGENTS.') === 0) return sendSelfAnswer(hash, who, answerAgents(only, body[only], owner));
-    if (only && OWNER_VERBS.indexOf(only) !== -1 && !owner) return sendSelfAnswer(hash, who, notGranted());
+    var isFs = only.indexOf('FS.') === 0;
+    if (only && (isFs || OWNER_VERBS.indexOf(only) !== -1) && !owner) return sendSelfAnswer(hash, who, notGranted());
+    if (isFs) return sendSelfAnswer(hash, who, answerFs(only, body[only]));
     // Set by the search branch: a roll walk to run before anything is sent.
     var searching = null;
 

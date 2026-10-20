@@ -277,8 +277,11 @@ test.subHeading('A puppet can compose any envelope, which is what makes the sibl
   // SINCE goal/G13.2 the surface is the loopback door's peer.post (the mounted puppet's post()
   // seam left with nodeApps.mountAll): a process on this box hands the node raw text, and the
   // node's router sends it signed by THIS node key. The basis of the sibling case stands.
+  // SINCE goal/G30.4 the peer family is mounted with bare verbs ('post' in loopbackVerbs.mount('peer', ...)), so the
+  // declaration is looked for from the start of that mount on.
   const surface = read('spirit/run/js/server.js');
-  const takesText = surface.indexOf("'peer.post': { request: { to: '', text: ''") !== -1;
+  const peerMount = surface.indexOf("loopbackVerbs.mount('peer',");
+  const takesText = peerMount !== -1 && surface.indexOf("'post': { request: { to: '', text: ''", peerMount) !== -1;
   const passesThrough = surface.indexOf('hub.handlePost(rq, rs, readJsonBody, { router: peerRouter') !== -1;
   const rawText = takesText && passesThrough;
   if (rawText) {
