@@ -1455,6 +1455,7 @@ const ICON = spirit.core.const.ICON = {
     TEXT: '🔤',
     TOGGLE: '🔘',
     SUCCESS: '✅',
+    SEARCH: '🔍',
     END: '🔚',
 };
 
