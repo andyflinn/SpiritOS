@@ -242,7 +242,8 @@ async function theDialog() {
   dd.mount(node('div'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const a = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = a ? Object.keys(a)[0] : '';
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(f), version: 1, change: 1 } });
       if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: 'text', version: 1 } });

@@ -87,7 +87,9 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
-    const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
+    const dc = ask && ask.deskClient;
     if (dc && dc.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (dc && dc.desk) return answer(200, { ok: true });
     answer(404, { ok: false, code: 'no-such-verb' });
@@ -229,18 +231,20 @@ async function mount(opts) {
     onPublished: function () {},
     verb: function (name, body) {
       calls.push({ name: name, body: body });
-      if (name === 'jobs.api' && body && body.ask === 'api') {
+      // The tree by the verb api; deskAgent's verbs by name (deskAgent.<verb>, goal/G30.6); a puppet's ride in
+      // owner.command as its command, the args its body.
+      if (name === 'api') {
         const apps = { deskAgent: {} };
         if (opts.hasDesk) apps.desk = {};
         return Promise.resolve({ status: 200, body: apps });
       }
-      if (name === 'jobs.api' && body && body.ask && body.ask.deskAgent) {
-        const verb = Object.keys(body.ask.deskAgent)[0];
-        const said = answerOf('local', verb, body.ask.deskAgent[verb]);
+      if (String(name).indexOf('deskAgent.') === 0) {
+        const verb = String(name).slice('deskAgent.'.length);
+        const said = answerOf('local', verb, body || {});
         return Promise.resolve(said ? { status: 200, body: said } : { status: 404, body: { ok: false, code: 'app-not-served', error: 'deskAgent is not served here' } });
       }
       if (name === 'owner.command') {
-        const verb = Object.keys((body.body && body.body.ask && body.body.ask.deskAgent) || {})[0];
+        const verb = String(body.command || '').indexOf('deskAgent.') === 0 ? String(body.command).slice('deskAgent.'.length) : '';
         const said = answerOf(body.to, verb, {});
         return Promise.resolve(said ? { status: 200, body: { ok: true, status: 200, body: said } } : { status: 200, body: { ok: false, code: 'not-reachable', error: 'the puppet is not reachable' } });
       }
@@ -302,8 +306,8 @@ async function faceHalf() {
   const before = ready.calls.length;
   doc.getElementById('dur-server-save').fire('click', {});
   await settled();
-  const sent = ready.calls.slice(before).filter(function (c) { return c.name === 'owner.command' && c.body && c.body.body && c.body.body.ask && c.body.body.ask.deskAgent && c.body.body.ask.deskAgent['connection.set']; });
-  const args = sent.length ? sent[0].body.body.ask.deskAgent['connection.set'] : null;
+  const sent = ready.calls.slice(before).filter(function (c) { return c.name === 'owner.command' && c.body && c.body.command === 'deskAgent.connection.set' && c.body.body; });
+  const args = sent.length ? sent[0].body.body : null;
   if (args && args.name === 'studio' && args.url === 'http://studio:8888/v1' && args.key === 'the-key' && sent[0].body.to === 'KEY-AGENT') test.check('the server bubble sends connection.set {name, url, key} to the chosen node');
   else test.fail(OWED + 'after the server bubble\'s button: ' + short(ready.calls.slice(before)));
 

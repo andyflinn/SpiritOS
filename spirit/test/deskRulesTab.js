@@ -73,7 +73,8 @@ function mount() {
   const calls = [];
   const dialogs = [];
   const verb = function (name, body) {
-    const ask = name === 'jobs.api' && body && body.ask && body.ask.desk;
+    // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+    const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
     const v = ask && Object.keys(ask)[0];
     if (v === 'rules.search') { calls.push({ verb: v, args: ask[v] }); return Promise.resolve({ status: 200, body: { items: RULES.slice(), more: false } }); }
     if (v === 'rule.add') { calls.push({ verb: v, args: ask[v] }); return Promise.resolve({ status: 200, body: { key: 'rule/4' } }); }

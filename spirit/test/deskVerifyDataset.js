@@ -18,7 +18,7 @@
 //   dirty tree and time stamped by deskVerify itself, never sent.
 //   testSupport: fail(title, detail) and check(title, detail) print both, but the title alone is the key. Given
 //   `--verify-port <port>`, every check and fail posts one record, {suite: the suite's file name, title, outcome}, to
-//   that node's jobs.api as {deskVerify: {record: ...}}, one post each, landing even when the suite exits right after
+//   that node as deskVerify.record by name ({verb: 'deskVerify.record', suite, title, outcome}; goal/G30.6), one post each, landing even when the suite exits right after
 //   its report. Run without the argument, a suite posts nothing, as today.
 // NOT ASSERTED: retitling the harness's existing assertions so their titles stop carrying runtime values (wsl-claude
 // counted about 9,000 check and fail sites). This red asserts the mechanism; the retitling is its own work.
@@ -153,10 +153,10 @@ function fakeNode() {
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, bodies: bodies, close: function () { s.close(); } }); });
   });
 }
-// GROWN IN THE VERIFY (claude-windows): a record counts only as a real node would take it, with verb jobs.api, as
-// kernel.core.ask sends it; a node answers a body without a verb "no such verb", so such a record never arrives.
+// GROWN IN THE VERIFY (claude-windows): a record counts only as a real node would take it, the verb by name
+// (deskVerify.record) with the record's fields beside it, as kernel.core.ask sends it; a node answers a body without a verb "no such verb", so such a record never arrives.
 function recordsIn(bodies) {
-  return bodies.map(function (b) { try { const j = JSON.parse(b); return j && j.verb === 'jobs.api' && j.ask && j.ask.deskVerify && j.ask.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
+  return bodies.map(function (b) { try { const f = test.foldAsk(JSON.parse(b)); return f && f.deskVerify && f.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
 }
 
 async function sender() {
@@ -189,7 +189,7 @@ async function sender() {
       await runMini(['--verify-port', String(lingerNode.port)], true);
       await sleep(300);
       const got2 = recordsIn(lingerNode.bodies).map(function (r) { return r.title + ':' + r.outcome; });
-      if (lingerNode.bodies.length >= 2 && JSON.stringify(got2.slice(0, 2)) === JSON.stringify(['mini #1:green', 'mini #2:red'])) test.check('its two posts arrive while it runs, with verb jobs.api');
+      if (lingerNode.bodies.length >= 2 && JSON.stringify(got2.slice(0, 2)) === JSON.stringify(['mini #1:green', 'mini #2:red'])) test.check('its two posts arrive while it runs, each as deskVerify.record by name');
       else test.fail(OWED + 'a lingering suite\'s posts read ' + short(lingerNode.bodies.slice(0, 3)));
     } finally { lingerNode.close(); }
 

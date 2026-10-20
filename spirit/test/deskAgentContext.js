@@ -81,7 +81,7 @@ function setUp() {
 function said(id, text, by) { desk.items[id].chat.push({ by: by || 'andy', at: new Date().toISOString(), text: text, taken: '' }); return 'DESK ' + (by || 'andy') + ' chat.add ' + JSON.stringify({ id: id, text: text }); }
 function facts(it) { return { id: it.id, title: it.title, goal: it.goal, status: 'open', with: '', buttons: [], blocking: [], blocked: [], go: true }; }
 
-const nodeAsks = [];    // every jobs.api body the agent sent its node
+const nodeAsks = [];    // every body the agent sent its node (a server's verb by name, goal/G30.6)
 const posted = [];      // every chat.add {id, text} the agent sent the desk
 let nextQueue = [];     // answers to next, each a lines array; empty queue answers no lines
 let nextCount = 0;
@@ -105,9 +105,10 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     nodeAsks.push(b);
-    const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
+    const ask = test.foldAsk(b);
+    const dc = ask && ask.deskClient;
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
-    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node answers jobs.api for deskClient alone' });
+    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node answers deskClient.<verb> alone' });
     if (dc.next) {
       nextCount++;
       if (nextQueue.length) return answer(200, { lines: nextQueue.shift() });
@@ -115,8 +116,8 @@ const node = http.createServer(function (req, res) {
     }
     if (dc.desk) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
-      if (!dc.desk.verb || !args) return answer(400, { ok: false, code: 'bad-request', error: 'verb and json' });
-      const a = deskAnswer(dc.desk.verb, args);
+      if (!dc.desk.name || !args) return answer(400, { ok: false, code: 'bad-request', error: 'name and json' });
+      const a = deskAnswer(dc.desk.name, args);
       return a && a.status ? answer(a.status, a.body) : answer(200, a);
     }
     return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake deskClient has next and desk alone' });
@@ -183,7 +184,7 @@ function writeFiles(which) {
 }
 function textOf(call) { return ((call.body && call.body.messages) || []).map(function (m) { return typeof m.content === 'string' ? m.content : JSON.stringify(m.content); }); }
 function holds(call, s) { return textOf(call).join('\n').indexOf(s) !== -1; }
-function nextAsks() { return nodeAsks.filter(function (b) { return b.ask && b.ask.deskClient && b.ask.deskClient.next; }).length; }
+function nextAsks() { return nodeAsks.filter(function (b) { return b.verb === 'deskClient.next'; }).length; }
 
 test.startTest('goal/G10.3: the context is built from the desk goal for the local agent');
 

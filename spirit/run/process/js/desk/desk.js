@@ -12,7 +12,7 @@
 //       voice file lived there too until goal/G2.1). The node names that folder and hands it over as
 //       --state, beside --pipe; this process never works it out itself, so
 //       a test hands it a temp folder and the live record is never touched.
-//   D4  the local shell reaches it by jobs.api on the loopback door, a known
+//   D4  the local shell reaches it by its verbs (desk.<verb>) on the loopback door, a known
 //       member by an 'api' packet; both end in appClient.ask.
 //   D12 no reply carries 'ok': that key is an error's (appServer.js).
 //
@@ -1882,7 +1882,7 @@ function nodeNamedPort() {
 function lookForDeskVerify() {
   const port = nodeNamedPort();
   if (!port) return;
-  appServer.spirit.core.ask('jobs.api', { ask: 'api' }, 'http://127.0.0.1:' + port).then(function (r) {
+  appServer.spirit.core.ask('api', {}, 'http://127.0.0.1:' + port).then(function (r) {
     const body = r && r.status === 200 ? r.body : null;
     const apps = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : [];
     VERIFY_SEEN = { at: Date.now(), there: apps.indexOf('deskVerify') !== -1 };
@@ -2045,13 +2045,12 @@ function pluginDesk(name, manifest) {
     fieldWhy: fieldWhy,
     nextItemId: nextItemId,
     // SINCE goal/G22.3 (Andy, 2026-10-13: "every run here should report to deskVerify."): one verb of this node's
-    // deskVerify, through the node's jobs.api door, as lookForDeskVerify asks the node; only a port its own node named,
+    // deskVerify, by its verbs on the node's flat apiDoor, as lookForDeskVerify asks the node; only a port its own node named,
     // never the kernel default (goal/G8.3). Resolves deskVerify's answer, rejects with its why.
     verify: function (verb, args) {
       const port = nodeNamedPort();
       if (!port) return Promise.reject(refusedWhy('bad-request', 'this desk\'s node named no port, so no deskVerify can be asked'));
-      const one = {}; one[verb] = args || {};
-      return appServer.spirit.core.ask('jobs.api', { ask: { deskVerify: one } }, 'http://127.0.0.1:' + port).then(function (r) {
+      return appServer.spirit.core.ask('deskVerify.' + verb, args || {}, 'http://127.0.0.1:' + port).then(function (r) {
         const b = r && r.body;
         if (r && r.status === 200 && b && typeof b === 'object' && b.ok !== false) return b;
         const why = b && b.extra && b.extra.why ? b.extra.why : (b && (b.error || b.code)) || ('status ' + (r && r.status));

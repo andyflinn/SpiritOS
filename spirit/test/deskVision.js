@@ -204,7 +204,7 @@ async function faceHalf() {
     new Function('spirit', 'document', 'window', fs.readFileSync(DD, 'utf8'))({ shell: { activateApp: function (x) { app = x; } }, core: require('../run/js/kernel.js').core }, d2, { addEventListener: function () {}, spiritFieldRules: require('../run/js/fieldRules.js') });
     const f = { id: 'x/G1.1', title: 'an item', goal: 'x/G1', status: '', with: '', buttons: ['close', 'delete'], blocking: [], blocked: [], code: false, codeOffered: codeOffered };
     app.mount(fakeElement('dd'), { escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
-      verb: function (n, body) { const q = body && body.ask && body.ask.desk; const v = q && Object.keys(q)[0];
+      verb: function (n, body) { const q = (test.foldAsk(Object.assign({}, body, { verb: n })) || {}).desk; const v = q && Object.keys(q)[0];
         if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(f), version: 1, change: 1 } });
         if (v === 'item.chat') return Promise.resolve({ status: 200, body: { chat: [], chatMore: false } });
         if (v === 'item.checks') return Promise.resolve({ status: 200, body: { checks: [] } });

@@ -277,11 +277,14 @@ function createVerbTable() {
 
   // ── THE ONE DOOR TO THE FLAT TABLE (goal/G30.4) ──────────────────────
   //
-  // door(apps) answers what apiDoor and jobs.api ask: 'api' is one flat object, this node's families and its apps'
+  // door(apps) answers what apiDoor and /api/spirit ask: 'api' is one flat object, this node's families and its apps'
   // side by side (Andy: "the apiDoor only responds with it's flat list of families. it doesn't include the
   // app-client branch at all anymore"); {family: {verb: {args}}} runs a node family through call and hands anything
-  // else to the apps (jobs.api stays the way app families join). It gates nothing: the gate is apiDoor's.
-  function door(apps) {
+  // else to the apps. It gates nothing: the gate is apiDoor's.
+  // opts.owner(), when given, is the caller the owner's own calls carry ({owner: true, key, label}): a server tracks
+  // his records by key like anybody's (apiAuth/G1.13). Without it, {owner: true}.
+  function door(apps, opts) {
+    var ownerOf = opts && typeof opts.owner === 'function' ? opts.owner : function () { return { owner: true }; };
     var d = {
       ask: function (body, caller) {
         if (body === 'api') {
@@ -309,7 +312,7 @@ function createVerbTable() {
     };
     // ── THE DOOR'S OWN FRONT (goal/G30.5) ───────────────────────────────
     //
-    //   Andy, 2026-10-20: "the api query belongs to the apiDoor", and on the door that sat behind jobs.api alone:
+    //   Andy, 2026-10-20: "the api query belongs to the apiDoor", and on the door that sat behind the jobs api verb alone:
     //   "why do you think i want a uniform, orthogonal api implementation?"
     //
     // The loopback door (/api/spirit) asks this for the handler of a verb, as it asked the table. A node family verb
@@ -334,12 +337,36 @@ function createVerbTable() {
             asked[name.slice(0, dot)] = {};
             asked[name.slice(0, dot)][name.slice(dot + 1)] = args;
           }
-          return d.ask(asked, { owner: true });
+          return d.ask(asked, ownerOf());
         }).then(function (a) {
           rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
           rs.end(JSON.stringify(a && a.body !== undefined ? a.body : { ok: false, code: 'handler-failed' }));
         });
       };
+    };
+    // ── THE DOOR'S IN-PROCESS CALL (goal/G30.6) ────────────────────────────
+    //
+    //   Andy, 2026-10-20: "jobs is for launching and tracking appServer processes and other local (transient)
+    //   processes, it is NOT meant to be some kind of api-hub."
+    //
+    // What the owner door (puppetDoor) runs: one verb by name, as /api/spirit takes it, answered {ok, status, body}.
+    // A node family verb through the table's call, 'api' the flat table, family.verb through ask; a family nobody
+    // serves is no-such-verb, as the loopback door says it.
+    d.call = function (verb, args) {
+      var name = String(verb || '');
+      if (handlerFor(name)) return call(name, args);
+      var dot = name.indexOf('.');
+      if (name !== 'api' && !d.handlerFor(name)) return Promise.resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: name });
+      var asked = name;
+      if (name !== 'api') {
+        asked = {};
+        asked[name.slice(0, dot)] = {};
+        asked[name.slice(0, dot)][name.slice(dot + 1)] = args && typeof args === 'object' ? args : {};
+      }
+      return Promise.resolve(d.ask(asked, ownerOf())).then(function (a) {
+        var status = (a && a.status) || 500;
+        return { ok: status < 400, status: status, body: a ? a.body : null };
+      });
     };
     return d;
   }

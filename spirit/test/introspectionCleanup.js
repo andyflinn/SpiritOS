@@ -6,7 +6,8 @@
 //   - introSpector is family(folder) alone. claim moves into verbTable ("a namespace container is not known by the
 //     namespace"). A module declares its verbs bare and the mounter gives it its family name ("a module shouldn't
 //     know who mounted it").
-//   - One flat table of families, the node's own and its apps' side by side; jobs.api stays the way apps join it.
+//   - One flat table of families, the node's own and its apps' side by side (the jobs api verb, the way apps joined
+//     it then, went with goal/G30.6: a call is the verb by name on the flat apiDoor).
 //     A loopback client's introspection answers that one table; the appClient branch is no longer separate.
 //   - The grant system sees every family; a grant path is family or family.verb whichever family it names. A peer
 //     call reaches a node family through the same handler as the loopback API, in-process, after the grant check
@@ -154,7 +155,7 @@ async function main() {
   if (!/introSpector\.claim\(/.test(server) && !/'(net|jobs|config|fs|node|owner|relay|contact|peer)\.[a-zA-Z]+':\s*\{/.test(server) && /loopbackVerbs\.mount\(/.test(server))
     test.check('server.js mounts each node module with bare verbs; no introSpector.claim and no family.verb names in its declarations');
   else test.fail(OWED + 'server.js still claims through introSpector or names verbs with their family');
-  if (/loopbackVerbs\.door\(/.test(server) && /createApiDoor\(\{[\s\S]{0,200}servers:\s*nodeDoor/.test(server)) test.check('apiDoor and jobs.api go through the one door (nodeDoor)');
+  if (/loopbackVerbs\.door\(/.test(server) && /createApiDoor\(\{[\s\S]{0,200}servers:\s*nodeDoor/.test(server)) test.check('apiDoor and /api/spirit go through the one door (nodeDoor)');
   else test.fail(OWED + 'server.js does not hand apiDoor the one door');
   const pm = code('js/puppetMode.js');
   if (!/function shim\(/.test(pm) && /\.call\(/.test(pm)) test.check('puppetMode runs node verbs through table.call and keeps no shim of its own');
@@ -195,7 +196,7 @@ async function main() {
   const appServerJs = code('js/appServer.js');
   if (/'\.family'/.test(appServerJs)) test.check('appServer reads the AGENTS family (and FS) from <script>.family');
   else test.fail(OWED + 'appServer still reads the AGENTS family from the script\'s own folder');
-  // The picker lists spiritApiTreeIndex.servers of the jobs.api 'api' answer, which is now the flat table.
+  // The picker lists spiritApiTreeIndex.servers of the verb api's answer, which is now the flat table.
   let listed = null;
   try {
     global.window = global.window || {};
@@ -205,7 +206,7 @@ async function main() {
     listed = idx.servers({ fs: { stat: {} }, jobs: { authGrant: {} }, desk: { items: {} } });
   } catch (e) { listed = { threw: e.message }; }
   const picker = code('shell/js/appServerSelector.js');
-  if (Array.isArray(listed) && listed.join(',') === 'desk,fs,jobs' && /jobs\.api/.test(picker) && /'api'/.test(picker))
+  if (Array.isArray(listed) && listed.join(',') === 'desk,fs,jobs' && /spirit\.core\.ask\('api'/.test(picker))
     test.check('the picker lists every family of the flat table, the node\'s (fs, jobs) beside the apps\' (desk)');
   else test.fail(OWED + 'the picker lists ' + short(listed));
 }

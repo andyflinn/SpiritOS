@@ -174,7 +174,8 @@ function mountFace(answers) {
     // goal/G29.8: the plugin folder is read from the shell's one tree, handed over by api.onFiles as the shell does.
     onFiles: function (fn) { if (Array.isArray(answers.files)) fn(answers.files, { visible: true }); return function () {}; },
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v) asked.push([v, ask[v]]);
       const a = answers[v];
@@ -213,10 +214,12 @@ function clickTab(el, tab) {
       req.on('end', function () {
         reports.push(b);
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        let out = j && j.ask === 'api' ? { desk: {} } : { ok: true };
-        if (j && j.ask && j.ask.deskVerify) {
-          const verb = Object.keys(j.ask.deskVerify)[0];
-          const a = j.ask.deskVerify[verb] || {};
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
+        let out = flatCall === 'api' ? { desk: {} } : { ok: true };
+        if (flatCall && flatCall.deskVerify) {
+          const verb = Object.keys(flatCall.deskVerify)[0];
+          const a = flatCall.deskVerify[verb] || {};
           verifyAsks.push([verb, a]);
           if (verb === 'door.run') { if (!fakeDoors[a.id] || doorState(a.id).ran) fakeDoors[a.id] = { at: Date.now() }; out = { queued: true, already: false }; }
           else if (verb === 'door.state') out = doorState(String(a.id));
@@ -886,7 +889,8 @@ function clickTab(el, tab) {
     dApp.mount(dbox, {
       escapeHtml: kernel.core.util.escapeHtml,
       verb: function (name, body) {
-        const q = body && body.ask && body.ask.desk;
+        // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+        const q = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
         const v = q && Object.keys(q)[0];
         dAsked.push([v, q && q[v]]);
         let out = { change: 1 };

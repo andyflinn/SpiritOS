@@ -83,10 +83,11 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const answer = answerer(res);
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    const ask = b.verb === 'jobs.api' && b.ask;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient && ask.deskClient.desk) {
-      const verb = String(ask.deskClient.desk.verb);
+      const verb = String(ask.deskClient.desk.name);
       const verbs = deskVerbFiles();
       if (verb === 'AGENTS') return answer(200, { text: 'Rules.' });
       if (verb === 'AGENTS.introspect') return answer(200, { items: Object.keys(verbs).map(function (v) { return { key: v, label: verbs[v].description }; }), more: false });

@@ -27,6 +27,8 @@ const spirit = require('../run/js/kernel.js');
 const APP_DIR = path.join(__dirname, '..', 'run', 'shell');
 const DESK = path.join(APP_DIR, 'desk', 'desk.js');
 const DETAILS = path.join(APP_DIR, 'deskDetails', 'deskDetails.js');
+// A verb of one of Desk's servers, by its name on the flat apiDoor (goal/G30.6); the family is the part before the dot.
+const SERVER_VERB = /^(desk|deskVerify|backup)\./;
 
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
 const WSL = 'MCowBQYDK2VwAyEAwslwslwslwslwslwslwslwslwslwslwslwsl=';
@@ -111,10 +113,11 @@ function mountDesk(opts) {
   const api = {
     fs: fakeFs(opts.files),
     escapeHtml: spirit.core.util.escapeHtml,
-    // What Desk asks the node for, other than jobs.api, is recorded; a Desk
+    // What Desk asks the node for, other than its servers' verbs by name (desk.<verb>, deskVerify.<verb>,
+    // backup.<verb> on the flat apiDoor, goal/G30.6), is recorded; a Desk
     // whose server is down (opts.dead) gets the node's refusal.
     verb: function (name, body) {
-      if (name !== 'jobs.api') verbs.push(name);
+      if (!SERVER_VERB.test(String(name))) verbs.push(name);
       if (opts.dead) return Promise.resolve({ status: 503, body: { ok: false, code: 'app-not-running', error: 'the app server is not running' } });
       return fakeFor(opts.files).verb(name, body);
     },
@@ -159,16 +162,18 @@ const BOARD = JSON.stringify({ goal: { id: 'puppets/G', title: 'Puppets' }, item
 
 test.startTest('Desk — its record, through the desk server, and nothing else asked of the node');
 
-// SINCE desk/G1.4 Desk reaches its record through jobs.api (D4), and that is
-// the one verb it may name; the node's own history it never asks for.
-test.subHeading('Desk and its dialog name only jobs.api (desk/G2.7), and never node.history');
+// SINCE desk/G1.4 Desk reaches its record through its servers (D4), by each
+// verb's name on the flat apiDoor since goal/G30.6 (desk.<verb>, and beside it
+// deskVerify.<verb> and backup.<verb>), and those are the only verbs it may
+// name; the node's own history it never asks for.
+test.subHeading('Desk and its dialog name only their servers\' verbs (desk/G2.7), and never node.history');
 [DESK, DETAILS].forEach(function (f) {
   const src = fs.readFileSync(f, 'utf8');
   const code = src.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   const named = (code.match(/\.verb\(\s*'([^']*)'/g) || []).map(function (m) { return m.replace(/^\.verb\(\s*'|'$/g, ''); });
-  const allowed = named.every(function (v) { return v === 'jobs.api'; }) && named.length > 0;
+  const allowed = named.every(function (v) { return SERVER_VERB.test(v); }) && named.length > 0;
   if (allowed && !/node\.history/.test(code)) {
-    test.check(path.basename(f) + ' names only jobs.api' + ', and never node.history outside a comment');
+    test.check(path.basename(f) + ' names only its servers\' verbs (' + named.join(', ') + '), and never node.history outside a comment');
   } else {
     test.fail(path.basename(f) + ' asks the node for ' + JSON.stringify(named) + (/node\.history/.test(code) ? ' and names node.history' : ''));
   }
@@ -199,7 +204,7 @@ function arrivalsAndSendsAreLogged() {
     } else {
       test.fail('posts ' + JSON.stringify(desk.posts) + ' out rows ' + JSON.stringify(out) + ' chat.add ' + JSON.stringify(added.map(function (c) { return c.args; })));
     }
-    if (!desk.verbs.length) test.check('the node was asked nothing but jobs.api');
+    if (!desk.verbs.length) test.check('the node was asked nothing but its servers\' verbs by name');
     else test.fail('verbs asked: ' + desk.verbs.join(', '));
 
     const again = mountDesk({ files: files });

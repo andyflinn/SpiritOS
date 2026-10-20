@@ -129,7 +129,7 @@ async function nextUntil(marker) {
 }
 const has = function (lines, text) { return lines.some(function (l) { return l.indexOf(text) !== -1; }); };
 const andySays = function (id, text) { return call('desk', 'chat.add', { id: id, text: text }, ANDY); };
-const throughClient = function (verb, args) { return call('deskClient', 'desk', { verb: verb, json: JSON.stringify(args) }, OWNER); };
+const throughClient = function (verb, args) { return call('deskClient', 'desk', { name: verb, json: JSON.stringify(args) }, OWNER); };
 async function lineOf(id, text) {
   const r = await call('desk', 'item.chat', { id: id }, ANDY);
   const chat = (r.body && Array.isArray(r.body.chat)) ? r.body.chat : [];

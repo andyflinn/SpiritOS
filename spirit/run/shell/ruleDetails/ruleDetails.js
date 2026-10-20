@@ -8,7 +8,7 @@
 //   edited by the user."
 //
 // WHAT COMES FROM WHERE. open({key}) asks the desk server rule.get and the rule's chat (item.chat under the rule's
-// key), through jobs.api as deskDetails does. The textbox is his: it shows his draft when there is one, else the
+// key), by name (desk.<verb>) as deskDetails does. The textbox is his: it shows his draft when there is one, else the
 // rule's text, and every change is saved as his draft (rule.draft) until Version makes it the rule (rule.version).
 // Activate and Delete are each one version with that status, both armed: the first press asks, the second sends.
 
@@ -22,11 +22,9 @@ var rdNote = '';
 
 function rdEsc(s) { return rdApi.escapeHtml(String(s == null ? '' : s)); }
 
-// The one way to the desk server: jobs.api on the loopback door.
+// The one way to the desk server: its verb by name on the loopback door (desk.<verb>, goal/G30.6).
 function rdAsk(verb, args) {
-  var desk = {};
-  desk[verb] = args;
-  return Promise.resolve(rdApi.verb('jobs.api', { ask: { desk: desk } })).then(function (r) {
+  return Promise.resolve(rdApi.verb('desk.' + verb, args)).then(function (r) {
     var body = (r && r.body) || {};
     if (body.ok === false) { var e = new Error(String(body.code || 'refused') + (body.error ? ' (' + body.error + ')' : '')); e.refused = true; throw e; }
     return body;

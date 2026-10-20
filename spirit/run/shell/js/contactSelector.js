@@ -106,8 +106,7 @@
     }
     var api = {
       verb: function (name, body) {
-        var ask = (body && body.ask && body.ask.node) || {};
-        return rows(ask['contact.search'] || {}).then(function (answer) {
+        return rows(body || {}).then(function (answer) {
           var items = ((answer && answer.items) || []).filter(function (i) { return i && i.key; }).map(function (i) {
             return { key: String(i.key), label: JSON.stringify(parseRow(i)) };
           });

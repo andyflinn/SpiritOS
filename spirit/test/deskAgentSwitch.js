@@ -19,13 +19,13 @@
 //   3. connect on: the asks resume, state says true, and no second signoff is sent; the backlog handed over before
 //      the first empty answer is read and not answered, as at a start.
 //   4. the shell app, shell/deskAgentRemote: its manifest beside its script, and ONE function building the ask
-//      from the target: for this node a jobs.api ask of deskAgent; for a puppet an owner.command carrying that
-//      same jobs.api ask, nothing else different. The same function unwraps both answers to the one deskAgent
+//      from the target: for this node deskAgent.<verb> by name on the flat apiDoor; for a puppet an owner.command
+//      whose command is that same verb, nothing else different (goal/G30.6). The same function unwraps both answers to the one deskAgent
 //      gave.
 // Not asserted, the builder's: the page's layout and words; where the puppet list in the app's folder is read from
 // (the box: "a small list in the app's own folder for now").
 //
-// THE FAKE is the node: a loopback door answering jobs.api for deskClient alone (next, and desk), as
+// THE FAKE is the node: a loopback door answering deskClient.<verb> by name alone (next, and desk), as
 // deskAgentContext.js fakes it; it records every ask. The model is never called: no line is addressed to the
 // persona here. rule/11: through testSupport only; its own folders and ports; never 65432.
 
@@ -49,9 +49,9 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 240); }
 async function until(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < (ms || 8000)) { if (fn()) return true; await sleep(50); } return fn(); }
 
-// ── THE FAKE NODE: jobs.api for deskClient, recorded ─────────────────────
-const nodeAsks = [];     // every jobs.api body the agent sent its node
-const deskWords = [];    // every deskClient.desk {verb, args} the agent sent
+// ── THE FAKE NODE: deskClient's verbs by name, recorded ──────────────────
+const nodeAsks = [];     // every body the agent sent its node
+const deskWords = [];    // every deskClient.desk {name, json} the agent sent, as {verb, args}
 let nextQueue = [];      // answers to next, each a lines array; an empty queue answers no lines
 let nextCount = 0;
 const node = http.createServer(function (req, res) {
@@ -60,9 +60,11 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     nodeAsks.push(b);
-    const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
+    const dc = ask && ask.deskClient;
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
-    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node answers jobs.api for deskClient alone' });
+    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node answers deskClient.<verb> alone' });
     if (dc.next) {
       nextCount++;
       if (nextQueue.length) return answer(200, { lines: nextQueue.shift() });
@@ -70,9 +72,9 @@ const node = http.createServer(function (req, res) {
     }
     if (dc.desk) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
-      deskWords.push({ verb: String(dc.desk.verb || ''), args: args });
-      if (dc.desk.verb === 'signoff') return answer(200, { change: 100 + deskWords.length });
-      if (dc.desk.verb === 'AGENTS') return answer(200, { text: 'rules' });
+      deskWords.push({ verb: String(dc.desk.name || ''), args: args });
+      if (dc.desk.name === 'signoff') return answer(200, { change: 100 + deskWords.length });
+      if (dc.desk.name === 'AGENTS') return answer(200, { text: 'rules' });
       return answer(404, { ok: false, code: 'no-such-item', error: 'the fake desk holds nothing' });
     }
     return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake deskClient has next and desk alone' });
@@ -208,16 +210,15 @@ async function suite() {
   const KEY = 'MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=';
   const local = askFor({ kind: 'node' }, 'connect', { on: false });
   const remote = askFor({ kind: 'puppet', key: KEY }, 'connect', { on: false });
-  const want = { ask: { deskAgent: { connect: { on: false } } } };
-  if (local && local.verb === 'jobs.api' && JSON.stringify(local.ask) === JSON.stringify(want.ask)) test.check('for this node the ask is jobs.api with deskAgent connect {on: false}');
+  if (local && JSON.stringify(local) === JSON.stringify({ on: false, verb: 'deskAgent.connect' })) test.check('for this node the ask is deskAgent.connect by name, {on: false} beside it');
   else test.fail(OWED + 'the local ask is ' + short(local));
-  if (remote && remote.verb === 'owner.command' && remote.to === KEY && remote.command === 'jobs.api' && JSON.stringify(remote.body) === JSON.stringify(want)) test.check('for the puppet the ask is owner.command to its key, carrying that same jobs.api ask as the command\'s body');
+  if (remote && remote.verb === 'owner.command' && remote.to === KEY && remote.command === 'deskAgent.connect' && JSON.stringify(remote.body) === JSON.stringify({ on: false })) test.check('for the puppet the ask is owner.command to its key, its command that same verb (deskAgent.connect), {on: false} its body');
   else test.fail(OWED + 'the puppet ask is ' + short(remote));
   const unwrap = ctx.deskAgentRemoteAnswerOf;
   if (typeof unwrap !== 'function') { test.fail(OWED + 'no deskAgentRemoteAnswerOf(target, answer) in the script'); return; }
   const said = { connected: false, persona: 'Levant', model: 'm' };
   const a1 = unwrap({ kind: 'node' }, { status: 200, body: said });
-  const a2 = unwrap({ kind: 'puppet', key: KEY }, { status: 200, body: { hash: 'h', verb: 'jobs.api', ok: true, status: 200, body: said } });
+  const a2 = unwrap({ kind: 'puppet', key: KEY }, { status: 200, body: { hash: 'h', verb: 'deskAgent.connect', ok: true, status: 200, body: said } });
   const a3 = unwrap({ kind: 'puppet', key: KEY }, { status: 504, body: { ok: false, status: 504, code: 'no-reply-from-puppet', error: 'the puppet did not answer in time' } });
   if (JSON.stringify(a1) === JSON.stringify(said) && JSON.stringify(a2) === JSON.stringify(said)) test.check('the same function hands back deskAgent\'s own answer from both: the node\'s body, and the body inside the puppet\'s answer');
   else test.fail(OWED + 'unwrapped ' + short(a1) + ' and ' + short(a2));

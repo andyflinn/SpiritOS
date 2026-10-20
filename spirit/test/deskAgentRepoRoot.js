@@ -75,7 +75,8 @@ const node = http.createServer(function (req, res) {
     if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: 'load a file' }, { key: 'fs.search', label: 'search files' }], more: false });
     if (b.verb === 'fs.AGENTS.load') return answer(200, { description: 'load a file under spirit/run', request: { path: '' }, reply: { path: '', text: '' } });
     if (b.verb === 'fs.AGENTS.search') return answer(200, { description: 'search files under spirit/run', request: { text: '' }, reply: {} });
-    const ask = b.verb === 'jobs.api' && b.ask;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient) return answer(200, { change: 1 });
     if (ask && ask.deskAgent && client) {

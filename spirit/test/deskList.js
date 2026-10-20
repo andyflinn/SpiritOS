@@ -6,7 +6,7 @@
 // [Goals Only] off". "Close makes item invisible? then Yes." Nudge: his pick (b), a bare 'changed' packet.
 // The contract the builder follows (wsl-claude's picks where the box names no shape):
 //   On mount the List asks items.search {text: '', currentGoalOnly: true, goalsOnly: false} once, through
-//   api.verb('jobs.api', {ask: {desk: {...}}}), and paints one row per label.
+//   api.verb('desk.items.search', {...}) (the verb by name, goal/G30.6), and paints one row per label.
 //   Each button of a row's `buttons` is an element with data-press="<what>" data-id="<id>"; the row's blocking and
 //   blocked ids are data-open links.
 //   A click on a data-press element sends press {id, what, by: 'andy'}; the row does not change until the server
@@ -78,8 +78,9 @@ function list() {
   behavior.mount(fakeElement('container'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
-      if (name === 'jobs.api' && ask) {
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      if (ask) {
         const v = Object.keys(ask)[0];
         asked.push({ verb: v, args: ask[v] });
         if (v === 'items.search') return Promise.resolve({ status: 200, body: LIST });

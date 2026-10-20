@@ -14,7 +14,7 @@
 //
 // EVERYTHING ELSE IS deskClient's (process/js/deskClient), the server on the agent's own node: it reads Desk, keeps
 // the place, selects what is the agent's, says listening and working, and counts every ask. This file only asks
-// that server, through its own node's jobs.api, by the kernel's one mouth. It opens no stream, reads no file and
+// that server, through its own node's flat apiDoor, by the kernel's one mouth. It opens no stream, reads no file and
 // takes nothing from the environment.
 //
 //   node deskAgentEar.js <port>                            wait: ask deskClient.next until lines come, print them, end
@@ -41,11 +41,9 @@ function end(code, text, bad) { (bad ? console.error : console.log)(text); proce
 
 // One ask of this agent's own deskClient: {status, body}, or the end of this process when its node says nothing.
 function ask(what, a) {
-  const one = {};
-  one[what] = a;
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer from the node in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
-  return Promise.race([kernel.core.ask('jobs.api', { ask: { deskClient: one } }, 'http://127.0.0.1:' + port), late])
+  return Promise.race([kernel.core.ask('deskClient.' + what, a, 'http://127.0.0.1:' + port), late])
     .then(function (r) { clearTimeout(timer); return r; }, function (e) { end(1, 'deskAgentEar: the node on port ' + port + ' did not answer: ' + ((e && e.message) || e), true); });
 }
 function refusedBy(r) { return r.status !== 200 || !r.body || r.body.ok === false; }
@@ -68,7 +66,7 @@ else if (verb.indexOf('deskClient.') === 0) {
   // ONE ASK OF THE DESK. Its answer is printed as it came, a refusal of the desk's too (exit 1); deskClient's own
   // refusal (a slow desk: no-answer with the record's id) is the reason. Since goal/G4.19 deskClient hands back the
   // desk's answer itself, not a json string, so a desk refusal arrives as the body: ok false, printed, exit 1.
-  ask('desk', { verb: verb, json: process.argv[4] || '{}' }).then(function (r) {
+  ask('desk', { name: verb, json: process.argv[4] || '{}' }).then(function (r) {
     if (r.status !== 200 || !r.body || typeof r.body !== 'object') end(1, 'deskAgentEar: ' + r.text, true);
     end(r.body.ok === false ? 1 : 0, JSON.stringify(r.body));
   });

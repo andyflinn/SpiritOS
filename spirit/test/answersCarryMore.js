@@ -113,7 +113,8 @@ const call = function (app, verb, args, caller) {
 };
 
 // THE PRETEND NODE: deskClient's peer.post goes into the real desk server as the agent's own ask, its answer back down
-// the event stream by re, as a relay brings it; jobs.api from deskAgentEar reaches deskClient as its node's owner.
+// the event stream by re, as a relay brings it; deskClient.<verb> by name from deskAgentEar (the flat apiDoor,
+// goal/G30.6) reaches deskClient as its node's owner.
 const node = http.createServer(function (req, res) {
   if (req.method === 'GET' && req.url === '/api/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream' });
@@ -126,8 +127,9 @@ const node = http.createServer(function (req, res) {
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     if (b.verb === 'jobs.update') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}'); return; }
-    if (b.verb === 'jobs.api') {
-      client.ask(b.ask, OWNER).then(function (r) {
+    const named = test.foldAsk(b);
+    if (named && named !== 'api' && named.deskClient) {
+      client.ask(named, OWNER).then(function (r) {
         res.writeHead((r && r.status) || 502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(r && r.body));
       }, function (e) { res.writeHead(502, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: false, error: e.message })); });
@@ -190,12 +192,12 @@ async function theDeskPath() {
   if (shape === '{}') test.check('deskClient.desk declares its reply {}');
   else test.fail(OWED + 'deskClient.desk declares its reply ' + shape);
 
-  const one = await call('deskClient', 'desk', { verb: 'item.get', json: JSON.stringify({ id: 'b/G1.1' }) }, OWNER);
+  const one = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'b/G1.1' }) }, OWNER);
   const b1 = one.body || {};
   if (one.status === 200 && typeof b1.item === 'string' && b1.json === undefined) test.check('item.get comes back as the desk\'s answer itself, {item, version, change}, no json string');
   else test.fail(OWED + 'deskClient.desk item.get answered ' + one.status + ' with keys ' + JSON.stringify(Object.keys(b1)));
 
-  const big = await call('deskClient', 'desk', { verb: 'changes', json: JSON.stringify({ n: 0, line: 0 }) }, OWNER);
+  const big = await call('deskClient', 'desk', { name: 'changes', json: JSON.stringify({ n: 0, line: 0 }) }, OWNER);
   const bb = big.body || {};
   const bigBytes = Buffer.byteLength(JSON.stringify(bb), 'utf8');
   if (big.status === 200 && Array.isArray(bb.records) && bb.records.length > 0 && !isError(bb, 'app-answer-too-large')) test.check('a changes read from the start comes back whole (' + bigBytes + ' bytes, ' + bb.records.length + ' records)');

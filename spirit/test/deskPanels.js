@@ -101,7 +101,8 @@ const call = function (verb, args, caller) { const q = {}; q[verb] = args; retur
   };
   dd.mount(el('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
-    verb: function (name, body) { const a = body.ask.desk; const v = Object.keys(a)[0]; asked.push(v); return Promise.resolve({ status: 200, body: answers[v] || { change: 1 } }); },
+    // The desk's verbs by name (desk.<verb>, goal/G30.6).
+    verb: function (name, body) { const v = String(name).indexOf('desk.') === 0 ? String(name).slice('desk.'.length) : ''; asked.push(v); return Promise.resolve({ status: 200, body: answers[v] || { change: 1 } }); },
     onPublished: function () {}, onPacket: function () {}, setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); }, fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });

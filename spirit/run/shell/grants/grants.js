@@ -28,7 +28,7 @@ var grBranch = null;
 function grEsc(text) { return grApi.escapeHtml(String(text == null ? '' : text)); }
 // The owner's api tree, once per paint: what serves() judges against.
 function grLoadTree() {
-  return grApi.verb('jobs.api', { ask: 'api' }).then(function (a) {
+  return grApi.verb('api').then(function (a) {
     grTree = (a && a.body) || {};
     return grTree;
   });
@@ -78,15 +78,13 @@ function grPaint(row, mark) {
     '<td style="text-align:right"><button type="button" class="gr-revoke" data-peer="' + grEsc(row.peer) + '" data-path="' + grEsc(row.path) + '">Revoke</button></td>';
 }
 
-// The chosen server's bundle: its DEPENDENCIES, read through jobs.api,
+// The chosen server's bundle: its DEPENDENCIES (<server>.DEPENDENCIES on the flat apiDoor),
 // the way every owner question reaches a server.
 function grLoadBundle(server) {
   var slot = document.getElementById('gr-bundle');
   if (!slot) return;
   if (!server) { slot.innerHTML = ''; return; }
-  var ask = {};
-  ask[server] = { DEPENDENCIES: {} };
-  grApi.verb('jobs.api', { ask: ask }).then(function (a) {
+  grApi.verb(server + '.DEPENDENCIES', {}).then(function (a) {
     var paths = (a.body && a.body.paths) || [];
     slot.innerHTML = paths.length
       ? '<button type="button" id="gr-grant-bundle" title="' + grEsc(server) + ' says a peer user needs: ' + grEsc(paths.join(', ')) + '">Grant the bundle</button>'
@@ -107,9 +105,7 @@ function grWarnings(path) {
     ? Object.keys((grTree && grTree[family]) || {}).filter(function (v) { return v.indexOf('AGENTS') !== 0 && v.indexOf('FS.') !== 0; })
     : [path.slice(dot + 1)];
   return Promise.all(verbs.map(function (verb) {
-    var ask = {};
-    ask[family] = { 'FS.loadFile': { path: verb + '.warning.txt' } };
-    return grApi.verb('jobs.api', { ask: ask }).then(function (a) {
+    return grApi.verb(family + '.FS.loadFile', { path: verb + '.warning.txt' }).then(function (a) {
       var w = a && a.body && typeof a.body.text === 'string' ? a.body.text.trim() : '';
       return w ? family + '.' + verb + ': ' + w : '';
     }, function () { return ''; });

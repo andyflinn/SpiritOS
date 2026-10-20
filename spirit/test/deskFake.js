@@ -4,7 +4,8 @@
 // A DESK SERVER IN MEMORY, FOR THE SUITES THAT MOUNT DESK — desk/G1.4.
 //
 // From G1.4 Desk keeps nothing in its own folder: it asks the desk server
-// (process/js/desk) through jobs.api on the loopback door (D4). A suite that
+// (process/js/desk) by its verbs on the loopback door (D4), desk.<verb> on the
+// flat apiDoor since goal/G30.6. A suite that
 // mounts Desk hands it this as `api.verb`, so it answers as the real server
 // does: the same verbs, the same shapes, the same bound (appClient.ANSWER_MAX
 // less 512, newest first, in the shared {items, more}), and it records every call so a
@@ -98,14 +99,18 @@ function create(rows) {
     if (!s || !s[verb]) return { status: 404, body: { ok: false, code: 'app-not-served', error: server + '.' + verb } };
     return { status: 200, body: s[verb](args || {}) };
   }
-  // api.verb(name, body) -> {status, body}, as the shell's is.
+  // api.verb(name, body) -> {status, body}, as the shell's is. A server's verb comes by name, '<server>.<verb>' with
+  // its args as the body (goal/G30.6); the server is the part before the FIRST dot. Anything else (the tree, a node
+  // verb) is answered empty, as before.
   fake.verb = function (name, body) {
-    if (name !== 'jobs.api' || !body || !body.ask || typeof body.ask !== 'object') {
+    const n = String(name || '');
+    const dot = n.indexOf('.');
+    const server = dot > 0 ? n.slice(0, dot) : '';
+    if (!server || !(server === 'deskVerify' || servers[server])) {
       return Promise.resolve({ status: 200, body: {} });
     }
-    const server = Object.keys(body.ask)[0];
-    const verb = Object.keys(body.ask[server] || {})[0];
-    const args = (body.ask[server] || {})[verb];
+    const verb = n.slice(dot + 1);
+    const args = body;
     const call = { server: server, verb: verb, args: args };
     calls.push(call);
     if (holding && holding(call)) {

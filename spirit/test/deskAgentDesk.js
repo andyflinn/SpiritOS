@@ -18,8 +18,8 @@
 //      back, asks the route the bare verb with the model's arguments, hands a json answer back as json and a
 //      refusal in the desk's words; a name never listed reaches nothing.
 //   3. THE PROCESS: a line addressed to the persona brings a call carrying the desk's tools beside net's and the
-//      note that its final text is posted for it; a desk tool call goes out as jobs.api deskClient.desk {verb,
-//      json} and the model is asked again; the final text is posted under the item once.
+//      note that its final text is posted for it; a desk tool call goes out as deskClient.desk {name,
+//      json} by name on the node's flat apiDoor and the model is asked again; the final text is posted under the item once.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -64,7 +64,7 @@ function deskAnswer(verb, args) {
   return { ok: false, code: 'no-such-verb', error: 'the fake desk has no ' + verb };
 }
 
-// ── THE FAKE NODE: jobs.api for deskClient (next, desk), jobs.update, and no net family ──
+// ── THE FAKE NODE: deskClient.next and deskClient.desk by name, the verb api, jobs.update, and no net family ──
 let nextQueue = [];
 const published = [];
 const node = http.createServer(function (req, res) {
@@ -74,13 +74,15 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
-    if (b.verb === 'jobs.api' && b.ask === 'api') return answer(200, {});
-    const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
+    if (b.verb === 'api') return answer(200, {});
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
+    const dc = ask && ask.deskClient;
     if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + b.verb });
     if (dc.next) { if (nextQueue.length) return answer(200, { lines: nextQueue.shift() }); return setTimeout(function () { answer(200, { lines: [] }); }, 100); }
     if (dc.desk) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
-      const a = deskAnswer(String(dc.desk.verb || ''), args || {});
+      const a = deskAnswer(String(dc.desk.name || ''), args || {});
       return answer(200, a);
     }
     return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake deskClient has next and desk alone' });

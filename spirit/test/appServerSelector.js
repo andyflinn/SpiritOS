@@ -4,15 +4,15 @@
 //   Andy: "the appServer selector (a subComponent of the api-path selector)", "these all will be shell-elements
 //   invisible to the user on the shell surface.", "one item here for each of these 3 selectors", and on its source:
 //   "the shell's api tree is a straight copy of the node's owner-api-tree ?", then "yes" to the selector reading
-//   jobs.api 'api' itself this cycle. And: "the boot continues. and the failure is logged. and that server will not
+//   the owner's api tree itself this cycle (since goal/G30.6 the verb api on the flat apiDoor). And: "the boot continues. and the failure is logged. and that server will not
 //   be part of the apiTree".
 // The contract the builder follows, in the icon selector's pattern (iconIndex.js beside createIconSelector):
 //   - js/client/apiTreeIndex.js, loaded by both sides (module.exports for node, window.spiritApiTreeIndex for the
 //     page, index.html loads it): servers(tree) -> the names of the servers in an 'api' answer, sorted; a branch that
 //     is an error ({ok: false, ...}, a server that did not answer) is not a server.
 //   - shell.js hands apps api.ui.elements.createAppServerSelector(options), beside createIconSelector: an element
-//     whose root carries .value (the chosen server) and fires a bubbling change; it fills itself from the node verb
-//     jobs.api with ask 'api', and lists servers(tree).
+//     whose root carries .value (the chosen server) and fires a bubbling change; it fills itself from the verb api
+//     (spirit.core.ask('api'), goal/G30.6), and lists servers(tree).
 
 const fs = require('fs');
 const path = require('path');
@@ -61,8 +61,8 @@ if (at !== -1) {
 }
 if (at !== -1 && handed) test.check('shell/js/appServerSelector.js defines createAppServerSelector and shell.js hands it to apps under api.ui.elements');
 else test.fail(OWED + 'appServerSelector.js: createAppServerSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
-if (body && /jobs\.api/.test(body) && /['"]api['"]/.test(body) && /spiritApiTreeIndex\.servers/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {
-  test.check('it asks jobs.api for \'api\', lists spiritApiTreeIndex.servers, and carries value and a change event');
-} else test.fail(OWED + 'createAppServerSelector does not ask jobs.api \'api\', list spiritApiTreeIndex.servers, and carry value with a change event');
+if (body && /spirit\.core\.ask\(\s*['"]api['"]\s*\)/.test(body) && /spiritApiTreeIndex\.servers/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {
+  test.check('it asks the verb api (the flat apiDoor), lists spiritApiTreeIndex.servers, and carries value and a change event');
+} else test.fail(OWED + 'createAppServerSelector does not ask the verb api, list spiritApiTreeIndex.servers, and carry value with a change event');
 
 test.reportSuccessFailureCount();

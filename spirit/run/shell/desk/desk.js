@@ -115,8 +115,8 @@ function deskOutgoing(to, body, r, e) {
 //
 // DECIDED (desk/G1, D5 and O9), not this file's to undo: Desk keeps nothing
 // in its own folder. Its log, what he typed, and its state and seen live in
-// the desk server (process/js/desk), reached by jobs.api on the loopback
-// door (D4). It reads only what it shows: the newest session, each open
+// the desk server (process/js/desk), reached by its verbs (desk.<verb>) on the loopback
+// door (D4; through the flat apiDoor since goal/G30.6). It reads only what it shows: the newest session, each open
 // item's own lines, a chat's newest page, never the whole log. Desk still
 // folds what it reads (deskFold); the server is storage and bounded search.
 // Each id a link to its item, as the dialog's are (Andy: "the blocked and
@@ -128,9 +128,7 @@ function deskLinks(ids) {
 }
 
 function deskAsk(verb, args) {
-  var ask = { desk: {} };
-  ask.desk[verb] = args || {};
-  return Promise.resolve(deskApi.verb('jobs.api', { ask: ask })).then(function (r) {
+  return Promise.resolve(deskApi.verb('desk.' + verb, args || {})).then(function (r) {
     var body = r && r.body;
     if (!r || r.status !== 200 || !body || body.ok === false) throw new Error(deskRefusalText(body) || 'the desk server did not answer');
     return body;
@@ -1243,7 +1241,7 @@ function deskLoad() {
 // when something was closed after the last check.
 var deskBackup = null;
 function deskAskBackup() {
-  return Promise.resolve(deskApi.verb('jobs.api', { ask: { backup: { 'status.get': {} } } })).then(function (r) {
+  return Promise.resolve(deskApi.verb('backup.status.get', {})).then(function (r) {
     deskBackup = r && r.status === 200 && r.body && r.body.ok !== false ? r.body : null;
     deskDraw();
   }, function () { deskBackup = null; });
@@ -1277,9 +1275,7 @@ var deskVerifyLast = '';
 // re-verify button." The desk refused it and the page swallowed the refusal; now its outcome is said in the tab.
 var deskVerifyNote = '';
 function deskVerifyAsk(verb, args) {
-  var ask = { deskVerify: {} };
-  ask.deskVerify[verb] = args || {};
-  return Promise.resolve(deskApi.verb('jobs.api', { ask: ask })).then(function (r) {
+  return Promise.resolve(deskApi.verb('deskVerify.' + verb, args || {})).then(function (r) {
     if (!r || r.status !== 200 || !r.body || r.body.ok === false) throw new Error('deskVerify did not answer');
     return r.body;
   });

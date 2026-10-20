@@ -5,7 +5,7 @@
 //
 //   Andy, 2026-10-10: "First we fix the puppet-issue", "all changes required to make puppeteering work".
 //
-// Found live the same day, from his node to his puppet on 11111: owner.command with jobs.api came back on the
+// Found live the same day, from his node to his puppet on 11111: owner.command with an app server's ask came back on the
 // command's hash, as the door promises, and the answer was 400 bad-request, Invalid JSON body. The cause: the shim
 // in puppetMode.puppetDoor hands the verb a request stream with no headers, and every verb in the node reads its
 // body through the one shared reader, serveCommon.readJsonBody, which begins by reading content-length off the

@@ -108,7 +108,9 @@ async function deskOnNode() {
       req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        const out = j && j.ask === 'api' ? { desk: {}, deskVerify: {} } : {};
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
+        const out = flatCall === 'api' ? { desk: {}, deskVerify: {} } : {};
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
@@ -173,18 +175,20 @@ async function verifyHalf() {
       req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
         let out = {};
-        if (j && j.ask === 'api') out = { desk: {} };
-        else if (j && j.ask && j.ask.desk && Object.keys(j.ask.desk)[0] === 'changes') {
-          const from = Number(j.ask.desk.changes.n) || 0;
+        if (flatCall === 'api') out = { desk: {} };
+        else if (flatCall && flatCall.desk && Object.keys(flatCall.desk)[0] === 'changes') {
+          const from = Number(flatCall.desk.changes.n) || 0;
           const rest = changes.filter(function (r) { return r.n > from; });
           out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : from, line: 0, more: false };
-        } else if (j && j.ask && j.ask.desk) {
-          const verb = Object.keys(j.ask.desk)[0];
-          asks.push({ verb: verb, args: j.ask.desk[verb] });
+        } else if (flatCall && flatCall.desk) {
+          const verb = Object.keys(flatCall.desk)[0];
+          asks.push({ verb: verb, args: flatCall.desk[verb] });
           if (verb === 'item.get') out = { item: JSON.stringify({ id: 'rj/G1.1', goal: 'rj/G1', go: true, status: 'running', files: [{ path: 'spirit/test/' + PROBE, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
           else out = { change: 1 };
-        } else if (j && j.ask && j.ask.deskVerify && j.ask.deskVerify.record) { records.push(j.ask.deskVerify.record); out = { written: true }; }
+        } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) { records.push(flatCall.deskVerify.record); out = { written: true }; }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });

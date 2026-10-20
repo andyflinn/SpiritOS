@@ -41,7 +41,9 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-desktaketoanswer-'
       let b = ''; req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        const out = j && j.ask === 'api' ? { desk: {} } : { ok: true };
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
+        const out = flatCall === 'api' ? { desk: {} } : { ok: true };
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });

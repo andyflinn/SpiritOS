@@ -61,7 +61,7 @@ test.startTest('nothing downstream fails silently');
 
   test.subHeading('a page that hears of a dropped update asks again');
   const asked = [];
-  const list = mount(DESK, function (name, body) { const a = body.ask && body.ask.desk; if (a) asked.push(Object.keys(a)[0]); return Promise.resolve({ status: 200, body: { items: [], more: false, json: '' } }); });
+  const list = mount(DESK, function (name, body) { const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk; if (a) asked.push(Object.keys(a)[0]); return Promise.resolve({ status: 200, body: { items: [], more: false, json: '' } }); });
   await settled();
   const before = asked.filter(function (v) { return v === 'items.search'; }).length;
   list.publish({ dropped: { bytes: 70000, max: 65536 } });
@@ -70,7 +70,7 @@ test.startTest('nothing downstream fails silently');
   else test.fail('the List did not ask again after a dropped update');
   const dAsked = [];
   const dlg = mount(DETAILS, function (name, body) {
-    const a = body.ask.desk; const v = Object.keys(a)[0]; dAsked.push(v);
+    const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk || {}; const v = Object.keys(a)[0]; dAsked.push(v);
     if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 't/G1', title: 'T', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }), version: 1, change: 3 } });
     return Promise.resolve({ status: 200, body: { box: '', version: 1, checks: [], chat: [], chatMore: false } });
   });
@@ -90,7 +90,7 @@ test.startTest('nothing downstream fails silently');
   const shown = d2.byId['dd-error'] ? d2.byId['dd-error'].textContent : '';
   if (/app-answer-too-large/.test(shown) && /9001/.test(shown) && /8377/.test(shown) && !/did not answer/.test(shown)) test.check('the dialog says: ' + shown);
   else test.fail('the dialog said ' + JSON.stringify(shown));
-  const l2 = mount(DESK, function (name, body) { const a = body.ask && body.ask.desk; if (a && a['items.search']) return Promise.resolve(refuse); return Promise.resolve({ status: 200, body: { items: [], more: false, json: '' } }); });
+  const l2 = mount(DESK, function (name, body) { const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk; if (a && a['items.search']) return Promise.resolve(refuse); return Promise.resolve({ status: 200, body: { items: [], more: false, json: '' } }); });
   await settled();
   const top = l2.byId['desk-top'] ? l2.byId['desk-top'].innerHTML : '';
   if (/app-answer-too-large/.test(top) && /9001/.test(top) && /8377/.test(top)) test.check('the List says the refusal by name, size and limit');

@@ -67,8 +67,9 @@ async function mount(answers) {
     fs: { loadFile: function () { return null; } },
     armUntilElsewhere: function (fn) { armed.push(fn); },
     verb: function (name, body) {
-      const a = body && body.ask && body.ask.deskAgent;
-      if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
+      // deskAgent's verbs by name on the flat apiDoor (deskAgent.<verb>, goal/G30.6), folded back to {verb: args}.
+      const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).deskAgent;
+      if (name === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
       const v = a ? Object.keys(a)[0] : '';
       if (v) calls.push({ verb: v, args: a[v] });
       const said = v === 'state' ? answers.state : v === 'models' ? MODELS : v === 'connection.use' ? { answers: true, url: 'http://s/v1', error: '' } : { ok: true };

@@ -113,7 +113,9 @@ function page() {
   const answer = function (body) { return Promise.resolve({ status: 200, body: body }); };
   const ask = function (verb, body) {
     asked.push({ verb: verb, body: body || {} });
-    if (verb === 'jobs.api') return answer(body && body.ask === 'api' ? TREE : { paths: [] });
+    // The tree by the verb api; a server's own verb by name (<server>.DEPENDENCIES, <server>.FS.loadFile; goal/G30.6).
+    if (verb === 'api') return answer(TREE);
+    if (TREE[String(verb).split('.')[0]]) return answer({ paths: [] });
     if (verb === 'jobs.authSearch') return answer({ items: GRANTS.map(function (g) { return { key: g.key + '\n' + g.path, label: JSON.stringify(g) }; }), more: false });
     if (verb === 'jobs.authGrant') return answer({ key: body.key, label: 'alice', path: body.path });
     if (verb === 'contact.search') return answer({ items: [{ key: ALICE, label: JSON.stringify({ name: 'alice', owned: false, blocked: false, held: false }) }, { key: BOB, label: JSON.stringify({ name: 'bob', owned: false, blocked: false, held: false }) }], more: false });

@@ -150,7 +150,8 @@ async function pages() {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(item), box: 'BOX', version: 1, change: 1, chatMore: false, checks: [], chat: [] } });
       return Promise.resolve({ status: 200, body: { change: 1, items: [], more: false, checks: [], chat: [], box: '', version: 1 } });

@@ -7,9 +7,9 @@
 //   node.db and nowhere else.
 //   A peers row lives exactly as long as its grants: Andy, on the last revoke —
 //   "it disappears."
-//   And "the peer never sees our apiAuth data": the one function a member's packet
-//   and jobs.api share (apiDoor.answer, desk/G1 D4) must answer nothing that carries
-//   either table's content.
+//   And "the peer never sees our apiAuth data": the flat table a member's packet
+//   and the owner's verb api both read (desk/G1 D4; the flat apiDoor since goal/G30.6)
+//   must answer nothing that carries either table's content.
 // jobs.auth's verb shapes are jobsAuth.js's business (G1.4); this suite plants rows
 // through them and looks at the DISK and the MEMBER SURFACE.
 
@@ -63,7 +63,7 @@ async function boot() {
   port = await freePort();
   child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
-  const served = await until(function () { return post({ verb: 'jobs.api', ask: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
+  const served = await until(function () { return post({ verb: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
   return up && served;
 }
 function down() {
@@ -98,12 +98,13 @@ async function readDb(fn) {
   }
 
   test.subHeading('the member surface answers none of it');
-  const tree = await post({ verb: 'jobs.api', ask: 'api' });
+  const tree = await post({ verb: 'api' });
   const treeText = JSON.stringify(tree.body);
   if (treeText.indexOf(KEYA) === -1 && treeText.indexOf(KEYB) === -1 && treeText.indexOf('alice') === -1) {
     test.check('the api tree (the same answer a member\'s packet gets, apiDoor.answer) carries no key and no label');
   } else test.fail(OWED + 'the api tree leaks the table: ' + treeText.slice(0, 220));
-  const reach = await post({ verb: 'jobs.api', ask: { auth: { query: { key: KEYA, path: 'desk' } } } });
+  // A server named auth, asked by name on the flat apiDoor (goal/G30.6): no app may be called that.
+  const reach = await post({ verb: 'auth.query', key: KEYA, path: 'desk' });
   const reachText = JSON.stringify(reach.body);
   if (reachText.indexOf('"allowed":true') === -1 && reachText.indexOf(KEYA) === -1) {
     test.check('asking the shared surface for an app named auth answers no grant data ("the name auth is reserved")');

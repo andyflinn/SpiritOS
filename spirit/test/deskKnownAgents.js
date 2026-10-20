@@ -142,8 +142,9 @@ async function thePage(served) {
   behavior.mount(container, {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
-      if (name !== 'jobs.api' || !ask) return Promise.resolve({ status: 200, body: {} });
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      if (!ask) return Promise.resolve({ status: 200, body: {} });
       const v = Object.keys(ask)[0];
       asked.push({ verb: v, args: ask[v] });
       if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 'k/G1', label: JSON.stringify(goalRow) }], more: false } });

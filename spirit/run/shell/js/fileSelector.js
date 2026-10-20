@@ -91,7 +91,7 @@
     // kept by path and joins the page's own rows; the list gets no rows of its own from it.
     var api = {
       verb: function (name, body) {
-        var a = (body && body.ask && body.ask.node && body.ask.node['fs.search']) || {};
+        var a = body || {};
         if (a.contents !== 'yes' || !a.q) {
           found = Object.create(null);
           return Promise.resolve({ status: 200, body: { items: [], more: false } });

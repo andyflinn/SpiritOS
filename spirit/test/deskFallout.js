@@ -51,11 +51,13 @@ async function startNode() {
       let b = ''; req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        let out = j && j.ask === 'api' ? { desk: {} } : { ok: true };
-        if (j && j.ask && j.ask.deskVerify) {
-          const verb = Object.keys(j.ask.deskVerify)[0];
-          verifyAsks.push([verb, j.ask.deskVerify[verb] || {}]);
-          out = verb === 'search' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false, total: (j.ask.deskVerify.search || {}).outcome === 'green' ? 340 : 12 } : { ok: false, code: 'no-such-verb', error: 'no such verb' };
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+        const asked = test.foldAsk(j);
+        let out = asked === 'api' ? { desk: {} } : { ok: true };
+        if (asked && asked.deskVerify) {
+          const verb = Object.keys(asked.deskVerify)[0];
+          verifyAsks.push([verb, asked.deskVerify[verb] || {}]);
+          out = verb === 'search' ? { items: [{ key: '7', label: JSON.stringify(RED) }], more: false, total: (asked.deskVerify.search || {}).outcome === 'green' ? 340 : 12 } : { ok: false, code: 'no-such-verb', error: 'no such verb' };
         }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
@@ -129,10 +131,10 @@ async function keysHalf() {
   };
   await runOne(miniSuite('zzKeyRed.js', "test.fail('OWED: beta answered 41', 'and more');"));
   await sleep(300);
-  const reds = bodies.splice(0).map(function (b) { try { return JSON.parse(b).ask.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
+  const reds = bodies.splice(0).map(function (b) { try { const f = test.foldAsk(JSON.parse(b)); return f && f.deskVerify && f.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
   await runOne(miniSuite('zzKeyRed.js', "test.check('beta holds');"));
   await sleep(300);
-  const greens = bodies.splice(0).map(function (b) { try { return JSON.parse(b).ask.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
+  const greens = bodies.splice(0).map(function (b) { try { const f = test.foldAsk(JSON.parse(b)); return f && f.deskVerify && f.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
   sink.close();
   const r2 = reds[1] || {};
   const g2 = greens[1] || {};
@@ -256,12 +258,13 @@ async function paneHalf() {
   ui.open(box, {
     goal: GOAL,
     ask: function (verb, a) { desks.push([verb, a]); return Promise.resolve({}); },
-    // Desk's own call, handed to its plugins since goal/G29.5: verb('jobs.api', {ask: {<server>: {<verb>: args}}}).
+    // Desk's own call, handed to its plugins since goal/G29.5: verb('<server>.<verb>', args), the verb by name on the
+    // flat apiDoor since goal/G30.6; the server is the part before the first dot.
     verb: function (name, body) {
-      const ask = (body && body.ask) || {};
-      const server = Object.keys(ask)[0];
-      const v = server && Object.keys(ask[server])[0];
-      const a = (v && ask[server][v]) || {};
+      const dot = String(name).indexOf('.');
+      const server = dot > 0 ? String(name).slice(0, dot) : '';
+      const v = dot > 0 ? String(name).slice(dot + 1) : '';
+      const a = body || {};
       asked.push({ name: name, server: server, verb: v, args: a });
       inFlight += 1;
       maxInFlight = Math.max(maxInFlight, inFlight);
@@ -288,7 +291,7 @@ async function paneHalf() {
   const cfg = made[0] && made[0].cfg;
   if (made.length === 1 && cfg && cfg.server === 'deskVerify' && cfg.verb === 'search') test.check('the Reds list is one shellCreateListSearch over deskVerify\'s search');
   else { test.fail(OWED29 + 'the pane made ' + made.length + ' list(s): ' + short(made.map(function (m) { return { server: m.cfg.server, verb: m.cfg.verb }; }))); return; }
-  if (!desks.length && asked.length && asked.every(function (x) { return x.name === 'jobs.api' && x.server === 'deskVerify'; })) test.check('Fallout talks to deskVerify only: ' + asked.length + ' requests, none to the desk');
+  if (!desks.length && asked.length && asked.every(function (x) { return x.server === 'deskVerify' && x.name === 'deskVerify.' + x.verb; })) test.check('Fallout talks to deskVerify only: ' + asked.length + ' requests, none to the desk');
   else test.fail(OWED29 + 'it asked the desk ' + short(desks) + ' and ' + short(asked.map(function (x) { return x.server + ' ' + x.verb; })));
   if (maxInFlight === 1 && asked.length >= 3) test.check('one request on the wire at a time, the summary\'s two included');
   else test.fail(OWED29 + maxInFlight + ' requests were in flight at once, of ' + asked.length);
@@ -358,7 +361,8 @@ async function historyHalf() {
   app.mount(box, {
     escapeHtml: require('../run/js/kernel.js').core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = (body && body.ask) || {};
+      // A server's verb by name (<server>.<verb>, goal/G30.6), folded back to {server: {verb: args}}.
+      const ask = test.foldAsk(Object.assign({}, body, { verb: name })) || {};
       const server = Object.keys(ask)[0];
       const q = server && ask[server];
       const v = q && Object.keys(q)[0];

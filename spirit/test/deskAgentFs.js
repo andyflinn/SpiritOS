@@ -97,18 +97,20 @@ const fake = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     nodeAsks.push(b);
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); }
-    // The node's verbs as goal/G30.4 describes them: the flat table from jobs.api 'api', each verb file through its
+    // The node's verbs as goal/G30.4 describes them: the flat table from the verb api, each verb file through its
     // family's FS.loadJsonValue. The process must reach none of them (point 4).
-    if (b.verb === 'jobs.api' && b.ask === 'api') return answer(200, { fs: { load: { request: { path: '' }, reply: {} }, save: { request: { path: '', content: '' }, reply: {} } }, net: { fetch: { request: { url: '' }, reply: {} } } });
+    if (b.verb === 'api') return answer(200, { fs: { load: { request: { path: '' }, reply: {} }, save: { request: { path: '', content: '' }, reply: {} } }, net: { fetch: { request: { url: '' }, reply: {} } } });
     if (b.verb === 'fs.FS.loadJsonValue' && b.path === 'load.json') return answer(200, { value: { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } } });
     if (b.verb === 'fs.FS.loadJsonValue' && b.path === 'save.json') return answer(200, { value: { description: 'save a file', request: { path: '', content: '' }, reply: {} } });
     if (b.verb === 'net.FS.loadJsonValue' && b.path === 'fetch.json') return answer(200, { value: { description: 'fetch', request: { url: '' }, reply: {} } });
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
+    const dc = ask && ask.deskClient;
     if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + b.verb });
     if (dc.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (dc.desk) {
-      const v = dc.desk.verb;
+      const v = dc.desk.name;
       if (v === 'FS.loadFile') return answer(200, { text: 'rules' });
       if (v === 'FS.search') return answer(200, { items: [], more: false });
       if (v === 'item.get') return answer(200, { item: JSON.stringify({ id: 'goal/G14.8', title: 't', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: true }), version: 1, change: 1 });

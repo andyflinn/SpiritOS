@@ -11,8 +11,8 @@
 //   user."" / "Where: a new shell app, shell/ruleDetails, beside shell/deskDetails."
 // The contract the builder follows (claude-windows's picks where the box names no shape):
 //   - shell/ruleDetails/ruleDetails.js and ruleDetails.json (type dialog), opened as callDialog('shell/ruleDetails',
-//     {key}); open(params) reads params.key. The desk is asked as deskDetails asks it: api.verb('jobs.api',
-//     {ask: {desk: {<verb>: args}}}).
+//     {key}); open(params) reads params.key. The desk is asked as deskDetails asks it: api.verb('desk.<verb>',
+//     args), the verb by name on the flat apiDoor (goal/G30.6).
 //   - Ids as deskDetails' with rd- for dd-: #rd-body holds the clicks; #rd-text the rule's textbox; #rd-version,
 //     #rd-activate, #rd-delete the buttons; #rd-say and #rd-say-send the chat input and its Send.
 //   - The header is api.ui.elements.createAppHeader() (goal/G6.1), and it carries the key and the label.
@@ -68,7 +68,8 @@ function dialog(draft) {
     escapeHtml: kernel.core.util.escapeHtml,
     ui: { elements: { createAppHeader: function () { headers += 1; return header; } } },
     verb: function (name, body) {
-      const ask = name === 'jobs.api' && body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (!v) return Promise.resolve({ status: 200, body: {} });
       calls.push({ verb: v, args: ask[v] });

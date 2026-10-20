@@ -5,7 +5,7 @@
 //   surface designed from scratch."; "chatter is the name."; "i didn't switch goals. i included UI in the scope now".
 //
 // The chatClerver is faceless and knows keys only; chatter is everything a person sees. It asks its server as Desk
-// does, jobs.api {ask: {chatClerver: {verb: args}}}, and hears every kept line by its publish, {line: {...}}. It
+// does, by the verb's name on the flat apiDoor (chatClerver.<verb>, args), and hears every kept line by its publish, {line: {...}}. It
 // builds with the shell's elements: the peer pane and the new-chat dropdown are contactSelector, every name is a
 // contactLabel.
 //
@@ -47,9 +47,7 @@ var chParts = {};
 function chEl(id) { return chParts[id] || null; }
 
 function chAsk(verb, args) {
-  var ask = { chatClerver: {} };
-  ask.chatClerver[verb] = args || {};
-  return Promise.resolve(chApi.verb('jobs.api', { ask: ask })).then(function (r) {
+  return Promise.resolve(chApi.verb('chatClerver.' + verb, args || {})).then(function (r) {
     var body = r && r.body;
     if (!r || r.status !== 200 || !body || body.ok === false) {
       throw new Error((body && (body.code || body.error)) || 'the chatClerver did not answer');
@@ -540,7 +538,7 @@ spirit.shell.activateApp({
     chSearch = window.spiritElements.shellCreateListSearch(chEl('ch-search'), {
       api: {
         verb: function (name, body) {
-          var a = (body && body.ask && body.ask.chatClerver && body.ask.chatClerver['chat.search']) || {};
+          var a = body || {};
           var peer = chPeer;
           if (!peer || !String(a.text || '').trim()) return Promise.resolve({ status: 200, body: { items: [], more: false } });
           return chAsk('chat.search', { peer: peer, text: String(a.text || ''), who: String(a.who || '') }).then(function (b) {

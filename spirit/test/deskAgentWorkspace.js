@@ -80,7 +80,7 @@ const plain = plainServer(plainSeen);
 const work = plainServer(workSeen);
 const refuser = http.createServer(function (req, res) { bodyOf(req, function () { answerer(res)(401, { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key' } }); }); });
 
-// ── THE FAKE NODE: jobs.api asks of deskAgent go to it; the desk is not asked here ──
+// ── THE FAKE NODE: deskAgent's verbs by name go to it; the desk is not asked here ──
 let client = null;
 const node = http.createServer(function (req, res) {
   let raw = '';
@@ -89,7 +89,8 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const answer = answerer(res);
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    const ask = b.verb === 'jobs.api' && b.ask;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient) return answer(200, { change: 1 });
     answer(404, { ok: false, code: 'no-such-verb' });
@@ -223,8 +224,9 @@ async function mount(answer) {
     fs: { loadFile: function () { return null; } },
     armUntilElsewhere: function () {},
     verb: function (name, body) {
-      if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
-      const a = body && body.ask && body.ask.deskAgent;
+      if (name === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
+      // deskAgent's verbs by name on the flat apiDoor (deskAgent.<verb>, goal/G30.6), folded back to {verb: args}.
+      const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).deskAgent;
       const v = a ? Object.keys(a)[0] : '';
       if (v) calls.push({ verb: v, args: a[v] });
       return Promise.resolve(answer(v, a ? a[v] : {}));

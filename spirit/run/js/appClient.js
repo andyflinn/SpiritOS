@@ -17,8 +17,8 @@
 //
 //   THE KNOCK. ask('api') asks every server its verb tree; ask({app: {verb:
 //   {args}}}) hands one verb to one server over its pipe and brings back
-//   its reply as it came (appPair/G1 D10, D11). jobs.api on the loopback
-//   door and a member's 'api' packet (apiDoor.js) both end here.
+//   its reply as it came (appPair/G1 D10, D11). The flat door (verbTable door,
+//   /api/spirit) and a member's 'api' packet (apiDoor.js) both end here.
 //
 // WHAT LEFT WITH goal/G13.2 (Andy, 2026-10-10, "no \"face\" crap belongs
 // into node."): readServers, the "serves" flag, startAll spawning

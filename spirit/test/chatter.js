@@ -19,7 +19,7 @@
 //
 // THE CONTRACT (the boxes of goal/G4.10, G4.11, and G4.9 for the app itself; shapes they left open marked NAMED).
 //   THE APP (G4.9): shell/chatter/chatter.js and chatter.json, named chatter, icon CHAT, not intrinsic. It asks its
-//   server as Desk does, api.verb('jobs.api', {ask: {chatClerver: {<verb>: args}}}), and hears it by
+//   server as Desk does, api.verb('chatClerver.<verb>', args) (the verb by name, goal/G30.6), and hears it by
 //   api.onPublished(fn, 'chatClerver'). It builds with the shell's elements, api.ui.elements.
 //   G4.10, THE PEERS:
 //     P1. The left pane is createContactSelector({face: 'pane', statuses, search}), statuses
@@ -233,7 +233,7 @@ function mount(opts) {
     return Promise.resolve({ status: 200, body: {} });
   };
   let nextSeq = 4;
-  // The chatClerver, as the app asks it (api.verb jobs.api).
+  // The chatClerver, as the app asks it (api.verb('chatClerver.<verb>', args)).
   function clerver(verb, a) {
     asked.push({ via: 'clerver', verb: verb, body: a || {} });
     if (verb === 'chats.search') {
@@ -257,9 +257,10 @@ function mount(opts) {
   const saved = {};
   const api = {
     verb: function (name, args) {
-      if (name !== 'jobs.api') { asked.push({ via: 'verb', verb: name, body: args }); return Promise.resolve({ status: 404, body: { ok: false } }); }
-      const ask = (args && args.ask && args.ask.chatClerver) || null;
-      if (!ask) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-such-server' } });
+      // The clerver's verbs by name on the flat apiDoor (chatClerver.<verb>, goal/G30.6); anything else is recorded
+      // and refused.
+      if (String(name).indexOf('chatClerver.') !== 0) { asked.push({ via: 'verb', verb: name, body: args }); return Promise.resolve({ status: 404, body: { ok: false } }); }
+      const ask = test.foldAsk(Object.assign({}, args, { verb: name })).chatClerver;
       const v = Object.keys(ask)[0];
       // AS STRICT AS THE REAL SERVER: a call with any key more or less than the verb's request is refused. A fake that
       // took short asks let chatter ship chats.search {text} and chat.read {peer}, refused on a real node

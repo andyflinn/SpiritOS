@@ -6,8 +6,8 @@
 //   "I want one box only." "All other text-output-boxes are removed."
 //   "no pulling". "a press shouldn't post a line, it is not textual information."
 //
-// WHAT COMES FROM WHERE. open() asks the desk server item.get once, through
-// jobs.api; after that the dialog paints only from what the server publishes
+// WHAT COMES FROM WHERE. open() asks the desk server item.get once, as
+// desk.item.get; after that the dialog paints only from what the server publishes
 // (api.onPublished). It decides nothing: its buttons are the item's
 // `buttons`, and a press goes to the server as a press, the screen waiting
 // for the server's publish. The order, top to bottom (Andy, desk/G2.7): ID,
@@ -29,11 +29,9 @@ var ddNote = '';
 
 function ddEsc(s) { return ddApi.escapeHtml(String(s == null ? '' : s)); }
 
-// The one way to the desk server: jobs.api on the loopback door.
+// The one way to the desk server: its verb by name on the loopback door (desk.<verb>, goal/G30.6).
 function ddAsk(verb, args) {
-  var desk = {};
-  desk[verb] = args;
-  return Promise.resolve(ddApi.verb('jobs.api', { ask: { desk: desk } })).then(function (r) {
+  return Promise.resolve(ddApi.verb('desk.' + verb, args)).then(function (r) {
     var body = (r && r.body) || {};
     if (body.ok === false) { var e = new Error(ddRefusalText(body)); e.refused = true; throw e; }
     return body;

@@ -439,7 +439,8 @@ function createWorld(opts) {
       let served = false;
       for (let n = 0; n < 100 && !served; n += 1) {
         await sleep(300);
-        const tree = await post(ownerNode.url + '/api/spirit', { verb: 'jobs.api', ask: 'api' });
+        // The tree by the verb api on the flat apiDoor (goal/G30.6).
+        const tree = await post(ownerNode.url + '/api/spirit', { verb: 'api' });
         served = !!tree.body && sc.servers.every(function (s) {
           const branch = tree.body[s];
           return branch && typeof branch === 'object' && branch.ok !== false;

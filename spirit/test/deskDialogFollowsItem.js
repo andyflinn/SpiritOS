@@ -24,8 +24,8 @@
 // Driven the way listeningApp.js drives the real shell.js (small document, fs and jobs stubs, the script "load" fired
 // by hand), with the real deskDetails.js evaluated as the browser would evaluate the script the shell injected. The
 // desk app that opens the dialog is a stand-in doing what desk.js's deskOpenRow does (desk.js:1097-1105): callDialog
-// shell/deskDetails with { id }, and open the row a result names. The desk server is a stand-in answering jobs.api
-// as desk.js does: item.get, item.box, item.checks, item.chat, and a press that publishes the item it pressed.
+// shell/deskDetails with { id }, and open the row a result names. The desk server is a stand-in answering desk.<verb>
+// by name (goal/G30.6) as desk.js does: item.get, item.box, item.checks, item.chat, and a press that publishes the item it pressed.
 
 const fs = require('fs');
 const path = require('path');
@@ -124,7 +124,9 @@ function bootPage(desk) {
   const shellSpirit = {
     core: {
       ask: function (verb, args) {
-        const body = verb === 'jobs.api' && args && args.ask && args.ask.desk ? desk.answer(args.ask.desk) : {};
+        // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+        const asked = test.foldAsk(Object.assign({}, args, { verb: verb }));
+        const body = asked && asked.desk ? desk.answer(asked.desk) : {};
         return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body });
       },
       const: { ICON: kernel.core.const.ICON, MIME: {} },

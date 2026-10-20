@@ -8,7 +8,8 @@
 //   desk.db (D5), in the process's state folder relay-state/process/desk/,
 //   never in git ("any appServer state is none of git's business"); his
 //   voice file was a plain file there until goal/G2.1; the local shell reaches
-//   it by jobs.api on the loopback door (D4), a member by an 'api' packet.
+//   it by its verbs on the loopback door (D4; desk.<verb> on the flat apiDoor
+//   since goal/G30.6), a member by an 'api' packet.
 //   Andy: "test suites need their own copy of node", so the node T3 boots
 //   is planted in a temp home, never the checkout.
 //
@@ -23,9 +24,9 @@
 //   state.get  {} -> {json};  state.set {json} -> {saved: true}
 //   seen.get   {} -> {json};  seen.set  {json} -> {saved: true}
 //   (voice.add, a line in <state>/voice.jsonl, left with goal/G2.1)
-//   jobs.api   POST /api/spirit {verb: 'jobs.api', ask} -> appClient.ask's
-//              status and body; apiDoor.answer(servers, ask) is the function
-//              it shares with the member door.
+//   desk.<verb> POST /api/spirit {verb: 'desk.<verb>', ...args} -> appClient.ask's
+//              status and body, through verbTable's door (its in-process
+//              call is door.call); 'api' answers the flat table.
 
 const fs = require('fs');
 const os = require('os');
@@ -248,14 +249,15 @@ function line(key, todo, text, extra) {
   else test.fail(OWED + 'the member got ' + JSON.stringify(r4));
 
   // ── T3 ──────────────────────────────────────────────────────────────
-  test.subHeading('T3: jobs.api on the loopback door reaches it');
-  const shared = apiDoor && typeof apiDoor.answer === 'function' ? await apiDoor.answer(client, { desk: { 'seen.get': {} } }) : null;
-  if (shared && shared.status === 200 && shared.body && shared.body.json === JSON.stringify({ team: 5 })) test.check('apiDoor.answer, the function jobs.api shares, reached the desk server');
-  else test.fail(OWED + 'apiDoor.answer ' + (apiDoor && apiDoor.answer ? 'answered ' + JSON.stringify(shared) : 'is missing'));
+  test.subHeading('T3: desk.<verb> on the loopback door reaches it');
+  const flat = require('../run/js/verbTable.js').createVerbTable().door(client);
+  const shared = flat && typeof flat.call === 'function' ? await flat.call('desk.seen.get', {}) : null;
+  if (shared && shared.status === 200 && shared.body && shared.body.json === JSON.stringify({ team: 5 })) test.check('the flat door /api/spirit runs (door.call(desk.seen.get)) reached the desk server');
+  else test.fail(OWED + 'door.call ' + (flat && flat.call ? 'answered ' + JSON.stringify(shared) : 'is missing'));
   await stop(kid);
 
   // A whole node, planted in a temp home (Andy: "test suites need their own
-  // copy of node"): it starts its own desk server, and jobs.api reaches it.
+  // copy of node"): it starts its own desk server, and its verbs by name reach it.
   // A node runs only from a folder named spirit/run.
   const home = path.join(scratch, 'home', 'spirit', 'run');
   plantRun.plantRunTree(home);
@@ -267,8 +269,8 @@ function line(key, todo, text, extra) {
   let said = '';
   node.stderr.on('data', function (b) { said = (said + b).slice(-2000); });
   const base = 'http://127.0.0.1:' + port;
-  const jobsApi = function (body) {
-    return relayRequest(base, 'POST', '/api/spirit', { verb: 'jobs.api', ask: body }).then(function (r) {
+  const flatAsk = function (body) {
+    return relayRequest(base, 'POST', '/api/spirit', body).then(function (r) {
       let b = null;
       try { b = JSON.parse(r.text); } catch (e) { b = null; }
       return { status: r.status, body: b };
@@ -276,14 +278,14 @@ function line(key, todo, text, extra) {
   };
   let whole = null;
   await waitFor(function () {
-    return jobsApi({ desk: { 'state.get': {} } }).then(function (r) { whole = r; return r.status === 200 && r.body && typeof r.body.json === 'string'; });
+    return flatAsk({ verb: 'desk.state.get' }).then(function (r) { whole = r; return r.status === 200 && r.body && typeof r.body.json === 'string'; });
   }, 15000);
-  const listed = await jobsApi('api').catch(function () { return null; });
+  const listed = await flatAsk({ verb: 'api' }).catch(function () { return null; });
   if (whole && whole.status === 200 && whole.body && typeof whole.body.json === 'string' &&
       listed && listed.body && listed.body.desk && verbsOf(listed.body.desk).join(',') === VERBS.join(',') && familyNamesVerbs(listed.body.desk)) {
-    test.check('a planted node started its desk server; jobs.api answered api with its verbs and a state.get');
+    test.check('a planted node started its desk server; the verb api listed its verbs and desk.state.get answered');
   } else {
-    test.fail(OWED + 'jobs.api answered ' + JSON.stringify(whole) + ' / api ' + JSON.stringify(listed && listed.body) + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : ''));
+    test.fail(OWED + 'desk.state.get answered ' + JSON.stringify(whole) + ' / api ' + JSON.stringify(listed && listed.body) + (said.trim() ? ' — node said: ' + said.trim().slice(-300) : ''));
   }
   if (fs.existsSync(path.join(home, 'relay-state', 'process', 'desk', 'desk.db'))) test.check('its desk.db is in the planted node\'s relay-state/process/desk');
   else test.fail(OWED + 'the planted node has no relay-state/process/desk/desk.db');

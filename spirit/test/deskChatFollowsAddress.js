@@ -97,7 +97,7 @@ async function up(app) {
 }
 const andySays = function (id, text) { return call('desk', 'chat.add', { id: id, text: text }, ANDY); };
 const posts = function (who, id, text) { return call('desk', 'chat.add', { id: id, text: text }, who); };
-const throughClient = function (id, text) { return call('deskClient', 'desk', { verb: 'chat.add', json: JSON.stringify({ id: id, text: text }) }, OWNER); };
+const throughClient = function (id, text) { return call('deskClient', 'desk', { name: 'chat.add', json: JSON.stringify({ id: id, text: text }) }, OWNER); };
 const ok = function (r) { return r && r.status === 200 && (r.body || {}).ok !== false; };
 // His fresh line under the item, taken by the other agent: from here a post by anyone else would be a second answer
 // unless R1 or R2 lets it.

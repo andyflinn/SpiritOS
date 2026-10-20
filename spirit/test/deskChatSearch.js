@@ -214,7 +214,7 @@ async function main() {
   }));
   await up('deskClient');
   await call('deskClient', 'setDesk', { key: DESK_KEY }, CW_OWNER);
-  const through = await call('deskClient', 'desk', { verb: 'chat.search', json: JSON.stringify(filter({ text: 'long' })) }, CW_OWNER);
+  const through = await call('deskClient', 'desk', { name: 'chat.search', json: JSON.stringify(filter({ text: 'long' })) }, CW_OWNER);
   // Since goal/G4.19 the desk's answer itself, not a json string.
   const passed = through.body || null;
   if (through.status === 200 && passed && Array.isArray(passed.items) && passed.items.length === full.lines.length && passed.more === true) {

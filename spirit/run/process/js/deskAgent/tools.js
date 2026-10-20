@@ -26,7 +26,7 @@
 //
 // THE ROUTES (goal/G14.7): a namespace is reached one way and that way is the route's, not this file's: the node's
 // namespaces (net) through the loopback door, the verb and its FS prefixed with the namespace, and its part of the
-// flat table from jobs.api; the desk through this node's deskClient.desk {verb, json}, the verb bare and its FS as
+// flat table from the verb api; the desk through this node's deskClient.desk {name, json}, the verb bare and its FS as
 // FS.<name> (a process server's family carries no prefix). A route is {ask(verb, args), verb(stem), fs(name),
 // table()?}; a plain {ask} alone is the node's route for every namespace, as goal/G14.6 built it.
 
@@ -67,14 +67,14 @@ function cutTo(text, room) {
 }
 
 // The node's route for a namespace: the loopback ask, the verb and its FS prefixed with the namespace, and the
-// namespace's part of the flat verb table (goal/G30.4: jobs.api asked 'api').
+// namespace's part of the flat verb table (the verb api on the flat apiDoor, goal/G30.6).
 function nodeRoute(ask, ns) {
   return {
     ask: ask,
     verb: function (stem) { return ns + '.' + stem; },
     fs: function (name) { return ns + '.FS.' + name; },
     table: function () {
-      return ask('jobs.api', { ask: 'api' }).then(function (r) { return (r && r.body && isPlain(r.body[ns])) ? r.body[ns] : {}; });
+      return ask('api', {}).then(function (r) { return (r && r.body && isPlain(r.body[ns])) ? r.body[ns] : {}; });
     },
   };
 }

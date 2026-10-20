@@ -69,11 +69,13 @@ async function startNode() {
       let b = ''; req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
-        let out = j && j.ask === 'api' ? { desk: {} } : { ok: true };
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
+        let out = flatCall === 'api' ? { desk: {} } : { ok: true };
         if (j && j.verb === 'jobs.create') { jobs.push(j); out = { id: 'job-' + jobs.length, status: 'running' }; }
-        if (j && j.ask && j.ask.deskVerify) {
-          const verb = Object.keys(j.ask.deskVerify)[0];
-          verifyAsks.push([verb, j.ask.deskVerify[verb] || {}]);
+        if (flatCall && flatCall.deskVerify) {
+          const verb = Object.keys(flatCall.deskVerify)[0];
+          verifyAsks.push([verb, flatCall.deskVerify[verb] || {}]);
           out = verb === 'door.run' ? { queued: true, already: false } : verb === 'door.record' ? { recorded: true } :
             verb === 'door.state' ? { running: false, queued: false, ran: false } : { ok: false, code: 'no-such-verb', error: 'no such verb' };
         }
@@ -315,7 +317,8 @@ async function dialogHalf() {
   app.mount(box, {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push([v, ask && ask[v]]);
       if (v === 'stackFrameChecks.doors') return Promise.resolve({ status: 200, body: { doors: [DOOR] } });

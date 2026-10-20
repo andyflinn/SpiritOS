@@ -61,7 +61,7 @@ function ask(verb, args) {
     function (e) { clearTimeout(timer); end(1, 'onboard: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }
 function ok(r) { return r && r.status >= 200 && r.status < 300 && r.body && r.body.ok !== false; }
-function deskClient(what, args) { const one = {}; one[what] = args; return ask('jobs.api', { ask: { deskClient: one } }); }
+function deskClient(what, args) { return ask('deskClient.' + what, args); }
 
 async function main() {
   // 1. THE SEAT. The node's key exists from its first boot (goal/G22.5); it is read after the claim, which is
@@ -138,7 +138,7 @@ async function main() {
   // 4. ONE DESK READ: the current goal's row, which names the live agents and their keys. Not the desk's whole
   // history: paged over the relay, thousands of records took minutes (found on gemma's first real run). An agent
   // that is not live now is caught later by the listener, which refuses to wait until it is blocked (`unblocked`).
-  const r = await deskClient('desk', { verb: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) });
+  const r = await deskClient('desk', { name: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) });
   if (!ok(r)) {
     end(1, 'onboard: NOT YET JOINED: the desk did not answer this agent (' + ((r.body && (r.body.code || r.body.error)) || r.status) + ').\n' +
       'Andy grants it on his node: jobs.authGrant {key: "' + me + '", path: "desk"} (the desk grant), then this is run again.');

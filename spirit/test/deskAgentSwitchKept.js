@@ -99,7 +99,8 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const answer = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); };
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    const ask = b.verb === 'jobs.api' && b.ask;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
     if (ask && ask.deskClient && ask.deskClient.next) {
       nextCount++;
       if (nextQueue.length) return answer(200, { lines: nextQueue.shift() });
@@ -107,7 +108,7 @@ const node = http.createServer(function (req, res) {
     }
     if (ask && ask.deskClient && ask.deskClient.desk) {
       let a = {}; try { a = JSON.parse(ask.deskClient.desk.json || '{}'); } catch (e) { a = {}; }
-      const verb = String(ask.deskClient.desk.verb);
+      const verb = String(ask.deskClient.desk.name);
       if (verb.indexOf('AGENTS') !== 0) deskWords.push({ verb: verb, args: a, at: Date.now() });
       return answer(200, deskAnswer(verb, a));
     }

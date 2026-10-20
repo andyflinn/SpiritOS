@@ -46,7 +46,8 @@ function mount(answers) {
   b.mount(fakeElement('c'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v) asked.push(v);
       return Promise.resolve({ status: 200, body: answers[v] || { change: 1 } });

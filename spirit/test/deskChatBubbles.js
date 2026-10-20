@@ -113,7 +113,7 @@ test.startTest('goal/G6.2: chat entries left-aligned, everyone in bubbles 1em ap
   test.subHeading('Desk, Team (the group chat)');
   const fake = require('./deskFake.js').fromFiles({ 'log/log.json': '[]', 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
   const verb = function (name, body) {
-    const asked = name === 'jobs.api' && body && body.ask && body.ask.desk && body.ask.desk['item.chat'];
+    const asked = name === 'desk.item.chat' && body;   // the desk's verb by name (goal/G30.6)
     if (asked && asked.id === 'desk/G0.0') return Promise.resolve({ status: 200, body: { chat: LINES.slice(), chatMore: false } });
     return fake.verb(name, body);
   };

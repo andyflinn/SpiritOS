@@ -9,7 +9,7 @@
 // The contract the builder follows (the box of goal/G3.3; the names are the agents', as he left them to us):
 //   1. process/js/deskClient/deskClient.js and its manifest deskClient.json, kind server, operated by the node,
 //      as desk.json is: a node that includes it starts it.
-//   2. Its verbs: desk {verb, json} -> {json}; setDesk {key} -> {set}; history.search {text} -> the standard
+//   2. Its verbs: desk {name, json} (the argument was verb until goal/G30.6) -> {json}; setDesk {key} -> {set}; history.search {text} -> the standard
 //      search answer {items: [{key, label}], more}.
 //   3. setDesk tells it the key of the node that runs Andy's desk. Only the node's owner may: a member is refused
 //      not-owner. Until it is set, desk is refused no-such-peer and nothing is posted.
@@ -158,15 +158,15 @@ async function main() {
   test.subHeading('2. its verbs');
   const tree = await up('deskClient') || {};
   const shapeOf = function (v) { return JSON.stringify(tree[v] || null); };
-  if (shapeOf('desk') === JSON.stringify({ request: { verb: '', json: '' }, reply: {} })
+  if (shapeOf('desk') === JSON.stringify({ request: { name: '', json: '' }, reply: {} })
     && shapeOf('setDesk') === JSON.stringify({ request: { key: '' }, reply: { set: true } })
     && shapeOf('history.search') === JSON.stringify({ request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
-    test.check('desk {verb, json} -> the answer itself (goal/G4.19); setDesk {key} -> {set}; history.search {text} -> {items, more}');
+    test.check('desk {name, json} -> the answer itself (goal/G4.19); setDesk {key} -> {set}; history.search {text} -> {items, more}');
   } else test.fail(OWED + 'the api answered desk ' + shapeOf('desk') + ', setDesk ' + shapeOf('setDesk') + ', history.search ' + shapeOf('history.search'));
 
   test.subHeading('3. setDesk, by the owner alone; no desk, no ask');
   const SEARCH = JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false });
-  const early = await call('deskClient', 'desk', { verb: 'items.search', json: SEARCH }, OWNER);
+  const early = await call('deskClient', 'desk', { name: 'items.search', json: SEARCH }, OWNER);
   if (early.status !== 200 && (early.body || {}).code === 'no-such-peer' && posts.length === 0) test.check('before setDesk an ask is refused no-such-peer, and nothing is posted');
   else test.fail(OWED + 'an ask before setDesk answered ' + early.status + ' ' + JSON.stringify(early.body).slice(0, 160) + ' after ' + posts.length + ' post(s)');
   const theirs = await call('deskClient', 'setDesk', { key: DESK_KEY }, MEMBER);
@@ -176,14 +176,14 @@ async function main() {
 
   test.subHeading('4. one ask, passed on and answered');
   posts.length = 0;
-  const yes = await call('deskClient', 'desk', { verb: 'items.search', json: SEARCH }, OWNER);
+  const yes = await call('deskClient', 'desk', { name: 'items.search', json: SEARCH }, OWNER);
   // Since goal/G4.19 the desk's answer itself, not a json string.
   const got = yes.body || null;
   const goalSeen = got && Array.isArray(got.items) && got.items.some(function (p) { return p.key === 'a/G1'; });
   if (yes.status === 200 && goalSeen && posts.length === 1 && posts[0].to === DESK_KEY && posts[0].app === 'api' && posts[0].verb === 'items.search') {
     test.check('items.search went as one api post to the desk\'s key, and its answer came back as the answer itself');
   } else test.fail(OWED + 'the ask answered ' + yes.status + ' ' + JSON.stringify(yes.body).slice(0, 200) + '; posts ' + JSON.stringify(posts));
-  const no = await call('deskClient', 'desk', { verb: 'item.get', json: JSON.stringify({ id: 'nope/G9' }) }, OWNER);
+  const no = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'nope/G9' }) }, OWNER);
   const refusedBody = no.body || null;
   if (no.status === 200 && refusedBody && refusedBody.ok === false && refusedBody.code === 'no-such-item') test.check('the desk\'s refusal comes back as its answer: no-such-item as the body');
   else test.fail(OWED + 'a refused ask answered ' + no.status + ' ' + JSON.stringify(no.body).slice(0, 200));
@@ -201,7 +201,7 @@ async function main() {
   posts.length = 0;
   holdMs = 13000;
   const t0 = Date.now();
-  const slow = await call('deskClient', 'desk', { verb: 'item.get', json: JSON.stringify({ id: 'a/G1.1' }) }, OWNER);
+  const slow = await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'a/G1.1' }) }, OWNER);
   const took = Date.now() - t0;
   const id = (((slow.body || {}).extra) || {}).id;
   const pendingRow = (await history()).filter(function (x) { return x.key === id; })[0];
@@ -221,7 +221,7 @@ async function main() {
   await up('deskClient');
   posts.length = 0;
   const after = await history();
-  const again = await call('deskClient', 'desk', { verb: 'items.search', json: SEARCH }, OWNER);
+  const again = await call('deskClient', 'desk', { name: 'items.search', json: SEARCH }, OWNER);
   if (before > 0 && after.length === before && again.status === 200 && posts.length === 1 && posts[0].to === DESK_KEY) test.check('after a restart: the same ' + before + ' record(s), and an ask goes to the desk\'s key without setting it again');
   else test.fail(OWED + 'after a restart: ' + after.length + ' record(s) where there were ' + before + ', an ask answered ' + again.status + ' ' + JSON.stringify(again.body).slice(0, 120));
 

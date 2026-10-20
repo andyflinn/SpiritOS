@@ -18,7 +18,7 @@
   //   Andy: "the appServer selector (a subComponent of the api-path
   //   selector)", and the tree it reads: "the shell's api tree is a
   //   straight copy of the node's owner-api-tree ?" — "yes". So it fills
-  //   itself from the node verb jobs.api with ask 'api', and lists
+  //   itself from the verb api on the flat apiDoor (goal/G30.6), and lists
   //   spiritApiTreeIndex.servers(tree): sorted, a server that did not
   //   answer left out (apiTreeIndex.js decides; this paints).
   //   SINCE goal/G30.4 that answer is the whole flat table, the node's own
@@ -71,7 +71,7 @@
       root.value = '';
       root.tree = null;
       list.redraw();
-      var got = typeof fn === 'function' ? fn() : spirit.core.ask('jobs.api', { ask: 'api' }).then(function (a) { return a && a.body; });
+      var got = typeof fn === 'function' ? fn() : spirit.core.ask('api').then(function (a) { return a && a.body; });
       return Promise.resolve(got).then(function (tree) {
         root.tree = tree && typeof tree === 'object' ? tree : null;
         list.redraw();

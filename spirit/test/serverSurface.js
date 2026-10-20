@@ -516,7 +516,8 @@ freePort()
       ['POST', '/api/spirit', { verb: 'jobs.update' }],
       ['POST', '/api/spirit', { verb: 'jobs.cancel' }],
       ['POST', '/api/spirit', { verb: 'jobs.delete' }],
-      ['POST', '/api/spirit', { verb: 'jobs.api', ask: 'api' }],
+      // The flat table, answered by the flat apiDoor's own front (goal/G30.6: the jobs api verb is gone).
+      ['POST', '/api/spirit', { verb: 'api' }],
       // The owner's allow-table (apiAuth/G1.4), each posted without its fields: refused bad-request, reachable,
       // and nothing granted. Its own suite is jobsAuth.js.
       ['POST', '/api/spirit', { verb: 'jobs.authQuery' }],

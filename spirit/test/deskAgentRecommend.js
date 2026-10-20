@@ -116,10 +116,11 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
-    const ask = b.verb === 'jobs.api' && b.ask;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient && ask.deskClient.desk) {
-      const verb = String(ask.deskClient.desk.verb);
+      const verb = String(ask.deskClient.desk.name);
       deskWords.push(verb);
       const verbs = deskVerbFiles();
       if (verb === 'AGENTS') return answer(200, { text: 'Rules.' });
@@ -280,8 +281,9 @@ async function faceHalf() {
     fs: { loadFile: function () { return null; } },
     verb: function (name, body) {
       calls.push({ name: name, body: body });
-      if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
-      const a = body && body.ask && body.ask.deskAgent;
+      if (name === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
+      // deskAgent's verbs by name on the flat apiDoor (deskAgent.<verb>, goal/G30.6), folded back to {verb: args}.
+      const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).deskAgent;
       const v = a ? Object.keys(a)[0] : '';
       if (v === 'state') return Promise.resolve({ status: 200, body: STATE });
       // goal/G27.17: the picker asks models.search; it answers as models did.
@@ -299,7 +301,7 @@ async function faceHalf() {
   if (/id="dur-test"/.test(sel)) test.check('a [test] button beside the selector');
   else test.fail(OWED + 'no [test] button in ' + short(sel));
   const before = calls.length;
-  const sentOf = function () { return calls.slice(before).map(function (c) { const a = c.body && c.body.ask && c.body.ask.deskAgent; return a && a['model.test']; }).filter(Boolean); };
+  const sentOf = function () { return calls.slice(before).map(function (c) { return c.name === 'deskAgent.model.test' && c.body; }).filter(Boolean); };
   doc.getElementById('dur-test').fire('click', {});
   await settled();
   const armedHtml = doc.getElementById('dur-models').innerHTML;

@@ -60,7 +60,7 @@
 //         when it is made (goal/G4.19, Andy: "Push it is."): the commit's hash as the remote holds it (its first
 //         seven characters at least) and each file it changed, one `- path` line each. A commit pulled and
 //         re-stacked before its push is written under the id it was pushed with, never the id it was made with.
-//         The asks go through the agent's own deskClient (jobs.api {deskClient: ...}), so they are counted.
+//         The asks go through the agent's own deskClient (deskClient.<verb> by name), so they are counted.
 //      3. With the agent's node unreachable the commit is refused, not waved through.
 //      The claim-done line listing the item's files is the agents' by hand until this lands (Andy's ruling above);
 //      this suite asserts nothing about it.
@@ -77,7 +77,7 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const kernel = require('../run/js/kernel.js');
 const appClient = require('../run/js/appClient.js');
-const apiDoor = require('../run/js/apiDoor.js');
+const verbTable = require('../run/js/verbTable.js');
 const packet = require('../run/js/client/packet.js');
 
 const OWED = 'OWED by goal/G3.9: ';
@@ -137,11 +137,16 @@ const factsOf = async function (id) { const r = await desk('item.get', { id: id 
 const chatOf = async function (id) { const r = await desk('item.chat', { id: id }, ANDY); return (r.body && r.body.chat) || []; };
 
 // THE PRETEND NODE this agent's deskClient runs on (as deskClientNext.js builds it), with two more doors:
-// jobs.api, answered through the real apiDoor as the owner, so a hook in a clone reaches deskClient; and the
+// a server's verb by name, answered through the real flat apiDoor (verbTable's door, as /api/spirit runs it since
+// goal/G30.6) as the owner, so a hook in a clone reaches deskClient; and the
 // contact book, from which contact.get and contact.search answer who is blocked.
 const streams = [];
 const asked = [];                    // every loopback ask: { verb, body }
 const book = Object.create(null);    // key -> { label, blocked }
+const ownDoor = verbTable.createVerbTable().door(client, { owner: function () { return OWNER; } });
+// A verb of a server this pretend node runs (deskClient.desk, desk.item.get), by its name: the family before the first dot.
+ownDoor.serves = function (verb) { const v = String(verb || ''); const dot = v.indexOf('.'); return dot > 0 && client.apps().indexOf(v.slice(0, dot)) !== -1; };
+const argsOf = function (b) { const a = {}; Object.keys(b).forEach(function (k) { if (k !== 'verb') a[k] = b[k]; }); return a; };
 const node = http.createServer(function (req, res) {
   if (req.method === 'GET' && req.url === '/api/events') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream' });
@@ -156,8 +161,8 @@ const node = http.createServer(function (req, res) {
     asked.push({ verb: b.verb, body: b });
     const json = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); };
     if (b.verb === 'jobs.update') return json(200, { ok: true });
-    if (b.verb === 'jobs.api') {
-      return apiDoor.answer(client, b.ask, OWNER).then(function (a) { json((a && a.status) || 500, a ? a.body : null); }, function (e) { json(500, { ok: false, error: String(e && e.message) }); });
+    if (ownDoor.serves(b.verb)) {
+      return ownDoor.call(b.verb, argsOf(b)).then(function (a) { json((a && a.status) || 500, a ? a.body : null); }, function (e) { json(500, { ok: false, error: String(e && e.message) }); });
     }
     if (b.verb === 'contact.get') {
       const row = book[String(b.key || '')];
@@ -232,7 +237,8 @@ function dialog(facts) {
   new Function('spirit', 'document', 'window', fs.readFileSync(DETAILS, 'utf8'))({ shell: { activateApp: function (x) { dd = x; } }, core: kernel.core }, doc, {});
   const presses = [];
   dd.mount(fakeElement('dd'), common(function (name, body) {
-    const ask = body && body.ask && body.ask.desk;
+    // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+    const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
     const v = ask && Object.keys(ask)[0];
     if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify(facts), version: 1, change: 3 } });
     if (v === 'item.box') return Promise.resolve({ status: 200, body: { box: 'BOX', version: 1 } });
@@ -254,7 +260,8 @@ function list(rows) {
   let b = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(PAGE, 'utf8'))({ shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, {});
   b.mount(fakeElement('c'), common(function (name, body) {
-    const ask = body && body.ask && body.ask.desk;
+    // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+    const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
     const v = ask && Object.keys(ask)[0];
     if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: rows.map(function (r) { return { key: r.id, label: JSON.stringify(r) }; }), more: false } });
     if (v === 'log.search' || v === 'chat.search') return Promise.resolve({ status: 200, body: { items: [], more: false } });
@@ -451,9 +458,9 @@ async function main() {
   const bullets = afterPush.hit ? afterPush.hit.text.split('\n').filter(function (x) { return /^- /.test(x.trim()); }).map(function (x) { return x.trim().slice(2).trim(); }) : [];
   if (pushed.status === 0 && afterPush.hit && bullets.length === 1 && bullets[0] === 'c.txt') test.check('E2: pushed, it is written under the item: ' + hash.slice(0, 7) + ' with "- c.txt"');
   else test.fail(OWED19 + 'E2: push -> ' + pushed.status + ' ' + String(pushed.stderr).trim().slice(0, 120) + '; line under r/G1.1: ' + JSON.stringify(afterPush.hit || afterPush.all.map(function (c) { return c.text; })).slice(0, 200));
-  const viaClient = asked.filter(function (a) { return a.verb === 'jobs.api' && a.body.ask && a.body.ask.deskClient; }).length;
-  if (viaClient > 0) test.check('E2: the check asked through this agent\'s own deskClient (' + viaClient + ' jobs.api asks), so it is counted');
-  else test.fail(OWED + 'E2: no jobs.api ask of deskClient came from the check');
+  const viaClient = asked.filter(function (a) { return String(a.verb).indexOf('deskClient.') === 0; }).length;
+  if (viaClient > 0) test.check('E2: the check asked through this agent\'s own deskClient (' + viaClient + ' deskClient.<verb> asks), so it is counted');
+  else test.fail(OWED + 'E2: no deskClient.<verb> ask came from the check');
   // Re-stacked before the push: the id written is the one the remote holds.
   const other = path.join(scratch, 'other');
   await git(scratch, ['clone', '-q', remote, other]);

@@ -984,7 +984,7 @@ spirit.shell.activateApp({
     contactsSeenList = window.spiritElements.shellCreateListSearch(seenHost, {
       api: {
         verb: function (name, body) {
-          var args = (body && body.ask && body.ask.node && body.ask.node['peer.search']) || {};
+          var args = body || {};
           return contactsSeenSource(args.q).then(function (answer) {
             return { status: 200, body: { items: answer.items, more: answer.more, total: answer.items.length } };
           });

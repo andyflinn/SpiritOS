@@ -155,7 +155,7 @@ let said = '';
   // verbs are loopbackVerbs.handlerFor's.
   const loopbackDoor = /const run = nodeDoor \? nodeDoor\.handlerFor\(verb\) : null;/.test(serverSrc) && /nodeDoor = loopbackVerbs\.door\(/.test(serverSrc);
   // Since goal/G30.4 the owner door is handed the table's call, which looks the verb up by loopbackVerbs.handlerFor.
-  const ownerDoor = /puppetDoor\(\{[\s\S]{0,300}?call: function \(verb, args\) \{ return loopbackVerbs\.call\(verb, args\); \}/
+  const ownerDoor = /puppetDoor\(\{[\s\S]{0,300}?call: function \(verb, args\) \{ return nodeDoor\.call\(verb, args\); \}/
     .test(serverSrc);
   if (loopbackDoor && ownerDoor) {
     test.check('the loopback door and the owner door both look verbs up in loopbackVerbs, so every verb here '

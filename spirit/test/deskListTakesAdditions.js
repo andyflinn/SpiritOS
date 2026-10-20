@@ -146,8 +146,10 @@ function bootPage(desk) {
   const shellSpirit = {
     core: {
       ask: function (verb, args) {
-        if (verb === 'jobs.api' && args && args.ask && args.ask.desk) {
-          return desk.answer(args.ask.desk).then(function (body) { return { status: 200, text: JSON.stringify(body), body: body }; });
+        // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+        const asked = test.foldAsk(Object.assign({}, args, { verb: verb }));
+        if (asked && asked.desk) {
+          return desk.answer(asked.desk).then(function (body) { return { status: 200, text: JSON.stringify(body), body: body }; });
         }
         return Promise.resolve({ status: 200, text: '{}', body: {} });
       },

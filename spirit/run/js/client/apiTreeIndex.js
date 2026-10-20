@@ -5,7 +5,7 @@
 //   Andy: "the appServer selector (a subComponent of the api-path
 //   selector)", and on its source: "the shell's api tree is a straight
 //   copy of the node's owner-api-tree ?" — "yes". The tree is what
-//   jobs.api answers to 'api': one branch per server, each branch that
+//   the verb api answers on /api/spirit (goal/G30.6): one branch per server, each branch that
 //   server's verbs, or { ok: false, ... } for a server that did not
 //   answer (Andy: "the boot continues. and the failure is logged. and
 //   that server will not be part of the apiTree").

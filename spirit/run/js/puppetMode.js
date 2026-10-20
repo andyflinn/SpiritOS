@@ -142,7 +142,7 @@ function ownerCommandIn(arrival, opts) {
 // reads its body through serveCommon.readJsonBody, which begins with the
 // content-length header: it threw before parsing, so every command with a
 // body was answered 400 Invalid JSON body, found live from his node to his
-// puppet with jobs.api. puppetCommands.js holds it; puppetDoor.js never saw
+// puppet with an app server's ask. puppetCommands.js holds it; puppetDoor.js never saw
 // it because its handlers read the stream by hand.
 function puppetDoor(opts) {
   const o = opts || {};

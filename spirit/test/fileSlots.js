@@ -116,7 +116,7 @@ async function main() {
 }
 
 // 5. ON A REAL NODE: the grants follow the slot. The node starts its own fileServer (intrinsic); the loopback reaches
-// it through jobs.api, and the grants are read with jobs.authQuery (server.js 1832).
+// it by name on the flat apiDoor (fileServer.<verb>, goal/G30.6), and the grants are read with jobs.authQuery.
 async function grants() {
   test.subHeading('5. grants on the old file move to the new one');
   const home = path.join(scratch, 'node', 'spirit', 'run');
@@ -130,7 +130,7 @@ async function grants() {
       return { status: r.status, body: b };
     }, function () { return { status: 0, body: {} }; });
   };
-  const files = function (verb, args) { const q = {}; q[verb] = args; return ask({ verb: 'jobs.api', ask: { fileServer: q } }); };
+  const files = function (verb, args) { return ask(Object.assign({ verb: 'fileServer.' + verb }, args)); };
   const ready = await waitFor(function () { return files('push', { path: write('warm.txt', 'warm up\n') }).then(function (r) { return r.status === 200 && r.body && r.body.hash; }); }, 30000);
   if (!ready) { test.fail('the node\'s fileServer did not answer push on the loopback'); return; }
   const first = await files('fill', { slot: SLOT, path: write('me.jpg', 'node picture one\n') });

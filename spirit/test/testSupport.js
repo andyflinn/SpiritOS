@@ -38,9 +38,9 @@ function record(title, outcome, failure) {
   if (outcome === 'red' && failure) rec.failure = String(failure);
   pending.add(rec);
   fetch('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, // verb AND ask, as kernel.core.ask sends it: a node answers a body with no verb 'no such verb' (found by
-    // claude-windows verifying c3935558, on a real node).
-    body: JSON.stringify({ verb: 'jobs.api', ask: { deskVerify: { record: rec } } }),
+    method: 'POST', headers: { 'content-type': 'application/json' }, // the verb by name with its args beside it, as kernel.core.ask sends it: a node answers a body with no
+    // verb 'no such verb' (found by claude-windows verifying c3935558, on a real node). deskVerify.record on the flat apiDoor (goal/G30.6).
+    body: JSON.stringify(Object.assign({ verb: 'deskVerify.record' }, rec)),
   }).then(function () { pending.delete(rec); }, function () { pending.delete(rec); });
 }
 // A suite's last words are its report, and then it exits. Whatever is still in the air is posted by a child this
@@ -469,6 +469,24 @@ const test = {
         return {
             status: function (name) { return ask('relay.status', { name: name || '' }); },
         };
+    },
+    // THE FLAT apiDoor's CALL, FOLDED (goal/G30.6), for a suite's pretend node. The node hears a server's verb by
+    // name on /api/spirit, {verb: '<server>.<verb>', ...args}, as kernel.core.ask sends it; the family is the part
+    // before the FIRST dot (desk.item.get is desk's item.get), and the args are the body without verb, as
+    // verbTable's door takes them. This hands back {<server>: {<verb>: args}}, the shape the server's pipe takes;
+    // 'api' for the tree; null for a body with no dotted verb.
+    foldAsk: function (b) {
+        const name = b && typeof b === 'object' ? String(b.verb || '') : '';
+        if (name === 'api') return 'api';
+        const dot = name.indexOf('.');
+        if (dot < 1 || dot === name.length - 1) return null;
+        const args = {};
+        Object.keys(b).forEach(function (k) { if (k !== 'verb') args[k] = b[k]; });
+        const inner = {};
+        inner[name.slice(dot + 1)] = args;
+        const outer = {};
+        outer[name.slice(0, dot)] = inner;
+        return outer;
     },
     browserAsk: function (fetchImpl) {
         return function (verb, args) {

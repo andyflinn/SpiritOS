@@ -18,7 +18,7 @@
 // hash as the remote holds it and each file it changed, one `- path` per line. A pull --rebase gives a commit a new
 // hash, so the hash it was made with would name nothing on the remote; the commit is found again at the push by
 // its subject and its patch (git patch-id, goal/G19.6), which a rebase keeps. Every ask
-// goes through the agent's own deskClient (its node's jobs.api), so it is counted with the rest; with the node not
+// goes through the agent's own deskClient (by its verbs on its node), so it is counted with the rest; with the node not
 // answering, the commit is refused, not waved through.
 //
 //   node commitCheck.js install <port of the agent's own node>    in the clone's root: writes the two hooks
@@ -61,7 +61,7 @@ function gitDir() {
 function desk(verb, args) {
   let timer = null;
   const late = new Promise(function (resolve, reject) { timer = setTimeout(function () { reject(new Error('no answer in ' + NODE_WAIT_MS / 1000 + ' s')); }, NODE_WAIT_MS); });
-  const ask = kernel.core.ask('jobs.api', { ask: { deskClient: { desk: { verb: verb, json: JSON.stringify(args) } } } }, 'http://127.0.0.1:' + port);
+  const ask = kernel.core.ask('deskClient.desk', { name: verb, json: JSON.stringify(args) }, 'http://127.0.0.1:' + port);
   return Promise.race([ask, late]).then(function (r) {
     clearTimeout(timer);
     // The desk's answer itself is the body (goal/G4.19): a refusal of the desk's or of deskClient's is ok false.

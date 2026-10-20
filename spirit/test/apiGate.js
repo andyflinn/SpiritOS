@@ -10,7 +10,7 @@
 // The contract the builder follows (G1.2's box, steps 0-6):
 //   - createApiDoor(opts) takes opts.auth = { pathsOf(key) }: the paths granted to that key, each 'app' or
 //     'app.verb' (G1.3's table, read through G1.4's module); it throws when the store cannot be read.
-//   - answer(servers, ask, caller): caller { owner: true } for loopback and puppeteering (jobs.api passes it),
+//   - answer(servers, ask, caller): caller { owner: true } for loopback and puppeteering (the flat door passes it),
 //     else { key, auth } for a member. The owner is never gated.
 //   0. A stranger gets no reply (unchanged: appApiDoor.js T6). A member writing as andy stays refused (unchanged).
 //   2. A member asking DEBUG or DEPENDENCIES on any server is refused not-owner, granted or not, and nothing is asked.

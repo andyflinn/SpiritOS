@@ -6,8 +6,8 @@
 //   searches and how a row looks; the element does everything else the same way for every app.
 //
 // shellCreateListSearch(container, {
-//   api,                          the shell api the app was mounted with: the element asks through api.verb('jobs.api',
-//                                 {ask: {<server>: {<verb>: args}}}), as Desk asks, and hears api.onPublished(fn, server)
+//   api,                          the shell api the app was mounted with: the element asks through
+//                                 api.verb('<server>.<verb>', args), as Desk asks, and hears api.onPublished(fn, server)
 //   server, verb,                 the server searched (its stream too) and its search verb
 //   args(text, filters),          the verb's arguments from the words and the filters' values, by filter name
 //   filters: [{ name, choices: [{ value, icon, word }], test(row, value) }],
@@ -283,12 +283,9 @@
     // THE ONE SLOT ON THE WIRE: the list's search first, with the words as they stand when it goes; then what the app
     // asks through the lent slot (goal/G29.5, list.ask), one at a time, in the order asked.
     var lent = [];
+    // By the verb's own name on the flat apiDoor (goal/G30.6): <server>.<verb>, the args beside it.
     function send(verb, args) {
-      var inner = {};
-      inner[verb] = args;
-      var outer = {};
-      outer[o.server] = inner;
-      return Promise.resolve(o.api.verb('jobs.api', { ask: outer })).then(function (r) {
+      return Promise.resolve(o.api.verb(o.server + '.' + verb, args)).then(function (r) {
         var body = r && r.body;
         if (!r || r.status !== 200 || !body || body.ok === false) throw new Error((body && (body.error || body.code)) || 'no answer');
         return body;

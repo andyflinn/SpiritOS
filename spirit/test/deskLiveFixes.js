@@ -57,9 +57,11 @@ async function serverHalf() {
       let b = ''; req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
         let out = {};
         if (j && j.verb === 'jobs.update') { if (j.app) published.push(j.app); out = { ok: true }; }
-        else if (j && j.ask === 'api') out = { desk: {}, deskVerify: {} };
+        else if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
@@ -252,7 +254,8 @@ async function dialogHalf() {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
       if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'lv/G1.2', title: 'Second', goal: 'lv/G1', status: 'running', with: '', buttons: [], blocking: ['lv/G1'], blocked: [], asks: 0 }), version: 1, change: 1 } });

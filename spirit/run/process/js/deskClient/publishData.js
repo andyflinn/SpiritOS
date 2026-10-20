@@ -51,7 +51,7 @@ function ask(verb, args) {
   return Promise.race([kernel.core.ask(verb, args, node), late]).then(function (r) { clearTimeout(timer); return r || {}; },
     function (e) { clearTimeout(timer); end(1, 'publishData: the node on port ' + port + ' did not answer ' + verb + ': ' + ((e && e.message) || e)); });
 }
-function desk(verb, args) { return ask('jobs.api', { ask: { deskClient: { desk: { verb: verb, json: JSON.stringify(args) } } } }); }
+function desk(verb, args) { return ask('deskClient.desk', { name: verb, json: JSON.stringify(args) }); }
 function ok(r) { return r && r.status === 200 && r.body && r.body.ok !== false; }
 
 function median(a) { if (!a.length) return 0; const s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.floor(s.length / 2)]; }

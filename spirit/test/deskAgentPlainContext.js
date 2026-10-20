@@ -84,7 +84,7 @@ const big = plainServer({ id: 'big-x', max_input_tokens: BIG_CONTEXT }, bigSeen)
 const len = plainServer({ id: 'len-x', context_length: BIG_CONTEXT }, lenSeen);
 const none = plainServer({ id: 'none-x' }, noneSeen);
 
-// ── THE FAKE NODE: file.load for the tool, jobs.api asks of deskAgent (the desk holds nothing), jobs.update ──
+// ── THE FAKE NODE: file.load for the tool, deskAgent's verbs by name (the desk holds nothing), jobs.update ──
 let client = null;
 const node = http.createServer(function (req, res) {
   let raw = '';
@@ -93,8 +93,9 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const answer = answerer(res);
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    const ask = b.verb === 'jobs.api' && b.ask;
-    // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskAgent: ...}, and the
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
+    // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as deskAgent.<verb>, and the
     // node answers them as it answered fs.load before.
     const du = ask && ask.deskAgent;
     // Described from the family folder since goal/G30.4: FS.search lists file.load.json, FS.loadJsonValue reads it.

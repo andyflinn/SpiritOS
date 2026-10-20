@@ -63,11 +63,13 @@ async function serverHalf() {
       req.on('data', function (c) { b += c; });
       req.on('end', function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
         let out = {};
-        if (j && j.ask === 'api') out = { desk: {}, deskVerify: {} };
-        else if (j && j.ask && j.ask.desk) {
-          const verb = Object.keys(j.ask.desk)[0];
-          const a = j.ask.desk[verb] || {};
+        if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
+        else if (flatCall && flatCall.desk) {
+          const verb = Object.keys(flatCall.desk)[0];
+          const a = flatCall.desk[verb] || {};
           if (verb === 'changes') {
             const rest = records.filter(function (r) { return r.n > (Number(a.n) || 0); });
             out = { records: rest, lines: [], n: rest.length ? rest[rest.length - 1].n : Number(a.n) || 0, line: 0, more: false };
@@ -77,7 +79,7 @@ async function serverHalf() {
             if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'tb/G1', code: true, go: true, files: [{ path: 'spirit/test/' + SLOW, by: 'claude-windows', core: false }] }), version: 1, change: 1 };
             else out = { change: 1 };
           }
-        } else if (j && j.ask && j.ask.deskVerify && j.ask.deskVerify.record) out = { written: true };
+        } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });

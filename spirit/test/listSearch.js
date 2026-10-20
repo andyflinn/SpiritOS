@@ -16,7 +16,7 @@
 //   many match and that the answer was partial.
 //
 // THE ONE KEY ADDED IN BUILDING: api, the shell api the app was mounted with, through which the element asks its
-// server (api.verb('jobs.api', {ask: {<server>: {<verb>: args}}}), as Desk asks) and hears its stream
+// server (api.verb('<server>.<verb>', args), the verb by name on the flat apiDoor since goal/G30.6, as Desk asks) and hears its stream
 // (api.onPublished(fn, server)), as deskElement takes the app's subscribe. Without it the element can reach nothing.
 //
 // rule/11: through testSupport only. No server: the api is a fake that counts what it is asked.
@@ -67,15 +67,15 @@ function page() {
   return { byId: byId, doc: doc, win: win, spy: spy };
 }
 
-// The api a shell app is mounted with: verb('jobs.api', {ask: {server: {verb: args}}}) answers the fake server's
-// search; onPublished(fn, server) hands the element the server's stream.
+// The api a shell app is mounted with: verb('<server>.<verb>', args) answers the fake server's search (the server is
+// the part before the first dot); onPublished(fn, server) hands the element the server's stream.
 function fakeApi(answer, delayMs) {
   const api = { asked: [], inFlight: 0, maxInFlight: 0, heard: [], streams: [] };
   api.verb = function (name, body) {
-    const ask = body && body.ask;
-    const server = ask && Object.keys(ask)[0];
-    const verb = server && Object.keys(ask[server])[0];
-    const args = verb && ask[server][verb];
+    const dot = String(name).indexOf('.');
+    const server = dot > 0 ? String(name).slice(0, dot) : undefined;
+    const verb = server && String(name).slice(dot + 1);
+    const args = verb && body;
     api.asked.push({ name: name, server: server, verb: verb, args: args, at: Date.now() });
     api.inFlight += 1;
     api.maxInFlight = Math.max(api.maxInFlight, api.inFlight);
@@ -159,7 +159,7 @@ test.startTest('goal/G29.4: shellCreateListSearch, the list with its search');
   const t0 = Date.now();
   typeInto(box, el.text, '');
   const first = api.asked[0];
-  if (first && first.name === 'jobs.api' && first.server === 'desk' && first.verb === 'fallout.reds' && first.args && first.args.text === '' && first.args.outcome === 'red' && first.at - t0 < 5) test.check('the first character asks api.verb(jobs.api, {ask: {desk: {fallout.reds: args(text, filters)}}}) at once, no typing pause');
+  if (first && first.name === 'desk.fallout.reds' && first.server === 'desk' && first.verb === 'fallout.reds' && first.args && first.args.text === '' && first.args.outcome === 'red' && first.at - t0 < 5) test.check('the first character asks api.verb(desk.fallout.reds, args(text, filters)) at once, no typing pause');
   else test.fail(OWED + 'asked ' + short(api.asked));
   await sleep(40);
   if (rowsShown(el.list) === 1 && /the relay answers its key/.test(el.list.innerHTML) && !/a door stays shut/.test(el.list.innerHTML)) test.check('rows are painted by paint(row), the ❌ filter testing each one: r1 shown, the green r2 left out');

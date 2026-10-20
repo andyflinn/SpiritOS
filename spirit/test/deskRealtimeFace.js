@@ -195,8 +195,9 @@ async function remoteHalf() {
     onPublished: function (fn) { handlers.push(fn); return function () { const i = handlers.indexOf(fn); if (i !== -1) handlers.splice(i, 1); }; },
     fs: { loadFile: function () { return null; } },
     verb: function (name, body) {
-      const a = body && body.ask && body.ask.deskAgent;
-      if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: { desk: {}, deskAgent: {} } });
+      // deskAgent's verbs by name on the flat apiDoor (deskAgent.<verb>, goal/G30.6), folded back to {verb: args}.
+      const a = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).deskAgent;
+      if (name === 'api') return Promise.resolve({ status: 200, body: { desk: {}, deskAgent: {} } });
       const v = a ? Object.keys(a)[0] : '';
       return Promise.resolve({ status: 200, body: v === 'state' ? STATE : v === 'models' ? STATE : { change: 1 } });
     },

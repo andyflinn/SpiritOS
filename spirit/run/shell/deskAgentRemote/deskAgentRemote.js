@@ -16,8 +16,8 @@
 //   hosts deskAgent....".
 //
 // ONE TARGET, ONE FUNCTION. The target is this node, or a puppet of it; every ask of deskAgent goes through
-// deskAgentRemoteAskFor: jobs.api on this node, owner.command carrying that same jobs.api ask on a puppet, which
-// the puppet's owner door runs through its own loopback verbs (puppetMode.js). One function unwraps both answers.
+// deskAgentRemoteAskFor: deskAgent.<verb> on this node, owner.command carrying that same verb on a puppet, which
+// the puppet's owner door runs through its own flat apiDoor (puppetMode.js, goal/G30.6). One function unwraps both answers.
 //
 // THE PUPPETS come from puppets.json in this app's own folder, for now: {"puppets": [{name, key}]}. A node with no
 // such file offers this node alone — which is what the same app shows when it opens on the puppet itself.
@@ -53,14 +53,13 @@ function deskAgentRemoteIcon(name) {
 // ── THE ONE FUNCTION: FROM A TARGET TO THE ASK ──────────────────────
 //
 // target: { kind: 'node' } or { kind: 'puppet', key }. The answer is the payload for api.verb: its `verb` and
-// everything beside it. For this node, jobs.api with the ask of deskAgent; for a puppet, owner.command to its
-// key whose command is that very jobs.api ask, as it would be sent on the puppet's own loopback door.
+// everything beside it. For this node, the verb by name on the flat apiDoor (deskAgent.<verb>, goal/G30.6); for a
+// puppet, owner.command to its key whose command is that same verb, as it would be sent on the puppet's own
+// loopback door.
 function deskAgentRemoteAskFor(target, verb, args) {
-  var ask = {};
-  ask[String(verb)] = args || {};
-  var local = { verb: 'jobs.api', ask: { deskAgent: ask } };
-  if (!target || target.kind !== 'puppet') return local;
-  return { verb: 'owner.command', to: String(target.key || ''), command: 'jobs.api', body: { ask: local.ask } };
+  var name = 'deskAgent.' + String(verb);
+  if (!target || target.kind !== 'puppet') return Object.assign({}, args || {}, { verb: name });
+  return { verb: 'owner.command', to: String(target.key || ''), command: name, body: args || {} };
 }
 
 // THE SAME FUNCTION BACK: what deskAgent itself answered. From this node the body is its answer; from a puppet
@@ -909,7 +908,7 @@ function deskAgentRemoteChooseTarget() {
 }
 function deskAgentRemoteChooseAmongPuppets() {
   var targets = deskAgentRemoteTargets;
-  return Promise.resolve(deskAgentRemoteApi.verb('jobs.api', { ask: 'api' })).then(function (r) {
+  return Promise.resolve(deskAgentRemoteApi.verb('api')).then(function (r) {
     var apps = r && r.status === 200 && r.body && typeof r.body === 'object' ? r.body : {};
     return !!apps.desk;
   }, function () { return false; }).then(function (hasDesk) {

@@ -14,7 +14,7 @@
 //     unchanged.
 //   - apiDoor.answer passes the caller on: a member's ask goes to servers.ask(ask, { key, label }), the label read
 //     through auth.labelOf(key) (apiAuth.js, the peers row); the owner's to servers.ask(ask, caller) as handed
-//     (jobs.api hands { owner: true, key: the node's own key, label: the owner's name }).
+//     (the flat door hands { owner: true, key: the node's own key, label: the owner's name }, goal/G30.6).
 //   Desk's half is deskWriterKey.js.
 
 const fs = require('fs');

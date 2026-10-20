@@ -248,11 +248,14 @@ const WAIT_MS = 250;
 function say(text) { console.log('deskAgent: ' + text); }
 function bytes(s) { return Buffer.byteLength(String(s), 'utf8'); }
 
+// One verb of a server on this node, {server: {verb: args}}, asked by its name on the flat apiDoor (goal/G30.6).
 function askNode(ask) {
-  return spirit.core.ask('jobs.api', { ask: ask }, NODE_URL).then(function (r) { return (r && r.body) || {}; });
+  const server = Object.keys(ask)[0];
+  const verb = Object.keys(ask[server])[0];
+  return spirit.core.ask(server + '.' + verb, ask[server][verb], NODE_URL).then(function (r) { return (r && r.body) || {}; });
 }
 function desk(verb, args) {
-  return askNode({ deskClient: { desk: { verb: verb, json: JSON.stringify(args || {}) } } });
+  return askNode({ deskClient: { desk: { name: verb, json: JSON.stringify(args || {}) } } });
 }
 function nextLines() {
   return askNode({ deskClient: { next: {} } }).then(function (b) { return Array.isArray(b.lines) ? b.lines : []; });
@@ -545,7 +548,7 @@ const tools = require('./tools').createTools({
     desk: {
       ask: function (verb, args) {
         if (!connected && !FS_READS.test(String(verb))) return Promise.resolve(offTheDesk(verb));
-        return askNode({ deskClient: { desk: { verb: String(verb), json: JSON.stringify(args || {}) } } })
+        return askNode({ deskClient: { desk: { name: String(verb), json: JSON.stringify(args || {}) } } })
           .then(function (body) { return { status: body && body.ok === false ? 400 : 200, body: body, text: JSON.stringify(body) }; });
       },
       verb: function (stem) { return stem; },
@@ -554,8 +557,7 @@ const tools = require('./tools').createTools({
     deskAgent: {
       ask: function (verb, args) {
         if (!connected && !FS_READS.test(String(verb)) && READS_OFF_THE_DESK.indexOf(String(verb)) === -1) return Promise.resolve(offTheDesk(verb));
-        const one = {}; one[String(verb)] = args || {};
-        return spirit.core.ask('jobs.api', { ask: { deskAgent: one } }, NODE_URL).then(function (r) {
+        return spirit.core.ask('deskAgent.' + String(verb), args || {}, NODE_URL).then(function (r) {
           const body = (r && r.body) || {};
           return { status: (r && r.status) || 200, body: body, text: JSON.stringify(body) };
         });
@@ -598,7 +600,7 @@ function argumentsOf(call) {
 // file.save, file.edit, commit and push; while any current goal is in design, or the desk cannot say, none of them is given.
 const WRITE_TOOLS = ['deskAgent_file_save', 'deskAgent_file_edit', 'deskAgent_commit', 'deskAgent_push'];
 function designNow() {
-  return askNode({ deskClient: { desk: { verb: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) } } })
+  return askNode({ deskClient: { desk: { name: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) } } })
     .then(function (r) {
       const items = (r && r.items) || [];
       return items.some(function (p) { try { return JSON.parse(p.label).design === true; } catch (e) { return false; } });
@@ -1086,7 +1088,7 @@ function publishState() {
 // model.load: the studio's load for that id (it swaps the loaded one; lengthy), and the configuration follows:
 // configuration.json is rewritten by this process, the one that owns it, and MODEL with it, so the next call names
 // what the studio serves. ANSWERED AT ONCE, THE STUDIO NOT WAITED FOR: its POST load blocks until the model is in,
-// minutes for a big one, and a process must answer jobs.api within 12 s (appClient DOOR_WAIT_MS). The first build
+// minutes for a big one, and a process must answer an ask within 12 s (appClient DOOR_WAIT_MS). The first build
 // waited, and Andy's press died at the wall (2026-10-10: "The load button fails because it takes too long to load
 // a model, you may have to load asynchronously, and poll"). models says when the studio is done; a refusal from
 // the studio is said in this process's log, the line finds out by polling.
@@ -1595,7 +1597,7 @@ function commandResult(id) {
 //   Andy, 2026-10-10: a chat box "sticky, at the bottom of the window (panel)", "Enter = send, one line only",
 //   "the chat will only be shown on the node that hosts deskAgent....".
 //
-// TWO ASKS, NOT ONE: an ask of this process through jobs.api is answered within DOOR_WAIT_MS, 12 s (appClient.js),
+// TWO ASKS, NOT ONE: an ask of this process through the node is answered within DOOR_WAIT_MS, 12 s (appClient.js),
 // and a model answer can take longer. So chat.send takes the page's transcript, answers an id at once and asks the
 // model; chat.answer {id} says whether it is done and hands the text over. The page keeps the transcript; this keeps
 // only the answers in flight, and forgets one ANSWER_KEEP_MS after it is done.
@@ -1848,7 +1850,7 @@ appServer.serve({
     request: {}, reply: { alive: true },
     handler: function () { return { alive: true }; },
   },
-  // THE SWITCH'S TWO VERBS (goal/G14.2): what deskAgentRemote flips and reads, on this node through jobs.api,
+  // THE SWITCH'S TWO VERBS (goal/G14.2): what deskAgentRemote flips and reads, on this node by name (deskAgent.<verb>),
   // from the owner's node through owner.command carrying that same ask.
   connect: {
     request: { on: true }, reply: { connected: true },

@@ -57,8 +57,9 @@ function dialog(box) {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
-      if (name === 'jobs.api' && ask) {
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      if (ask) {
         const v = Object.keys(ask)[0];
         asked.push({ verb: v, args: ask[v] });
         if (v === 'item.get') return Promise.resolve({ status: 200, body: { item: facts(), version: 0, change: 1 } });

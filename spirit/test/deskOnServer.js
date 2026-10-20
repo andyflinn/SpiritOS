@@ -20,8 +20,8 @@
 //     matches keys exactly, D8). todo '-' means lines with no todo (an
 //     agent's direct chat). Still newest first, bounded, partial when cut (T6).
 //
-//   DESK (app/desk/desk.js), through api.verb('jobs.api', {ask: {desk:
-//   {verb: args}}}) and never api.fs for its record:
+//   DESK (app/desk/desk.js), through api.verb('desk.<verb>', args), the
+//   verb by name (goal/G30.6), and never api.fs for its record:
 //   - T5: it reads the newest session (log.search kind 'session') and draws
 //     every open item as id and title at once; each row then fills its
 //     state from log.search {todo: that id}, newest first, a next page only

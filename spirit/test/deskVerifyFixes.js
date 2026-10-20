@@ -95,19 +95,21 @@ function fakeNode(opts) {
       req.on('data', function (c) { b += c; });
       req.on('end', async function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
         let out = {};
         if (j && j.verb === 'jobs.update') { if (j.app) st.published.push(j.app); }
-        else if (j && j.ask === 'api') { out = {}; st.apps.forEach(function (a) { out[a] = {}; }); }
-        else if (j && j.ask && j.ask.desk) {
-          const verb = Object.keys(j.ask.desk)[0];
-          out = deskAnswer(verb, j.ask.desk[verb] || {});
-        } else if (j && j.ask && j.ask.deskClient && j.ask.deskClient.desk) {
-          let a = {}; try { a = JSON.parse(j.ask.deskClient.desk.json || '{}'); } catch (e) { a = {}; }
-          st.viaClient.push(j.ask.deskClient.desk.verb);
-          out = deskAnswer(String(j.ask.deskClient.desk.verb), a);
-        } else if (j && j.ask && j.ask.deskVerify && j.ask.deskVerify.record) {
+        else if (flatCall === 'api') { out = {}; st.apps.forEach(function (a) { out[a] = {}; }); }
+        else if (flatCall && flatCall.desk) {
+          const verb = Object.keys(flatCall.desk)[0];
+          out = deskAnswer(verb, flatCall.desk[verb] || {});
+        } else if (flatCall && flatCall.deskClient && flatCall.deskClient.desk) {
+          let a = {}; try { a = JSON.parse(flatCall.deskClient.desk.json || '{}'); } catch (e) { a = {}; }
+          st.viaClient.push(flatCall.deskClient.desk.name);
+          out = deskAnswer(String(flatCall.deskClient.desk.name), a);
+        } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) {
           // A suite's record, handed on to the deskVerify under test, as the node's door would.
-          try { const r = st.forward ? await st.forward(j.ask.deskVerify) : null; out = (r && r.body) || { written: false }; } catch (e) { out = { written: false }; }
+          try { const r = st.forward ? await st.forward(flatCall.deskVerify) : null; out = (r && r.body) || { written: false }; } catch (e) { out = { written: false }; }
         }
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });

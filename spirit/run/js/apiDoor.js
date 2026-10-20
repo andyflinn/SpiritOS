@@ -59,15 +59,14 @@ function stripTree(tree, paths) {
   return kept;
 }
 
-// THE ONE WAY IN (desk/G1 D4): a member's packet here and the local shell's
-// jobs.api on the loopback door both end in this, so the gate has one place
-// to live. caller is { owner: true } for loopback and puppeteering (jobs.api
-// passes it; a missing caller counts as the owner — Andy: "a call from your
+// THE ONE WAY IN (desk/G1 D4): a member's packet ends in this, so the gate has
+// one place to live. caller is { owner: true } for the owner (the flat door
+// passes it for loopback and puppeteering, goal/G30.6; a missing caller counts as the owner — Andy: "a call from your
 // own machine counts as you"), else { key, auth } for a member.
 function answer(servers, ask, caller) {
   const c = caller || { owner: true };
   // The caller rides on to the servers (apiAuth/G1.13): the owner as
-  // handed (jobs.api gives his mark, key and name), a member as its
+  // handed (the flat door gives his mark, key and name), a member as its
   // verified key with the label the auth table holds for it — never the
   // auth handle, which is the gate's own and no server's business.
   if (c.owner === true) {
@@ -171,7 +170,7 @@ function createApiDoor(opts) {
     if (!o.isKnown(message.fromKey)) return;
     // 'DEBUG verb is never allowed through peerPost()' (Andy, desk/G2.5), and DEPENDENCIES with it
     // (apiAuth/G1.10, owner-only "like DEBUG"): a member's ask for either on any server is refused
-    // here, by name, granted or not, and never passed on. jobs.api (answer) still reaches them.
+    // here, by name, granted or not, and never passed on. The owner's own calls on /api/spirit still reach them.
     if (asksOwnerVerb(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG and DEPENDENCIES are for the owner, on loopback only' });
     return answer(o.servers, info.body, { key: message.fromKey, auth: o.auth }).then(function (r) {
       return reply(message, r ? r.body : null, r && r.kind);

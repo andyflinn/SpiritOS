@@ -5,7 +5,7 @@
 //   D1. the door's detail is this shell dialog, opened from the Stacks pane with
 //       callDialog('shell/stackFrameCheckDetail', { id }); the pane draws no detail of its own.
 //   D2. it reads and writes the door only through the plugin's verbs (stackFrameChecks.doors, update, run, runState,
-//       remove), over jobs.api to the desk server, as deskDetails asks.
+//       remove), by name (desk.<verb>) to the desk server, as deskDetails asks.
 //   D3. its chat is the chat of the door's item (the door's `item`), the shared chat element (shell/shared/js/deskChat.js).
 //   D5. Run runs this one door at once, in the plugin, outside deskVerify's queue; the plugin hands the verdict to
 //       deskVerify as a record only. So the run, its time and its verdict show here; there is no Verifier console to go to.
@@ -41,11 +41,9 @@ function sdNeed(name, done) {
   document.body.appendChild(script);
 }
 
-// The one way to the desk server: jobs.api on the loopback door, as deskDetails asks.
+// The one way to the desk server: its verb by name on the loopback door (desk.<verb>, goal/G30.6), as deskDetails asks.
 function sdAsk(verb, args) {
-  var desk = {};
-  desk[verb] = args;
-  return Promise.resolve(sdApi.verb('jobs.api', { ask: { desk: desk } })).then(function (r) {
+  return Promise.resolve(sdApi.verb('desk.' + verb, args)).then(function (r) {
     var body = (r && r.body) || {};
     if (body.ok === false) {
       var x = body.extra || {};

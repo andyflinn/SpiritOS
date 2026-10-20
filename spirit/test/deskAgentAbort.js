@@ -81,10 +81,11 @@ const node = http.createServer(function (req, res) {
     nodeAsks.push(b);
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
-    // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as jobs.api {deskAgent: ...}, and
+    // THE FILE TOOL IS deskAgent's OWN SINCE goal/G23.5: its asks reach this node as deskAgent.<verb> (by name on the flat apiDoor, goal/G30.6), and
     // the node answers them here as it answered fs.load before (recorded as verb file.load / FS.search). Since
     // goal/G30.4 the tools are described from the family folder: FS.search lists file.load.json, FS.loadJsonValue reads it.
-    const du = b.verb === 'jobs.api' && b.ask && b.ask.deskAgent;
+    const ask = test.foldAsk(b);
+    const du = ask && ask.deskAgent;
     if (du && du['FS.search']) { nodeAsks.push({ verb: 'deskAgent.FS.search' }); return answer(200, { items: [{ key: 'file.load.json', label: 'file.load.json' }], more: false }); }
     if (du && du['FS.loadJsonValue'] && du['FS.loadJsonValue'].path === 'file.load.json') return answer(200, { value: { description: 'load a file', request: { path: '' }, reply: { path: '', text: '' } } });
     if (du && du['file.load']) {
@@ -94,12 +95,12 @@ const node = http.createServer(function (req, res) {
       if (/slow/.test(p)) return setTimeout(function () { answer(200, { path: p, text: 'slow file' }); }, 900);
       return answer(200, { path: p, text: /big/.test(p) ? BIG : 'a small file' });
     }
-    const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
+    const dc = ask && ask.deskClient;
     if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node has no ' + b.verb });
     if (dc.next) { if (nextQueue.length) return answer(200, { lines: nextQueue.shift() }); return setTimeout(function () { answer(200, { lines: [] }); }, 100); }
     if (dc.desk) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
-      const v = String(dc.desk.verb || '');
+      const v = String(dc.desk.name || '');
       if (v === 'FS.loadFile' && args.path === 'AGENTS.md') return answer(200, { text: 'the rules' });
       if (v === 'FS.search') return answer(200, { items: [], more: false });
       if (v === 'item.get') return answer(200, { item: JSON.stringify({ id: args.id, title: 't', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: true }), version: 1, change: 1 });
@@ -450,10 +451,11 @@ async function mount(delays) {
     armUntilElsewhere: function () {},
     verb: function (name, body) {
       calls.push({ name: name, body: body });
-      if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
+      if (name === 'api') return Promise.resolve({ status: 200, body: { deskAgent: {} } });
+      // deskAgent's verbs by name (deskAgent.<verb>, goal/G30.6); a puppet's ride in owner.command as its command.
       let verb = null;
-      if (name === 'jobs.api' && body && body.ask && body.ask.deskAgent) verb = Object.keys(body.ask.deskAgent)[0];
-      if (name === 'owner.command') verb = Object.keys((body.body && body.body.ask && body.body.ask.deskAgent) || {})[0];
+      if (String(name).indexOf('deskAgent.') === 0) verb = String(name).slice('deskAgent.'.length);
+      if (name === 'owner.command' && body && String(body.command || '').indexOf('deskAgent.') === 0) verb = String(body.command).slice('deskAgent.'.length);
       const said = answers[verb] || { ok: true };
       const wrap = name === 'owner.command' ? { status: 200, body: { ok: true, status: 200, body: said } } : { status: 200, body: said };
       const ms = (delays || {})[verb] || 0;
@@ -464,7 +466,7 @@ async function mount(delays) {
   for (let i = 0; i < 6; i++) { await settled(); await sleep(20); }
   return { doc: doc, calls: calls, ctx: ctx, publish: function (obj) { if (onPub) onPub(obj, { from: '' }); } };
 }
-function asksOf(m, verb) { return m.calls.filter(function (c) { return c.name === 'jobs.api' && c.body && c.body.ask && c.body.ask.deskAgent && c.body.ask.deskAgent[verb]; }); }
+function asksOf(m, verb) { return m.calls.filter(function (c) { return c.name === 'deskAgent.' + verb; }); }
 
 async function faceHalf() {
   test.subHeading('9. the Remote: the Abort beside the chat, alive only while the model works');
@@ -498,7 +500,7 @@ async function faceHalf() {
   m.doc.getElementById('dur-chat-send').fire('click', {});
   await settled();
   const sendAsk = asksOf(m, 'chat.send').pop();
-  const lines = sendAsk ? sendAsk.body.ask.deskAgent['chat.send'].lines : null;
+  const lines = sendAsk && sendAsk.body ? sendAsk.body.lines : null;
   if (/the batch is clean/.test(display) && Array.isArray(lines) && lines.length === 1 && lines[0].role === 'user' && lines[0].text === 'hello Levant') test.check('chat.send carries the conversation alone, never the log');
   else test.fail(OWED + 'chat.send carried ' + short(lines));
 

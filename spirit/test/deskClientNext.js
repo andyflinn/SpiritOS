@@ -268,7 +268,7 @@ async function main() {
   } else test.fail(OWED + 'after the restart next answered ' + JSON.stringify(back.lines).slice(0, 200) + ', then ' + JSON.stringify(later.lines).slice(0, 200));
 
   test.subHeading('9. the record of asks is bounded');
-  for (let i = 0; i < HISTORY_MAX + 3; i++) await call('deskClient', 'desk', { verb: 'item.get', json: JSON.stringify({ id: 'a/G1.1' }) }, OWNER);
+  for (let i = 0; i < HISTORY_MAX + 3; i++) await call('deskClient', 'desk', { name: 'item.get', json: JSON.stringify({ id: 'a/G1.1' }) }, OWNER);
   const h2 = await history();
   if (h2.length === HISTORY_MAX && h2[0].row.verb === 'item.get' && h2[0].row.outcome === 'answered') test.check('after more asks than historyMax, history holds the newest ' + HISTORY_MAX);
   else test.fail(OWED + 'history holds ' + h2.length + ' record(s) where historyMax is ' + HISTORY_MAX + ', the newest ' + JSON.stringify(h2[0] || null));

@@ -188,7 +188,8 @@ async function page() {
   ];
   const asked = [];   // every desk ask the page made: { verb, args }
   const verb = function (name, body) {
-    const desk = name === 'jobs.api' && body && body.ask && body.ask.desk;
+    // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+    const desk = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
     const v = desk ? Object.keys(desk)[0] : '';
     if (desk) asked.push({ verb: v, args: desk[v] });
     if (v === 'item.chat' && desk[v] && desk[v].id === CHAT) return Promise.resolve({ status: 200, body: { chat: groupChat.slice(), chatMore: false } });

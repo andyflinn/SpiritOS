@@ -9,7 +9,8 @@
 //   The kernel's DEBUG is a let, false at start, one per process; print() writes only while it is on.
 //   appServer gives every server a DEBUG verb, as it gives AGENTS: {} reads, {on: true|false} sets; both
 //   answer {debug: <boolean>} with the state that resulted. It flips that process's kernel DEBUG.
-//   apiDoor refuses a member's ask for a server's DEBUG and never passes it on; jobs.api (loopback) reaches it.
+//   apiDoor refuses a member's ask for a server's DEBUG and never passes it on; the owner's own call on /api/spirit
+//   (<server>.DEBUG through the flat door, goal/G30.6) reaches it.
 //   The node answers node.debug, shaped like relay.debug: {debug: {}} reads, {debug: {on}} sets; both answer
 //   {debug: <boolean>}. It is claimed in server.js, so the owner door reaches it on a puppet (everyVerb.js).
 //   The relay keeps no DEBUG of its own: relay.debug uses the kernel's.
@@ -87,7 +88,7 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   kid.kill();
 
   // ── MEMBERS NEVER REACH IT ──────────────────────────────────────────
-  test.subHeading('apiDoor refuses DEBUG to a member; jobs.api reaches it');
+  test.subHeading('apiDoor refuses DEBUG to a member; the owner\'s flat door reaches it');
   const apiDoor = require('../run/js/apiDoor.js');
   const MEMBER = 'MCowBQYDK2VwAyEAmembermembermembermembermembermemb=';
   const asked = [];
@@ -111,8 +112,11 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
   if (asked.some(function (a) { return a.grantFace && a.grantFace.get; })) test.check('a member\'s other verbs still pass');
   else test.fail('a member\'s ordinary ask did not pass: ' + JSON.stringify(asked));
   asked.length = 0;
-  await apiDoor.answer(servers, { grantFace: { DEBUG: {} } });
-  if (asked.length === 1) test.check('jobs.api\'s way in (apiDoor.answer) still reaches DEBUG');
+  // The owner's way in since goal/G30.6: /api/spirit hands grantFace.DEBUG to the flat door (verbTable's door), whose
+  // in-process call is what the loopback front and the owner door both run.
+  const ownDoor = require('../run/js/verbTable.js').createVerbTable().door({ apps: function () { return ['grantFace']; }, ask: servers.ask });
+  await ownDoor.call('grantFace.DEBUG', {});
+  if (asked.length === 1 && asked[0].grantFace && asked[0].grantFace.DEBUG) test.check('the owner\'s way in (grantFace.DEBUG by name on the flat door) still reaches DEBUG');
   else test.fail(OWED + 'the loopback way in no longer reaches DEBUG');
 
   // ── THE RELAY ───────────────────────────────────────────────────────

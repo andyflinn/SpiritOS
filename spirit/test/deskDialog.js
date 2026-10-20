@@ -5,7 +5,7 @@
 // line, it is not textual information." The yellow strip "should only be offered when the agents claim 'done'".
 // The goal's abandon: "a red, arming-button ... with are-you-sure", "at the very right of the button row".
 // The contract the builder follows:
-//   open({id}) asks the desk server item.get {id} once, through api.verb('jobs.api', {ask: {desk: {...}}}), and
+//   open({id}) asks the desk server item.get {id} once, through api.verb('desk.item.get', {id}) (goal/G30.6), and
 //   paints its answer. After that it asks nothing: it repaints from api.onPublished objects,
 //   {change, verb, item: <facts>} plus, for a box write, {box, version}, and for a chat line, {chat: {by, at, text}}.
 //   (The desk server publishes box and chat that way; its half is part of this item.)
@@ -65,8 +65,9 @@ function dialog(answer) {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
-      if (name === 'jobs.api' && ask) {
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
+      if (ask) {
         const v = Object.keys(ask)[0];
         asked.push({ verb: v, args: ask[v] });
         if (v === 'item.get' || v === 'item.box' || v === 'item.checks' || v === 'item.chat') return Promise.resolve({ status: 200, body: answer });

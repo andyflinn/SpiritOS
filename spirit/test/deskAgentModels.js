@@ -27,13 +27,13 @@
 //      and the next chat call names the new model.
 //   3. deskAgent chat.send {lines} answers an id at once; chat.answer {id} turns done with the model's text; the
 //      call carried the preamble and the lines.
-//   4. the app's pure functions: the ask for models and model.load from the target (jobs.api here, owner.command on
-//      the puppet, the same one function as the switch); the line for a model (Load or the running mark, the icons,
+//   4. the app's pure functions: the ask for models and model.load from the target (deskAgent.<verb> by name here, owner.command
+//      on the puppet, the same one function as the switch); the line for a model (Load or the running mark, the icons,
 //      the small print) built from the models answer with no ask; the chat asks its own node only.
 // Not asserted, the builder's: the layout and the words of the page; the poll pacing; the load fraction's display.
 //
 // THE FAKES: the studio (cached-gguf, v1/models, inference/status, inference/load, load-progress, chat/completions)
-// and the node of deskAgentSwitch.js (jobs.api for deskClient alone). rule/11: through testSupport only; its own
+// and the node of deskAgentSwitch.js (deskClient.<verb> by name alone). rule/11: through testSupport only; its own
 // folders and ports; never 65432.
 
 const fs = require('fs');
@@ -122,7 +122,7 @@ const studioServer = http.createServer(function (req, res) {
   });
 });
 
-// ── THE FAKE NODE: jobs.api for deskClient, as deskAgentSwitch.js ─────
+// ── THE FAKE NODE: deskClient's verbs by name, as deskAgentSwitch.js ──
 let nextQueue = [];
 const deskWords = [];
 const published = [];
@@ -131,20 +131,22 @@ const node = http.createServer(function (req, res) {
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
-    const dc = b.verb === 'jobs.api' && b.ask && b.ask.deskClient;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
+    const dc = ask && ask.deskClient;
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     // WHAT deskAgent PUBLISHES (goal/G14.5, Andy: "so deskAgent keeps a state, and publishes changes"): the
     // fake node takes jobs.update {app} as the real one does and keeps every object.
     if (b.verb === 'jobs.update') { if (b.app && typeof b.app === 'object') published.push(b.app); return answer(200, { ok: true }); }
-    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node answers jobs.api for deskClient alone' });
+    if (!dc) return answer(404, { ok: false, code: 'no-such-verb', error: 'the fake node answers deskClient.<verb> alone' });
     if (dc.next) {
       if (nextQueue.length) return answer(200, { lines: nextQueue.shift() });
       return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     }
     if (dc.desk) {
       let args = null; try { args = JSON.parse(dc.desk.json || '{}'); } catch (e) { args = null; }
-      deskWords.push({ verb: String(dc.desk.verb || ''), args: args });
-      const v = dc.desk.verb;
+      deskWords.push({ verb: String(dc.desk.name || ''), args: args });
+      const v = dc.desk.name;
       if (v === 'AGENTS') return answer(200, { text: 'rules' });
       if (v === 'item.get') return answer(200, { item: JSON.stringify({ id: args.id, title: 't', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], go: true }), version: 1, change: 1 });
       if (v === 'item.box') return answer(200, { box: 'the box', version: 1 });
@@ -433,7 +435,7 @@ async function suite() {
   const askFor = ctx.deskAgentRemoteAskFor;
   const local = askFor && askFor({ kind: 'node' }, 'models', {});
   const remote = askFor && askFor({ kind: 'puppet', key: KEY }, 'model.load', { id: OTHER });
-  if (local && local.verb === 'jobs.api' && local.ask.deskAgent.models && remote && remote.verb === 'owner.command' && remote.to === KEY && remote.body.ask.deskAgent['model.load'].id === OTHER) test.check('models and model.load go through the same one function as the switch: jobs.api here, owner.command on the puppet');
+  if (local && local.verb === 'deskAgent.models' && remote && remote.verb === 'owner.command' && remote.to === KEY && remote.command === 'deskAgent.model.load' && remote.body && remote.body.id === OTHER) test.check('models and model.load go through the same one function as the switch: deskAgent.<verb> by name here, owner.command on the puppet');
   else test.fail(OWED + 'the asks: ' + short([local, remote]));
   const lineFor = ctx.deskAgentRemoteLineFor;
   if (typeof lineFor !== 'function') { test.fail(OWED + 'no deskAgentRemoteLineFor(model) in the script'); return; }
@@ -476,12 +478,12 @@ async function suite() {
   const t5 = takes && takes({ kind: 'puppet', key: KEY }, { from: 'MCowBQYDK2VwAyEAother' });
   if (t1 === true && t2 === true && t3 === false && t4 === false && t5 === false) test.check('the Remote takes a local object for this node and a streamed one from the chosen puppet, nothing else');
   else test.fail(OWED + 'takesPublished answered ' + short([t1, t2, t3, t4, t5]));
-  // The chat follows the target (Andy, 2026-10-10, "go." on running the chat on 65432): jobs.api on this node,
+  // The chat follows the target (Andy, 2026-10-10, "go." on running the chat on 65432): deskAgent.chat.send on this node,
   // owner.command on the puppet, the same function as the switch.
   const chatAsk = ctx.deskAgentRemoteChatAskFor;
   const c1 = chatAsk && chatAsk({ kind: 'node' }, 'chat.send', { lines: [] });
   const c2 = chatAsk && chatAsk({ kind: 'puppet', key: KEY }, 'chat.send', { lines: [] });
-  if (c1 && c1.verb === 'jobs.api' && c1.ask.deskAgent['chat.send'] && c2 && c2.verb === 'owner.command' && c2.to === KEY && c2.body.ask.deskAgent['chat.send']) test.check('the chat send follows the target: jobs.api on this node, owner.command on the puppet');
+  if (c1 && c1.verb === 'deskAgent.chat.send' && Array.isArray(c1.lines) && c2 && c2.verb === 'owner.command' && c2.to === KEY && c2.command === 'deskAgent.chat.send' && c2.body && Array.isArray(c2.body.lines)) test.check('the chat send follows the target: deskAgent.chat.send on this node, owner.command on the puppet');
   else test.fail(OWED + 'the chat asks: ' + short([c1, c2]));
 }
 

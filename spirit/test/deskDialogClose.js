@@ -43,7 +43,8 @@ function dialog(pressAnswer, buttons) {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       if (v === 'item.get') {
         return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 't/G1.2', title: 'Beta', goal: 't/G1', status: 'done', with: '',

@@ -124,7 +124,8 @@ async function dialogHalf() {
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
-      const ask = body && body.ask && body.ask.desk;
+      // The desk's verbs by name (desk.<verb>, goal/G30.6), folded back to {desk: {verb: args}}.
+      const ask = (test.foldAsk(Object.assign({}, body, { verb: name })) || {}).desk;
       const v = ask && Object.keys(ask)[0];
       calls.push({ verb: v, args: ask && ask[v] });
       if ((v === 'item.add' || v === 'item.rename') && refuseWith) return Promise.resolve({ status: 400, body: refuseWith });
@@ -206,10 +207,11 @@ async function remoteHalf() {
       fs: { loadFile: function (n) { return n === 'puppets.json' ? JSON.stringify({ puppets: [{ name: 'agent', key: 'KEY-AGENT' }] }) : null; } },
       verb: function (name, body) {
         calls.push({ name: name, body: body });
-        if (name === 'jobs.api' && body && body.ask === 'api') return Promise.resolve({ status: 200, body: local ? { desk: {}, deskAgent: {} } : { desk: {} } });
-        const a = (body && body.ask && body.ask.deskAgent) || (body && body.body && body.body.ask && body.body.ask.deskAgent);
-        const v = a ? Object.keys(a)[0] : '';
-        const here = name === 'jobs.api';
+        if (name === 'api') return Promise.resolve({ status: 200, body: local ? { desk: {}, deskAgent: {} } : { desk: {} } });
+        // deskAgent's verbs by name (deskAgent.<verb>, goal/G30.6) here; on a puppet the same name rides in owner.command.
+        const here = String(name).indexOf('deskAgent.') === 0;
+        const named = here ? String(name) : name === 'owner.command' ? String((body && body.command) || '') : '';
+        const v = named.indexOf('deskAgent.') === 0 ? named.slice('deskAgent.'.length) : '';
         if (here && !local) return Promise.resolve({ status: 404, body: { ok: false, code: 'app-not-served', error: 'deskAgent is not served here' } });
         // goal/G27.17: the picker asks models.search; it answers as models did.
         const said = v === 'state' ? READY : (v === 'models' || v === 'models.search') ? MODELS : {};
@@ -225,7 +227,7 @@ async function remoteHalf() {
   const s = models.indexOf('id="dur-model"');
   if (r !== -1 && s !== -1 && r < s) test.check('a refresh button sits left of the model picker');
   else test.fail(OWED + '#dur-models reads ' + short(models));
-  const asked = function (c) { return c.slice().filter(function (x) { const a = (x.body && x.body.ask && x.body.ask.deskAgent) || (x.body && x.body.body && x.body.body.ask && x.body.body.ask.deskAgent); return a && (a.models || a['models.search']); }).length; };
+  const asked = function (c) { return c.slice().filter(function (x) { const named = x.name === 'owner.command' ? String((x.body && x.body.command) || '') : String(x.name); return named === 'deskAgent.models' || named === 'deskAgent.models.search'; }).length; };
   const before = asked(own.calls);
   own.doc.getElementById('dur-refresh').fire('click', {});
   await settled();

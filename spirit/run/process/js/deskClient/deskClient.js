@@ -535,7 +535,9 @@ appServer.serve({
   // (appServer.js), so a big desk read is not escaped once more past the travel limit. Andy: "4. a MAX_PAYLOAD pop
   // is serious."
   'desk': {
-    request: { verb: '', json: '' }, reply: {},
+    // {name, json}: the desk verb's name and its arguments as JSON. The argument was verb until goal/G30.6, when calls
+    // went flat on /api/spirit and a verb argument collided with the name of the call (Andy, 2026-10-20: "yes").
+    request: { name: '', json: '' }, reply: {},
     handler: function (a, caller) {
       ownerOnly(caller);
       // A SIGNED-OFF AGENT WRITES NOTHING (goal/G27.12): the desk's signoff holds here too, not only on the desk's list (Andy 2026-10-16).
@@ -544,13 +546,13 @@ appServer.serve({
       let args = null;
       try { args = JSON.parse(a.json || '{}'); } catch (e) { args = null; }
       // A REFUSAL SAYS WHY (goal/G10.10; Andy, 2026-10-12: "all refusals everywhere should say why.").
-      if (!a.verb) throw refused('bad-request', { why: 'desk needs the verb to ask' });
+      if (!a.name) throw refused('bad-request', { why: 'desk needs the name of the desk verb to ask' });
       if (!args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request', { why: 'desk needs json: the arguments as a JSON object' });
       // CHAT IS GATED (goal/G27.6; Andy 2026-10-16): on an item this agent holds, or where it has taken a line, its chat may
       // be written; anywhere else it may only reply to lines it successfully took. If the desk cannot say, it is refused.
-      return mayChat(to, a.verb, args).then(function (ok) {
+      return mayChat(to, a.name, args).then(function (ok) {
         if (!ok) throw refused('not-taken', { why: 'this agent holds neither the item nor a line it took here' });
-        const one = countedAsk(to, a.verb, args);
+        const one = countedAsk(to, a.name, args);
         // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
         const answer = one.answer.then(function (got) {
           if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });

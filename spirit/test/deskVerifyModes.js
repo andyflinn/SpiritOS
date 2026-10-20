@@ -47,7 +47,7 @@ test.startTest('goal/G8.2: deskVerify knows where it runs, and only his clone ke
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskverifymodes-'));
 
-// A node that answers jobs.api 'api' with the app servers it runs, as a real one does.
+// A node that answers the verb api with the app servers it runs, as a real one does.
 function fakeNode(apps) {
   return new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
@@ -59,9 +59,9 @@ function fakeNode(apps) {
         const body = {};
         apps.forEach(function (a) { body[a] = {}; });
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        // A real node answers jobs.api 'api' with the tree itself, app name -> its verbs (asked of claude-windows'
+        // A real node answers the verb api (the flat apiDoor, goal/G30.6) with the tree itself, app name -> its verbs (asked of claude-windows'
         // node, 2026-10-09), not wrapped in {status, body}; the builder made the fake answer the same.
-        res.end(JSON.stringify(ask && ask.verb === 'jobs.api' && ask.ask === 'api' ? body : {}));
+        res.end(JSON.stringify(ask && ask.verb === 'api' ? body : {}));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
   });

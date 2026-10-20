@@ -119,7 +119,7 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   // that chat, answered here as the desk server answers it.
   const deskFake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
   const deskVerb = function (name, body) {
-    const asked = name === 'jobs.api' && body && body.ask && body.ask.desk && body.ask.desk['item.chat'];
+    const asked = name === 'desk.item.chat' && body;   // the desk's verb by name (goal/G30.6)
     if (asked && asked.id === 'desk/G0.0') return Promise.resolve({ status: 200, body: { chat: [{ by: 'claude-windows', at: AT, text: NOTE, taken: '' }], chatMore: false } });
     return deskFake.verb(name, body);
   };

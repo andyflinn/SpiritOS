@@ -21,7 +21,7 @@ const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
-const apiDoor = require('../run/js/apiDoor.js');
+const verbTable = require('../run/js/verbTable.js');
 const packet = require('../run/js/client/packet.js');
 
 const OWED = 'OWED by goal/G4.23 (core grants): ';
@@ -58,12 +58,17 @@ const kids = [];
 const call = function (app, verb, args, caller) { const q = {}; q[verb] = args; const b = {}; b[app] = q; return client.ask(b, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
 const desk = function (verb, args, caller) { return call('desk', verb, args, caller); };
 
-// The pretend node this agent's deskClient runs on, as deskRules.js builds it: jobs.api through the real apiDoor as
-// the owner (so the commit hook reaches deskClient), the contact book (the other agent blocked), and peer.post into
+// The pretend node this agent's deskClient runs on, as deskRules.js builds it: a server's verb by name through the
+// real flat apiDoor (verbTable's door, as /api/spirit runs it since goal/G30.6) as the owner (so the commit hook reaches
+// deskClient), the contact book (the other agent blocked), and peer.post into
 // the real desk as this agent.
 const streams = [];
 const book = Object.create(null);
 book[OTHER_KEY] = { label: 'wsl-claude', blocked: true };
+const ownDoor = verbTable.createVerbTable().door(client, { owner: function () { return OWNER; } });
+// A verb of a server this pretend node runs (deskClient.desk, desk.item.get), by its name: the family before the first dot.
+ownDoor.serves = function (verb) { const v = String(verb || ''); const dot = v.indexOf('.'); return dot > 0 && client.apps().indexOf(v.slice(0, dot)) !== -1; };
+const argsOf = function (b) { const a = {}; Object.keys(b).forEach(function (k) { if (k !== 'verb') a[k] = b[k]; }); return a; };
 const node = http.createServer(function (req, res) {
   if (req.method === 'GET' && req.url === '/api/events') { res.writeHead(200, { 'Content-Type': 'text/event-stream' }); res.write(': open\n\n'); streams.push(res); return; }
   let raw = '';
@@ -72,7 +77,7 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     const json = function (status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); };
     if (b.verb === 'jobs.update') return json(200, { ok: true });
-    if (b.verb === 'jobs.api') return apiDoor.answer(client, b.ask, OWNER).then(function (a) { json((a && a.status) || 500, a ? a.body : null); }, function (e) { json(500, { ok: false, error: String(e && e.message) }); });
+    if (ownDoor.serves(b.verb)) return ownDoor.call(b.verb, argsOf(b)).then(function (a) { json((a && a.status) || 500, a ? a.body : null); }, function (e) { json(500, { ok: false, error: String(e && e.message) }); });
     if (b.verb === 'contact.get') { const row = book[String(b.key || '')]; return row ? json(200, { ok: true, key: b.key, person: { publicKey: b.key, caption: row.label, blocked: !!row.blocked, held: false } }) : json(404, { ok: false }); }
     if (b.verb === 'contact.search') return json(200, { ok: true, items: Object.keys(book).map(function (k) { return { key: k, label: book[k].label + (book[k].blocked ? ' · blocked' : '') }; }), more: false, selfTail: 'self' });
     if (b.verb !== 'peer.post') return json(400, { ok: false, code: 'no-such-verb' });

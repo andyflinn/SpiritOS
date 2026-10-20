@@ -79,7 +79,8 @@ async function boot() {
   child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
   // The node boots waiting for its servers (Andy's rule), but give desk a moment regardless.
-  const served = await until(function () { return post({ verb: 'jobs.api', ask: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
+  // The tree by the verb api on the flat apiDoor (goal/G30.6).
+  const served = await until(function () { return post({ verb: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
   return up && served;
 }
 function down() {

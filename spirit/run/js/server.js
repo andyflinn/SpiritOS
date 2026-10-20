@@ -1444,7 +1444,7 @@ contactBook.syncMarks(ROOT_DIR);
   //
   // ONE WAY TO START A PROCESS (goal/G13.2, Andy 2026-10-10): jobs.startNodeServers starts every
   // listed process/js server with the pipe the node names, and appClient knows each by that pipe
-  // (register) and knocks on it for jobs.api and the api door. Nothing is loaded into this
+  // (register) and knocks on it for the api door. Nothing is loaded into this
   // process, nothing is started by any other branch, and the node opens no door for visitors:
   // a server that wants a port opens its own (process/js/appFaceApp), and the node is not told.
   // Two branches stood here until then: nodeApps.mountAll, which loaded a shell app with
@@ -1458,9 +1458,17 @@ contactBook.syncMarks(ROOT_DIR);
     reserved: function () { return loopbackVerbs.namespaces().map(function (n) { return n.namespace; }); },
   });
   // THE ONE DOOR TO THE FLAT TABLE (goal/G30.4): this node's families and its apps' side by side. apiDoor (a
-  // peer, gated by its grants) and jobs.api (the owner, ungated) both ask it; a node family runs in-process
+  // peer, gated by its grants) and /api/spirit (the owner, ungated) both ask it; a node family runs in-process
   // through the same handler the loopback door calls (Andy: "1 handler, grant-system covers all").
-  nodeDoor = loopbackVerbs.door(appClient);
+  nodeDoor = loopbackVerbs.door(appClient, {
+    // The owner's own calls carry his key and name (apiAuth/G1.13), so a server tracks his records by key like anybody's.
+    owner: function () {
+      const me = require('./relayAuth').loadIdentity(ROOT_DIR);
+      const own = { owner: true, key: me.publicKey };
+      if (me.name) own.label = String(me.name);
+      return own;
+    },
+  });
   jobs.startNodeServers(ROOT_DIR, appClient);
 
   // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────
@@ -1476,7 +1484,7 @@ contactBook.syncMarks(ROOT_DIR);
     const wire = require('./client/packet.js');
     arrivals.witness(require('./puppetMode').puppetDoor({
       rootDir: ROOT_DIR,
-      call: function (verb, args) { return loopbackVerbs.call(verb, args); },
+      call: function (verb, args) { return nodeDoor.call(verb, args); },
       post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
       encode: wire.encode,
       auth: require('./relayAuth'),
@@ -1853,30 +1861,9 @@ contactBook.syncMarks(ROOT_DIR);
     'cancel': { request: { id: '' }, reply: JOB, handler: handleCancelJob },
     // 204, no body.
     'delete': { request: { id: '' }, reply: {}, handler: handleDeleteJob },
-    // THE LOCAL WAY TO A SERVER PROCESS (desk/G1 D4, Andy: "it goes into
-    // jobs(.api) for me, that's settled", "because procceses provide dynamic
-    // api"): {verb: 'jobs.api', ask}, ask being 'api' or {name: {verb: args}}.
-    // It answers exactly as a member's packet is answered, through the one
-    // function they share (apiDoor.answer), and the reply is flat (D11).
-    'api': { request: { ask: {} }, reply: {}, handler: function (rq, rs) {
-      readJsonBody(rq).then(function (body) {
-        // The owner is never gated (apiAuth/G1.2, Andy: "a call from your
-        // own machine counts as you"); the loopback door says so by name.
-        // His key and name ride along (G1.13, Andy: "my key will at least
-        // confirm it came from my node..."), so a server tracks his
-        // records by key like anybody's.
-        const me = require('./relayAuth').loadIdentity(ROOT_DIR);
-        const own = { owner: true, key: me.publicKey };
-        if (me.name) own.label = String(me.name);
-        return require('./apiDoor').answer(nodeDoor, body && body.ask, own);
-      }).then(function (a) {
-        rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify(a ? a.body : null));
-      }, function () {
-        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify({ ok: false, code: 'bad-request', error: 'Invalid JSON body' }));
-      });
-    } },
+    // THE LOCAL WAY TO A SERVER PROCESS (the jobs api verb) STOOD HERE until goal/G30.6. Andy, 2026-10-20: "jobs is
+    // for launching and tracking appServer processes and other local (transient) processes, it is NOT meant to be
+    // some kind of api-hub." A server process is called on /api/spirit by its verb, through the flat apiDoor.
     // LOCAL: a job is this machine's, whether or not anything is reachable.
   }, { wire: false, by: 'server.js' });
 

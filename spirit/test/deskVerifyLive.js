@@ -60,12 +60,14 @@ function fakeNode(opts) {
       req.on('data', function (c) { b += c; });
       req.on('end', async function () {
         let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
+        // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}; 'api' the tree.
+        const flatCall = test.foldAsk(j);
         let out = {};
         if (j && j.verb === 'jobs.update') { if (j.app) st.published.push(j.app); out = { ok: true }; }
-        else if (j && j.ask === 'api') out = { desk: {}, deskVerify: {} };
-        else if (j && j.ask && j.ask.desk) {
-          const verb = Object.keys(j.ask.desk)[0];
-          const a = j.ask.desk[verb] || {};
+        else if (flatCall === 'api') out = { desk: {}, deskVerify: {} };
+        else if (flatCall && flatCall.desk) {
+          const verb = Object.keys(flatCall.desk)[0];
+          const a = flatCall.desk[verb] || {};
           if (verb === 'changes') {
             if (st.slow) await sleep(st.slow);
             const from = Number(a.n) || 0;
@@ -76,7 +78,7 @@ function fakeNode(opts) {
             if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'lv/G1', code: true, go: true, files: (st.files[a.id] || []).map(function (f) { return { path: 'spirit/test/' + f, by: 'claude-windows', core: false }; }) }), version: 1, change: 1 };
             else out = { change: 1 };
           }
-        } else if (j && j.ask && j.ask.deskVerify && j.ask.deskVerify.record) out = { written: true };
+        } else if (flatCall && flatCall.deskVerify && flatCall.deskVerify.record) out = { written: true };
         res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
       });
     }).listen(0, '127.0.0.1', function () {

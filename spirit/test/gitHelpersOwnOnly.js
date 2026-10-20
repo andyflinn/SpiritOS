@@ -103,7 +103,7 @@ function runPush(repo) {
 }
 
 // A PRETEND NODE: every POST answered {ok: true, name: 'gemma'}, which reads as the desk's answer to any desk ask
-// through deskClient (jobs.api), and as a node that took a jobs.create. Each body is kept.
+// through deskClient (deskClient.desk by name, goal/G30.6), and as a node that took a jobs.create. Each body is kept.
 const heard = [];
 const node = http.createServer(function (req, res) {
   let raw = '';
@@ -116,8 +116,8 @@ const node = http.createServer(function (req, res) {
   });
 });
 function deskAsked(verb) {
-  return heard.filter(function (b) { return b.verb === 'jobs.api' && b.ask && b.ask.deskClient && b.ask.deskClient.desk && b.ask.deskClient.desk.verb === verb; })
-    .map(function (b) { let a = {}; try { a = JSON.parse(b.ask.deskClient.desk.json); } catch (e) { a = {}; } return a; });
+  return heard.filter(function (b) { return b.verb === 'deskClient.desk' && b.name === verb; })
+    .map(function (b) { let a = {}; try { a = JSON.parse(b.json); } catch (e) { a = {}; } return a; });
 }
 
 test.startTest('goal/G19.6: the git helpers touch only what they put there themselves');

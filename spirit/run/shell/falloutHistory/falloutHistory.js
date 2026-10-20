@@ -17,9 +17,7 @@ var fhKey = '';
 function fhEsc(s) { return fhApi && fhApi.escapeHtml ? fhApi.escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function fhWhen(iso) { return iso ? String(iso).replace('T', ' ').replace(/\.\d+Z$/, 'Z') : ''; }
 function fhAsk(verb, args) {
-  var deskVerify = {};
-  deskVerify[verb] = args;
-  return Promise.resolve(fhApi.verb('jobs.api', { ask: { deskVerify: deskVerify } })).then(function (r) {
+  return Promise.resolve(fhApi.verb('deskVerify.' + verb, args)).then(function (r) {
     var body = (r && r.body) || {};
     if (body.ok === false) throw new Error((body.extra && body.extra.why) || body.code || 'refused');
     return body;

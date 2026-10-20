@@ -86,10 +86,11 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     function answer(status, body) { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(body)); }
     if (b.verb === 'jobs.update') return answer(200, { ok: true });
-    const ask = b.verb === 'jobs.api' && b.ask;
+    // A server's verb by name on the flat apiDoor (goal/G30.6), folded to {server: {verb: args}}.
+    const ask = test.foldAsk(b);
     if (ask && ask.deskClient && ask.deskClient.next) return setTimeout(function () { answer(200, { lines: [] }); }, 100);
     if (ask && ask.deskClient && ask.deskClient.desk) {
-      const v = String(ask.deskClient.desk.verb);
+      const v = String(ask.deskClient.desk.name);
       // The desk's family folder through its FS (goal/G30.4): its AGENTS.md, and no verb files.
       if (v === 'FS.loadFile') return answer(200, { text: 'Rules for agents.' });
       if (v === 'FS.search') return answer(200, { items: [], more: false });
