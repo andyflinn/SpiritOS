@@ -120,6 +120,25 @@ const info = code('shell/info/info.js');
 if (!/id="info-face-email"/.test(info)) test.check('Info\'s face section has no email field');
 else test.fail(OWED + 'Info\'s face section still has its email field');
 
-homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
-test.reportSuccessFailureCount();
-process.exit(0);
+test.subHeading('6. a newly started node presents noderoutes.net as a contact');
+// Box v29: "A newly started node presents noderoutes.net as a contact already". Contacts' relay rows are relay.search's
+// (contacts.js asks it); a new node's list is what boot asserts (server.js calls ownerBadge.ensureRelays). So a fresh
+// home, the boot's call, and relay.search as Contacts asks it.
+const freshHome = home('fresh');
+plant.ensureAt(freshHome, 'carl');
+let fresh = null;
+try {
+  require('../run/js/ownerBadge').ensureRelays(freshHome);
+  fresh = require('../run/js/hub').createHub(freshHome).relaySearch({ q: '*' }, {});
+} catch (e) { fresh = Promise.resolve({ threw: e.message }); }
+const server = code('js/server.js');
+Promise.resolve(fresh).then(function (r) {
+  const items = (r && r.items) || [];
+  const seed = items.filter(function (i) { return i.key === 'https://noderoutes.net'; })[0];
+  if (/ownerBadge\.ensureRelays\(ROOT_DIR\)/.test(server) && seed) test.check('a fresh node\'s relay.search, what Contacts lists relays from, holds noderoutes.net');
+  else test.fail('a fresh node\'s relay.search answered ' + short(r));
+}, function (e) { test.fail('a fresh node\'s relay.search threw ' + e.message); }).then(function () {
+  homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
+  test.reportSuccessFailureCount();
+  process.exit(0);
+});
