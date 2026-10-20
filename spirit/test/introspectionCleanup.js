@@ -11,8 +11,14 @@
 //   - The grant system sees every family; a grant path is family or family.verb whichever family it names. A peer
 //     call reaches a node family through the same handler as the loopback API, in-process, after the grant check
 //     ("1 handler, grant-system covers all").
-//   - Warnings are files: <verb>.warning.txt beside the verb's description file; AGENTS.<verb> carries the text, and
-//     the grants app shows it before that grant. This item adds one: js/jobs/authGrant.warning.txt.
+//   - introSpector always supplies one owner verb per family, FS, multiplexed as AGENTS is (FS.<name>) with the
+//     kernel's fs names (loadFile, saveFile, deleteFile, statFile, fileExists, loadJsonValue, saveJsonValue,
+//     getAnnotations, annotateFile) and search {q} over the folder's file names, scoped to the family's folder,
+//     nothing above it.
+//   - A family folder never holds code: an app's is <module>.family beside <module>.js (process/js/desk/desk.family/
+//     beside desk.js), where its AGENTS.md and verb files move; the node's stay js/<family>/.
+//   - Warnings are files: <verb>.warning.txt in the family folder, read by the grants app through that family's FS
+//     before a grant; nothing is opened to agents. This item adds one: js/jobs/authGrant.warning.txt.
 //   - An app server named like a node family is refused at mount, by name.
 //   - The grants app's picker lists apiDoor's whole table.
 // NAMED HERE where the box names none:
@@ -52,10 +58,31 @@ async function main() {
   fs.writeFileSync(path.join(dir, 'stat.json'), JSON.stringify({ description: 'how big a file is' }));
   fs.writeFileSync(path.join(dir, 'stat.warning.txt'), 'stat reads your disc');
   const fam = intro.family(dir, { declared: ['stat'] });
-  let statAnswer = null;
-  try { statAnswer = fam.verbs['AGENTS.stat'] && fam.verbs['AGENTS.stat'].handler({}); } catch (e) { statAnswer = { threw: e.message }; }
-  if (statAnswer && statAnswer.warning === 'stat reads your disc') test.check('AGENTS.<verb> carries the text of <verb>.warning.txt when the file is there');
-  else test.fail(OWED + 'AGENTS.stat answered ' + short(statAnswer));
+  const FS_NAMES = ['loadFile', 'saveFile', 'deleteFile', 'statFile', 'fileExists', 'loadJsonValue', 'saveJsonValue', 'getAnnotations', 'annotateFile', 'search'];
+  const fsMissing = FS_NAMES.filter(function (n) { return !fam.verbs['FS.' + n] || typeof fam.verbs['FS.' + n].handler !== 'function'; });
+  if (!fsMissing.length) test.check('family(folder) supplies FS.' + FS_NAMES.join(', FS.'));
+  else test.fail(OWED + 'family(folder) has no FS.' + fsMissing.join(', FS.'));
+  const fsCall = function (name, args) {
+    try { return fam.verbs['FS.' + name] ? fam.verbs['FS.' + name].handler(args) : { missing: true }; } catch (e) { return { refused: e.refusal || e.message }; }
+  };
+  const warned = fsCall('loadFile', { path: 'stat.warning.txt' });
+  if (warned && warned.text === 'stat reads your disc') test.check('FS.loadFile reads stat.warning.txt from the family folder');
+  else test.fail(OWED + 'FS.loadFile answered ' + short(warned));
+  fsCall('saveFile', { path: 'stat.design.md', content: '# a remark' });
+  const remark = fsCall('loadFile', { path: 'stat.design.md' });
+  if (remark && remark.text === '# a remark' && fs.existsSync(path.join(dir, 'stat.design.md'))) test.check('FS.saveFile places a remark in the folder, and FS.loadFile reads it back');
+  else test.fail(OWED + 'saving a remark answered ' + short(remark));
+  const above = fsCall('loadFile', { path: '../outside.txt' });
+  if (above && above.refused) test.check('a path above the folder is refused (' + above.refused + ')');
+  else test.fail(OWED + 'FS.loadFile of ../outside.txt answered ' + short(above));
+  const found = fsCall('search', { q: 'warning' });
+  if (found && Array.isArray(found.items) && found.items.some(function (i) { return i.key === 'stat.warning.txt'; })) test.check('FS.search finds stat.warning.txt by name, bounded as every search is');
+  else test.fail(OWED + 'FS.search answered ' + short(found));
+  const bare = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cleanup-bare-'));
+  const bareFam = intro.family(bare, { declared: [] });
+  if (bareFam.verbs['FS.loadFile'] && !bareFam.verbs['AGENTS']) test.check('FS is there even where the folder has no AGENTS.md (and so no AGENTS verbs)');
+  else test.fail(OWED + 'a folder without AGENTS.md answered ' + short(Object.keys(bareFam.verbs)));
+  try { fs.rmSync(bare, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
   test.subHeading('2. verbTable mounts a module under a name it gives');
   const table = require('../run/js/verbTable').createVerbTable();
@@ -134,8 +161,22 @@ async function main() {
   if (warn.length) test.check('js/jobs/authGrant.warning.txt is there: ' + short(warn));
   else test.fail(OWED + 'js/jobs/authGrant.warning.txt is missing');
   const grants = code('shell/grants/grants.js');
-  if (/warning/.test(grants) && /AGENTS\./.test(grants)) test.check('the grants app asks AGENTS.<verb> and shows its warning before the grant');
-  else test.fail(OWED + 'the grants app shows no warning');
+  if (/FS\.loadFile/.test(grants) && /\.warning\.txt/.test(grants) && !/'AGENTS\.' \+ verb/.test(grants)) test.check('the grants app reads <verb>.warning.txt through the family\'s FS and shows it before the grant');
+  else test.fail(OWED + 'the grants app does not read warnings through FS');
+
+  test.subHeading('8. app family folders hold no code');
+  const APPS = ['desk', 'deskAgent', 'deskVerify'];
+  const wrong = APPS.filter(function (a) {
+    const home = path.join(RUN, 'process', 'js', a);
+    const famDir = path.join(home, a + '.family');
+    return !fs.existsSync(path.join(famDir, 'AGENTS.md')) || fs.existsSync(path.join(home, 'AGENTS.md')) ||
+      fs.readdirSync(famDir).some(function (f) { return /\.js$/.test(f); });
+  });
+  if (!wrong.length) test.check('desk, deskAgent and deskVerify keep AGENTS.md and their verb files in <module>.family beside <module>.js, with no code in it');
+  else test.fail(OWED + 'not moved to <module>.family: ' + short(wrong));
+  const appServerJs = code('js/appServer.js');
+  if (/'\.family'/.test(appServerJs)) test.check('appServer reads the AGENTS family (and FS) from <script>.family');
+  else test.fail(OWED + 'appServer still reads the AGENTS family from the script\'s own folder');
   const picker = code('shell/js/appServerSelector.js');
   if (!/jobs\.api/.test(picker) || /every family|whole table/.test(picker)) test.check('the picker reads the whole flat table');
   else test.fail(OWED + 'the picker still reads the apps\' branch only');
