@@ -1,5 +1,5 @@
 {
- "change": 74727,
+ "change": 74730,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -465,9 +465,7 @@
    "blocking": [
     "goal/G30"
    ],
-   "blocked": [
-    "goal/G30.4"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -4030,10 +4028,11 @@
    "id": "goal/G30.4",
    "title": "Clean up introSpector and its usage",
    "goal": "goal/G30",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30.1"
@@ -4167,7 +4166,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 2,
+   "asks": 1,
    "half": true,
    "full": true,
    "box": "Added on Andy, 2026-10-19: \"add item that blocks this one: Clean up introSpector and its usage\"\n\nClean up introSpector and its usage, before goal/G30.3 makes the relay its next user.\n\nFACTS FROM THE TREE (before this item)\n- introSpector exported family and claim; claim was the node's loopback wiring (goal/G10.5). appServer built each app's AGENTS family from the script's own folder. deskAgent's tools read AGENTS.introspect and AGENTS.<verb>.\n\nTHE PICTURE (Andy, 2026-10-19)\n- Three users of introSpector. appClient asks every mounted app server for its families and returns them as one bundle, in-process to the node or to a peer request. The node's own modules register as introspection suppliers in-process; the node takes each module's family from introSpector and builds its request paths from it. The app servers' families join the node's own as siblings, beside fs, relay, peer, owner and the rest: the node mounts its app servers, gathers their families and inserts them as equal families. deskAgent takes the whole loopback bundle of families from its node, as owner, and turns it into one flat table of tool calls for a model; later it gets an authGrant subsystem of its own, giving different agent persons different sets of tool calls.\n- introSpector itself is then family(folder) alone. claim, which signs a module's verbs up on the node's table and wraps its AGENTS verbs for the web door, moves into verbTable (Andy, 2026-10-20: \"it does NOT belong in introSpector. a namespace container is not known by the namespace.\").\n- An app server named like a node namespace (fs, relay, net and the rest) would collide in the one list; the node refuses to mount it, by name, at mount time. None collides today.\n- The doors stay as they are: the owner sees the whole bundle on loopback; a peer still sees only what apiDoor grants it.\n- jobs.api stays: it is the mechanism the node uses to insert the app servers' verb families as siblings into its flat list of families (Andy, 2026-10-20). Its callers do not change.\n- Introspected by a loopback client, the node answers only its flat list of families, its own and its apps' side by side; the appClient branch is no longer a separate part of the answer (Andy, 2026-10-20).\n- The grant system sees all verb families, the node's own (net, jobs, config, fs, node, owner, relay, contact, peer) and the apps' alike, and is no longer a part of the app-client path (Andy, 2026-10-20: \"this allows me to grant my agent node read-access to my files in spirit/run. i view this as a more orthogonal, simple design, all these doors are closed by default\"). A grant path is family or family.verb, whichever family it names; nothing is reachable by a peer without one.\n- Every verb is grantable, the grant verbs, DEBUG, DEPENDENCIES and the owner family included, as root authority may be handed over: the owner may leave his node's management to a trusted peer while away (Andy, 2026-10-20). No grant exists by default, and a user may grant unwisely; the grant screen warns when a grant reaches a verb that carries a warning.\n- Warnings are configured, not coded (Andy, 2026-10-20): a plain text file <verb>.warning.txt in its family's folder, read mainly by the grant screen through that family's FS; it opens nothing to agents. The grant screen shows it before a grant to that verb, or to its whole family when any verb in it has one. A warning is the same whether the grantee is a peer or an agent. This item adds one warning file (Andy, 2026-10-20): js/jobs/authGrant.warning.txt, saying that granting the grant verb lets the grantee give itself and others any verb on this node. Others are added later by dropping files.\n- The one thing no grant can ever do is change the node's owner or take the owner's rights away; no verb does that today, and a flat grant system does not change it.\n- Both doors deal with the same set of verb families: a peerPost arrives where it always has and may now reach anything in the flat tree, not only the app servers, gated by the grants; a loopback call is not gated.\n- A peer call reaches a node family through the same door as the loopback API, in-process (Andy, 2026-10-20): after the grant check, apiDoor hands it to the same handler a loopback call reaches, which runs it as the loopback call would.\n- A module does not know who mounted it or its name in the mounter's namespace, as a git project folder does not know its name in the parent directory (Andy, 2026-10-20). So a module declares its verbs bare (stat, not fs.stat), and the mounter, verbTable on the node and appClient for the apps, gives it its family name and prefixes its verbs and its AGENTS verbs.\n- A namespace change outside a client touches one table in it (Andy, 2026-10-20: \"don't let external name-space changes affect more than 1 table.object\"): each client maps the APIs it uses to names in the introspection in one place, as let MY_FS = require('fs') keeps a supplier swap to one line. In this item that holds for verbTable's mount table and the seven readers of the introspection this item touches; the other callers adopt it when they are next changed, not in a sweep.\n- The grants app's picker (appServerSelector) lists apiDoor's whole table of families and verbs, the node's own and the apps', as the grant system sees it (Andy, 2026-10-20).\n- introSpector always supplies one owner verb per family, FS, multiplexed as AGENTS is (family.FS.<name>) with the kernel's own fs names: loadFile, saveFile, deleteFile, statFile, fileExists, loadJsonValue, saveJsonValue, getAnnotations, annotateFile, and search {q} over the folder's file names (no list, only a search, as fs.search; Andy, 2026-10-20: \"then put a search in there.\"), each scoped to the family's folder as the kernel's are to spirit/run/, nothing above it (Andy, 2026-10-20), so any consumer of the introspection may read the folder and place its own remarks there (verb.design.md, a README.md for the family). Owner only, like DEBUG and DEPENDENCIES, and grantable like every verb.\n- A family folder never holds code (Andy, 2026-10-20: \"this fits my future re-factoring plans much better\"): the node's families are js/<family>/ as today; an app's is a folder of its own beside its code, named after the script it describes, <module>.family beside <module>.js (Andy, 2026-10-20), e.g. process/js/desk/desk.family/ beside desk.js, where its AGENTS.md and verb files move, and appServer reads the AGENTS family there. So FS needs no fence beyond the folder.\n- The AGENTS verbs go; FS covers them (Andy, 2026-10-20: \"cannot the agent simply use FS to retrieve the AGENTS.md file of the verb.json files?\"). deskAgent first gets the verb table, the flat api tree; it reads a family's AGENTS.md through FS.loadFile and, for each verb in the table, its <verb>.json through FS.loadJsonValue. A verb with no file is not offered to a model, so the verb file stays the allow mark. There is no introspect step: the allowed verbs are known from the table and their files are fetched directly. The request of each verb comes from the table.",
