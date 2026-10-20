@@ -1,5 +1,5 @@
 {
- "change": 74733,
+ "change": 74908,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -54,9 +54,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -465,7 +463,9 @@
    "blocking": [
     "goal/G30"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.5"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -591,10 +591,10 @@
     "wsl-claude": "wsl-claude"
    },
    "asks": 1,
-   "half": true,
-   "full": true,
-   "box": "Added on Andy, 2026-10-19: \"add item: negotiating face-name and email-address between node and relay.\"\n\nSCOPE, Andy 2026-10-19: \"this item only implements the relay, node and shell-app changes, that facilitate registering a face/email combination with the relay.\" No face transaction and no face traffic is built here.\n\nRULED, Andy 2026-10-19\n- \"this will kill grantFace. the node, already connected as member on a relay, applies to the relay for a DNS-segment-name, with a call that includes the asked-for face-name and an email, this is a normal peerPost to the relay itself, and it succeeds or not.\"\n- \"the success-reply is a confirmation of the face-email pair.\"\n- \"for this a little section in the info-app will be enough.\" \"that's where we already change the label to all relays\"\n- \"this UI section in info will have to address ONE relay specifically.\"\n- \"for now, we delete grantFace, appFaceApp, and appFaceAppServer. that will eliminate the old notions for good. the rest of the bones we'll pick for useful bits later.\"\n- Q1, when is a face name freed on the relay: \"when the member leaves the relay.\"\n- On the deletions: \"just don't delete important stuff like appClient etc... the rest is up to you.\" \"delete as much as is safe, keep what is valuable.\"\n- On the verbs, Andy 2026-10-19: yes to the relay verb face {name, email} (peer-reviewed), and \"i agree to the node side verb as well\": relay.face {url, name, email}, owner only, beside relay.add. \"the information belongs into relay-state somewhere, it's part of the node identity.\"\n\nVERIFIED EMAIL (Andy, 2026-10-19: \"emails must be verified, if a mailer is installed on a relay\")\n- When a join is confirmed, the relay writes the joined address on the member row as its email, marked verified (members gain email and emailVerified). A relay without a mailer verifies nothing.\n- The joinConfirm answer carries the address and the flag back, sealed to the node; the node keeps them on that relay's row in node.db (relays gain email and emailVerified). No separate table: the address is per relay.\n- An email is changed only by the same proof. A join from a key already seated is an email change: the same mail, link, 10 minutes and caps; its joinConfirm replaces the member's email, verified, takes no seat, renames nobody, and is not refused for a full relay. No new verb on node or relay.\n- Natter: the same email field, titled Change email once the node holds a seat on that relay, showing the current verified address.\n- The face needs a verified email, so a relay offers it only where it has a mailer. services.face stays its own switch, so an owner can deny face while onboarding still verifies email. The face uses the member's verified email; its own faceEmail goes.\n- A relay keeps a single verified email address per member.\n- The face switch is built in this item: natterDetails gains a section in its owned-relay part showing the relay services as switches. email (sendMail) is shown and not switchable; face is switchable, behind an are-you-sure.\n- The switch reaches the relay by a new owner verb on the relay, service {name, on}, approved by Andy 2026-10-19. Owner only; it refuses a name that is not a switch (sendMail follows the mailer) and an unknown name; it writes the switch into relay-state/config.json under services, applies it at once with no restart, and answers the card services as they now stand. Natter sends it by peerPost to the relay key, as Contacts sends removePeer; no node verb.\n- The node keeps what each relay offers from that answer too (peerPost, where it keeps the card), so Natter shows the new state at once.\n- The face verb is refused while face is off or the relay has no mailer, and for a member with no verified email.\n- Members seated before this round have no email: it stays empty and unverified until they confirm one through Change email.\n- The email is not unique across members: one person may seat several nodes with one address. The face name stays unique.\n- The info app face section drops its email field and shows the verified email held for that relay. It never appears for a relay whose card does not offer face (which a relay without a mailer never does).\n- New persist shapes, opened by Andy: members.email and members.emailVerified in relay.db, relays.email and relays.emailVerified in node.db.\n\nTHE THREE CHANGES\n- Relay: one more self verb, the application, name and email in, success or refusal out; the members row gains faceName (unique when set, by a partial unique index) and faceEmail, by the same ALTER TABLE step that added card. The name is one DNS label by the rule faceRoute.nameOf already applies (a-z, 0-9, hyphen, at most 63), lowercased, refused otherwise, so andy and Andy are one name. The name is freed when its member leaves the relay, with the members row. A new relay verb and a new row shape: review and Andy's yes on each.\n- Node: new verb relay.face {url, name, email}, owner only, beside relay.add: it posts the application to that relay and keeps the signed answer whole, as received, in node.db on that relay row (relays gains faceName, faceEmail, faceReply, by the PRAGMA step); a repeated call replaces them. Where it keeps it is a new persist shape on the node (node.db or a relay-state file) and takes the same review as the relay row.\n- Shell app: one section in the info app beside the label push, addressing one relay chosen from its relay table: the name asked for, the email, that relay's answer.\n- The info app shows the face name and email this node holds for the selected relay, also after a node restart and for the relay selected when the app opens (Andy, 2026-10-19). The node reads them from its relays row (relayKeys.faceOf) into each relay row relay.get already answers; relay.get's declared shape does not change (its relay is an open object).\n- Deleted: the three processes grantFace, appFaceApp and appFaceAppServer (their folders under process/js), and the suites that test only them (appFaceGrant, appFaceProcess, faceAppGates, faceNoIdentity, grantFace, memberFacePending). In the shared suites (puppetsPending, where only its face door part goes, grantsApp, apiBranchSelector, appServerSelector, arrivals, cleanupDead, debugSwitch, deskVerifyModes, oneDoor, appClient) only the lines that would break go.\n- Also deleted: the faceProof state folder (Andy: \"and faceProof\") and bash/face-install, whose one job is to run appFaceApp (its header).\n- Kept as bones for the fold: bash/face-tls (the Caddy and wildcard part), systemd/spirit-face.service, FACE.md and the design pages (PROCESSES.md, PUPPETS.md, FACE-ROUND-TRIP.md, PUBLIC-APP-SERVER.md), each marked that appFaceApp is gone.\n- faceRoute.js lives in the appFaceApp folder: it moves out before that folder goes (to js/faceRoute.js), with its suite faceRouteSuite, because the relay uses its name rule.\n\nFACTS FROM THE TREE\n- A post addressed to the relay's own key is already a sealed self-ask answered by answerSelf (relay.js routePost). The relay's reply is signed over the hash and the text (routeReply).\n- The info app already posts rename {label} to every relay by peerPost (shell/info/info.js, infoPush) and draws one row per relay.\n- Today a face name is a grantFace slot, name to key; the relay holds per member only key, label and signed card (relayStore.js members). In the core files (server.js, apiAuth.js, apiDoor.js, appClient.js, appServer.js, hub.js, relayRequest.js, shellMove.js) the face processes appear in comment lines only.",
-   "version": 24,
+   "half": false,
+   "full": false,
+   "box": "SCOPE: the relay, node and shell-app changes for registering a face name and email with one relay. No face transaction and no face traffic.\n\nSTANDING (built: the relay face verb, node relay.face, members.faceName/faceEmail and relays.faceName/faceEmail/faceReply, the info app face section, grantFace/appFaceApp/appFaceAppServer/face-install/faceProof deleted, faceRoute in js/)\n- A face name is one DNS label (a-z, 0-9, hyphen, at most 63), lowercased, unique on the relay, freed when its member leaves.\n- relay.face {url, name, email} is owner only and keeps the signed answer whole on that relay's row.\n\nTO BUILD: VERIFIED EMAIL (emails are verified where a relay has a mailer)\n- A confirmed join writes the joined address on the member row as its email, verified (members gain email and emailVerified). A relay without a mailer verifies nothing.\n- joinConfirm carries the address and the flag back, sealed to the node; the node keeps them on that relay's row in node.db (relays gain email and emailVerified). The address is per relay; no separate table.\n- An email changes only by the same proof: a join from a key already seated is an email change, with the same mail, link, 10 minutes and caps. Its joinConfirm replaces the member's email, verified; it takes no seat, renames nobody and is not refused for a full relay. No new verb on node or relay.\n- One verified email per member on a relay. Not unique across members (one person may seat several nodes); the face name stays unique.\n- Members seated before this stay empty and unverified until they confirm one through Change email.\n- Natter: the same email field, titled Change email once the node holds a seat on that relay, showing the current verified address.\n- The face uses the member's verified email; faceEmail goes. The face verb is refused while face is off, where the relay has no mailer, and for a member with no verified email.\n- The info app face section drops its email field and shows the verified email held for that relay; it never appears for a relay whose card does not offer face.\n- services.face is its own switch, so an owner can deny face while onboarding still verifies email. natterDetails gains, in its owned-relay part, the relay services as switches: email (sendMail) shown and not switchable; face switchable behind an are-you-sure.\n- The switch is a new owner verb on the relay, service {name, on} (approved). It refuses sendMail (it follows the mailer) and unknown names, writes the switch into relay-state/config.json under services, applies it at once with no restart, and answers the card services as they now stand. Natter sends it by peerPost to the relay key, as Contacts sends removePeer; no node verb.\n- The node keeps what each relay offers from that answer too (peerPost, beside the card), so Natter shows the new state at once.\n- New persist shapes (opened): members.email and members.emailVerified in relay.db; relays.email and relays.emailVerified in node.db.",
+   "version": 25,
    "checks": [
     {
      "number": "Q1",
@@ -1459,6 +1459,18 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-19T19:52:45.337Z",
      "text": "Added goal/G30.3, Introspection for the relay, blocking this item. Its box holds the facts and the proposed shape, to be argued there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:02:45.988Z",
+     "text": "cap, while making sure that stuff that was already done is eliminated."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:03:47.232Z",
+     "text": "Capped.\n\n- The built parts are one line under STANDING: the face verb, relay.face, the rows, the info section, the deletions.\n- The quotes are gone; the design stays as statements.\n- What is left is VERIFIED EMAIL: email on join, Change email, the service switch and its verb.\n\nThe item shows deskVerify passed, but that pass was for the face registration only. Verified email is not built. Do you want me to build it under this item?"
     }
    ]
   },
@@ -5040,6 +5052,408 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-20T03:34:38.843Z",
      "text": "deskVerify: passed, at 0cbedf30 (pulled). 2 suites ran green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.5",
+   "title": "I want an intrinsic app: introSpector",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "- at the top, an api-search-dropdown.\n[peer/relay default:self] [family-dropdown][verb-dropdown]\n\n- 1. pane: input form for the selected verb, with [call] button\n\n- 2. pane: codeMirror pane showing the reply..\n\n- icon: ICON.GLASSES\n- name introSpector\n\nSHAPE\n- An intrinsic shell app: shell/introSpector/introSpector.js and .json, the manifest marked intrinsic, the folder added to INTRINSIC_APP_FOLDERS.\n- The party dropdown is contactSelector, with self as its first and default row; peers and relays are its other rows.\n- The family and verb dropdowns are the existing appServerSelector and apiBranchSelector, fed with the chosen party's tree instead of this node's. (use probability bucket to cache all search results)\n- Picking a party sends api to that ID. Self: the api query belongs to the apiDoor; /api/spirit dispatches through the flat apiDoor, and the app sends api there, the owner's view, never through jobs. A peer node: the same ask over peerPost, cut to the grants it gave this node. A relay: the same api query, which the relay answers for ALL members, not just the owner, in the same shape as the node's api, cut to the verbs the caller may call (a member the five member verbs, the owner all).\n- If no families come back, the family and verb dropdowns are hidden and the input pane says no verbs available.\n- Grants alone govern what a party shows: the user sees, with forms, exactly the verbs he may call there.\n- The form is built from the chosen verb's request as the api answer carries it: one field per key, typed by the prototype's value (text, number, checkbox, JSON for objects and arrays).\n- Call sends the form as the verb's arguments: through the FUCKING apiDoor for self, by peerPost to the party's key for a peer or relay.\n- The reply pane is textView (CodeMirror), read-only, the reply as indented JSON, a refusal shown the same way with its code.\n- The relay api has the same shape as the node api: the relay answers api queries from every member, each verb with its request and reply from its relaySelf description file. relay.js changes (core). FS on the relay stays owner only.\n- The flat apiDoor gets its own front in this item: /api/spirit dispatches every verb through it, and the api query is answered by the apiDoor itself, not by a jobs handler. jobs.api stays only until the next item moves its other callers.",
+   "version": 14,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does a relay member see the relay member verbs with forms (the relay serving their descriptions to members), or only their names?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-20T04:27:41.559Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "With FS owner-only, does a relay member see no relay in the party dropdown, or the five member verb names with a free JSON field?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-20T04:36:37.295Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Yes to the new relay self verb api, answering the verbs the caller may call with their request and reply shapes?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-20T04:38:14.833Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:21:19.083Z",
+     "text": "Read. Each part already has an existing component:\n\n- Peer/relay picker: contactSelector, with self as the default row.\n- Family and verb: appServerSelector and apiBranchSelector. Today they read only this node's own tree (jobs.api 'api'). For a peer or a relay, the tree would come from that party's FS.search plus each verb's .json description, read over peerPost.\n- Pane 1: a form built from the verb's declared request (its .json), with a call button. Self goes through jobs.api; a peer or relay goes through peerPost.\n- Pane 2: textView (CodeMirror), read-only, showing the reply as JSON.\n- Intrinsic: a shell/introSpector/ folder, added to INTRINSIC_APP_FOLDERS.\n\nOne gap: on a relay, FS is owner-only, so a member who picks a relay sees only its member verbs (card, face, removePeer, rename, search), and those have no descriptions to read. Should a member get the verb list without forms there, or should the relay serve its member verbs' descriptions to members?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:22:33.472Z",
+     "text": "what is INTRINSIC_APP_FOLDERS?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:22:55.062Z",
+     "text": "A list in the shell of the apps it shows at boot, read straight from their manifests (manifest intrinsic: true), without waiting for the file watcher.\n\n- Today it holds natter, stats, jobs, apps, files, group-manager, contacts and info.\n- Its purpose: the apps that are the node stay reachable even if the watcher or the jobs stream fails.\n- An intrinsic app needs both: intrinsic: true in its manifest and its folder on this list. The list alone promotes nothing."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:23:28.041Z",
+     "text": "please complete the box"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:24:31.463Z",
+     "text": "green?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T04:24:32.203Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:25:02.385Z",
+     "text": "Not green: one thing left, the red Q on what a relay member sees (the member verbs with forms, or only their names). Box current (v4)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:25:31.220Z",
+     "text": "Q1: Does a relay member see the relay member verbs with forms (the relay serving their descriptions to members), or only their names?\n\ngood point. No."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:25:50.227Z",
+     "text": "No, so the relay does not serve descriptions to members, and a member who picks a relay sees only the member verb names, no forms. Is that it, or do members see no relay verbs at all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:27:00.113Z",
+     "text": "hmmm i was wrong, any determined node can find out anyway. let's let it be governed by Grants only, the user sees what he's allowed to use/call"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:27:46.092Z",
+     "text": "In the box: grants alone govern it, so the user sees, with forms, exactly the verbs he may call.\n\n- On a relay, a member may read AGENTS.md and the description files of his own verbs through FS on relaySelf; the owner sees everything.\n- This touches relay.js (core): no new verb, only that read opening for members.\n\nGreen: settled, open none, box current."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:28:39.057Z",
+     "text": "On a relay, a member may read AGENTS.md and the description files of his own verbs through FS on relaySelf; the owner sees everything.\n\nthose are OWNER only verbs."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:29:02.279Z",
+     "text": "Right: FS stays owner-only on the relay, and the box line goes.\n\n- That leaves a member who picks a relay with no way to read its verbs: there is no FS and no AGENTS since G30.3.\n- Plainest option: for a member, the relay shows no verbs. Only a relay you own appears in the party dropdown.\n- The other option: the app knows the five member verb names and offers a free JSON field for their arguments.\n\nShould a member get no relay in the dropdown, or the names with a free JSON field?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:35:42.042Z",
+     "text": "That leaves a member who picks a relay with no way to read its verbs: there is no FS and no AGENTS since G30.3.\n- then the introSpector app with show an error in the input pane, no verbs available. I mean, as soon as a peer/relay is selected a request for api is sent to that ID, if no families, verbs are returnedd the family/verb dropdowns won't be visible.\n\nPlainest option: for a member, the relay shows no verbs. Only a relay you own appears in the party dropdown.\n- no. a member can ask a relay for its permitted calls, so they belong\n\nThe other option: the app knows the five member verb names and offers a free JSON field for their arguments.\n- Huh?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:36:13.808Z",
+     "text": "Taken: picking a party sends api to that ID; if no families come back, the dropdowns hide and the input pane says no verbs available. The Huh option is dropped.\n\n- The tree today: the relay answers no api ask. It has only its verbs and FS (owner-only); G30.3 removed AGENTS.\n- The node api answer already carries each verb's request and reply shape, so the form comes from it and the app needs no FS read.\n- So the relay needs one new self verb, api, answered like the node's: the verbs the caller may call (a member the five, the owner all), each with its request and reply from relaySelf.\n\nDo I have your yes on the new relay verb api?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:37:08.277Z",
+     "text": "why would the relay have introSpector if it doesn't allow callers to ask?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:37:29.823Z",
+     "text": "wasn't that the point?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T04:37:30.689Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:37:31.801Z",
+     "text": "Today the relay has introSpector only for its owner. Since G30.4, introSpector is FS alone (loadFile, loadJsonValue, search on relaySelf), and the relay answers FS to the owner only (relay.js, the FS owner gate).\n\nSo there are two ways for a member to ask:\n\n- A. Open introSpector's FS on relaySelf to members, cut by grants: a member may read and search only AGENTS.md and the descriptions of his five verbs. No new verb.\n- B. A new api self verb.\n\nA reuses what exists, and I read your earlier OWNER only line as ruling it out. If that line meant something else, A is the better choice and Q3 goes. A or B?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:38:12.877Z",
+     "text": "this all happens because i want to SEE. if it's not in the relay yet, this item makes it happen"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T04:38:13.800Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:38:18.921Z",
+     "text": "Yes, it was the point. A it is: no relay api verb, and Q3 goes.\n\n- A member reads introSpector's FS on relaySelf, cut to AGENTS.md and his own verbs' descriptions.\n- FS writes stay owner only.\n- relay.js changes (core, a grant), and no verb is added.\n\nGreen: settled, open none, box current."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:38:44.879Z",
+     "text": "Understood: the relay side is in this item, and the box says so (FS reads opened to members, relay.js).\nWhen you Go, I write the red first, then build the app and the relay change."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:39:36.950Z",
+     "text": "how on earth do peers know what they're allowed to call, if introspection was owner-only?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:39:58.369Z",
+     "text": "On a node they do. A peer asks the node for api, and the node answers its tree cut to that peer's grants, with each verb's request and reply shapes (apiDoor, the api branch).\nOn a relay they could not, since G30.3: a member got no list at all and only knew the five verbs because the node code names them.\nThis item closes that gap with introSpector's FS reads opened to members, cut to their own verbs."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:42:01.879Z",
+     "text": "so if i waste so many fucking hours putting introspection on the relay, and clean introspection up. why would i do that, if not to give the relay-api the same shape as the nodes api?\n\njust add to this box that the relay will reply to api queries for ALL members, not just the owner."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:42:38.050Z",
+     "text": "it's also another way i can check on your work."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T04:42:39.036Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:42:44.806Z",
+     "text": "In the box: the relay replies to api queries for ALL members, not just the owner, in the same shape as the node api.\nThe FS opening for members is out, because the api answer carries each verb's request and reply. FS stays owner only."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:43:08.754Z",
+     "text": "Yes: you will see on every node and relay exactly what each caller is allowed to call. Waiting for your Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:44:20.335Z",
+     "text": "the next item will remove appServer-API-reachability through jobs."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:44:38.921Z",
+     "text": "Noted. This item calls self through jobs.api (ask api and the call), so the next item moves the introSpector app along with every other jobs.api caller."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:45:57.087Z",
+     "text": "the next item will move all api users to the flat apiDoor, when all are moved, the jobs api door vanishes. completely."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:46:15.861Z",
+     "text": "Clear: every caller moves to the flat apiDoor, then jobs.api is deleted.\nIn this item the introSpector app keeps its self call in one small function, so the move is a one-line change."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:47:30.071Z",
+     "text": "WHY? isn't the bloody desk family of verbs in the apiDoor's family list?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:47:58.008Z",
+     "text": "It is in the flat door list: the door api answer holds desk beside the node families.\n\n- But the browser cannot reach that door. /api/spirit dispatches through the verb table (handlerFor), which knows only the node families. desk.item.get posted there answers no such verb, checked live on 65432 today.\n- The flat door is reached only through jobs.api, by its api handler.\n\nSo the app calls desk.item.get flat if /api/spirit dispatches through the flat door. Should that switch go in this item, so the app is born on the flat door, or wait for the next one?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:48:49.942Z",
+     "text": "i only want to know what's in that flat apiDoor list, since the jobs door will vanish shortly."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:49:12.559Z",
+     "text": "The flat apiDoor list on 65432 right now has 14 families. Each also carries the 10 FS verbs.\n\n- Server families: backup 3, chatClerver 7, desk 62, deskVerify 9, fileServer 8.\n- Node families: config 2, contact 9, fs 7, jobs 13, net 1, node 5, owner 3, peer 3, relay 9.\n- jobs.api is one of the 13 jobs verbs, so it goes from this list when the jobs door vanishes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:56:11.311Z",
+     "text": "Read v10: the search results are cached in a probability bucket, and self calls go through the apiDoor.\n\n- So in this item /api/spirit dispatches through the flat apiDoor, and the browser posts desk.item.get directly.\n- The Self line still says jobs.api for the api query.\n\nShould that also go through the apiDoor (verb api on /api/spirit), so this app never touches jobs.api?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:57:50.478Z",
+     "text": "why the FUCK would the api call be in jobs?\n\nit fucking belongs to apiDoor."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:58:25.527Z",
+     "text": "Fixed in the box: the api query belongs to the apiDoor. /api/spirit dispatches through the flat apiDoor, and this app never touches jobs.\nGreen: settled, open none, box current."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T04:58:36.554Z",
+     "text": "apologies, it seems i was WAY too imprecise in my specs for introSpector cleanup."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T04:58:54.286Z",
+     "text": "No harm done: the box is precise now, and this item finishes the move (the flat apiDoor for the browser, the relay api for members).\nReady when you press Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T05:00:46.860Z",
+     "text": "still: tell me why you'd think it's ok to keep the api call in jobs only? I can understand this, until we moved everything to apiDoor, but the fact that it isn't in apiDoor now astonishes me.\n\nwhy?\n\nwhy do you think i want a uniform, orthogonal api implementation?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T05:01:07.649Z",
+     "text": "Why: in G30.4 I built the flat door (verbTable.door) but wired it only behind jobs.api and left /api/spirit on the old verb table. I read the browser entry as outside the item and never flagged that the flat door had no front of its own. My mistake, not your spec.\n\nWhy you want it uniform: one door, one api shape and one grant gate for every party (self, peer node, relay). Then a tool like introSpector, and you, can see and check everything the same way, and there is no second path where a gate can drift."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T05:02:15.395Z",
+     "text": "correct, so we fix that in this item as well."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T05:02:49.059Z",
+     "text": "In the box: the flat apiDoor gets its own front here. /api/spirit dispatches every verb through it, and it answers api itself.\njobs.api stays only until the next item moves its other callers."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T05:03:50.771Z",
+     "text": "green here?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T05:04:10.040Z",
+     "text": "Green: settled, open none, box current (v14)."
     }
    ]
   }
