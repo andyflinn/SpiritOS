@@ -116,8 +116,9 @@ else test.fail(OWED + 'peerPost drops the confirm\'s email');
 
 test.subHeading('5. the form, and Info');
 const nd = code('shell/natterDetails/natterDetails.js');
-if (/function ndEmailHtml/.test(nd) && /Add email address/.test(nd) && /Change email address/.test(nd) && /confirmation link/.test(nd))
-  test.check('natterDetails has the email panel for a seated relay, reading Add or Change email address, and says a confirmation link is in the inbox');
+// The confirmation-link sentence moved into the shared joinForm element (box v33, section 5d).
+if (/function ndEmailHtml/.test(nd) && /Add email address/.test(nd) && /Change email address/.test(nd))
+  test.check('natterDetails has the email panel for a seated relay, reading Add or Change email address');
 else test.fail(OWED + 'natterDetails has no email panel for a seated relay, or not its words');
 const info = code('shell/info/info.js');
 if (!/id="info-face-email"/.test(info)) test.check('Info\'s face section has no email field');
@@ -145,13 +146,47 @@ test.subHeading('5c. the Join icon while the node holds no seat (box v32)');
 let joinManifest = null;
 try { joinManifest = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'join', 'join.json'), 'utf8')); } catch (e) { joinManifest = null; }
 const joinApp = code('shell/join/join.js');
-if (joinManifest && joinManifest.intrinsic === true && joinManifest.untilSeated === true && /'relay\.join'/.test(joinApp) && /relay\.search/.test(joinApp) && /confirmation link/.test(joinApp))
-  test.check('shell/join is an intrinsic app shown until seated; it asks relay.join for the first listed relay and says a confirmation link is in the inbox');
+if (joinManifest && joinManifest.intrinsic === true && joinManifest.untilSeated === true && /relay\.search/.test(joinApp))
+  test.check('shell/join is an intrinsic app shown until seated; it finds the first listed relay (its form is joinForm, section 5d)');
 else test.fail(OWED + 'no shell/join app with untilSeated, or it asks no relay.join, or not its words');
 const desktop = (/function renderDesktop\(\) \{[\s\S]*?\n  \}/.exec(shellSrc) || [''])[0];
 if (/'join'/.test((/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*\]/.exec(shellSrc) || [''])[0]) && /untilSeated/.test(desktop) && /nodeSeated/.test(desktop) && /untilSeated/.test((/function renderAppGroup\([\s\S]*?\n  \}/.exec(shellSrc) || [''])[0]))
   test.check('the shell declares join at boot, shows it on the desktop only while the node holds no seat, and keeps it out of the group grid');
 else test.fail(OWED + 'the shell does not show the join app by the node\'s seat');
+
+test.subHeading('5d. the join form is one shell element (box v33)');
+// NAMED HERE: spiritElements.joinForm = { html(opts), bind(root, opts), send(opts) }. send asks opts.ask('relay.join',
+// {url, email, code: ''}) and answers {ok, text}; html draws the field (prefilled with opts.email), the button and the
+// line the text goes to; bind wires a root's button and Enter to send.
+let element = null;
+try {
+  const src = fs.readFileSync(path.join(RUN, 'shell', 'js', 'joinForm.js'), 'utf8');
+  const win = {};
+  new Function('window', src)(win);
+  element = win.spiritElements && win.spiritElements.joinForm;
+} catch (e) { element = null; }
+let asked = null;
+let said = null;
+let drawn = '';
+const sendIt = function () {
+  if (!element || typeof element.send !== 'function') return Promise.resolve(null);
+  drawn = typeof element.html === 'function' ? String(element.html({ email: 'held@example.org', label: 'Change email address' })) : '';
+  return element.send({ url: 'https://relay.example', email: 'new@example.org', ask: function (verb, args) { asked = { verb: verb, args: args }; return Promise.resolve({ status: 200, body: { ok: true } }); } });
+};
+const elementDone = sendIt().then(function (r) {
+  said = r;
+  if (asked && asked.verb === 'relay.join' && asked.args.url === 'https://relay.example' && asked.args.email === 'new@example.org' && asked.args.code === ''
+      && said && said.ok && /new@example\.org/.test(said.text) && /confirmation link/.test(said.text) && /value="held@example\.org"/.test(drawn) && typeof element.bind === 'function')
+    test.check('joinForm draws the field prefilled, asks relay.join for its relay, and says the confirmation link is in the inbox');
+  else test.fail(OWED + 'joinForm asked ' + short(asked) + ', said ' + short(said) + ', drew ' + short(drawn));
+  const index = (function () { try { return fs.readFileSync(path.join(RUN, 'index.html'), 'utf8'); } catch (e) { return ''; } }());
+  const ndSrc = code('shell/natterDetails/natterDetails.js');
+  const joinSrc = code('shell/join/join.js');
+  if (/src="\/shell\/js\/joinForm\.js"/.test(index) && /spiritElements\.joinForm/.test(ndSrc) && /spiritElements\.joinForm/.test(joinSrc)
+      && !/type="email"/.test(ndSrc) && !/type="email"/.test(joinSrc) && !/'relay\.join'/.test(ndSrc) && !/'relay\.join'/.test(joinSrc))
+    test.check('index.html loads it; natterDetails and the Join app draw it and keep no email form or relay.join of their own');
+  else test.fail(OWED + 'joinForm is not loaded, or natterDetails or the Join app keeps its own form');
+});
 
 test.subHeading('6. a newly started node presents noderoutes.net as a contact');
 // Box v29: "A newly started node presents noderoutes.net as a contact already". Contacts' relay rows are relay.search's
@@ -165,7 +200,7 @@ try {
   fresh = require('../run/js/hub').createHub(freshHome).relaySearch({ q: '*' }, {});
 } catch (e) { fresh = Promise.resolve({ threw: e.message }); }
 const server = code('js/server.js');
-Promise.resolve(fresh).then(function (r) {
+elementDone.then(function () { return fresh; }).then(function (r) {
   const items = (r && r.items) || [];
   const seed = items.filter(function (i) { return i.key === 'https://noderoutes.net'; })[0];
   if (/ownerBadge\.ensureRelays\(ROOT_DIR\)/.test(server) && seed) test.check('a fresh node\'s relay.search, what Contacts lists relays from, holds noderoutes.net');
