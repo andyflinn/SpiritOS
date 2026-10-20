@@ -1,0 +1,12 @@
+/* spirit/run/face/face.css
+   THE FACE'S OWN COLOURS (goal/G30.9; Andy: "this is supposed to look like our shell, maybe in green tones of same
+   brightness"). The face loads the shell's one sheet, /shell.css, and this after it: the shell's blues, as its
+   variables, turned green at the same brightness. Nothing else differs. */
+
+:root {
+  --shell-bg: #1a2e22;
+  --shell-pane: #163e24;
+  --shell-accent: #0f6034;
+  --shell-accent-strong: #167a44;
+  --shell-link: #8effb6;
+}

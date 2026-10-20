@@ -1534,7 +1534,8 @@ function foldsObeyTheSpacingRules() {
   test.subHeading('The folds are one group, and the block below a heading carries its own space');
 
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
-  const css = fs.readFileSync(path.join(RUN_DIR, 'index.html'), 'utf8');
+  // The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
+  const css = fs.readFileSync(path.join(RUN_DIR, 'shell.css'), 'utf8');
 
   // Opening one fold closes its sibling, done by the browser: same name,
   // no JS, no state. Read off the markup rather than counted, so the

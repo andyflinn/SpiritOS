@@ -1,30 +1,29 @@
 <!doctype html>
 <!-- spirit/run/face.html
-     A MEMBER'S FACE (goal/G30.9): the lazy-load version of the shell, served by the relay at <face>.<relay host>.
-     Empty but for the login app until there is a login; its apps load only when opened (face/shell.js). -->
+     THE NEW SHELL IN THE MAKING (goal/G30.9): the lazy-load shell, served by the relay at <face>.<relay host> and by
+     the home node at /face.html alike. It has the shell's skeleton (the desktop, the title bar with Back and Home,
+     the app screen) on the shell's one sheet, /shell.css, with the face's green after it. Logged out, the desktop is
+     empty but for the login app, which opens at once; its apps load only when opened (face/shell.js). -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Face</title>
-  <style>
-    :root { color-scheme: light dark; --bg: #f6f6f4; --fg: #1d1d1b; --tile: #ffffff; --line: #d8d8d2; --muted: #6b6b66; }
-    @media (prefers-color-scheme: dark) { :root { --bg: #161615; --fg: #ececea; --tile: #222220; --line: #3a3a37; --muted: #9a9a94; } }
-    body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 system-ui, sans-serif; }
-    #face-desktop { display: flex; gap: 16px; padding: 24px 16px; flex-wrap: wrap; }
-    .face-tile { width: 96px; text-align: center; cursor: pointer; background: none; border: 0; color: inherit; font: inherit; }
-    .face-tile .face-icon { font-size: 36px; display: block; }
-    #face-app { max-width: 560px; margin: 0 auto; padding: 24px 16px; }
-    .face-card { background: var(--tile); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-    .face-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .face-row input { flex: 1; min-width: 12em; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); }
-    .face-note { color: var(--muted); margin-top: 8px; }
-    button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--tile); color: var(--fg); cursor: pointer; }
-  </style>
+  <link rel="stylesheet" href="/shell.css" />
+  <link rel="stylesheet" href="/face/face.css" />
 </head>
 <body>
-  <div id="face-desktop"></div>
-  <div id="face-app" hidden></div>
+  <div id="desktop"></div>
+
+  <div id="app-container" hidden>
+    <div id="app-header">
+      <button id="app-close" type="button" title="Back">⬅️</button>
+      <button id="app-home" type="button" title="Home">🏠</button>
+      <div id="app-title"></div>
+    </div>
+    <div id="app-content"></div>
+  </div>
+
   <script src="/face/shell.js"></script>
 </body>
 </html>

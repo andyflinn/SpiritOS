@@ -152,7 +152,8 @@ function barWidth(cell) { const m = /class="[^"]*\blist-rank\b[^"]*"[\s\S]*?widt
   // viewer's marks.
   if (/border-top:\s*0\.8em\s+solid\s+var\(--spirit-match/.test(barTag) && !/background:/.test(barTag)) test.check('the bar is a solid border in the one match colour, var(--spirit-match), 0.8em tall');
   else test.fail(OWED + 'the bar is drawn ' + short(barTag));
-  const idx = fs.readFileSync(path.join(RUN, 'index.html'), 'utf8');
+  // The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
+  const idx = fs.readFileSync(path.join(RUN, 'shell.css'), 'utf8');
   const token = (/--spirit-match:\s*([^;]+);/.exec(idx) || [])[1] || '';
   const rgb = (/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/.exec(token) || []).slice(1).map(Number);
   if (rgb.length === 3 && rgb[2] > rgb[0] && rgb[2] > rgb[1] && rgb[2] >= 200 && rgb[0] >= 100) test.check('--spirit-match is a pastel blue: ' + token.trim());

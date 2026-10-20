@@ -404,8 +404,10 @@ function isRelayPublicPath(method, pathname) {
 // /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
 // fetches a certificate for that name on demand (bash/face-setup).
 const FACE_DIR = path.join(__dirname, '..', 'face');
-const FACE_FILES = { '/face/shell.js': 'shell.js', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
-const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8' };
+// /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
+// (goal/G30.9, box v16); face.css turns its colours green.
+const FACE_FILES = { '/shell.css': '../shell.css', '/face/face.css': 'face.css', '/face/shell.js': 'shell.js', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
+const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
   return m ? m[1] : '';

@@ -1,0 +1,1176 @@
+/* spirit/run/shell.css
+   THE SHELL'S LOOK, ONE SHEET (goal/G30.9). It stood inline in index.html, where nothing else could load it; the face
+   (face.html) is the new shell in the making, for the home node and the face alike, and loads this same sheet. The
+   shell's blues are variables, so the face's own small sheet (face/face.css) sets them green at the same brightness. */
+
+:root {
+  --shell-bg: #1a1a2e;
+  --shell-pane: #16213e;
+  --shell-accent: #0f3460;
+  --shell-accent-strong: #16487a;
+  --shell-link: #8ec9ff;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--shell-bg);
+  color: #eee;
+}
+
+#desktop {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 16px;
+  padding: 24px;
+  height: 100vh;
+  align-content: start;
+}
+
+#desktop[hidden] { display: none; }
+
+/* Same grid the real desktop uses, scoped to a grouping app's own
+   mount container (e.g. "spirit") rather than the full-viewport
+   #desktop — no height:100vh, #app-content already provides padding. */
+.app-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 16px;
+}
+
+.app-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 10px 4px;
+  border-radius: 12px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.app-icon:hover, .app-icon:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.app-icon .icon { font-size: 40px; line-height: 1; }
+.app-icon .label { font-size: 13px; text-align: center; }
+
+#app-container {
+  position: fixed;
+  inset: 0;
+  background: var(--shell-pane);
+  overflow-y: auto;
+}
+
+#app-container[hidden] { display: none; }
+
+#app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  background: var(--shell-accent);
+  z-index: 1;
+}
+
+/* A dialog is greyscale, and the greys are not picked by eye.
+   Each one is the value whose RELATIVE LUMINANCE equals the colour
+   it replaces (WCAG: 0.2126R + 0.7152G + 0.0722B on linearized
+   channels), so every contrast ratio in the window is preserved
+   exactly — text is as readable, a button is as distinct from its
+   background, and nothing needs re-checking. Only the hue is gone.
+
+     var(--shell-bg) -> #1c1c1c   the page behind
+     var(--shell-pane) -> #222222   the window
+     var(--shell-accent) -> #343434   titlebar, buttons, inputs, select
+     var(--shell-accent-strong) -> #464646   button hover
+     var(--shell-link) -> #c3c3c3   accent (radio, checkbox)
+
+   Why say it at all: a dialog is the only screen you cannot launch
+   out of, and Back is its one exit (Andy). Draining the colour is
+   how the window says so without a word of chrome, and it costs no
+   layout — the same page, in the same places, in grey.
+
+   Set on #app-container because that is the one ancestor the
+   titlebar and the content share; switchTo puts the class there
+   when the screen it is mounting declares type dialog. */
+#app-container.is-dialog { background: #222222; }
+#app-container.is-dialog #app-header { background: #343434; }
+
+#app-container.is-dialog #app-content button,
+#app-container.is-dialog #app-content input,
+#app-container.is-dialog #app-content select,
+#app-container.is-dialog #app-content textarea:not(.code-view),
+#app-container.is-dialog .cancel-btn { background: #343434; }
+
+#app-container.is-dialog #app-content button:hover,
+#app-container.is-dialog .cancel-btn:hover,
+#app-container.is-dialog .icon-selector-field:hover { background: #464646; }
+
+#app-container.is-dialog select option { background: #222222; }
+#app-container.is-dialog .icon-selector-rows { background: #222222; }
+#app-container.is-dialog .icon-selector-row.is-active { background: #343434; }
+
+#app-container.is-dialog input[type="radio"],
+#app-container.is-dialog input[type="checkbox"] { accent-color: #c3c3c3; }
+
+#app-close, #app-home, .titlebar-link {
+  cursor: pointer;
+  font-size: 22px;
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 4px 8px;
+}
+
+#app-title { font-size: 16px; font-weight: 600; }
+/* A DIALOG CLOSES WITH A BLACK X AT THE FAR RIGHT (desk/G3.5). Andy: "when i exit out of i dialog, i don't
+   want my mouse pointer to be right on top of the back-button for the app." Light behind it, so the black
+   reads on the dialog's dark bar. */
+/* THE STREAM IS DOWN (Andy: "this should work without a hickup"): said, not silent. */
+#app-offline { margin-left: auto; color: #fff; background: #b00020; border-radius: 4px; padding: 2px 8px; font-size: 13px; }
+#app-dialog-close { margin-left: auto; cursor: pointer; font-size: 18px; color: #000; background: #c3c3c3; border: none; border-radius: 4px; padding: 2px 8px; }
+#app-content { padding: 16px; }
+
+/* A MARK, NOT A LINK. Same size as Back and Home — 22px, inherited
+   from the rule above — because a mark at the title's own 16px
+   reads as part of the name, and this is a statement ABOUT the
+   name rather than more of it (Andy).
+
+   Not a button: it answers no click and takes no focus. What it
+   means rides on its title attribute, at the place the question
+   gets asked. `default` cursor because the rule above sets
+   `pointer` for the controls it shares a selector with, and a
+   pointer over something unclickable is a promise. */
+.titlebar-mark {
+  font-size: 22px;
+  opacity: 0.75;
+  margin-left: 8px;
+  vertical-align: middle;
+  cursor: default;
+}
+
+.titlebar-link {
+  opacity: 0.75;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.titlebar-link:hover { opacity: 1; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.stat-tile {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.stat-tile.wide { grid-column: 1 / -1; }
+.stat-tile.clickable { cursor: pointer; }
+.stat-tile.clickable:hover { background: rgba(255, 255, 255, 0.12); }
+.stat-tile .value { font-size: 22px; font-weight: 700; }
+.stat-tile .label { font-size: 12px; opacity: 0.7; margin-top: 4px; }
+.stat-tile .rows { font-size: 13px; margin-top: 4px; }
+
+/* Label and value on the same line — dedicated to the file info
+   bubble (renderFileInfoBubble), separate from .stat-tile .label/.rows
+   above (stacked label-over-value), which other apps rely on as-is. */
+/* Reading size, the same as #app-title: a Path, an Id, a Members
+   list are what the screen is about, not a footnote to it. If a
+   line deserves to be smaller than this it is fine print, and fine
+   print belongs at the bottom of a page rather than shrunk in the
+   middle of one. Size only — the titlebar keeps its 600 weight, or
+   the block below it starts competing with it.
+   One row type, one voice: this is the launchers' info bubble, the
+   Apps detail rows and the Groups panel alike. The label column
+   grew with the text; at 16px "Default name" and "Changed" no
+   longer fit 70px, and the values stopped aligning. */
+/* Wrapping, so on a genuinely narrow pane the value drops to its
+   own line and gets the width instead of fighting a 90px label for
+   it — the same thing .start-job-form does, and what §10 asks. */
+.file-info-row { display: flex; flex-wrap: wrap; gap: 8px; font-size: 16px; margin-top: 4px; }
+.file-info-row .file-info-label { opacity: 0.7; min-width: 90px; }
+
+/* min-width:0 is what actually lets a long value shrink. A flex
+   item defaults to min-width:auto and refuses to go below its
+   min-content width, which for a path with no spaces is the whole
+   string — so the row pushed out of the pane and no wrapping rule
+   was ever consulted.
+   overflow-wrap:anywhere rather than break-word: only `anywhere`
+   affects min-content sizing, so only `anywhere` works inside a
+   flex row. It is the fallback for one segment longer than the
+   line; <wbr> (pathValue, shell.js) is what makes it fold after a
+   slash by preference. */
+.file-info-value, .fact-value { min-width: 0; overflow-wrap: anywhere; }
+
+/* The directories step back so the filename reads first — §2's own
+   move, distinguished by dimming rather than by shrinking. The
+   filename carries the weight because it is the subject: in the
+   path bubble it IS the title of the screen. */
+.path-dir { opacity: 0.6; }
+.path-file { font-weight: 600; }
+
+/* Which file this is, as the title of the screen — its own bubble
+   with no caption, because "Path:" was a word saying what the only
+   thing in the bubble obviously is, and it took 90px of the width
+   the path itself needed most (Andy). Reading size, like the
+   titlebar it echoes: same size, and the weight above does the
+   telling apart (§2). */
+.file-path { font-size: 16px; }
+
+#file-detail { margin-top: 16px; }
+
+.code-view {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  padding: 12px;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+/* The text view (goal/G29.12): CodeMirror as tall as its text, inside the page's rounded tile; a search match
+   marked as the shared list marks one. */
+.text-view { margin-top: 1em; border-radius: 10px; overflow: hidden; }
+.text-view .CodeMirror { height: auto; font-family: ui-monospace, Consolas, monospace; font-size: 13px; }
+/* THE ONE MATCH COLOUR (goal/G29.11; Andy, 2026-10-18: "i do like to have the same color for the text highlights
+   as the score bar has, try a pastel blue (in the color scheme?)"): the list's marks, the viewer's marks and the
+   rank bar (shell/shared/js/listSearch.js) all take it. */
+:root { --spirit-match: rgba(130, 180, 240, 0.55); }
+mark { background: var(--spirit-match); color: inherit; border-radius: 2px; }
+.text-view-match { background: var(--spirit-match); border-radius: 2px; }
+
+.media-view { max-width: 100%; margin-top: 12px; display: block; }
+
+/* One rhythm down the viewer: the info bubble, the Open with line
+   and the preview are three blocks, evenly spaced. The preview
+   carries its own 12px (.code-view and .media-view above) and this
+   is the matching gap above it — both launchers share this id, so
+   they space identically.
+   :empty because renderOpenWith writes '' when nothing declared
+   the extension. An empty div still occupies its margin, which
+   would push the preview 24px down on exactly the files that have
+   no Open with — a bigger gap where there is less to see. */
+/* Collapsed rather than margin-cancelled when nothing declared the
+   extension. §3 named the old :empty{margin-top:0} as a hack that
+   only existed because space was carried downward; with the block
+   below carrying its own, this is the same answer every other
+   can-be-empty block gives (#rc-peer-strip, .job-start-error). */
+/* Styled by what it IS (§4), so one rule serves both launchers and
+   a third one would need no CSS at all. The ids differ only because
+   both panes stay mounted and each has to be found by name — see
+   the comment where they are built. */
+.open-with { margin-top: 12px; }
+.open-with:empty { display: none; }
+
+/* Which app a file IS, when it is one. Collapsed when it is not,
+   like every other block that can be empty (§3). */
+#app-of-file:empty { display: none; }
+
+/* The identity takes the width so the button ends the row — the
+   same job .field-label.grow does for a captioned field. */
+.app-of-file { flex: 1; min-width: 0; font-size: 16px; }
+.app-of-file-icon { font-size: 20px; margin-right: 8px; vertical-align: middle; }
+
+/* renderAnnotationsSection's "More Information" cards (shell.js) */
+.stat-tile.nested { margin-top: 8px; background: rgba(255, 255, 255, 0.04); }
+.annotation-raw summary { cursor: pointer; font-size: 13px; opacity: 0.8; }
+.annotation-raw pre { margin: 6px 0 0; }
+
+/* The ownership mark: ★ means this node owns that relay, the
+   same as in Relay Chat's To list. It is a mark and not a control
+   — what opens the row is the row (.natter-openable) — so it takes
+   no hit area of its own and the whole width is the target. */
+.natter-star { color: #ffd48a; font-size: 18px; line-height: 1; }
+.natter-openable { cursor: pointer; }
+
+/* One spacing scale: the 12px that separates blocks down a page
+   (UI_DESIGN_STYLE.md) is also what separates controls across a
+   row. Two gaps that are nearly the same read as a mistake rather
+   than a distinction — this was 8px beside 12px everywhere else.
+   flex-end so a caption-over-input pair (.field-label) lines its
+   input up with the button beside it rather than floating above
+   it; wrap so a narrow screen gets full-width targets stacked
+   instead of one squeezed row. */
+/* No margin-bottom: whatever follows a row carries its own space
+   above it (§3). Carried downward, a row that is not on the page
+   leaves its gap behind — which is the hack #open-with:empty had to
+   exist for.
+   margin-top because a row IS a block and takes its space from
+   above like one. At the top level of a pane the stack rule already
+   said so and wins on specificity with the same number; inside a
+   panel nothing did, so a form sat flush under whatever it
+   followed — a facts bubble, a heading, another form. */
+.start-job-form {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-top: 12px;
+}
+
+/* Unless it opens the box it is in — then the box's padding is the
+   leading edge and a margin on top of it is that space twice. The
+   same answer #app-content already gave: who supplies the first gap
+   is the container, and only where the container supplies none does
+   the first block bring its own. */
+.start-job-form:first-child { margin-top: 0; }
+
+/* A form is its own card only where it SHARES a panel with
+   something else — a reading above it, another form beside it.
+   Where the panel is the form, two boxes around one object is what
+   you see, and Jobs, the Groups create form and Contacts'
+   add-by-handle were all exactly that (Andy).
+   So it is asked for rather than automatic. `.stat-tile .start-job-form`
+   was the first try and it could not tell the two cases apart. */
+.start-job-form.card {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+/* Inside a row the gap does the spacing, so the pair drops its own
+   vertical margins — otherwise it sits 8px higher than the button
+   it is meant to line up with. */
+.start-job-form .field-label { margin: 0; }
+
+/* Whatever follows a row takes its space from it (§3). The row used
+   to push this down with a margin-bottom; carried that way it left
+   its gap behind on screens where the row is not drawn, which is
+   the hack #open-with:empty existed for. Turning it round left the
+   followers flush — a Delete under a Groups row, an error line
+   under Create, a minted token under Invite — because those sit
+   inside a panel rather than in the pane's own stack. */
+.start-job-form + * { margin-top: 12px; }
+
+/* A button in a row of CAPTIONED fields reserves the caption's
+   line, so wrapping keeps the rhythm (Andy). On one line
+   align-items:flex-end already lines the button up with the
+   inputs; the moment the row wraps and the button lands alone, its
+   line is a caption shorter than every other, and the block reads
+   as if the button were hugging the field above it.
+   20px is the 13px caption line plus the 4px .field-label gap.
+   :has() so a row of BARE inputs is untouched — Contacts'
+   add-by-handle is a search box and its button with nothing
+   written over either, and a top margin there would push the
+   button out of line with the input it belongs to. (Jobs' form was
+   the example until it got captions of its own.) Where :has() is
+   not understood nothing happens, which is exactly today's
+   behaviour. */
+.start-job-form:has(.field-label) > button { margin-top: 20px; }
+
+/* The field that should take whatever the row does not: a caption
+   and its input filling the line, with the buttons pushed to the
+   end. Opt-in rather than the default for every label in a row —
+   Natter's bind line puts three of them side by side on purpose,
+   and they are meant to share the width evenly. */
+.start-job-form > .field-label.grow { flex: 1; }
+
+/* A form row wraps rather than scrolls: on a portrait phone the
+   input takes the width and the button drops under it, which is
+   two full-width targets instead of one squeezed pair. */
+.start-job-form input { flex: 1; min-width: 140px; }
+
+/* The titlebar's own bail-out button (setViewerTitle) is chrome,
+   not a field, so it keeps the small shape. Inside an app,
+   #app-content button wins on specificity. */
+.cancel-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: var(--shell-accent);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cancel-btn:hover { background: var(--shell-accent-strong); }
+
+/* ---- Controls ----------------------------------------------
+   One look for every input, select and button an app puts on the
+   page: a rounded box, a dark fill, reading-size text, and a
+   target big enough for a thumb.
+   This used to be five near-identical copies living beside their
+   own forms — a search box, .start-job-form, .field-label,
+   #job-manifest-form and the Relay Chat rows — each 6px padding
+   and 6px radius, drifting one edit at a time. Scoped to
+   #app-content because that is where an app's own markup lives;
+   the titlebar keeps its small buttons, which are chrome rather
+   than something you fill in.
+   16px is not only the reading size: any control smaller than
+   that makes iOS zoom the whole page on focus, which leaves you
+   scrolled sideways in a layout you did not ask for. 44px is the
+   smallest target that is comfortable to hit on a portrait
+   phone. Both of those are why this file cares about the size at
+   all — see UI_DESIGN_STYLE.md. */
+#app-content input,
+#app-content select,
+#app-content button,
+#app-content textarea:not(.code-view) {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  min-height: 44px;
+  max-width: 100%;
+}
+
+#app-content button {
+  border: none;
+  background: var(--shell-accent);
+  cursor: pointer;
+  padding: 10px 16px;
+}
+
+#app-content button:hover { background: var(--shell-accent-strong); }
+
+/* ── AN ARMED BUTTON IS RED ───────────────────────────────────
+     Andy: "New password... should be protected by your
+     are-you-sure mechanism. Thats the RED button!"
+
+   It already was protected — every are-you-sure button on every
+   screen arms, changes its wording and goes cold when attention
+   moves (UI_DESIGN_STYLE.md). What it did not do was LOOK
+   different, and a button that only says "press again" asks to be
+   read at the exact moment somebody is not reading: the danger is
+   never the second press, it is the press after it landing on a
+   control that is still loaded.
+
+   So the colour is the second channel. The same red as the dud
+   bubble in Contacts Details and a failed card in Find someone —
+   one red in this app, meaning "this is the thing that bites".
+
+   KEYED ON THE ARMING ITSELF, not on which button it is. Every
+   screen here already marks an armed control with data-armed
+   (labMaster, which is not a shell app, uses .armed) so there is
+   nothing to remember per button: arm it and it turns red, and a
+   control that skips the red is one that skipped the arming.
+
+   Inset box-shadow rather than a border, because #app-content
+   button sets border:none and a border here would change the
+   button's size the moment it armed — a control that grows under
+   a finger already on its way down. */
+#app-content button[data-armed],
+#app-content button.armed {
+  background: #7a2222;
+  box-shadow: inset 0 0 0 1px #ff8080;
+}
+
+#app-content button[data-armed]:hover,
+#app-content button.armed:hover { background: #932a2a; }
+
+/* A native dropdown paints its popup with the control's OWN
+   colours. A translucent background (rgba over a dark page) lands
+   as near-white behind near-white text once the OS draws the list
+   on its own layer — readable in the closed control, unreadable
+   open. Opaque on both the select and its options, everywhere in
+   the shell, since every app that grows a dropdown inherits this
+   problem. color-scheme asks the browser for dark popup chrome;
+   the option colours are the belt-and-suspenders for engines that
+   only honour explicit colours. */
+select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--shell-accent);
+  color: #eee;
+  font: inherit;
+  color-scheme: dark;
+}
+
+#app-content select { background: var(--shell-accent); }
+
+select option { background: var(--shell-pane); color: #eee; }
+
+/* Same look as #job-manifest-form's fields, scoped by class instead
+   of that one form's id, so other edit forms (e.g. the Apps table's
+   per-app edit panel) can reuse it without duplicating the rules. */
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+/* No min-height: a note that reserves a line for a message nobody
+   has written is §1 in CSS, and it was the empty space under the
+   process form. Collapsed when empty, like every other block that
+   can be (§3). Its size is still the open question §2 names — 12px
+   mid-page — and it is shared with the Apps and Contacts notes, so
+   it is not this sitting's to settle. */
+.job-manifest-note { font-size: 12px; opacity: 0.75; margin-top: 12px; }
+
+.job-manifest-note:empty { display: none; }
+
+/* The icon selector (createIconSelector, shell.js). A closed field
+   that drops a list we paint, rather than a native <select>: the
+   glyph has to lead every line for the column to scan, and native
+   type-ahead can only match a prefix of the whole option text, so
+   the only typeable prefix would have been the emoji itself. The
+   filter here reads every name on every line instead. */
+/* A floor, so a row can never squeeze the words off it. Without
+   one, flex shrinks this to the glyph and its caret — the names
+   are the whole reason the list is readable, and the dropdown is
+   pinned to the field's edges, so a squashed field gives a
+   squashed list.
+   260px is `Arrowright, Forward` — the longest line in the pool —
+   plus the glyph column, the gap, the padding and the caret.
+   With it declared, .start-job-form's own wrap does the rest: a
+   row that cannot fit this at its minimum drops it onto its own
+   line, and nothing has to count how many fields are in the row. */
+.icon-selector { position: relative; min-width: 260px; }
+
+/* Reads at the size the titlebar does — this is the row's content,
+   not its fine print. */
+.icon-selector-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--shell-accent);
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.icon-selector-field:hover { background: var(--shell-accent-strong); }
+
+/* One fixed column for the picture, so 129 of them line up down the
+   left edge and the eye can run the list without reading it. */
+.icon-selector-glyph {
+  flex: 0 0 auto;
+  width: 24px;
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+}
+
+.icon-selector-name { flex: 1; min-width: 0; }
+
+.icon-selector-caret { flex: 0 0 auto; opacity: 0.6; font-size: 12px; }
+
+/* Over the panel, not in it: opening the list must not push the
+   rest of the row down the page. */
+/* Its own floor as well as the field's. The list is pinned to the
+   field's edges, so it would otherwise inherit any squeeze — and a
+   line of names that has to scroll sideways is a line nobody
+   reads. */
+.icon-selector-list {
+  min-width: 260px;
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--shell-pane);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.icon-selector-filter {
+  width: 100%;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.icon-selector-rows { max-height: 40vh; overflow-y: auto; }
+
+/* One row type, one voice: the same shape as the closed field, so
+   picking a line and then reading it back says the same thing. */
+.icon-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.icon-selector-row:hover,
+.icon-selector-row.is-active { background: var(--shell-accent); }
+
+/* The contact and file selectors (shell/js/contactSelector.js,
+   shell/js/fileSelector.js) draw through the shared list
+   (shell/shared/js/listSearch.js), which lays out its own field, pane
+   and popup. A dropdown stands inline like any input control; only its
+   pane pops up (goal/G29.8). */
+.contact-selector, .file-selector { position: relative; }
+.contact-selector-face-dropdown, .file-selector-face-dropdown { display: inline-block; }
+
+/* The contact label (shell/js/contactLabel.js, goal/G4.13). It takes
+   the style of its container, so nothing here sets its face or size;
+   only the editable one says it can be clicked, and a refusal shows
+   beside it. */
+.contact-label-editable { cursor: text; }
+.contact-label-input { font: inherit; }
+.contact-label-error { color: #ff8080; font-size: 13px; margin-left: 8px; }
+.contact-label-error:empty { display: none; }
+
+/* No min-height and no margin under it. Reserving a line for a
+   message that is not there is exactly what §1 forbids, and here it
+   was the bottom half of 48px of nothing below the Jobs form: the
+   row's 12px, a blank line held open, 8px beneath it, then the
+   panel's own padding.
+   Collapsed when empty, the way #rc-peer-strip is — a block that
+   can be empty collapses to nothing (§3), and its margin goes with
+   it. The panel grows when an error appears, which is the moment
+   you want the eye pulled anyway. */
+.job-start-error {
+  color: #ff8080;
+  font-size: 13px;
+}
+
+.job-start-error:empty { display: none; }
+
+.jobs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+/* A COLUMN THAT HOLDS A GLYPH IS FIXED, AND SQUARE-ISH.
+
+     Andy: "when leftmost columns display icons the column width
+     should be fixed to twice the column height."
+
+   Taken literally: the width is twice the line height of a row, so
+   the cell is a fixed box rather than one sized by whatever emoji
+   happens to be in it. That matters because the mark column is
+   EMPTY on most rows — a content-sized column would be a few pixels
+   wide until somebody is held or blocked, and then every name in
+   the table would shift right.
+
+   Centred, and with the side padding taken off: the padding is
+   there to keep text off a neighbour, and a glyph in a fixed box
+   has its own room. */
+.jobs-table th.icon-cell, .jobs-table td.icon-cell {
+  width: 2.6em;          /* 2 x the 1.3 line height below */
+  line-height: 1.3;
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
+
+.jobs-table th, .jobs-table td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.job-row { cursor: pointer; }
+.job-row:hover { background: rgba(255, 255, 255, 0.06); }
+
+.job-log-row td { padding: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+
+.job-log-panel {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 10px 14px;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+.job-log-entry { padding: 2px 0; }
+.job-log-time {
+  opacity: 0.6;
+  margin-right: 8px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.job-log-empty { opacity: 0.6; font-style: italic; }
+
+/* Relay Chat's thread (chat 3). Deliberately the same panel the
+   Jobs log already uses — this is the shell's bones, not a second
+   design system. Two message shapes, yours and theirs, told apart
+   by weight and a tint rather than by bubbles. */
+#rc-thread { max-height: 55vh; margin-bottom: 12px; }
+
+.rc-msg { display: flex; gap: 10px; padding: 3px 6px; border-radius: 6px; }
+.rc-msg .rc-time {
+  opacity: 0.5;
+  font-family: ui-monospace, Consolas, monospace;
+  white-space: nowrap;
+}
+/* A CELL THAT HOLDS A LABEL.
+
+   Labels became Unicode and permissive on 2026-09-15 — a real
+   name, with spaces and punctuation. The relay BOUNDS one (64
+   bytes, js/fieldRules.js) so nobody can write ten kilobytes into
+   somebody else's enrolment ledger, and it stops there: how wide a
+   table is belongs to the table, not to a router.
+
+      Andy: "the max length ... also for limiting the width of
+      columns in list displays since that is a primary use for
+      labels."
+
+   Done in CSS rather than by truncating the string, because the
+   width that matters is the RENDERED one. 20 CJK characters is 20
+   graphemes and 40 columns; an ellipsis counted in JavaScript
+   would cut the two cases differently and cut emoji in half. The
+   browser already measures this correctly. */
+.label-cell {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rc-msg .rc-who { opacity: 0.85; font-weight: 600; white-space: nowrap; }
+.rc-msg .rc-text { flex: 1; }
+.rc-msg.me { background: rgba(255, 255, 255, 0.06); }
+.rc-msg.me .rc-who { color: var(--shell-link); }
+.rc-msg.them .rc-who { color: #ffd48a; }
+
+/* The thread scrolls inside its own panel, so the composer is
+   always on screen without being pinned there — and pinning it
+   would float it over the invite panel that now sits below. Flow
+   order is the layout: thread, composer, invite. */
+#rc-composer { margin: 10px 0 14px; }
+#rc-to-bar { margin-bottom: 12px; }
+#rc-to-bar input { flex: 1; min-width: 120px; }
+
+/* The To control carries a caption, an owned marker and a URL on
+   one line, so it gets the width of the page rather than of its
+   longest option. */
+.rc-wide { width: 100%; margin-bottom: 10px; }
+
+/* What an unbound node has to read. It is not a footnote to a page
+   of controls — while this shows, it IS the page, so it is set at
+   reading size rather than at the 12px of .job-manifest-note. It
+   shares the claim tile rather than owning one of its own: two
+   bubbles of different widths read as two unrelated things. */
+#rc-unbound {
+  font-size: 16px;
+  line-height: 1.55;
+  margin-bottom: 12px;
+}
+
+/* Same row, same gap as .start-job-form above — this one is not a
+   .start-job-form only because it lives inside the unbound tile
+   with the paragraph that explains it. */
+#rc-claim-fields {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* Every folded panel, said once. This was a list of ids — and by
+   the time anybody looked, three of the four named panels had
+   moved out of Relay Chat (invite to Natter, add-someone and the
+   stranger policy to Contacts) and the two that arrived in
+   Contacts were left with no pointer cursor at all: a fold that
+   does not look clickable.
+   A rare job, one line until it is wanted. Same size, same marker,
+   same weight, wherever it is.
+   The [open] half went with the list: it pushed the body down with
+   a margin-bottom on the summary, and a fold's body carries its
+   own space above it now (§3) — .start-job-form, the choices
+   block, a nested tile all bring theirs. */
+details.stat-tile > summary {
+  cursor: pointer;
+}
+
+/* The open conversation and the decision about it share a line:
+   the To control takes the width, the button sits at its right.
+   The select keeps its full width when there is no button, because
+   an empty span takes no room (:empty) and the row's gap goes with
+   it. */
+#rc-to-row { align-items: center; }
+#rc-to-row #rc-to-pick { flex: 1; width: auto; margin-bottom: 0; }
+#rc-peer-strip:empty { display: none; }
+
+/* Info's relay table, which is a panel that may have nothing to
+   say: a node on no relay has nothing to distribute a label to, and
+   a bordered empty box with 12px of padding is a thing to read and
+   dismiss (§1). It also sits empty for the moment between the
+   screen opening and relay.status answering, so this is what stops
+   the page jumping when the probe lands rather than only what
+   handles the never-enrolled case. */
+#info-relays:empty { display: none; }
+
+/* Contacts, Find someone: what the person on that row said about
+   themselves, or why nothing came back.
+
+     Andy: "4) description or error message, where error message
+     must be visually different (preceded by ICON.WARNING and maybe
+     a dark-red background)."
+
+   THE GROUND, NOT ONLY THE COLOUR. Everywhere else in the shell a
+   refusal is red TEXT (.job-start-error), and that works because it
+   is the only thing in its block. Here it is one cell of prose in a
+   row of four, beside nine other rows of prose — colour alone reads
+   as emphasis rather than as a category, and the eye is scanning
+   for which rows can be acted on at all.
+
+   Dark enough to sit under 13px text without fighting it: the same
+   red as the text elsewhere, at low alpha over the dark ground, so
+   the cell reads as a band rather than a highlight.
+
+   The cell is allowed to be the widest thing in the row — it is the
+   only one holding a sentence — and wraps rather than pushing the
+   table sideways. */
+/* THE CELL IS ONLY THE BOX; the bubble is the span inside it.
+
+     Andy: "hmmm the description text should still be in a bubble."
+
+   What went was the row expansion — the colspan under each result —
+   not the bubble. Those were one thing and never had to be: a
+   sentence somebody wrote about themselves is a READING, and bare
+   text in a table cell reads as a fourth column of data.
+
+   Same card-inside-a-card ground .stat-tile.nested and .fact-row
+   use, and the same 10px roundness as the panel it all sits in. */
+.seen-said { font-size: 13px; }
+
+.seen-said .said-bubble {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+/* THE GROUND, NOT ONLY THE COLOUR. Everywhere else a refusal is red
+   TEXT (.job-start-error) and that works because it is the only
+   thing in its block. Here it is one bubble of prose among nine
+   other bubbles of prose, where colour alone reads as emphasis
+   rather than as a category — and somebody scanning ten rows is
+   asking which they can act on at all, which has to be answerable
+   without reading any of them. */
+.seen-said .said-bubble.is-error {
+  background: rgba(255, 128, 128, 0.14);
+  color: #ff8080;
+}
+
+/* Contacts Details, at the top: no relay this node is on lists this
+   key.
+
+     Andy: "show a warning bubble at the top of contact details if
+     the contact is an obvious dud... the bubble will show the
+     reason."
+
+   The same red ground as a failed card in Find someone, on a full
+   panel rather than a cell — the two say related things and a
+   reader should not have to learn two colours for them.
+
+   A LEFT EDGE RATHER THAN A BORDER. It sits above an ordinary
+   panel, and a full outline would read as a second kind of tile;
+   a bar on the leading edge marks it without giving it a shape of
+   its own. The heading keeps the normal text colour so the sentence
+   stays readable — the mark and the ground carry the warning, and
+   red prose at reading length is harder to read, not more urgent. */
+.cd-dud {
+  background: rgba(255, 128, 128, 0.12);
+  border-left: 3px solid #ff8080;
+}
+
+/* And the lock's own fold: the same left-edge shape as the warning
+   above it, in the accent rather than the red.
+
+     Andy: "for those locked contacts display a foldable bubble
+     containing a list of the relays that cause the locked status."
+
+   INFO AND NOT A WARNING (Andy: "ICON.INFO"). A dud is something
+   wrong; this is a fact about a box you keep and arranged on
+   purpose. Sharing the red would spend the warning colour on a
+   state that is working correctly, and the warning is only worth
+   anything while it is rare.
+
+   The list is inside a fold that starts shut, so the whole thing
+   costs one line until somebody asks. */
+.cd-locked { border-left: 3px solid var(--shell-link); }
+
+.cd-seat-list {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+/* The choices are a block, and a block carries the gap above itself
+   (§3). On top of the space a summary keeps from its body, because
+   a list of radios reads as part of the title otherwise.
+
+   This rule followed the panel from Relay Chat to Contacts; the
+   chat copy was left behind pointing at an element that no longer
+   existed. */
+#contacts-unknown-choices { margin-top: 12px; }
+
+/* A handful of short facts read as ONE line, not as a list. Used
+   where a row has already supplied the heading, so the facts under
+   it are a single reading rather than four label-over-value rows
+   stacked into a table: what a relay reports in Natter, and who a
+   contact is in the row that opened.
+
+   Was .natter-facts, named for the one app that had it. One row
+   type, one voice (§4) — the shape is not Natter's, so neither is
+   the name.
+
+   Wraps rather than scrolls: on a narrow screen the facts stack,
+   they do not vanish off the side. */
+/* A bubble of its own, so a reading is visibly not the controls
+   beside it. Same card-inside-a-card ground .stat-tile.nested uses,
+   and the same 10px roundness as the panel it sits in. */
+.fact-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+/* Label and value centre on each other, not on the left edge — a
+   short caption over a long value, or the other way round, reads as
+   one block rather than two ragged lines. align-items is the
+   horizontal axis here because the fact is a column; text-align
+   carries it into a value that wraps. */
+.fact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Caption above value, and the caption is the small bold half: you
+   scan the labels to find the one you want, then read the value at
+   reading size (§2). The opposite way round from .stat-tile's
+   figure-over-caption, where the number is the thing being read and
+   the caption only says what it is. */
+.fact-label { font-size: 12px; font-weight: 600; opacity: 0.75; }
+.fact-value { font-size: 16px; }
+
+/* The other half of the rule above: the td gives the last block
+   the same space at the bottom, because what follows is another
+   row and a row has nothing to carry. */
+.job-log-row > td { padding-bottom: 12px; }
+
+.natter-mint { margin-top: 12px; }
+
+/* The relay list reads at heading size: these rows are the subject
+   of this app, not a table of records to scan. The shared
+   .jobs-table stays 13px for Jobs, which is a log. */
+.natter-table th, .natter-table td { font-size: 16px; }
+
+/* Names the relay a claim will happen on, which the form itself
+   cannot ask about — see natterPaintBind. Same weight as the mint
+   heading: both are the title of a thing to do. */
+/* A heading inside a panel: reading size, and no browser margin of
+   its own. Was .natter-bind-heading and .natter-mint-heading, two
+   names for one look — and the process form used a bare <h3>, whose
+   default ~21px top margin was the space nobody asked for above it
+   (Andy). Three callers, one class (§4). */
+.panel-heading { font-size: 16px; margin: 0; }
+/* A FOLDING TITLE BAR. The mark on the left says open or shut, the
+   icon beside the title says what kind of panel this is — a warning
+   or a thing to do — so a column of folded bars is still readable.
+   Pointer and select:none because it is a control, and a heading
+   that highlights on a double click reads as text. */
+.panel-heading.nd-fold { cursor: pointer; user-select: none; display: flex; align-items: baseline; gap: 0.35rem; }
+.panel-heading.nd-fold:hover { text-decoration: underline; }
+.nd-fold-mark { font-size: 12px; opacity: 0.75; }
+.nd-panel-body { margin-top: 0.5rem; }
+
+/* The line between "what I am on this relay" and "what I run",
+   and it FOLDS (Andy: "Managing my relay should be a folded
+   container"). It shipped as a plain heading for about an hour,
+   which grouped the owner bubbles visually and still left five
+   bars on the screen — folding them leaves one. */
+.nd-group-fold { cursor: pointer; -webkit-user-select: none; user-select: none; display: flex; align-items: baseline; gap: 0.35rem; }
+.nd-group-fold:hover { text-decoration: underline; }
+/* Inset, so a panel inside the group reads as inside it. The tiles
+   bring their own borders; this is the only thing that says which
+   level you are looking at. */
+.nd-group-body { margin-top: 0.5rem; padding-left: 0.75rem; border-left: 2px solid rgba(128,128,128,0.25); }
+.nd-group-body .stat-tile { margin-bottom: 0.5rem; }
+/* The last eight characters of a key, for telling two peers with
+   one label apart — spirit-3 carries two `jazz` and two `rock`
+   right now. Tabular so the columns line up and the eye can
+   compare them without counting. */
+.nd-peer-tail { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.7; }
+
+/* What a mint answered. Reading size, because it is read aloud down
+   a phone — and it takes the space above it like any block, which
+   nothing inside a panel does for it. Collapsed until there is an
+   answer (§3, §1). */
+.natter-inv-out { display: block; font-size: 16px; margin-top: 12px; }
+.natter-inv-out:empty { display: none; }
+
+/* A token is a thing to read out; a refusal is a thing to fix. The
+   wrong one spoken down a phone wastes somebody's time, so they do
+   not look alike. */
+.natter-inv-out.is-token { font-family: ui-monospace, Consolas, monospace; }
+.natter-inv-out.is-error { color: #ff8080; }
+
+/* The one heading in that panel: the facts above are a reading of
+   the row that opened them, but this is a thing to do. Reading
+   size, and the same ★ the row carries for owning the relay. */
+
+
+/* All the labels in this panel read at the same size — the form's
+   captions included. Scoped here rather than changed shell-wide:
+   .field-label is shared with Jobs, Contacts and the claim row,
+   and none of those asked. */
+.natter-mint .field-label { font-size: 16px; }
+
+/* ---- Space belongs to the block that follows it ----
+   A block carries the gap ABOVE itself, never below. Then a block
+   that is not on the page contributes nothing: no trailing margin
+   left hanging where it used to be, and no :empty rule to cancel
+   one — the two hacks this replaces (#open-with:empty, and the
+   12px that had to sit on the panel ABOVE the invite slot because
+   the slot is empty for a node that owns no relay).
+   The first block in a stack has nothing above it to be separated
+   from, so it takes the space back. */
+/* §3, said once instead of once per pair.
+   This used to be seven selectors naming which KINDS of block space
+   themselves from which other kinds — .stat-tile after .stat-tile,
+   a table after a panel, a fold after a table. That list is
+   quadratic in block types and the gaps it misses are silent: two
+   blocks simply sit flush and the page reads a little cramped.
+   It is how Natter's mint bubble arrived with no space above a
+   rule that already forbade it.
+   `> * + *` names no types, so a new kind of block is spaced the
+   day it is added, by nobody.
+   On containers that hold BLOCKS, never on a panel's contents — a
+   .file-info-row is 4px from the row above it and is not a block.
+   Stats needs no exception: it renders one child, so this never
+   matches there. */
+/* §3, said once instead of once per pair.
+   Who supplies the space above the FIRST block is the box it sits
+   in, and the two boxes answer differently:
+   #app-content has 16px of padding, and that padding IS the space
+   under the titlebar. A margin on the first block as well is 28px
+   where 16 was meant — visible, and nobody asked for it.
+   An expanded row has 6px of cell padding, which is not a gap, so
+   there the first block does bring its own — the rule that comment
+   has always stated, and that the first pass at this quietly took
+   away by writing `+ *` for both. */
+#app-content > .app-pane > * + *,
+.stack > * + *,
+.job-log-row > td > * { margin-top: 12px; }
+
+/* .stack is any OTHER box that holds blocks. Both launchers write
+   their whole page into a wrapper (#cv-body, #mv-body) so a later
+   loadFile can replace it, and while that wrapper said nothing the
+   rule stopped at the pane's only child — the path bubble and the
+   facts bubble under it sat flush, and so did the annotation cards.
+   The same thing .app-pane was before it was named. Say what a box
+   is and the rule finds it; name boxes in a list and the list goes
+   stale (§4). */
+
+/* And the pane itself takes none. It is not a block, it is the
+   box the blocks are in — every app has one and they are siblings
+   under #app-content, all hidden but the open one (switchTo,
+   shell.js). A margin here is a gap above the whole app and none
+   between anything in it. */
+#app-content > .app-pane { margin-top: 0; }
+
+/* A fold is the other case: its <summary> IS the first child, and
+   it belongs against the panel's own top edge. So here `+ *` is
+   right — it starts the rhythm at the body, one block below the
+   heading that introduces it. */
+#rc-settings-panel > * + * { margin-top: 12px; }
+
+/* A question inside Settings. .stat-tile.nested is already the
+   shell's word for a card inside a card (it is what the annotation
+   sections use), so a sub-panel needs no look of its own — the
+   space comes from the stack rule above, which also puts the first
+   one clear of the summary. */
+
+/* The folded panels at the foot of Relay Chat are separate offers,
+   not one block: the same 12px that separates blocks everywhere
+   else (§3). On each panel rather than the slot below them,
+   because the invite slot is empty for a node that owns no relay
+   and an empty div would still hold its margin. */
+/* Both are .stat-tile details, so the rule above already spaces
+   them from whatever precedes them. Nothing to carry downward. */
+
+/* A choice is a button, a name and a sentence. Two columns: the
+   button in the first, the name and its explanation stacked in the
+   second — so the explanation is left-aligned with the name it
+   belongs to rather than with the button, and the name sits on the
+   button's own line. */
+.rc-choice {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.rc-choice-title { font-size: 16px; }
+
+/* Fine print, under the name and never under the button. */
+.rc-choice-note {
+  grid-column: 2;
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* A checkbox is not a text field either, and for the same reason.
+   Same size as a radio, so a list of settings reads as one list. */
+#app-content input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  accent-color: var(--shell-link);
+}
+
+/* A setting that is a single switch, sitting among the folds. It
+   is a .rc-choice for its layout and a .stat-tile.nested for its
+   weight — the same card as a section, so the panel reads as a
+   list of settings rather than a mixture of shapes. */
+#rc-dnd { margin-bottom: 12px; }
+
+/* A radio is not a text field. The shared control rule gives every
+   input in an app a padded 44px box with a border, which is right
+   for something you type in and absurd for something you tick —
+   so this one takes back its own shape and keeps a size that is
+   still findable with a thumb. */
+#app-content input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  accent-color: var(--shell-link);
+}
+
+@media (max-width: 480px) {
+  .app-icon .icon { font-size: 32px; }
+  .app-icon .label { font-size: 11px; }
+}
+

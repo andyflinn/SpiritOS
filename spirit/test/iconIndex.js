@@ -306,8 +306,9 @@ test.subHeading('The picker declares the width it needs');
   // flex squeezed this to the glyph and its caret: the names are the
   // whole reason the list is worth reading, and .icon-selector-name is
   // deliberately min-width:0 so they will shrink away if allowed.
+  // The shell's styles are shell.css since goal/G30.9 (they stood inline in index.html).
   const css = require('fs').readFileSync(
-    require('path').join(__dirname, '..', 'run', 'index.html'), 'utf8');
+    require('path').join(__dirname, '..', 'run', 'shell.css'), 'utf8');
 
   const field = /\.icon-selector\s*\{[^}]*min-width:\s*(\d+)px/.exec(css);
   if (field && Number(field[1]) >= 200) {
