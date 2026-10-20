@@ -1,5 +1,5 @@
 {
- "change": 76880,
+ "change": 76881,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -8391,10 +8391,9 @@
    "id": "goal/G30.9",
    "title": "Face-Side login with a new email loop",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
