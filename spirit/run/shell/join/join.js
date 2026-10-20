@@ -1,27 +1,35 @@
 // spirit/run/shell/join/join.js
 // THE JOIN APP (goal/G30.1, box v39): it walks a new user from joining a relay to opening his face, as one to-do list.
-// The steps are its manifest's (join.json), each with its name, icon and the fact that ends it; joinSteps
-// (shell/js/joinSteps.js) says which are done, the same answer the shell draws this app's tile by. Done steps are
-// ticked; every open step up to the first one that counts is expanded with its form, so the optional Find someone
-// never stands in the way of the step after it. The forms are the shell elements: joinForm, peerFind, faceForm.
+// The steps are its manifest's (join.json), each with its name, icon and the fact that ends it. Done steps are ticked;
+// every open step up to the open one is expanded with its form, so the optional Find someone never stands in the way
+// of the step after it. The forms are the shell elements: joinForm, peerFind, faceForm.
+//
+// DECIDED ONCE, IN THE SHELL (box v42; Andy: "Why, when the shell already figured out that the join-app must appear,
+// does the join app figure out AGAIN where the user stands?"). The shell hears the node's join-steps job, works out the
+// open step and which steps are done, and hands that to onSteps below: when this app mounts, when the job changes, and
+// when this app's own faceOpened changes. This app subscribes to nothing, decides nothing and asks the node nothing
+// about the steps; it draws what it is handed. Handed the same again, it draws nothing; handed something new while a
+// field in the list has focus, it waits until the focus leaves, so nothing he is typing is wiped.
 //
 // It goes exactly this far: the last step is a link to his face URL, ticked once he has opened it, kept as this app's
 // own override (faceOpened); the face answers once the face switch is built, which is not in this item.
 
 var joinApi = null;
+var joinHanded = null;    // what the shell last handed: { facts, open, done }
 var joinFacts = null;
 var joinRelayRow = null;
+var joinShown = '';       // what the list was last drawn from
+var joinWaiting = false;  // handed something new while he was typing
 
 // The shell elements this app is made of, as index.html hands them out.
 function joinEl() {
   var w = window.spiritElements || {};
-  return { steps: w && window.spiritElements.joinSteps, joinForm: w && window.spiritElements.joinForm,
-    peerFind: w && window.spiritElements.peerFind, faceForm: w && window.spiritElements.faceForm };
+  return { joinForm: w && window.spiritElements.joinForm, peerFind: w && window.spiritElements.peerFind, faceForm: w && window.spiritElements.faceForm };
 }
 function joinIcon(name) { return spirit.core.const.ICON[name] || ''; }
 function joinEsc(s) { return joinApi.escapeHtml(String(s == null ? '' : s)); }
 function joinAsk(verb, args) { return joinApi.verb(verb, args); }
-// The steps, read once from this app's own manifest, as the shell reads it.
+// The steps' names, icons and words, read once from this app's own manifest.
 var joinStepList = null;
 function joinSteps() {
   if (joinStepList) return joinStepList;
@@ -29,57 +37,35 @@ function joinSteps() {
   return joinStepList;
 }
 
-function joinOpened() { return !!(joinApi.getAppOverride('shell/join') || {}).faceOpened; }
-
-// THE APP CARRIES ITS OWN LISTENER (goal/G30.1, box v40; Andy, 2026-10-20: "does the fucking new element even carry its
-// own listener, that keeps the screen untouched until a streamed event actually affects it?", then "FIX IT RIGHT").
-// It hears the node's join-steps job on the jobs stream and draws only when that job says something new; it asks the
-// node nothing about the steps, and the shell's render does nothing here. A change that arrives while a field in the
-// list has focus waits until the focus leaves the list, so nothing he is typing is wiped.
-var joinData = null;      // the job's facts as last heard
-var joinShown = '';       // what the list was last drawn from
-var joinWaiting = false;  // a change heard while he was typing
-function joinTake(job) {
-  if (!job || job.type !== 'join-steps') return;
-  joinData = job.data || {};
-  joinShow(false);
-}
-// Drawn from the last job heard, with this app's own faceOpened. `forced` after something he did here (the link opened):
-// drawn even while unchanged, never while he is typing in the list.
-function joinShow(forced) {
-  var steps = joinEl().steps;
-  if (!steps || !joinData) return;
-  var said = JSON.stringify([joinData, joinOpened()]);
-  if (said === joinShown && forced !== true) return;
+function joinShow() {
+  if (!joinHanded) return;
+  var said = JSON.stringify(joinHanded);
+  if (said === joinShown) return;
   var host = document.getElementById('join-list');
   if (host && host.contains(document.activeElement)) { joinWaiting = true; return; }
   joinShown = said;
   joinWaiting = false;
-  joinFacts = steps.fromJob(joinData, joinOpened());
+  joinFacts = joinHanded.facts || {};
   joinDraw();
 }
-function joinReload() { joinShow(true); }
 
 function joinDraw() {
   var host = document.getElementById('join-list');
-  if (!host) return;
-  var steps = joinEl().steps;
+  if (!host || !joinHanded) return;
   var list = joinSteps();
-  if (!steps || !joinFacts) { host.innerHTML = '<div class="job-manifest-note">Asking this node where you stand…</div>'; return; }
-  var current = steps.current(list, joinFacts);
+  var done = joinHanded.done || [];
   var reached = false;
   host.innerHTML = '<ol class="join-steps">' + list.map(function (s, i) {
-    var done = steps.done(s, joinFacts);
-    // Every open step up to and including the first one that counts is expanded.
-    var open = !done && !reached;
-    if (s === current) reached = true;
+    // Every open step up to and including the open one is expanded.
+    var open = !done[i] && !reached;
+    if (s.until === joinHanded.open) reached = true;
     return '<li class="stat-tile wide">' +
-      '<div class="label">' + (done ? joinIcon('CHECKED') : joinIcon('UNCHECKED')) + ' ' + joinIcon(s.icon) + ' ' + joinEsc(s.name) +
+      '<div class="label">' + (done[i] ? joinIcon('CHECKED') : joinIcon('UNCHECKED')) + ' ' + joinIcon(s.icon) + ' ' + joinEsc(s.name) +
         (s.optional ? ' <span class="job-manifest-note">(optional)</span>' : '') + '</div>' +
       (open ? '<div class="job-manifest-note">' + joinEsc(s.text || '') + '</div><div id="join-step-' + i + '"></div>' : '') +
       '</li>';
   }).join('') + '</ol>' +
-  (current ? '' : '<div class="job-manifest-note">' + joinIcon('CHECKED') + ' Every step is done.</div>');
+  (joinHanded.open ? '' : '<div class="job-manifest-note">' + joinIcon('CHECKED') + ' Every step is done.</div>');
   list.forEach(function (s, i) {
     var box = document.getElementById('join-step-' + i);
     if (box) joinForm(s, box);
@@ -140,9 +126,9 @@ function joinForm(step, box) {
         '<div class="job-manifest-note">Your face does not answer yet: the relay\'s face switch is still being built.</div>'
       : '<div class="job-manifest-note">No face name yet.</div>';
     var link = document.getElementById('join-face-link');
+    // Kept as this app's own override; the shell hands the steps again with it (box v42).
     if (link) link.addEventListener('click', function () {
       joinApi.setAppOverride('shell/join', { faceOpened: true });
-      joinReload();
     });
   }
 }
@@ -156,16 +142,16 @@ spirit.shell.activateApp({
           '<div class="job-manifest-note">A few steps, from joining a relay to opening your node from anywhere.</div></div>' +
         '<div id="join-list"><div class="job-manifest-note">Waiting for this node to say where you stand…</div></div>' +
       '</div>';
-    // A change heard while he typed is drawn once the focus has left the list.
+    // Handed something new while he typed: drawn once the focus has left the list.
     document.getElementById('join-list').addEventListener('focusout', function () {
-      setTimeout(function () { if (joinWaiting) joinShow(true); }, 0);
-    });
-    // The node's join-steps job: the snapshot has it now, every update after that is news.
-    spirit.core.jobs.subscribe({
-      onSnapshot: function (jobs) { (jobs || []).forEach(joinTake); },
-      onUpdate: joinTake,
+      setTimeout(function () { if (joinWaiting) joinShow(); }, 0);
     });
   },
-  // The shell's messages are not this app's news: it draws from the join-steps job alone.
+  // Where the user stands, worked out by the shell (handSteps): { facts, open, done }.
+  onSteps: function (handed) {
+    joinHanded = handed || null;
+    joinShow();
+  },
+  // The shell's messages are not this app's news: it draws what onSteps hands it alone.
   render: function () {},
 });

@@ -437,6 +437,7 @@
     }
     savePreferences();
     renderDesktop(); // reflect a name/icon/group change on the real desktop immediately, not just wherever this was called from
+    if (apps[id] && apps[id].steps) handSteps(apps[id]); // its own faceOpened moves its steps (goal/G30.1, box v42)
     return { ok: true };
   }
 
@@ -570,18 +571,38 @@
   // the desktop beside the Spirit group while a step is open, named and marked by that step; past the last one the tile
   // is gone. The facts are the node's join-steps job, heard on the jobs stream below (takeStepsJob) and never asked:
   // the node publishes it the moment a seat, a contact or a face changes. joinSteps (shell/js/joinSteps.js) decides
-  // the open step from it and the app's own override faceOpened, the same answer the Join app draws. null until heard.
+  // the open step from it and the app's own override faceOpened. null until heard.
+  // DECIDED ONCE, HERE (goal/G30.1, box v42; Andy: "Why, when the shell already figured out that the join-app must
+  // appear, does the join app figure out AGAIN where the user stands?"). The shell hands the app what it worked out
+  // (handSteps: the facts, the open step, which steps are done) through the app's onSteps, when the app mounts, when
+  // the job changes and when the app's own override changes; the app subscribes to nothing and decides nothing.
   var stepFacts = null;
   function takeStepsJob(job) {
     if (!job || job.type !== 'join-steps') return;
     var was = JSON.stringify(stepFacts);
     stepFacts = job.data || {};
-    if (was !== JSON.stringify(stepFacts) && typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
+    if (was === JSON.stringify(stepFacts)) return;
+    if (typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
+    Object.keys(apps).forEach(function (id) { if (apps[id].steps) handSteps(apps[id]); });
   }
-  function openStep(app) {
+  function stepsOf(app) {
     var steps = window.spiritElements && window.spiritElements.joinSteps;
     if (!steps || !stepFacts) return null;
-    return steps.current(app.steps, steps.fromJob(stepFacts, !!getAppOverride(app.id).faceOpened));
+    var facts = steps.fromJob(stepFacts, !!getAppOverride(app.id).faceOpened);
+    var open = steps.current(app.steps, facts);
+    return { facts: facts, open: open ? open.until : null, done: app.steps.map(function (s) { return steps.done(s, facts); }) };
+  }
+  function openStep(app) {
+    var s = stepsOf(app);
+    if (!s || !s.open) return null;
+    return app.steps.filter(function (st) { return st.until === s.open; })[0] || null;
+  }
+  // To a mounted app that takes them; one that has not mounted is handed them at its mount.
+  function handSteps(app) {
+    if (!app || !app.steps || !app._el || typeof app.onSteps !== 'function') return;
+    var s = stepsOf(app);
+    if (!s) return;
+    try { app.onSteps(s); } catch (e) { /* the app's own fault stays its own */ }
   }
 
   function renderDesktop() {
@@ -1622,6 +1643,7 @@
       // between its blocks, which is exactly what it looked like.
       contentEl.appendChild(app._el);
       app.mount(app._el, buildApiFor(app), params);
+      handSteps(app); // an app with steps is handed where the user stands as it opens (goal/G30.1, box v42)
     } else if (params && params.path && typeof app.loadFile === 'function') {
       // Revisiting an already-mounted app with a file — mount() itself
       // only ever runs once now, so an app that cares which file it was
@@ -1812,6 +1834,7 @@
     apps[id].render = behavior.render || function () {};
     apps[id].loadFile = behavior.loadFile; // optional — only apps that care which file they're opened against define this
     apps[id].open = behavior.open;         // dialogs only — called on every entry
+    apps[id].onSteps = behavior.onSteps;   // an app with steps: handed where the user stands (goal/G30.1, handSteps)
     apps[id]._activated = true;
     if (pendingActivationId === id) pendingActivationId = null;
   }
