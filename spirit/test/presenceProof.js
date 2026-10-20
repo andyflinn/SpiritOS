@@ -136,7 +136,9 @@ function mountContacts(people) {
   });
   new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(doc, win);
   new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'))(shellSpirit, doc, win);
-  new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, {}, fakeFetch);
+  // Find someone on the network is the shell element peerFind since goal/G30.1 (box v39): the page's window carries it.
+  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'peerFind.js'), 'utf8'))(shellSpirit, doc, win);
+  new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, win, fakeFetch);
   const api = {
     ui: { elements: { createContactSelector: win.spiritElements.createContactSelector } },
     verb: function (name, args) {
@@ -155,7 +157,9 @@ function person(key, label) { return { publicKey: key, publicLabel: label, capti
 // The presence cell of one row in the picker's list (goal/G29.6: <tr data-key>, cells ★, presence, name, status): the
 // second cell, its glyph and its title.
 function dotOf(doc, key) {
-  const html = doc.getElementById('listsearch-1-list').innerHTML;
+  // The book's list, whichever the page made it as: the network search (peerFind) makes its own list too.
+  let html = '';
+  for (let n = 1; n <= 5 && html.indexOf('data-key="' + key + '"') === -1; n += 1) html = doc.getElementById('listsearch-' + n + '-list').innerHTML;
   const i = html.indexOf('data-key="' + key + '"');
   if (i === -1) return '';
   const row = html.slice(i, html.indexOf('</tr>', i));

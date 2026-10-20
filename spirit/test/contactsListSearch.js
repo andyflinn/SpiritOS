@@ -74,7 +74,8 @@ if (JSON.stringify(only({ owned: 'yes' })) === '["K-pup"]' && JSON.stringify(onl
 else test.fail(OWED + 'filters answer ' + short([only({ owned: 'yes' }), only({ blocked: 'yes' }), only({ held: 'yes' })]));
 const cs = fnBody(hubSrc, 'contactSearch');
 const server = fs.readFileSync(path.join(RUN, 'js', 'server.js'), 'utf8');
-const route = (server.match(/'contact\.search':\s*\{\s*request:\s*\{[^}]*\}/) || [''])[0];
+// The contact family's search in the flat door's tables since goal/G30.5: the 'search' whose handler is hub.contactSearch.
+const route = (server.match(/'search':\s*\{\s*request:\s*\{[^}]*\}[^\n]*hub\.contactSearch/) || [''])[0];
 if (/searchPeople\([^;]*body\s*\)/.test(cs) && /owned/.test(route) && /blocked/.test(route) && /held/.test(route)) test.check('the node hands the filters through: contactSearch passes the body, the route declares owned, blocked and held');
 else test.fail(OWED + 'contactSearch ' + short(cs.slice(0, 200)) + '; the route ' + short(route));
 const shellJs = strip(fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8'));

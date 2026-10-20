@@ -67,6 +67,8 @@ function loadPicker(doc, shellSpirit) {
   const real = win.spiritElements.shellCreateListSearch;
   win.spiritElements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
   new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'))(shellSpirit, doc, win);
+  // Find someone on the network is the shell element peerFind since goal/G30.1 (box v39), loaded by index.html.
+  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'peerFind.js'), 'utf8'))(shellSpirit, doc, win);
   return { win: win, made: made };
 }
 

@@ -32,8 +32,13 @@ function joinSteps() {
 function joinOpened() { return !!(joinApi.getAppOverride('shell/join') || {}).faceOpened; }
 
 // The facts, and the relay row the face step needs (relay.get carries its face and verified email).
+// THE LIST HOLDS STILL WHILE HE TYPES (Andy, 2026-10-20: "the ting, AGAIN, refreshes EVERYTHING, whenever a bloody
+// message hits the shell"). The shell calls render on its messages; a load asked from there redraws only when what the
+// node says has changed, and never while a field inside the list has focus. A load after something he did here (mount,
+// an Add, a face asked, the link opened) is `forced`: it draws what it got.
 var joinLoadedAt = 0;
-function joinLoad() {
+var joinShown = '';
+function joinLoad(forced) {
   joinLoadedAt = Date.now();
   var steps = joinEl().steps;
   if (!steps) { joinDraw(); return Promise.resolve(); }
@@ -44,8 +49,15 @@ function joinLoad() {
       var row = (g && g.body && g.body.relay) || null;
       joinRelayRow = row ? Object.assign({ label: row.label || f.relayUrl.replace(/^https?:\/\//, '') }, row) : null;
     });
-  }).then(joinDraw, joinDraw);
+  }).then(function () {
+    var said = JSON.stringify([joinFacts, joinRelayRow]);
+    var host = document.getElementById('join-list');
+    if (forced !== true && (said === joinShown || (host && host.contains(document.activeElement)))) return;
+    joinShown = said;
+    joinDraw();
+  }, function () { if (forced === true) joinDraw(); });
 }
+function joinReload() { return joinLoad(true); }
 
 function joinDraw() {
   var host = document.getElementById('join-list');
@@ -91,7 +103,7 @@ function joinForm(step, box) {
       ask: joinAsk,
       peerPost: function (app, key, body) { return joinApi.peerPost(app, key, body); },
       callDialog: function (id, params) { return joinApi.callDialog(id, params); },
-      onAdded: function () { joinLoad(); },
+      onAdded: function () { joinReload(); },
       say: function (text) { var s = box.querySelector('.join-find-said'); if (s) s.textContent = text; },
     });
     return;
@@ -101,7 +113,7 @@ function joinForm(step, box) {
       seats: joinRelayRow ? [joinRelayRow] : [],
       ask: joinAsk,
       callDialog: function (id, params) { return joinApi.callDialog(id, params); },
-      reload: joinLoad,
+      reload: joinReload,
       idPrefix: 'join-face-',
       escape: joinApi.escapeHtml,
     });
@@ -116,7 +128,7 @@ function joinForm(step, box) {
     var link = document.getElementById('join-face-link');
     if (link) link.addEventListener('click', function () {
       joinApi.setAppOverride('shell/join', { faceOpened: true });
-      joinLoad();
+      joinReload();
     });
   }
 }
@@ -130,9 +142,10 @@ spirit.shell.activateApp({
           '<div class="job-manifest-note">A few steps, from joining a relay to opening your node from anywhere.</div></div>' +
         '<div id="join-list"></div>' +
       '</div>';
-    joinLoad();
+    joinReload();
   },
-  // Opened again later: asked again, at most every few seconds, so a step done elsewhere shows ticked.
+  // On the shell's messages, and when opened again: asked again at most every few seconds, and drawn only when the
+  // node says something new and nobody is typing in the list (joinLoad).
   render: function () {
     if (Date.now() - joinLoadedAt < 3000) return;
     joinLoad();
