@@ -254,15 +254,8 @@ function ddPanelHtml() {
 }
 
 // THE ONE BOX. An item with no text yet says so; an agent writes it.
-// IT FOLDS AGAIN (goal/G2.1 note 1; the fold was lost in desk/G2.7). Andy: "BIG complaint: the text bubble
-// no longer folds." Folded shows its first line; the state is kept here, so a repaint keeps his fold.
-// ALL OF THE TEXT, ON EVERY OPEN (goal/G9.17). Andy, 2026-10-09: "it always should open so all text is visible." So an
-// open starts unfolded and the textarea is as tall as the lines the box holds; the arrow only shrinks it afterwards.
-var ddFolded = false;
-function ddBoxRows() {
-  var lines = String(ddBox || '').split('\n').length;
-  return ddFolded ? 1 : Math.max(3, lines);
-}
+// NO FOLD ANY MORE (goal/G30.8; Andy, 2026-10-20: "the box no longer needs to be foldable, it is now space-limited and
+// contained"): the textarea fills the upper half's panel and scrolls inside it. The fold (goal/G2.1, G9.17) stood here.
 // HIS TAKE OF THE BOX (goal/G9.3): on while he is in the textarea, with the text as it stood when he went in, so a
 // blur that changed nothing releases instead of writing. Focus and blur arrive more than once (the element, the body),
 // so the flag is what keeps one take and one release.
@@ -285,15 +278,13 @@ function ddBoxHtml() {
   // THE BOX CAP, SEEN (goal/G2.2 note 1). Andy: "orange at 50%, red at 75%" — the server says half and full; the
   // border is the only automatic part, the split into items is negotiated ("never automated").
   var cap = taker || (ddFacts && ddFacts.full) ? 'border:2px solid red;padding:4px;' : ddFacts && ddFacts.half ? 'border:2px solid orange;padding:4px;' : '';
-  var toggle = '<button type="button" data-fold="item" title="' + (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button> ';
   // HIS INPUT AREA (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
   // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for agents.
   // When the user clicks outside of that text box, and deactivates the input, also by leaving the details dialog, the
   // box input is released from the take. When a details dialog is opened, the text box is never taken."
-  // So the box is a textarea holding the whole text; the fold only decides how tall it is, and the take happens on
-  // focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
-  return '<div' + taken + ' style="' + cap + '"><div>' + toggle + '</div>' +
-    '<textarea id="dd-box-input" rows="' + ddBoxRows() + '" style="width:100%;white-space:pre-wrap">' + ddEsc(ddBox) + '</textarea></div>';
+  // So the box is a textarea holding the whole text, as tall as its panel; the take happens on focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
+  return '<div' + taken + ' style="' + cap + 'height:100%;box-sizing:border-box">' +
+    '<textarea id="dd-box-input" style="width:100%;height:calc(30vh - 12px);box-sizing:border-box;white-space:pre-wrap">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
 // WHAT WAITS ON HIM, UNDER THE BOX (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
@@ -460,7 +451,7 @@ function ddTake(obj) {
   ddFacts = obj.item;
   // A CHANGED BOX UNFOLDS (slim/G1.6 D6: "a changed block opens; his fold is his ack"): an agent's write while
   // his dialog is open must not hide behind his fold; he folds it again when he has read it.
-  if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; ddBoxLoaded = true; ddFolded = false; }
+  if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; ddBoxLoaded = true; }
   if (obj.chat) ddChat.push(obj.chat);
   if (Array.isArray(obj.checks)) ddChecks = obj.checks;
   ddPaint();
@@ -628,8 +619,7 @@ spirit.shell.activateApp({
         if (event.preventDefault) event.preventDefault();
         ddApi.closeDialog({ open: to });
         return;
-      }
-      if (t && t.getAttribute && t.getAttribute('data-fold') === 'item') { ddFolded = !ddFolded; ddPaint(); return; }
+      }
       var grantEl = t && t.closest ? t.closest('[data-grant]') : null;
       if (grantEl) {
         var g = grantEl.getAttribute('data-grant');
@@ -728,8 +718,7 @@ spirit.shell.activateApp({
     ddArmed = '';
     ddRenaming = false;
     ddNote = '';
-    ddLastChange = 0;
-    ddFolded = false;  // goal/G9.17: every open shows all of the text
+    ddLastChange = 0;
     ddFrame();
     ddPaint();
     return ddLoad().then(function () {

@@ -119,6 +119,9 @@ function answer(checks) {
   test.subHeading('3. one panel at a time, and only what it needs');
   if (/BOX-TEXT/.test(d.html('dd-panel')) && !/WHICH-ONE/.test(d.html('dd-panel'))) test.check('on open the panel is the box');
   else test.fail(OWED + 'the open panel reads ' + short(d.html('dd-panel')));
+  // Andy, 2026-10-20: "the box no longer needs to be foldable, it is now space-limited and contained".
+  if (!/data-fold="item"/.test(d.html('dd-panel')) && /id="dd-box-input"/.test(d.html('dd-panel'))) test.check('the box has no fold; its textarea fills the panel');
+  else test.fail(OWED + 'the box still folds: ' + short(d.html('dd-panel')));
   if (!d.asked.some(function (a) { return a.verb === 'block.targets'; })) test.check('opening asks no block.targets');
   else test.fail(OWED + 'opening asked block.targets: ' + short(d.asked.map(function (a) { return a.verb; })));
   d.click('', { 'data-panel': 'qs' });

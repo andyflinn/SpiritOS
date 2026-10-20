@@ -186,10 +186,12 @@ callback.listen(0, '127.0.0.1', async function () {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
   }
 
-  test.subHeading('1. the box folds again, and the fold survives a repaint');
-  const details = fs.readFileSync(DETAILS, 'utf8');
-  if (/data-fold="item"/.test(details) && /ddFolded/.test(details)) test.check('the dialog paints the box with a data-fold="item" toggle whose state (ddFolded) is kept');
-  else test.fail(OWED + 'deskDetails.js paints no data-fold="item" toggle with a kept ddFolded (lost in desk/G2.7)');
+  // SUPERSEDED BY goal/G30.8 (Andy, 2026-10-20: "the box no longer needs to be foldable, it is now space-limited and
+  // contained"): the box fills its panel in the fixed upper half, and the fold is gone.
+  test.subHeading('1. the box no longer folds: it fills its panel');
+  const details = fs.readFileSync(DETAILS, 'utf8').replace(/^\s*\/\/.*$/gm, '');
+  if (!/data-fold="item"/.test(details) && !/ddFolded/.test(details) && /id="dd-box-input" style="[^"]*height:calc\(30vh/.test(details)) test.check('the box paints no fold toggle; its textarea fills the panel');
+  else test.fail(OWED + 'deskDetails.js still folds the box, or the textarea does not fill the panel');
 
   test.subHeading('4. the two top lines stick below the title bar, not at the top');
   const desk = fs.readFileSync(DESK, 'utf8');
