@@ -1,5 +1,5 @@
 {
- "change": 76390,
+ "change": 76391,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -463,10 +463,9 @@
    "id": "goal/G30.1",
    "title": "Negotiating face-name and email between node and relay",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
