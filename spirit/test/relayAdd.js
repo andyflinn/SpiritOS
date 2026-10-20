@@ -23,7 +23,8 @@ test.startTest('goal/G28.1: adding a relay');
 test.subHeading('1. the node declares relay.add');
 {
   const server = stripComments(fs.readFileSync(path.join(RUN, 'js', 'server.js'), 'utf8'));
-  if (/'relay\.add'\s*:/.test(server)) test.check('server.js declares relay.add');
+  // The relay family's 'add' in the flat door's tables since goal/G30.5, its handler hub.relayAdd.
+  if (/'add'\s*:\s*\{[^\n]*hub\.relayAdd\(/.test(server)) test.check('server.js declares relay.add');
   else test.fail(OWED + 'server.js declares no relay.add: no node verb adds a relay');
 }
 

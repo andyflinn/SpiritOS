@@ -72,7 +72,9 @@ else test.fail(OWED + 'peerRank does not stand on the probability modules');
 
 test.subHeading('3. peer.search answers the shared shape');
 const server = code('js/server.js');
-const decl = (/'peer\.search':\s*\{\s*request:\s*\{[^}]*\},\s*reply:\s*\{[^\n]*/.exec(server) || [''])[0];
+// The peer family's search in the flat door's tables since goal/G30.5: 'search' under peer, the one whose reply carries
+// the question back (q) and the relays that could not answer (silent).
+const decl = (/'search':\s*\{\s*request:\s*\{\s*q:\s*''\s*\},\s*reply:\s*\{\s*q:[^\n]*silent[^\n]*/.exec(server) || [''])[0];
 if (/items:\s*\[\s*\{\s*key:\s*''\s*,\s*label:\s*''\s*\}\s*\]/.test(decl) && /more:\s*false/.test(decl) && !/matches:/.test(decl)) test.check('server.js declares peer.search answering {items: [{key, label}], more, ...}');
 else test.fail(OWED + 'server.js declares ' + short(decl));
 if (/items:\s*/.test((/res\.end\(JSON\.stringify\(\{\s*q:\s*q,[\s\S]{0,300}/.exec(hub) || [''])[0])) test.check('hub.js answers items');
