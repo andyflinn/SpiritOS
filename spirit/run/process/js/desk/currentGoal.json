@@ -1,5 +1,5 @@
 {
- "change": 75045,
+ "change": 75258,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -14,8 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G30.1",
-    "goal/G30.6"
+    "goal/G30.1"
    ],
    "codeOffered": false,
    "go": false,
@@ -46,8 +45,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 2,
+   "design": true,
+   "waiting": 4,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -55,9 +54,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -466,7 +463,9 @@
    "blocking": [
     "goal/G30"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.7"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -5717,10 +5716,11 @@
    "id": "goal/G30.6",
    "title": "Fix all modules in  SpiritOS that still use jobs.api",
    "goal": "goal/G30",
-   "status": "running",
-   "with": "claude-windows",
+   "status": "done",
+   "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30"
@@ -5730,21 +5730,72 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
-   "green": true,
+   "files": [
+    {
+     "path": "spirit/run/js/apiDoor.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/appClient.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/client/apiTreeIndex.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/puppetMode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/verbTable.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/deskClient/deskClient.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/shared/js/listSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/jobsApiGone.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/testSupport.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "c75a9618",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -5778,12 +5829,233 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "SCOPE: every module in SpiritOS that still calls jobs.api moves to the flat apiDoor on /api/spirit; then jobs.api is deleted.\n- jobs is for launching and tracking appServer processes and other local (transient) processes; it is NOT an api hub.\n\nSHAPE\n- A call becomes the verb itself on /api/spirit: {verb: desk.item.get, id} instead of {verb: jobs.api, ask: {desk: {item.get: {id}}}}.\n- The tree becomes {verb: api} instead of {verb: jobs.api, ask: api}.\n- Shell apps: chatter, desk, deskDetails, deskAgentRemote, falloutHistory, grants, ruleDetails, stackFrameCheckDetail, the list search (listSearch) and appServerSelector.\n- Reached through those, with no call of their own: the desk plugins (fallout, stackFrameChecks, vision) and deskChat ask through the desk app; Grants and introSpector through the selectors; Fallout's lists through listSearch. They change with them.\n- Server processes: desk (desk.js, commitCheck, onboard, deskAgentEar), deskAgent (deskAgent.js, tools.js), deskClient (publishData) and deskVerify.\n- When the last caller has moved, the jobs api verb goes from server.js, with every mention of it in the core files and the suites; a red asserts it is gone.\n- deskAgentRemote also runs jobs.api on a remote node as an owner command (owner.command, command jobs.api). The owner door (puppetDoor) runs a command through the node verb table alone, so it moves to the flat door too: an owner command names the verb itself (deskAgent.<verb>, api) and reaches the app that serves it.\n- Peers are untouched: they reach apiDoor by peerPost, never through jobs.\n\nFACTS (at 5d670c1f and f5a61df8)\n- 34 code lines call jobs.api, all in shell apps and server processes; the core files name it only in comments and in the jobs mount.\n- 78 suites name jobs.api.\n- /api/spirit already dispatches through the flat apiDoor since goal/G30.5 (door.handlerFor).",
-   "version": 4,
-   "checks": [],
+   "box": "SCOPE\n- jobs launches and tracks appServer processes and other local transient processes; it is not an api hub.\n- Every module that calls jobs.api moves to the flat apiDoor on /api/spirit; then jobs.api is deleted, with every mention in the core files and the suites. A red asserts it is gone.\n\nSHAPE\n- A call is the verb by name: desk.item.get with its args. The tree is the verb api.\n- Shell apps: chatter, desk, deskDetails, deskAgentRemote, falloutHistory, grants, ruleDetails, stackFrameCheckDetail, listSearch, appServerSelector. The desk plugins, deskChat, Grants and introSpector change with them.\n- Server processes: desk (desk.js, commitCheck, onboard, deskAgentEar), deskAgent (deskAgent.js, tools.js), deskClient (publishData), deskVerify.\n- The owner door (puppetDoor) runs through the flat door too, so an owner command names an app verb (deskAgent.verb) or api.\n- deskClient.desk takes name and json: its argument verb is renamed name, which collided with the name of the call.\n- Peers are untouched: they reach apiDoor by peerPost.\n\nAUTH, ITS OWN NODE FAMILY\n- The grant verbs leave jobs for a node family of their own, auth, beside node, fs, jobs, peer and relay: auth.query, auth.search, auth.peer, auth.grant, auth.revoke, auth.relabel (were jobs.authQuery ... jobs.authRelabel), with the folder js/auth/ and the code staying in apiAuth.js.\n- jobs then holds jobs alone: search, get, create, update, cancel, delete.\n- Every caller moves (the Grants app, its warning file, the suites); nothing names jobs.auth afterwards.",
+   "version": 7,
+   "checks": [
+    {
+     "number": "T1",
+     "kind": "T",
+     "words": "",
+     "test": "spirit/test/jobsApiGone.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Rename deskClient.desk argument verb to name, so it can travel flat on /api/spirit (its verb collides with the call name)?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-20T06:20:29.465Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "stale: claude-windows holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": "",
+     "placedBy": "desk",
+     "placedKey": ""
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/apiDoor.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:27:58.916Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/appClient.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:15.102Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/client/apiTreeIndex.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:13.088Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: js/puppetMode.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:24.881Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:28.304Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: js/verbTable.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:29.235Z"
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: shell/contacts/contacts.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:29:08.578Z"
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: shell/grants/grants.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:37.745Z"
+    },
+    {
+     "number": "G9",
+     "kind": "G",
+     "words": "core grant: shell/js/appServerSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:40.696Z"
+    },
+    {
+     "number": "G10",
+     "kind": "G",
+     "words": "core grant: shell/js/contactSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:41.682Z"
+    },
+    {
+     "number": "G11",
+     "kind": "G",
+     "words": "core grant: shell/js/fileSelector.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:28:44.543Z"
+    },
+    {
+     "number": "G12",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/apiDoor.js, spirit/run/js/appClient.js, spirit/run/js/client/apiTreeIndex.js, spirit/run/js/puppetMode.js, spirit/run/js/server.js, spirit/run/js/verbTable.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T07:30:10.457Z"
+    },
+    {
+     "number": "G13",
+     "kind": "G",
+     "words": "core grant: js/auth/grant.warning.txt",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:19.190Z"
+    },
+    {
+     "number": "G14",
+     "kind": "G",
+     "words": "core grant: js/auth/peer.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:20.991Z"
+    },
+    {
+     "number": "G15",
+     "kind": "G",
+     "words": "core grant: js/auth/query.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:24.350Z"
+    },
+    {
+     "number": "G16",
+     "kind": "G",
+     "words": "core grant: js/auth/search.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:39.746Z"
+    },
+    {
+     "number": "G17",
+     "kind": "G",
+     "words": "core grant: js/jobs/api.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:41.416Z"
+    },
+    {
+     "number": "G18",
+     "kind": "G",
+     "words": "core grant: js/apiAuth.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:42.891Z"
+    },
+    {
+     "number": "G19",
+     "kind": "G",
+     "words": "core grant: js/auth/AGENTS.md",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:46.160Z"
+    },
+    {
+     "number": "G20",
+     "kind": "G",
+     "words": "core grant: js/jobs/AGENTS.md",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:56.144Z"
+    },
+    {
+     "number": "G21",
+     "kind": "G",
+     "words": "core grant: js/spiritErrors.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T08:01:57.275Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -5856,8 +6128,219 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-20T06:10:57.970Z",
      "text": "I searched every shell file again, for the literal call and for indirect paths (ask bodies, the selectors, plugin asks).\n\n- No other shell app calls jobs.api itself.\n- The desk plugins (fallout, stackFrameChecks, vision) and deskChat ask through the desk app; Grants and introSpector go through the selectors; Fallout's lists go through listSearch. They move with those, and that line is now in the box (v4)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:12:40.277Z",
+     "text": "commit 51f1a5d3c26874e1d1bba0d79e5384b3a18960f3: goal/G30.6: the red for moving every caller off jobs.api: no module, core file or suite names it; jobs declares no api; the door calls in-process for the owner door (node verbs, api, family.verb); the\n- spirit/test/jobsApiGone.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T06:12:48.148Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:13:01.681Z",
+     "text": "The red is in at 51f1a5d3: 9 owed. 105 files under spirit/run and spirit/test still name jobs.api; the jobs mount declares api; door.call is missing; the owner door, appServerSelector and the desk app go through jobs.\nBuilding now: the callers first, then the verb and its mentions."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:14:23.615Z",
+     "text": "One collision found while building: deskClient.desk takes {verb, json}. On /api/spirit the body is {verb: <the verb called>, ...args}, so its own verb argument overwrites the name of the call.\n\n- It is the only verb with an argument called verb; every agent's desk call goes through it (deskAgentEar, commitCheck, publishData, deskVerify).\n- Plainest fix: rename that argument to name, so deskClient.desk takes {name, json}. That changes an app verb's request.\n\nYes to renaming deskClient.desk's argument verb to name?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:17:25.292Z",
+     "text": "Q1: Rename deskClient.desk argument verb to name, so it can travel flat on /api/spirit (its verb collides with the call name)?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:20:21.952Z",
+     "text": "Building: every caller under spirit/run is moved, deskClient.desk takes {name, json}, and the jobs mount declares no api. My node answers jobs.api with no such verb.\n\n- The red stands at 8/9; the one left is the 78 suites that still name jobs.api, being rewritten now.\n- Heads-up: this is a flag day for every node and agent on the old code. An old deskAgentEar or deskVerify asks jobs.api and is refused until its node is restarted on this commit."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:23:34.199Z",
+     "text": "cap the box, it doesn't load anymore here"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:24:14.083Z",
+     "text": "Capped (v6): the facts section and the long lines are gone, and there are no braces or angle brackets left in the box.\nIf it still does not load, tell me what the dialog shows. Your node is on the old code, and it may be the dialog rather than the box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:30:47.790Z",
+     "text": "box is there."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:24:47.009Z",
+     "text": "Built; the red is 9/9, and the suites around it are green. The commit waits on your grants for 11 core files: apiDoor, appClient, apiTreeIndex, puppetMode, server, verbTable, contacts, grants, appServerSelector, contactSelector, fileSelector.\n\n- 157 files: 31 under spirit/run, 126 suites. The suites include 47 that never named jobs.api but used its shapes.\n- Two suites stay red, deskVerifyGoalRun (2) and deskClientNext (1), and they are just as red at 51f1a5d3, before this build.\n\nGrant the 11?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:29:43.170Z",
+     "text": "commit 7d88e3ffff8a1181471bb0b0183b1a8f1c004699: goal/G30.6: nothing calls jobs.api: jobs launches and tracks processes, it is no api hub. Every shell app and server process calls a verb by name on the flat apiDoor (desk.item.get, api); the owner do\n- spirit/run/js/apiDoor.js\n- spirit/run/js/appClient.js\n- spirit/run/js/client/apiTreeIndex.js\n- spirit/run/js/puppetMode.js\n- spirit/run/js/server.js\n- spirit/run/js/verbTable.js\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/desk.json\n- spirit/run/process/js/desk/deskAgentEar.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/run/process/js/deskAgent/deskAgent.js\n- spirit/run/process/js/deskAgent/tools.js\n- spirit/run/process/js/deskClient/deskClient.js\n- spirit/run/process/js/deskClient/deskClient.json\n- spirit/run/process/js/deskClient/publishData.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/deskVerify.json\n- spirit/run/shell/chatter/chatter.js\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskAgentRemote/deskAgentRemote.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/falloutHistory/falloutHistory.js\n- spirit/run/shell/grants/grants.js\n- spirit/run/shell/js/appServerSelector.js\n- spirit/run/shell/js/contactSelector.js\n- spirit/run/shell/js/fileSelector.js\n- spirit/run/shell/ruleDetails/ruleDetails.js\n- spirit/run/shell/shared/js/listSearch.js\n- spirit/run/shell/stackFrameCheckDetail/stackFrameCheckDetail.js\n- spirit/test/answersCarryMore.js\n- spirit/test/apiGate.js\n- spirit/test/appServerSelector.js\n- spirit/test/authTables.js\n- spirit/test/chatter.js\n- spirit/test/debugSwitch.js\n- spirit/test/deskAddBlocking.js\n- spirit/test/deskAddGoal.js\n- spirit/test/deskAgentAbort.js\n- spirit/test/deskAgentAgent.js\n- spirit/test/deskAgentCommand.js\n- spirit/test/deskAgentCommandJob.js\n- spirit/test/deskAgentConnectTable.js\n- spirit/test/deskAgentContext.js\n- spirit/test/deskAgentCurrentGoal.js\n- spirit/test/deskAgentDesk.js\n- spirit/test/deskAgentDeskName.js\n- spirit/test/deskAgentEarThin.js\n- spirit/test/deskAgentEffort.js\n- spirit/test/deskAgentFileEdit.js\n- spirit/test/deskAgentFileRange.js\n- spirit/test/deskAgentFileSearch.js\n- spirit/test/deskAgentFs.js\n- spirit/test/deskAgentLearnsContext.js\n- spirit/test/deskAgentModels.js\n- spirit/test/deskAgentModelsSearch.js\n- spirit/test/deskAgentOneAnswer.js\n- spirit/test/deskAgentPairs.js\n- spirit/test/deskAgentPlainContext.js\n- spirit/test/deskAgentRecommend.js\n- spirit/test/deskAgentRemoteTabs.js\n- spirit/test/deskAgentRepoRoot.js\n- spirit/test/deskAgentSwitch.js\n- spirit/test/deskAgentSwitchKept.js\n- spirit/test/deskAgentTakesLine.js\n- spirit/test/deskAgentToolRounds.js\n- spirit/test/deskAgentTools.js\n- spirit/test/deskAgentWorkspace.js\n- spirit/test/deskBindingNick.js\n- spirit/test/deskBlocks.js\n- spirit/test/deskBoxHeight.js\n- spirit/test/deskBoxTake.js\n- spirit/test/deskBusyReply.js\n- spirit/test/deskChatBubbles.js\n- spirit/test/deskChatFlowOneTask.js\n- spirit/test/deskChatFollowsAddress.js\n- spirit/test/deskChatFormat.js\n- spirit/test/deskChatSearch.js\n- spirit/test/deskCheckNumbers.js\n- spirit/test/deskClaimCommit.js\n- spirit/test/deskClientAsk.js\n- spirit/test/deskClientNext.js\n- spirit/test/deskClientQuiet.js\n- spirit/test/deskCodeToggle.js\n- spirit/test/deskCoreGrants.js\n- spirit/test/deskDelete.js\n- spirit/test/deskDialog.js\n- spirit/test/deskDialogClose.js\n- spirit/test/deskDialogFollowsItem.js\n- spirit/test/deskEmptyBox.js\n- spirit/test/deskFake.js\n- spirit/test/deskFallout.js\n- spirit/test/deskFilesTouched.js\n- spirit/test/deskForAgents.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskFresh.js\n- spirit/test/deskFrontPage.js\n- spirit/test/deskGoalClose.js\n- spirit/test/deskGroupChat.js\n- spirit/test/deskIssues.js\n- spirit/test/deskKnownAgents.js\n- spirit/test/deskLineTakeAddressed.js\n- spirit/test/deskList.js\n- spirit/test/deskListTakesAdditions.js\n- spirit/test/deskLiveFixes.js\n- spirit/test/deskLog.js\n- spirit/test/deskOnServer.js\n- spirit/test/deskPageNoNudge.js\n- spirit/test/deskPanels.js\n- spirit/test/deskPluginsGg.js\n- spirit/test/deskRealtimeFace.js\n- spirit/test/deskRedQOnPurpose.js\n- spirit/test/deskRows.js\n- spirit/test/deskRules.js\n- spirit/test/deskRulesTab.js\n- spirit/test/deskServer.js\n- spirit/test/deskSmallFixes.js\n- spirit/test/deskStacksDialog.js\n- spirit/test/deskSword.js\n- spirit/test/deskTakeToAnswer.js\n- spirit/test/deskVerifyCommitBound.js\n- spirit/test/deskVerifyDataset.js\n- spirit/test/deskVerifyDoneGates.js\n- spirit/test/deskVerifyFixes.js\n- spirit/test/deskVerifyFull.js\n- spirit/test/deskVerifyGoalRun.js\n- spirit/test/deskVerifyLive.js\n- spirit/test/deskVerifyModes.js\n- spirit/test/deskVerifyOnClaim.js\n- spirit/test/deskVerifyQueueKept.js\n- spirit/test/deskVerifyReject.js\n- spirit/test/deskVerifyStopTree.js\n- spirit/test/deskVerifyTab.js\n- spirit/test/deskVerifyWatch.js\n- spirit/test/deskVerifyWatchHistory.js\n- spirit/test/deskVision.js\n- spirit/test/deskWaive.js\n- spirit/test/deskWorking.js\n- spirit/test/everyVerb.js\n- spirit/test/fileSlots.js\n- spirit/test/forwardKey.js\n- spirit/test/gitHelpersOwnOnly.js\n- spirit/test/grantsApp.js\n- spirit/test/grantsSharedList.js\n- spirit/test/introSpectorApp.js\n- spirit/test/introspectionCleanup.js\n- spirit/test/jobsAuth.js\n- spirit/test/labWorld.js\n- spirit/test/listSearch.js\n- spirit/test/puppetCommands.js\n- spirit/test/ruleDetails.js\n- spirit/test/serverSurface.js\n- spirit/test/silentNoMore.js\n- spirit/test/streamReconnect.js\n- spirit/test/testSupport.js\n- spirit/test/verifyPost.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:30:13.811Z",
+     "text": "Claimed at 7d88e3ff; my verify passed (jobsApiGone 9/9).\n\nFiles: 157 in all. The core ones are apiDoor, appClient, apiTreeIndex, puppetMode, server, verbTable, deskClient and listSearch; the rest are the shell apps and processes named in the box, plus 126 suites (testSupport gains foldAsk).\n\n- Flag day: your 65432, deskVerify and any agent on the old code must restart on this commit. Until then the old code asks jobs.api and is refused."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T07:31:01.060Z",
+     "text": "deskVerify: passed, at 7d88e3ff (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T07:32:03.596Z",
+     "text": "so jobs is now about jobs/processes and nothing else?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:32:29.806Z",
+     "text": "Almost. The jobs mount in server.js now declares:\n\n- jobs proper: search, get, create, update, cancel, delete.\n- Grants, still under jobs: authQuery, authSearch, authPeer, authGrant, authRevoke, authRelabel. That is apiAuth, not processes; the Grants app calls them as jobs.authGrant and so on.\n\nMoving those six to a family of their own (auth.query, auth.grant ...) would leave jobs about processes only. That is a new item, if you want it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T07:35:21.246Z",
+     "text": "what on earth is grant stuff doing in jobs?\n\nshould there not be an auth folder, sibling to node, fs, jobs, peer, relay etc?\n\nwhat made that stuff end up in jobs?\n\nexplain."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:35:54.408Z",
+     "text": "How it got there (commit 45a668c4, apiAuth/G1.4, 2026-10-01):\n\n- Then, jobs.api was the way to the app servers, and the allow-table gates exactly that api. So the grant verbs were put beside it: your ruling then was \"jobs.auth supersedes: api.auth, sibling to app names\".\n- They were first jobs.auth.query and so on; the verb table refused three-part names, so on your yes (789d0d43) they became jobs.authQuery, jobs.authGrant ...\n- G30.6 removed jobs.api, so the reason they sat in jobs is gone.\n\nYes, by today's shape they belong in their own family beside node, fs, jobs, peer and relay: auth.query, auth.search, auth.peer, auth.grant, auth.revoke, auth.relabel, in js/auth/, the code staying in apiAuth.js. That changes six node verbs, so it needs your yes on them. Shall I propose it as a new item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T07:37:05.210Z",
+     "text": "in this item, in the box: move auth stuff into its own node family."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:37:45.320Z",
+     "text": "In the box: auth becomes its own node family (auth.query, auth.search, auth.peer, auth.grant, auth.revoke, auth.relabel, folder js/auth/), and jobs keeps only jobs.\n\n- The red grows by the checks for it, and then I build.\n\nGo on this, under this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T07:38:11.348Z",
+     "text": "?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:38:36.071Z",
+     "text": "Taken as yes: building the auth family now, red first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:39:24.072Z",
+     "text": "commit e7fc26cfaef693b347105dfc68a522ac25972ee9: goal/G30.6: the red grows by the auth family: auth mounted with query, search, peer, grant, revoke, relabel; jobs declares jobs alone; js/auth/ holds the grant warning; nothing names jobs.auth\n- spirit/test/jobsApiGone.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T07:40:16.756Z",
+     "text": "nothing names jobs.auth\n\nin plain english, please?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:40:40.588Z",
+     "text": "It means the old grant verb names are gone from the code everywhere. No program, app or test still calls jobs.authGrant or its five siblings; they all call auth.grant and the others instead, so a leftover old name cannot keep the old place alive."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T07:54:30.078Z",
+     "text": "The auth family is built; the red is 14/14, and the auth and grants suites are green. The commit waits on your grants for 9 core files: apiAuth.js, spiritErrors.js, js/auth/ (AGENTS.md, grant.warning.txt, peer, query and search descriptions), js/jobs/AGENTS.md and the removed js/jobs/api.json.\n\n- deskLoop is red, and was just as red before G30.6 (checked at 51f1a5d3); deskClientNext the same, as before.\n\nGrant the 9?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:02:23.384Z",
+     "text": "commit c75a9618ffa708425c9f2961b8953c6d80bba32d: goal/G30.6: auth is its own node family: auth.query, auth.search, auth.peer, auth.grant, auth.revoke, auth.relabel (were the six jobs.auth verbs), its folder js/auth/ with AGENTS.md and grant.warning.\n- spirit/run/js/apiAuth.js\n- spirit/run/js/auth/AGENTS.md\n- spirit/run/js/auth/grant.warning.txt\n- spirit/run/js/auth/peer.json\n- spirit/run/js/auth/query.json\n- spirit/run/js/auth/search.json\n- spirit/run/js/jobs/AGENTS.md\n- spirit/run/js/jobs/api.json\n- spirit/run/js/server.js\n- spirit/run/js/spiritErrors.js\n- spirit/run/process/js/chatClerver/chatClerver.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/run/process/js/desk/removeAgent.js\n- spirit/run/process/js/fileServer/fileServer.js\n- spirit/run/shell/grants/grants.js\n- spirit/test/agentOnboard.js\n- spirit/test/authTables.js\n- spirit/test/authWorld.js\n- spirit/test/chatClerverLines.js\n- spirit/test/chatClerverWrite.js\n- spirit/test/deskClientNext.js\n- spirit/test/deskLoop.js\n- spirit/test/deskRedWriterBuild.js\n- spirit/test/fileSlots.js\n- spirit/test/grantsApp.js\n- spirit/test/grantsSharedList.js\n- spirit/test/introspectionCleanup.js\n- spirit/test/jobsAuth.js\n- spirit/test/labWorld.js\n- spirit/test/publishData.js\n- spirit/test/scenario.js\n- spirit/test/serverSurface.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T08:02:43.246Z",
+     "text": "Claimed again at c75a9618: auth is its own node family, and jobs is jobs alone. My run of the red is 14/14.\n\nFiles: server.js, apiAuth.js, spiritErrors.js, js/auth/ (new), js/jobs/ (AGENTS.md; api.json and the auth files gone), grants.js, chatClerver.js, fileServer.js, onboard.js, removeAgent.js, plus 17 suites."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T08:02:46.523Z",
+     "text": "deskVerify: passed, at c75a9618 (pulled). 2 suites ran green."
     }
    ]
+  },
+  {
+   "id": "goal/G30.7",
+   "title": "Fix Shell problems related to face-name and email first",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.1"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "# Natter\n- has no search\n- Managing my relay: Public label of this relay: This input field must show the current public label of this relay, otherwise i won't even know what I'm changing.\n- Peers 0, Connected 1: Does this mean that noderoutes knows me as owner, but has no actual seat for me?\n- What this relay says: owner (none?/unknown?).... undefined — allowing undefined (floor 1, ceiling 4096)??\n\n# Info\nName: Andy Flinn: Save: saved here — 1 of 2 relay(s) did not take it: is this the problem i see in natter (peers 0, Connected 1)?\n\n",
+   "version": 11,
+   "checks": [],
+   "chat": []
   }
  ]
 }
