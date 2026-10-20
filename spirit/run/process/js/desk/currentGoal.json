@@ -1,5 +1,5 @@
 {
- "change": 74999,
+ "change": 75045,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -14,7 +14,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G30.1"
+    "goal/G30.1",
+    "goal/G30.6"
    ],
    "codeOffered": false,
    "go": false,
@@ -45,7 +46,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
+   "design": false,
    "waiting": 2,
    "excluded": [
     "ollama agent node",
@@ -5709,6 +5710,152 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-20T05:58:51.060Z",
      "text": "Good to see it working as owner, FS included.\n\nThat reply shows a stale line: relaySelf/AGENTS.md still names AGENTS.introspect and AGENTS.<verb>, which G30.4 removed. It should say that api lists the verbs the asker may call, and FS (owner only) reads the folder.\n\nThat is a third small fix for the same tag, next to card and the removePeer warning. Fold all three into this item?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.6",
+   "title": "Fix all modules in  SpiritOS that still use jobs.api",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "SCOPE: every module in SpiritOS that still calls jobs.api moves to the flat apiDoor on /api/spirit; then jobs.api is deleted.\n- jobs is for launching and tracking appServer processes and other local (transient) processes; it is NOT an api hub.\n\nSHAPE\n- A call becomes the verb itself on /api/spirit: {verb: desk.item.get, id} instead of {verb: jobs.api, ask: {desk: {item.get: {id}}}}.\n- The tree becomes {verb: api} instead of {verb: jobs.api, ask: api}.\n- Shell apps: chatter, desk, deskDetails, deskAgentRemote, falloutHistory, grants, ruleDetails, stackFrameCheckDetail, the list search (listSearch) and appServerSelector.\n- Reached through those, with no call of their own: the desk plugins (fallout, stackFrameChecks, vision) and deskChat ask through the desk app; Grants and introSpector through the selectors; Fallout's lists through listSearch. They change with them.\n- Server processes: desk (desk.js, commitCheck, onboard, deskAgentEar), deskAgent (deskAgent.js, tools.js), deskClient (publishData) and deskVerify.\n- When the last caller has moved, the jobs api verb goes from server.js, with every mention of it in the core files and the suites; a red asserts it is gone.\n- deskAgentRemote also runs jobs.api on a remote node as an owner command (owner.command, command jobs.api). The owner door (puppetDoor) runs a command through the node verb table alone, so it moves to the flat door too: an owner command names the verb itself (deskAgent.<verb>, api) and reaches the app that serves it.\n- Peers are untouched: they reach apiDoor by peerPost, never through jobs.\n\nFACTS (at 5d670c1f and f5a61df8)\n- 34 code lines call jobs.api, all in shell apps and server processes; the core files name it only in comments and in the jobs mount.\n- 78 suites name jobs.api.\n- /api/spirit already dispatches through the flat apiDoor since goal/G30.5 (door.handlerFor).",
+   "version": 4,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:05:02.268Z",
+     "text": "Taken. Facts at 5d670c1f plus f5a61df8:\n\n- 34 code lines call jobs.api, all in shell apps and server processes. Shell: chatter, desk, deskDetails, deskAgentRemote, falloutHistory, grants, ruleDetails, stackFrameCheckDetail, listSearch, appServerSelector. Processes: desk (commitCheck, onboard, deskAgentEar), deskAgent, deskClient publishData, deskVerify.\n- Each becomes a flat call on /api/spirit: {verb: desk.item.get, ...} for a call, {verb: api} for the tree.\n- The jobs api verb itself (server.js, the jobs mount) and its suites (78 test files name jobs.api) go once the last caller moves.\n- Peers are not touched: they reach apiDoor by peerPost, never through jobs.\n\nWaiting for your box."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:05:04.473Z",
+     "text": "cap"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T06:05:05.320Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:07:17.266Z",
+     "text": "Let's put into the box also:\n\njobs is for launching and tracking appServer processes and other local (transient) processes, it is NOT meant to be some kind of api-hub."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:07:50.263Z",
+     "text": "In the box, under SCOPE: jobs launches and tracks appServer processes and other local transient processes; it is not an api hub."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:08:31.206Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:08:49.420Z",
+     "text": "Green: settled, open none, box current (v2)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:09:22.582Z",
+     "text": "you forgot deskAgentRemote?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T06:09:46.485Z",
+     "text": "other shell apps?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T06:09:47.463Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:10:05.955Z",
+     "text": "deskAgentRemote is in the box under Shell apps, but you were right to look: it also sends jobs.api to a remote node as an owner command.\n\n- The owner door (puppetDoor) runs a command through the node verb table alone, so an app verb cannot travel that way today.\n- Added to the box: the owner door moves to the flat door too, so an owner command names the verb itself (deskAgent.<verb>, api).\n\nGreen again: open none, box v3."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T06:10:57.970Z",
+     "text": "I searched every shell file again, for the literal call and for indirect paths (ask bodies, the selectors, plugin asks).\n\n- No other shell app calls jobs.api itself.\n- The desk plugins (fallout, stackFrameChecks, vision) and deskChat ask through the desk app; Grants and introSpector go through the selectors; Fallout's lists go through listSearch. They move with those, and that line is now in the box (v4)."
     }
    ]
   }
