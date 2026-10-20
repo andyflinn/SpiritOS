@@ -135,7 +135,8 @@ const shellSrc = code('js/client/shell.js');
 if (/status:\s*said\.status === 200 \? 200 : 201/.test(relayJoinSrc) && /Email address verified/.test(shellSrc))
   test.check('the node passes the relay\'s 200 for a change on, and the page says Email address verified');
 else test.fail(OWED + 'relay.join hands no change apart from a new seat, or the page never says Email address verified');
-const infoFace = (info.split('function infoDrawFace')[1] || '');
+// Info's face form is the shell element faceForm since box v39.
+const infoFace = /spiritElements\.faceForm/.test(info) ? code('shell/js/faceForm.js') : (info.split('function infoDrawFace')[1] || '');
 if (/emailVerified/.test(infoFace) && /Verify your email in Contacts/.test(infoFace) && /callDialog\('shell\/natterDetails'/.test(infoFace))
   test.check('Info draws no face form for a relay with no verified email, and offers its natterDetails instead');
 else test.fail(OWED + 'Info draws the face form without a verified email, or offers no way to natterDetails');

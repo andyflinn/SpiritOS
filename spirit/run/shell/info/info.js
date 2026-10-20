@@ -237,94 +237,21 @@ function infoDrawRelays() {
   infoDrawFace();
 }
 
-// ── A FACE NAME AND AN EMAIL, FOR ONE RELAY ──────────────────────────
+// ── A FACE NAME, FOR ONE RELAY ───────────────────────────────────────
 //
-// One relay chosen from the seats this node holds, a name, and the relay's answer. relay.face does the asking and
-// the node keeps the signed answer; this page only draws the form and says what came back. NO EMAIL FIELD (goal/G30.1,
-// box v30): the relay pairs the name with the verified email it holds for this node, added or changed in Natter.
-var infoFaceSaid = '';
+// The shell element faceForm since goal/G30.1 (box v39): moved whole from here, so Info and the Join app draw one form.
+// relay.face is {url, name}; the relay pairs the name with the verified email it holds for this node (box v30).
 function infoDrawFace() {
+  var form = window.spiritElements && window.spiritElements.faceForm;
   var box = document.getElementById('info-face');
-  if (!box) return;
-  var escape = infoApi && infoApi.escapeHtml ? infoApi.escapeHtml : function (s) { return String(s); };
-  var seats = infoSeats();
-  if (!seats.length) { box.innerHTML = ''; return; }
-  // What the user has typed or chosen survives a redraw of the table.
-  var keep = { relay: '', name: '' };
-  ['relay', 'name'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el) keep[k] = el.value; });
-  box.innerHTML =
-    '<div class="label">A face name on one relay</div>' +
-    '<div class="job-manifest-note">Ask one relay for a name under its domain. It is paired with the verified email ' +
-      'that relay holds for you (add or change it in Natter). The relay answers yes or no; asking again changes the name.</div>' +
-    '<div class="start-job-form card">' +
-      '<label class="field-label">Relay<select id="info-face-relay">' +
-        seats.map(function (row) { return '<option value="' + escape(row.url) + '">' + escape(row.label || row.url) + '</option>'; }).join('') +
-      '</select></label>' +
-      '<span id="info-face-ask" class="grow">' +
-        '<label class="field-label grow">Face name<input type="text" id="info-face-name" placeholder="one word, letters and digits"></label>' +
-        '<button type="button" id="info-face-save">Ask</button>' +
-      '</span>' +
-    '</div>' +
-    // NO FACE FORM WITHOUT A VERIFIED EMAIL (goal/G30.1, box v31): the relay would refuse the ask, so the form gives
-    // way to the place the email is verified, that relay's natterDetails.
-    '<div id="info-face-verify" class="job-manifest-note">Verify your email in Contacts, relays, before asking for a face name on this relay. ' +
-      '<button type="button" id="info-face-open">Open this relay</button></div>' +
-    '<div id="info-face-now" class="job-manifest-note"></div>' +
-    '<div id="info-face-error" class="job-start-error"></div>';
-  ['relay', 'name'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el && keep[k]) el.value = keep[k]; });
-  // WHAT THIS NODE HOLDS ON THE SELECTED RELAY (goal/G30.1; Andy, 2026-10-19: "it should show my current face and
-  // email address for any relay i select..... or any relay that is pre-selected"). The node reads it from the relay's
-  // row into each relay row (row.face); picking a relay fills the form with it, and a form he has typed in is kept.
-  function infoFaceShow(fill) {
-    var pick = document.getElementById('info-face-relay');
-    var row = seats.filter(function (r) { return pick && r.url === pick.value; })[0] || {};
-    var face = row.face || {};
-    var now = document.getElementById('info-face-now');
-    // The verified email beside the face: the one the face pairs with, read from the relay's row (relay.get).
-    var mail = row.emailVerified ? String(row.email || '') : '';
-    if (now) now.textContent = (face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.') +
-      (mail ? ' Verified email: ' + mail + '.' : '');
-    var ask = document.getElementById('info-face-ask');
-    var verify = document.getElementById('info-face-verify');
-    if (ask) ask.hidden = !row.emailVerified;
-    if (verify) verify.hidden = !!row.emailVerified;
-    if (!fill) return;
-    var n = document.getElementById('info-face-name');
-    if (n) n.value = face.name || '';
-  }
-  infoFaceShow(!keep.name);
-  document.getElementById('info-face-relay').addEventListener('change', function () { infoFaceSaid = ''; infoSay('info-face-error', '', false); infoFaceShow(true); });
-  document.getElementById('info-face-save').addEventListener('click', infoSaveFace);
-  // The same dialog Contacts opens for a relay row; the rows are read again when it closes, so a verified email shows.
-  document.getElementById('info-face-open').addEventListener('click', function () {
-    var pick = document.getElementById('info-face-relay');
-    if (!pick || !infoApi) return;
-    Promise.resolve(infoApi.callDialog('shell/natterDetails', { url: pick.value })).then(function () { return infoLoadRelays(); }, function () { return infoLoadRelays(); });
+  if (!box || !form) return;
+  form.mount(box, {
+    seats: infoSeats(),
+    ask: function (verb, args) { return infoApi.verb(verb, args); },
+    callDialog: function (id, params) { return infoApi.callDialog(id, params); },
+    reload: function () { return infoLoadRelays(); },
+    escape: infoApi && infoApi.escapeHtml,
   });
-  document.getElementById('info-face-name').addEventListener('keydown', function (e) { infoOnKey(e, infoSaveFace); });
-  if (infoFaceSaid) infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
-}
-
-function infoSaveFace() {
-  var relay = document.getElementById('info-face-relay');
-  var name = document.getElementById('info-face-name');
-  if (!relay || !name || infoBusy) return Promise.resolve();
-  if (!name.value.trim()) {
-    infoFaceSaid = { text: 'a face name is needed', bad: true };
-    infoSay('info-face-error', infoFaceSaid.text, true);
-    return Promise.resolve();
-  }
-  infoBusy = true;
-  infoSay('info-face-error', 'asking the relay…', false);
-  return infoApi.verb('relay.face', { url: relay.value, name: name.value }).then(function (r) {
-    var said = (r && r.body) || {};
-    infoFaceSaid = said.ok
-      ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }
-      : { text: said.error || (r && r.error) || 'the relay did not answer', bad: true };
-    infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
-    // The node now holds the new pair: read the rows again so the line under the form says so.
-    if (said.ok) return infoLoadRelays();
-  }).then(function () { infoBusy = false; }, function () { infoBusy = false; });
 }
 
 function infoLoad() {

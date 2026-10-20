@@ -85,9 +85,11 @@ test.subHeading('4. the Contacts panel is the shared list');
 const contacts = code('shell/contacts/contacts.js');
 if (!/id="contacts-seen-q"/.test(contacts) && !/id="contacts-seen-go"/.test(contacts)) test.check('the panel\'s own input and Search button are gone');
 else test.fail(OWED + 'Find someone on the network still has its own input or Search button');
-if (/shellCreateListSearch\(/.test(contacts) && /'peer\.search'/.test(contacts) && !/function contactsSearchSeen\(/.test(contacts)) test.check('the panel draws through the shared list, asking peer.search');
+// The panel is the shell element peerFind since goal/G30.1 (box v39); Contacts draws it with its own Add class.
+const finder = code('shell/js/peerFind.js');
+if (/spiritElements\.peerFind\.create\(/.test(contacts) && /shellCreateListSearch\(/.test(finder) && /'peer\.search'/.test(finder) && !/function contactsSearchSeen\(/.test(contacts)) test.check('the panel draws through the shared list, asking peer.search');
 else test.fail(OWED + 'the panel does not draw through the shared list');
-if (/contacts-seen-add/.test(contacts) && /contactsSaidCell\(/.test(contacts)) test.check('a row still has its Add and the sentence the node said about itself');
+if (/contacts-seen-add/.test(contacts) && /function saidCell\(/.test(finder)) test.check('a row still has its Add and the sentence the node said about itself');
 else test.fail(OWED + 'the row lost Add or the said cell');
 
 test.reportSuccessFailureCount();

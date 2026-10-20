@@ -59,7 +59,9 @@ test.subHeading('3. Natter searches');
 // Natter retired (section 7), so its list with it: relays are searched in the Contacts list of peers seen, which is
 // the shared list search.
 const contactsList = code('shell/contacts/contacts.js');
-if (/contactsSeenList = window\.spiritElements\.shellCreateListSearch\(/.test(contactsList) && !natterApp())
+// The list of peers seen is the shell element peerFind since goal/G30.1 (box v39); Contacts draws it.
+const finder = code('shell/js/peerFind.js');
+if (/contactsSeenList = window\.spiritElements\.peerFind\.create\(/.test(contactsList) && /shellCreateListSearch\(/.test(finder) && !natterApp())
   test.check('relays are searched in the Contacts list of peers seen, the shared list search');
 else test.fail(OWED + 'relays are not searched through the shared list');
 const relaySearch = (/function relaySearch\(body, deps\) \{[\s\S]*?\n  \}/.exec(hub) || [''])[0];
@@ -145,7 +147,7 @@ else test.fail(OWED + 'an added relay in the shadow: ' + short(added));
 if (/kind:/.test((/function fromMemory[\s\S]*?\n  \}/.exec(hub) || [''])[0])) test.check('peer.search rows carry kind in their label');
 else test.fail(OWED + 'peer.search rows carry no kind');
 const contacts = code('shell/contacts/contacts.js');
-if (/kind\s*===\s*'relay'/.test(contacts) && /callDialog\('shell\/natterDetails'/.test(contacts)) test.check('the Contacts list of peers seen has a relay filter, and a relay opens natterDetails');
+if (/kind\s*===\s*'relay'/.test(finder) && /callDialog\('shell\/natterDetails'/.test(finder)) test.check('the Contacts list of peers seen has a relay filter, and a relay opens natterDetails');
 else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to natterDetails');
 
 // NATTER RETIRES (the box, v20; Andy, 2026-10-20: "i feel like killing natter now, and putting the add-relay into
@@ -170,7 +172,7 @@ else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no
 // Andy, 2026-10-20: on noderoutes he got Block and Forget ("It also allows me to block or forget a relay that i have a
 // seat on..... not optimal...."): a relay's book row (added before relays were peers) gives way to the relay row, and
 // the network search offers no Add for a relay.
-if (/relayKey: relayKeys\.pinned\(rootDir, row\.url\)/.test(hub) && /!relayKeys\[i\.key\]/.test(contactsCode) && /c\.kind === 'relay' \? '<span class="muted">a relay<\/span>'/.test(contactsCode))
+if (/relayKey: relayKeys\.pinned\(rootDir, row\.url\)/.test(hub) && /!relayKeys\[i\.key\]/.test(contactsCode) && /c\.kind === 'relay' \? '<span class="muted">a relay<\/span>'/.test(finder))
   test.check('a relay\'s book row gives way to its relay row (matched by the relay key relay.search now carries), and a relay has no Add');
 else test.fail(OWED + 'a relay can still show as a book contact, or be added to the book');
 

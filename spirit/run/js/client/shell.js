@@ -566,23 +566,32 @@
     serversShown = now;
     renderDesktop();
   }
-  // DOES THIS NODE HOLD A SEAT? (goal/G30.1, box v32) null until relay.search answers; then true when any listed relay
-  // is owned or claimed. Asked once per page: a seat is taken by opening the mailed link, which loads the page anew.
-  var nodeSeated = null;
-  function askSeated() {
-    Promise.resolve(spirit.core.ask('relay.search', { q: '*' })).then(function (r) {
-      var items = (r && r.body && r.body.items) || [];
-      var seated = items.some(function (i) {
-        var row = null;
-        try { row = JSON.parse(i.label); } catch (e) { row = null; }
-        return !!(row && (row.owned || row.claimed));
-      });
-      if (seated === nodeSeated) return;
-      nodeSeated = seated;
-      if (typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
-    }, function () { /* no answer: the icon stays undrawn */ });
+  // WHERE THE JOIN APP'S STEPS STAND (goal/G30.1, box v39). An app whose manifest lists steps has its tile on the
+  // desktop beside the Spirit group while a step is open, named and marked by that step; past the last one the tile is
+  // gone. joinSteps (shell/js/joinSteps.js) decides it, from what the node says and the app's own override faceOpened,
+  // so the tile and the app's list read one answer. null until the node has answered. Asked at load and again when the
+  // desktop is drawn, at most every few seconds, so a step done inside the app moves the tile on the way back.
+  var stepFacts = null;
+  var stepsAskedAt = 0;
+  function askStepFacts() {
+    var steps = window.spiritElements && window.spiritElements.joinSteps;
+    if (!steps || Date.now() - stepsAskedAt < 3000) return;
+    stepsAskedAt = Date.now();
+    steps.facts(function (verb, args) { return spirit.core.ask(verb, args); }, false).then(function (f) {
+      var was = JSON.stringify(stepFacts);
+      stepFacts = f;
+      if (was !== JSON.stringify(f) && typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
+    }, function () { /* no answer: the tile stays undrawn */ });
   }
-  askSeated();
+  function openStep(app) {
+    var steps = window.spiritElements && window.spiritElements.joinSteps;
+    if (!steps || !stepFacts) return null;
+    var f = {};
+    Object.keys(stepFacts).forEach(function (k) { f[k] = stepFacts[k]; });
+    f.opened = !!getAppOverride(app.id).faceOpened;
+    return steps.current(app.steps, f);
+  }
+  askStepFacts();
 
   function renderDesktop() {
     serversShown = serversUpKey();
@@ -592,9 +601,17 @@
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
       if (!serverUp(app)) return; // its server is not running (goal/G27.16)
       if (!shownByInclusion(id)) return; // not included on this node (slim/G1.7)
-      // The Join icon (goal/G30.1, box v32): on the desktop beside the Spirit group while the node holds no seat,
-      // gone once it holds one. Not drawn until relay.search has said which.
-      if (app.untilSeated) { if (nodeSeated === false) desktopEl.appendChild(buildAppIcon(id)); return; }
+      // The Join tile (goal/G30.1, box v39): beside the Spirit group, named and marked by its open step, gone past the
+      // last one; not drawn until the node has answered.
+      if (app.steps) {
+        askStepFacts();
+        var step = openStep(app);
+        if (!step) return;
+        app.name = step.name;
+        app.icon = spirit.core.const.ICON[step.icon] || app.icon;
+        desktopEl.appendChild(buildAppIcon(id));
+        return;
+      }
       // An intrinsic app is excluded here like any other grouped app —
       // effectiveGroup returns Spirit for it, and that is where its icon
       // is, one tap from the desktop and never at the operator's mercy.
@@ -667,8 +684,8 @@
       // parent underneath, which is precisely the case that invariant
       // says cannot arise.
       if (apps[id].hidden) return;
-      // Nor an app the desktop shows until the node is seated (goal/G30.1): it lives beside the group, not in it.
-      if (apps[id].untilSeated) return;
+      // Nor an app with steps (goal/G30.1): its tile lives beside the group while a step is open, not in it.
+      if (apps[id].steps) return;
       // Nor while the server it needs is not running (goal/G27.16).
       if (!serverUp(apps[id])) return;
       drawn[id] = true;
@@ -2775,9 +2792,9 @@
       // (Andy). Nothing already shipped changes — every manifest in the
       // tree says hidden:false.
       hidden: !!manifest.hidden,
-      // SHOWN ONLY WHILE THE NODE HOLDS NO SEAT (goal/G30.1, box v32): on the desktop, not in a group; see
-      // renderDesktop and nodeSeated.
-      untilSeated: !!manifest.untilSeated,
+      // THE STEPS IT WALKS A USER THROUGH (goal/G30.1, box v39): its tile is on the desktop, not in a group, while a
+      // step is open; see renderDesktop and askStepFacts.
+      steps: Array.isArray(manifest.steps) ? manifest.steps : null,
       // THE SERVER IT NEEDS (goal/G27.16): the folder name of a server under process/js, read off the app's own
       // manifest; '' for an app that needs none. See serverUp.
       server: typeof manifest.server === 'string' ? manifest.server : '',
@@ -2964,19 +2981,32 @@
   // The relay mailed the user a link to this node, http://127.0.0.1:<port>?join=<code>. Opened here, the node sends
   // the code back to the relay it asked (relay.join with the code); a right code takes the seat at once. The code
   // leaves the address bar first, so a reload or a shared screenshot does not carry it.
+  // AN APP NAMED IN THE ADDRESS OPENS ON LOAD (goal/G30.1, box v39): ?app=<folder>, so the mail's link
+  // (?join=<code>&app=join) leads straight back into the Join app. Read before the address is cleared below, and opened
+  // once the join has answered, so the app shows the seat it just took.
+  var appFromAddress = '';
+  try { appFromAddress = new URLSearchParams(window.location.search).get('app') || ''; } catch (e) { appFromAddress = ''; }
+  function openAppFromAddress() {
+    if (!/^[A-Za-z0-9_-]+$/.test(appFromAddress) || !apps['shell/' + appFromAddress]) return;
+    stepsAskedAt = 0;
+    askStepFacts();
+    launchApp('shell/' + appFromAddress);
+  }
   (function joinFromLink() {
     var code = '';
     try { code = new URLSearchParams(window.location.search).get('join') || ''; } catch (e) { code = ''; }
-    if (!code) return;
+    if (!code) { openAppFromAddress(); return; }
     try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the code is spent anyway */ }
     Promise.resolve(spirit.core.ask('relay.join', { url: '', email: '', code: code })).then(function (r) {
+      // The app named beside the code opens once the join has answered, whatever it said.
+      setTimeout(openAppFromAddress, 0);
       var b = (r && r.body) || {};
       // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31); the node's status is the
       // HTTP one.
       if (b.ok && r.status === 200) { window.alert('Email address verified on ' + (b.url || 'the relay') + '.'); return; }
       window.alert(b.ok ? 'Joined ' + (b.url || 'the relay') + (b.label ? ' as ' + b.label : '') + '.'
         : 'The join did not finish: ' + (b.error || 'no answer') + '. Ask again with your email.');
-    }, function () { window.alert('The join did not finish: this node did not answer.'); });
+    }, function () { window.alert('The join did not finish: this node did not answer.'); openAppFromAddress(); });
   }());
 
   // ---- Shared data subscription (page-lifetime, not app-lifetime) ----

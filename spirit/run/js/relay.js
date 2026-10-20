@@ -4047,7 +4047,7 @@ function createRelay(rootDir, deps) {
       to: mail,
       // A seated key is changing its email, not joining (goal/G30.1, box v31).
       subject: findByKey(key) ? 'Confirm your email address' : 'Join this relay',
-      text: 'Open this link on the computer where SpiritOS runs, within 10 minutes:\n\nhttp://127.0.0.1:' + p + '?join=' + code + '\n\nIt counts once.',
+      text: 'Open this link on the computer where SpiritOS runs, within 10 minutes:\n\nhttp://127.0.0.1:' + p + '?join=' + code + '&app=join\n\nIt counts once.',
     })).catch(function () { /* the pending join lapses on its own */ });
     return { ok: true, status: 200 };
   }
