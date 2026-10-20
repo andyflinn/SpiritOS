@@ -33,7 +33,7 @@
     var ALL_VERBS = '*';   // kept for a pick that names all verbs; the dropdown's Clear means the same
     var root = document.createElement('div');
     root.className = 'api-branch-selector' + (options.className ? ' ' + options.className : '');
-    var servers = window.spiritElements.createAppServerSelector({ placeholder: options.serverPlaceholder, all: options.all });
+    var servers = window.spiritElements.createAppServerSelector({ placeholder: options.serverPlaceholder, all: options.all, tree: options.tree });
     var verbBox = document.createElement('span');
     verbBox.hidden = true;
     // SIDE BY SIDE (goal/G29.7; Andy, 2026-10-18: "get those two selector, server and verb NEXT to each other, not
@@ -74,6 +74,17 @@
       verbList.redraw();
       settle();
     });
+    // A NEW PARTY'S TREE (goal/G30.5): the choice clears, the verb half hides, and root.tree is the tree once loaded.
+    root.load = function (fn) {
+      root.server = '';
+      root.verb = '';
+      verbBox.hidden = true;
+      verbList.redraw();
+      settle();
+      return servers.load(fn);
+    };
+    servers.addEventListener('tree', function () { root.tree = servers.tree; root.dispatchEvent(new Event('tree', { bubbles: false })); });
+    root.servers = servers;
     return root;
   }
 

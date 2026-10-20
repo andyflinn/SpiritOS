@@ -2547,6 +2547,34 @@ function createRelay(rootDir, deps) {
     catch (e) { return { ok: false, status: e && e.refusal ? 400 : 500, error: (e && e.refusal) || 'the folder could not be read' }; }
   }
 
+  // ── THE RELAY'S API, FOR EVERY MEMBER (goal/G30.5) ────────────────────
+  //
+  //   Andy, 2026-10-20: "the relay will reply to api queries for ALL members, not just the owner", in the same shape
+  //   as the node's api ("why would i do that, if not to give the relay-api the same shape as the nodes api?").
+  //
+  // The body 'api' answers { relay: { <verb>: { description, request, reply } } }, cut to the caller's category: a
+  // member the member verbs, the owner every verb and the FS verbs. Each entry is read from the verb's file in
+  // js/relaySelf/; a file declares no reply, so reply is {}. FS itself stays the owner's (the gate below).
+  function relayApi(owner) {
+    var family = relaySelfFamily();
+    var out = {};
+    (owner ? MEMBER_VERBS.concat(OWNER_VERBS) : MEMBER_VERBS).forEach(function (v) {
+      var read = answerFs('FS.loadJsonValue', { path: v + '.json' });
+      var file = read && read.value && typeof read.value === 'object' ? read.value : {};
+      out[v] = {
+        description: typeof file.description === 'string' ? file.description : '',
+        request: file.request && typeof file.request === 'object' ? file.request : {},
+        reply: file.reply && typeof file.reply === 'object' ? file.reply : {},
+      };
+    });
+    if (owner) {
+      Object.keys(family).filter(function (n) { return n.indexOf('FS.') === 0; }).forEach(function (n) {
+        out[n] = { description: family[n].description || '', request: family[n].request || {}, reply: family[n].reply || {} };
+      });
+    }
+    return { relay: out };
+  }
+
   function answerSelfInner(hash, text, who) {
     var asked = null;
     try { asked = JSON.parse(text); }
@@ -2554,6 +2582,7 @@ function createRelay(rootDir, deps) {
     var body = (asked && asked.body) || null;
     var out = { ok: false, status: 404, error: 'no such peer' };
     var owner = isOwner(who);
+    if (body === 'api') return sendSelfAnswer(hash, who, relayApi(owner));
 
     // THE GATE comes first (goal/G30.3): a verb outside the caller's category is refused before any verb below can see
     // it. FS.* is an owner verb (goal/G30.4), answered from the folder.

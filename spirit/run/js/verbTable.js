@@ -282,7 +282,7 @@ function createVerbTable() {
   // app-client branch at all anymore"); {family: {verb: {args}}} runs a node family through call and hands anything
   // else to the apps (jobs.api stays the way app families join). It gates nothing: the gate is apiDoor's.
   function door(apps) {
-    return {
+    var d = {
       ask: function (body, caller) {
         if (body === 'api') {
           return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask('api', caller) : { status: 200, body: {} }).then(function (r) {
@@ -307,6 +307,41 @@ function createVerbTable() {
         return Promise.resolve(apps && typeof apps.ask === 'function' ? apps.ask(body, caller) : { status: 404, body: { ok: false, code: 'app-not-served' } });
       },
     };
+    // ── THE DOOR'S OWN FRONT (goal/G30.5) ───────────────────────────────
+    //
+    //   Andy, 2026-10-20: "the api query belongs to the apiDoor", and on the door that sat behind jobs.api alone:
+    //   "why do you think i want a uniform, orthogonal api implementation?"
+    //
+    // The loopback door (/api/spirit) asks this for the handler of a verb, as it asked the table. A node family verb
+    // keeps its own (req, res) handler, unchanged; 'api' answers the flat table; 'family.verb' (the family is the part
+    // before the first dot) goes through ask as {family: {verb: args}}, args the body without verb. The caller is the
+    // owner: the loopback door is the owner's own machine.
+    d.handlerFor = function (verb) {
+      var name = String(verb || '');
+      var own = handlerFor(name);
+      if (own) return own;
+      var dot = name.indexOf('.');
+      if (name !== 'api' && (dot < 1 || dot === name.length - 1)) return null;
+      // A family nobody serves is no verb at all: the door refuses it, as it refused any unclaimed verb.
+      if (name !== 'api' && apps && typeof apps.apps === 'function' && apps.apps().indexOf(name.slice(0, dot)) === -1) return null;
+      return function (rq, rs) {
+        return readBody(rq).then(function (body) {
+          var args = {};
+          if (body && typeof body === 'object' && !Array.isArray(body)) Object.keys(body).forEach(function (k) { if (k !== 'verb') args[k] = body[k]; });
+          var asked = name;
+          if (name !== 'api') {
+            asked = {};
+            asked[name.slice(0, dot)] = {};
+            asked[name.slice(0, dot)][name.slice(dot + 1)] = args;
+          }
+          return d.ask(asked, { owner: true });
+        }).then(function (a) {
+          rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
+          rs.end(JSON.stringify(a && a.body !== undefined ? a.body : { ok: false, code: 'handler-failed' }));
+        });
+      };
+    };
+    return d;
   }
 
   return {

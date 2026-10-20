@@ -185,6 +185,8 @@ let peerRouter = null;
 //
 // A relay has no such door and does not load this module (relayServer.js).
 const loopbackVerbs = require('./verbTable').createVerbTable();
+// The flat apiDoor (goal/G30.4), set once the app client exists below; /api/spirit dispatches through it (goal/G30.5).
+let nodeDoor = null;
 // THE DECLARATION FORM (goal/G10.5), MOUNTED (goal/G30.4): each module's verbs are {request, reply, handler},
 // declared bare (stat, not fs.stat); loopbackVerbs.mount gives them their family name and adds the AGENTS family of
 // the folder js/<family>/. A module does not know the name it is mounted under (Andy, 2026-10-20).
@@ -1044,8 +1046,9 @@ const server = http.createServer((req, res) => {
           res.end('Body too large: ' + common.bodyBytes(req) + ' of ' + require('./limits').BODY_MAX);
           return;
         }
-        const run = loopbackVerbs.handlerFor(verb);
-        if (!run) {
+        // THROUGH THE FLAT apiDoor (goal/G30.5; Andy, 2026-10-20: "the api query belongs to the apiDoor"): a node
+        // family verb keeps its handler, 'api' is the door's flat table, family.verb reaches the app that serves it.
+        const run = nodeDoor ? nodeDoor.handlerFor(verb) : null;        if (!run) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ error: 'no such verb: ' + verb }));
           return;
@@ -1457,7 +1460,7 @@ contactBook.syncMarks(ROOT_DIR);
   // THE ONE DOOR TO THE FLAT TABLE (goal/G30.4): this node's families and its apps' side by side. apiDoor (a
   // peer, gated by its grants) and jobs.api (the owner, ungated) both ask it; a node family runs in-process
   // through the same handler the loopback door calls (Andy: "1 handler, grant-system covers all").
-  const nodeDoor = loopbackVerbs.door(appClient);
+  nodeDoor = loopbackVerbs.door(appClient);
   jobs.startNodeServers(ROOT_DIR, appClient);
 
   // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────

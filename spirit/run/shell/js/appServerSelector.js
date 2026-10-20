@@ -64,11 +64,21 @@
       empty: 'No server matches.',
     });
 
-    spirit.core.ask('jobs.api', { ask: 'api' }).then(function (a) {
-      root.tree = (a && a.body) || null;
+    // ANY PARTY'S TREE (goal/G30.5): options.tree, a function answering a promise of the tree, lists another party's
+    // families (introSpector: a peer node's, a relay's); root.load(fn) lists a new one and clears the choice. Without
+    // it, this node's own, as before.
+    root.load = function (fn) {
+      root.value = '';
+      root.tree = null;
       list.redraw();
-      root.dispatchEvent(new Event('tree', { bubbles: false }));
-    }, function () { /* the list stays empty; the node says why elsewhere */ });
+      var got = typeof fn === 'function' ? fn() : spirit.core.ask('jobs.api', { ask: 'api' }).then(function (a) { return a && a.body; });
+      return Promise.resolve(got).then(function (tree) {
+        root.tree = tree && typeof tree === 'object' ? tree : null;
+        list.redraw();
+        root.dispatchEvent(new Event('tree', { bubbles: false }));
+      }, function () { /* the list stays empty; the node says why elsewhere */ });
+    };
+    root.load(options.tree);
     return root;
   }
 

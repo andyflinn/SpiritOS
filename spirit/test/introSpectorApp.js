@@ -80,6 +80,7 @@ function run(handler, body) {
   }, { wire: false, by: 'test' });
   const asked = [];
   const fakeApps = {
+    apps: function () { return ['desk']; },
     ask: function (body) {
       asked.push(body);
       if (body === 'api') return Promise.resolve({ status: 200, body: { desk: { items: { request: { q: '' }, reply: {} } } } });
@@ -106,9 +107,11 @@ function run(handler, body) {
   const nodeAns = front && front('xfs.stat') ? await run(front('xfs.stat'), { verb: 'xfs.stat', path: 'a' }) : null;
   if (nodeAns && nodeAns.status === 200 && nodeAns.body && nodeAns.body.size === 7) test.check('a node family verb (xfs.stat) still runs its own handler through the front');
   else test.fail(OWED + 'xfs.stat answered ' + short(nodeAns));
-  const none = front && front('nope.x') ? await run(front('nope.x'), { verb: 'nope.x' }) : null;
-  if (none && none.status === 404 && none.body && none.body.code === 'app-not-served') test.check('a family nobody serves answers app-not-served from the door');
-  else test.fail(OWED + 'nope.x answered ' + short(none));
+  // A family that is neither the node's nor a served app's is no verb: the loopback door answers it no such verb, as
+  // it answered any unclaimed verb (serverSurface, everyVerb).
+  const none = front ? front('nope.x') : 'no front';
+  if (none === null) test.check('a family nobody serves has no handler, so the door answers it no such verb');
+  else test.fail(OWED + 'nope.x has a handler: ' + short(typeof none));
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* busy */ }
   const server = code('js/server.js');
   if (/nodeDoor\.handlerFor\(verb\)/.test(server) && !/loopbackVerbs\.handlerFor\(verb\)/.test(server)) test.check('server.js: /api/spirit dispatches through nodeDoor.handlerFor, not the verb table alone');
@@ -152,7 +155,8 @@ function run(handler, body) {
     'a peer node asked api by peerPost': /peerPost\(\s*'api'\s*,[^)]*'api'\s*\)/.test(app),
     'a relay asked api by peerPost': /peerPost\(\s*'relay'\s*,[^)]*'api'\s*\)/.test(app),
     'the contact selector': /createContactSelector\(/.test(app),
-    'the app-server selector': /createAppServerSelector\(/.test(app),
+    // the family dropdown is the app-server selector the api-branch selector builds and feeds options.tree
+    'the app-server selector': /createAppServerSelector\(/.test(app) || (/createApiBranchSelector\(\{[^}]*tree:/.test(app) && /createAppServerSelector\(\{[^}]*tree: options\.tree/.test(code('shell/js/apiBranchSelector.js'))),
     'the api-branch selector': /createApiBranchSelector\(/.test(app),
     'a CodeMirror text view for the reply': /textView|createTextView|CodeMirror/.test(app),
     'no verbs available': /no verbs available/.test(app),

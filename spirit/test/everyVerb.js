@@ -151,7 +151,9 @@ let said = '';
   // door must look a verb up in the SAME table, or "proxies the entire
   // node api" (G7) is a second list that can drift. Read from the source,
   // because the owner door needs a relay to be driven live.
-  const loopbackDoor = /const run = loopbackVerbs\.handlerFor\(verb\);/.test(serverSrc);
+  // Since goal/G30.5 the loopback door asks the flat apiDoor (nodeDoor, made from loopbackVerbs), whose node family
+  // verbs are loopbackVerbs.handlerFor's.
+  const loopbackDoor = /const run = nodeDoor \? nodeDoor\.handlerFor\(verb\) : null;/.test(serverSrc) && /nodeDoor = loopbackVerbs\.door\(/.test(serverSrc);
   // Since goal/G30.4 the owner door is handed the table's call, which looks the verb up by loopbackVerbs.handlerFor.
   const ownerDoor = /puppetDoor\(\{[\s\S]{0,300}?call: function \(verb, args\) \{ return loopbackVerbs\.call\(verb, args\); \}/
     .test(serverSrc);

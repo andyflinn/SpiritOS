@@ -1,0 +1,8 @@
+{
+  "name": "introSpector",
+  "description": "See what a party lets you call: this node, a peer or a relay. Pick a family and a verb, fill its form, call it, read the reply.",
+  "icon": "GLASSES",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}
