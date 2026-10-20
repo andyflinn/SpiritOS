@@ -31,33 +31,34 @@ function joinSteps() {
 
 function joinOpened() { return !!(joinApi.getAppOverride('shell/join') || {}).faceOpened; }
 
-// The facts, and the relay row the face step needs (relay.get carries its face and verified email).
-// THE LIST HOLDS STILL WHILE HE TYPES (Andy, 2026-10-20: "the ting, AGAIN, refreshes EVERYTHING, whenever a bloody
-// message hits the shell"). The shell calls render on its messages; a load asked from there redraws only when what the
-// node says has changed, and never while a field inside the list has focus. A load after something he did here (mount,
-// an Add, a face asked, the link opened) is `forced`: it draws what it got.
-var joinLoadedAt = 0;
-var joinShown = '';
-function joinLoad(forced) {
-  joinLoadedAt = Date.now();
-  var steps = joinEl().steps;
-  if (!steps) { joinDraw(); return Promise.resolve(); }
-  return steps.facts(joinAsk, joinOpened()).then(function (f) {
-    joinFacts = f;
-    if (!f.seated || !f.relayUrl) { joinRelayRow = null; return null; }
-    return Promise.resolve(joinAsk('relay.get', { key: f.relayUrl })).then(function (g) {
-      var row = (g && g.body && g.body.relay) || null;
-      joinRelayRow = row ? Object.assign({ label: row.label || f.relayUrl.replace(/^https?:\/\//, '') }, row) : null;
-    });
-  }).then(function () {
-    var said = JSON.stringify([joinFacts, joinRelayRow]);
-    var host = document.getElementById('join-list');
-    if (forced !== true && (said === joinShown || (host && host.contains(document.activeElement)))) return;
-    joinShown = said;
-    joinDraw();
-  }, function () { if (forced === true) joinDraw(); });
+// THE APP CARRIES ITS OWN LISTENER (goal/G30.1, box v40; Andy, 2026-10-20: "does the fucking new element even carry its
+// own listener, that keeps the screen untouched until a streamed event actually affects it?", then "FIX IT RIGHT").
+// It hears the node's join-steps job on the jobs stream and draws only when that job says something new; it asks the
+// node nothing about the steps, and the shell's render does nothing here. A change that arrives while a field in the
+// list has focus waits until the focus leaves the list, so nothing he is typing is wiped.
+var joinData = null;      // the job's facts as last heard
+var joinShown = '';       // what the list was last drawn from
+var joinWaiting = false;  // a change heard while he was typing
+function joinTake(job) {
+  if (!job || job.type !== 'join-steps') return;
+  joinData = job.data || {};
+  joinShow(false);
 }
-function joinReload() { return joinLoad(true); }
+// Drawn from the last job heard, with this app's own faceOpened. `forced` after something he did here (the link opened):
+// drawn even while unchanged, never while he is typing in the list.
+function joinShow(forced) {
+  var steps = joinEl().steps;
+  if (!steps || !joinData) return;
+  var said = JSON.stringify([joinData, joinOpened()]);
+  if (said === joinShown && forced !== true) return;
+  var host = document.getElementById('join-list');
+  if (host && host.contains(document.activeElement)) { joinWaiting = true; return; }
+  joinShown = said;
+  joinWaiting = false;
+  joinFacts = steps.fromJob(joinData, joinOpened());
+  joinDraw();
+}
+function joinReload() { joinShow(true); }
 
 function joinDraw() {
   var host = document.getElementById('join-list');
@@ -103,20 +104,30 @@ function joinForm(step, box) {
       ask: joinAsk,
       peerPost: function (app, key, body) { return joinApi.peerPost(app, key, body); },
       callDialog: function (id, params) { return joinApi.callDialog(id, params); },
-      onAdded: function () { joinReload(); },
+      // The node republishes join-steps once the contact is in the book; nothing to ask here.
+      onAdded: function () {},
       say: function (text) { var s = box.querySelector('.join-find-said'); if (s) s.textContent = text; },
     });
     return;
   }
   if (step.until === 'face' && el.faceForm) {
-    el.faceForm.mount(box, {
-      seats: joinRelayRow ? [joinRelayRow] : [],
-      ask: joinAsk,
-      callDialog: function (id, params) { return joinApi.callDialog(id, params); },
-      reload: joinReload,
-      idPrefix: 'join-face-',
-      escape: joinApi.escapeHtml,
-    });
+    // The form needs the relay's row (its kept face and verified email): read once, when this step is drawn, which is
+    // when the job changed. The node republishes join-steps once a face is accepted.
+    var mount = function () {
+      el.faceForm.mount(box, {
+        seats: joinRelayRow ? [joinRelayRow] : [],
+        ask: joinAsk,
+        callDialog: function (id, params) { return joinApi.callDialog(id, params); },
+        reload: function () { return Promise.resolve(); },
+        idPrefix: 'join-face-',
+        escape: joinApi.escapeHtml,
+      });
+    };
+    Promise.resolve(joinAsk('relay.get', { key: joinFacts.relayUrl })).then(function (g) {
+      var row = (g && g.body && g.body.relay) || null;
+      joinRelayRow = row ? Object.assign({ label: row.label || joinFacts.relayUrl.replace(/^https?:\/\//, '') }, row) : null;
+      mount();
+    }, mount);
     return;
   }
   if (step.until === 'opened') {
@@ -140,14 +151,18 @@ spirit.shell.activateApp({
       '<div class="stack">' +
         '<div class="stat-tile wide"><div class="label">Becoming a SpiritOS participant</div>' +
           '<div class="job-manifest-note">A few steps, from joining a relay to opening your node from anywhere.</div></div>' +
-        '<div id="join-list"></div>' +
+        '<div id="join-list"><div class="job-manifest-note">Waiting for this node to say where you stand…</div></div>' +
       '</div>';
-    joinReload();
+    // A change heard while he typed is drawn once the focus has left the list.
+    document.getElementById('join-list').addEventListener('focusout', function () {
+      setTimeout(function () { if (joinWaiting) joinShow(true); }, 0);
+    });
+    // The node's join-steps job: the snapshot has it now, every update after that is news.
+    spirit.core.jobs.subscribe({
+      onSnapshot: function (jobs) { (jobs || []).forEach(joinTake); },
+      onUpdate: joinTake,
+    });
   },
-  // On the shell's messages, and when opened again: asked again at most every few seconds, and drawn only when the
-  // node says something new and nobody is typing in the list (joinLoad).
-  render: function () {
-    if (Date.now() - joinLoadedAt < 3000) return;
-    joinLoad();
-  },
+  // The shell's messages are not this app's news: it draws from the join-steps job alone.
+  render: function () {},
 });

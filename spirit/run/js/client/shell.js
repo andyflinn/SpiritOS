@@ -566,32 +566,23 @@
     serversShown = now;
     renderDesktop();
   }
-  // WHERE THE JOIN APP'S STEPS STAND (goal/G30.1, box v39). An app whose manifest lists steps has its tile on the
-  // desktop beside the Spirit group while a step is open, named and marked by that step; past the last one the tile is
-  // gone. joinSteps (shell/js/joinSteps.js) decides it, from what the node says and the app's own override faceOpened,
-  // so the tile and the app's list read one answer. null until the node has answered. Asked at load and again when the
-  // desktop is drawn, at most every few seconds, so a step done inside the app moves the tile on the way back.
+  // WHERE THE JOIN APP'S STEPS STAND (goal/G30.1, box v39 and v40). An app whose manifest lists steps has its tile on
+  // the desktop beside the Spirit group while a step is open, named and marked by that step; past the last one the tile
+  // is gone. The facts are the node's join-steps job, heard on the jobs stream below (takeStepsJob) and never asked:
+  // the node publishes it the moment a seat, a contact or a face changes. joinSteps (shell/js/joinSteps.js) decides
+  // the open step from it and the app's own override faceOpened, the same answer the Join app draws. null until heard.
   var stepFacts = null;
-  var stepsAskedAt = 0;
-  function askStepFacts() {
-    var steps = window.spiritElements && window.spiritElements.joinSteps;
-    if (!steps || Date.now() - stepsAskedAt < 3000) return;
-    stepsAskedAt = Date.now();
-    steps.facts(function (verb, args) { return spirit.core.ask(verb, args); }, false).then(function (f) {
-      var was = JSON.stringify(stepFacts);
-      stepFacts = f;
-      if (was !== JSON.stringify(f) && typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
-    }, function () { /* no answer: the tile stays undrawn */ });
+  function takeStepsJob(job) {
+    if (!job || job.type !== 'join-steps') return;
+    var was = JSON.stringify(stepFacts);
+    stepFacts = job.data || {};
+    if (was !== JSON.stringify(stepFacts) && typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
   }
   function openStep(app) {
     var steps = window.spiritElements && window.spiritElements.joinSteps;
     if (!steps || !stepFacts) return null;
-    var f = {};
-    Object.keys(stepFacts).forEach(function (k) { f[k] = stepFacts[k]; });
-    f.opened = !!getAppOverride(app.id).faceOpened;
-    return steps.current(app.steps, f);
+    return steps.current(app.steps, steps.fromJob(stepFacts, !!getAppOverride(app.id).faceOpened));
   }
-  askStepFacts();
 
   function renderDesktop() {
     serversShown = serversUpKey();
@@ -604,7 +595,6 @@
       // The Join tile (goal/G30.1, box v39): beside the Spirit group, named and marked by its open step, gone past the
       // last one; not drawn until the node has answered.
       if (app.steps) {
-        askStepFacts();
         var step = openStep(app);
         if (!step) return;
         app.name = step.name;
@@ -2793,7 +2783,7 @@
       // tree says hidden:false.
       hidden: !!manifest.hidden,
       // THE STEPS IT WALKS A USER THROUGH (goal/G30.1, box v39): its tile is on the desktop, not in a group, while a
-      // step is open; see renderDesktop and askStepFacts.
+      // step is open; see renderDesktop and takeStepsJob.
       steps: Array.isArray(manifest.steps) ? manifest.steps : null,
       // THE SERVER IT NEEDS (goal/G27.16): the folder name of a server under process/js, read off the app's own
       // manifest; '' for an app that needs none. See serverUp.
@@ -2988,8 +2978,6 @@
   try { appFromAddress = new URLSearchParams(window.location.search).get('app') || ''; } catch (e) { appFromAddress = ''; }
   function openAppFromAddress() {
     if (!/^[A-Za-z0-9_-]+$/.test(appFromAddress) || !apps['shell/' + appFromAddress]) return;
-    stepsAskedAt = 0;
-    askStepFacts();
     launchApp('shell/' + appFromAddress);
   }
   (function joinFromLink() {
@@ -3013,7 +3001,7 @@
   spirit.core.jobs.subscribe({
     onSnapshot: function (jobs) {
       jobsById.clear();
-      jobs.forEach(function (job) { jobsById.set(job.id, job); });
+      jobs.forEach(function (job) { jobsById.set(job.id, job); takeStepsJob(job); });
       // THE TREE COMES AFTER THE SNAPSHOT (goal/G4.25): discovery, its listeners and the pruning wait for
       // treeComplete, since pruning before the tree is whole would strip the settings of apps not yet seen. A node
       // with no watcher sends no tree, so they run now, as they did when the list was empty.
@@ -3044,6 +3032,7 @@
         if (!fileTreeReady) return;
       }
       jobsById.set(job.id, job);
+      takeStepsJob(job);
       deliverPublished(job);
       notifyFileSubscribers();
       notifyJobSubscribers(job);

@@ -167,6 +167,11 @@ const BOOT_ASSETS = ['index.html', 'js/kernel.js', 'js/client/shell.js', 'favico
 
 const jobs = require('./jobs')(spirit, port);
 jobs.startFsWatcherJob(ROOT_DIR);
+// WHERE THE JOIN STEPS STAND (goal/G30.1, box v40): a permanent job the shell's Join tile and the Join app hear, so
+// they draw when a seat, a contact or a face changes and never ask. Refreshed at /api/spirit after a relay, contact or
+// peer verb has answered (below), the moment the node knows.
+let joinStepsJob = null;
+try { joinStepsJob = require('./joinStepsJob').create(ROOT_DIR, jobs); } catch (e) { joinStepsJob = null; }
 
 // `let presence` STOOD HERE. The node's held streams live inside peerRouter
 // since goal/G19.14 (peerPost.holdStreams): one door, and this file asks it.
@@ -1062,6 +1067,11 @@ const server = http.createServer((req, res) => {
           res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
           res.end(JSON.stringify({ ok: false, code: 'handler-failed', error: 'the handler failed' }));
         };
+        // A relay, contact or peer verb may have taken a seat, added a contact or kept a face: once its answer has gone
+        // out, the join-steps job is refreshed, and published only if that changed it (goal/G30.1, box v40).
+        if (joinStepsJob && /^(relay|contact|peer)\./.test(String(verb))) {
+          res.on('finish', function () { try { joinStepsJob.refresh(String(verb)); } catch (e) { /* the next verb refreshes it */ } });
+        }
         let ran = null;
         try { ran = run(req, res); }
         catch (e) { failed(); return; }
