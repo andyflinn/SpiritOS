@@ -1,5 +1,5 @@
 {
- "change": 74730,
+ "change": 74733,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -4028,10 +4028,9 @@
    "id": "goal/G30.4",
    "title": "Clean up introSpector and its usage",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
