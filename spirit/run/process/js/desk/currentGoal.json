@@ -1,5 +1,5 @@
 {
- "change": 75602,
+ "change": 75657,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -14,8 +14,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G30.1",
-    "goal/G30.8"
+    "goal/G30.1"
    ],
    "codeOffered": false,
    "go": false,
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 4,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -7104,10 +7103,11 @@
    "id": "goal/G30.8",
    "title": "Desk item details: icon strip, fixed halves, lazy panels",
    "goal": "goal/G30",
-   "status": "running",
-   "with": "claude-windows",
+   "status": "done",
+   "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30"
@@ -7117,21 +7117,37 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/js/kernel.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskDetailsPanels.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "8e671c15",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -7168,9 +7184,37 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "WHY: in an item's details the separate requests load one after another and the page jumps around as each lands; red Qs and grants that wait on Andy are found only by scrolling.\n\nSHAPE (deskDetails)\n- The header (the button bar) stays as it is, minus the yellow bubble that always says \"How you check it: no checks written yet.\", which goes.\n- Below it, the upper half, about 30% of the page height, fixed: a strip of icons down its left edge, and the wide section to their right showing one panel at a time.\n- The panels, one icon each: the box (shown on open), the red Qs, the files with their grants, the blocks (what this item blocks and waits on).\n- A panel asks for its own content only when its icon is pressed (lazy), so opening an item asks for the box alone.\n- An icon blinks while something in its panel waits on Andy: a red Q not answered, a grant not given.\n- Below the upper half: the chat search, the chat input, then the chat history, as before.\n- Fixed heights for both halves, so nothing arriving late moves the page.\n- The icons: box 📃, red Qs ❌, blocks 🪠, files 📂. kernel.js ICON gains the missing two, PAGE 📃 and PLUNGER 🪠; ❌ (NO) and 📂 (OPENFOLDER) are there already.\n- Each red Q in its panel has a remove button beside it, which clears that Q (Andy's to press).",
-   "version": 5,
-   "checks": [],
+   "box": "WHY: in an item's details the separate requests load one after another and the page jumps around as each lands; red Qs and grants that wait on Andy are found only by scrolling.\n\nSHAPE (deskDetails)\n- The header (the button bar) stays as it is, minus the yellow bubble that always says \"How you check it: no checks written yet.\", which goes.\n- Below it, the upper half, about 30% of the page height, fixed: a strip of icons down its left edge, and the wide section to their right showing one panel at a time.\n- The panels, one icon each: the box (shown on open), the red Qs, the files with their grants, the blocks (what this item blocks and waits on).\n- A panel asks for its own content only when its icon is pressed (lazy). Opening an item asks for the item, its box, its checks (they drive the blinking) and its chat; the block targets only when 🪠 is pressed.\n- An icon blinks while something in its panel waits on Andy: a red Q not answered, a grant not given.\n- Below the upper half: the chat search, the chat input, then the chat history, as before.\n- Fixed heights for both halves, so nothing arriving late moves the page.\n- The icons: box 📃, red Qs ❌, blocks 🪠, files 📂. kernel.js ICON gains the missing two, PAGE 📃 and PLUNGER 🪠; ❌ (NO) and 📂 (OPENFOLDER) are there already.\n- Each red Q in its panel has a remove button beside it, which clears that Q (Andy's to press).",
+   "version": 6,
+   "checks": [
+    {
+     "number": "T1",
+     "kind": "T",
+     "words": "",
+     "test": "spirit/test/deskDetailsPanels.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/kernel.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T11:24:47.339Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/kernel.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T11:25:30.237Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -7195,6 +7239,66 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-20T11:12:08.896Z",
      "text": "i love the plunger for blockage...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T11:15:15.054Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:15:17.803Z",
+     "text": "commit 5a9ec76c04dd4cf384d05d3cfa0f8470d2b654c1: goal/G30.8: the red for the item details' icon strip: kernel ICON PAGE and PLUNGER; #dd-upper (30vh) with #dd-icons and #dd-panel above the chat; one panel at a time, the box on open; block.targets on\n- spirit/test/deskDetailsPanels.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:24:30.242Z",
+     "text": "Built; the red is 13/13, and the 11 deskDetails suites are moved to the panels and green (none was red before). The commit waits on one grant: js/kernel.js, for the two icons PAGE 📃 and PLUNGER 🪠.\n\n- Upper half 30vh: 📃 box on open, ❌ red Qs each with remove (sends your Q1: clear) plus the checks that sat in the yellow strip, 🪠 blocks (targets asked only then), 📂 files with grants.\n- ❌ and 📂 blink while a Q or grant waits on you.\n\nGrant kernel.js?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:25:19.418Z",
+     "text": "commit 6fa65df1ca9ac529ac69d8db9974c61e4508a53c: goal/G30.8: the item details hold still: a fixed upper half (30vh) with an icon strip, 📃 box, ❌ red Qs (each with its remove, his clear) and checks, 🪠 blocks (block.targets asked when opened), 📂 fi\n- spirit/run/js/kernel.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskAddBlocking.js\n- spirit/test/deskBindingNick.js\n- spirit/test/deskBlocks.js\n- spirit/test/deskChatFormat.js\n- spirit/test/deskDialog.js\n- spirit/test/deskDialogFollowsItem.js\n- spirit/test/deskFilesTouched.js\n- spirit/test/deskForAgents.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskHeaderArea.js\n- spirit/test/deskLayout.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:25:35.192Z",
+     "text": "Claimed at 6fa65df1; my verify passed (deskDetailsPanels 13/13). Files: kernel.js, deskDetails.js, the red, and 11 deskDetails suites moved to the panels. It is shell code: a page reload shows it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:25:37.613Z",
+     "text": "deskVerify: passed, at 6fa65df1 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:35:37.373Z",
+     "text": "so the box no longer needs to be foldable, it is now space-limited and contained. other than that, it feels much more controlled now....\n\nthanks!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:37:35.241Z",
+     "text": "commit 8e671c15e3aeb463dc9bd54de7e78c34ed7476f3: goal/G30.8: the box no longer folds: its textarea fills the upper half's panel (Andy: \"the box no longer needs to be foldable, it is now space-limited and contained\"); deskBoxHeight, which sized the f\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskBoxHeight.js\n- spirit/test/deskDetailsPanels.js\n- spirit/test/deskIssues.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:37:39.507Z",
+     "text": "Glad it holds still now. The fold is gone at 8e671c15: the box textarea fills its panel and scrolls inside it. deskBoxHeight (it sized the fold) is retired; the red is 14/14."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:37:42.800Z",
+     "text": "deskVerify: passed, at 8e671c15 (pulled). 1 suite ran green."
     }
    ]
   }
