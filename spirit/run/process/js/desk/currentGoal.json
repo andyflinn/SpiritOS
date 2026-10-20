@@ -1,5 +1,5 @@
 {
- "change": 75493,
+ "change": 75497,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -54,9 +54,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -465,7 +463,9 @@
    "blocking": [
     "goal/G30"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.7"
+   ],
    "codeOffered": true,
    "go": true,
    "alone": false,
@@ -6302,10 +6302,11 @@
    "id": "goal/G30.7",
    "title": "Fix Shell problems related to face-name and email first",
    "goal": "goal/G30",
-   "status": "closed",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G30.1"
@@ -6315,7 +6316,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -6439,7 +6440,7 @@
    "names": {
     "claude-windows": "claude-windows"
    },
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "# Natter\n- has no search\n- Managing my relay: Public label of this relay: This input field must show the current public label of this relay, otherwise i won't even know what I'm changing.\n- Peers 0, Connected 1: Does this mean that noderoutes knows me as owner, but has no actual seat for me?\n- What this relay says: owner (none?/unknown?).... undefined — allowing undefined (floor 1, ceiling 4096)??\n\n# Info\nName: Andy Flinn: Save: saved here — 1 of 2 relay(s) did not take it: is this the problem i see in natter (peers 0, Connected 1)?\n\nSHAPE\n- Relays are searched in the Contacts list of peers seen (the shared list search), Natter being retired; relay.search answers each row as JSON, as the other searches do, its text the label as ruled (\"spirit-3 — yours, online\").\n- The public label field shows the relay's current label: the node keeps the label from the relay card beside its services, and relay.get's row carries it.\n- natterDetails reads lever.value, as relayMonitor does, instead of position and allowed.\n- First-run defaults live in serveCommon, called at boot by the node (server.js) and the relay (relayServer.js) alike: an identity with no description gets the first description (moved from nodeCard ensureDescription, worded for a node or a relay), and a relay with no public label gets a first one.\n- On boot, if the owner (relay-state/owner.json) has no seat, the relay creates one: label owner. The owner's node renames it like any seat (Info on Save). A member row holds no description; the owner's description travels on his node card, which the relay keeps once his node hands it over. A node's owner (a puppet's) has no seat table on the node, so the seat is the relay's alone.\n\nRELAYS ARE PEERS\n- A relay is a peer in the shadow (seenPeers) like a node: its key, its label, and its route, which is its own URL. Each row carries kind, node or relay.\n- The peer search (peer.search, which reads the shadow) finds both; the Contacts app's list of peers seen gains a relay filter, and a click on a relay opens natterDetails for it. The contact selector lists the contact book, which holds no relays, and is unchanged.\n- Apps that talk node to node need no change: what a party can do is what its api answers, and a relay offers no chat api when introspected.\n- The seeded relay, noderoutes.net (ownerBadge SEED_RELAYS, asserted by key at every boot, never removable), also enters the shadow at boot as a relay peer, so a new node finds it in the peer search.\n- Every relay on the node's list is a relay peer in the shadow: the whole list at boot, and each relay a claim adds (Natter's Add).\n- Membership stays in the relays table: a relay holds a seat for this node, a node does not.\n\nNATTER RETIRES\n- The Natter app goes, with its intrinsic entry, its first-run branch in the shell (dead since a node is named at its first start) and its suites; natterDetails stays as the dialog, opened from a relay row in Contacts.\n- Add a relay moves into Contacts: a folding panel right below Find someone on the network, before People who write and are not in this book.\n- The bind guidance goes; claiming and the seat label live in natterDetails.\n- Removing a relay from the list is refused: never noderoutes.net; for a relay you own, \"you cannot remove a relay you own\"; for a relay where you hold a seat, \"you must remove yourself from this relay before you can remove the relay from your contacts\". The node enforces it (relay.remove) and natterDetails offers Remove only when the rule allows, saying why otherwise.\n\nOUT OF SCOPE\n- Leaving a relay from the UI (removing oneself): it belongs in natterDetails, shown only for relays you do not own.",
