@@ -152,6 +152,18 @@ else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to n
 // contacts, in a folding-panel, right below \"Find someone on the network\", and before \"People who write and are not in
 // this book\""). Named here: the rule is ownerBadge.removalRefusal(rows, url), '' when a relay may come off the list,
 // else the sentence; rows carry owned and claimed. hub.relayRemove asks it with what the node knows.
+// Andy, 2026-10-20: "the relays don't appear in the contact list.... so i cannot reach natterDetails" and "there's no
+// relay filter in the contacs search": the book's list (the contact selector) shows this node's relays beside the
+// book, with a relay filter, and a relay row opens natterDetails.
+test.subHeading('6b. relays in the contact list');
+const selector = code('shell/js/contactSelector.js');
+if (/name: 'relay'/.test(selector) && /'owned', 'blocked', 'held', 'relay'/.test(selector)) test.check('the contact selector has a relay filter, shown when its rows hold relays');
+else test.fail(OWED + 'the contact selector has no relay filter');
+const contactsCode = code('shell/contacts/contacts.js');
+if (/function contactsSearchBookFor[\s\S]{0,900}relay\.search/.test(contactsCode) && /contactsRelayUrls\[contactsBook\.value\][\s\S]{0,200}shell\/natterDetails/.test(contactsCode))
+  test.check('the contact list adds this node\'s relays (relay.search) and a relay row opens natterDetails');
+else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no natterDetails');
+
 test.subHeading('7. Natter retires');
 const shellJs = code('js/client/shell.js');
 const natterGone = !natterApp();

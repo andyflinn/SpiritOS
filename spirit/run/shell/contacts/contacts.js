@@ -358,10 +358,27 @@ function contactsRefresh() {
   if (contactsBook) contactsBook.refresh();
 }
 // The picker's source: the node's contact.search with the list's own arguments, its selfTail read on the way.
+// THE BOOK, AND THIS NODE'S RELAYS BESIDE IT (goal/G30.7; Andy, 2026-10-20: "the relays don't appear in the contact
+// list.... so i cannot reach natterDetails", "and there's no relay filter in the contacs search"). A relay is never
+// written into the book: its rows come from relay.search, marked relay, keyed by its url, and match the same words.
+var contactsRelayUrls = Object.create(null);
 function contactsSearchBookFor(text, args) {
-  return contactsAsk('contact.search', args || { q: text }).then(function (data) {
+  var a = args || { q: text };
+  var book = a.relay === 'yes' ? Promise.resolve({ items: [], more: false }) : contactsAsk('contact.search', a).then(function (data) {
     if (data && data.selfTail) { contactsSelfTail = data.selfTail; contactsPaintSelf(); }
     return data || { items: [], more: false };
+  });
+  var relays = (a.owned === 'yes' || a.blocked === 'yes' || a.held === 'yes') ? Promise.resolve({ items: [] })
+    : contactsAsk('relay.search', { q: String(text || '').trim() || '*' }).then(function (d) { return d || { items: [] }; }, function () { return { items: [] }; });
+  return Promise.all([book, relays]).then(function (got) {
+    var rows = (got[1].items || []).map(function (i) {
+      var r = null;
+      try { r = JSON.parse(i.label); } catch (e) { r = null; }
+      contactsRelayUrls[i.key] = true;
+      // owned is the star, as on a puppet: this node owns that relay (Andy: "they don't show me the Star icon (i own them)").
+      return { key: i.key, label: JSON.stringify({ name: (r && (r.relayLabel || r.name)) || i.key, relay: true, url: i.key, owned: !!(r && r.owned) }) };
+    });
+    return { items: (got[0].items || []).concat(rows), more: !!got[0].more, selfTail: got[0].selfTail };
   });
 }
 
@@ -1097,6 +1114,13 @@ spirit.shell.activateApp({
     });
     document.getElementById('contacts-book').appendChild(contactsBook);
     contactsBook.addEventListener('change', function () {
+      // A relay row opens the relay's own screen (goal/G30.7).
+      if (contactsRelayUrls[contactsBook.value]) {
+        contactsApi.callDialog('shell/natterDetails', { url: contactsBook.value }).then(function (result) {
+          if (result && result.changed) contactsRefresh();
+        });
+        return;
+      }
       contactsApi.callDialog('shell/contactsDetails', { key: contactsBook.value })
         .then(function (result) {
           if (result && result.changed) contactsRefresh();

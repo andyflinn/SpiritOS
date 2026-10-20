@@ -2154,6 +2154,12 @@ function createHub(rootDir) {
 
     function shaped(c) {
       var best = S.get(c.publicKey) || {};
+      // A RELAY'S OWN ADDRESS (goal/G30.7): its row's route is its url, the one route whose door is itself. A relay's
+      // key heard arriving through another relay has that route too, and the best-ranked one may be it.
+      if (best.kind === 'relay') {
+        var own = S.routes(c.publicKey).filter(function (r) { return r && r.at && r.at === r.url; })[0];
+        if (own) best = Object.assign({}, best, { at: own.at, url: own.url });
+      }
       var row = bookRows[c.publicKey] || null;
       return {
         publicKey: c.publicKey,

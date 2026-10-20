@@ -131,13 +131,15 @@
       verb: 'contact.search',
       args: function (text, filters) {
         var a = { q: text };
-        ['owned', 'blocked', 'held'].forEach(function (n) { if (filters[n] === 'yes') a[n] = 'yes'; });
+        ['owned', 'blocked', 'held', 'relay'].forEach(function (n) { if (filters[n] === 'yes') a[n] = 'yes'; });
         return a;
       },
       filters: [
         { name: 'owned', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.STAR || '★', word: 'my puppets' }], test: yes('owned'), when: any('owned') },
         { name: 'blocked', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.NO || '', word: 'blocked' }], test: yes('blocked'), when: any('blocked') },
         { name: 'held', choices: [{ value: '', word: 'all' }, { value: 'yes', icon: ICON.WAITING || '', word: 'held' }], test: yes('held'), when: any('held') },
+        // RELAYS ARE PEERS (goal/G30.7): shown only when a caller's rows hold relays (Contacts' own search adds them).
+        { name: 'relay', choices: [{ value: '', word: 'all' }, { value: 'yes', word: 'relays' }], test: yes('relay'), when: any('relay') },
       ],
       paint: paint,
       pick: function (row) { pick(row); },
