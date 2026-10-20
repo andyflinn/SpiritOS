@@ -127,7 +127,58 @@ if (/spiritElements\.joinSteps/.test(joinApp) && /setAppOverride\('shell\/join',
   test.check('the Join app draws its steps from joinSteps, the join form, and keeps the opened link as its override');
 else test.fail(OWED + 'the Join app does not draw joinSteps, the join form, or does not keep faceOpened');
 
-stepsDone.then(function () {
+// 5. THE FORM HOLDS STILL WHILE HE TYPES (Andy, 2026-10-20: "the ting, AGAIN, refreshes EVERYTHING, whenever a bloody
+// message hits the shell ... before i can FUCKING type the first part of my email address"). The shell calls an app's
+// render on its messages; the Join app redraws its list only when what the node says has changed, and never while a
+// field inside it has focus. The real join.js on a fake page, the real elements, render called again and again.
+function settle() { return new Promise(function (r) { setTimeout(r, 5); }); }
+const holdsStill = (function () {
+  const byId = {};
+  function fakeEl(id) {
+    let html = '';
+    const el = { id: id, writes: 0, value: '', hidden: false, addEventListener: function () {}, querySelector: function () { return fakeEl('q'); }, contains: function (x) { return !!x && x.inside === id; } };
+    Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); el.writes += 1; } });
+    return el;
+  }
+  const doc = { activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeEl(id)); } };
+  const win = {};
+  ['joinSteps', 'joinForm'].forEach(function (n) { try { new Function('window', raw('shell/js/' + n + '.js'))(win); } catch (e) { /* missing */ } });
+  let app = null;
+  const sp = { core: { const: { ICON: {} }, fs: { loadFile: function () { return raw('shell/join/join.json'); } } }, shell: { activateApp: function (d) { app = d; } } };
+  try { new Function('spirit', 'document', 'window', raw('shell/join/join.js'))(sp, doc, win); } catch (e) { return Promise.resolve({ threw: e.message }); }
+  if (!app) return Promise.resolve({ threw: 'no app' });
+  const api = { escapeHtml: function (s) { return String(s); }, verb: door({ seated: false }), getAppOverride: function () { return {}; },
+    setAppOverride: function () {}, peerPost: function () { return Promise.resolve({}); }, callDialog: function () { return Promise.resolve(null); } };
+  const realNow = Date.now;
+  let t = realNow();
+  Date.now = function () { return t; };
+  app.mount(doc.getElementById('container'), api);
+  let first = 0;
+  let typing = 0;
+  return settle().then(settle).then(function () {
+    first = doc.getElementById('join-list').writes;
+    let chain = Promise.resolve();
+    for (let i = 0; i < 5; i += 1) chain = chain.then(function () { t += 10000; app.render(); return settle(); }).then(settle);
+    return chain;
+  }).then(function () {
+    const unchanged = doc.getElementById('join-list').writes - first;
+    // Now the node says something new (a seat) while a field inside the list has focus: still no redraw.
+    api.verb = door({ seated: true });
+    doc.activeElement = { inside: 'join-list' };
+    typing = doc.getElementById('join-list').writes;
+    t += 10000;
+    app.render();
+    return settle().then(settle).then(function () { return { first: first, unchanged: unchanged, whileTyping: doc.getElementById('join-list').writes - typing }; });
+  }).then(function (r) { Date.now = realNow; return r; }, function (e) { Date.now = realNow; return { threw: e.message }; });
+}());
+const stillDone = holdsStill.then(function (r) {
+  test.subHeading('5. the form holds still while he types');
+  if (r && r.first > 0 && r.unchanged === 0 && r.whileTyping === 0)
+    test.check('render on a shell message redraws nothing when the node says the same, and nothing while a field has focus');
+  else test.fail(OWED + 'the Join app redrew its list: ' + short(r));
+});
+
+Promise.all([stepsDone, stillDone]).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);
 }, function (e) { test.fail('the steps threw ' + e.message); test.reportSuccessFailureCount(); process.exit(0); });
