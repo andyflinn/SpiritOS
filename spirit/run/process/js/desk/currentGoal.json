@@ -1,5 +1,5 @@
 {
- "change": 76391,
+ "change": 76559,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -8393,11 +8392,9 @@
    "id": "goal/G30.9",
    "title": "Face-Side login with a new email loop",
    "goal": "goal/G30",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -8405,17 +8402,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -8423,15 +8420,167 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
-   "names": {},
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "When a user navigates to his face for the first time, he is presented with a login form for that a few things must happen,\n\n- the relay side, as soon as a member has a verified email AND a face-name AND is present with his home-node, the relay must serve that url.\n\n- a user using a face must be logged in as the face-owner, the login page presents only one field, where the user enters either an email or a \"secret\", the login page does not say which. it just presents and empty shell, with a login-input in the middle:  \"Log in: [input-field]\"\n\n- the shell populates with face-compatible apps only when the user is logged in.\n\n- for this shell apps must have a manifest item like: \"face:true\"\n\n- this version of shell will be booted by face.html, the lazy-load, version of shell\n\n",
-   "version": 2,
+   "box": "A member logs in on his face, served by the relay. The item ends with the user logged in; the face does not yet reach his home node.\n\n- The relay serves face.html, the lazy-load version of the shell, at <face>.<relay host> to anyone, logged in or not, while that member has a verified email, a face name and his home node present. Logged out, the shell is empty but for the login app.\n- The login app is the counterpart of the node's Join app: a steps app on the same design. Its manifest lists the steps; the shell decides where the user stands and hands it to the app; the tile shows the open step and stays after login for the steps still open.\n- Its one field, Log in: [ ], takes the member's verified email or the token from the mail; the page never says which it got.\n- The relay decides the login: it knows whether the home node is present and the member's verified email, and sends the mail. The mail offers the token alone, to paste into the field, and a link to <face>.<relay host>/?<token> that opens the login app and logs in directly. No coordination between the link's window and the waiting one.\n- The token is used once and is good for 10 minutes, with the join's caps: one a minute, five an hour per face.\n- A login is a cookie for that face host, valid until 7 days after the logged-in user's last interaction; Log out ends it.\n- After login the login app says \"waiting for plumbing\".\n- Shell apps for the face carry face:true in their manifest; they appear once logged in, with the plumbing item.\n- Certificates, DNS and Caddy on the relay box come from new or improved scripts in ./bash, which gets an overhaul.\n\nNOT IN THIS ITEM: connecting the logged-in face to the home node (the plumbing), the next item.",
+   "version": 12,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T22:39:39.336Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T22:40:21.659Z",
+     "text": "Thoughts, in the order the request travels:\n\n- The relay serves the face: a request for <face>.<relay host> is matched to its member by name (faceRoute.nameOf, members.faceName), and served only while that member has a verified email and his home node holds its stream. The relay forwards the request over that stream to the home node and returns its answer; an absent node gets a plain offline page. Nothing is kept on the relay.\n- Certificates and DNS: a wildcard name and certificate for *.noderoutes.net on the relay box (the Caddy part of bash/face-tls is the bone). That is your box to set up.\n- Login, one field: the home node decides. If what was typed is his verified email, the relay mails a one-time link to it (the new email loop); otherwise the home node checks it as his secret. The page never says which it took. A good login gets a session cookie for that face host, issued by the home node; failures are rate-limited at the relay.\n- face.html: a small shell that shows only Log in until there is a session, then lists the apps whose manifest says face:true and loads each only when opened, through the same relay path.\n- Open: where he sets the secret (Info, beside the face name?), how long a session lasts, which apps start out face:true.\n\nIt is four pieces of different size: the relay forwarding, the certificate on the box, the login with its email loop and secret, and face.html with face:true.\n\nSplit G30.9 into those four items?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T22:48:57.880Z",
+     "text": "The relay serves the face: a request for <face>.<relay host> is matched to its member by name (faceRoute.nameOf, members.faceName), and served only while that member has a verified email and his home node holds its stream. The relay forwards the request over that stream to the home node and returns its answer; an absent node gets a plain offline page. Nothing is kept on the relay.\n- false: the relay has to serve the empty shell, with only the login-icon, even when the user is NOT logged in, how else is the user going to log in?\n\nCertificates and DNS: a wildcard name and certificate for *.noderoutes.net on the relay box (the Caddy part of bash/face-tls is the bone). That is your box to set up.\n- new/improved ./bash/scripts will facilitate all or most of that, the bash folder needs an overhaul anyways.\n\nLogin, one field: the home node decides. If what was typed is his verified email, the relay mails a one-time link to it (the new email loop); otherwise the home node checks it as his secret. The page never says which it took. A good login gets a session cookie for that face host, issued by the home node; failures are rate-limited at the relay.\n- false: the home node is at home, the user is in africa. the relay decides, it has all the info it needs: is the home-node online? check. does it know the users email? can it send the email? check? can the user view the email on his mobile device? check.\n\nface.html: a small shell that shows only Log in until there is a session, then lists the apps whose manifest says face:true and loads each only when opened, through the same relay path.\n\nOpen: where he sets the secret (Info, beside the face name?), how long a session lasts, which apps start out face:true.\n- the phone is where the user sees his email, he clicks on the link. this time the link is facename.noderoutes.net/?secret-token."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T22:49:52.352Z",
+     "text": "Taken, and in the box: the relay serves the login shell to anyone, the relay decides the login, the link goes to <face>.<relay host>/?<secret token>, and ./bash gets the certificate tools.\n\nOne consequence to name, not to change: with the relay issuing the session, whoever runs the relay can act as the face owner on that face. For your own relay that is you; for a member on someone else's relay, he trusts that owner with his face.\n\nNext question: what does the one field accept besides the email, the token pasted in by hand, or nothing else?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T22:50:38.170Z",
+     "text": "after this item, the user is logged in, but not yet connected to his home node, that's the next item, connecting the plumbing...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T22:51:21.535Z",
+     "text": "In the box (v5): this item ends with the user logged in on his face; reaching the home node is the next item.\n\nStill open: does the one field accept anything besides the email?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T22:52:52.030Z",
+     "text": "The one field also accepts the token-secret, just in case the user copies that from the email, and pastes it into the login."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T22:53:47.027Z",
+     "text": "In the box (v6): the field takes the email or the pasted token.\n\nWhat I would build unless you say otherwise:\n\n- The token: used once, good for 10 minutes, the same caps as a join (one a minute, five an hour per face).\n- After login: the shell says Logged in as <face> and shows no apps yet; they come with the plumbing item.\n- Log out: one button, ends the session on the relay.\n\nOne question: how long does a login last before he must log in again?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T22:54:45.417Z",
+     "text": "The email will offer both, the token alone to copy/paste, and the link doing the job directly.\n\nthe disadvantage of the link: it opens a new window...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T22:55:45.965Z",
+     "text": "In the box (v7): the mail offers the token and the link.\n\nOn the new window: in the same browser the link's window and the waiting one share the login, so the waiting page can notice it and switch to logged in by itself, and the new window can say: logged in, you may close this. On another device (link on the phone, page on a laptop), only the device that opened the link is logged in; the token pasted on the laptop is the way there.\n\nStill open: how long does a login last?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T22:59:30.135Z",
+     "text": "On the new window: in the same browser the link's window and the waiting one share the login, so the waiting page can notice it and switch to logged in by itself, and the new window can say: logged in, you may close this. On another device (link on the phone, page on a laptop), only the device that opened the link is logged in; the token pasted on the laptop is the way there.\n- too much extra work.\n\n- the empty face-shells login icon is an exact counterpart of the join-app node-side, after login it won't be complete, and still show up for extra steps, same design concept, including the fact that the emailed link opens the face-shell-login-app...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:00:18.260Z",
+     "text": "after login, the login-app says \"waiting for plumbing\" for now...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:00:20.629Z",
+     "text": "In the box (v8): the face login is a steps app like Join, the mailed link opens it, and no window coordination.\n\nOn how long a login lasts: unless you say otherwise, 30 days, ended earlier by Log out. Which steps does the face login app list after Log in?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:01:05.091Z",
+     "text": "In the box (v9): after login the app says waiting for plumbing; the token and login durations as I offered them (strike them if wrong).\n\nThe design reads whole to me. Building it means:\n\n- the relay serves face.html at <face>.<relay host> for a member with a verified email, a face name and his node present\n- the face login app, a steps app like Join, with the one field (email or token)\n- the login mail with token and link, the token check, the session cookie and Log out on the relay\n- the ./bash scripts for Caddy, DNS and the certificate, for your box\n\nEnd design and Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:01:22.955Z",
+     "text": "a login lasts 30 days idle, and is extended by 30 days every time a logged-in user interacts."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:02:06.619Z",
+     "text": "In the box (v10): a login lasts 30 days idle, extended to 30 days from each interaction; Log out ends it.\n\nEnd design and Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:03:29.891Z",
+     "text": "a cookie that is valid last-interaction+30 days, or even 7 days is enough with that concepts, the login expires after it is idle for 7 days.... so a \"frequent\" user rarely has to re-login."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:04:30.186Z",
+     "text": "In the box (v11): the login cookie is valid until 7 days after the last interaction; 7 days idle and it expires.\n\nEnd design and Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:05:15.438Z",
+     "text": "cap while i go end design mode...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:06:04.054Z",
+     "text": "Capped (v12): the box holds the decided design only, in the order a visit goes, and the line on what is not in this item."
+    }
+   ]
   }
  ]
 }
