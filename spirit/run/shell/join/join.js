@@ -89,9 +89,12 @@ function joinDraw() {
 // The form each step draws, from the shell elements.
 function joinForm(step, box) {
   var el = joinEl();
-  if (step.until === 'seated' && el.joinForm) {
-    box.innerHTML = '<span class="job-manifest-note">on ' + joinEsc((joinFacts.relayUrl || 'no relay').replace(/^https?:\/\//, '')) + '</span>' +
-      el.joinForm.html({ label: 'Your email', button: 'Join' });
+  // Step 1 (box v41): the one join control, its words where the node stands: Join with no seat, Add on a seat taken
+  // without a verified email (by invite), Change once verified. So a node seated by invite completes it here.
+  if (step.until === 'email' && el.joinForm) {
+    var w = window.spiritElements.joinForm.words(joinFacts);
+    box.innerHTML = '<span class="job-manifest-note">' + joinEsc(w.title) + ' on ' + joinEsc((joinFacts.relayUrl || 'no relay').replace(/^https?:\/\//, '')) + '</span>' +
+      el.joinForm.html(w);
     el.joinForm.bind(box, { url: function () { return joinFacts.relayUrl; }, ask: joinAsk });
     return;
   }

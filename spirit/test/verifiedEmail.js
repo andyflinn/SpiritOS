@@ -117,7 +117,9 @@ else test.fail(OWED + 'peerPost drops the confirm\'s email');
 test.subHeading('5. the form, and Info');
 const nd = code('shell/natterDetails/natterDetails.js');
 // The confirmation-link sentence moved into the shared joinForm element (box v33, section 5d).
-if (/function ndEmailHtml/.test(nd) && /Add email address/.test(nd) && /Change email address/.test(nd))
+// The words are the joinForm control's own since box v41 (joinForm.words); natterDetails asks it.
+const jfWords = code('shell/js/joinForm.js');
+if (/function ndEmailHtml/.test(nd) && /ndJoinForm\(\)\.words\(/.test(nd) && /Add email address/.test(jfWords) && /Change email address/.test(jfWords))
   test.check('natterDetails has the email panel for a seated relay, reading Add or Change email address');
 else test.fail(OWED + 'natterDetails has no email panel for a seated relay, or not its words');
 const info = code('shell/info/info.js');

@@ -48,10 +48,10 @@
         '<label class="field-label">Relay<select id="' + p + 'relay">' +
           seats.map(function (row) { return '<option value="' + escape(row.url) + '">' + escape(row.label || row.url) + '</option>'; }).join('') +
         '</select></label>' +
-        '<span id="' + p + 'ask" class="grow">' +
-          '<label class="field-label grow">Face name<input type="text" id="' + p + 'name" placeholder="one word, letters and digits"></label>' +
-          '<button type="button" id="' + p + 'save">Ask</button>' +
-        '</span>' +
+        // ONE LINE (box v41; Andy: "WHAT is the ASK button doing BELOW the face-name input? this should be one smooth
+        // line"): relay, face name and Ask are the form row's own children, side by side, never wrapped together.
+        '<label class="field-label grow">Face name<input type="text" id="' + p + 'name" placeholder="one word, letters and digits"></label>' +
+        '<button type="button" id="' + p + 'save">Ask</button>' +
       '</div>' +
       // No face form without a verified email: the relay would refuse the ask (box v31).
       '<div id="' + p + 'verify" class="job-manifest-note">Verify your email in Contacts, relays, before asking for a face name on this relay. ' +
@@ -69,9 +69,12 @@
       var now = el('now');
       if (now) now.textContent = (face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.') +
         (mail ? ' Verified email: ' + mail + '.' : '');
-      var ask = el('ask');
+      // The field's label and the button, each hidden on its own, so the row keeps its one line when shown.
+      var field = el('name');
+      var save = el('save');
       var verify = el('verify');
-      if (ask) ask.hidden = !row.emailVerified;
+      if (field && field.parentNode) field.parentNode.hidden = !row.emailVerified;
+      if (save) save.hidden = !row.emailVerified;
       if (verify) verify.hidden = !!row.emailVerified;
       if (!fill) return;
       var n = el('name');

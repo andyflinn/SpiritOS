@@ -14,14 +14,16 @@
   function fromJob(data, opened) {
     var d = data || {};
     return {
-      seated: !!d.seated, relayUrl: String(d.relayUrl || ''), contact: !!d.contact,
+      seated: !!d.seated, relayUrl: String(d.relayUrl || ''), email: String(d.email || ''), emailVerified: !!d.emailVerified,
+      contact: !!d.contact,
       face: String(d.face || ''), faceUrl: String(d.faceUrl || ''), opened: !!opened,
     };
   }
 
   function done(step, f) {
     var until = step && step.until;
-    if (until === 'seated') return !!f.seated;
+    // Step 1 (box v41): a seat with a verified email; a seat taken by invite still owes the email.
+    if (until === 'email') return !!(f.seated && f.emailVerified);
     if (until === 'contact') return !!f.contact;
     if (until === 'face') return !!f.face;
     if (until === 'opened') return !!f.opened;

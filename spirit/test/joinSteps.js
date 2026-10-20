@@ -168,7 +168,7 @@ try {
 } catch (e) { words = { threw: e.message }; }
 const nd = code('shell/natterDetails/natterDetails.js');
 if (Array.isArray(words) && words[0].button === 'Join' && words[1].button === 'Add' && /Add email address/.test(words[1].title) && words[2].button === 'Change' && words[2].email === 'carl@example.org'
-    && /joinForm\(\)\.words\(/.test(nd) && /\.joinForm\.words\(/.test(joinApp) && !/'Add email address'|'Change email address'/.test(nd))
+    && /ndJoinForm\(\)\.words\(/.test(nd) && /\.joinForm\.words\(/.test(joinApp) && !/'Add email address'|'Change email address'/.test(nd))
   test.check('joinForm picks Join, Add or Change by where the node stands, and natterDetails and the Join app both ask it');
 else test.fail(OWED + 'joinForm.words answered ' + short(words) + ', or a caller keeps its own words');
 let faceHtml = '';

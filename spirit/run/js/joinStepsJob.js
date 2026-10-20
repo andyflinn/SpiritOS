@@ -8,7 +8,8 @@
 // the Join app hear it and draw only then; nothing asks the node for the steps on a shell message.
 //
 //   create(rootDir, jobs) -> { job, facts(), refresh(why) }
-//     facts(): seated (a relay row holds a seat), relayUrl (that relay, else the first listed), contact (the book holds
+//     facts(): seated (a relay row holds a seat), relayUrl (that relay, else the first listed), email and emailVerified
+//              (the email a confirmed join proved there, box v41), contact (the book holds
 //              anyone but this node and the relays it knows by key), face (the face name kept on that relay's row),
 //              faceUrl (https://<face>.<relay host>).
 //     refresh(why): publishes the job when facts() changed, with why as its log line; answers whether it did.
@@ -20,7 +21,7 @@ const relayKeys = require('./relayKeys');
 const contactBook = require('./contacts');
 
 function facts(rootDir) {
-  const out = { seated: false, relayUrl: '', contact: false, face: '', faceUrl: '' };
+  const out = { seated: false, relayUrl: '', email: '', emailVerified: false, contact: false, face: '', faceUrl: '' };
   let seated = [];
   try { seated = relayKeys.seatedUrls(rootDir); } catch (e) { seated = []; }
   out.seated = seated.length > 0;
@@ -28,6 +29,11 @@ function facts(rootDir) {
   try { listed = require('./ownerBadge').loadRelays(rootDir).map(function (r) { return r.url; }); } catch (e) { listed = []; }
   out.relayUrl = String(seated[0] || listed[0] || '');
   if (out.seated) {
+    // The email a confirmed join code proved on that relay (box v41): step 1 is done only with it.
+    let held = null;
+    try { held = relayKeys.emailOf(rootDir, out.relayUrl); } catch (e) { held = null; }
+    out.emailVerified = !!(held && held.verified && held.email);
+    out.email = out.emailVerified ? String(held.email) : '';
     let kept = null;
     try { kept = relayKeys.faceOf(rootDir, out.relayUrl); } catch (e) { kept = null; }
     out.face = kept && kept.name ? String(kept.name) : '';

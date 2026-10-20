@@ -15,6 +15,17 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  // ONE CONTROL FOR JOIN, ADD AND CHANGE (goal/G30.1, box v41; Andy: "Join, Add AND Change email address MUST be one and
+  // the same control, a bit flexible..."). Its words follow where the node stands on that relay, so every caller asks
+  // here and none keeps words of its own: no seat, Join; a seat without a verified email, Add; verified, Change, with
+  // the address held in the field.
+  function words(state) {
+    var s = state || {};
+    if (!s.seated) return { title: 'Join a relay', label: 'Your email', button: 'Join', email: '' };
+    if (!s.emailVerified) return { title: 'Add email address', label: 'Email address', button: 'Add', email: '' };
+    return { title: 'Change email address', label: 'Email address', button: 'Change', email: String(s.email || '') };
+  }
+
   function html(opts) {
     var o = opts || {};
     return '<div class="start-job-form card">' +
@@ -67,5 +78,5 @@
   }
 
   window.spiritElements = window.spiritElements || {};
-  window.spiritElements.joinForm = { html: html, bind: bind, send: send };
+  window.spiritElements.joinForm = { words: words, html: html, bind: bind, send: send };
 }());

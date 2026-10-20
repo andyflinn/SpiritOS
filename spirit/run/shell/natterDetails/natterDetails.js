@@ -664,7 +664,7 @@ function ndClaimHtml() {
     // JOIN WITH YOUR EMAIL, FIRST (goal/G30.2): the one thing a new user types. The relay mails a link to this node;
     // opening it takes the seat (shell.js joinFromLink). The invite form below stays for an invite somebody gave you.
     // The form is the shell element joinForm (goal/G30.1, box v33), bound once on nd-body at mount.
-    (joinByMail && ndJoinForm() ? ndJoinForm().html({ label: 'Your email', button: 'Join' }) : '') +
+    (joinByMail && ndJoinForm() ? ndJoinForm().html(ndJoinForm().words({ seated: false })) : '') +
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Invite name' +
       '<input type="text" class="nd-claim-invite" placeholder="(the word the owner read out)"></label>' +
@@ -695,10 +695,9 @@ function ndEmailHtml() {
   if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
   if (!(ndBadge.services && ndBadge.services.sendMail === true)) return '';
   if (!ndJoinForm()) return '';
-  var held = ndBadge.emailVerified ? String(ndBadge.email || '') : '';
-  return ndPanel('email', ndIcon.EMAIL, held ? 'Change email address' : 'Add email address',
-    ndJoinForm().html({ label: 'Email address', email: held, button: held ? 'Change' : 'Add' }),
-    'natter-email');
+  // The words are the control's own (joinForm.words, box v41), the same the Join app's step 1 shows.
+  var w = ndJoinForm().words({ seated: true, email: ndBadge.email, emailVerified: !!ndBadge.emailVerified });
+  return ndPanel('email', ndIcon.EMAIL, w.title, ndJoinForm().html(w), 'natter-email');
 }
 
 // THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): shell/js/joinForm.js, loaded by index.html.
