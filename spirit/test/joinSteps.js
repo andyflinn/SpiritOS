@@ -49,7 +49,8 @@ try { manifest = JSON.parse(raw('shell/join/join.json')); } catch (e) { manifest
 const steps = (manifest && Array.isArray(manifest.steps)) ? manifest.steps : [];
 const find = steps.filter(function (s) { return s.until === 'contact'; })[0] || {};
 const face = steps.filter(function (s) { return s.until === 'face'; })[0] || {};
-if (steps.map(function (s) { return s.until; }).join(',') === 'seated,contact,face,opened' && find.optional === true && /remote control/i.test(String(face.name || '')) && steps.every(function (s) { return s.name && s.icon; }))
+// Box v41: step 1 ends once the node holds a seat with a verified email (until: 'email').
+if (steps.map(function (s) { return s.until; }).join(',') === 'email,contact,face,opened' && find.optional === true && /remote control/i.test(String(face.name || '')) && steps.every(function (s) { return s.name && s.icon; }))
   test.check('join.json lists Join, Find someone (optional), Configure your node\'s remote control and the face link, each with a name and an icon');
 else test.fail(OWED + 'join.json steps read ' + short(steps));
 
@@ -76,7 +77,13 @@ try {
   relayKeys.list(home, 'https://relay.example', 'relay', 'RELAYKEY-J');
   relayKeys.seat(home, 'https://relay.example', 'carl');
   r.seatPublished = J.refresh('relay.join') === true && published.length === 1;
+  // A seat with no verified email (joined by invite): step 1 is still open, its form reading Add.
   r.afterSeat = at();
+  r.noEmail = made.data.emailVerified === false;
+  relayKeys.keepEmail(home, 'https://relay.example', 'carl@example.org', true);
+  J.refresh('relay.join');
+  r.emailVerified = made.data.emailVerified === true && made.data.email === 'carl@example.org';
+  r.afterEmail = at();
   contactBook.acquire(home, { publicKey: 'BERTKEY-J', publicLabel: 'bert' }, 'handle');
   J.refresh('peer.acquire');
   r.contact = made.data.contact === true;
@@ -91,7 +98,8 @@ try {
 const n = nodeSide || {};
 if (n.kind === 'permanent' && n.type === 'join-steps' && n.quiet === true) test.check('the node makes a permanent join-steps job, and a refresh with nothing changed publishes nothing');
 else test.fail(OWED + 'the join-steps job: ' + short(n));
-if (n.start === 'seated' && n.seatPublished === true && n.afterSeat === 'face') test.check('a seat taken publishes the job once; the open step moves from Join to the remote control');
+if (n.start === 'email' && n.seatPublished === true && n.afterSeat === 'email' && n.noEmail === true && n.emailVerified === true && n.afterEmail === 'face')
+  test.check('a seat taken publishes the job; step 1 stays open until the email is verified (the job carries email and emailVerified), then the remote control is next');
 else test.fail(OWED + 'after a seat: ' + short(n));
 if (n.contact === true && n.afterContact === 'face') test.check('a contact added is in the job; Find someone is optional, so the open step stays');
 else test.fail(OWED + 'after a contact: ' + short(n));
@@ -149,6 +157,33 @@ else test.fail(OWED + 'index.html does not load all three elements');
 if (/spiritElements\.joinSteps/.test(joinApp) && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spiritElements\.joinForm/.test(joinApp))
   test.check('the Join app draws its steps from joinSteps, the join form, and keeps the opened link as its override');
 else test.fail(OWED + 'the Join app does not draw joinSteps, the join form, or does not keep faceOpened');
+
+test.subHeading('4b. one join control, and the face form on one line (box v41)');
+// joinForm.words({seated, email, emailVerified}) picks the control's words, so natterDetails and the Join app draw the
+// same control: no seat Join; a seat without a verified email Add; verified Change, prefilled.
+const joinFormEl = element('shell/js/joinForm.js', 'joinForm');
+let words = null;
+try {
+  words = [joinFormEl.words({ seated: false }), joinFormEl.words({ seated: true, email: '', emailVerified: false }), joinFormEl.words({ seated: true, email: 'carl@example.org', emailVerified: true })];
+} catch (e) { words = { threw: e.message }; }
+const nd = code('shell/natterDetails/natterDetails.js');
+if (Array.isArray(words) && words[0].button === 'Join' && words[1].button === 'Add' && /Add email address/.test(words[1].title) && words[2].button === 'Change' && words[2].email === 'carl@example.org'
+    && /joinForm\(\)\.words\(/.test(nd) && /\.joinForm\.words\(/.test(joinApp) && !/'Add email address'|'Change email address'/.test(nd))
+  test.check('joinForm picks Join, Add or Change by where the node stands, and natterDetails and the Join app both ask it');
+else test.fail(OWED + 'joinForm.words answered ' + short(words) + ', or a caller keeps its own words');
+let faceHtml = '';
+try {
+  const byId = {};
+  const fakeEl = function (id) { return byId[id] || (byId[id] = { id: id, innerHTML: '', value: '', hidden: false, addEventListener: function () {} }); };
+  const win = {};
+  new Function('window', 'document', raw('shell/js/faceForm.js'))(win, { getElementById: fakeEl });
+  const box = fakeEl('box');
+  win.spiritElements.faceForm.mount(box, { seats: [{ url: 'https://relay.example', label: 'relay', emailVerified: true, email: 'a@b.c' }], ask: function () { return Promise.resolve({}); } });
+  faceHtml = box.innerHTML;
+} catch (e) { faceHtml = 'threw ' + e.message; }
+if (/<\/select><\/label><label class="field-label grow">Face name<input[^>]*><\/label><button type="button" id="info-face-save">/.test(faceHtml))
+  test.check('the face form draws relay, face name and Ask side by side in one row');
+else test.fail(OWED + 'the face form row reads ' + short(faceHtml));
 
 // 5. THE APP HEARS THE JOB AND NOTHING ELSE. The real join.js on a fake page with the real elements: it subscribes to
 // the jobs stream, draws when the join-steps job arrives or changes, not when the same job comes again, not on render,
