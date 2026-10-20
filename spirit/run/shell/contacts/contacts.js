@@ -376,9 +376,14 @@ function contactsSearchBookFor(text, args) {
       try { r = JSON.parse(i.label); } catch (e) { r = null; }
       contactsRelayUrls[i.key] = true;
       // owned is the star, as on a puppet: this node owns that relay (Andy: "they don't show me the Star icon (i own them)").
-      return { key: i.key, label: JSON.stringify({ name: (r && (r.relayLabel || r.name)) || i.key, relay: true, url: i.key, owned: !!(r && r.owned) }) };
+      return { key: i.key, label: JSON.stringify({ name: (r && (r.relayLabel || r.name)) || i.key, relay: true, url: i.key, owned: !!(r && r.owned) }), relayKey: (r && r.relayKey) || '' };
     });
-    return { items: (got[0].items || []).concat(rows), more: !!got[0].more, selfTail: got[0].selfTail };
+    // A RELAY ONCE ADDED TO THE BOOK (by its key, before relays were peers) shows once, as the relay: the relay row
+    // opens natterDetails, where a book row would offer Block and Forget on a relay this node holds a seat on.
+    var relayKeys = Object.create(null);
+    rows.forEach(function (r) { if (r.relayKey) relayKeys[r.relayKey] = true; });
+    var book = (got[0].items || []).filter(function (i) { return !relayKeys[i.key]; });
+    return { items: book.concat(rows.map(function (r) { return { key: r.key, label: r.label }; })), more: !!got[0].more, selfTail: got[0].selfTail };
   });
 }
 
@@ -479,7 +484,8 @@ function contactsSeenCells(c, mark) {
             ? ' <span class="muted" title="more than one answer wears this name">\u2026' +
               contactsEscapeHtml(String(c.tail || '')) + '</span>'
             : '') + '</td>' +
-        '<td>' + (known
+        // A relay is never written into the book (goal/G30.7): it is reached through natterDetails, so no Add.
+        '<td>' + (c.kind === 'relay' ? '<span class="muted">a relay</span>' : known
           ? '<span class="muted">already a contact</span>'
           : '<button type="button" class="cancel-btn contacts-seen-add"' +
             ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +

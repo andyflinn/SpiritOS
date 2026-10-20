@@ -2684,7 +2684,9 @@ function createHub(rootDir) {
     var name = row.label || String(row.url || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '');
     var up = row.status === 200 ? 'online' : 'offline';
     return { url: String(row.url || ''), name: name, text: name + ' — ' + who + ', ' + up, who: who, online: row.status === 200, owned: !!row.owned,
-      claimed: !!row.claimed, refused: !!row.refused, relayLabel: (row.roll && row.roll.relayLabel) || '' };
+      claimed: !!row.claimed, refused: !!row.refused, relayLabel: (row.roll && row.roll.relayLabel) || '',
+      // The relay's key, pinned at first contact (goal/G30.7): what the contact list matches a book row against.
+      relayKey: relayKeys.pinned(rootDir, row.url) || '' };
   }
 
   // ── RANKED, NOT FILTERED (goal/G19.17) ──────────────────────────────
