@@ -19,8 +19,8 @@
 //     boot as a relay peer. Membership stays in the relays table.
 // NAMED HERE where the box names none:
 //   - serveCommon.ensureFirstRun(rootDir, {kind: 'node' | 'relay', now}). The first description reads "this <kind>
-//     described for the first time <date> UTC"; a relay's first label is "relay " and the last 8 characters of its
-//     key, written as its identity's name when the name is empty or the installer's 'relay'.
+//     described for the first time <date> UTC"; a relay's first label is "relay " and its key tail (kernel keyTail),
+//     written as its identity's name when the name is empty or the installer's 'relay'.
 //   - seenPeers.note(key, {kind}) keeps kind on the row, get(key).kind answers it ('node' when never said).
 //   - peer.search rows carry kind in their label JSON; peerPost keeps the card label as labelOf(url).
 // rule/11: through testSupport only; its own scratch folders.
@@ -79,7 +79,7 @@ const relayId = auth.loadIdentity(relayHome);
 if (ran === true && nodeId.description === 'this node described for the first time 2026-10-20 08:00:00 UTC' && nodeId.name === 'andy')
   test.check('a node with no description gets the first one; its name is left alone');
 else test.fail(OWED + 'ensureFirstRun for a node: ' + short(ran) + ', ' + short({ name: nodeId.name, description: nodeId.description }));
-if (ran === true && relayId.description === 'this relay described for the first time 2026-10-20 08:00:00 UTC' && relayId.name === 'relay ' + String(relayId.publicKey).slice(-8))
+if (ran === true && relayId.description === 'this relay described for the first time 2026-10-20 08:00:00 UTC' && relayId.name === 'relay ' + require('../run/js/kernel').keyTail(relayId.publicKey))
   test.check('a relay gets the first description and a first public label, relay and its key\'s tail');
 else test.fail(OWED + 'ensureFirstRun for a relay: ' + short({ name: relayId.name, description: relayId.description }));
 const nodeCard = code('js/nodeCard.js');
@@ -126,11 +126,78 @@ try {
 } catch (e) { seed = { threw: e.message }; }
 if (seed && seed.kind === 'relay' && seed.at === 'https://noderoutes.net') test.check('the seeded relay noderoutes.net enters the shadow at boot as a relay peer, its route its own URL');
 else test.fail(OWED + 'the seed in the shadow: ' + short(seed));
+// Andy, 2026-10-20: "and natter itself, when i add a relay, stashes that relay in the peer-list now?" — a relay a claim
+// adds (ownerBadge.addRelay) enters the shadow the same way.
+let added = null;
+try {
+  require('../run/js/ownerBadge').addRelay(peerHome, 'https://added.example', 'added', 'RELAYKEY-ADDED');
+  const row = hubMod.shadow(peerHome).get('RELAYKEY-ADDED') || {};
+  added = { kind: row.kind, at: row.at };
+} catch (e) { added = { threw: e.message }; }
+if (added && added.kind === 'relay' && added.at === 'https://added.example') test.check('a relay added to the list enters the shadow as a relay peer too');
+else test.fail(OWED + 'an added relay in the shadow: ' + short(added));
 if (/kind:/.test((/function fromMemory[\s\S]*?\n  \}/.exec(hub) || [''])[0])) test.check('peer.search rows carry kind in their label');
 else test.fail(OWED + 'peer.search rows carry no kind');
 const contacts = code('shell/contacts/contacts.js');
 if (/kind\s*===\s*'relay'/.test(contacts) && /callDialog\('shell\/natterDetails'/.test(contacts)) test.check('the Contacts list of peers seen has a relay filter, and a relay opens natterDetails');
 else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to natterDetails');
+
+// NATTER RETIRES (the box, v20; Andy, 2026-10-20: "i feel like killing natter now, and putting the add-relay into
+// contacts, in a folding-panel, right below \"Find someone on the network\", and before \"People who write and are not in
+// this book\""). Named here: the rule is ownerBadge.removalRefusal(rows, url), '' when a relay may come off the list,
+// else the sentence; rows carry owned and claimed. hub.relayRemove asks it with what the node knows.
+test.subHeading('7. Natter retires');
+const shellJs = code('js/client/shell.js');
+const natterGone = !fs.existsSync(path.join(RUN, 'shell', 'natter'));
+if (natterGone && !/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*'natter'/.test(shellJs) && !/NATTER_ID|function firstRun/.test(shellJs))
+  test.check('the Natter app is gone: its folder, its intrinsic entry and the first-run branch');
+else test.fail(OWED + 'Natter is still there: folder ' + !natterGone + ', or the shell still names it');
+const contactsSrc = fs.existsSync(path.join(RUN, 'shell', 'contacts', 'contacts.js')) ? fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8') : '';
+// The panels as the page draws them: each a <details> whose <summary> carries its title; the new one is named
+// contacts-relay-add-summary here.
+const iFind = contactsSrc.indexOf('<summary id="contacts-seen-summary">Find someone on the network');
+const iAdd = contactsSrc.indexOf('<summary id="contacts-relay-add-summary">Add a relay');
+const iWrite = contactsSrc.indexOf('<summary id="contacts-unknown-summary">People who write and are not in this book');
+if (iFind !== -1 && iAdd > iFind && iWrite > iAdd && /relay\.add/.test(code('shell/contacts/contacts.js')))
+  test.check('Contacts has the Add a relay panel below Find someone on the network and before People who write, adding through relay.add');
+else test.fail(OWED + 'the Add a relay panel is not in Contacts where the box puts it (' + [iFind, iAdd, iWrite].join(', ') + ')');
+
+test.subHeading('8. a relay you own, or hold a seat on, stays on the list');
+const ownerBadge = require('../run/js/ownerBadge');
+const rows = [
+  { url: 'https://noderoutes.net' }, { url: 'https://a.example', owned: true, claimed: true },
+  { url: 'https://b.example', claimed: true }, { url: 'https://c.example' },
+];
+let why = null;
+try {
+  why = {
+    kept: ownerBadge.removalRefusal(rows, 'https://noderoutes.net'),
+    owned: ownerBadge.removalRefusal(rows, 'https://a.example'),
+    seated: ownerBadge.removalRefusal(rows, 'https://b.example'),
+    free: ownerBadge.removalRefusal(rows, 'https://c.example'),
+  };
+} catch (e) { why = { threw: e.message }; }
+if (why && why.owned === 'you cannot remove a relay you own' &&
+    why.seated === 'you must remove yourself from this relay before you can remove the relay from your contacts' &&
+    why.kept && why.free === '')
+  test.check('the rule refuses noderoutes.net, an owned relay and a seated one, each with its sentence, and lets a free one go');
+else test.fail(OWED + 'removalRefusal answered ' + short(why));
+const relayKeys = require('../run/js/relayKeys');
+const listHome = home('list');
+plant.ensureAt(listHome, 'andy');
+let refused = null;
+try {
+  relayKeys.list(listHome, 'https://seated.example', 'seated', 'RELAYKEY-S');
+  relayKeys.list(listHome, 'https://other.example', 'other', 'RELAYKEY-O');
+  relayKeys.seat(listHome, 'https://seated.example', 'andy');
+  refused = ownerBadge.removeRelay(listHome, 'https://seated.example');
+} catch (e) { refused = { threw: e.message }; }
+if (refused && refused.ok === false && refused.error === 'you must remove yourself from this relay before you can remove the relay from your contacts')
+  test.check('the node refuses relay.remove for a relay it holds a seat on, with the sentence');
+else test.fail(OWED + 'removing a seated relay answered ' + short(refused));
+const nd2 = code('shell/natterDetails/natterDetails.js');
+if (/removalRefusal\(/.test(nd2) && !/params\.canRemove/.test(nd2)) test.check('natterDetails asks the rule itself and says why when Remove is refused');
+else test.fail(OWED + 'natterDetails still takes canRemove from Natter');
 
 homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
 test.reportSuccessFailureCount();
