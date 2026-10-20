@@ -663,13 +663,8 @@ function ndClaimHtml() {
     // that travels is "Invite name" on both screens now.
     // JOIN WITH YOUR EMAIL, FIRST (goal/G30.2): the one thing a new user types. The relay mails a link to this node;
     // opening it takes the seat (shell.js joinFromLink). The invite form below stays for an invite somebody gave you.
-    (joinByMail ?
-      '<div class="start-job-form card">' +
-      '<label class="field-label grow">Your email' +
-        '<input type="email" class="nd-join-email" placeholder="you@example.org" autocomplete="email"></label>' +
-      '<button type="button" class="nd-join-go">Join</button>' +
-      '</div>' +
-      '<div class="job-manifest-note nd-join-out"></div>' : '') +
+    // The form is the shell element joinForm (goal/G30.1, box v33), bound once on nd-body at mount.
+    (joinByMail && ndJoinForm() ? ndJoinForm().html({ label: 'Your email', button: 'Join' }) : '') +
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Invite name' +
       '<input type="text" class="nd-claim-invite" placeholder="(the word the owner read out)"></label>' +
@@ -699,16 +694,15 @@ function ndClaimHtml() {
 function ndEmailHtml() {
   if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
   if (!(ndBadge.services && ndBadge.services.sendMail === true)) return '';
+  if (!ndJoinForm()) return '';
   var held = ndBadge.emailVerified ? String(ndBadge.email || '') : '';
   return ndPanel('email', ndIcon.EMAIL, held ? 'Change email address' : 'Add email address',
-    '<div class="start-job-form card">' +
-    '<label class="field-label grow">Email address' +
-      '<input type="email" class="nd-join-email" placeholder="you@example.org" autocomplete="email" value="' + ndEscapeHtml(held) + '"></label>' +
-    '<button type="button" class="nd-join-go">' + (held ? 'Change' : 'Add') + '</button>' +
-    '</div>' +
-    '<div class="job-manifest-note nd-join-out"></div>',
+    ndJoinForm().html({ label: 'Email address', email: held, button: held ? 'Change' : 'Add' }),
     'natter-email');
 }
+
+// THE JOIN FORM IS A SHELL ELEMENT (goal/G30.1, box v33): shell/js/joinForm.js, loaded by index.html.
+function ndJoinForm() { return (window.spiritElements && window.spiritElements.joinForm) || null; }
 
 // ── WHAT IS OUTSTANDING, AND TAKING ONE BACK ─────────────────────────
 //
@@ -1288,26 +1282,8 @@ function ndRender() {
 // session.json is Natter's file and api.fs here is scoped to this app's
 // own folder. The screen says what the relay agreed to; Natter writes it
 // down against this url.
-// THE JOIN BY EMAIL (goal/G30.2): asks relay.join with the email; the relay mails a link to this node, and opening
-// it takes the seat. Nothing else is typed.
-function ndJoin(button) {
-  var panel = button.closest('.natter-claim, .natter-email');
-  var out = panel.querySelector('.nd-join-out');
-  var email = panel.querySelector('.nd-join-email').value.trim();
-  function say(text, bad) {
-    out.className = 'job-manifest-note nd-join-out ' + (bad ? 'is-error' : 'is-token');
-    out.textContent = text;
-  }
-  if (!/^[^\s@]+@[^\s@]+$/.test(email)) { say('type your email address', true); return; }
-  button.disabled = true;
-  ndPost('relay.join', { url: ndUrl, email: email, code: '' }).then(function (r) {
-    var said = null;
-    try { said = JSON.parse(r.text); } catch (e) { said = null; }
-    // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
-    if (said && said.ok) say('An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.', false);
-    else say((said && said.error) || (r.status + ' ' + r.text), true);
-  }, function (e) { say(String((e && e.message) || e), true); }).then(function () { button.disabled = false; });
-}
+// THE JOIN BY EMAIL STOOD HERE (ndJoin, goal/G30.2): it is the shell element joinForm now (goal/G30.1, box v33),
+// bound on nd-body at mount, below.
 
 function ndClaim(button) {
   var panel = button.closest('.natter-claim');
@@ -1591,6 +1567,10 @@ spirit.shell.activateApp({
       });
     }
 
+    // The join form's button and Enter (goal/G30.1, box v33): the shell element binds once on nd-body, aimed at
+    // this screen's relay.
+    if (ndJoinForm()) ndJoinForm().bind(ndBody(), { url: function () { return ndUrl; }, ask: ndPost });
+
     // Delegated, because the panels are repainted and a handler bound to
     // a button would go with them.
     ndBody().addEventListener('click', function (event) {
@@ -1642,8 +1622,6 @@ spirit.shell.activateApp({
       // with the next repaint — the same reason every control on this
       // screen is delegated.
 
-      var joinBtn = target.closest('.nd-join-go');
-      if (joinBtn) { ndJoin(joinBtn); return; }
       var claimBtn = target.closest('.nd-claim-go');
       if (claimBtn) { ndClaim(claimBtn); return; }
 

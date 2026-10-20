@@ -138,7 +138,9 @@ async function main() {
   // THE EMAIL, TYPED ONCE ON FIRST START: an unbound node opens Natter, which opens the claim screen of its relay
   // (shell.js openBinderIfUnbound); the email field sits there and asks relay.join with the email.
   const nd = code('shell/natterDetails/natterDetails.js');
-  if (/type="email"|class="nd-join-email"/.test(nd) && /'relay\.join',\s*\{[^}]*email/.test(nd)) test.check('the first-run claim screen (natterDetails) has an email field that asks relay.join with it');
+  // The form is the shell element joinForm since goal/G30.1 (box v33): natterDetails draws it, the element asks.
+  const jf = code('shell/js/joinForm.js');
+  if (/spiritElements\.joinForm/.test(nd) && /type="email"/.test(jf) && /'relay\.join',\s*\{[^}]*email/.test(jf)) test.check('the first-run claim screen (natterDetails) draws the join form, whose email field asks relay.join with it');
   else test.fail(OWED + 'the first-run screen has no email field asking relay.join');
   const relayServer = code('js/relayServer.js');
   // Through the driver loader since the box's v28 (no vendor in core).
@@ -350,7 +352,7 @@ async function main() {
   if (/services/.test(relayKeyFn)) test.check('peerPost.relayKey hands the card\'s services on');
   else test.fail(OWED + 'peerPost.relayKey drops services from the card');
 
-  if (/services[^\n]{0,80}sendMail/.test(nd) && /nd-join-email/.test(nd)) test.check('natterDetails draws the email field only when the relay row says services.sendMail');
+  if (/services[^\n]{0,80}sendMail/.test(nd) && /ndJoinForm\(\)\.html/.test(nd)) test.check('natterDetails draws the email field only when the relay row says services.sendMail');
   else test.fail(OWED + 'natterDetails draws the email field without reading services.sendMail');
 
   // The --email start reads the card first: a relay without mail is answered without asking it to join.
