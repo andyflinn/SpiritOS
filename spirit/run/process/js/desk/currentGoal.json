@@ -1,5 +1,5 @@
 {
- "change": 75657,
+ "change": 75658,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -7103,10 +7103,9 @@
    "id": "goal/G30.8",
    "title": "Desk item details: icon strip, fixed halves, lazy panels",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
