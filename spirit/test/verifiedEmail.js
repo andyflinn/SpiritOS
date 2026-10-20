@@ -123,6 +123,22 @@ const info = code('shell/info/info.js');
 if (!/id="info-face-email"/.test(info)) test.check('Info\'s face section has no email field');
 else test.fail(OWED + 'Info\'s face section still has its email field');
 
+test.subHeading('5b. the words around a change (box v31)');
+// The mails this suite made: [0] bert's first join, [1] his repeat, [2] the owner's join on his boot seat.
+const subjects = mails.map(function (m) { return m.subject; });
+if (subjects[0] === 'Join this relay' && subjects[1] === 'Confirm your email address' && subjects[2] === 'Confirm your email address')
+  test.check('a first join mails Join this relay; a seated key (the owner too) gets Confirm your email address');
+else test.fail(OWED + 'the mail subjects were ' + short(subjects));
+const relayJoinSrc = (/function relayJoin\([\s\S]*?\n  \}/.exec(code('js/hub.js')) || [''])[0];
+const shellSrc = code('js/client/shell.js');
+if (/status:\s*said\.status === 200 \? 200 : 201/.test(relayJoinSrc) && /Email address verified/.test(shellSrc))
+  test.check('the node passes the relay\'s 200 for a change on, and the page says Email address verified');
+else test.fail(OWED + 'relay.join hands no change apart from a new seat, or the page never says Email address verified');
+const infoFace = (info.split('function infoDrawFace')[1] || '');
+if (/emailVerified/.test(infoFace) && /Verify your email in Contacts/.test(infoFace) && /callDialog\('shell\/natterDetails'/.test(infoFace))
+  test.check('Info draws no face form for a relay with no verified email, and offers its natterDetails instead');
+else test.fail(OWED + 'Info draws the face form without a verified email, or offers no way to natterDetails');
+
 test.subHeading('6. a newly started node presents noderoutes.net as a contact');
 // Box v29: "A newly started node presents noderoutes.net as a contact already". Contacts' relay rows are relay.search's
 // (contacts.js asks it); a new node's list is what boot asserts (server.js calls ownerBadge.ensureRelays). So a fresh
