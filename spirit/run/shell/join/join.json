@@ -1,0 +1,9 @@
+{
+  "name": "Join",
+  "description": "Join a relay with your email: the one form a new node needs.",
+  "icon": "EMAIL",
+  "hidden": false,
+  "intrinsic": true,
+  "untilSeated": true,
+  "owner": "system"
+}

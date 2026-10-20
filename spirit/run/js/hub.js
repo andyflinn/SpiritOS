@@ -2817,7 +2817,9 @@ function createHub(rootDir) {
       if (said.email) { try { relayKeys.keepEmail(rootDir, url, said.email, said.emailVerified === true); } catch (e) { /* the relay holds it; the next change writes it here */ } }
       if (deps.probe) { try { router.startStreams(deps.probe); } catch (e) { /* the next boot connects */ } }
       joinAskedOf = '';
-      return { ok: true, status: 201, url: url, label: label };
+      // The relay's 200 is an email change on a seat already held, its 201 a new seat (goal/G30.1, box v31): passed
+      // on, so the page says Email address verified or Joined.
+      return { ok: true, status: said.status === 200 ? 200 : 201, url: url, label: label };
     }, function (e) {
       return { ok: false, status: 502, error: 'no answer from that relay: ' + ((e && e.message) || 'no answer') };
     });

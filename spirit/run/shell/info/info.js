@@ -260,9 +260,15 @@ function infoDrawFace() {
       '<label class="field-label">Relay<select id="info-face-relay">' +
         seats.map(function (row) { return '<option value="' + escape(row.url) + '">' + escape(row.label || row.url) + '</option>'; }).join('') +
       '</select></label>' +
-      '<label class="field-label grow">Face name<input type="text" id="info-face-name" placeholder="one word, letters and digits"></label>' +
-      '<button type="button" id="info-face-save">Ask</button>' +
+      '<span id="info-face-ask" class="grow">' +
+        '<label class="field-label grow">Face name<input type="text" id="info-face-name" placeholder="one word, letters and digits"></label>' +
+        '<button type="button" id="info-face-save">Ask</button>' +
+      '</span>' +
     '</div>' +
+    // NO FACE FORM WITHOUT A VERIFIED EMAIL (goal/G30.1, box v31): the relay would refuse the ask, so the form gives
+    // way to the place the email is verified, that relay's natterDetails.
+    '<div id="info-face-verify" class="job-manifest-note">Verify your email in Contacts, relays, before asking for a face name on this relay. ' +
+      '<button type="button" id="info-face-open">Open this relay</button></div>' +
     '<div id="info-face-now" class="job-manifest-note"></div>' +
     '<div id="info-face-error" class="job-start-error"></div>';
   ['relay', 'name'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el && keep[k]) el.value = keep[k]; });
@@ -277,7 +283,11 @@ function infoDrawFace() {
     // The verified email beside the face: the one the face pairs with, read from the relay's row (relay.get).
     var mail = row.emailVerified ? String(row.email || '') : '';
     if (now) now.textContent = (face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.') +
-      (mail ? ' Verified email: ' + mail + '.' : ' No verified email on this relay: add one in Natter before asking.');
+      (mail ? ' Verified email: ' + mail + '.' : '');
+    var ask = document.getElementById('info-face-ask');
+    var verify = document.getElementById('info-face-verify');
+    if (ask) ask.hidden = !row.emailVerified;
+    if (verify) verify.hidden = !!row.emailVerified;
     if (!fill) return;
     var n = document.getElementById('info-face-name');
     if (n) n.value = face.name || '';
@@ -285,6 +295,12 @@ function infoDrawFace() {
   infoFaceShow(!keep.name);
   document.getElementById('info-face-relay').addEventListener('change', function () { infoFaceSaid = ''; infoSay('info-face-error', '', false); infoFaceShow(true); });
   document.getElementById('info-face-save').addEventListener('click', infoSaveFace);
+  // The same dialog Contacts opens for a relay row; the rows are read again when it closes, so a verified email shows.
+  document.getElementById('info-face-open').addEventListener('click', function () {
+    var pick = document.getElementById('info-face-relay');
+    if (!pick || !infoApi) return;
+    Promise.resolve(infoApi.callDialog('shell/natterDetails', { url: pick.value })).then(function () { return infoLoadRelays(); }, function () { return infoLoadRelays(); });
+  });
   document.getElementById('info-face-name').addEventListener('keydown', function (e) { infoOnKey(e, infoSaveFace); });
   if (infoFaceSaid) infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
 }

@@ -566,6 +566,24 @@
     serversShown = now;
     renderDesktop();
   }
+  // DOES THIS NODE HOLD A SEAT? (goal/G30.1, box v32) null until relay.search answers; then true when any listed relay
+  // is owned or claimed. Asked once per page: a seat is taken by opening the mailed link, which loads the page anew.
+  var nodeSeated = null;
+  function askSeated() {
+    Promise.resolve(spirit.core.ask('relay.search', { q: '*' })).then(function (r) {
+      var items = (r && r.body && r.body.items) || [];
+      var seated = items.some(function (i) {
+        var row = null;
+        try { row = JSON.parse(i.label); } catch (e) { row = null; }
+        return !!(row && (row.owned || row.claimed));
+      });
+      if (seated === nodeSeated) return;
+      nodeSeated = seated;
+      if (typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
+    }, function () { /* no answer: the icon stays undrawn */ });
+  }
+  askSeated();
+
   function renderDesktop() {
     serversShown = serversUpKey();
     desktopEl.innerHTML = '';
@@ -574,6 +592,9 @@
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
       if (!serverUp(app)) return; // its server is not running (goal/G27.16)
       if (!shownByInclusion(id)) return; // not included on this node (slim/G1.7)
+      // The Join icon (goal/G30.1, box v32): on the desktop beside the Spirit group while the node holds no seat,
+      // gone once it holds one. Not drawn until relay.search has said which.
+      if (app.untilSeated) { if (nodeSeated === false) desktopEl.appendChild(buildAppIcon(id)); return; }
       // An intrinsic app is excluded here like any other grouped app —
       // effectiveGroup returns Spirit for it, and that is where its icon
       // is, one tap from the desktop and never at the operator's mercy.
@@ -646,6 +667,8 @@
       // parent underneath, which is precisely the case that invariant
       // says cannot arise.
       if (apps[id].hidden) return;
+      // Nor an app the desktop shows until the node is seated (goal/G30.1): it lives beside the group, not in it.
+      if (apps[id].untilSeated) return;
       // Nor while the server it needs is not running (goal/G27.16).
       if (!serverUp(apps[id])) return;
       drawn[id] = true;
@@ -2752,6 +2775,9 @@
       // (Andy). Nothing already shipped changes — every manifest in the
       // tree says hidden:false.
       hidden: !!manifest.hidden,
+      // SHOWN ONLY WHILE THE NODE HOLDS NO SEAT (goal/G30.1, box v32): on the desktop, not in a group; see
+      // renderDesktop and nodeSeated.
+      untilSeated: !!manifest.untilSeated,
       // THE SERVER IT NEEDS (goal/G27.16): the folder name of a server under process/js, read off the app's own
       // manifest; '' for an app that needs none. See serverUp.
       server: typeof manifest.server === 'string' ? manifest.server : '',
@@ -2808,7 +2834,7 @@
   // its move, alongside its APP_ID_RENAMES entry.
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
-  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'files', 'group-manager', 'contacts', 'info', 'introSpector'];
+  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'files', 'group-manager', 'contacts', 'info', 'introSpector', 'join'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {
@@ -2945,6 +2971,9 @@
     try { window.history.replaceState(null, '', window.location.pathname); } catch (e) { /* the code is spent anyway */ }
     Promise.resolve(spirit.core.ask('relay.join', { url: '', email: '', code: code })).then(function (r) {
       var b = (r && r.body) || {};
+      // 200 is an email change on a seat already held, 201 a new seat (goal/G30.1, box v31); the node's status is the
+      // HTTP one.
+      if (b.ok && r.status === 200) { window.alert('Email address verified on ' + (b.url || 'the relay') + '.'); return; }
       window.alert(b.ok ? 'Joined ' + (b.url || 'the relay') + (b.label ? ' as ' + b.label : '') + '.'
         : 'The join did not finish: ' + (b.error || 'no answer') + '. Ask again with your email.');
     }, function () { window.alert('The join did not finish: this node did not answer.'); });

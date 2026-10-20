@@ -4045,7 +4045,8 @@ function createRelay(rootDir, deps) {
     pendingJoins.set(key, { email: mail, port: p, hash: joinHash(code), until: clock() + JOIN_MS, card: typeof card === 'string' ? card : '' });
     Promise.resolve(sendMail({
       to: mail,
-      subject: 'Join this relay',
+      // A seated key is changing its email, not joining (goal/G30.1, box v31).
+      subject: findByKey(key) ? 'Confirm your email address' : 'Join this relay',
       text: 'Open this link on the computer where SpiritOS runs, within 10 minutes:\n\nhttp://127.0.0.1:' + p + '?join=' + code + '\n\nIt counts once.',
     })).catch(function () { /* the pending join lapses on its own */ });
     return { ok: true, status: 200 };
