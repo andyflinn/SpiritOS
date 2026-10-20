@@ -154,9 +154,15 @@ else test.fail(OWED + 'faceForm is missing, or Info keeps its own face form, or 
 if (['peerFind', 'faceForm', 'joinSteps'].every(function (nm) { return new RegExp('src="/shell/js/' + nm + '\\.js"').test(index); }))
   test.check('index.html loads peerFind, faceForm and joinSteps');
 else test.fail(OWED + 'index.html does not load all three elements');
-if (/spiritElements\.joinSteps/.test(joinApp) && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spiritElements\.joinForm/.test(joinApp))
-  test.check('the Join app draws its steps from joinSteps, the join form, and keeps the opened link as its override');
-else test.fail(OWED + 'the Join app does not draw joinSteps, the join form, or does not keep faceOpened');
+// Box v42: decided once, in the shell. The shell hands the Join app what it worked out (onSteps); the app neither
+// subscribes nor decides.
+if (/onSteps:/.test(joinApp) && !/spiritElements\.joinSteps|jobs\.subscribe|\.current\(|\.done\(/.test(joinApp)
+    && /setAppOverride\('shell\/join',\s*\{\s*faceOpened:\s*true\s*\}\)/.test(joinApp) && /spiritElements\.joinForm/.test(joinApp))
+  test.check('the Join app draws what the shell hands it (onSteps): it neither subscribes nor decides, draws the join form and keeps the opened link as its override');
+else test.fail(OWED + 'the Join app still decides or subscribes, or lacks onSteps, the join form or faceOpened');
+if (/apps\[id\]\.onSteps = behavior\.onSteps/.test(shell) && /\.onSteps\(/.test(shell) && /function handSteps\(/.test(shell))
+  test.check('the shell keeps the app\'s onSteps and hands it the steps (handSteps)');
+else test.fail(OWED + 'the shell does not hand the steps to the app');
 
 test.subHeading('4b. one join control, and the face form on one line (box v41)');
 // joinForm.words({seated, email, emailVerified}) picks the control's words, so natterDetails and the Join app draw the
@@ -185,9 +191,10 @@ if (/<\/select><\/label><label class="field-label grow">Face name<input[^>]*><\/
   test.check('the face form draws relay, face name and Ask side by side in one row');
 else test.fail(OWED + 'the face form row reads ' + short(faceHtml));
 
-// 5. THE APP HEARS THE JOB AND NOTHING ELSE. The real join.js on a fake page with the real elements: it subscribes to
-// the jobs stream, draws when the join-steps job arrives or changes, not when the same job comes again, not on render,
-// not while a field inside the list has focus; and it asks the node nothing about the steps.
+// 5. THE APP DRAWS WHAT THE SHELL HANDS IT (box v42). The real join.js on a fake page with the real joinForm: the shell
+// (played here) works out the steps and hands them to the app's onSteps; the app draws when handed something new, not
+// when handed the same again, not on render, not while a field inside the list has focus; it subscribes to nothing and
+// asks the node nothing about the steps.
 const holdsStill = (function () {
   const byId = {};
   function fakeEl(id) {
@@ -198,35 +205,41 @@ const holdsStill = (function () {
   }
   const doc = { activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeEl(id)); } };
   const win = {};
-  ['joinSteps', 'joinForm'].forEach(function (nm) { try { new Function('window', raw('shell/js/' + nm + '.js'))(win); } catch (e) { /* missing */ } });
+  try { new Function('window', raw('shell/js/joinForm.js'))(win); } catch (e) { /* missing */ }
   let app = null;
   const subscribers = [];
   const sp = { core: { const: { ICON: {} }, fs: { loadFile: function () { return raw('shell/join/join.json'); } },
-    jobs: { subscribe: function (s) { subscribers.push(s); return function () {}; } } }, shell: { activateApp: function (d) { app = d; } } };
+    jobs: { subscribe: function (sub) { subscribers.push(sub); return function () {}; } } }, shell: { activateApp: function (d) { app = d; } } };
   try { new Function('spirit', 'document', 'window', raw('shell/join/join.js'))(sp, doc, win); } catch (e) { return Promise.resolve({ threw: e.message }); }
   if (!app) return Promise.resolve({ threw: 'no app' });
   const asked = [];
-  const api = { escapeHtml: function (s) { return String(s); }, verb: function (v) { asked.push(v); return Promise.resolve({ status: 200, body: { ok: true, items: [] } }); },
+  const api = { escapeHtml: function (x) { return String(x); }, verb: function (v) { asked.push(v); return Promise.resolve({ status: 200, body: { ok: true, items: [] } }); },
     getAppOverride: function () { return {}; }, setAppOverride: function () {}, peerPost: function () { return Promise.resolve({}); }, callDialog: function () { return Promise.resolve(null); } };
-  const job = function (data) { return { id: 'job_7', type: 'join-steps', kind: 'permanent', data: data }; };
-  const feed = function (j, snapshot) { subscribers.forEach(function (s) { if (snapshot && s.onSnapshot) s.onSnapshot([j]); else if (s.onUpdate) s.onUpdate(j); }); };
+  // What the shell hands: the facts, the open step and which steps are done, worked out by joinSteps as the shell does.
+  const hand = function (data) {
+    const facts = joinSteps.fromJob(data, false);
+    const open = joinSteps.current(steps, facts);
+    return { facts: facts, open: open ? open.until : null, done: steps.map(function (st) { return joinSteps.done(st, facts); }) };
+  };
   app.mount(doc.getElementById('container'), api);
   const list = function () { return doc.getElementById('join-list').writes; };
   const r = {};
+  const give = function (data) { if (typeof app.onSteps === 'function') app.onSteps(hand(data)); };
   return settle().then(function () {
     r.subscribed = subscribers.length > 0;
+    r.hasOnSteps = typeof app.onSteps === 'function';
     const before = list();
-    feed(job({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' }), true);
-    return settle().then(function () { r.drewOnJob = list() > before; });
+    give({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' });
+    return settle().then(function () { r.drewOnHand = list() > before; });
   }).then(function () {
     const before = list();
-    feed(job({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' }));
+    give({ seated: false, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' });
     for (let i = 0; i < 5; i += 1) app.render();
     return settle().then(function () { r.quietOnSame = list() === before; });
   }).then(function () {
     const before = list();
     doc.activeElement = { inside: 'join-list' };
-    feed(job({ seated: true, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' }));
+    give({ seated: true, relayUrl: 'https://relay.example', contact: false, face: '', faceUrl: '' });
     return settle().then(function () { r.quietWhileTyping = list() === before; });
   }).then(function () {
     r.askedSteps = asked.filter(function (v) { return v === 'relay.search' || v === 'contact.search'; });
@@ -234,11 +247,11 @@ const holdsStill = (function () {
   }, function (e) { return { threw: e.message }; });
 }());
 const stillDone = holdsStill.then(function (r) {
-  test.subHeading('5. the Join app hears the job and nothing else');
-  if (r && r.subscribed && r.drewOnJob) test.check('the Join app subscribes to the jobs stream and draws when the join-steps job arrives');
-  else test.fail(OWED + 'the Join app does not draw from the join-steps job: ' + short(r));
+  test.subHeading('5. the Join app draws what the shell hands it');
+  if (r && r.hasOnSteps && !r.subscribed && r.drewOnHand) test.check('the Join app has onSteps, subscribes to nothing, and draws when the shell hands it the steps');
+  else test.fail(OWED + 'the Join app does not draw from what the shell hands it: ' + short(r));
   if (r && r.quietOnSame && r.quietWhileTyping && r.askedSteps && r.askedSteps.length === 0)
-    test.check('the same job again, five renders, and a change while a field has focus redraw nothing; it asks the node nothing about the steps');
+    test.check('the same steps again, five renders, and a change while a field has focus redraw nothing; it asks the node nothing about the steps');
   else test.fail(OWED + 'the Join app redrew or asked: ' + short(r));
 });
 
