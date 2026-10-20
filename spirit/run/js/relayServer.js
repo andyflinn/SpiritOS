@@ -393,6 +393,93 @@ function isRelayPublicPath(method, pathname) {
   return false;
 }
 
+// ── A MEMBER'S FACE (goal/G30.9) ─────────────────────────────────────
+//
+// The relay serves <face>.<its face domain> to anyone while that member has a verified email, a face name and his
+// home node present (relay.faceAt). Logged out, the page is the empty face shell with its login app; the login is the
+// relay's (relay.faceLogin), a session in its memory carried by the cookie spirit_face, HttpOnly, for that host only.
+// The face shell's files are served from spirit/run/face/ alone. Nothing reaches the home node yet: that is the
+// plumbing, the next item.
+//
+// /face/allowed?domain=<host> answers 200 for a face this relay serves now, on any host: Caddy asks it before it
+// fetches a certificate for that name on demand (bash/face-setup).
+const FACE_DIR = path.join(__dirname, '..', 'face');
+const FACE_FILES = { '/face/shell.js': 'shell.js', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
+const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8' };
+function faceCookie(req) {
+  const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
+  return m ? m[1] : '';
+}
+function faceSetCookie(res, sid) {
+  res.setHeader('Set-Cookie', 'spirit_face=' + sid + '; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=' + (7 * 24 * 60 * 60));
+}
+function faceSend(res, status, file) {
+  fs.readFile(path.join(FACE_DIR, file), function (err, data) {
+    if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Not found'); return; }
+    res.writeHead(status, { 'Content-Type': FACE_TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+    res.end(data);
+  });
+}
+function faceJson(res, body) {
+  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(JSON.stringify(body));
+}
+// True when the request was a face's and is answered here.
+function faceDoor(req, res, url, pathname) {
+  if (req.method === 'GET' && pathname === '/face/allowed') {
+    const asked = relay.faceAt(url.searchParams.get('domain') || '');
+    res.writeHead(asked.ok ? 200 : 404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(asked.ok ? 'ok' : 'no');
+    return true;
+  }
+  const at = relay.faceAt(req.headers.host || '');
+  if (!at.face) return false;
+  if (!at.ok) {
+    res.writeHead(at.status || 404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end(at.status === 503 ? 'This face is offline: its home node is not connected.' : 'No such face.');
+    return true;
+  }
+  if (req.method === 'GET' && (pathname === '/' || pathname === '/face.html')) {
+    // The mailed link, /?<token>: the token logs in once, and the page opens logged in.
+    const token = (url.search || '').replace(/^\?/, '');
+    if (token && /^[A-Za-z0-9_-]+$/.test(token)) {
+      const said = relay.faceLogin(at.name, token);
+      if (said.loggedIn) faceSetCookie(res, said.session);
+    }
+    faceSend(res, 200, '../face.html');
+    return true;
+  }
+  if (req.method === 'GET' && FACE_FILES[pathname]) { faceSend(res, 200, FACE_FILES[pathname]); return true; }
+  if (req.method === 'POST' && pathname === '/face/api') {
+    readJsonBody(req).then(function (body) {
+      const verb = String((body && body.verb) || '');
+      const sid = faceCookie(req);
+      if (verb === 'state') {
+        const s = relay.faceSession(sid);
+        faceJson(res, { ok: true, face: at.name, loggedIn: !!(s.ok && s.name === at.name) });
+        return;
+      }
+      if (verb === 'login') {
+        const said = relay.faceLogin(at.name, String((body && body.text) || ''));
+        if (said.loggedIn) faceSetCookie(res, said.session);
+        faceJson(res, { ok: true, loggedIn: !!said.loggedIn });
+        return;
+      }
+      if (verb === 'logout') {
+        relay.faceLogout(sid);
+        res.setHeader('Set-Cookie', 'spirit_face=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0');
+        faceJson(res, { ok: true, loggedIn: false });
+        return;
+      }
+      faceJson(res, { ok: false, error: 'no such verb' });
+    }, function () { faceJson(res, { ok: false, error: 'the body is not json' }); });
+    return true;
+  }
+  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Not found');
+  return true;
+}
+
 const server = http.createServer((req, res) => {
   // NO LOOPBACK OR HOST GATE, which is the node's first line and not this
   // one's: a relay is meant to be reached from the internet, and a
@@ -406,6 +493,9 @@ const server = http.createServer((req, res) => {
   if (!parsed) return;
   const url = parsed.url;
   const pathname = parsed.pathname;
+
+  // A MEMBER'S FACE (goal/G30.9), answered before the relay's own door: its host is <face>.<the face domain>.
+  if (faceDoor(req, res, url, pathname)) return;
 
   if (!isRelayPublicPath(req.method, pathname)) {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });

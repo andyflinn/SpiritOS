@@ -1,0 +1,8 @@
+{
+  "name": "Log in",
+  "description": "Log in on your face: the counterpart of the node's Join app.",
+  "steps": [
+    { "until": "login", "name": "Log in", "icon": "🔑", "text": "Your email, or the token from the mail." },
+    { "until": "plumbing", "name": "Waiting for plumbing", "icon": "🔧", "text": "Logged in. Reaching your home node comes next." }
+  ]
+}

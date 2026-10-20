@@ -4071,7 +4071,95 @@ function createRelay(rootDir, deps) {
     return out;
   }
 
+  // ── A MEMBER'S FACE, AND LOGGING IN ON IT (goal/G30.9) ───────────────
+  //
+  // The relay serves <face>.<its domain> to anyone while that member has a verified email, a face name and his home
+  // node present (its stream open); logged out the page is the empty face shell with its login app. The relay decides
+  // the login (Andy, 2026-10-21: "the relay decides, it has all the info it needs"): one field takes the member's
+  // verified email, which gets a mail with a token and a link, or the token itself, which logs in once within 10
+  // minutes. Anything else gets the email's answer, so the page never says which it got. A login is a session in this
+  // relay's memory, valid until 7 days after the last interaction ("the login expires after it is idle for 7 days");
+  // Log out ends it. NOT ON DISC: a stored shape would be new, so a relay restart logs faces out.
+  //
+  // THE DOMAIN is the owner's to say, in relay-state/face.json {domain}, placed as mail.json is (bash/face-setup
+  // writes it). Without it the relay serves no face.
+  var FACE_TOKEN_MS = 10 * 60 * 1000;
+  var FACE_IDLE_MS = 7 * 24 * 60 * 60 * 1000;
+  var faceDomain = (function () {
+    try {
+      var f = JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'face.json'), 'utf8'));
+      return String((f && f.domain) || '').trim().toLowerCase().replace(/\.$/, '');
+    } catch (e) { return ''; }
+  }());
+  var faceTokens = new Map();    // face name -> { hash, until }: the one token a login mail carries
+  var faceSessions = new Map();  // session id -> { name, until }
+  function faceSweep() {
+    var t = clock();
+    faceTokens.forEach(function (v, k) { if (v.until < t) faceTokens.delete(k); });
+    faceSessions.forEach(function (v, k) { if (v.until < t) faceSessions.delete(k); });
+  }
+  // The member a face name belongs to, when he has a verified email.
+  function faceMember(name) {
+    var m = store.members.byFace(String(name || '').toLowerCase());
+    return m && m.emailVerified && m.email ? m : null;
+  }
+  // The face a host asks for, when this relay serves it now.
+  function faceAt(host) {
+    // `face` says whether the host is a face name at all: anything else is the relay's own door.
+    if (!faceDomain) return { ok: false, face: false, status: 404, error: 'this relay serves no faces' };
+    var name = faceRoute.nameOf(String(host || '').toLowerCase().replace(/:\d+$/, ''), faceDomain);
+    if (!name) return { ok: false, face: false, status: 404, error: 'not a face' };
+    var m = faceMember(name);
+    if (!m) return { ok: false, face: true, status: 404, error: 'no such face' };
+    if (!activeRows[m.publicKey]) return { ok: false, face: true, status: 503, error: 'this face\'s node is not present' };
+    return { ok: true, face: true, status: 200, name: name };
+  }
+  function faceLogin(name, text) {
+    faceSweep();
+    var n = String(name || '').toLowerCase();
+    var t = String(text == null ? '' : text).trim();
+    var neutral = { ok: true, status: 200, loggedIn: false };
+    var m = faceMember(n);
+    if (!m) return neutral;
+    var tok = faceTokens.get(n);
+    if (tok && t && joinHash(t) === tok.hash) {
+      faceTokens.delete(n);
+      var sid = require('crypto').randomBytes(24).toString('base64url');
+      faceSessions.set(sid, { name: n, until: clock() + FACE_IDLE_MS });
+      return { ok: true, status: 200, loggedIn: true, session: sid, name: n };
+    }
+    // The member's own email: a mail with the token and the link, within the join's caps (one a minute, five an hour).
+    if (sendMail && t.toLowerCase() === String(m.email).toLowerCase() && !joinCapped('face:' + n)) {
+      var code = require('crypto').randomBytes(24).toString('base64url');
+      faceTokens.set(n, { hash: joinHash(code), until: clock() + FACE_TOKEN_MS });
+      var link = 'https://' + n + '.' + faceDomain + '/?' + code;
+      Promise.resolve(sendMail({
+        to: m.email,
+        subject: 'Log in to your face',
+        text: 'To log in, paste this token into the Log in field:\n\n' + code + '\n\nor open this link:\n\n' + link + '\n\nIt counts once, within 10 minutes.',
+      })).catch(function () { /* the token lapses on its own */ });
+    }
+    return neutral;
+  }
+  // A session, moved to 7 days from now by this interaction; gone after 7 days idle.
+  function faceSession(sid) {
+    faceSweep();
+    var s = faceSessions.get(String(sid || ''));
+    if (!s) return { ok: false, status: 401, error: 'not logged in' };
+    s.until = clock() + FACE_IDLE_MS;
+    return { ok: true, status: 200, name: s.name };
+  }
+  function faceLogout(sid) {
+    faceSessions.delete(String(sid || ''));
+    return { ok: true, status: 200 };
+  }
+
   return {
+    // The face (goal/G30.9): which face a host is, the one-field login, the session and Log out.
+    faceAt: faceAt,
+    faceLogin: faceLogin,
+    faceSession: faceSession,
+    faceLogout: faceLogout,
     claim: claim,
     forgetPeer: forgetPeer,
     join: join,

@@ -1,0 +1,95 @@
+#!/bin/bash
+# The relay serves its members' faces (goal/G30.9): every name under the relay's own domain, <face>.<domain>, goes
+# to the relay's port, which answers a face for a member with a verified email, a face name and his home node
+# present. This writes the two things that takes:
+#
+#   1. relay-state/face.json { "domain": "<domain>" }, which tells the relay which host is a face. Without it the
+#      relay serves no face.
+#   2. a Caddy site for *.<domain> with a certificate per face fetched ON DEMAND, after Caddy has asked the relay
+#      whether the name is a face it serves now: GET /face/allowed?domain=<name>, 200 or 404. So only real faces get
+#      a certificate, and a scanner's random names get none.
+#
+#   Andy, 2026-10-21: "certificates and DNS, the ./bash folder on spirit.andyflinn.com will provide tools for setting
+#   up the caddy, if it doesn't exist yet...", and "new/improved ./bash/scripts will facilitate all or most of that".
+#
+# DNS is the one thing this cannot do: a wildcard record *.<domain> pointing at this box must exist at the domain's
+# DNS host. It checks one name and says so when it does not resolve here.
+#
+# Same rule as bash/tls: one file per domain under /etc/caddy/sites/, and the main Caddyfile is the operator's. This
+# only READS it, and says what to add when the global on_demand_tls block is missing.
+source "$(dirname "$0")/lib.sh"
+need_root
+have caddy || die "caddy is not installed — run ./bash/tls first"
+
+FACE_DOMAIN="${SPIRIT_FACE_DOMAIN:-$DOMAIN}"
+SITES_DIR=/etc/caddy/sites
+SITE_FILE="$SITES_DIR/faces.$FACE_DOMAIN.caddy"
+ASK_URL="http://127.0.0.1:$NODE_PORT/face/allowed"
+FACE_JSON="$RUN_DIR/relay-state/face.json"
+
+# ── 1. THE RELAY'S FACE DOMAIN ────────────────────────────────────────
+say "write $FACE_JSON: faces are <name>.$FACE_DOMAIN"
+mkdir -p "$RUN_DIR/relay-state"
+printf '{ "domain": "%s" }\n' "$FACE_DOMAIN" > "$FACE_JSON"
+chmod 644 "$FACE_JSON"
+
+# ── 2. CADDY, FOR EVERY NAME UNDER THE DOMAIN ─────────────────────────
+mkdir -p "$SITES_DIR"
+say "write $SITE_FILE for *.$FACE_DOMAIN -> 127.0.0.1:$NODE_PORT"
+cat > "$SITE_FILE" <<SITE
+# Written by bash/face-setup. Every face under $FACE_DOMAIN, served by the relay. reverse_proxy keeps the visitor's
+# Host header, which is how the relay knows which face was asked for.
+*.$FACE_DOMAIN {
+	tls {
+		on_demand
+	}
+	encode gzip
+	reverse_proxy 127.0.0.1:$NODE_PORT
+}
+SITE
+chmod 644 "$SITE_FILE"
+
+# ── THE ASK IS GLOBAL, AND THE GLOBAL BLOCK IS THE OPERATOR'S ────────
+#
+# Caddy refuses on-demand certificates with nothing to ask: without it, anyone could make this box request
+# certificates for any name pointing here and burn the domain's Let's Encrypt limits.
+MAIN=/etc/caddy/Caddyfile
+if [ ! -f "$MAIN" ] || ! grep -q 'import sites/' "$MAIN"; then
+  warn "$MAIN does not import $SITES_DIR — run ./bash/tls first, it explains how"
+  exit 1
+fi
+if ! grep -q "on_demand_tls" "$MAIN" || ! grep -q "$ASK_URL" "$MAIN"; then
+  warn "$MAIN has no global on_demand_tls block asking the relay"
+  echo
+  echo "    Add this at the VERY TOP of $MAIN (a global block must come first), above the import line. If a"
+  echo "    global { } block is already there, put the on_demand_tls part inside it instead:"
+  echo
+  echo "      {"
+  echo "      	on_demand_tls {"
+  echo "      		ask $ASK_URL"
+  echo "      	}"
+  echo "      }"
+  echo
+  echo "    Then check and reload:"
+  echo "      caddy validate --config $MAIN --adapter caddyfile"
+  echo "      systemctl reload caddy"
+  echo
+  echo "    and rerun this script. Nothing was reloaded, so what is serving now keeps serving."
+  exit 1
+fi
+
+say "validate and reload caddy"
+caddy validate --config "$MAIN" --adapter caddyfile || die "caddy refused the configuration; nothing was reloaded"
+systemctl reload caddy || die "caddy did not reload"
+ok "caddy serves *.$FACE_DOMAIN"
+
+# ── DNS, CHECKED NOT WRITTEN ──────────────────────────────────────────
+PROBE="spirit-face-check.$FACE_DOMAIN"
+if have getent && getent hosts "$PROBE" >/dev/null; then
+  ok "$PROBE resolves: the wildcard record is there"
+else
+  warn "$PROBE does not resolve: add a DNS record *.$FACE_DOMAIN pointing at this box at the domain's DNS host"
+fi
+
+say "restart the relay so it reads $FACE_JSON"
+echo "    ./bash/restart"

@@ -148,9 +148,11 @@ async function main() {
   else test.fail(OWED + 'relayServer hands the relay no mailer');
 
   test.subHeading('6. the first round\'s pages are gone');
-  const gone = ['spirit/run/js/faceLogin.js', 'spirit/test/faceLogin.js'].filter(function (p) { return fs.existsSync(path.join(ROOT, p)); });
-  if (!gone.length && !/faceLogin/.test(relayServer) && !/keepCode|takeCode|loginHash/.test(code('js/relayStore.js'))) test.check('faceLogin.js, its suite, its wiring and the login code columns are gone');
-  else test.fail(OWED + 'still there: ' + short(gone.concat(/faceLogin/.test(relayServer) ? ['faceLogin in relayServer'] : []).concat(/keepCode|takeCode|loginHash/.test(code('js/relayStore.js')) ? ['login code in relayStore'] : [])));
+  // goal/G30.9 brings a face login back by Andy's new design (relay.faceLogin, its suite spirit/test/faceLogin.js,
+  // sessions in the relay's memory). What stays gone is the first round's: its module and the login code it stored.
+  const gone = ['spirit/run/js/faceLogin.js'].filter(function (p) { return fs.existsSync(path.join(ROOT, p)); });
+  if (!gone.length && !/keepCode|takeCode|loginHash/.test(code('js/relayStore.js'))) test.check('the first round\'s faceLogin.js and its stored login code columns are gone');
+  else test.fail(OWED + 'still there: ' + short(gone.concat(/keepCode|takeCode|loginHash/.test(code('js/relayStore.js')) ? ['login code in relayStore'] : [])));
 
   // ── 7. THE NODE STARTED WITH --email (the box, v26) ─────────────────────────────────────────────────
   // The user starts the node with node js/server.js --email <address>. While the node holds no seat it asks its kept
