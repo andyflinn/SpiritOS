@@ -48,7 +48,9 @@ const owner = auth.generateIdentity('andy');
 const member = auth.generateIdentity('bert');
 auth.writeOwner(boxHome, owner.publicKey);
 const mails = [];
-const box = createRelay(boxHome, { sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
+// The relay's clock, moved past the one-a-minute join cap between joins.
+let now = Date.now();
+const box = createRelay(boxHome, { now: function () { return now; }, sendMail: function (m) { mails.push(m); return Promise.resolve({ ok: true }); } });
 const codeOf = function () { const last = mails[mails.length - 1]; const m = last && /\?join=([A-Za-z0-9_-]+)/.exec(last.text); return m ? m[1] : ''; };
 const row = function (key) { try { return relayStore.open(boxHome).members.get(key) || {}; } catch (e) { return { threw: e.message }; } };
 
@@ -68,6 +70,7 @@ else test.fail(OWED + 'joinConfirm answered ' + short(firstOk));
 
 test.subHeading('2. a repeat join from a seated key changes the email only once the code is confirmed');
 let again = null;
+now += 2 * 60 * 1000;
 try { again = box.join(member.publicKey, 'bert@new.example', 4242, ''); } catch (e) { again = { threw: e.message }; }
 const r2 = row(member.publicKey);
 if (again && again.ok && r2.email === 'bert@example.org') test.check('a seated key may join again: a mail goes out, and the old email stands until the code');

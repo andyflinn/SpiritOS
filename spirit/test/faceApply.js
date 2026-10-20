@@ -2,7 +2,8 @@
 
 // spirit/test/faceApply.js
 // goal/G30.1: a node registers a face name and an email with one relay. Red on today's tree; claude-windows writes
-// it, wsl-claude builds it. The item's box (v19), in short:
+// it, wsl-claude builds it. Box v30 drops the email from the verb: relay.face is {url, name}, and the relay pairs the
+// name with the verified email it holds for the calling key; sections 1 to 3 and 5 assert that. The box (v19), in short:
 //   - Relay: one more self verb, face {name, email}, answered with the pair signed, or refused; the members row gains
 //     faceName (unique when set) and faceEmail. The name is one DNS label by faceRoute.nameOf's rule, lowercased. It is
 //     freed when its member leaves the relay.
@@ -41,8 +42,13 @@ if (!L.ok) { test.fail('the world: ' + L.error); test.reportSuccessFailureCount(
 const ann = L.peer('ann');
 const bob = L.peer('bob');
 const ask = function (who, body) { return (world.ask(L.box, who, body) || {}).answer || {}; };
+// THE EMAIL IS ON FILE (box v30): relay.face is {url, name}; the relay pairs the name with the verified email it
+// holds for the calling key, which a confirmed join wrote (verifiedEmail.js drives that loop). Written here the way
+// the confirm writes it.
+const verify = function (who, email) { require('../run/js/relayStore').open(L.box.rootDir()).members.setEmail(who.publicKey, email); };
+verify(ann, 'ann@example.org');
 
-const got = ask(ann, { face: { name: 'Harbour', email: 'ann@example.org' } });
+const got = ask(ann, { face: { name: 'Harbour' } });
 if (got.ok === true && got.name === 'harbour' && got.email === 'ann@example.org') test.check('ann applies for Harbour and is answered ok with the pair, the name lowercased');
 else test.fail(OWED + 'face {Harbour, ann@example.org} answered ' + short(got));
 const row = faceRows(L.box).filter(function (r) { return r.key === ann.publicKey; })[0] || {};
@@ -50,26 +56,31 @@ if (row.faceName === 'harbour' && row.faceEmail === 'ann@example.org') test.chec
 else test.fail(OWED + 'ann\'s members row reads ' + short(row));
 
 test.subHeading('2. what the relay refuses');
-const badName = ask(bob, { face: { name: 'two words', email: 'bob@example.org' } });
+const noMail = ask(bob, { face: { name: 'bob' } });
+if (noMail.ok === false && noMail.status === 400 && /email/i.test(String(noMail.error))) test.check('a member with no verified email on file is refused 400, told to add one');
+else test.fail(OWED + 'face {bob} with no email on file answered ' + short(noMail));
+verify(bob, 'bob@example.org');
+const badName = ask(bob, { face: { name: 'two words' } });
 if (badName.ok === false && badName.status === 400) test.check('a name that is not one DNS label is refused 400');
 else test.fail(OWED + 'face {two words} answered ' + short(badName));
-const badMail = ask(bob, { face: { name: 'bob', email: 'not-an-address' } });
-if (badMail.ok === false && badMail.status === 400) test.check('an email without @ is refused 400');
-else test.fail(OWED + 'face {bob, not-an-address} answered ' + short(badMail));
-const held = ask(bob, { face: { name: 'HARBOUR', email: 'bob@example.org' } });
+const sent = ask(bob, { face: { name: 'bobby', email: 'other@example.org' } });
+if (sent.ok === true && sent.email === 'bob@example.org') test.check('an email sent along is ignored: the face pairs with the one on file');
+else test.fail(OWED + 'face {bobby, other@example.org} answered ' + short(sent));
+const held = ask(bob, { face: { name: 'HARBOUR' } });
 if (held.ok === false && held.status === 409) test.check('a name another member holds is refused 409, whatever its case');
 else test.fail(OWED + 'bob asking for HARBOUR answered ' + short(held));
 const bobRow = faceRows(L.box).filter(function (r) { return r.key === bob.publicKey; })[0] || {};
-if (!bobRow.faceName) test.check('and bob\'s row holds no face name after the refusals');
+if (bobRow.faceName === 'bobby') test.check('and bob\'s row holds his own face name, not harbour, after the refusals');
 else test.fail(OWED + 'bob\'s row reads ' + short(bobRow));
 
 test.subHeading('3. a repeat changes the pair; leaving frees the name');
-const again = ask(ann, { face: { name: 'harbour', email: 'ann@new.example.org' } });
+verify(ann, 'ann@new.example.org');
+const again = ask(ann, { face: { name: 'harbour' } });
 const annRow = faceRows(L.box).filter(function (r) { return r.key === ann.publicKey; })[0] || {};
-if (again.ok === true && annRow.faceEmail === 'ann@new.example.org') test.check('ann repeats with a new email and the row carries it');
+if (again.ok === true && annRow.faceEmail === 'ann@new.example.org') test.check('ann\'s verified email changes, she asks again, and the pair carries the new one');
 else test.fail(OWED + 'ann\'s repeat answered ' + short(again) + ', row ' + short(annRow));
 ask(ann, { removePeer: { key: ann.publicKey } });
-const freed = ask(bob, { face: { name: 'harbour', email: 'bob@example.org' } });
+const freed = ask(bob, { face: { name: 'harbour' } });
 if (freed.ok === true && freed.name === 'harbour') test.check('once ann leaves the relay, bob may take harbour');
 else test.fail(OWED + 'after ann left, bob asking for harbour answered ' + short(freed));
 
@@ -91,8 +102,12 @@ else test.fail(OWED + 'the node relays table has ' + short(cols));
 
 test.subHeading('5. the node verb and the info app section');
 const server = code('js/server.js');
-if (/'relay\.face':\s*\{\s*request:\s*\{\s*url:\s*'',\s*name:\s*'',\s*email:\s*''\s*\}/.test(server)) test.check('server.js declares relay.face {url, name, email}');
-else test.fail(OWED + 'server.js declares no relay.face {url, name, email}');
+// The relay family's verbs since the flat door (goal/G30.5): 'face' in the relay table. Box v30: {url, name}.
+if (/'face':\s*\{\s*request:\s*\{\s*url:\s*'',\s*name:\s*''\s*\}/.test(server)) test.check('server.js declares relay.face {url, name}, no email');
+else test.fail(OWED + 'server.js does not declare relay.face {url, name}');
+const hubFace = (/function relayFace\([\s\S]*?\n  \}/.exec(code('js/hub.js')) || [''])[0];
+if (hubFace && !/body\.email/.test(hubFace)) test.check('hub.relayFace sends no email to the relay');
+else test.fail(OWED + 'hub.relayFace still reads an email from the body');
 // Every relayKeys function hub.js calls is one relayKeys exports: relay.face crashed Andy's node on 2026-10-19
 // because hub.relayFace called relayKeys.byUrl, which existed but was not exported.
 const relayKeysApi = require('../run/js/relayKeys.js');
@@ -121,6 +136,8 @@ if (/\.face\b/.test(info.split('function infoDrawFace')[1] || '') && /addEventLi
 else test.fail(OWED + 'the info app does not show the kept face of the selected relay');
 if (/relay\.face/.test(info)) test.check('the info app asks relay.face');
 else test.fail(OWED + 'the info app never asks relay.face');
+if (!/info-face-email/.test(info) && !/email:\s*email/.test(info)) test.check('the info app has no email field and sends no email');
+else test.fail(OWED + 'the info app still has its email field or sends one');
 
 test.subHeading('6. the old face processes are gone; faceRoute moved');
 const gone = ['spirit/run/process/js/grantFace', 'spirit/run/process/js/appFaceApp', 'spirit/run/process/js/appFaceAppServer', 'bash/face-install',
