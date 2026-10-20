@@ -1,5 +1,5 @@
 {
- "change": 75662,
+ "change": 76116,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,12 +10,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G30.1"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -454,11 +453,11 @@
    "id": "goal/G30.1",
    "title": "Negotiating face-name and email between node and relay",
    "goal": "goal/G30",
-   "status": "deskVerify passed",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done",
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30"
@@ -468,18 +467,28 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
     {
-     "path": "spirit/run/js/faceRoute.js",
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/client/shell.js",
      "by": "claude-windows",
      "core": true
     },
     {
      "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/joinStepsJob.js",
      "by": "claude-windows",
      "core": true
     },
@@ -504,6 +513,11 @@
      "core": true
     },
     {
+     "path": "spirit/run/js/relaySelf/face.json",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
      "path": "spirit/run/js/relayStore.js",
      "by": "claude-windows",
      "core": true
@@ -514,17 +528,62 @@
      "core": true
     },
     {
+     "path": "spirit/run/shell/contacts/contacts.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
      "path": "spirit/run/shell/info/info.js",
      "by": "claude-windows",
      "core": true
     },
     {
-     "path": "spirit/test/appClient.js",
+     "path": "spirit/run/shell/join/join.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/join/join.json",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/faceForm.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/joinForm.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/joinSteps.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/peerFind.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/natterDetails/natterDetails.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/contacts.js",
      "by": "claude-windows",
      "core": false
     },
     {
-     "path": "spirit/test/cleanupDead.js",
+     "path": "spirit/test/contactsFilter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactsListSearch.js",
      "by": "claude-windows",
      "core": false
     },
@@ -534,12 +593,37 @@
      "core": false
     },
     {
-     "path": "spirit/test/faceRouteSuite.js",
+     "path": "spirit/test/joinOnboarding.js",
      "by": "claude-windows",
      "core": false
     },
     {
-     "path": "spirit/test/serverSurface.js",
+     "path": "spirit/test/joinSteps.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterShellFixes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerSearchShared.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceProof.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/relayAdd.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/verifiedEmail.js",
      "by": "claude-windows",
      "core": false
     }
@@ -551,7 +635,7 @@
    "builder": "claude-windows",
    "verifier": "claude-windows",
    "creator": "wsl-claude",
-   "claimCommit": "3d7abdc8",
+   "claimCommit": "32b42028",
    "redCommit": "30b8952c",
    "waived": true,
    "rules": [
@@ -588,11 +672,11 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 1,
-   "half": false,
+   "asks": 0,
+   "half": true,
    "full": false,
-   "box": "SCOPE: the relay, node and shell-app changes for registering a face name and email with one relay. No face transaction and no face traffic.\n\nSTANDING (built: the relay face verb, node relay.face, members.faceName/faceEmail and relays.faceName/faceEmail/faceReply, the info app face section, grantFace/appFaceApp/appFaceAppServer/face-install/faceProof deleted, faceRoute in js/)\n- A face name is one DNS label (a-z, 0-9, hyphen, at most 63), lowercased, unique on the relay, freed when its member leaves.\n- relay.face {url, name, email} is owner only and keeps the signed answer whole on that relay's row.\n\nTO BUILD: VERIFIED EMAIL (emails are verified where a relay has a mailer)\n- A confirmed join writes the joined address on the member row as its email, verified (members gain email and emailVerified). A relay without a mailer verifies nothing.\n- joinConfirm carries the address and the flag back, sealed to the node; the node keeps them on that relay's row in node.db (relays gain email and emailVerified). The address is per relay; no separate table.\n- An email changes only by the same proof: a join from a key already seated is an email change, with the same mail, link, 10 minutes and caps. Its joinConfirm replaces the member's email, verified; it takes no seat, renames nobody and is not refused for a full relay. No new verb on node or relay.\n- One verified email per member on a relay. Not unique across members (one person may seat several nodes); the face name stays unique.\n- Members seated before this stay empty and unverified until they confirm one through Change email.\n- Natter: the same email field, titled Change email once the node holds a seat on that relay, showing the current verified address.\n- The face uses the member's verified email; faceEmail goes. The face verb is refused while face is off, where the relay has no mailer, and for a member with no verified email.\n- The info app face section drops its email field and shows the verified email held for that relay; it never appears for a relay whose card does not offer face.\n- services.face is its own switch, so an owner can deny face while onboarding still verifies email. natterDetails gains, in its owned-relay part, the relay services as switches: email (sendMail) shown and not switchable; face switchable behind an are-you-sure.\n- The switch is a new owner verb on the relay, service {name, on} (approved). It refuses sendMail (it follows the mailer) and unknown names, writes the switch into relay-state/config.json under services, applies it at once with no restart, and answers the card services as they now stand. Natter sends it by peerPost to the relay key, as Contacts sends removePeer; no node verb.\n- The node keeps what each relay offers from that answer too (peerPost, beside the card), so Natter shows the new state at once.\n- New persist shapes (opened): members.email and members.emailVerified in relay.db; relays.email and relays.emailVerified in node.db.",
-   "version": 25,
+   "box": "LEFT TO DO: a member's (or the owner's) verified email on a relay, added and changed through the join loop, and the Join app that walks a new user from joining to his face link.\n\n- The join form in natterDetails is always there, for a seated member and the owner too, its label reading \"Add email address\" while the node holds none for that relay, \"Change email address\" once it does. The email input shows the verified address held for that relay, so he sees whether a change is needed. After he sends it, the form says that an email in his inbox at the entered address holds a confirmation link.\n- The relay takes a repeat join from a key already seated as an email update: the same mail, link and code, 10 minutes and caps. Only when the code is confirmed does it write the address on that member's row, verified (members.email and members.emailVerified, new columns); until then the old email stands. It takes no seat, renames nobody and is not refused for a full relay.\n- A first join writes the joined address on the new member's row the same way, verified.\n- joinConfirm brings the address and the flag back, sealed to the node, which keeps them on that relay's row in node.db (relays.email and relays.emailVerified, new columns); natterDetails reads the label from it.\n- One verified email per member on a relay; not unique across members.\n- relay.face is {url, name}: the email is dropped from the verb. The relay pairs the face name with the verified email it holds for the calling key, and refuses a member with none (add an email in Natter first); the answer stays {name, email}.\n- Info's face section loses its email field and shows the verified email beside the face.\n- Info draws no face form for a relay with no verified email. In its place it says to verify the email in Contacts, relays, with a button that opens that relay's natterDetails.\n- For a key already seated, the mail reads Confirm your email address, not Join this relay.\n- After the link, the page says Email address verified for an email change (the relay's 200), Joined as before for a new seat (201); the node passes the relay's status on.\n- The desktop shows the Join app's tile beside the spirit group until its steps are done. It is a small built-in shell app, not a dialog (a dialog opened from the desktop has nothing beneath it to return to). Its Join step asks relay.join of the kept relay (noderoutes.net), as natterDetails does; no new verb.\n- The join form is one shell element, joinForm (shell/js/joinForm.js, handed out as spiritElements): the email field prefilled with what is held, its button, and the confirmation-link sentence, asking relay.join for one relay. natterDetails' claim panel, its email panel and the Join app all draw it; none keeps a form of its own.\n- The Join app walks the user through steps to becoming a real SpiritOS participant. It goes exactly this far: its last step shows a link to his face URL, and opening that link fails until the face switch is built (not in this item). Its manifest lists the steps in order, each with its name, icon and the fact that ends it; the desktop tile shows the current step's name and icon and the app opens on that step's form; past the last step the tile is gone. The app shows every step as a bullet in a to-do list, done ones ticked, the first open one expanded with its form; the tile shows the first open step's name and icon. Steps so far: Join (until a seat); Find someone (until a first contact besides relays), optional, so it never blocks the steps after it; Configure your node's remote control (until the node holds a face name on the relay it joined), with Info's face form, which becomes a shell element drawn by Info and the Join app; then the face link, https://<face name>.<relay host>, last, ticked once he has opened it (kept in the shell's preferences), which ends the steps and takes the tile away; the face answers once the face switch is built.\n- The element carries its own listener: the node keeps a permanent job, join-steps, with where the steps stand (seated, the relay, contact, face, the face URL), read from its own records and published only when it changes, after a relay, contact or peer verb. The shell's tile and the Join app hear that job and draw only when it changes, never while a field in the list has focus; nothing asks the node for the steps on a shell message.\n- The shell opens an app named in its address on load (?app=<folder>), as it reads ?join= today. The mail's link carries both (?join=<code>&app=join), so the email that joins the relay leads straight back into the Join app. From there the cycle completes in the app with no further mail.\n- Find someone on the network is one shell element, like joinForm: the shared list asking peer.search, with its rows, Add and the description bubble. Contacts and the Join app draw it; Contacts keeps no copy.\n- A newly started node presents noderoutes.net as a contact already: the relay row in Contacts, from the seed boot asserts. The tests assert it.\n\nNOT IN THIS ITEM: the face switch and its relay verb service.",
+   "version": 40,
    "checks": [
     {
      "number": "Q1",
@@ -705,6 +789,186 @@
      "state": "granted",
      "by": "andy",
      "at": "2026-10-19T03:12:48.740Z"
+    },
+    {
+     "number": "T1",
+     "kind": "T",
+     "words": "verifiedEmail: the email per member, added and changed through the join loop",
+     "test": "spirit/test/verifiedEmail.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "G11",
+     "kind": "G",
+     "words": "core grant: js/relaySelf/face.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T12:19:38.453Z"
+    },
+    {
+     "number": "G12",
+     "kind": "G",
+     "words": "core grant: shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T12:19:44.219Z"
+    },
+    {
+     "number": "G13",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T12:20:28.691Z"
+    },
+    {
+     "number": "T2",
+     "kind": "T",
+     "words": "faceApply: relay.face {url, name}, paired with the verified email on file",
+     "test": "spirit/test/faceApply.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "G14",
+     "kind": "G",
+     "words": "core grant: js/client/shell.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T12:46:47.605Z"
+    },
+    {
+     "number": "G15",
+     "kind": "G",
+     "words": "core grant: shell/join/join.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T12:46:52.687Z"
+    },
+    {
+     "number": "G16",
+     "kind": "G",
+     "words": "core grant: shell/join/join.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T12:46:55.604Z"
+    },
+    {
+     "number": "G17",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T13:08:30.636Z"
+    },
+    {
+     "number": "G18",
+     "kind": "G",
+     "words": "core grant: index.html",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T13:08:34.003Z"
+    },
+    {
+     "number": "G19",
+     "kind": "G",
+     "words": "core grant: shell/js/joinForm.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T13:10:33.296Z"
+    },
+    {
+     "number": "G20",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/js/joinForm.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T13:11:44.239Z"
+    },
+    {
+     "number": "T3",
+     "kind": "T",
+     "words": "joinSteps: the Join app from joining to the face link",
+     "test": "spirit/test/joinSteps.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "G21",
+     "kind": "G",
+     "words": "core grant: shell/contacts/contacts.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T14:05:56.329Z"
+    },
+    {
+     "number": "G22",
+     "kind": "G",
+     "words": "core grant: shell/js/faceForm.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T14:05:59.325Z"
+    },
+    {
+     "number": "G23",
+     "kind": "G",
+     "words": "core grant: shell/js/joinSteps.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T14:06:01.853Z"
+    },
+    {
+     "number": "G24",
+     "kind": "G",
+     "words": "core grant: shell/js/peerFind.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T14:07:40.940Z"
+    },
+    {
+     "number": "G25",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T14:08:37.275Z"
+    },
+    {
+     "number": "G26",
+     "kind": "G",
+     "words": "core grant: js/joinStepsJob.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T14:34:02.538Z"
+    },
+    {
+     "number": "G27",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/client/shell.js, spirit/run/js/hub.js, spirit/run/js/joinStepsJob.js, spirit/run/js/nodeStore.js, spirit/run/js/peerPost.js, spirit/run/js/relay.js, spirit/run/js/relayKeys.js, spirit/run/js/relaySelf/face.json, spirit/run/js/relayStore.js, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/info/info.js, spirit/run/shell/join/join.js, spirit/run/shell/join/join.json, spirit/run/shell/js/faceForm.js, spirit/run/shell/js/joinForm.js, spirit/run/shell/js/joinSteps.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/natterDetails/natterDetails.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T14:57:05.270Z"
     }
    ],
    "chat": [
@@ -1469,6 +1733,696 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-20T04:03:47.232Z",
      "text": "Capped.\n\n- The built parts are one line under STANDING: the face verb, relay.face, the rows, the info section, the deletions.\n- The quotes are gone; the design stays as statements.\n- What is left is VERIFIED EMAIL: email on join, Change email, the service switch and its verb.\n\nThe item shows deskVerify passed, but that pass was for the face registration only. Verified email is not built. Do you want me to build it under this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:40:06.015Z",
+     "text": "hmmm what's left in this one?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:40:27.291Z",
+     "text": "What is left is the VERIFIED EMAIL part of the box; nothing of it is built:\n\n- A confirmed join writes the joined address on the member row, verified (members.email, emailVerified), and joinConfirm brings it back to the node (relays.email, emailVerified).\n- Change email: a join from a key already seated replaces the email by the same mail-and-code proof. Natter's email field becomes Change email (now in natterDetails).\n- The face uses that verified email; faceEmail goes, and the face verb is refused without one.\n- The service switch: the relay verb service {name, on}, owner only, and the face switch in natterDetails behind an are-you-sure.\n\nShould I take it now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:50:41.663Z",
+     "text": "ah, what's not done with the join yet?\n\nthe form in natterDetail that is used to join a node, it must be available at all times so a member (or owner) can add or update a verified email address, with the label text now either saying \"add\" or \"change\" email address.... nothing to do with face yet.\n\nthe other part, face allocation, in info, looses it's email field, since that is handled in natter where we already have an email-loop that works perfectly fine for join and updating emails.\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:51:13.483Z",
+     "text": "Makes sense, and it is smaller. What the code does today:\n\n- The join form in natterDetails shows only while this node has no seat on that relay (ndClaimHtml returns nothing for owned or seated).\n- A join from a key already seated is refused at the relay: joinConfirm goes through claim, which answers 409 key already claimed. So updating an email does not work yet.\n- The relay keeps no email on the member row: members has card, faceName, faceEmail, no email.\n\nSo the item becomes three things: the form always shown, reading Add or Change email address; the relay taking a join from a seated key as an email update and keeping the verified email on the member row (members.email, emailVerified); and Info's face section losing its email field. The face itself stays out. Shall I write the box that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:53:16.230Z",
+     "text": "ah, i was missing the part where the relay accepts repeat join calls from a member (or owner) and verifies the email if it changes, and only updates the email for that member if the email loop confirms the new email....\n\ncorrect?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:53:36.344Z",
+     "text": "Correct. A repeat join from a seated member or the owner sends the mail-and-code loop to the address given. Only when that code comes back does the relay write the new address on that member's row, verified. Nothing else changes: no new seat, no rename, and no refusal for a full relay. Until the code is confirmed, the old email stands. Shall I write the box that way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:54:52.895Z",
+     "text": "cap this item so it shows only what's left to do."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:55:32.346Z",
+     "text": "Capped: the box now holds only what is left, the verified email added and changed through the join loop, with the form always shown, the relay and node rows, and Info losing its email field. Face allocation and the service switch are listed as not in this item."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:57:50.538Z",
+     "text": "also: if a member already has a verified email address, it will be displayed in the input of that natter form. that may cause the user to realize that an update is not necessary..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T11:58:23.283Z",
+     "text": "In the box (v27): the email input shows the verified address held for that relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T11:59:43.500Z",
+     "text": "and the displayed message after the user registers/changes must say something like: \"an email in your inbox contains a confirmation link for the entered email...\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:00:17.040Z",
+     "text": "In the box (v28): after he sends it, the form says an email in his inbox at the entered address holds a confirmation link."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:00:53.430Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:01:14.120Z",
+     "text": "Green: settled, open none, box current (v28)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:01:41.266Z",
+     "text": "go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:05:09.692Z",
+     "text": "commit a8443f82572d84df8deb06be7b08ebf8a0f502df: goal/G30.1: the red for the verified email: a first join writes the email on the member's row, verified; a seated key (the owner too) may join again and its email changes only once the code is confirm\n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:05:24.314Z",
+     "text": "and tests must assert that a newly started node presents noderoutes.net already installed as a contact."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:07:15.264Z",
+     "text": "Added to the box (v29): a newly started node shows noderoutes.net as a contact, and the tests assert it.\n\n- The red (verifiedEmail) starts a fresh node home the way boot does, then asks relay.search the way Contacts does.\n- That check passes already today: noderoutes.net is there.\n- The other 10 checks (the email loop) are red; building now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:07:17.069Z",
+     "text": "commit fa1aa1ab80447d40c61fd97de9562738364b21bd: goal/G30.1: the red asserts a newly started node presents noderoutes.net as a contact (box v29): a fresh home, the boot's ensureRelays, relay.search as Contacts asks it; green already\n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:10:25.869Z",
+     "text": "Build: the relay and node side of the email loop is in and green; natterDetails has the email panel for a seated relay.\n\nOne gap before Info:\n\n- relay.face still needs an email, and Info's email field is what gives it one.\n- With the field gone and the face's use of the verified email out of this item, the face form would refuse every ask.\n- Option A: Info sends the verified email the node holds for that relay (no field; a relay with none is told to add one in Natter).\n- Option B: leave the face form refusing until the face item.\n\nWhich one, A or B?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:13:32.127Z",
+     "text": "relay.face still needs an email, and Info's email field is what gives it one.\n\nrelay.face does NOT need an email, it's already on file."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:14:03.313Z",
+     "text": "Understood: the face pairs with the email already on file.\n\nToday's code still asks for one, so this changes the node verb relay.face:\n\n- relay.face {url, name, email} becomes relay.face {url, name}; the answer stays {name, email}.\n- The relay pairs the face name with the member's verified email (members.email), and refuses a member with none: add an email in Natter first.\n- Info's face form keeps the relay and the name, loses the email field, and shows the verified email beside the face.\n- This brings the face's use of the verified email into this item, out of NOT IN THIS ITEM.\n\nYes to that relay.face change?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:14:15.841Z",
+     "text": "the relay already knows, which email address is verified for the calling id"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:14:35.321Z",
+     "text": "Agreed: the relay reads the verified email for the calling key, so the node sends none.\n\nThat drops email from the node verb relay.face, which needs your yes on the verb itself: relay.face {url, name}. Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:15:53.800Z",
+     "text": "yes. the email must be dropped from the verb relay.face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:17:35.703Z",
+     "text": "commit 483a108d751df90ccd8f5121a9ab8c348628d5c6: goal/G30.1: the red for relay.face {url, name} (box v30): the relay pairs the face name with the verified email on file for the calling key, refuses a member with none, ignores an email sent along; se\n- spirit/test/faceApply.js\n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:19:33.032Z",
+     "text": "Build done; both reds are green (verifiedEmail 11 of 11, faceApply 21 of 21).\n\nThe commit waits on two grants under this item:\n\n- the relay face verb description: name only, paired with the verified email on file\n- natterDetails: the Add or Change email address panel for a seated relay\n\nGrant both?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:20:15.290Z",
+     "text": "commit 7f41ef3c2efae8d03259aa205f064617058e3a63: goal/G30.1: the verified email per member, added and changed through the join loop: a seated key (the owner too) may join again, and the address is written verified on its row (members.email, emailVer\n- spirit/run/js/hub.js\n- spirit/run/js/nodeStore.js\n- spirit/run/js/peerPost.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayKeys.js\n- spirit/run/js/relaySelf/face.json\n- spirit/run/js/relayStore.js\n- spirit/run/js/server.js\n- spirit/run/shell/info/info.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/joinOnboarding.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:20:52.439Z",
+     "text": "Claimed: 7f41ef3c. Verify passes: verifiedEmail 11 of 11, faceApply 21 of 21.\n\nFiles: relay, relayStore, nodeStore, relayKeys, peerPost, hub, server, the relay face verb description, natterDetails, info; tests verifiedEmail, faceApply, joinOnboarding.\n\n- joinOnboarding read the relay join verb the old way; fixed in this commit.\n- relayListIsNodeState (G16.3) still fails 3: it cannot read the verb list since the flat door, and it asserts no relay.add, which G28.1 added. Not touched here."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:20:54.579Z",
+     "text": "deskVerify: passed, at 7f41ef3c (pulled). 3 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:23:42.679Z",
+     "text": "please tag so i can update spirit-3"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:24:29.432Z",
+     "text": "Tagged: v-2026-10-20-14-24 at 7f41ef3c, pushed.\n\nWhat spirit-3 gets:\n\n- the owner seated from boot, labelled owner\n- a seated member may join again by email to add or change it; written verified only when the code is confirmed\n- relay.db gains members.email and emailVerified on start; existing rows read empty\n- face takes a name only and pairs it with the verified email; a member with none is refused, faces already held stay"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:34:27.957Z",
+     "text": "- the face form must not appear in info if the node has no verified email-address. at best it says verify your email in contacts -> relays .... best with a button that leads directly to the natterDetails of that relay\n\n- SUCCESS! But! the message in the email, or the one that shows up in the web-browser ideally says \"email address verified\", if the user already had a seat on the relay.....\n\n- and yes, the email is now pre-filled, if i visit that form on natterDetails again.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:34:54.504Z",
+     "text": "Thoughts, all three fit this item:\n\n- Info: for a relay with no verified email the face form is not drawn. In its place: verify your email in Contacts, relays, with a button that opens that relay's natterDetails (the same dialog Contacts opens).\n- The mail: for a key already seated it reads Confirm your email address, not Join this relay.\n- The browser after the link: the relay already answers 200 for an email change and 201 for a new seat; the node passes that on, and the page says Email address verified on a change, Joined as before on a new seat.\n- Pre-filled: confirmed, nothing to do.\n\nAdd these three to this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:39:57.771Z",
+     "text": "add these three to the item\n\nalso, the shell, on a brand new node that's NOT bound to a relay yet, now show only an icon for the spirit-group, \n\n- for a non-bound, new relay, it'd be AWESOME, if and icon appeared next to it, and it launched a little app that features only the on-boarding version of the join-form.... (hardwired right into the shell)\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:40:45.398Z",
+     "text": "Added to the box (v31): the three.\n\nThoughts on the join icon:\n\n- It brings back, smaller, what the first-run gate did before G30.7 deleted it: while the node holds no seat, the desktop shows a Join icon beside the spirit group.\n- It opens a small dialog with only the email field and Join, aimed at the kept relay (noderoutes.net), through the same relay.join the natterDetails form uses. No new verb.\n- The shell knows there is no seat from relay.search (no row owned or claimed), which it can already ask.\n- Once the link confirms the seat, the icon is gone on the next paint.\n- Hardwired: a built-in shell app the desktop shows only in that state, rather than code inside the shell file, so the shell file stays the same size.\n- It is not in this item.\n\nAdd a new item for this?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:41:32.686Z",
+     "text": "commit 9b66637628d3bae1fc6e40f0d97abf8ec6c87961: goal/G30.1: the red for box v31: Confirm your email address for a seated key's mail, the node passes the relay's 200 for a change and the page says Email address verified, Info draws no face form with\n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:42:53.605Z",
+     "text": "ha ha, without that join icon this item is not complete, add it to the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:44:49.353Z",
+     "text": "commit d370f53fd06c95a6930f0ab3536ffdccce34d29b: goal/G30.1: the red for box v32: shell/join, an intrinsic app with untilSeated, shown on the desktop only while the node holds no seat and never in the group grid; it asks relay.join for the first lis\n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:46:32.692Z",
+     "text": "Built: the three from v31 and the Join icon (v32); the red is green (verifiedEmail 16 of 16).\n\n- The Join icon is a small app, not a dialog: a dialog opened from the desktop has nothing beneath it to return to.\n- It shows beside the Spirit group only while relay.search says no relay is owned or claimed, and asks relay.join for the first listed relay, the kept seed.\n\nThe commit waits on grants for the shell file and the new join app (two files). Grant them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:47:29.776Z",
+     "text": "commit eb99229fc781d919461caf848662d10d850615b8: goal/G30.1: box v31 and v32: a seated key's mail reads Confirm your email address; relay.join passes the relay's 200 for an email change and the page says Email address verified, Joined for a new seat\n- spirit/run/js/client/shell.js\n- spirit/run/js/hub.js\n- spirit/run/js/relay.js\n- spirit/run/shell/info/info.js\n- spirit/run/shell/join/join.js\n- spirit/run/shell/join/join.json"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:47:46.165Z",
+     "text": "Claimed: eb99229f. Verify passes: verifiedEmail 16 of 16.\n\nFiles this round: relay, hub, shell, info, and the new join app (two files).\n\n- On a node with no seat the Join icon shows beside the Spirit group; once a seat is held, it is gone on the next load."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:47:49.677Z",
+     "text": "deskVerify: passed, at eb99229f (pulled). 3 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:57:57.522Z",
+     "text": "the join email sent the wrong port number"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:58:12.585Z",
+     "text": "for the join-icon"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:58:32.106Z",
+     "text": "Looking at it.\n\n- The node sends the relay the port it listens on: --port, else PORT, else 65432; the relay writes that into the link.\n- So either the node was started on a port it does not report, or the page asked a different node than the one you meant.\n\nWhich port does that node listen on, which port did the link name, and was it the Join icon or the natterDetails form?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T12:58:38.422Z",
+     "text": "you better make that form a shell-element"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T12:59:13.272Z",
+     "text": "Thanks. The Join icon asks the same node door as the natterDetails form, and the node sends the port it listens on; I find no place it could differ.\n\nWhich port is in the browser address bar on that node, and which port did the link in the mail name?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:00:10.384Z",
+     "text": "Added to the box: the join form becomes one shell element, joinForm, drawn by natterDetails (claim and email panels) and the Join app; none keeps its own form.\n\n- Building it now: red first.\n- The wrong port is still unexplained; with one form left, I will check the port it sends on a fresh node of my own."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:01:08.392Z",
+     "text": "commit 6c10192c3cc379b5aa599630f922c762f918523d: goal/G30.1: the red for box v33: the join form is one shell element, spiritElements.joinForm {html, bind, send}, loaded by index.html; natterDetails and the Join app draw it and keep no email form or \n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:03:04.437Z",
+     "text": "Built: joinForm is one shell element; natterDetails (both panels) and the Join app draw it, and their own forms are gone. The red is green (verifiedEmail 18 of 18).\n\nThe commit waits on two grants: the new element file and index.html, which loads it. Grant them?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:10:00.778Z",
+     "text": "now the join icon successfully on-boarder the node at 11112 (D:/onBoarder)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:10:18.439Z",
+     "text": "Good: the Join icon onboarded 11112 with the right port.\n\n- I take the wrong port as closed unless it comes back.\n- The joinForm element waits on its grant (G19); the rest of it is granted."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:11:05.377Z",
+     "text": "commit 4ddfec9460d9c0b0e148eefdc1204173356dbd5b: goal/G30.1: box v33: the join form is one shell element, spiritElements.joinForm {html, bind, send} (shell/js/joinForm.js, loaded by index.html): the email field prefilled with what is held, its butto\n- spirit/run/index.html\n- spirit/run/shell/join/join.js\n- spirit/run/shell/js/joinForm.js\n- spirit/run/shell/natterDetails/natterDetails.js\n- spirit/test/joinOnboarding.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:11:22.992Z",
+     "text": "Claimed: 4ddfec94. Verify passes: verifiedEmail 18 of 18, joinOnboarding 40 of 40.\n\nFiles this round: the joinForm element, index.html, natterDetails, the Join app, joinOnboarding."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:11:29.784Z",
+     "text": "deskVerify: passed, at 4ddfec94 (pulled). 3 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:22:26.139Z",
+     "text": "Damn, i already onBoarded moe than 1 countinn on noderoutes.net. Yes, that one is email-enabled, too. \n\nworked nicely.\n\nnow for the next crazy idea!\n\n- we make a shell-element out of the part in contacts-shell-app where it says: \"Find someone on the network\"\n- we keep the join applet alive, because the user has no contacts yet.\n- but now! since the relay is joined, but no contacts exist yet (other than the relay) the join-applet presents the \"Find someone on the network\" form....\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:22:56.583Z",
+     "text": "Glad it worked. Several countinn on one relay is fine: an email is one per member, not unique across members.\n\nThoughts on the next one:\n\n- Find someone on the network becomes a shell element, like joinForm: the shared list asking peer.search, its rows with the dot, the name, Add and the description bubble. Contacts and the Join app both draw it; Contacts keeps no copy.\n- The Join app gets two stages: no seat, the join form; seated but no contacts besides relays, the find form. Once one contact is in the book, the icon is gone.\n- The shell already asks relay.search for the seat; it would also ask contact.search once for any contact, the same way. No new verb.\n- untilSeated in the manifest becomes untilFirstContact (shown while no seat or no contact).\n- It is a bigger cut than joinForm: the find panel is the largest part of Contacts.\n- It is not in this item, whose box is the email loop.\n\nAdd a new item for this?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:25:25.111Z",
+     "text": "the join app can change its shell-label and or icon while it directs the user along the steps to becoming a real SpiritOS participant...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:25:46.983Z",
+     "text": "Yes, that fits: the app names its steps, and the shell draws the step it is on.\n\n- The manifest lists the steps in order, each with its name, icon and the fact that ends it: Join (no seat yet), then Find someone (no contact yet).\n- The shell already learns both facts at load; the desktop tile shows the current step's name and icon, and the app opens on that step's form.\n- Past the last step the tile is gone.\n- A later step (say, set your face name) is one more line in the manifest and one more form.\n\nStill the same question: add a new item for this?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:27:24.032Z",
+     "text": "nah, this item, we'll take the user all the way to seeing a mirror of his shell on his cellphone...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:28:05.788Z",
+     "text": "In the box (v34): the steps app, ending at the mirror of his shell on his phone, and Find someone as one shell element.\n\nOne conflict to settle first:\n\n- The box still says NOT IN THIS ITEM: the face switch and its relay verb service.\n- The phone mirror is the face, so it needs both.\n\nDo the face switch and service come into this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:32:24.904Z",
+     "text": "One conflict to settle first:\n\nWe'll go exactly this far.... \n\n- a link will appear in the join-app that sends the user to his face-URL, and THAT fails....."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:33:09.066Z",
+     "text": "In the box (v35): the steps stop at a link to his face URL, and that link fails until the face switch is built; the face switch stays out of this item.\n\nThe link needs a face name: it reads https://<face name>.<relay host>, for example harbour.noderoutes.net.\n\n- So the steps would be: Join (until a seat), Find someone (until a first contact), Face name (until the node holds one on that relay; Info's face form as a shell element), then the link.\n\nIs Face name the third step?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:39:09.107Z",
+     "text": "it gets even crazier than that, IF\n\n- we can invent a way where the shell can accept a link like \"http://127.0.0.1:11112/shell/js/joinForm.js\" and the shell will open with that app open already.\n- the app presents a bullet-list of to-do's that need completion, where opening his face in the browser is the last step\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:39:36.988Z",
+     "text": "Thoughts, both doable without a new verb:\n\n- Opening an app from a link: the shell reads ?join= on load today; it can read ?app=<folder> the same way and open that app over the desktop. So http://127.0.0.1:11112/?app=join opens the Join app.\n- Not a path like /shell/js/joinForm.js: the node already serves that path as the script file itself, and joinForm is an element, not an app; the link names the app that draws it.\n- The mail's link can carry it too: ?join=<code>&app=join, so confirming the email lands back in the list.\n- The to-do list: the Join app shows every step as a bullet, done ones ticked, the first open one expanded with its form; opening his face in the browser is the last bullet. The tile shows the first open step's name and icon, and is gone when all are done.\n\nIs Face name one of the bullets, before the face link?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:43:38.862Z",
+     "text": "it would be important that the email that joins the relay leads directly into the join-app again. From that point on, i think, it can stay in the join app without new emails, to complete the cycle, and acquiring contacts is optional."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:44:16.415Z",
+     "text": "In the box (v36):\n\n- The mail's link opens the Join app (?join=<code>&app=join); after that, no more mail.\n- The shell opens any app named as ?app=<folder>.\n- Find someone is optional and never blocks the steps after it.\n\nStill open, and it decides the face link: is Face name a bullet before the link?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:47:01.333Z",
+     "text": "yes. i think: \"face name a bullet before the link\"\n\na nice sounding bullet, like \"configure your node's remote control....\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:48:08.231Z",
+     "text": "In the box (v38): Configure your node's remote control as the face-name bullet, with Info's face form as a shell element; two older lines rewritten to match the steps (the head, and the Join tile).\n\nOne gap left: the face link fails until the face switch exists, so opening it cannot be what ticks the last bullet.\n\n- Option A: the last bullet is ticked once he has opened the link, and the tile goes.\n- Option B: the last bullet never ticks while the face does not answer, so the tile stays until the face switch is built.\n\nA or B?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:50:29.347Z",
+     "text": "Option A: the last bullet is ticked once he has opened the link, and the tile goes.\n\n... because it's going to work! (after another few items)"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:51:08.191Z",
+     "text": "In the box (v39): the face link is ticked once he has opened it, kept in the shell's preferences, and the tile goes.\n\nThe design is whole as the box reads. Building it means:\n\n- the shell opens ?app=<folder>; the mail link carries &app=join (a relay change, so spirit-3 needs a tag after)\n- the Join app as a to-do list over steps its manifest declares\n- Find someone and the face form as shell elements; Contacts and Info draw them\n- the face link from the face name and the relay host\n\nGo?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T13:52:20.555Z",
+     "text": "go!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T13:54:48.586Z",
+     "text": "commit 6fd5bbf9d283e46ce7ba39cac1669144c183396e: goal/G30.1: the red for box v39: joinSteps.js, the Join app's steps in its manifest (Join, Find someone optional, Configure your node's remote control, the face link), joinSteps {facts, current, done}\n- spirit/test/joinSteps.js\n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:00:49.638Z",
+     "text": "Built: the Join app as a to-do list from joining to the face link; the red is green (joinSteps 12 of 12; verifiedEmail, faceApply, contacts, natterShellFixes green too).\n\n- Find someone moved whole out of Contacts into a shell element; the face form moved whole out of Info into one; both apps draw them unchanged.\n- The mail link now carries &app=join and opens the Join app after the join.\n- Two older suites (relayAdd, peerSearchShared) still fail one line each on reading server.js since the flat door; not from this build.\n\nThe commit waits on grants: Contacts and the three new element files. Grant them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:08:20.218Z",
+     "text": "commit cf63069a41a36e2aa9c76b2dcbd9f6dafe4f4b79: goal/G30.1: box v39: the Join app walks a new user from joining to his face link: its manifest lists the steps (Join, Find someone optional, Configure your node's remote control, Open your face), join\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/js/relay.js\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/info/info.js\n- spirit/run/shell/join/join.js\n- spirit/run/shell/join/join.json\n- spirit/run/shell/js/faceForm.js\n- spirit/run/shell/js/joinSteps.js\n- spirit/run/shell/js/peerFind.js\n- spirit/test/contacts.js\n- spirit/test/faceApply.js\n- spirit/test/natterShellFixes.js\n- spirit/test/peerSearchShared.js\n- spirit/test/verifiedEmail.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:08:40.164Z",
+     "text": "Claimed: cf63069a. Verify passes: joinSteps 12 of 12, verifiedEmail 18 of 18.\n\nFiles this round: relay (the mail link), the shell, index.html, the Join app and its manifest, the three new elements (peerFind, faceForm, joinSteps), Contacts, Info, and the suites that asserted the moved code.\n\n- The mail link changed on the relay, so spirit-3 needs a tag for &app=join to reach new users."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:09:00.479Z",
+     "text": "deskVerify: rejected, at cf63069a (pulled); taken back: goal/G29.17, goal/G29; the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/peerSearchShared.js: FAILURE #1.1: OWED by goal/G29.17: server.js declares"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T14:09:03.023Z",
+     "text": "verify rejected: spirit/test/peerSearchShared.js: FAILURE #1.1: OWED by goal/G29.17: server.js declares"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:09:37.819Z",
+     "text": "commit 80bd5a1e8fdd32cb8e4fb5e2783252976f2be811: goal/G30.1: peerSearchShared and relayAdd read the peer family's search and the relay family's add from the flat door's tables (goal/G30.5); deskVerify had flagged goal/G29.17 regressed by the stale r\n- spirit/test/peerSearchShared.js\n- spirit/test/relayAdd.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:09:41.390Z",
+     "text": "deskVerify flagged goal/G29.17 regressed by peerSearchShared: its server.js read was stale since the flat door (G30.5) and surfaced because this round touched the suite.\n\n- Fixed in 80bd5a1e, with relayAdd (G28.1), which had the same stale read: both read the family tables now; peerSearchShared 17 of 17, relayAdd 4 of 4.\n- Asking deskVerify to check G29.17 again."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:10:38.916Z",
+     "text": "Claimed again at 80bd5a1e, which holds the fix for the red that rejected cf63069a. Verify passes: joinSteps 12, verifiedEmail 18, peerSearchShared 17, relayAdd 4."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:10:46.584Z",
+     "text": "deskVerify: passed, at 80bd5a1e (pulled). 7 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:21:48.954Z",
+     "text": "I'm stuck because, int step 1, \n\n-----------------------------------\n⬜ ✉️ Join\nJoin a relay with your email.\non noderoutes.net\nYour email\n[you@example.org] [Join]\n------------------------------------\n\ni cannot enter my email address, because the ting, AGAIN, refreshes EVERYTHING, whenever a bloody message hits the shell, and the input is drawn again with (shell-stats-related?) events that re-draw the form before i can FUCKING type the first part of my email address.\n\n!!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:22:15.709Z",
+     "text": "Taking it: the Join app reloads and redraws its whole list on every shell message (its render), which wipes the field you type in. Fix: it redraws only when what the node says has changed, and never while a field in it has focus."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:23:08.249Z",
+     "text": "commit c47670574214619111a757d1c03cef9f51704681: goal/G30.1: the red for the Join app redrawing on every shell message (Andy: \"refreshes EVERYTHING, whenever a bloody message hits the shell\"): render redraws nothing when the node says the same, and \n- spirit/test/joinSteps.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:24:48.657Z",
+     "text": "Taking it: the Join app reloads and redraws its whole list on every shell message (its render), which wipes the field you type in. Fix: it redraws only when what the node says has changed, and never while a field in it has focus.\n\nWHAT? \n\ndoes the fucking new element even carry its own listener, that keeps the screen untouched until a streamed event actually affects it?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T14:24:49.486Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:24:59.773Z",
+     "text": "commit e11a5227fb234baff84269b9fa6d470d7e1c0e25: goal/G30.1: the Join app holds still while he types: a load from the shell's render draws only when the node says something new and no field in the list has focus; loads after his own actions draw. co\n- spirit/run/shell/join/join.js\n- spirit/test/contactsFilter.js\n- spirit/test/contactsListSearch.js\n- spirit/test/presenceProof.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:25:29.075Z",
+     "text": "Fixed at e11a5227: the Join list redraws only when the node says something new, and never while you type in it. Reload the page and try step 1 again.\n\n- Claimed; verify passes: joinSteps 13 of 13 (with a red that calls render five times and counts redraws), contacts 89, contactsFilter 4, presenceProof 11, contactsListSearch 22.\n- G29.17 claimed at the same commit: contactsFilter and presenceProof built Contacts without the new element, and contactsListSearch read server.js the old way."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:25:31.364Z",
+     "text": "deskVerify: passed, at e11a5227 (pulled). 7 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:26:15.616Z",
+     "text": "No, it does not. My fix is a patch on the render path: the app still re-asks the node on shell messages and decides whether to redraw.\n\nThe gap underneath: nothing on the stream says that a seat was taken, a contact added or a face set, so there is nothing for the element to listen to.\n\nProposal:\n\n- The node keeps one permanent job, join-steps, carrying {seated, contact, face, faceUrl}, the way it keeps relay-presence; it updates the job when a join confirms, a contact is acquired, a face is accepted, a relay is removed.\n- The Join app and the shell's tile subscribe to that job and redraw only when it changes; no render polling, no asking on messages.\n- joinSteps reads the facts from the job instead of asking relay.search, contact.search and relay.get.\n- No new verb; a job, like relay-presence.\n\nBuild this into this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:26:41.438Z",
+     "text": "FIX IT RIGHT, DAMMIT!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:29:13.025Z",
+     "text": "commit b6ed4a66e810da18161d5f1cad9d766608577e3e: goal/G30.1: the red for the Join steps as a stream (Andy: \"does the fucking new element even carry its own listener\", \"FIX IT RIGHT\"): the node keeps a permanent join-steps job from its own records, p\n- spirit/test/joinSteps.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:29:28.041Z",
+     "text": "the request to the seat-confirming. it obviously is successful (or not), at that point the node KNOWS how to update the stream-subscribers, so that they know the seat is successfully claimed."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T14:29:29.147Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:29:58.245Z",
+     "text": "Yes, that is the build: when the seat confirm answers, the node republishes join-steps right there, and every subscriber (the tile, the Join app) hears the seat taken. The same for a contact added and a face accepted. Nothing in the page asks; it only listens."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:32:13.978Z",
+     "text": "Built, as a stream:\n\n- The node keeps a permanent job, join-steps, from its own records; it republishes it the moment a relay, contact or peer verb has answered and changed it (the seat confirm included).\n- The shell's tile and the Join app subscribe to it; neither asks the node anything for the steps, and the app does nothing on the shell's messages. A change heard while you type waits until you leave the field.\n- The red: joinSteps 15 of 15, including the node job on real stores and the app on a fake page fed the job (five renders and a repeat of the same job draw nothing, nothing is asked).\n\nThe commit waits on one grant: the new node file for the job. Grant it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:34:37.749Z",
+     "text": "commit 32b420282059d9557efbf52c288675063000f755: goal/G30.1: box v40, the Join steps as a stream: the node keeps a permanent join-steps job (js/joinStepsJob.js) read from its own records (seat, relay, contact, kept face, face URL), refreshed at /api\n- spirit/run/js/client/shell.js\n- spirit/run/js/joinStepsJob.js\n- spirit/run/js/server.js\n- spirit/run/shell/join/join.js\n- spirit/run/shell/js/joinSteps.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:34:54.945Z",
+     "text": "Claimed: 32b42028. Verify passes: joinSteps 15 of 15.\n\nFiles this round: the new node job file, server.js, the shell, the joinSteps element, the Join app.\n\n- Your node needs a restart to keep the job; then reload the page."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:37:39.864Z",
+     "text": "nah, still repaints based on SHIT events that trigger senseless re-draws...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:38:11.619Z",
+     "text": "Taking it.\n\n- At 32b42028 the Join app does nothing on the shell's events: it draws only when the join-steps job changes. If it still repaints, that page runs older code.\n- The root of the noise is in the shell: it calls the open app's render on every job event of any kind (fs-watcher, stats, presence), so any app that draws in render repaints on events that are not its own. That is the next thing to remove, in the shell, if you want it.\n\nWhich node shows it (port), and was it pulled to 32b42028 and restarted?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:39:20.780Z",
+     "text": "its on D:/onBoarder  port 11112"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:39:48.150Z",
+     "text": "That is it: D:/onBoarder is at 80bd5a1e, and the 11112 node started at 16:12 on that code. Neither the typing fix (e11a5227) nor the stream (32b42028) is in it; at 80bd5a1e the Join app re-asked and redrew on every shell event.\n\n- Pull D:/onBoarder to 32b42028, restart 11112, reload the page."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:43:46.460Z",
+     "text": "I'm stuck because a tag is missing for me to update noderoutes.net"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:44:17.420Z",
+     "text": "Tagged: v-2026-10-20-16-44 at 32b42028, pushed.\n\nWhat the relay gets:\n\n- the join mail reads Confirm your email address for a key already seated, Join this relay otherwise\n- the mail link carries ?join=<code>&app=join, so it lands in the Join app"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:44:48.541Z",
+     "text": "it worked END-TO-END!!!!!"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:45:04.613Z",
+     "text": "Good. The box reads as built (v40); anything left on G30.1, or is it done?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:45:29.523Z",
+     "text": "i didn't really get a chance to acquire contacts...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:45:50.045Z",
+     "text": "Find someone should stay open, with its search, until a contact is in the book; being optional it only never blocks the next step.\n\nWhat did you see on that bullet: already ticked, open but no search box, or not shown at all?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:51:02.370Z",
+     "text": "i still can, optionally click on the join-App icon and when i find a peer (i added the noderoutes.net owner) the join-app disappeared from the shell."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:51:36.308Z",
+     "text": "As built, the tile goes when the last required step is done (the face link opened); Find someone being optional never holds the tile. So adding the peer should not by itself be what took it away.\n\nWhat did the tile read just before it disappeared, Open your face or Configure your node's remote control?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:52:32.646Z",
+     "text": "deskVerify: passed, at 32b42028 (pulled). 11 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:52:35.401Z",
+     "text": "i constantly re-clone the git repo to test this.... nothing about me struck me as provably wrong."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T14:52:55.596Z",
+     "text": "Understood; nothing to change on the tile then. G30.1 is verified at 32b42028 (11 suites green). Open on my side: only G29.17's labMaster question."
     }
    ]
   },
