@@ -507,6 +507,9 @@ function open(rootDir, opts) {
     if (cols.indexOf('faceName') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceName TEXT NOT NULL DEFAULT ''");
     if (cols.indexOf('faceEmail') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceEmail TEXT NOT NULL DEFAULT ''");
     if (cols.indexOf('faceReply') === -1) db.exec("ALTER TABLE relays ADD COLUMN faceReply TEXT NOT NULL DEFAULT ''");
+    // The email this node's join code confirmed on that relay, and the relay's flag for it (goal/G30.1, box v28).
+    if (cols.indexOf('email') === -1) db.exec("ALTER TABLE relays ADD COLUMN email TEXT NOT NULL DEFAULT ''");
+    if (cols.indexOf('emailVerified') === -1) db.exec('ALTER TABLE relays ADD COLUMN emailVerified INTEGER NOT NULL DEFAULT 0');
   }());
 
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
@@ -647,7 +650,8 @@ function open(rootDir, opts) {
     relByKey: db.prepare('SELECT * FROM relays WHERE key = ?'),
     relByUrl: db.prepare('SELECT * FROM relays WHERE url = ?'),
     relPut: db.prepare(`INSERT OR REPLACE INTO relays (key, url, label, listed, pos, firstSeen, acceptedAt, replaced,
-      seatLabel, seatClaimedAt, refusal, refusedAt, faceName, faceEmail, faceReply) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+      seatLabel, seatClaimedAt, refusal, refusedAt, faceName, faceEmail, faceReply, email, emailVerified)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`),
     relDel: db.prepare('DELETE FROM relays WHERE key = ?'),
     relMaxPos: db.prepare('SELECT COALESCE(MAX(pos), -1) AS n FROM relays WHERE listed = 1'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
@@ -779,6 +783,7 @@ function open(rootDir, opts) {
       seatLabel: r.seatLabel, seatClaimedAt: r.seatClaimedAt,
       refusal: r.refusal, refusedAt: r.refusedAt,
       faceName: r.faceName || '', faceEmail: r.faceEmail || '', faceReply: r.faceReply || '',
+      email: r.email || '', emailVerified: !!r.emailVerified,
     };
   }
   function routeRow(r) {
@@ -1323,7 +1328,8 @@ function open(rootDir, opts) {
           String(r.firstSeen || ''), String(r.acceptedAt || ''), String(r.replaced || ''),
           String(r.seatLabel || ''), String(r.seatClaimedAt || ''),
           String(r.refusal || ''), String(r.refusedAt || ''),
-          String(r.faceName || ''), String(r.faceEmail || ''), String(r.faceReply || ''));
+          String(r.faceName || ''), String(r.faceEmail || ''), String(r.faceReply || ''),
+          String(r.email || ''), r.emailVerified ? 1 : 0);
       },
       del: function (key) { return q.relDel.run(String(key || '')).changes > 0; },
       nextPos: function () { return q.relMaxPos.get().n + 1; },

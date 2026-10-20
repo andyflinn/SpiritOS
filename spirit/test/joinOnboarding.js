@@ -124,11 +124,12 @@ async function main() {
 
   test.subHeading('5. the node verb and the shell');
   const server = code('js/server.js');
-  if (/'relay\.join':\s*\{\s*request:\s*\{\s*url:\s*'',\s*email:\s*'',\s*code:\s*''\s*\}/.test(server)) test.check('server.js declares relay.join {url, email, code}');
+  // The relay family's verbs since the flat door (goal/G30.5): 'join' in the relay table, its handler hub.relayJoin.
+  if (/'join':\s*\{\s*request:\s*\{\s*url:\s*'',\s*email:\s*'',\s*code:\s*''\s*\}/.test(server)) test.check('server.js declares relay.join {url, email, code}');
   else test.fail(OWED + 'server.js declares no relay.join {url, email, code}');
   // THE PORT THE NODE LISTENS ON (found live, 2026-10-19: a node on 11112 got a mail link to 65432). relay.join hands
   // the hub the listening port first, never the stored default ahead of it.
-  const joinLine = (server.split('\n').filter(function (l) { return /'relay\.join'/.test(l); })[0]) || '';
+  const joinLine = (server.split('\n').filter(function (l) { return /'join':\s*\{[\s\S]*hub\.relayJoin/.test(l); })[0]) || '';
   if (/port:\s*Number\(port\)\s*\|\|/.test(joinLine)) test.check('relay.join hands on the port this node listens on, before any stored default');
   else test.fail(OWED + 'relay.join hands on ' + short((/port:\s*[^,]+/.exec(joinLine) || [''])[0]) + ', not the listening port first');
   const shell = code('js/client/shell.js');

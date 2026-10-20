@@ -239,10 +239,9 @@ function infoDrawRelays() {
 
 // ── A FACE NAME AND AN EMAIL, FOR ONE RELAY ──────────────────────────
 //
-// One relay chosen from the seats this node holds, a name, an email, and the relay's answer. relay.face does the
-// asking and the node keeps the signed answer; this page only draws the form and says what came back. The relay
-// does not verify the email: the login provider does, at a face sign-in that is not built yet, so a wrong address
-// simply never signs in and is corrected by applying again.
+// One relay chosen from the seats this node holds, a name, and the relay's answer. relay.face does the asking and
+// the node keeps the signed answer; this page only draws the form and says what came back. NO EMAIL FIELD (goal/G30.1,
+// box v30): the relay pairs the name with the verified email it holds for this node, added or changed in Natter.
 var infoFaceSaid = '';
 function infoDrawFace() {
   var box = document.getElementById('info-face');
@@ -251,23 +250,22 @@ function infoDrawFace() {
   var seats = infoSeats();
   if (!seats.length) { box.innerHTML = ''; return; }
   // What the user has typed or chosen survives a redraw of the table.
-  var keep = { relay: '', name: '', email: '' };
-  ['relay', 'name', 'email'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el) keep[k] = el.value; });
+  var keep = { relay: '', name: '' };
+  ['relay', 'name'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el) keep[k] = el.value; });
   box.innerHTML =
     '<div class="label">A face name on one relay</div>' +
-    '<div class="job-manifest-note">Ask one relay for a name under its domain, with the email that will sign in to it. ' +
-      'The relay answers yes or no; asking again changes the pair.</div>' +
+    '<div class="job-manifest-note">Ask one relay for a name under its domain. It is paired with the verified email ' +
+      'that relay holds for you (add or change it in Natter). The relay answers yes or no; asking again changes the name.</div>' +
     '<div class="start-job-form card">' +
       '<label class="field-label">Relay<select id="info-face-relay">' +
         seats.map(function (row) { return '<option value="' + escape(row.url) + '">' + escape(row.label || row.url) + '</option>'; }).join('') +
       '</select></label>' +
       '<label class="field-label grow">Face name<input type="text" id="info-face-name" placeholder="one word, letters and digits"></label>' +
-      '<label class="field-label grow">Email<input type="text" id="info-face-email" placeholder="you@example.org"></label>' +
       '<button type="button" id="info-face-save">Ask</button>' +
     '</div>' +
     '<div id="info-face-now" class="job-manifest-note"></div>' +
     '<div id="info-face-error" class="job-start-error"></div>';
-  ['relay', 'name', 'email'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el && keep[k]) el.value = keep[k]; });
+  ['relay', 'name'].forEach(function (k) { var el = document.getElementById('info-face-' + k); if (el && keep[k]) el.value = keep[k]; });
   // WHAT THIS NODE HOLDS ON THE SELECTED RELAY (goal/G30.1; Andy, 2026-10-19: "it should show my current face and
   // email address for any relay i select..... or any relay that is pre-selected"). The node reads it from the relay's
   // row into each relay row (row.face); picking a relay fills the form with it, and a form he has typed in is kept.
@@ -276,33 +274,33 @@ function infoDrawFace() {
     var row = seats.filter(function (r) { return pick && r.url === pick.value; })[0] || {};
     var face = row.face || {};
     var now = document.getElementById('info-face-now');
-    if (now) now.textContent = face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.';
+    // The verified email beside the face: the one the face pairs with, read from the relay's row (relay.get).
+    var mail = row.emailVerified ? String(row.email || '') : '';
+    if (now) now.textContent = (face.name ? 'This node holds ' + face.name + ' for ' + face.email + ' on this relay.' : 'No face name on this relay yet.') +
+      (mail ? ' Verified email: ' + mail + '.' : ' No verified email on this relay: add one in Natter before asking.');
     if (!fill) return;
     var n = document.getElementById('info-face-name');
-    var m = document.getElementById('info-face-email');
     if (n) n.value = face.name || '';
-    if (m) m.value = face.email || '';
   }
-  infoFaceShow(!keep.name && !keep.email);
+  infoFaceShow(!keep.name);
   document.getElementById('info-face-relay').addEventListener('change', function () { infoFaceSaid = ''; infoSay('info-face-error', '', false); infoFaceShow(true); });
   document.getElementById('info-face-save').addEventListener('click', infoSaveFace);
-  document.getElementById('info-face-email').addEventListener('keydown', function (e) { infoOnKey(e, infoSaveFace); });
+  document.getElementById('info-face-name').addEventListener('keydown', function (e) { infoOnKey(e, infoSaveFace); });
   if (infoFaceSaid) infoSay('info-face-error', infoFaceSaid.text, infoFaceSaid.bad);
 }
 
 function infoSaveFace() {
   var relay = document.getElementById('info-face-relay');
   var name = document.getElementById('info-face-name');
-  var email = document.getElementById('info-face-email');
-  if (!relay || !name || !email || infoBusy) return Promise.resolve();
-  if (!name.value.trim() || !email.value.trim()) {
-    infoFaceSaid = { text: 'a name and an email are both needed', bad: true };
+  if (!relay || !name || infoBusy) return Promise.resolve();
+  if (!name.value.trim()) {
+    infoFaceSaid = { text: 'a face name is needed', bad: true };
     infoSay('info-face-error', infoFaceSaid.text, true);
     return Promise.resolve();
   }
   infoBusy = true;
   infoSay('info-face-error', 'asking the relay…', false);
-  return infoApi.verb('relay.face', { url: relay.value, name: name.value, email: email.value }).then(function (r) {
+  return infoApi.verb('relay.face', { url: relay.value, name: name.value }).then(function (r) {
     var said = (r && r.body) || {};
     infoFaceSaid = said.ok
       ? { text: 'the relay confirmed ' + said.name + ' for ' + said.email, bad: false }

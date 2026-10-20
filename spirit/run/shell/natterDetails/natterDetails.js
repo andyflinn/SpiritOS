@@ -691,6 +691,25 @@ function ndClaimHtml() {
     'natter-claim');
 }
 
+// YOUR EMAIL ON A RELAY WHERE YOU HOLD A SEAT (goal/G30.1, box v28): the join form for a seated member and the owner
+// too. A repeat join from a seated key is an email update on the relay: the same mail, link and code, and the address
+// is written only when the code is confirmed. "Add" while this node holds none for the relay, "Change" once it does,
+// and the input shows the address held, so he sees whether a change is needed. Only where the relay sends mail, as the
+// claim panel's join form.
+function ndEmailHtml() {
+  if (!ndBadge || !(ndBadge.owned || ndBadge.claimed)) return '';
+  if (!(ndBadge.services && ndBadge.services.sendMail === true)) return '';
+  var held = ndBadge.emailVerified ? String(ndBadge.email || '') : '';
+  return ndPanel('email', ndIcon.EMAIL, held ? 'Change email address' : 'Add email address',
+    '<div class="start-job-form card">' +
+    '<label class="field-label grow">Email address' +
+      '<input type="email" class="nd-join-email" placeholder="you@example.org" autocomplete="email" value="' + ndEscapeHtml(held) + '"></label>' +
+    '<button type="button" class="nd-join-go">' + (held ? 'Change' : 'Add') + '</button>' +
+    '</div>' +
+    '<div class="job-manifest-note nd-join-out"></div>',
+    'natter-email');
+}
+
 // ── WHAT IS OUTSTANDING, AND TAKING ONE BACK ─────────────────────────
 //
 //   Andy: "The relay owner maintains invites through a panel in
@@ -1222,6 +1241,7 @@ function ndRender() {
     // now a panel that is either there or absent rather than one of a
     // pair. See ndClaimHtml.
     ndClaimHtml() +
+    ndEmailHtml() +
     // ── THE OWNER'S HALF, INSIDE ONE FOLD ────────────────────────────
     //
     // Minting and what has been minted are ONE panel now (ndInvitePanel).
@@ -1271,7 +1291,7 @@ function ndRender() {
 // THE JOIN BY EMAIL (goal/G30.2): asks relay.join with the email; the relay mails a link to this node, and opening
 // it takes the seat. Nothing else is typed.
 function ndJoin(button) {
-  var panel = button.closest('.natter-claim');
+  var panel = button.closest('.natter-claim, .natter-email');
   var out = panel.querySelector('.nd-join-out');
   var email = panel.querySelector('.nd-join-email').value.trim();
   function say(text, bad) {
@@ -1283,7 +1303,8 @@ function ndJoin(button) {
   ndPost('relay.join', { url: ndUrl, email: email, code: '' }).then(function (r) {
     var said = null;
     try { said = JSON.parse(r.text); } catch (e) { said = null; }
-    if (said && said.ok) say('A link is on its way to ' + email + '. Open it on this computer within 10 minutes.', false);
+    // Andy (goal/G30.1): "an email in your inbox contains a confirmation link for the entered email".
+    if (said && said.ok) say('An email in your inbox at ' + email + ' holds a confirmation link. Open it on this computer within 10 minutes.', false);
     else say((said && said.error) || (r.status + ' ' + r.text), true);
   }, function (e) { say(String((e && e.message) || e), true); }).then(function () { button.disabled = false; });
 }

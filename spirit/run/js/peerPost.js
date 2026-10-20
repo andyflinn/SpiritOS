@@ -490,7 +490,7 @@ function createPeerPost(opts) {
 
   // ── A FACE NAME THE RELAY ACCEPTED, KEPT ON ITS ROW (goal/G30.1) ──────
   //
-  // relay.face posts {face: {name, email}} through this door like any post. When the relay says yes, the pair it
+  // relay.face posts {face: {name}} through this door like any post. When the relay says yes, the pair it
   // confirmed and its answer WHOLE, as received (the opened text, the hash and the signature over them), go on that
   // relay's row beside the seat. Andy, 2026-10-19: "the information belongs into relay-state somewhere, it's part
   // of the node identity." Never rebuilt: the signature is the relay's own word and can be shown as proof.
@@ -2069,6 +2069,9 @@ function createPeerPost(opts) {
           peer: said.peer || undefined,
           error: said.ok ? undefined : String(said.error || 'refused'),
           relayPublicKey: key.relayPublicKey,
+          // What a confirmed code proved (goal/G30.1): the address and the relay's flag for it.
+          email: said.email ? String(said.email) : undefined,
+          emailVerified: said.emailVerified === true ? true : undefined,
         };
       });
     });

@@ -2079,7 +2079,7 @@ contactBook.syncMarks(ROOT_DIR);
     'add': { request: { url: '', label: '' }, reply: { ok: true, url: '', relayKey: '' }, handler: proxyVerb(function (b) { return hub.relayAdd(b, { router: peerRouter }); }) },
     // relay.face {url, name, email} (goal/G30.1, Andy 2026-10-19: "i agree to the node side verb as well."): this node
     // applies to one relay for a face name; the relay's signed answer is kept whole on that relay's row.
-    'face': { request: { url: '', name: '', email: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: proxyVerb(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
+    'face': { request: { url: '', name: '' }, reply: { ok: true, url: '', name: '', email: '' }, handler: proxyVerb(function (b) { return hub.relayFace(b, { router: peerRouter }); }) },
     // relay.join {url, email, code} (goal/G30.2, confirmed by Andy 2026-10-19): this node joins a relay by its user's
     // email. With an email it asks; with the code from the mailed link it takes the seat.
     'join': { request: { url: '', email: '', code: '' }, reply: { ok: true, url: '' }, handler: proxyVerb(function (b) { return hub.relayJoin(b, { router: peerRouter, port: Number(port) || spirit.core.node.const.SPIRIT_PORT, probe: require('./hub').relayKeyAsk(peerRouter) }); }) },

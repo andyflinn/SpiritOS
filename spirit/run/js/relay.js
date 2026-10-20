@@ -1940,19 +1940,21 @@ function createRelay(rootDir, deps) {
   // an own-row verb with no owner path: the name belongs to the key that asked. It succeeds with the pair, which
   // routeReply signs with the rest of the answer ("the success-reply is a confirmation of the face-email pair"),
   // or it is refused: 400 for a name that is not one DNS label (faceRoute.faceLabel, the rule the Host parser
-  // uses) or an email that is not one address, 409 for a name another member holds. The name is lowercased, so
-  // andy and Andy are one. Asking again replaces the pair. The email is NOT verified here: the login provider
-  // does that at the face sign-in (Andy: "the email is verified be the auth-provider"), which is not built yet.
-  // The name is freed when the member leaves, because it is a column of the member's row (forgetPeer).
-  function faceSelf(who, wanted, mail) {
+  // uses) or a member with no verified email, 409 for a name another member holds. The name is lowercased, so
+  // andy and Andy are one. Asking again replaces the pair. The name is freed when the member leaves, because it is a column of the member's row (forgetPeer).
+  //
+  // THE EMAIL IS THE ONE ON FILE (goal/G30.1, box v30; Andy, 2026-10-20: "the relay already knows, which email
+  // address is verified for the calling id", and "the email must be dropped from the verb relay.face"). The pair is
+  // the face name and the verified email a confirmed join wrote on this member's row; an email sent along is not
+  // read. A member with none is refused until a join confirms one.
+  function faceSelf(who, wanted) {
     if (!who || !who.publicKey) return { ok: false, status: 403, error: 'no such peer' };
     var name = faceRoute.faceLabel(wanted);
     if (!name) return { ok: false, status: 400, error: 'a face name is one label of letters, digits and hyphens' };
-    var email = String(mail == null ? '' : mail).trim();
-    if (Buffer.byteLength(email, 'utf8') > 254 || !/^[^\s@]+@[^\s@]+$/.test(email)) {
-      return { ok: false, status: 400, error: 'an email is one address with an @' };
-    }
-    if (!findByKey(who.publicKey)) return { ok: false, status: 404, error: 'no such peer' };
+    var mine = store.members.get(who.publicKey);
+    if (!mine) return { ok: false, status: 404, error: 'no such peer' };
+    var email = mine.emailVerified ? mine.email : '';
+    if (!email) return { ok: false, status: 400, error: 'no verified email on file for this member: add an email address in Natter first' };
     var holder = store.members.byFace(name);
     if (holder && holder.publicKey !== who.publicKey) return { ok: false, status: 409, error: 'that face name is held by another member' };
     var wrote = guardWrite('face name', function () { return store.members.setFace(who.publicKey, name, email); });
@@ -2481,6 +2483,7 @@ function createRelay(rootDir, deps) {
       return sendSelfAnswer(hash, who, {
         ok: !!(jout && jout.ok), status: (jout && jout.status) || 500,
         peer: (jout && jout.peer) || undefined, error: jout && !jout.ok ? jout.error : undefined,
+        email: (jout && jout.email) || undefined, emailVerified: (jout && jout.emailVerified) || undefined,
       }, { sealKey: jseal });
     }
     var claimed = null;
@@ -2881,7 +2884,7 @@ function createRelay(rootDir, deps) {
 
     // REGISTERING A FACE NAME AND EMAIL, own row, no owner path (goal/G30.1; faceSelf above).
     if (body && body.face && typeof body.face === 'object') {
-      out = faceSelf(who, body.face.name, body.face.email);
+      out = faceSelf(who, body.face.name);
     }
 
     // TAKING ONE BACK, by label — the only handle an unclaimed invite
@@ -4033,8 +4036,9 @@ function createRelay(rootDir, deps) {
     if (!key) return { ok: false, status: 400, error: 'a join needs the key that asks' };
     if (Buffer.byteLength(mail, 'utf8') > 254 || !/^[^\s@]+@[^\s@]+$/.test(mail)) return { ok: false, status: 400, error: 'an email is one address with an @' };
     if (!(p >= 1 && p <= 65535 && Math.floor(p) === p)) return { ok: false, status: 400, error: 'a join needs the port of the node' };
-    if (findByKey(key)) return { ok: false, status: 409, error: 'key already claimed', peer: findByKey(key) };
-    if (seats.fullForMembers()) return seatsFull();
+    // A SEATED KEY JOINING AGAIN CHANGES ITS EMAIL (goal/G30.1, box v28): the same mail, link and code, 10 minutes
+    // and caps; it takes no seat, so a full relay does not refuse it.
+    if (!findByKey(key) && seats.fullForMembers()) return seatsFull();
     if (!sendMail) return { ok: false, status: 503, error: 'this relay sends no mail, so it takes no join' };
     if (joinCapped('key:' + key) || joinCapped('mail:' + mail)) return { ok: false, status: 429, error: 'a join was asked a moment ago; wait a minute' };
     var code = require('crypto').randomBytes(24).toString('base64url');
@@ -4052,7 +4056,18 @@ function createRelay(rootDir, deps) {
     var p = pendingJoins.get(key);
     if (!p || p.until < clock() || !code || joinHash(code) !== p.hash) return { ok: false, status: 403, error: 'no join waits for that code under this key' };
     pendingJoins.delete(key);
-    return claim(labelFromEmail(p.email), '', key, '', '', '', typeof card === 'string' && card ? card : p.card, true);
+    // THE CODE PROVES THE ADDRESS (goal/G30.1, box v28): only now is it written on the member's row, verified; until
+    // then the old email stood. A seated key keeps its seat and its label; a new key is seated as a join seats it.
+    var out = findByKey(key)
+      ? { ok: true, status: 200 }
+      : claim(labelFromEmail(p.email), '', key, '', '', '', typeof card === 'string' && card ? card : p.card, true);
+    if (!out || !out.ok) return out;
+    store.members.setEmail(key, p.email);
+    refreshActive(key);
+    out.peer = findByKey(key);
+    out.email = p.email;
+    out.emailVerified = true;
+    return out;
   }
 
   return {

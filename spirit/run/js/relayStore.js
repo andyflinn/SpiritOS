@@ -242,6 +242,14 @@ function open(rootDir) {
     db.exec("CREATE UNIQUE INDEX IF NOT EXISTS members_face ON members (faceName) WHERE faceName <> ''");
   } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
 
+  // A MEMBER'S VERIFIED EMAIL (goal/G30.1, box v28): written only when a join's code is confirmed, so it is verified
+  // when set; one per member, not unique across members. Empty means none.
+  try {
+    const ecols = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
+    if (ecols.indexOf('email') === -1) db.exec("ALTER TABLE members ADD COLUMN email TEXT NOT NULL DEFAULT ''");
+    if (ecols.indexOf('emailVerified') === -1) db.exec('ALTER TABLE members ADD COLUMN emailVerified INTEGER NOT NULL DEFAULT 0');
+  } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
+
   const hasOwnerColumn = db.prepare('PRAGMA table_info(members)').all()
     .some(function (c) { return c.name === 'owner'; });
   if (hasOwnerColumn) db.exec('ALTER TABLE members DROP COLUMN owner');
@@ -298,6 +306,9 @@ function build(rootDir, db, key) {
       // The face name and email the member applied for (goal/G30.1); empty when none.
       faceName: row.faceName || '',
       faceEmail: row.faceEmail || '',
+      // The email a join's code confirmed (goal/G30.1); empty and false when none.
+      email: row.email || '',
+      emailVerified: !!row.emailVerified,
     };
   }
 
@@ -371,6 +382,10 @@ function build(rootDir, db, key) {
       setFace: function (publicKey, name, email) {
         try { return faceStmt('set', 'UPDATE members SET faceName = ?, faceEmail = ? WHERE publicKey = ?').run(String(name || ''), String(email || ''), String(publicKey || '')).changes > 0; }
         catch (e) { if (/UNIQUE/i.test(String(e && e.message))) return false; throw e; }
+      },
+      // The email a confirmed join code proved, written verified. True when the member is on the roll.
+      setEmail: function (publicKey, email) {
+        return faceStmt('email', 'UPDATE members SET email = ?, emailVerified = 1 WHERE publicKey = ?').run(String(email || ''), String(publicKey || '')).changes > 0;
       },
     },
 

@@ -273,6 +273,25 @@ function faceOf(rootDir, url) {
   return row && row.faceName ? { name: row.faceName, email: row.faceEmail, reply: row.faceReply } : null;
 }
 
+// THE EMAIL A JOIN CODE CONFIRMED ON A RELAY (goal/G30.1, box v28), as the relay's confirm answered it, with its
+// flag; on the same row as the seat. natterDetails reads "Add" or "Change email address" from it. A url with no
+// record has nothing to file under: false.
+function keepEmail(rootDir, url, email, verified) {
+  var rel = table(rootDir);
+  var row = rel.byUrl(normalizeUrl(url));
+  if (!row) return false;
+  row.email = String(email || '');
+  row.emailVerified = !!verified;
+  rel.put(row);
+  return true;
+}
+
+// What this node holds of its email on a relay: { email, verified }, empty and false when none.
+function emailOf(rootDir, url) {
+  var row = byUrl(rootDir, url);
+  return { email: (row && row.email) || '', verified: !!(row && row.emailVerified) };
+}
+
 // Where this node holds a seat — the question `probe` used to answer by
 // reading a roll.
 //
@@ -530,6 +549,8 @@ module.exports = {
   normalizeUrl: normalizeUrl,
   keepFace: keepFace,
   faceOf: faceOf,
+  keepEmail: keepEmail,
+  emailOf: emailOf,
   // One relay's row by its address (goal/G30.1: hub.relayFace finds the relay it applies to).
   byUrl: byUrl,
   load: load,

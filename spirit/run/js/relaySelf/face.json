@@ -1,7 +1,6 @@
 {
-  "description": "Apply for a face name and register an email with this relay.",
+  "description": "Apply for a face name with this relay; it is paired with the verified email this relay holds for you.",
   "request": {
-    "name": "",
-    "email": ""
+    "name": ""
   }
 }

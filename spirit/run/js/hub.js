@@ -2812,6 +2812,9 @@ function createHub(rootDir) {
       try { ownerBadge.addRelay(rootDir, url, '', said.relayPublicKey || ''); } catch (e) { /* the seat stands; listed on the next join */ }
       try { relayKeys.clearRefusal(rootDir, said.relayPublicKey || url); } catch (e) { /* read again on the next probe */ }
       try { relayKeys.seat(rootDir, url, label); } catch (e) { /* a boot can still backfill */ }
+      // THE VERIFIED EMAIL (goal/G30.1, box v28): what the relay's confirm answered, kept on that relay's row, where
+      // natterDetails reads "Add" or "Change email address" from.
+      if (said.email) { try { relayKeys.keepEmail(rootDir, url, said.email, said.emailVerified === true); } catch (e) { /* the relay holds it; the next change writes it here */ } }
       if (deps.probe) { try { router.startStreams(deps.probe); } catch (e) { /* the next boot connects */ } }
       joinAskedOf = '';
       return { ok: true, status: 201, url: url, label: label };
@@ -2876,12 +2879,13 @@ function createHub(rootDir) {
   function relayFace(body, deps) {
     var url = String((body && body.url) || '').trim().replace(/\/+$/, '');
     var name = String((body && body.name) || '').trim();
-    var email = String((body && body.email) || '').trim();
-    if (!url || !name || !email) return Promise.resolve({ ok: false, status: 400, error: 'a relay url, a face name and an email are required' });
+    // NO EMAIL IN THE ASK (goal/G30.1, box v30, Andy: "the email must be dropped from the verb relay.face"): the
+    // relay pairs the name with the verified email it holds for this node's key, and answers the pair.
+    if (!url || !name) return Promise.resolve({ ok: false, status: 400, error: 'a relay url and a face name are required' });
     if (!deps || !deps.router) return Promise.resolve({ ok: false, status: 503, error: 'no router to ask the relay with' });
     var row = relayKeys.byUrl(rootDir, url);
     if (!row) return Promise.resolve({ ok: false, status: 404, error: 'that relay is not on this node\'s list' });
-    var made = packet.encode('relay', { face: { name: name, email: email } });
+    var made = packet.encode('relay', { face: { name: name } });
     if (!made || !made.ok) return Promise.resolve({ ok: false, status: 500, error: 'the application could not be encoded' });
     return sendPacket(deps.router, row.url, row.key, made.text).then(function (answer) {
       if (!answer || !answer.ok) return { ok: false, status: (answer && answer.status) || 502, error: (answer && answer.error) || 'the relay did not answer' };
@@ -2901,6 +2905,9 @@ function createHub(rootDir) {
     return relaySummary(deps && deps.router).then(function (summary) {
       var row = summary.rows.filter(function (r) { return r.url === key; })[0];
       if (!row) return { ok: false, status: 404, error: 'no such relay' };
+      // The email this node's join confirmed there (goal/G30.1), for natterDetails' email form.
+      var held = relayKeys.emailOf(rootDir, key);
+      row = Object.assign({}, row, { email: held.email, emailVerified: held.verified });
       var reports = (deps && deps.router && deps.router.relayStatus) ? deps.router.relayStatus() : {};
       return require('./limits').boundedGet({ ok: true, status: 200, key: key, relay: row,
         report: reports[key] || null });
