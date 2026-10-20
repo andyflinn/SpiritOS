@@ -368,12 +368,15 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
   }
 
   // ── 5 ─────────────────────────────────────────────────────────────
-  test.subHeading('5. Natter: the refused row, and Remove');
+  // NATTER RETIRED (goal/G30.7): natterDetails asks the remove rule itself (ownerBadge.removalRefusal over the rows
+  // its probe brings) and performs a Remove through relay.remove; nobody hands it canRemove.
+  test.subHeading('5. natterDetails: the refused row, and Remove');
   {
     const at = '2026-10-12T09:30:00.000Z';
     const refusedRow = { url: A, label: 'a', status: 200, owned: false, claimed: false,
       refused: { code: 'not-a-sender', why: WHY, at: at } };
-    const shown = mountDetails(refusedRow, true);
+    const another = { url: 'https://other.example', label: 'other', status: 200, owned: false, claimed: false };
+    const shown = mountDetails(refusedRow, [refusedRow, another]);
     await settled();
     const html = shown.body().innerHTML;
     const says = {
@@ -386,29 +389,22 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     if (says.refused && says.since && says.seatGone && says.invite) {
       test.check('natterDetails says the relay refused this node, since when, that the seat is gone and only a new invite brings it back');
     } else test.fail(OWED + 'natterDetails on a refused row says ' + show(says));
-    if (says.remove) test.check('and offers Remove');
+    if (says.remove) test.check('and offers Remove while another public relay stays listed');
     else test.fail(OWED + 'no Remove offered on a refused row');
-    const last = mountDetails(refusedRow, false);
+    const last = mountDetails(refusedRow, [refusedRow]);
     await settled();
-    if (!/nd-remove/.test(last.body().innerHTML) && /last/.test(last.body().innerHTML)) {
+    if (!/nd-remove/.test(last.body().innerHTML) && /public relay/.test(last.body().innerHTML)) {
       test.check('on the last relay there is no Remove, and the screen says why');
     } else test.fail(OWED + 'last relay: Remove offered ' + /nd-remove/.test(last.body().innerHTML));
-    // Two presses, then the screen returns its decision for Natter to perform.
+    // Two presses, then relay.remove from the screen itself.
     const btn = removeTarget();
     shown.body().fire('click', { target: btn });
     shown.body().fire('click', { target: btn });
-    const decided = shown.answers.filter(function (a) { return a && a.remove; })[0];
-    if (decided && decided.url === A) test.check('two presses return { remove } for Natter to perform through relay.remove');
-    else test.fail(OWED + 'Remove returned ' + show(shown.answers));
-
-    const natterSrc = stripComments(fs.readFileSync(path.join(RUN, 'shell', 'natter', 'natter.js'), 'utf8'));
-    if (/'relay\.remove'/.test(natterSrc) && /canRemove:/.test(natterSrc)) test.check('Natter performs a returned Remove through relay.remove, and hands the dialog canRemove');
-    else test.fail(OWED + 'natter.js does not perform relay.remove / hand canRemove');
-    if (/relay-presence/.test(natterSrc) && /refused/.test(natterSrc)) test.check('Natter hears the streamed refusal on the relay-presence job');
-    else test.fail(OWED + 'natter.js does not watch the relay-presence job for a refusal');
-    const title = natterTitle(refusedRow);
-    if (/refused this node/.test(title)) test.check('the list row\'s title says it: ' + title);
-    else test.fail(OWED + 'natter list title for a refused row: ' + show(title));
+    await settled();
+    const asked = shown.asked.filter(function (v) { return v && v.verb === 'relay.remove'; })[0];
+    const closed = shown.answers.filter(function (x) { return x && x.removed; })[0];
+    if (asked && asked.key === A && closed && closed.url === A) test.check('two presses send relay.remove for that relay and close the screen');
+    else test.fail(OWED + 'Remove asked ' + show(shown.asked) + ', answered ' + show(shown.answers));
 
     // The node's half: relay.remove refuses the last public relay, and a Remove gives up the seat.
     const h2 = tmpHome();
@@ -419,9 +415,16 @@ test.startTest('goal/G19.1 — seats kept on first connect; an evicted node told
     const kept = hub2.relayRemove({ key: ONLY });
     if (!kept.ok) test.check('relay.remove refuses the relay a node must keep: ' + kept.error);
     else test.fail('relay.remove took the kept relay');
+    // A seat the relay still honours blocks the removal (goal/G30.7, Andy: "you must remove yourself from this relay
+    // before you can remove the relay from your contacts"); one it refused is gone already, and Remove clears its record.
+    const held = hub2.relayRemove({ key: OTHER });
+    if (!held.ok && held.error === 'you must remove yourself from this relay before you can remove the relay from your contacts')
+      test.check('relay.remove refuses a relay this node holds a seat on, with the sentence');
+    else test.fail(OWED + 'removing a seated relay answered ' + show(held));
+    relayKeys.refuse(h2, OTHER, 'not-a-sender');
     const gone = hub2.relayRemove({ key: OTHER });
     const kr = keyRow(h2, OTHER);
-    if (gone.ok && kr && !kr.seat && kr.publicKey === rA.publicKey) test.check('a Remove gives up the seat (relayKeys.unseat) and keeps the pin');
+    if (gone.ok && kr && !kr.seat && kr.publicKey === rA.publicKey) test.check('a relay that refused this node comes off the list: the seat record goes (relayKeys.unseat), the pin stays');
     else test.fail(OWED + 'after relay.remove: ' + show(gone) + ', relayKeys row ' + show(kr));
   }
 
@@ -510,13 +513,16 @@ function removeTarget() {
   node.closest = function (sel) { return sel === '.nd-remove' ? node : null; };
   return node;
 }
-function mountDetails(row, canRemove) {
+function mountDetails(row, rows) {
   const elements = Object.create(null);
+  const asked = [];
   const doc = { getElementById: function (id) { return elements[id] || (elements[id] = fakeElement(id)); } };
   const fakeFetch = function (url, init) {
     let verb = '';
     try { verb = JSON.parse(String((init && init.body) || '{}')).verb || ''; } catch (e) { verb = ''; }
-    const text = verb === 'relay.status' ? JSON.stringify({ rows: [row], relayStatus: {} }) : '{}';
+    asked.push(JSON.parse(String((init && init.body) || '{}')));
+    const text = verb === 'relay.status' ? JSON.stringify({ rows: rows || [row], relayStatus: {} })
+      : verb === 'relay.remove' ? JSON.stringify({ ok: true, key: row.url }) : '{}';
     return Promise.resolve({ status: 200, text: function () { return Promise.resolve(text); }, json: function () { return Promise.resolve(JSON.parse(text)); } });
   };
   let behavior = null;
@@ -530,7 +536,7 @@ function mountDetails(row, canRemove) {
   };
   new Function('spirit', 'document', 'window', 'fetch', 'setInterval', 'clearInterval', 'navigator',
     fs.readFileSync(path.join(RUN, 'shell', 'natterDetails', 'natterDetails.js'), 'utf8'))(
-    shellSpirit, doc, {}, fakeFetch, function () { return 1; }, function () {}, {});
+    shellSpirit, doc, { spiritOwnerBadge: require('../run/js/ownerBadge') }, fakeFetch, function () { return 1; }, function () {}, {});
   const answers = [];
   const api = {
     verb: function (name, args) {
@@ -545,12 +551,6 @@ function mountDetails(row, canRemove) {
     onRelayEvent: function () { return function () {}; }, setScreenTitle: function () {},
   };
   behavior.mount(fakeElement('container'), api);
-  behavior.open({ url: row.url, label: 'jazz', relayLabel: row.label, canRemove: canRemove });
-  return { body: function () { return doc.getElementById('nd-body'); }, answers: answers };
-}
-function natterTitle(badge) {
-  const src = fs.readFileSync(path.join(RUN, 'shell', 'natter', 'natter.js'), 'utf8');
-  const stub = { shell: { activateApp: function () {} }, core: { const: { ICON: spirit.core.const.ICON } } };
-  const got = new Function('spirit', 'document', 'window', src + '\n;return natterStatusTitle;')(stub, {}, {});
-  return got(badge);
+  behavior.open({ url: row.url, label: 'jazz', relayLabel: row.label });
+  return { body: function () { return doc.getElementById('nd-body'); }, answers: answers, asked: asked };
 }

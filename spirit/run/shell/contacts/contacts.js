@@ -943,6 +943,18 @@ spirit.shell.activateApp({
         '<div id="contacts-seen-list"></div>' +
         '<div id="contacts-seen-note"></div>' +
       '</details>' +
+      // ADD A RELAY, moved here from Natter (goal/G30.7; Andy, 2026-10-20: "putting the add-relay into contacts, in a
+      // folding-panel, right below \"Find someone on the network\""). relay.add lists it on its card's answer; the label
+      // is this node's private caption, never on the wire.
+      '<details class="stat-tile wide" name="contacts-panels" id="contacts-relay-add-section">' +
+        '<summary id="contacts-relay-add-summary">Add a relay</summary>' +
+        '<div class="start-job-form">' +
+          '<label class="field-label">Private label<input type="text" id="contacts-relay-label" placeholder="only you see this"></label>' +
+          '<label class="field-label">URL<input type="text" id="contacts-relay-url" placeholder="https://example.com"></label>' +
+          '<button type="button" id="contacts-relay-add">Add</button>' +
+        '</div>' +
+        '<div class="job-manifest-note" id="contacts-relay-add-out"></div>' +
+      '</details>' +
       '<details class="stat-tile wide" name="contacts-panels" id="contacts-unknown-section">' +
         '<summary id="contacts-unknown-summary">People who write and are not in this book</summary>' +
         '<div id="contacts-unknown-choices"></div>' +
@@ -981,6 +993,27 @@ spirit.shell.activateApp({
       if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
       contactsSeenAdd(btn);
     });
+    // ADD A RELAY (goal/G30.7, from Natter): relay.add asks the relay for its card and lists it; the node notes it as a
+    // relay peer, so the list above finds it. The rule on the address is the wire's (hub.assertRelayUrl), asked here so
+    // a typo costs no round trip.
+    document.getElementById('contacts-relay-add').addEventListener('click', function () {
+      var out = document.getElementById('contacts-relay-add-out');
+      var label = String(document.getElementById('contacts-relay-label').value || '').trim();
+      var url = String(document.getElementById('contacts-relay-url').value || '').trim().replace(/\/+$/, '');
+      if (!label || !url) { out.textContent = 'both a label and a URL are required'; return; }
+      var ok = false;
+      try {
+        var target = new URL(url);
+        var host = String(target.hostname || '').toLowerCase();
+        ok = target.protocol === 'https:' || (target.protocol === 'http:' && (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]'));
+      } catch (e) { ok = false; }
+      if (!ok) { out.textContent = 'a relay must be https — http is allowed only to 127.0.0.1'; return; }
+      out.textContent = 'adding ' + url + '…';
+      contactsAsk('relay.add', { url: url, label: label }).then(function (said) {
+        out.textContent = said && said.ok ? 'added ' + url : 'not added: ' + ((said && said.error) || 'no answer');
+      }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
+    });
+
     contactsSeenList = window.spiritElements.shellCreateListSearch(seenHost, {
       api: {
         verb: function (name, body) {
@@ -1000,12 +1033,24 @@ spirit.shell.activateApp({
       score: function () { return contactsSeenList && contactsSeenList.words() === '*' ? 1 : null; },
       paint: contactsSeenCells,
       head: ['', 'Name', '', ''],
+      // RELAYS ARE PEERS (goal/G30.7; Andy, 2026-10-20: "the contact/peer search would have a \"relay\" filter, and
+      // clicking on them would open the natterDetails dialog"): each row says its kind, node or relay.
+      filters: [{ name: 'kind', choices: [{ value: 'all', word: 'all' }, { value: 'node', word: 'nodes' }, { value: 'relay', word: 'relays' }],
+        test: function (c, v) {
+          var relay = !!(c && c.kind === 'relay');
+          return v === 'relay' ? (relay ? 1 : 0) : v === 'node' ? (relay ? 0 : 1) : 1;
+        } }],
       // THE ROW ITSELF ASKS FOR A DESCRIPTION (2026-09-21). One request,
       // for one person, because somebody wanted to know about them — and
       // never fifty on the chance they might. Already asked, already
       // answered, or asking: pressing again would spend a turn on
       // something already on screen.
       details: function (c) {
+        // A relay opens its own screen, natterDetails, by its url (its route is its own url, goal/G30.7).
+        if (c && c.kind === 'relay' && c.atKey) {
+          contactsApi.callDialog('shell/natterDetails', { url: String(c.atKey) });
+          return;
+        }
         var key = String((c && c.publicKey) || '');
         if (!key || contactsCards[key]) return;
         contactsAskCard(key);

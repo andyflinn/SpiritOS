@@ -1255,7 +1255,7 @@ contactBook.syncMarks(ROOT_DIR);
   // row and this one reads "this node was not running", not "nothing
   // happened". Written for every relay the record already knows.
   markRecord('started');
-  try { nodeCard.ensureDescription(ROOT_DIR); }
+  try { require('./serveCommon').ensureFirstRun(ROOT_DIR, { kind: 'node' }); }
   catch (e) { /* a caption must never be the reason a node will not boot */ }
 
   // ── AND A NODE WITH NO RELAY LIST GETS ONE ─────────────────────────
@@ -2074,7 +2074,7 @@ contactBook.syncMarks(ROOT_DIR);
     //   Andy, 2026-10-10: "Q4: Do you approve two new commands on the node,
     //   list relays and remove relay, with a successful claim adding its
     //   relay? yes."
-    'remove': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayRemove(b); }) },
+    'remove': { request: { key: '' }, reply: { ok: true, key: '' }, handler: proxyVerb(function (b) { return hub.relayRemove(b, { router: peerRouter }); }) },
     // relay.add {url, label} (goal/G28.1, Andy 2026-10-16): a relay goes on the node's list when its card answers.
     'add': { request: { url: '', label: '' }, reply: { ok: true, url: '', relayKey: '' }, handler: proxyVerb(function (b) { return hub.relayAdd(b, { router: peerRouter }); }) },
     // relay.face {url, name, email} (goal/G30.1, Andy 2026-10-19: "i agree to the node side verb as well."): this node

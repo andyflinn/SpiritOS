@@ -143,8 +143,8 @@ Promise.resolve()
       const keys = Object.keys(r).sort().join(',');
       const item = r.items[0] || {};
       if (r.ok === true && keys === 'items,more,mustPick,name,ok,status' && r.name === 'andy' && typeof r.mustPick === 'boolean' &&
-          Object.keys(item).sort().join(',') === 'key,label' && /^probe — not joined, offline$/.test(item.label)) {
-        test.check('{ok, status, items:[{key,label}], more, mustPick, name}, the label as ruled');
+          Object.keys(item).sort().join(',') === 'key,label' && /^probe — not joined, offline$/.test((function () { try { return JSON.parse(item.label).text; } catch (e) { return ''; } }()))) {
+        test.check('{ok, status, items:[{key,label}], more, mustPick, name}, the label a json row whose text is as ruled (goal/G30.7)');
       } else test.fail('the answer changed shape: ' + JSON.stringify(r));
     });
   })

@@ -271,6 +271,8 @@ test.subHeading('5. relayKeys and ownerBadge read and write the table; 6. nodero
     test.fail(OWED + 'noderoutes.net was removed: ' + short(kept));
   }
 
+  // A seat this node still holds keeps a relay listed (goal/G30.7); given up, the relay may go.
+  relayKeys.unseat(root, NEWR.url);
   const went = ownerBadge.removeRelay(root, NEWR.url);
   if (went && went.ok === true && ownerBadge.configuredUrls(root).indexOf(NEWR.url) === -1 &&
       relayKeys.pinned(root, NEWR.url) === NEWR.key) {

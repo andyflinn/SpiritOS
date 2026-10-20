@@ -53,9 +53,12 @@ if (/relayLabel:\s*''/.test(hub) || !/labelOf\(/.test(hub)) test.fail(OWED + 'hu
 else test.check('hub relaySummary fills relayLabel from labelOf');
 
 test.subHeading('3. Natter searches');
-const natter = code('shell/natter/natter.js');
-if (/shellCreateListSearch\(/.test(natter)) test.check('Natter\'s relay list is built on the shared list search');
-else test.fail(OWED + 'Natter\'s relay list is a plain table');
+// Natter retired (section 7), so its list with it: relays are searched in the Contacts list of peers seen, which is
+// the shared list search.
+const contactsList = code('shell/contacts/contacts.js');
+if (/contactsSeenList = window\.spiritElements\.shellCreateListSearch\(/.test(contactsList) && !fs.existsSync(path.join(RUN, 'shell', 'natter')))
+  test.check('relays are searched in the Contacts list of peers seen, the shared list search');
+else test.fail(OWED + 'relays are not searched through the shared list');
 const relaySearch = (/function relaySearch\(body, deps\) \{[\s\S]*?\n  \}/.exec(hub) || [''])[0];
 if (/label:\s*JSON\.stringify\(/.test(relaySearch)) test.check('relay.search answers each row\'s label as JSON');
 else test.fail(OWED + 'relay.search answers a plain string label');

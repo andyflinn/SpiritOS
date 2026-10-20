@@ -1914,6 +1914,10 @@ function createPeerPost(opts) {
     var s = servicesByUrl[String(relayUrl || '').replace(/\/+$/, '')];
     return { sendMail: !!(s && s.sendMail), face: !!(s && s.face) };
   }
+  // AND ITS PUBLIC LABEL, as its last card said (goal/G30.7): Natter shows the label it would change (Andy, 2026-10-20:
+  // "This input field must show the current public label of this relay"). In memory only, beside the services.
+  var labelByUrl = Object.create(null);
+  function labelOf(relayUrl) { return String(labelByUrl[String(relayUrl || '').replace(/\/+$/, '')] || ''); }
   function relayKey(relayUrl) {
     var ask = JSON.stringify({ v: 1, body: { card: true } });
     return publicPost(relayUrl, '', ask).then(function (got) {
@@ -1926,6 +1930,7 @@ function createPeerPost(opts) {
       }
       var services = { sendMail: !!(said.services && said.services.sendMail === true), face: !!(said.services && said.services.face === true) };
       servicesByUrl[String(relayUrl || '').replace(/\/+$/, '')] = services;
+      labelByUrl[String(relayUrl || '').replace(/\/+$/, '')] = String(said.relayLabel || '');
       return {
         relayPublicKey: String(said.relayPublicKey),
         relaySealKey: String(said.relaySealKey || ''),
@@ -1953,7 +1958,7 @@ function createPeerPost(opts) {
     var id = auth.nameIdentity(rootDir, name);
     // server.js fills the description on every boot; this stays for one
     // emptied by hand. A caption must never be the reason a claim fails.
-    try { nodeCard.ensureDescription(rootDir); } catch (e) { /* the claim still goes */ }
+    try { require('./serveCommon').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the claim still goes */ }
     var body = {
       name: name,
       publicKey: id.publicKey,
@@ -2040,7 +2045,7 @@ function createPeerPost(opts) {
     }
     return keyed.then(function (key) {
       var mine = me();
-      try { nodeCard.ensureDescription(rootDir); } catch (e) { /* the join still goes */ }
+      try { require('./serveCommon').ensureFirstRun(rootDir, { kind: 'node' }); } catch (e) { /* the join still goes */ }
       var card = nodeCard.describe(rootDir);
       var body = code
         ? { joinConfirm: { code: String(code), card: card } }
@@ -2149,6 +2154,7 @@ function createPeerPost(opts) {
     relayKey: relayKey,
     // What a relay's last card offered (goal/G30.2), read without a call.
     servicesOf: servicesOf,
+    labelOf: labelOf,
     claim: claim,
     join: join,
     // What arrived while nobody was home, and what is still outstanding.

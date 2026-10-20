@@ -101,7 +101,9 @@ const restore = watchWire();
 
 function label(items, url) {
   const hit = (items || []).filter(function (i) { return i.key === url; })[0];
-  return hit ? hit.label : '(absent)';
+  // The label is the row as json since goal/G30.7; the ruled sentence is its text.
+  if (!hit) return '(absent)';
+  try { return JSON.parse(hit.label).text; } catch (e) { return hit.label; }
 }
 
 Promise.resolve()

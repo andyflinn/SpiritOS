@@ -115,8 +115,9 @@ const ROWS = [
   .then(function () {
     test.subHeading('The node side: labels carry the state as words');
     const hub = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'hub.js'), 'utf8');
-    if (/' — ' \+ who \+ ', ' \+ up/.test(hub) && /'yours' : \(row\.claimed \? 'member' : 'not joined'\)/.test(hub)) {
-      test.check('relay.search labels a relay "<name> — yours|member|not joined, online|offline"');
+    // Since goal/G30.7 the label is the row as json; the ruled sentence is its text.
+    if (/text: name \+ ' — ' \+ who \+ ', ' \+ up/.test(hub) && /'yours' : \(row\.claimed \? 'member' : 'not joined'\)/.test(hub)) {
+      test.check('relay.search rows carry the text "<name> — yours|member|not joined, online|offline"');
     } else {
       test.fail('relayLabel no longer builds the ruled label');
     }

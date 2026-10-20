@@ -27,149 +27,18 @@
   // dataset this project is building toward (see preferences.json in
   // .gitignore), not ordinary app config — hence root-level, not
   // app-scoped.
-  // ---- First run ----
-  //
-  // A clone ships pointed at one public mailbox and nothing else, so
-  // until this node has claimed a name there is exactly one thing it can
-  // do: bind to a mailbox. A desktop of apps that all need one is a menu
-  // of dead ends; showing one icon is the whole instruction.
-  //
-  // That app is Natter — the relay list is also where a claim happens
-  // (packet 3), which is why the escape hatch this rule used to carry
-  // could go: an unbound node cannot be sent to an app it is not shown,
-  // because the app it is shown IS the one with the URL list in it.
-  //
-  // "Bound" is readNodeLabel() below — the same accessor the window
-  // title uses, so the two can never disagree about whether this node
-  // has a name.
-  var NATTER_ID = 'shell/natter';
+  // ---- First run ---- STOOD HERE: the gate that showed an unbound node Natter alone and opened it. Gone with Natter
+  // (goal/G30.7; Andy, 2026-10-20: "i found that to be untrue, because now the node generates it's own pubKey before it
+  // even listens for the first time"): a node is named at its first start, so the gate never closed.
 
-  // Whether the first-run rule applies at all.
-  //
-  // Fails OPEN, deliberately: if the binder is not registered yet there
-  // is nothing to show, and an empty desktop that never fills is worse
-  // than a moment of the full one. Natter is intrinsic and declared at
-  // boot, so in practice this holds from the first paint. Gating before then would paint an empty desktop — and if
-  // that snapshot never came, an empty desktop with no way out. Better a
-  // moment of the full desktop that then collapses to one icon than a
-  // node with nothing on it.
-  //
-  // AND THE REAL CONDITION IS NOT THE LABEL.
-  //
-  //   Andy: "it can't be a first-run if the node is already bound to a
-  //   public relay, that's the real condition that needs checking"
-  //
-  // This asked one thing — a label in session.json — and that file is
-  // gitignored and untracked, so anything that lays down a fresh tracked
-  // tree omits it. A node with its identity, its rows on a relay, its
-  // contacts and its mail all intact would open to Natter alone and
-  // behave like a stranger to itself, because one untracked file was
-  // missing. It happened to Andy's own node twice, and every freshly
-  // created lab node has always started that way.
-  //
-  // A node HOLDING A STREAM TO A RELAY has manifestly been set up. The
-  // label says what it calls itself; the stream says it exists as a peer
-  // — and the second is the fact a first-run screen is actually asking
-  // about. Either one is enough, and neither is required to be the other.
-  function firstRun() {
-    if (readNodeLabel()) return false;
-    if (boundToARelay()) return false;
-    return !!apps[NATTER_ID];
-  }
-
-  // Read off the presence job the node already keeps, rather than asked
-  // for over HTTP: the shell has this in the same snapshot it learns
-  // everything else from, so no new route and no new round trip.
-  //
-  // The LOG rather than `data.presence`, because presence is who else is
-  // reachable — legitimately empty on a relay where nobody else is home —
-  // while "connected to <url>" is this node's own attachment, which is
-  // the question. Last line per url wins, so a relay that dropped is not
-  // counted as held.
-  //
-  // The lost pattern needs the SPACE after the colon. presenceNode writes
-  // `lost <url>: <reason>`, and a url has a colon of its own: `\S+?`
-  // matched at the one in "https:" and recorded losing a relay called
-  // "https", leaving the real url marked connected for ever. Caught by
-  // the dropped-relay check in natterIntrinsic.
-  //
-  // Unknown reads as NOT bound, which keeps the existing fail-open
-  // behaviour intact: before the first snapshot there is no job, so this
-  // answers false and the label rule decides alone, exactly as it did.
-  function boundToARelay() {
-    var job = findJobByType('relay-presence');
-    if (!job) return false;
-    var open = Object.create(null);
-    (job.log || []).forEach(function (line) {
-      var connected = /^connected to (.+)$/.exec((line && line.message) || '');
-      var lost = /^lost (.+?): /.exec((line && line.message) || '');
-      if (connected) open[connected[1]] = true;
-      else if (lost) open[lost[1]] = false;
-    });
-    return Object.keys(open).some(function (url) { return open[url]; });
-  }
-
-  // One rule, asked by everything that lists apps — the desktop, the
-  // Apps manager and the Spirit grid — rather than three id lists that
-  // drift apart. Hidden here means not SHOWN: every app stays
-  // registered, and launchApp by id keeps working, which is what viewers
-  // and app-to-app jumps depend on.
-  function shownOnFirstRun(id) {
-    return id === NATTER_ID;
-  }
-
-  function hiddenByFirstRun(id) {
-    return firstRun() && !shownOnFirstRun(id);
-  }
-
-  // An unbound node does not get a desktop with one icon on it — it gets
-  // the binder, open.
-  //
-  // Natter is intrinsic, so its tile lives in the Spirit group, and the
-  // gate hides Spirit along with everything else. The desktop of an
-  // unbound node is therefore EMPTY: somebody opening 127.0.0.1:65432 on
-  // a fresh clone saw a black page and had nothing to click. Drawing a
-  // tile would mean a second rule about where an intrinsic app's icon
-  // sits, for a tile that vanishes after the first claim; opening the
-  // app needs no icon at all.
-  //
-  // launchApp does the lazy script fetch a click would have done, so
-  // this is the same path by a different trigger.
-  function openBinderIfUnbound() {
-    if (!firstRun()) return;
-    if (activeAppId === NATTER_ID) return; // already there; do not restack
-    launchApp(NATTER_ID);
-  }
-
-  // Back and Home while unbound would land on that same empty desktop.
-  // There is nowhere else to be until this node has a name, so the two
-  // buttons are not drawn — the same rule as every other control that
-  // could not do anything in the state it is offered in.
-  //
-  // ── UNLESS SOMETHING IS STACKED ON TOP OF NATTER ────────────────────
-  //
-  // An unbound node opens the relay's own screen now (natter pops
-  // app/natterDetails for the relay it would claim on), and that screen
-  // IS somewhere to come back from. With Back hidden, the only way off
-  // it was to claim — so somebody who wanted the other thing Natter
-  // offers, adding a relay, had no route to it and no way to say so.
-  //
-  // "Nowhere else to be" was always the real rule; firstRun() was
-  // standing in for it while the binder was the only screen an unbound
-  // node could reach. It is not any more, so the condition says what it
-  // means: nothing beneath to go back TO.
-  // THE TWO BUTTONS PART COMPANY HERE, because they answer different
-  // questions. Back asks "is there something beneath this one" and while
-  // unbound there now is. Home asks "is the desktop worth going to", and
-  // an unbound node's desktop is deliberately empty — so Home stays
-  // hidden until this node has a name, exactly as before.
+  // Back and Home: Back where there is something beneath, Home always; a dialog has its X instead (desk/G3.5).
   function paintTitlebarChrome() {
-    var canGoBack = !firstRun() || navStack.length > 1;
+    var canGoBack = true;
     // A dialog on top has no Back; its X at the right does what Back did (desk/G3.5).
     var dialog = !!(activeAppId && apps[activeAppId] && apps[activeAppId].type === 'dialog');
     if (closeBtn) closeBtn.style.display = canGoBack && !dialog ? '' : 'none';
     if (dialogCloseBtn) dialogCloseBtn.style.display = dialog ? '' : 'none';
-    if (homeBtn) homeBtn.style.display = firstRun() ? 'none' : '';
+    if (homeBtn) homeBtn.style.display = '';
   }
 
   // ---- The window title ----
@@ -197,7 +66,7 @@
   //
   // THE LABEL IS THE NODE'S ONE NAME (goal/G28.3). Andy, 2026-10-16: "there
   // should be only 1 name/label for a node." and "The window title should
-  // be the nodes damn name". This read shell/natter/session.json, Natter's
+  // be the nodes damn name". This read the Natter app's session.json (the app is gone, goal/G30.7), Natter's
   // mirror of the label a relay last confirmed for a seat, and cached it
   // once found — so a name set in Info that no relay had confirmed never
   // reached the tab, across restarts. The name is the node's (node.card,
@@ -253,7 +122,6 @@
     renderDesktop();
     paintTitlebarChrome();
     renderActive();
-    openBinderIfUnbound();
   }
 
   var preferencesRaw = spirit.core.fs.loadFile('preferences.json');
@@ -705,7 +573,6 @@
       var app = apps[id];
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
       if (!serverUp(app)) return; // its server is not running (goal/G27.16)
-      if (hiddenByFirstRun(id)) return; // an unbound node has one thing to do
       if (!shownByInclusion(id)) return; // not included on this node (slim/G1.7)
       // An intrinsic app is excluded here like any other grouped app —
       // effectiveGroup returns Spirit for it, and that is where its icon
@@ -723,7 +590,6 @@
   function listApps() {
     return Object.keys(apps)
       .filter(function (id) { return !apps[id]._isGroup; })
-      .filter(function (id) { return !hiddenByFirstRun(id); })
       .map(function (id) {
       var app = apps[id];
       return {
@@ -761,7 +627,7 @@
     // Filtered here rather than where the member list is written, so
     // index.html keeps the one list of ids and this stays the one rule
     // about showing them.
-    appIds.filter(function (id) { return !hiddenByFirstRun(id); }).forEach(function (id) {
+    appIds.forEach(function (id) {
       if (!apps[id] || drawn[id]) return;
       // Only what this node includes (slim/G1.7), as on the desktop.
       if (!shownByInclusion(id)) return;
@@ -2847,7 +2713,7 @@
   // needs a reload to be discovered, same as you'd already expect for
   // a new process manifest.
   //
-  // The id is derived from scriptPath's own folder (for example "shell/natter"), not
+  // The id is derived from scriptPath's own folder (for example "shell/info"), not
   // read from manifest.id — an app's manifest can no longer claim to be
   // whatever id it likes; its identity is the one fact the shell already
   // observed directly via the fs-watcher. manifest.id, if a manifest still
@@ -2942,7 +2808,7 @@
   // its move, alongside its APP_ID_RENAMES entry.
   // The Job Selector is gone (goal/G29.13): nothing it did cannot be done through Files.
   // introSpector (goal/G30.5; Andy, 2026-10-20: "I want an intrinsic app: introSpector").
-  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps', 'files', 'group-manager', 'contacts', 'info', 'introSpector'];
+  var INTRINSIC_APP_FOLDERS = ['stats', 'jobs', 'apps', 'files', 'group-manager', 'contacts', 'info', 'introSpector'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {
@@ -3065,9 +2931,7 @@
   // And on a node with no name, the binder is what "opened" means. Asked
   // of the node first: a binder opened before the name arrived would sit
   // on top of a node that has one.
-  var nameAsked = askNodeName();
-  if (nodeNameAsking) nameAsked.then(openBinderIfUnbound);
-  else openBinderIfUnbound();
+  askNodeName();
 
   // ── OPENED FROM THE JOIN MAIL (goal/G30.2) ───────────────────────────
   //

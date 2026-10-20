@@ -122,10 +122,10 @@ expectLoads('js/peerFile.js', 'js/peerFile.js');
 // App Builder era's refusal is gone, and an intrinsic app is fenced by the
 // commit hook, not the gate. The verdict is asked; nothing is written.
 test.subHeading('App code, manifests and app data');
-expectLoads('shell/natter/natter.js (app entry script)', 'shell/natter/natter.js');
-expectWritable('shell/natter/natter.js (app entry script, goal/G14.8)', 'shell/natter/natter.js');
-expectLoads('shell/natter/natter.json (manifest)', 'shell/natter/natter.json');
-expectWritable('shell/natter/natter.json (manifest, goal/G14.8)', 'shell/natter/natter.json');
+expectLoads('shell/info/info.js (app entry script)', 'shell/info/info.js');
+expectWritable('shell/info/info.js (app entry script, goal/G14.8)', 'shell/info/info.js');
+expectLoads('shell/info/info.json (manifest)', 'shell/info/info.json');
+expectWritable('shell/info/info.json (manifest, goal/G14.8)', 'shell/info/info.json');
 
 // Natter's own data is ordinary scoped app data, written via api.fs. It
 // must stay both readable and writable — locking it in a "protect
@@ -138,8 +138,8 @@ expectWritable('shell/natter/natter.json (manifest, goal/G14.8)', 'shell/natter/
 // question about the path. The file is gitignored (a fresh clone has
 // none — see .gitignore), so loading it would pass only on a working copy
 // that happened to hold one (WSL, 2026-09-19).
-expectServable('shell/natter/captions.json (app data)', 'shell/natter/captions.json');
-expectWritable('shell/natter/captions.json (app data)', 'shell/natter/captions.json');
+expectServable('shell/info/captions.json (app data)', 'shell/info/captions.json');
+expectWritable('shell/info/captions.json (app data)', 'shell/info/captions.json');
 
 // ---- process scripts: readable, never writable ----
 // Job Selector/Job Monitor list them, the Code Viewer shows them; writes are already

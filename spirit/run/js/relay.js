@@ -266,6 +266,15 @@ function createRelay(rootDir, deps) {
     if (activeRows[key]) rememberActive(key);
   }
   var ownerKey = auth.loadOwner(rootDir);
+  // THE OWNER HAS A SEAT FROM BOOT (goal/G30.7; Andy, 2026-10-20: "if the owner has no seat/row yet at boot time,
+  // create a seat: label: owner"). A relay owned by owner.json but never claimed on showed Peers 0 and Owner (none),
+  // and refused its owner's rename with no such peer. The row starts with the key and the label owner; his node renames
+  // it like any seat, and his claim on it is taken (claimAttempt).
+  if (ownerKey) {
+    try {
+      if (!store.members.get(ownerKey)) store.members.put({ publicKey: ownerKey, publicLabel: 'owner', claimedAt: new Date().toISOString(), card: '' });
+    } catch (e) { /* a store that cannot be written is said by every verb that needs it */ }
+  }
   // Posts routed, per sender key. The sender is the identity that was
   // RESOLVED, never a name they chose — the reasoning is in the note on
   // `rateOk` below, and it is why the old per-name limit was worthless.
@@ -1357,8 +1366,10 @@ function createRelay(rootDir, deps) {
     if (!publicKey) {
       return { ok: false, status: 400, error: 'claim needs publicKey' };
     }
-    if (findByKey(publicKey)) {
-      return { ok: false, status: 409, error: 'key already claimed', peer: findByKey(publicKey) };
+    // The owner's seat made at boot (goal/G30.7) is his to claim: the claim fills it with his name and card.
+    var held = findByKey(publicKey);
+    if (held && !(ownerClaim && held.publicLabel === 'owner' && !held.card)) {
+      return { ok: false, status: 409, error: 'key already claimed', peer: held };
     }
 
     // ── THE DISC BOUND BITES HERE (cycle 9) ──────────────────────────

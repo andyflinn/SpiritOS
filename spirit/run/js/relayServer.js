@@ -361,6 +361,9 @@ const relay = createRelay.createRelay(undefined, {
 // goal/G22.6), and it is NOT the owner's key — the owner is a peer who
 // claimed, the relay is the box.
 require('./relayAuth').nameIdentity(ROOT_DIR, 'relay');
+// FIRST-RUN DEFAULTS (goal/G30.7): a first description and a first public label, by the node's own rule (serveCommon).
+try { require('./serveCommon').ensureFirstRun(ROOT_DIR, { kind: 'relay' }); }
+catch (e) { /* a caption must never be the reason a relay will not boot */ }
 
 // handleDeviceOffer (POST /api/relay/device) STOOD HERE, removed by
 // goal/G16.2 with the device enrolment.

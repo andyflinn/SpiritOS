@@ -97,7 +97,10 @@ function isSearch(text, ask) {
     got[0].forEach(function (r) { isKinds[r.key] = { kind: 'peer', key: r.key }; });
     var relayRows = got[1].map(function (r) {
       isKinds['relay:' + r.key] = { kind: 'relay', key: r.key };
-      return { key: 'relay:' + r.key, label: 'relay ' + String(r.label || r.key) };
+      // relay.search answers each label as a JSON row (goal/G30.7); its name is what the list shows.
+      var row = null;
+      try { row = JSON.parse(r.label); } catch (e) { row = null; }
+      return { key: 'relay:' + r.key, label: 'relay ' + String((row && row.name) || r.key) };
     });
     var items = (!q || 'self'.indexOf(q.toLowerCase()) === 0 ? [self] : []).concat(got[0], relayRows);
     return { items: items, more: false };

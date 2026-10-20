@@ -141,11 +141,11 @@ function expectEverySpellingWritable(label, canonical) {
   });
 }
 test.subHeading('App entry scripts are writable in every spelling (goal/G14.8)');
-expectEverySpellingWritable('shell/natter/natter.js (intrinsic)', 'shell/natter/natter.js');
+expectEverySpellingWritable('shell/info/info.js (intrinsic)', 'shell/info/info.js');
 expectEverySpellingWritable('shell/textEditor/textEditor.js (not intrinsic)', 'shell/textEditor/textEditor.js');
 
 test.subHeading('App manifests are writable in every spelling (goal/G14.8)');
-expectEverySpellingWritable('shell/natter/natter.json', 'shell/natter/natter.json');
+expectEverySpellingWritable('shell/info/info.json', 'shell/info/info.json');
 
 test.subHeading('Sidecars stay unwritable in every spelling');
 expectEverySpellingUnwritable('a media sidecar', 'media/001.jpg.sidecar.json');
@@ -171,7 +171,7 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
   // only on a working copy that happened to hold one, and went red on the
   // first fresh checkout (WSL, 2026-09-19). relays.json's writability is
   // asserted below, by path, which needs no file.
-  ['shell/./natter/natter.json', 'shell/natter/natter.json'],
+  ['shell/./info/info.json', 'shell/info/info.json'],
 ].forEach(function (pair) {
   const variant = pair[0];
   const canonical = pair[1];
@@ -189,10 +189,10 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
 // app/ data must stay writable in a non-canonical spelling too, for the
 // same reason. It was relays.json; goal/G16.3 made the relay list node
 // state, so Natter's own captions.json is the app data asked about.
-if (fileWritable('shell/./natter/captions.json') === true) {
-  test.check('"shell/./natter/captions.json" is still writable (app data, not an entry script)');
+if (fileWritable('shell/./info/captions.json') === true) {
+  test.check('"shell/./info/captions.json" is still writable (app data, not an entry script)');
 } else {
-  test.fail('"shell/./natter/captions.json" should still be writable — the write gate is now over-blocking');
+  test.fail('"shell/./info/captions.json" should still be writable — the write gate is now over-blocking');
 }
 
 test.reportSuccessFailureCount();

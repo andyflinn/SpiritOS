@@ -98,20 +98,25 @@ function isPublicRelay(url) {
 // add a second public relay and this rule lets spirit-3 go, because by
 // then a public path genuinely survives without it. That is the right
 // moment for the protection to end, and it ends by itself.
-function canRemoveRelay(relays, url) {
-  // A count, from the version before this one. Answered false rather
-  // than guessed at: a caller that still passes a number is asking a
-  // question this rule no longer knows how to answer, and saying no is
-  // the safe half of being wrong.
-  if (!Array.isArray(relays)) return false;
-  var going = String(url || '');
-  // THE FLOOR (goal/G16.3): noderoutes.net is never removed, whatever else
-  // is listed. Andy: "we'll remove the option to delete noderoutes.net".
-  if (normalizeUrl(going) === normalizeUrl(KEPT_RELAY.url)) return false;
-  return relays.some(function (row) {
-    var u = String((row && row.url) || row || '');
+// WHY A RELAY MAY NOT COME OFF THE LIST, or '' when it may (goal/G30.7). rows are the list's rows; a row may say owned
+// (this node owns that relay) and claimed (this node holds a seat there). Andy, 2026-10-20: "Owning a relay or holding a
+// seat there should block it from being removed", with the sentences below.
+var REFUSE_OWNED = 'you cannot remove a relay you own';
+var REFUSE_SEATED = 'you must remove yourself from this relay before you can remove the relay from your contacts';
+function removalRefusal(relays, url) {
+  // A count, from the version before this one, is a question this rule no longer answers: no is the safe half of wrong.
+  if (!Array.isArray(relays)) return 'this node must keep one public relay';
+  var going = normalizeUrl(String(url || ''));
+  // THE FLOOR (goal/G16.3): noderoutes.net is never removed. Andy: "we'll remove the option to delete noderoutes.net".
+  if (going === normalizeUrl(KEPT_RELAY.url)) return 'noderoutes.net is kept on every node';
+  var row = relays.filter(function (r) { return normalizeUrl(String((r && r.url) || r || '')) === going; })[0] || null;
+  if (row && row.owned) return REFUSE_OWNED;
+  if (row && row.claimed) return REFUSE_SEATED;
+  var another = relays.some(function (r) {
+    var u = normalizeUrl(String((r && r.url) || r || ''));
     return u !== going && isPublicRelay(u);
   });
+  return another ? '' : 'this node must keep one public relay';
 }
 
 // ── THE LIST IS THE NODE'S OWN STATE (goal/G16.3) ────────────────────
@@ -190,7 +195,23 @@ var SEED_RELAYS = [KEPT_RELAY];
 function ensureRelays(rootDir) {
   try { relayKeys.assertSeeds(rootDir, SEED_RELAYS); }
   catch (e) { return []; }
+  notePeers(rootDir);
   return loadRelays(rootDir);
+}
+
+// EVERY LISTED RELAY IS A PEER (goal/G30.7, relays are peers): in the shadow, a relay whose route is its own url, so the
+// peer search finds it. At boot for the whole list (the seed included, so a new node finds noderoutes.net), and on every
+// relay a claim adds (Andy, 2026-10-20: "and natter itself, when i add a relay, stashes that relay in the peer-list
+// now?"). Known by its pinned key, so noted as arrived, not as hearsay; a url with no key yet is left out.
+function notePeers(rootDir) {
+  try {
+    var seen = require('./seenPeers');
+    var S = require('./hub').shadow(rootDir);
+    loadRelays(rootDir).forEach(function (r) {
+      var key = relayKeys.pinned(rootDir, r.url);
+      if (key) S.note(key, { label: r.label, at: r.url, url: r.url, kind: 'relay', rank: seen.ARRIVED });
+    });
+  } catch (e) { /* the relay list stands without its shadow rows; the next boot notes them again */ }
 }
 
 // A SUCCESSFUL CLAIM IS WHAT ADDS A RELAY (goal/G16.3, Andy's Q4 above).
@@ -206,28 +227,33 @@ function addRelay(rootDir, url, label, relayKey) {
   var u = normalizeUrl(url);
   if (!u) return loadRelays(rootDir);
   relayKeys.list(rootDir, u, label, relayKey);
+  notePeers(rootDir);
   return loadRelays(rootDir);
 }
 
 // relay.remove's whole effect, under the rule the screen has always
-// obeyed (canRemoveRelay): the node keeps one public relay. Asked here as
+// obeys (removalRefusal): noderoutes.net stays, an owned or seated relay stays, the node keeps one public relay. Asked here as
 // well as in the browser, because the node is the list's only writer and
 // a rule enforced only by a screen is a suggestion.
-function removeRelay(rootDir, url) {
+// opts.owned: whether this node owns that relay, which only the node's live view of its relays knows (hub.relayRemove).
+// The seat is this node's own record (relayKeys).
+function removeRelay(rootDir, url, opts) {
   var u = normalizeUrl(url);
-  var rows = loadRelays(rootDir);
+  var rows = loadRelays(rootDir).map(function (r) {
+    var row = { url: r.url, label: r.label };
+    if (r.url === u) {
+      row.owned = !!(opts && opts.owned);
+      // A seat the relay has refused is gone already (goal/G19.1): only a seat it still honours blocks the removal.
+      row.claimed = !!relayKeys.seatLabel(rootDir, r.url) && !relayKeys.refusal(rootDir, r.url);
+    }
+    return row;
+  });
   if (!u) return { ok: false, status: 400, error: 'key required' };
   if (!rows.some(function (r) { return r.url === u; })) {
     return { ok: false, status: 404, error: 'no such relay' };
   }
-  // The kept relay, by name (Andy above: "we'll remove the option to
-  // delete noderoutes.net").
-  if (u === normalizeUrl(KEPT_RELAY.url)) {
-    return { ok: false, status: 409, error: 'noderoutes.net is kept on every node' };
-  }
-  if (!canRemoveRelay(rows, u)) {
-    return { ok: false, status: 409, error: 'this node must keep one public relay' };
-  }
+  var why = removalRefusal(rows, u);
+  if (why) return { ok: false, status: 409, error: why };
   relayKeys.unlist(rootDir, u);
   return { ok: true, status: 200, key: u };
 }
@@ -474,7 +500,7 @@ function chooseUrl(urls, wanted) {
 if (isNode) {
   module.exports = {
     normalizeUrl: normalizeUrl,
-    canRemoveRelay: canRemoveRelay,
+    removalRefusal: removalRefusal,
     isPublicRelay: isPublicRelay,
     loadRelays: loadRelays,
     ensureRelays: ensureRelays,
@@ -495,7 +521,7 @@ if (isNode) {
 } else if (typeof window !== 'undefined') {
   window.spiritOwnerBadge = {
     normalizeUrl: normalizeUrl,
-    canRemoveRelay: canRemoveRelay,
+    removalRefusal: removalRefusal,
     isPublicRelay: isPublicRelay,
   };
 }

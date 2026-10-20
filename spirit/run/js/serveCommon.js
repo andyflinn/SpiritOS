@@ -333,7 +333,43 @@ function refuseListenError(server, port, entry) {
   });
 }
 
+// ── FIRST-RUN DEFAULTS, FOR A NODE AND A RELAY ALIKE (goal/G30.7) ────────
+//
+//   Andy, 2026-10-20: "shouldn't the relay: on boot, like a node, make sure it has a default description", and
+//   "doesn't that kind of stuff belong in serverCommon?"
+//
+// The node's own rule, moved here from nodeCard (ensureDescription):
+//   Andy: "on boot: the node should fill the description 'this node described for the first time [date / time
+//   string].' this gives likely different strings by default."
+// ONCE, AND ONLY INTO A GAP: it runs on every boot and writes only a blank, so nothing a person typed is ever
+// overwritten by a restart. TO THE SECOND and in UTC, because it is read by a person and two boxes minted in one second
+// are a collision worth having.
+//
+// A RELAY GETS A FIRST PUBLIC LABEL TOO: its identity's name, when it is empty or the installer's word 'relay' (a type,
+// not a caption), becomes 'relay' and its key tail (kernel keyTail), so no two relays read alike by default.
+function firstDescription(kind, now) {
+  const at = (now instanceof Date ? now : new Date()).toISOString();
+  // 2026-09-17T14:23:07.123Z -> 2026-09-17 14:23:07 UTC
+  return 'this ' + kind + ' described for the first time ' + at.slice(0, 10) + ' ' + at.slice(11, 19) + ' UTC';
+}
+function ensureFirstRun(rootDir, opts) {
+  const auth = require('./relayAuth');
+  const kind = opts && opts.kind === 'relay' ? 'relay' : 'node';
+  const id = auth.loadIdentity(rootDir);
+  if (!id || !id.publicKey) return null;
+  // Through the ordinary setter, so the one thing written without a human present obeys every rule a human's would.
+  if (!String(id.description || '').trim()) auth.setDescription(rootDir, firstDescription(kind, opts && opts.now));
+  if (kind === 'relay') {
+    const now = auth.loadIdentity(rootDir);
+    const name = String(now.name || '').trim();
+    if (!name || name === 'relay') auth.saveIdentity(rootDir, Object.assign({}, now, { name: 'relay ' + spirit.keyTail(now.publicKey) }));
+  }
+  return auth.loadIdentity(rootDir);
+}
+
 module.exports = {
+  ensureFirstRun: ensureFirstRun,
+  firstDescription: firstDescription,
   bodyBytes: bodyBytes,
   verifyStartupCwd: verifyStartupCwd,
   portFromArgs: portFromArgs,

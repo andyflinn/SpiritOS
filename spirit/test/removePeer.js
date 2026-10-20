@@ -262,8 +262,9 @@ function run() {
   auth.writeOwner(legacyHome, L.owner.publicKey);
 
   const ignored = createRelay(legacyHome);
-  if (labels(ignored) === '') {
-    test.check('a home holding only the old filename opens with no roster at all');
+  // Since goal/G30.7 a relay seats its owner at boot, labelled owner: that one seat, and nothing from the old file.
+  if (labels(ignored) === 'owner') {
+    test.check('a home holding only the old filename opens with no roster but the owner\'s boot seat');
   } else {
     test.fail('the old name was still read: ' + labels(ignored));
   }

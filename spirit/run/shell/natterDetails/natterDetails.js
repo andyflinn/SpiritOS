@@ -85,7 +85,7 @@ var ndLabel = '';       // this node's own name, needed to sign a status ask
 var ndMinted = '';      // a label minted while this screen was open
 var ndChanged = false;  // has anything happened the list must repaint for?
 var ndRelayLabel = '';  // what the LIST calls this relay, for the title
-var ndCanRemove = false; // Natter's answer: may this relay come off the list?
+var ndRelayNamed = '';  // the public label the relay just confirmed, until the node's next read of its card says it
 
 // WHICH ONE PANEL IS OPEN. '' means none, and none is how the screen
 // arrives.
@@ -396,11 +396,7 @@ function ndLocalHtml() {
 function ndRefusedHtml(refused) {
   var since = new Date(refused.at);
   var when = isNaN(since.getTime()) ? String(refused.at || 'an unknown time') : since.toLocaleString();
-  var remove = ndCanRemove
-    ? '<div class="start-job-form"><button type="button" class="cancel-btn nd-remove">Remove this relay</button></div>' +
-      '<div class="job-manifest-note">Remove takes it off this node\'s list and gives up the seat record here.</div>'
-    : '<div class="job-manifest-note">It cannot be removed: this node must keep the relay it is last on, ' +
-      'and noderoutes.net is kept on every node.</div>';
+  var remove = ndRemoveBody();
   return '<div class="stat-tile wide">' +
     '<div class="panel-heading">' + ndIcon.WARNING + ' This relay refused this node</div>' +
     '<div>Since ' + ndEscapeHtml(when) + ' it has answered “' +
@@ -413,17 +409,39 @@ function ndRefusedHtml(refused) {
     '</div>';
 }
 
-// Two presses, then the decision goes back to Natter, which performs it
-// through relay.remove (the list is the node's, and Natter is the list).
+// WHETHER THIS RELAY MAY COME OFF THE LIST, asked here (goal/G30.7, Natter retired): the one rule the node enforces too,
+// ownerBadge.removalRefusal, over the list's rows as ndLoad holds them (owned, claimed). '' when it may.
+function ndRemoveRefusal() {
+  var badge = window.spiritOwnerBadge;
+  if (!badge || typeof badge.removalRefusal !== 'function') return 'this page cannot tell whether it may be removed';
+  return badge.removalRefusal(ndRows, ndUrl);
+}
+function ndRemoveBody() {
+  var why = ndRemoveRefusal();
+  if (why) return '<div class="job-manifest-note">It cannot be removed: ' + ndEscapeHtml(why) + '.</div>';
+  return '<div class="start-job-form"><button type="button" class="cancel-btn nd-remove">Remove this relay</button></div>' +
+    '<div class="job-manifest-note nd-remove-out">Remove takes it off this node\'s list and gives up the seat record here.</div>';
+}
+function ndRemoveHtml() {
+  return ndPanel('remove', ndIcon.WARNING, 'Remove this relay from your list', ndRemoveBody());
+}
+
+// Two presses, then relay.remove, here (goal/G30.7: Natter, which performed it, is gone). The node asks the same rule.
 function ndRemove(button) {
-  if (!ndCanRemove) return;
+  if (ndRemoveRefusal()) return;
   if (button.getAttribute('data-armed') !== 'yes') {
     button.setAttribute('data-armed', 'yes');
     button.textContent = 'Press again to remove';
     return;
   }
   button.removeAttribute('data-armed');
-  if (ndApi) ndApi.closeDialog({ changed: true, url: ndUrl, remove: true });
+  if (!ndApi) return;
+  ndApi.verb('relay.remove', { key: ndUrl }).then(function (r) {
+    var said = (r && r.body) || {};
+    if (said.ok) { ndApi.closeDialog({ changed: true, url: ndUrl, removed: true }); return; }
+    var out = document.querySelector('.nd-remove-out');
+    if (out) out.textContent = 'not removed: ' + (said.error || 'no answer');
+  });
 }
 
 function ndReportHtml() {
@@ -541,7 +559,9 @@ function ndGovernorFacts(report) {
   }
   var lever = report.levers && report.levers.connections1;
   if (lever) {
-    rows.push(['Connections', lever.position + ' — allowing ' + lever.allowed +
+    // The lever's readOut (lever.js) is {value, floor, ceiling, ...}: the allowance is its value, as relayMonitor
+    // reads it (goal/G30.7; it read position and allowed, which the relay has not sent since cycle 1).
+    rows.push(['Connections', 'allowing ' + lever.value +
       ' (floor ' + lever.floor + ', ceiling ' + lever.ceiling + ')']);
   }
   var d = report.decision;
@@ -931,7 +951,8 @@ function ndOwnerGroupHtml(inner) {
 function ndRelayLabelHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
   var roll = ndBadge.roll || {};
-  var now = roll.relayLabel || '';
+  // The relay's own label as its card said (goal/G30.7), or the one it just confirmed while the node's copy catches up.
+  var now = ndRelayNamed || roll.relayLabel || '';
   return ndPanel('relaylabel', ndIcon.INFO, 'Change what this relay is called',
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Public label of this relay' +
@@ -969,6 +990,7 @@ function ndSetRelayLabel(button) {
     var said = r && r.reply;
     if (r && r.ok && said && said.ok !== false) {
       say('this relay is called ' + (said.label || wanted) + ' now');
+      ndRelayNamed = String(said.label || wanted);
       ndChanged = true;
       ndLoad();
       return;
@@ -1212,7 +1234,8 @@ function ndRender() {
     ndOwnerGroupHtml(
       ndRelayLabelHtml() +
       ndInvitePanel()
-    );
+    ) +
+    ndRemoveHtml();
     // The device panel was removed by goal/G16.2 with the device enrolment.
 }
 
@@ -1649,13 +1672,11 @@ spirit.shell.activateApp({
   // inside.
   open: function (params) {
     ndUrl = (params && params.url) || '';
+    ndRelayNamed = '';
     ndLabel = (params && params.label) || '';
     // The list's caption for this relay. It is the list's to know — this
     // screen is handed one subject and never searches the relay list.
     ndRelayLabel = (params && params.relayLabel) || '';
-    // The list's rule (ownerBadge.canRemoveRelay), asked by Natter, which
-    // knows the list; this screen never counts rows.
-    ndCanRemove = !!(params && params.canRemove === true);
     ndBadge = null;
     // Opening a second relay must show "asking" again, not the previous
     // relay's answer wearing this one's name.

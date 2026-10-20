@@ -47,11 +47,12 @@ if (intrinsic && !/process-browser/.test(intrinsic)) test.check('the shell\'s in
 else test.fail(OWED + 'INTRINSIC_APP_FOLDERS reads ' + intrinsic);
 
 test.subHeading('3. its tests say it is gone');
-const tests = ['natterIntrinsic.js', 'fsWatcherCommands.js'].filter(function (t) {
+// natterIntrinsic.js went with the Natter app (goal/G30.7).
+const tests = ['fsWatcherCommands.js'].filter(function (t) {
   const src = fs.readFileSync(path.join(__dirname, t), 'utf8');
   return /readRun\('shell\/process-browser|'shell\/process-browser\/process-browser\.js'\]|PROCESS_SCRIPT = 'shell\/process-browser/.test(src);
 });
-if (!tests.length) test.check('natterIntrinsic and fsWatcherCommands no longer read the app');
+if (!tests.length) test.check('fsWatcherCommands no longer reads the app');
 else test.fail(OWED + 'still reading the app: ' + tests.join(', '));
 
 test.subHeading('4. what stays');

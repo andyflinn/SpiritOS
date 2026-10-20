@@ -260,7 +260,7 @@ test.subHeading('7. node bookkeeping is not written into the Contacts app\'s fol
 // delete noderoutes.net". A relay that cannot go is a floor, so the rule that stops somebody deleting their last
 // relay needs no notion of which relay has ever answered — there is always one left by construction.
 //
-// Asserted on canRemoveRelay, the rule the screens ask, rather than on a screen: that is where the floor has to
+// Asserted on removalRefusal (canRemoveRelay until goal/G30.7), the rule the screens ask, rather than on a screen: that is where the floor has to
 // hold, whatever Natter grows later. (No screen offers remove today, so a check on the button would assert
 // nothing.)
 test.subHeading('8. noderoutes.net cannot be removed, so a node always keeps one way in');
@@ -269,7 +269,7 @@ test.subHeading('8. noderoutes.net cannot be removed, so a node always keeps one
   const other = 'https://spirit.andyflinn.com';
   const both = [{ label: 'noderoutes', url: pinned }, { label: 'spirit', url: other }];
 
-  if (ownerBadge.canRemoveRelay(both, pinned) === false) {
+  if (ownerBadge.removalRefusal(both, pinned) !== '') {
     test.check('the floor holds: noderoutes.net cannot be removed even with another public relay beside it');
   } else {
     test.fail(OWED + 'noderoutes.net can still be removed, so a node can be left with no floor at all');
@@ -277,14 +277,14 @@ test.subHeading('8. noderoutes.net cannot be removed, so a node always keeps one
 
   // AND THE OTHER ONE STILL GOES. A floor that froze the whole list would be a different bug: somebody who
   // joins their own relay must still be able to drop a public one they do not want.
-  if (ownerBadge.canRemoveRelay(both, other) === true) {
+  if (ownerBadge.removalRefusal(both, other) === '') {
     test.check('and the other public relay can still be removed, so the floor is one row, not the list');
   } else {
     test.fail(OWED + 'no public relay can be removed any more: the floor froze the whole list');
   }
 
   // A LIST OF ONLY THE FLOOR: nothing to remove, and nothing to be left with.
-  if (ownerBadge.canRemoveRelay([{ label: 'noderoutes', url: pinned }], pinned) === false) {
+  if (ownerBadge.removalRefusal([{ label: 'noderoutes', url: pinned }], pinned) !== '') {
     test.check('and a node holding only the floor cannot empty itself');
   } else {
     test.fail(OWED + 'a node holding only noderoutes.net could remove it and keep nothing');

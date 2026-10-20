@@ -249,7 +249,8 @@ function open(rootDir, opts) {
       present   INTEGER NOT NULL DEFAULT 0,
       seen      INTEGER NOT NULL DEFAULT 0,
       choice    TEXT    NOT NULL DEFAULT '',
-      blocked   INTEGER NOT NULL DEFAULT 0
+      blocked   INTEGER NOT NULL DEFAULT 0,
+      kind      TEXT    NOT NULL DEFAULT 'node'
     );
     CREATE INDEX IF NOT EXISTS seen_when ON seen (seen);
   `);
@@ -531,6 +532,8 @@ function open(rootDir, opts) {
     // its marks on its next save, and the node saves it at boot.
     if (cols.indexOf('choice') === -1) db.exec("ALTER TABLE seen ADD COLUMN choice TEXT NOT NULL DEFAULT ''");
     if (cols.indexOf('blocked') === -1) db.exec("ALTER TABLE seen ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0");
+    // RELAYS ARE PEERS (goal/G30.7): a row says whether it is a node or a relay; every row before it is a node.
+    if (cols.indexOf('kind') === -1) db.exec("ALTER TABLE seen ADD COLUMN kind TEXT NOT NULL DEFAULT 'node'");
 
     // THE OLD SINGLE ROUTE BECOMES A ROW IN THE NEW TABLE, at rank 4 and
     // with no `via`: nothing recorded which door proved it, and claiming
@@ -673,8 +676,8 @@ function open(rootDir, opts) {
     // all along — "WHITE is NOT a dimmer red. A contact we share no relay
     // with is not offline, they are UNSEEN" — and 0019 rests on the same
     // distinction. Two states could not hold it.
-    put: db.prepare(`INSERT INTO seen (publicKey, label, labelRank, labelAt, present, seen)
-      VALUES (?, ?, ?, ?, ?, ?)
+    put: db.prepare(`INSERT INTO seen (publicKey, label, labelRank, labelAt, present, seen, kind)
+      VALUES (?, ?, ?, ?, ?, ?, CASE WHEN ? = '' THEN 'node' ELSE ? END)
       ON CONFLICT(publicKey) DO UPDATE SET
         label     = CASE WHEN excluded.label <> '' AND excluded.labelRank <= seen.labelRank
                          THEN excluded.label ELSE seen.label END,
@@ -683,7 +686,8 @@ function open(rootDir, opts) {
         labelAt   = CASE WHEN excluded.label <> '' AND excluded.labelRank <= seen.labelRank
                          THEN excluded.labelAt ELSE seen.labelAt END,
         present   = CASE WHEN excluded.present < 0 THEN seen.present ELSE excluded.present END,
-        seen      = excluded.seen`),
+        seen      = excluded.seen,
+        kind      = CASE WHEN ? = '' THEN seen.kind ELSE excluded.kind END`),
     del: db.prepare('DELETE FROM seen WHERE publicKey = ?'),
     count: db.prepare('SELECT COUNT(*) AS n FROM seen'),
     // ── ONE EVICTION, AND THE MARK DECIDES WHO IS IN LINE (0021) ─────
@@ -752,6 +756,8 @@ function open(rootDir, opts) {
       WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name IN ('seen', 'seen_routes'))`),
   };
 
+  // A row is a node or a relay (goal/G30.7); a caller that says neither leaves the row as it is.
+  function kindOf(k) { return k === 'relay' || k === 'node' ? k : ''; }
   function row(r) {
     if (!r) return null;
     return {
@@ -762,6 +768,7 @@ function open(rootDir, opts) {
       seen: r.seen,
       choice: r.choice || '',
       blocked: !!r.blocked,
+      kind: r.kind || 'node',
     };
   }
   function relayRow(r) {
@@ -861,7 +868,7 @@ function open(rootDir, opts) {
         const present = w.present === true ? 1 : (w.present === false ? 0 : -1);
         q.put.run(String(publicKey || ''),
           String(w.label || ''), Number(w.labelRank || 4), Number(w.labelAt || w.seen || 0),
-          present, Number(w.seen || 0));
+          present, Number(w.seen || 0), kindOf(w.kind), kindOf(w.kind), kindOf(w.kind));
         return row(q.get.get(String(publicKey || '')));
       },
       // ── ROUTES ───────────────────────────────────────

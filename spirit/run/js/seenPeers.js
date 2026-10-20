@@ -223,7 +223,7 @@ function createSeenPeers(opts) {
     // own stamp); everybody else is stamped now.
     var now = (what && typeof what.seen === 'number' && what.seen > 0) ? what.seen : nowFn();
     rows.put(key, {
-      label: label, labelRank: rank, labelAt: now,
+      label: label, labelRank: rank, labelAt: now, kind: (what && what.kind) || '',
       present: hasPresence ? present : undefined, seen: now,
     });
     // A ROUTE IS A SEPARATE ROW, because it is a separate thing: through
@@ -254,6 +254,7 @@ function createSeenPeers(opts) {
       seen: row.seen,
       choice: row.choice,
       blocked: row.blocked,
+      kind: row.kind || 'node',
     };
   }
 

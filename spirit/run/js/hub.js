@@ -2158,6 +2158,8 @@ function createHub(rootDir) {
       return {
         publicKey: c.publicKey,
         publicLabel: c.publicLabel,
+        // A node or a relay (goal/G30.7, relays are peers): the Contacts list filters on it.
+        kind: best.kind || 'node',
         tail: keyTail(c.publicKey),
         atKey: best.at || '',
         relay: best.url || '',
@@ -2617,10 +2619,10 @@ function createHub(rootDir) {
   //   roll.myLabel, claimedLabel      the seat label recorded at claim
   //   roll.ownerKey, roll.owner       this node's key and seat label when owned
   //
-  // What only the relay's card said is not known here and is left empty,
-  // never fetched: the relay's own label (roll.relayLabel), and who owns a
-  // relay this node does not own (roll.ownerKey, roll.owner). Every reader
-  // already falls back on the list's label for the first.
+  // The relay's own label (roll.relayLabel) is what its last card said, kept
+  // by peerPost beside its services (labelOf, goal/G30.7), never fetched
+  // here. Who owns a relay this node does not own (roll.ownerKey,
+  // roll.owner) is not known here and is left empty.
   function relaySummary(router) {
     var me = auth.loadIdentity(rootDir);
     var held = Object.create(null);
@@ -2651,7 +2653,8 @@ function createHub(rootDir) {
           owner: row.owned ? seatLabel : '',
           ownerKey: row.owned ? me.publicKey : '',
           relayKey: relayKeys.pinned(rootDir, url),
-          relayLabel: '',
+          // The relay's own public label, as its card said (goal/G30.7).
+          relayLabel: router && typeof router.labelOf === 'function' ? router.labelOf(url) : '',
           myLabel: seatLabel,
         };
         row.claimedLabel = seatLabel;
@@ -2666,12 +2669,16 @@ function createHub(rootDir) {
     });
     return Promise.resolve(ownerBadge.summarize(rows));
   }
-  function relayLabel(row) {
+  // ONE RELAY AS A ROW, JSON, as every shared search answers (goal/G30.7): the list search (listSearch.js) parses each
+  // label as the row it paints. name is the list's label, or the host when it has none, never the whole url.
+  // text keeps the label as ruled (Andy, 2026-09-27: "label = its name plus what's true of it, e.g. 'spirit-3 — yours,
+  // online', 'lab — member, offline'"), inside the row now rather than as the whole label.
+  function relayRow(row) {
     var who = row.refused ? 'refused this node' : (row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined'));
-    var up = row.status === 200 ? 'online' : 'offline';
-    // A relay with no name goes by its host, never its whole url.
     var name = row.label || String(row.url || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '');
-    return name + ' — ' + who + ', ' + up;
+    var up = row.status === 200 ? 'online' : 'offline';
+    return { url: String(row.url || ''), name: name, text: name + ' — ' + who + ', ' + up, who: who, online: row.status === 200, owned: !!row.owned,
+      claimed: !!row.claimed, refused: !!row.refused, relayLabel: (row.roll && row.roll.relayLabel) || '' };
   }
 
   // ── RANKED, NOT FILTERED (goal/G19.17) ──────────────────────────────
@@ -2701,10 +2708,11 @@ function createHub(rootDir) {
       for (var i = 0; i < summary.rows.length; i += 1) {
         if (i >= RELAY_SEARCH_SCANNED) { more = true; break; }
         var row = summary.rows[i];
-        var pair = { key: String(row.url), label: relayLabel(row) };
+        var shown = relayRow(row);
+        var pair = { key: String(row.url), label: JSON.stringify(shown) };
         // One pair too big for the answer alone is skipped and said by more.
         if (Buffer.byteLength(JSON.stringify([pair]), 'utf8') > RELAY_SEARCH_ROOM) { more = true; continue; }
-        bucket.seatFor(text ? probabilityStringObjectMatch(text, { label: pair.label, url: pair.key }) : 0, pair);
+        bucket.seatFor(text ? probabilityStringObjectMatch(text, { label: shown.name, url: pair.key }) : 0, pair);
       }
       var r = bucket.serialize(null, RELAY_SEARCH_ROOM);
       // One fact about this node, never a row: it owns more than one relay
@@ -2727,8 +2735,12 @@ function createHub(rootDir) {
   // AND IT GIVES UP THE SEAT (goal/G19.1). Andy, 2026-10-12: "only the
   // node's user removes a relay, never the last one". The pin stays, so a
   // later claim there still knows who that relay is.
-  function relayRemove(body) {
-    var out = ownerBadge.removeRelay(rootDir, String((body && body.key) || ''));
+  // Owned is what the relay's owner report says, as relaySummary reads it (goal/G30.7: an owned relay stays listed).
+  function relayRemove(body, deps) {
+    var url = ownerBadge.normalizeUrl(String((body && body.key) || ''));
+    var router = deps && deps.router;
+    var reports = router && typeof router.relayStatus === 'function' ? (router.relayStatus() || {}) : {};
+    var out = ownerBadge.removeRelay(rootDir, url, { owned: !!reports[url] });
     if (out.ok) {
       try { relayKeys.unseat(rootDir, out.key); }
       catch (e) { /* the relay is off the list; a seat left on disk is never probed */ }
