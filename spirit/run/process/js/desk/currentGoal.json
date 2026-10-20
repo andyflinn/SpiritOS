@@ -1,5 +1,5 @@
 {
- "change": 75661,
+ "change": 75662,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -6300,10 +6300,9 @@
    "id": "goal/G30.7",
    "title": "Fix Shell problems related to face-name and email first",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
