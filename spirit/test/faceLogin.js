@@ -171,6 +171,38 @@ if (/face\.json/.test(setup) && /on_demand/.test(setup) && /\/face\/allowed/.tes
   test.check('bash/face-setup writes face.json and a Caddy block with on-demand certificates asked of /face/allowed');
 else test.fail(OWED + 'bash/face-setup is missing, or writes no face.json or on-demand Caddy block');
 
+test.subHeading('5. the face looks and feels like the shell, in green (box v14)');
+// NAMED HERE: the shell's styles leave index.html for spirit/run/shell.css, its blues as variables on :root
+// (--shell-*); the face loads the same sheet (/face/shell.css) and spirit/run/face/face.css, which sets those
+// variables green. face.html has the shell's skeleton; the face shell opens the login app at once when logged out;
+// the login app draws its steps as Join does.
+const rawFile = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8'); } catch (e) { return ''; } };
+const index = rawFile('index.html');
+const sheet = rawFile('shell.css');
+const faceSheet = rawFile('face/face.css');
+const rootVars = ((/:root\s*\{([^}]*)\}/.exec(sheet) || [])[1] || '');
+const outsideRoot = sheet.replace(/:root\s*\{[^}]*\}/, '');
+if (sheet.length > 10000 && /#desktop\s*\{/.test(sheet) && /<link rel="stylesheet" href="\/shell\.css"/.test(index) && !/#desktop\s*\{/.test(index)
+    && /--shell-/.test(rootVars) && !/#1a1a2e|#16213e|#0f3460|#16487a/i.test(outsideRoot))
+  test.check('the shell\'s styles are one stylesheet, shell.css, linked by index.html; its blues are --shell-* variables on :root');
+else test.fail(OWED + 'the shell\'s styles are not one shared sheet with its blues as variables');
+const faceVars = ((/:root\s*\{([^}]*)\}/.exec(faceSheet) || [])[1] || '');
+const varNames = (rootVars.match(/--shell-[a-z0-9-]+/g) || []);
+if (varNames.length && varNames.every(function (v) { return faceVars.indexOf(v) !== -1; }) && /'\/face\/shell\.css':\s*'\.\.\/shell\.css'/.test(code('js/relayServer.js')) && /'\/face\/face\.css'/.test(code('js/relayServer.js')))
+  test.check('face.css sets every --shell-* variable green, and the relay serves both sheets to the face');
+else test.fail(OWED + 'face.css does not set every shell variable, or the relay does not serve the sheets: ' + short(varNames));
+const fh = rawFile('face.html');
+if (/href="\/face\/shell\.css"/.test(fh) && /href="\/face\/face\.css"/.test(fh) && /id="desktop"/.test(fh) && /id="app-container"/.test(fh) && /id="app-header"/.test(fh)
+    && /id="app-close"/.test(fh) && /id="app-home"/.test(fh) && /id="app-title"/.test(fh) && /id="app-content"/.test(fh) && !/<style/.test(fh))
+  test.check('face.html is the shell\'s skeleton (desktop, title bar with Back and Home, app screen) on the shared sheets, with no style of its own');
+else test.fail(OWED + 'face.html is not the shell\'s skeleton on the shared sheets');
+const fs2 = code('face/shell.js');
+const la = code('face/login/login.js');
+if (/app-icon/.test(fs2) && /!state\.loggedIn|!\(state && state\.loggedIn\)|loggedIn === false/.test(fs2) && /openApp\(\)/.test(fs2)
+    && /join-steps/.test(la) && /stat-tile wide/.test(la) && /start-job-form card/.test(la) && /field-label/.test(la))
+  test.check('the face shell opens the login app at once when logged out, and the login app draws its steps as Join does');
+else test.fail(OWED + 'the face shell does not open the login app at once, or the login app does not draw as Join');
+
 homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
 test.reportSuccessFailureCount();
 process.exit(0);
