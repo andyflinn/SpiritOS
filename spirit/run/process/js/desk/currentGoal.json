@@ -1,5 +1,5 @@
 {
- "change": 76118,
+ "change": 76143,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.1"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -44,8 +45,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 1,
+   "design": true,
+   "waiting": 2,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -53,9 +54,7 @@
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -448,6 +447,12 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-19T10:45:29.556Z",
      "text": "goal run on 6 suites: all green (at d0e62a72, pull failed: fatal: Cannot fast-forward to multiple branches.)"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T14:58:19.420Z",
+     "text": "need a break. ttyl. signoff."
     }
    ]
   },
@@ -455,10 +460,11 @@
    "id": "goal/G30.1",
    "title": "Negotiating face-name and email between node and relay",
    "goal": "goal/G30",
-   "status": "closed",
+   "status": "deskVerify passed",
    "with": "",
    "buttons": [
-    "reopen"
+    "done",
+    "delete"
    ],
    "blocking": [
     "goal/G30"
@@ -468,7 +474,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -673,7 +679,7 @@
     "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude"
    },
-   "asks": 0,
+   "asks": 1,
    "half": true,
    "full": false,
    "box": "LEFT TO DO: a member's (or the owner's) verified email on a relay, added and changed through the join loop, and the Join app that walks a new user from joining to his face link.\n\n- The join form in natterDetails is always there, for a seated member and the owner too, its label reading \"Add email address\" while the node holds none for that relay, \"Change email address\" once it does. The email input shows the verified address held for that relay, so he sees whether a change is needed. After he sends it, the form says that an email in his inbox at the entered address holds a confirmation link.\n- The relay takes a repeat join from a key already seated as an email update: the same mail, link and code, 10 minutes and caps. Only when the code is confirmed does it write the address on that member's row, verified (members.email and members.emailVerified, new columns); until then the old email stands. It takes no seat, renames nobody and is not refused for a full relay.\n- A first join writes the joined address on the new member's row the same way, verified.\n- joinConfirm brings the address and the flag back, sealed to the node, which keeps them on that relay's row in node.db (relays.email and relays.emailVerified, new columns); natterDetails reads the label from it.\n- One verified email per member on a relay; not unique across members.\n- relay.face is {url, name}: the email is dropped from the verb. The relay pairs the face name with the verified email it holds for the calling key, and refuses a member with none (add an email in Natter first); the answer stays {name, email}.\n- Info's face section loses its email field and shows the verified email beside the face.\n- Info draws no face form for a relay with no verified email. In its place it says to verify the email in Contacts, relays, with a button that opens that relay's natterDetails.\n- For a key already seated, the mail reads Confirm your email address, not Join this relay.\n- After the link, the page says Email address verified for an email change (the relay's 200), Joined as before for a new seat (201); the node passes the relay's status on.\n- The desktop shows the Join app's tile beside the spirit group until its steps are done. It is a small built-in shell app, not a dialog (a dialog opened from the desktop has nothing beneath it to return to). Its Join step asks relay.join of the kept relay (noderoutes.net), as natterDetails does; no new verb.\n- The join form is one shell element, joinForm (shell/js/joinForm.js, handed out as spiritElements): the email field prefilled with what is held, its button, and the confirmation-link sentence, asking relay.join for one relay. natterDetails' claim panel, its email panel and the Join app all draw it; none keeps a form of its own.\n- The Join app walks the user through steps to becoming a real SpiritOS participant. It goes exactly this far: its last step shows a link to his face URL, and opening that link fails until the face switch is built (not in this item). Its manifest lists the steps in order, each with its name, icon and the fact that ends it; the desktop tile shows the current step's name and icon and the app opens on that step's form; past the last step the tile is gone. The app shows every step as a bullet in a to-do list, done ones ticked, the first open one expanded with its form; the tile shows the first open step's name and icon. Steps so far: Join (until a seat); Find someone (until a first contact besides relays), optional, so it never blocks the steps after it; Configure your node's remote control (until the node holds a face name on the relay it joined), with Info's face form, which becomes a shell element drawn by Info and the Join app; then the face link, https://<face name>.<relay host>, last, ticked once he has opened it (kept in the shell's preferences), which ends the steps and takes the tile away; the face answers once the face switch is built.\n- The element carries its own listener: the node keeps a permanent job, join-steps, with where the steps stand (seated, the relay, contact, face, the face URL), read from its own records and published only when it changes, after a relay, contact or peer verb. The shell's tile and the Join app hear that job and draw only when it changes, never while a field in the list has focus; nothing asks the node for the steps on a shell message.\n- The shell opens an app named in its address on load (?app=<folder>), as it reads ?join= today. The mail's link carries both (?join=<code>&app=join), so the email that joins the relay leads straight back into the Join app. From there the cycle completes in the app with no further mail.\n- Find someone on the network is one shell element, like joinForm: the shared list asking peer.search, with its rows, Add and the description bubble. Contacts and the Join app draw it; Contacts keeps no copy.\n- A newly started node presents noderoutes.net as a contact already: the relay row in Contacts, from the seed boot asserts. The tests assert it.\n\nNOT IN THIS ITEM: the face switch and its relay verb service.",
@@ -2424,6 +2430,42 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-20T14:52:55.596Z",
      "text": "Understood; nothing to change on the tile then. G30.1 is verified at 32b42028 (11 suites green). Open on my side: only G29.17's labMaster question."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T21:32:14.401Z",
+     "text": "in natterDetails, isn't just this input along a shell-element?\n\nEmail address\n[you@example.org] [Add}"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T21:32:31.637Z",
+     "text": "Yes: that field and its button are the joinForm shell element, the same one the Join app and the claim panel draw. It reads Add with an empty field while this node holds no verified email for that relay, Change and prefilled once it does."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T21:52:32.355Z",
+     "text": "a few small things\n\n- This here for nodes already joined to a relay, where the join-app also shows up, and they're unable to complete it: i think \"Email address [you@example.org] [Add]\" (a shell-element!) should be displayed directly in step 1, redecorated because jump to natterDetails, then finding the right pane, is tedious, when it could be right in the join app. THI CONTROL should be the smae control, wherever it appear, in natterDetails OR in join.\n\n- EXTREMELY UGLY SHELL ELEMENT in info and join: \n\n\"Relay\n[noderoutes]\nFace name\n[countinn]\n[Ask]\"\n\nWHAT is the ASK button doing BELOW the face-name input? this should be one smooth line\n\n relay               face-name\n[noderoutes] [countinn] [Ask]\n\n\nThese are the most glaring problems with the join app, and the shell-elements that go with it"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T21:52:55.786Z",
+     "text": "Both clear:\n\n- Email in the Join app: a node seated without a verified email (joined by invite, or before the email loop) gets the same joinForm control right in step 1, reading Add or Change email address as in natterDetails; the step counts as done once the email is verified. The join-steps job gains emailVerified for that.\n- The face form: relay, face name and Ask on one line. The Ask button sits under the field today because the field and the button are wrapped together; they go side by side in the form's row, in Info and in Join alike.\n\nG30.1 is closed. Add a new item under G30 for these two?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T21:54:38.745Z",
+     "text": "Join, Add AND Change email address MUST be one and the same control, a bit flexible..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T21:54:55.848Z",
+     "text": "Agreed, and it already is one control: joinForm draws Join, Add and Change alike, its words chosen by where it stands (no seat: Join; seat, no verified email: Add; verified: Change, prefilled). The fix only places it in the Join app's step 1 too.\n\nStill open: a new item under G30 for the two fixes?"
     }
    ]
   },
