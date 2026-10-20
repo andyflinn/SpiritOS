@@ -13,8 +13,8 @@
 //     server answered, 'app.verb' when that verb is among its verbs (verbs(), so DEBUG and DEPENDENCIES never
 //     are); a server that did not answer serves nothing. It is how the app tells a deprecated grant.
 //   - shell/grants/grants.js: picks a contact (api.ui.elements.createContactSelector) and a path
-//     (createApiBranchSelector); grants and revokes through jobs.authGrant and jobs.authRevoke; shows a key's grants
-//     (jobs.authPeer) and finds them by label (jobs.authSearch); offers a server's bundle, read from its
+//     (createApiBranchSelector); grants and revokes through auth.grant and auth.revoke; shows a key's grants
+//     (auth.peer) and finds them by label (auth.search); offers a server's bundle, read from its
 //     DEPENDENCIES (<server>.DEPENDENCIES by name, goal/G30.6); and marks every grant spiritApiTreeIndex.serves says is gone, for the owner
 //     to revoke. Nothing is pruned without his press.
 
@@ -49,18 +49,18 @@ if (!index || typeof index.serves !== 'function') {
   else test.fail(OWED + 'serves answered wrongly for ' + wrong.map(function (w) { return w[0]; }).join(', '));
 }
 
-test.subHeading('the app does its four jobs through the shell and jobs.auth');
+test.subHeading('the app does its four jobs through the shell and the auth family');
 let src = '';
 try { src = fs.readFileSync(path.join(APP, 'grants.js'), 'utf8'); } catch (e) { src = ''; }
 const parts = {
   'picks a contact': /createContactSelector/,
   'picks a path': /createApiBranchSelector/,
-  'grants': /jobs\.authGrant/,
-  'revokes': /jobs\.authRevoke/,
+  'grants': /auth\.grant/,
+  'revokes': /auth\.revoke/,
   // AMENDED BY goal/G29.7: the page holds every grant and the line's filters narrow it, so a key's grants are the
-  // table filtered by that peer, read through jobs.authSearch (below), not jobs.authPeer.
+  // table filtered by that peer, read through auth.search (below), not auth.peer.
   'shows a key\'s grants': /grContact\.value/,
-  'finds by label': /jobs\.authSearch/,
+  'finds by label': /auth\.search/,
   'reads a bundle': /DEPENDENCIES/,
   'marks deprecated grants': /spiritApiTreeIndex\.serves/,
 };

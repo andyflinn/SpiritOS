@@ -406,7 +406,7 @@ function createWorld(opts) {
     // peers made known through contacts.acquire (frontDoor's 'known' is
     // the acquired set, hub.js listenSet) — GAP 1's shape, but through
     // the product's own writers. The grants then go through
-    // jobs.authGrant on its loopback, never by writing node.db (Andy's
+    // auth.grant on its loopback, never by writing node.db (Andy's
     // ruling under G1.5: configuring by file is the cheat).
     if (sc) {
       const node = await ensureNode('owner', 'avatar', OWNER_PORT);
@@ -453,7 +453,7 @@ function createWorld(opts) {
         const row = peers.filter(function (x) { return x.name === p.name; })[0];
         for (const g of p.grants) {
           const made = await post(ownerNode.url + '/api/spirit',
-            { verb: 'jobs.authGrant', key: row.id.publicKey, path: g });
+            { verb: 'auth.grant', key: row.id.publicKey, path: g });
           if (!made.ok) {
             return { ok: false, error: 'grant ' + p.name + ' ' + g + ': ' + JSON.stringify(made.body).slice(0, 160) };
           }

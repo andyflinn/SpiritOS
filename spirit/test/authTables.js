@@ -10,7 +10,7 @@
 //   And "the peer never sees our apiAuth data": the flat table a member's packet
 //   and the owner's verb api both read (desk/G1 D4; the flat apiDoor since goal/G30.6)
 //   must answer nothing that carries either table's content.
-// jobs.auth's verb shapes are jobsAuth.js's business (G1.4); this suite plants rows
+// The auth family's verb shapes are jobsAuth.js's business (G1.4); this suite plants rows
 // through them and looks at the DISK and the MEMBER SURFACE.
 
 const fs = require('fs');
@@ -94,7 +94,7 @@ async function readDb(fn) {
 (async function () {
   if (!(await boot())) { test.fail('the node did not boot with the desk server included — every later check would blame the wrong thing'); throw new Error('no world'); }
   for (const g of [{ key: KEYA, path: 'desk' }, { key: KEYA, path: 'desk.chat.add' }, { key: KEYB, path: 'desk' }]) {
-    await ask('jobs.authGrant', g);
+    await ask('auth.grant', g);
   }
 
   test.subHeading('the member surface answers none of it');
@@ -103,12 +103,12 @@ async function readDb(fn) {
   if (treeText.indexOf(KEYA) === -1 && treeText.indexOf(KEYB) === -1 && treeText.indexOf('alice') === -1) {
     test.check('the api tree (the same answer a member\'s packet gets, apiDoor.answer) carries no key and no label');
   } else test.fail(OWED + 'the api tree leaks the table: ' + treeText.slice(0, 220));
-  // A server named auth, asked by name on the flat apiDoor (goal/G30.6): no app may be called that.
+  // auth is a node family of its own since goal/G30.6 (Andy, 2026-10-20: "move auth stuff into its own node
+  // family."): the owner asks it by name on the loopback door; a member reaches it only through the grant gate.
   const reach = await post({ verb: 'auth.query', key: KEYA, path: 'desk' });
-  const reachText = JSON.stringify(reach.body);
-  if (reachText.indexOf('"allowed":true') === -1 && reachText.indexOf(KEYA) === -1) {
-    test.check('asking the shared surface for an app named auth answers no grant data ("the name auth is reserved")');
-  } else test.fail(OWED + 'ask {auth: ...} answered grant data: ' + reachText.slice(0, 220));
+  if (reach.status === 200 && reach.body && reach.body.allowed === true) {
+    test.check('the owner\'s auth.query on the loopback door answers the table (allowed: true for the planted grant)');
+  } else test.fail(OWED + 'auth.query answered ' + JSON.stringify(reach.body).slice(0, 220));
 
   test.subHeading('on disk: two tables in node.db, shaped as decided');
   await down();
@@ -140,13 +140,13 @@ async function readDb(fn) {
 
   test.subHeading('the rows survive a restart, and the last revoke takes the peers row with it');
   if (!(await boot())) test.fail('the node did not boot again');
-  const kept = (await ask('jobs.authQuery', { key: KEYA, path: 'desk.chat.add' })).body;
+  const kept = (await ask('auth.query', { key: KEYA, path: 'desk.chat.add' })).body;
   if (kept.allowed === true) test.check('a grant made before the restart still answers after it');
   else test.fail(OWED + 'after a restart the grant answered ' + JSON.stringify(kept).slice(0, 160));
-  await ask('jobs.authRevoke', { key: KEYA, path: 'desk' });
-  await ask('jobs.authRevoke', { key: KEYA, path: 'desk.chat.add' });
-  const gone = (await ask('jobs.authPeer', { key: KEYA })).body;
-  const still = (await ask('jobs.authPeer', { key: KEYB })).body;
+  await ask('auth.revoke', { key: KEYA, path: 'desk' });
+  await ask('auth.revoke', { key: KEYA, path: 'desk.chat.add' });
+  const gone = (await ask('auth.peer', { key: KEYA })).body;
+  const still = (await ask('auth.peer', { key: KEYB })).body;
   await down();
   try {
     const after = await readDb(function (db) {

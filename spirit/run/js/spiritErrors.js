@@ -758,7 +758,7 @@ define('invite-not-found', { status: 403, texts: ['invite not found'] });
 define('no-row', { status: 404, texts: ['no row for that key'] });
 // `taken` STOOD HERE and went with the app codes (goal/G16.11). It is the desk's,
 // and the desk declares it to appServer itself.
-// apiAuth (G1.2, G1.4): the gate's refusals and jobs.auth's.
+// apiAuth (G1.2, G1.4): the gate's refusals and the auth family's.
 define('not-granted', { status: 403, texts: ['not granted to this caller'] });
 define('already-granted', { status: 409, texts: ['already granted'] });
 define('unknown-path', { status: 404, texts: ['no server serves that path, and no grant names it'] });

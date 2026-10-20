@@ -39,7 +39,7 @@ function code(r) { return (r && r.body && r.body.code) || ''; }
 
 async function main() {
   // 1. THE DESK GRANT.
-  const rev = await ask('jobs.authRevoke', { key: agent, path: 'desk' });
+  const rev = await ask('auth.revoke', { key: agent, path: 'desk' });
   if (!ok(rev) && code(rev) !== 'not-granted') end(1, 'removeAgent: the desk grant was not revoked: ' + rev.text);
   say(ok(rev) ? 'desk grant revoked' : 'it held no desk grant');
 

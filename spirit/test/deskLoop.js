@@ -151,7 +151,7 @@ function handed(log) {
   // relay's url (every node also lists noderoutes.net).
   spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + memberInvite.token, 'andy', relayUrl], { cwd: clone, encoding: 'utf8', timeout: 180000 });
   const agentKey = (await verb(agentPort, { verb: 'node.card' })).body.publicKey || '';
-  await verb(andyPort, { verb: 'jobs.authGrant', key: agentKey, path: 'desk' });
+  await verb(andyPort, { verb: 'auth.grant', key: agentKey, path: 'desk' });
   const joined = spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + memberInvite.token, 'andy', relayUrl], { cwd: clone, encoding: 'utf8', timeout: 180000 });
   if (joined.status === 0) test.check('the world: the agent joined Desk through onboard.js');
   else { test.fail('the world: onboard.js exited ' + joined.status + ': ' + short(String(joined.stdout || '') + String(joined.stderr || ''))); return; }

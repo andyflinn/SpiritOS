@@ -19,7 +19,7 @@
 //   - A family folder never holds code: an app's is <module>.family beside <module>.js (process/js/desk/desk.family/
 //     beside desk.js), where its AGENTS.md and verb files move; the node's stay js/<family>/.
 //   - Warnings are files: <verb>.warning.txt in the family folder, read by the grants app through that family's FS
-//     before a grant; nothing is opened to agents. This item adds one: js/jobs/authGrant.warning.txt.
+//     before a grant; nothing is opened to agents. This item adds one: js/auth/grant.warning.txt (in js/jobs/ until goal/G30.6).
 //   - An app server named like a node family is refused at mount, by name.
 //   - The grants app's picker lists apiDoor's whole table.
 // NAMED HERE where the box names none:
@@ -163,9 +163,9 @@ async function main() {
 
   test.subHeading('7. the warning, and the grants app');
   let warn = '';
-  try { warn = fs.readFileSync(path.join(RUN, 'js', 'jobs', 'authGrant.warning.txt'), 'utf8').trim(); } catch (e) { warn = ''; }
-  if (warn.length) test.check('js/jobs/authGrant.warning.txt is there: ' + short(warn));
-  else test.fail(OWED + 'js/jobs/authGrant.warning.txt is missing');
+  try { warn = fs.readFileSync(path.join(RUN, 'js', 'auth', 'grant.warning.txt'), 'utf8').trim(); } catch (e) { warn = ''; }
+  if (warn.length) test.check('js/auth/grant.warning.txt is there: ' + short(warn));
+  else test.fail(OWED + 'js/auth/grant.warning.txt is missing');
   const grants = code('shell/grants/grants.js');
   if (/FS\.loadFile/.test(grants) && /\.warning\.txt/.test(grants) && !/'AGENTS\.' \+ verb/.test(grants)) test.check('the grants app reads <verb>.warning.txt through the family\'s FS and shows it before the grant');
   else test.fail(OWED + 'the grants app does not read warnings through FS');

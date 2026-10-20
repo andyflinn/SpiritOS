@@ -151,7 +151,7 @@ async function partB() {
   // relay's url (every node also lists noderoutes.net).
   spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + mi.token, 'andy', relayUrl], { cwd: clone, timeout: 180000 });
   const agentKey = (await verb(agentPort, { verb: 'node.card' })).body.publicKey || '';
-  await verb(andyPort, { verb: 'jobs.authGrant', key: agentKey, path: 'desk' });
+  await verb(andyPort, { verb: 'auth.grant', key: agentKey, path: 'desk' });
   const joined = spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + mi.token, 'andy', relayUrl], { cwd: clone, encoding: 'utf8', timeout: 180000 });
   await waitFor(function () { return deskAsk('profile.set', { agent: agentKey, name: 'gemma', nick: 'gemma' }).then(function (r) { return r.status === 200; }); });
   if (joined.status !== 0) { test.fail('the world: onboard.js exited ' + joined.status + ': ' + short(String(joined.stdout) + String(joined.stderr))); return; }

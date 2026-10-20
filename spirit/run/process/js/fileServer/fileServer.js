@@ -392,7 +392,7 @@ const server = appServer.serve({
 } });
 
 // Every grant on fileServer.<from> becomes one on fileServer.<to>, through the node's own loopback auth verbs
-// (server.js jobs.authSearch, jobs.authGrant, jobs.authRevoke); no auth verb of its own. Run outside a node (no
+// (server.js auth.search, auth.grant, auth.revoke); no auth verb of its own. Run outside a node (no
 // SPIRIT_CALLBACK_URL), there are no grants to move.
 function moveGrants(from, to) {
   const url = process.env.SPIRIT_CALLBACK_URL;
@@ -400,13 +400,13 @@ function moveGrants(from, to) {
   const base = new URL(url).origin;
   const ask = function (verb, args) { return require('../../../js/kernel.js').core.ask(verb, args, base).then(function (r) { return (r && r.body) || {}; }); };
   const fromPath = 'fileServer.' + from, toPath = 'fileServer.' + to;
-  return ask('jobs.authSearch', { text: from }).then(function (found) {
-    // jobs.authSearch answers the new search's list (goal/G29.7): each grant's label is {name, key, path}.
+  return ask('auth.search', { text: from }).then(function (found) {
+    // auth.search answers the new search's list (goal/G29.7): each grant's label is {name, key, path}.
     const rows = (found.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } })
       .filter(function (r) { return r.path === fromPath; });
     return rows.reduce(function (p, r) {
-      return p.then(function () { return ask('jobs.authGrant', { key: r.key, path: toPath }); })
-        .then(function () { return ask('jobs.authRevoke', { key: r.key, path: fromPath }); });
+      return p.then(function () { return ask('auth.grant', { key: r.key, path: toPath }); })
+        .then(function () { return ask('auth.revoke', { key: r.key, path: fromPath }); });
     }, Promise.resolve());
   }).catch(function (e) { console.error('fileServer: grants on ' + from + ' were not moved: ' + ((e && e.message) || e)); });
 }

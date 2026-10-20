@@ -1,3 +1,0 @@
-{
-  "description": "The way to this node's server processes: ask is 'api' for the tree of every server's verbs ({server: {verb: {request, reply}}}), or {server: {verb: args}} for one call, whose answer comes back flat, exactly as the server gave it. Which servers there are is what 'api' answers; the node names none of them itself."
-}

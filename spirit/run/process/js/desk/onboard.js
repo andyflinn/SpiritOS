@@ -141,7 +141,7 @@ async function main() {
   const r = await deskClient('desk', { name: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) });
   if (!ok(r)) {
     end(1, 'onboard: NOT YET JOINED: the desk did not answer this agent (' + ((r.body && (r.body.code || r.body.error)) || r.status) + ').\n' +
-      'Andy grants it on his node: jobs.authGrant {key: "' + me + '", path: "desk"} (the desk grant), then this is run again.');
+      'Andy grants it on his node: auth.grant {key: "' + me + '", path: "desk"} (the desk grant), then this is run again.');
   }
   say('the desk answered');
   const writers = Object.create(null);

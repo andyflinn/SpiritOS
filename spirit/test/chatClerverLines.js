@@ -96,7 +96,7 @@ const node = http.createServer(function (req, res) {
       if (b.key === DARK) return json(500, { ok: false, error: 'the node broke' });
       return json(200, { ok: true, key: b.key, person: { publicKey: b.key, blocked: false, held: false } });
     }
-    if (b.verb === 'jobs.authGrant') {
+    if (b.verb === 'auth.grant') {
       if (b.key === NOGRANT) return json(500, { ok: false, code: 'store-failed', error: 'the grant was not kept' });
       return json(200, { key: b.key, label: 'peer', path: b.path });
     }

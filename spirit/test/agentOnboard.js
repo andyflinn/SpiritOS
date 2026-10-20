@@ -274,9 +274,9 @@ function pointAt(home, relayUrl, relayKey) {
 
   test.subHeading('2. Andy grants desk; the second run finishes');
   if (!agentKey) { test.fail(OWED + 'no agent key, so there is nothing for Andy to grant'); return; }
-  const granted = await verb(andyPort, { verb: 'jobs.authGrant', key: agentKey, path: 'desk' });
+  const granted = await verb(andyPort, { verb: 'auth.grant', key: agentKey, path: 'desk' });
   if (granted.status === 200) test.check('the world: Andy\'s node grants the agent desk');
-  else test.fail('the world: jobs.authGrant answered ' + granted.status + ' ' + short(granted.body));
+  else test.fail('the world: auth.grant answered ' + granted.status + ' ' + short(granted.body));
   const second = run(SCRIPT, [String(agentPort), 'gemma:' + memberInvite.token, 'andy', relayUrl], clone);
   if (second.code === 0) test.check('the second run exits 0');
   else test.fail(OWED + 'the second run exited ' + second.code + ', saying ' + short(second.said));
@@ -319,9 +319,9 @@ function pointAt(home, relayUrl, relayKey) {
     const rm = run(REMOVE, [String(andyPort), agentKey], clone);
     if (rm.code === 0) test.check('removeAgent.js exits 0');
     else test.fail(OWED + 'removeAgent.js exited ' + rm.code + ', saying ' + short(rm.said));
-    const q = await verb(andyPort, { verb: 'jobs.authQuery', key: agentKey, path: 'desk' });
+    const q = await verb(andyPort, { verb: 'auth.query', key: agentKey, path: 'desk' });
     if (q.status === 200 && q.body.allowed === false) test.check('the agent\'s desk grant is revoked');
-    else test.fail(OWED + 'jobs.authQuery answered ' + q.status + ' ' + short(q.body));
+    else test.fail(OWED + 'auth.query answered ' + q.status + ' ' + short(q.body));
     const c = await verb(andyPort, { verb: 'contact.get', key: agentKey });
     if (!(c.body.person)) test.check('Andy\'s node no longer holds the agent as a contact');
     else test.fail(OWED + 'Andy\'s contact.get of the agent answered ' + c.status + ' ' + short(c.body));

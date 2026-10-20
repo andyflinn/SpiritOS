@@ -116,7 +116,7 @@ async function main() {
 }
 
 // 5. ON A REAL NODE: the grants follow the slot. The node starts its own fileServer (intrinsic); the loopback reaches
-// it by name on the flat apiDoor (fileServer.<verb>, goal/G30.6), and the grants are read with jobs.authQuery.
+// it by name on the flat apiDoor (fileServer.<verb>, goal/G30.6), and the grants are read with auth.query.
 async function grants() {
   test.subHeading('5. grants on the old file move to the new one');
   const home = path.join(scratch, 'node', 'spirit', 'run');
@@ -136,11 +136,11 @@ async function grants() {
   const first = await files('fill', { slot: SLOT, path: write('me.jpg', 'node picture one\n') });
   const old = first.body && first.body.hash;
   if (!old) { test.fail(OWED + 'fill on the node answered ' + first.status + ' ' + short(first.body) + '; grants cannot be followed'); return; }
-  const granted = await ask({ verb: 'jobs.authGrant', key: PEER.key, path: 'fileServer.' + old });
+  const granted = await ask({ verb: 'auth.grant', key: PEER.key, path: 'fileServer.' + old });
   const second = await files('fill', { slot: SLOT, path: write('me2.jpg', 'node picture two\n') });
   const neu = second.body && second.body.hash;
-  const onNew = neu ? (await ask({ verb: 'jobs.authQuery', key: PEER.key, path: 'fileServer.' + neu })).body : {};
-  const onOld = (await ask({ verb: 'jobs.authQuery', key: PEER.key, path: 'fileServer.' + old })).body;
+  const onNew = neu ? (await ask({ verb: 'auth.query', key: PEER.key, path: 'fileServer.' + neu })).body : {};
+  const onOld = (await ask({ verb: 'auth.query', key: PEER.key, path: 'fileServer.' + old })).body;
   if (granted.status === 200 && neu && onNew && onNew.allowed === true && onOld && onOld.allowed === false) test.check('a peer granted the old picture is granted the new one, and no longer the old');
   else test.fail(OWED + 'grant ' + granted.status + ' ' + short(granted.body) + '; after fill: new ' + short(onNew) + ', old ' + short(onOld));
 }

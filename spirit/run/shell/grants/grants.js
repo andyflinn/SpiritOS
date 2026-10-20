@@ -15,13 +15,13 @@
 //   - THE LINE: the contact selector, the api-branch selector (server, then verb) and Grant, on one line. Each chosen
 //     selector narrows the table; one left unchosen means all. Grant grants what the line names: the peer the server,
 //     one verb or all of them; a server that names a bundle (its DEPENDENCIES) offers Grant the bundle beside it.
-//   - THE TABLE: every grant, held by the page (jobs.authSearch with no words) and ranked by the shared list within
+//   - THE TABLE: every grant, held by the page (auth.search with no words) and ranked by the shared list within
 //     the line's filters: the peer's name, the path, deprecated when spiritApiTreeIndex.serves says no server serves
 //     it today (a REPORT: pruning is the owner's press, one Revoke at a time), and each row's own Revoke.
 // Nothing here writes node.db; every change goes through the loopback verbs apiAuth.js answers.
 var grApi = null;
 var grTree = null;
-var grGrants = [];      // every grant, {name, key, path}, as jobs.authSearch answered with no words
+var grGrants = [];      // every grant, {name, key, path}, as auth.search answered with no words
 var grList = null;      // the shared list over them
 var grContact = null;
 var grBranch = null;
@@ -44,7 +44,7 @@ function grRefusal(body) {
 }
 // Every grant, held by the page; the shared list ranks them.
 function grLoadGrants() {
-  return grApi.verb('jobs.authSearch', { text: '' }).then(function (a) {
+  return grApi.verb('auth.search', { text: '' }).then(function (a) {
     if (a.status !== 200) { grSay('the grants could not be read: ' + grRefusal(a.body), true); return; }
     grGrants = ((a.body && a.body.items) || []).map(function (i) {
       try { return JSON.parse(i.label); } catch (e) { return null; }
@@ -125,7 +125,7 @@ function grGrant(key, path) {
 }
 
 function grGrantNow(key, path) {
-  return grApi.verb('jobs.authGrant', { key: key, path: path }).then(function (a) {
+  return grApi.verb('auth.grant', { key: key, path: path }).then(function (a) {
     if (a.status !== 200) { grSay('grant refused: ' + grRefusal(a.body), true); return; }
     grSay('granted ' + ((a.body && a.body.label) || '') + ' ' + path);
     return grLoadGrants();
@@ -143,7 +143,7 @@ function grGrantMany(paths) {
 }
 
 function grRevoke(key, path) {
-  return grApi.verb('jobs.authRevoke', { key: key, path: path }).then(function (a) {
+  return grApi.verb('auth.revoke', { key: key, path: path }).then(function (a) {
     if (a.status !== 200) { grSay('revoke refused: ' + grRefusal(a.body), true); return; }
     grSay('revoked ' + path);
     return grLoadGrants();

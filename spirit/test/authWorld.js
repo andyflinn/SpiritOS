@@ -7,7 +7,7 @@
 // The contract the builder follows:
 //   - scenario.js takes three fields more: servers: [names] (the OWNER's, seeded into its include.json through
 //     includeList — the owner is a name, so the field sits at the top beside it); a peer's grants: [paths] (set
-//     through jobs.authGrant on the owner's loopback, never by writing node.db); and top-level cases:
+//     through auth.grant on the owner's loopback, never by writing node.db); and top-level cases:
 //     [{ from, ask, expect }], expect one of 'answered' | 'refused <code>' | 'silence'.
 //   - labWorld.createWorld({ scenario }) builds that world on real ports: the owner running its servers, each
 //     peer a contact of the owner holding its grants; the built world's runCases() sends each case's ask from its

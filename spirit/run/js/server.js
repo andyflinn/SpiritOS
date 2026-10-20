@@ -1817,8 +1817,7 @@ contactBook.syncMarks(ROOT_DIR);
   // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
   const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, mimeTypes: spirit.core.const.MIME_TYPES });
-  // jobs.auth (apiAuth/G1.4): the owner's allow-table, loopback only. Andy: "jobs.auth supersedes: "api.auth,
-  // sibling to app names";". An answer is the verb's object as is; a refusal is the catalogue's, by name.
+  // auth (apiAuth/G1.4, its own family since goal/G30.6): the owner's allow-table, loopback only. An answer is the verb's object as is; a refusal is the catalogue's, by name.
   const apiAuth = require('./apiAuth').createApiAuth({
     rootDir: ROOT_DIR,
     tree: function () { return nodeDoor.ask('api').then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); },
@@ -1847,13 +1846,18 @@ contactBook.syncMarks(ROOT_DIR);
   }
   const JOB = { id: '', kind: '', type: '', status: '' };
   const GRANT = { key: '', label: '', path: '' };
+  // AUTH, ITS OWN NODE FAMILY (goal/G30.6; Andy, 2026-10-20: "move auth stuff into its own node family."): the owner's
+  // allow-table for members, beside node, fs, jobs, peer and relay. It sat in jobs while jobs held the way to the
+  // servers it gates; with that gone, jobs is jobs alone. Local (wire: false).
+  loopbackVerbs.mount('auth', path.join(__dirname, 'auth'), {
+    'query': { request: { key: '', path: '' }, reply: { allowed: false }, handler: authVerb(apiAuth.query) },
+    'search': { request: { text: '' }, reply: LIST, handler: authVerb(apiAuth.search) },
+    'peer': { request: { key: '' }, reply: { records: [GRANT] }, handler: authVerb(apiAuth.peer) },
+    'grant': { request: { key: '', path: '' }, reply: GRANT, handler: authVerb(apiAuth.grant) },
+    'revoke': { request: { key: '', path: '' }, reply: { revoked: true }, handler: authVerb(apiAuth.revoke) },
+    'relabel': { request: { key: '', label: '' }, reply: { key: '', label: '' }, handler: authVerb(apiAuth.relabel) },
+  }, { wire: false, by: 'server.js' });
   loopbackVerbs.mount('jobs', path.join(__dirname, 'jobs'), {
-    'authQuery': { request: { key: '', path: '' }, reply: { allowed: false }, handler: authVerb(apiAuth.query) },
-    'authSearch': { request: { text: '' }, reply: LIST, handler: authVerb(apiAuth.search) },
-    'authPeer': { request: { key: '' }, reply: { records: [GRANT] }, handler: authVerb(apiAuth.peer) },
-    'authGrant': { request: { key: '', path: '' }, reply: GRANT, handler: authVerb(apiAuth.grant) },
-    'authRevoke': { request: { key: '', path: '' }, reply: { revoked: true }, handler: authVerb(apiAuth.revoke) },
-    'authRelabel': { request: { key: '', label: '' }, reply: { key: '', label: '' }, handler: authVerb(apiAuth.relabel) },
     'search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', job: JOB }, handler: proxyVerb(function (b) { return nodeSearches.jobsGet(b); }) },
     'create': { request: { command: '', args: [''], type: '' }, reply: JOB, handler: handleCreateJob },

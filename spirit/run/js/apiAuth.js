@@ -6,7 +6,8 @@
 //   Andy: "apiAuth will enforce an active consent scheme: denial is the absence of authorization. only
 //   authorization is stored", "it will know absolutely nothing about faces, or apps, or grantFace, it will only
 //   only now how to grant peerPost() access to an api-tree, based on a lookup table that matches caller ID's with
-//   paths in the api tree", "jobs.auth supersedes: "api.auth, sibling to app names";", and on the verbs, "approved
+//   paths in the api tree", and on the verbs (their own node family, auth, since goal/G30.6: "move auth stuff into
+//   its own node family."), "approved
 //   with dropping label out of grant.input", "relabel is FINE verb.", "please fix the api, to be consistent with
 //   your practices in terms of precise answer shapes."
 //

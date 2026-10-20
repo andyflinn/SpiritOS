@@ -9,12 +9,12 @@
 //   what the line names (a peer and a server, one verb or all of them).
 //   THE SEARCH AND THE TABLE: the search bar below the line searches within the line's filters, ranked as every search
 //   is; below it the grants in a small table: the peer's name, the path, deprecated when no server serves it today,
-//   each row's own Revoke. The page holds the grants (jobs.authSearch with no words) and ranks them itself.
-//   jobs.authSearch moves to the new search: words ranked by the probability modules, each grant answered as a json
+//   each row's own Revoke. The page holds the grants (auth.search with no words) and ranks them itself.
+//   auth.search moves to the new search: words ranked by the probability modules, each grant answered as a json
 //   label {name, key, path}; its old search goes.
 //
 // NAMED HERE where the box names none (argue them in Desk first if the build disagrees):
-//   - jobs.authSearch answers {items: [{key: key + '\n' + path, label: json {name, key, path}}], more}.
+//   - auth.search answers {items: [{key: key + '\n' + path, label: json {name, key, path}}], more}.
 //   - createContactSelector({ all }) and createAppServerSelector({ all }) offer a first row with key '' named by all;
 //     createApiBranchSelector's root carries server and verb ('' for all) beside value (the path: 'app' when no verb
 //     is chosen, 'app.verb' when one is).
@@ -65,7 +65,7 @@ function page() {
 
 (async function () {
   // ── 1. the node ──
-  test.subHeading('1. jobs.authSearch on the new search');
+  test.subHeading('1. auth.search on the new search');
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-grants-'));
   try {
     const store = require('../run/js/nodeStore').open(root).auth;
@@ -76,7 +76,7 @@ function page() {
     const all = auth.search({ text: '' });
     const rows = ((all && all.items) || []).map(function (i) { return { key: i.key, label: parse(i.label) }; });
     if (rows.length === 3 && rows.every(function (r) { return r.label && r.label.name && r.label.key && r.label.path && r.key === r.label.key + '\n' + r.label.path; })) test.check('no words: every grant, each {key: key + newline + path, label: {name, key, path}}');
-    else test.fail(OWED + 'jobs.authSearch with no words answered ' + short(all));
+    else test.fail(OWED + 'auth.search with no words answered ' + short(all));
     const found = auth.search({ text: 'alice desk' });
     const top = parse(((found && found.items) || [])[0] && found.items[0].label) || {};
     if (top.name === 'alice' && top.path === 'desk.item.get') test.check('words ranked best first: alice desk puts alice\'s desk.item.get on top');
@@ -91,12 +91,13 @@ function page() {
   } finally { try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* scratch */ } }
   // Since goal/G30.4 the jobs family is mounted with its verbs bare: authSearch inside loopbackVerbs.mount('jobs', ...).
   const server = code(path.join(RUN, 'js', 'server.js'));
-  const jobsMount = (/loopbackVerbs\.mount\('jobs',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
-  if (/'authSearch':\s*\{\s*request:\s*\{\s*text:\s*''\s*\},\s*reply:\s*LIST/.test(jobsMount)) test.check('server.js declares jobs.authSearch {text} answering LIST');
-  else test.fail(OWED + 'server.js declares ' + short((/'authSearch':[^\n]*/.exec(jobsMount) || [''])[0]));
+  // The grant verbs are the auth family's since goal/G30.6.
+  const jobsMount = (/loopbackVerbs\.mount\('auth',[\s\S]*?\n {2}\}, \{ wire:/.exec(server) || [''])[0];
+  if (/'search':\s*\{\s*request:\s*\{\s*text:\s*''\s*\},\s*reply:\s*LIST/.test(jobsMount)) test.check('server.js declares auth.search {text} answering LIST');
+  else test.fail(OWED + 'server.js declares ' + short((/'search':[^\n]*/.exec(jobsMount) || [''])[0]));
   const fileServer = code(path.join(RUN, 'process', 'js', 'fileServer', 'fileServer.js'));
-  if (/jobs\.authSearch[\s\S]{0,400}\.items/.test(fileServer) && !/found\.records/.test(fileServer)) test.check('the file server reads the new answer (items) when it moves grants');
-  else test.fail(OWED + 'fileServer.js still reads records from jobs.authSearch');
+  if (/auth\.search[\s\S]{0,400}\.items/.test(fileServer) && !/found\.records/.test(fileServer)) test.check('the file server reads the new answer (items) when it moves grants');
+  else test.fail(OWED + 'fileServer.js still reads records from auth.search');
 
   // ── 2. the page ──
   test.subHeading('2. Grants: one line of filters, a search within them, a table below');
@@ -116,8 +117,8 @@ function page() {
     // The tree by the verb api; a server's own verb by name (<server>.DEPENDENCIES, <server>.FS.loadFile; goal/G30.6).
     if (verb === 'api') return answer(TREE);
     if (TREE[String(verb).split('.')[0]]) return answer({ paths: [] });
-    if (verb === 'jobs.authSearch') return answer({ items: GRANTS.map(function (g) { return { key: g.key + '\n' + g.path, label: JSON.stringify(g) }; }), more: false });
-    if (verb === 'jobs.authGrant') return answer({ key: body.key, label: 'alice', path: body.path });
+    if (verb === 'auth.search') return answer({ items: GRANTS.map(function (g) { return { key: g.key + '\n' + g.path, label: JSON.stringify(g) }; }), more: false });
+    if (verb === 'auth.grant') return answer({ key: body.key, label: 'alice', path: body.path });
     if (verb === 'contact.search') return answer({ items: [{ key: ALICE, label: JSON.stringify({ name: 'alice', owned: false, blocked: false, held: false }) }, { key: BOB, label: JSON.stringify({ name: 'bob', owned: false, blocked: false, held: false }) }], more: false });
     return answer({});
   };
@@ -242,11 +243,11 @@ function page() {
   const grantBtn = line && line.children.filter(function (c) { return c.tagName === 'BUTTON'; })[0];
   if (grantBtn) grantBtn.dispatchEvent({ type: 'click', target: grantBtn });
   await settle();
-  const g = asked.filter(function (a) { return a.verb === 'jobs.authGrant'; }).pop();
+  const g = asked.filter(function (a) { return a.verb === 'auth.grant'; }).pop();
   if (g && g.body.key === ALICE && g.body.path === 'desk') test.check('Grant grants what the line names: alice the whole server desk (no verb chosen)');
   else test.fail(OWED + 'Grant asked ' + short(g || asked.map(function (a) { return a.verb; })));
-  if (!asked.some(function (a) { return a.verb === 'jobs.authPeer'; })) test.check('the page holds the grants: no jobs.authPeer is asked');
-  else test.fail(OWED + 'the page still asks jobs.authPeer');
+  if (!asked.some(function (a) { return a.verb === 'auth.peer'; })) test.check('the page holds the grants: no auth.peer is asked');
+  else test.fail(OWED + 'the page still asks auth.peer');
   if (grantBtn && !grantBtn.hidden) test.check('with a contact and a server chosen, Grant shows');
   else test.fail(OWED + 'with alice and desk chosen Grant is ' + short(grantBtn ? { hidden: grantBtn.hidden } : 'missing'));
 

@@ -51,7 +51,7 @@ const TOP = [
   'servers', 'cases',
 ];
 // `grants` (apiAuth/G1.0): the paths granted to this peer, set through
-// jobs.authGrant on the owner's loopback — never by writing node.db.
+// auth.grant on the owner's loopback — never by writing node.db.
 const PEER = ['name', 'label', 'on', 'running', 'expect', 'grants'];
 const THEN = ['remove', 'from', 'why'];
 const CASE = ['from', 'ask', 'expect'];

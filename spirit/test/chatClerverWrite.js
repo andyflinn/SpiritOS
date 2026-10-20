@@ -23,7 +23,7 @@
 //   3. HELD (G4.7): a key the book marks held (person.held) is first released by contact.accept {publicKey} on the
 //      writer's own node; a key not held is not.
 //   4. THE GRANT (G4.6): before the line leaves, the writer's node grants the peer chatClerver.line.receive
-//      (jobs.authGrant {key, path}); already-granted is no error.
+//      (auth.grant {key, path}); already-granted is no error.
 //   5. THE POST (G4.2): one api packet to the peer's key (kernel.peerPost), body {chatClerver: {'line.receive':
 //      {seq, at, text, re}}}; seq the writer's own number for this chat, 1, 2, 3 ... per peer; at the writer's UTC
 //      time (ISO). The answer {seq, outcome: 'sent'} once the peer kept it.
@@ -109,8 +109,8 @@ const node = http.createServer(function (req, res) {
       row.held = false;
       return json(200, { publicKey: b.publicKey, acquiredVia: 'message', blocked: row.blocked, held: false });
     }
-    if (b.verb === 'jobs.authGrant') {
-      const granted = asked.filter(function (a) { return a.verb === 'jobs.authGrant' && a.body.key === b.key && a.body.path === b.path; }).length > 1;
+    if (b.verb === 'auth.grant') {
+      const granted = asked.filter(function (a) { return a.verb === 'auth.grant' && a.body.key === b.key && a.body.path === b.path; }).length > 1;
       if (granted) return json(409, { ok: false, code: 'already-granted', error: 'already granted' });
       return json(200, { key: b.key, label: 'peer', path: b.path });
     }
@@ -170,7 +170,7 @@ async function main() {
 
   test.subHeading('2. a blocked key is refused, nothing granted, nothing posted');
   const blocked = await write(BLOCKED, 'to the blocked one');
-  const grantedBlocked = asked.some(function (a) { return a.verb === 'jobs.authGrant' && a.body.key === BLOCKED; });
+  const grantedBlocked = asked.some(function (a) { return a.verb === 'auth.grant' && a.body.key === BLOCKED; });
   if (blocked.body && blocked.body.ok === false && blocked.body.code === 'peer-blocked' && !receives(BLOCKED).length && !grantedBlocked) test.check('refused peer-blocked; no grant, no post');
   else test.fail(OWED + 'to a blocked key: ' + JSON.stringify(blocked.body).slice(0, 160) + '; granted ' + grantedBlocked + ', posted ' + receives(BLOCKED).length);
 
@@ -178,11 +178,11 @@ async function main() {
   const at0 = asked.length;
   const one = await write(PEER, 'first line');
   const order = asked.slice(at0).map(function (a) { return a.verb; });
-  const grant = asked.slice(at0).filter(function (a) { return a.verb === 'jobs.authGrant'; })[0];
+  const grant = asked.slice(at0).filter(function (a) { return a.verb === 'auth.grant'; })[0];
   const r1 = receives(PEER)[0] || {};
   if (one.body && one.body.seq === 1 && one.body.outcome === 'sent') test.check('answered {seq: 1, outcome: sent}');
   else test.fail(OWED + 'the first line answered ' + JSON.stringify(one.body).slice(0, 160));
-  if (grant && grant.body.key === PEER && grant.body.path === 'chatClerver.line.receive' && order.indexOf('jobs.authGrant') !== -1 && order.indexOf('jobs.authGrant') < order.indexOf('peer.post')) test.check('jobs.authGrant {key: the peer, path: chatClerver.line.receive} was asked before the post');
+  if (grant && grant.body.key === PEER && grant.body.path === 'chatClerver.line.receive' && order.indexOf('auth.grant') !== -1 && order.indexOf('auth.grant') < order.indexOf('peer.post')) test.check('auth.grant {key: the peer, path: chatClerver.line.receive} was asked before the post');
   else test.fail(OWED + 'the asks in order: ' + JSON.stringify(order) + '; the grant: ' + JSON.stringify(grant && grant.body));
   if (r1.seq === 1 && r1.text === 'first line' && iso(r1.at) && JSON.stringify(r1.re) === JSON.stringify(NONE)) test.check('one api packet to the peer: line.receive {seq: 1, at (UTC), text, re: none}');
   else test.fail(OWED + 'the peer received ' + JSON.stringify(receives(PEER)).slice(0, 200));
@@ -222,7 +222,7 @@ async function main() {
   const held = await write(HELD, 'to the one who knocked');
   const seq = asked.slice(at1).map(function (a) { return a.verb; });
   const accepted = asked.slice(at1).filter(function (a) { return a.verb === 'contact.accept'; })[0];
-  if (held.body && held.body.outcome === 'sent' && accepted && accepted.body.publicKey === HELD && seq.indexOf('contact.accept') < seq.indexOf('jobs.authGrant') && seq.indexOf('jobs.authGrant') < seq.indexOf('peer.post')) {
+  if (held.body && held.body.outcome === 'sent' && accepted && accepted.body.publicKey === HELD && seq.indexOf('contact.accept') < seq.indexOf('auth.grant') && seq.indexOf('auth.grant') < seq.indexOf('peer.post')) {
     test.check('contact.accept {publicKey}, then the grant, then the post; answered sent');
   } else test.fail(OWED7 + 'to a held key the asks were ' + JSON.stringify(seq) + '; answered ' + JSON.stringify(held.body).slice(0, 120));
   if (!asked.slice(at0, at1).some(function (a) { return a.verb === 'contact.accept'; })) test.check('no contact.accept was asked for a key that was not held');

@@ -58,7 +58,7 @@ const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskClientNextTestOtherAAAAAAAAAAAAAAA=';
 const DESK_KEY = 'MCowBQYDK2VwAyEAdeskClientNextTestDeskNodeAAAAAAAAAAA=';
 const OWNER = { owner: true, key: SELF_KEY, label: 'claude-windows' };
 const MEMBER = { key: 'MCowBQYDK2VwAyEAdeskClientNextTestMemberAAAAAAAAAAAAA=', label: 'somebody' };
-// At the desk the agent goes by the label Andy's node holds for its key, which he may change (jobs.authRelabel):
+// At the desk the agent goes by the label Andy's node holds for its key, which he may change (auth.relabel):
 // not the name of its own node. So its own records are known by their key.
 const SELF_AT_DESK = { key: SELF_KEY, label: 'renamed-at-the-desk' };
 const OTHER_AT_DESK = { key: OTHER_KEY, label: 'wsl-claude' };

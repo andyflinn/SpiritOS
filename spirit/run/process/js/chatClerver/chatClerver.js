@@ -248,7 +248,7 @@ appServer.serve({
         if (person.held !== true) return null;
         return askNode('contact.accept', { publicKey: to }).then(function (x) { if (x.status !== 200) throw refused('no-answer'); });
       }).then(function () {
-        return askNode('jobs.authGrant', { key: to, path: 'chatClerver.line.receive' });
+        return askNode('auth.grant', { key: to, path: 'chatClerver.line.receive' });
       }).then(function (g) {
         const already = g.status === 409 && g.body && g.body.code === 'already-granted';
         if (g.status !== 200 && !already) throw refused('store-unavailable');
