@@ -1,5 +1,5 @@
 {
- "change": 76559,
+ "change": 76880,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,12 +10,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G30.9"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -46,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -8392,10 +8391,11 @@
    "id": "goal/G30.9",
    "title": "Face-Side login with a new email loop",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30"
@@ -8405,21 +8405,107 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "bash/face-setup",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face.html",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/face.css",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/login/login.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/login/login.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/shell.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell.css",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/armedButtons.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contacts.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactsDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceLogin.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/filesContentsSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/iconIndex.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/joinOnboarding.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "7a6bdc9c",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -8456,9 +8542,64 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "A member logs in on his face, served by the relay. The item ends with the user logged in; the face does not yet reach his home node.\n\n- The relay serves face.html, the lazy-load version of the shell, at <face>.<relay host> to anyone, logged in or not, while that member has a verified email, a face name and his home node present. Logged out, the shell is empty but for the login app.\n- The login app is the counterpart of the node's Join app: a steps app on the same design. Its manifest lists the steps; the shell decides where the user stands and hands it to the app; the tile shows the open step and stays after login for the steps still open.\n- Its one field, Log in: [ ], takes the member's verified email or the token from the mail; the page never says which it got.\n- The relay decides the login: it knows whether the home node is present and the member's verified email, and sends the mail. The mail offers the token alone, to paste into the field, and a link to <face>.<relay host>/?<token> that opens the login app and logs in directly. No coordination between the link's window and the waiting one.\n- The token is used once and is good for 10 minutes, with the join's caps: one a minute, five an hour per face.\n- A login is a cookie for that face host, valid until 7 days after the logged-in user's last interaction; Log out ends it.\n- After login the login app says \"waiting for plumbing\".\n- Shell apps for the face carry face:true in their manifest; they appear once logged in, with the plumbing item.\n- Certificates, DNS and Caddy on the relay box come from new or improved scripts in ./bash, which gets an overhaul.\n\nNOT IN THIS ITEM: connecting the logged-in face to the home node (the plumbing), the next item.",
-   "version": 12,
-   "checks": [],
+   "box": "A member logs in on his face, served by the relay. The item ends with the user logged in; the face does not yet reach his home node.\n\n- The relay serves face.html, the lazy-load version of the shell, at <face>.<relay host> to anyone, logged in or not, while that member has a verified email, a face name and his home node present. Logged out, the shell is empty but for the login app.\n- The login app is the counterpart of the node's Join app: a steps app on the same design. Its manifest lists the steps; the shell decides where the user stands and hands it to the app; the tile shows the open step and stays after login for the steps still open.\n- Its one field, Log in: [ ], takes the member's verified email or the token from the mail; the page never says which it got.\n- The relay decides the login: it knows whether the home node is present and the member's verified email, and sends the mail. The mail offers the token alone, to paste into the field, and a link to <face>.<relay host>/?<token> that opens the login app and logs in directly. No coordination between the link's window and the waiting one.\n- The token is used once and is good for 10 minutes, with the join's caps: one a minute, five an hour per face.\n- A login is a cookie for that face host, valid until 7 days after the logged-in user's last interaction; Log out ends it.\n- The face looks and feels exactly like the node shell, in green tones of the same brightness, minus the Spirit group and the app icons for now: the shell's styles are one stylesheet both pages load (the node's colours as variables, the face's green in its own small sheet), the same desktop, title bar and app screen, and the login app opens at once and takes over the screen as Join does, its steps drawn as Join draws them, from not logged in to logged in.\n- The face shell is the new shell in the making, to work equally on the home node and on the face: built so, with only the login app and the green sheet the face's own.\n- face.html works on the home node too (127.0.0.1:65432/face.html): there the shell asks the node who it is and the user is logged in as its owner, the login step ticked.\n- After login the login app says \"waiting for plumbing\".\n- Shell apps for the face carry face:true in their manifest; they appear once logged in, with the plumbing item.\n- Certificates, DNS and Caddy on the relay box come from new or improved scripts in ./bash, which gets an overhaul.\n\nNOT IN THIS ITEM: connecting the logged-in face to the home node (the plumbing), the next item; the home node booting the new shell instead of index.html.",
+   "version": 16,
+   "checks": [
+    {
+     "number": "T1",
+     "kind": "T",
+     "words": "faceLogin: the face served, the one-field login, the session",
+     "test": "spirit/test/faceLogin.js",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/relay.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T23:14:25.489Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T23:14:28.589Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/relay.js, spirit/run/js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T23:16:10.046Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: index.html",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T23:51:42.857Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/relay.js, spirit/run/js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-20T23:52:27.631Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -8579,6 +8720,312 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-20T23:06:04.054Z",
      "text": "Capped (v12): the box holds the decided design only, in the order a visit goes, and the line on what is not in this item."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T23:09:01.047Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:09:02.501Z",
+     "text": "commit 80b20e002d13e7a8b888d079c7ab2523a7340ffa: goal/G30.9: the red for the face login: the relay serves a face (faceAt) while its member has a verified email, a face name and his node present; one field (faceLogin) mails the email, logs in by toke\n- spirit/test/faceLogin.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:09:09.094Z",
+     "text": "Red written (faceLogin, 9 checks owed). Named where the box names nothing; strike any of it:\n\n- The relay learns its face domain from relay-state/face.json {domain}, placed by the owner like mail.json; bash/face-setup writes it. Without it, no face is served.\n- Logins live in the relay's memory, not on disc (a stored shape would be new), so restarting the relay logs faces out.\n- For Caddy's on-demand certificates the relay answers /face/allowed?domain=<host> with 200 for a face it serves now.\n- The cookie is spirit_face, HttpOnly, for that face host.\n\nBuilding now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:13:55.468Z",
+     "text": "Built; the red is green (faceLogin 9 of 9).\n\n- The relay serves the face, decides the login (email gets the mail with token and link; the token logs in once within 10 minutes; anything else gets the email's answer), and keeps the session for 7 days idle; Log out ends it.\n- face.html, the face shell and the login steps app: Log in, then waiting for plumbing.\n- bash/face-setup writes relay-state/face.json and the Caddy block for *.<domain>, with certificates on demand asked of the relay; the DNS wildcard it only checks.\n- One older check moved: G30.2 guarded that the first round's faceLogin.js was gone, by the name; it now guards that module and its stored login code, so your new face login may carry the name.\n- Not tried live yet: the relay door needs a relay with face.json behind Caddy.\n\nThe commit waits on grants for relay.js and relayServer.js. Grant them?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:15:17.711Z",
+     "text": "commit 1488df75f390167548c5ad077e69811d6005242a: goal/G30.9: the face login: the relay serves <face>.<its domain> (relay-state/face.json) while the member has a verified email, a face name and his node present (faceAt); one field (faceLogin) mails t\n- bash/face-setup\n- spirit/run/face.html\n- spirit/run/face/login/login.js\n- spirit/run/face/login/login.json\n- spirit/run/face/shell.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayServer.js\n- spirit/test/joinOnboarding.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:15:34.570Z",
+     "text": "deskVerify: passed, at 1488df75 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T23:15:35.347Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:15:51.500Z",
+     "text": "commit 3128af19bc794769b3554bdbc8a908b3fa755b1c: goal/G30.9: bash/face-setup is executable, as every script in bash/\n- bash/face-setup"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:15:53.383Z",
+     "text": "Claimed: 1488df75, with 3128af19 making bash/face-setup executable. Verify passes: faceLogin 9 of 9.\n\nFiles: relay.js, relayServer.js, face.html, the face shell, the login app and its manifest, bash/face-setup; the suites faceLogin and joinOnboarding.\n\nTo try it on your box after a tag: ./bash/face-setup, the wildcard DNS record, ./bash/restart."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:16:06.748Z",
+     "text": "deskVerify: passed, at 3128af19 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:18:18.225Z",
+     "text": "tag for relay-update?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:19:15.149Z",
+     "text": "Tagged: v-2026-10-21-01-19 at 3128af19, pushed.\n\nOn the relay box, once, after the update:\n\n- ./bash/face-setup: writes relay-state/face.json and the Caddy block for *.<domain>; if the main Caddyfile lacks the on_demand_tls ask, it prints the block to add and stops\n- a DNS record *.<domain> pointing at the box\n- ./bash/restart\n\nWithout face.json the relay behaves as before."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:23:03.358Z",
+     "text": "root@spirit-3:~/SpiritOS# ./bash/face-setup\n==> write /root/SpiritOS/spirit/run/relay-state/face.json: faces are <name>.spirit.andyflinn.com\n==> write /etc/caddy/sites/faces.spirit.andyflinn.com.caddy for *.spirit.andyflinn.com -> 127.0.0.1:65430\n    !!  /etc/caddy/Caddyfile has no global on_demand_tls block asking the relay\n\n    Add this at the VERY TOP of /etc/caddy/Caddyfile (a global block must come first), above the import line. If a\n    global { } block is already there, put the on_demand_tls part inside it instead:\n\n      {\n        on_demand_tls {\n                ask http://127.0.0.1:65430/face/allowed\n        }\n      }\n\n    Then check and reload:\n      caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile\n      systemctl reload caddy\n\n    and rerun this script. Nothing was reloaded, so what is serving now keeps serving.\nroot@spirit-3:~/SpiritOS#"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:23:42.300Z",
+     "text": "That stop is by design: the main Caddyfile is yours, so the script prints the edit and leaves it to you.\n\n- Open /etc/caddy/Caddyfile. If it already has an on_demand_tls block (the old face-tls one, asking 127.0.0.1:65434/.well-known/spirit-name), change only its ask line to: ask http://127.0.0.1:65430/face/allowed. Caddy takes one ask.\n- If it has none, paste the printed block at the very top, above the import line.\n- caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile, then systemctl reload caddy.\n- Run ./bash/face-setup again; it reloads Caddy itself and checks the DNS.\n- /etc/caddy/sites/face.spirit.andyflinn.com.caddy still points at the deleted face node on 65434; it can go.\n- Then ./bash/restart, so the relay reads face.json."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:29:00.769Z",
+     "text": "root@spirit-3:~/SpiritOS#\nroot@spirit-3:~/SpiritOS# more /etc/caddy/Caddyfile\n\n        on_demand_tls {\n                ask http://127.0.0.1:65430/face/allowed\n        }\n}"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:29:43.845Z",
+     "text": "Careful: as shown, that Caddyfile has lost its opening { and its import line. It will not validate, and if it were reloaded every site would go, the relay included. Do not reload it like this.\n\nThe whole file should read:\n\n{\n\ton_demand_tls {\n\t\task http://127.0.0.1:65430/face/allowed\n\t}\n}\n\nimport sites/*.caddy\n\nThen: caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile; when it says Valid, systemctl reload caddy, and ./bash/face-setup again."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:29:45.865Z",
+     "text": "already fixed"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:30:01.312Z",
+     "text": "Good. Next: ./bash/face-setup again, then ./bash/restart; its last lines say whether the DNS wildcard resolves."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:30:54.603Z",
+     "text": "root@spirit-3:~/SpiritOS# nano /etc/caddy/Caddyfile\nroot@spirit-3:~/SpiritOS# caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile\n2026/10/20 23:30:33.096 INFO    using config from file  {\"file\": \"/etc/caddy/Caddyfile\"}\n2026/10/20 23:30:33.099 INFO    adapted config to JSON  {\"adapter\": \"caddyfile\"}\n2026/10/20 23:30:33.101 INFO    http.auto_https server is listening only on the HTTPS port but has no TLS connection policies; adding one to enable TLS {\"server_name\": \"srv0\", \"https_port\": 443}\n2026/10/20 23:30:33.101 INFO    http.auto_https enabling automatic HTTP->HTTPS redirects        {\"server_name\": \"srv0\"}\n2026/10/20 23:30:33.101 INFO    http    servers shutting down with eternal grace period\n2026/10/20 23:30:33.102 INFO    tls.cache.maintenance   started background certificate maintenance      {\"cache\": \"0xfffef21e480\"}\n2026/10/20 23:30:33.102 INFO    tls.cache.maintenance   stopped background certificate maintenance      {\"cache\": \"0xfffef21e480\"}\nValid configuration\nroot@spirit-3:~/SpiritOS#"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:31:11.070Z",
+     "text": "Valid configuration: good. Now ./bash/face-setup again (it reloads Caddy and checks the DNS wildcard), then ./bash/restart."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:32:50.884Z",
+     "text": "why is this shell so ugly?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:33:19.518Z",
+     "text": "Because it is not the shell's look at all: face.html carries twenty lines of its own CSS, written for this item. The node shell's look (tiles, the desktop, fields, the dark theme) lives inline in index.html's one style block, so nothing else can load it.\n\nThe fix: move that style block out of index.html into one stylesheet both pages load, so the face looks exactly like your shell. Do that in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:35:31.773Z",
+     "text": "and why does  the login not \"open\" like the join-app, take over the screen?\n\n Because it is not the shell's look at all: face.html carries twenty lines of its own CSS, written for this item. The node shell's look (tiles, the desktop, fields, the dark theme) lives inline in index.html's one style block, so nothing else can load it.\n- hogwash, lazyness. oos for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:36:10.119Z",
+     "text": "Recorded as out of scope for now (box v13): the face wearing the shell's look.\n\nWhy the login does not take over: the face shell only draws its tile and waits for a click, and when opened it shows a narrow card under no title bar, not the full app screen the node shell gives Join.\n\nThe fix: logged out, the face shell opens the login app at once, full screen with a title bar, as the node shell opens an app; logged in, the same app screen says waiting for plumbing. Do that in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:37:01.521Z",
+     "text": "🔧\nWaiting for plumbing\nLogged in as levant.\nWaiting for plumbing: reaching your home node comes next.\nLog out"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:37:19.884Z",
+     "text": "Logged in as levant, live on spirit-3: the face, the mail, the token and the session work end to end.\n\nStill open: the login opening at once, full screen with a title bar, like Join. In this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:41:48.260Z",
+     "text": "this is supposed to look like our shell, maybe in green tones of same brightness.\n\nthe hole process, not-logged in to logged in should look and feel exactly like the home node setup, minus the spirit group and app-icons for now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:43:06.933Z",
+     "text": "think of it like this: this is going to be the new shell, that works equally on both the home-node AND the face..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:43:24.118Z",
+     "text": "In the box (v14), replacing the out-of-scope line: the face looks and feels exactly like the shell, in green of the same brightness, minus the Spirit group and app icons.\n\nBuilding it:\n\n- the shell's style block leaves index.html for one stylesheet both pages load; its blues become variables, and the face's small sheet sets them green\n- face.html takes the shell's skeleton: desktop, title bar with Back and Home, app screen\n- the login app opens at once, full screen, its steps drawn as Join draws them\n\nRed first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:44:12.087Z",
+     "text": "on the home node, i'll test it simply by navigating to 127.0.0.1:65432/face.html"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T23:44:13.067Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:44:17.729Z",
+     "text": "Understood, in the box (v15): the face shell is the new shell in the making, for home node and face alike; only the login app and the green sheet are the face's own. The home node booting it instead of index.html is a later item.\n\nSo I build its desktop, title bar and app screen as shell code, not face code, on the one shared stylesheet."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:44:40.424Z",
+     "text": "commit 7e22f270d35e3d283d9b031a9052c50a19963bec: goal/G30.9: the red for box v14/v15: the shell's styles in one shared sheet (shell.css, its blues as --shell-* variables), face.css setting them green, served to the face; face.html with the shell's s\n- spirit/test/faceLogin.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:45:10.045Z",
+     "text": "Then face.html works on both:\n\n- it links /shell.css, which the node serves as it is and the relay serves too\n- on the home node there is no relay login: the shell asks the node who it is (node.card), and you are logged in as its owner; the login app shows the same steps, Log in ticked\n- the face itself stays as built: the relay's login"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:45:47.544Z",
+     "text": "commit b757095ca235222f4743d3e6f80622921c21bd1a: goal/G30.9: the red for box v16: face.html works on the home node too: /shell.css on both servers, and on the home node the face shell asks node.card and the owner is logged in\n- spirit/test/faceLogin.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:46:15.214Z",
+     "text": "the next item will essentially route face requests to the home-nodes apiDoor, and create a SSE-stream equivalent from the home-node to the face, that's all."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T23:46:16.261Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:46:55.950Z",
+     "text": "Noted for the next item: the face's requests routed to the home node's apiDoor, and a stream from the home node to the face standing in for its SSE. Not in this one; this one ends logged in."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:47:28.319Z",
+     "text": "claude-windows 01:46 Noted for the next item: the face's requests routed to the home node's apiDoor, and a stream from the home node to the face standing in for its SSE. Not in this one; this one ends logged in.\n\ncorrect."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:47:57.955Z",
+     "text": "btw. i AM happy about the nice login thinggie...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T23:47:58.888Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:48:27.885Z",
+     "text": "so let's update the look and feel of this, and the item will be done."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T23:48:28.940Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:49:14.275Z",
+     "text": "Glad the login suits you.\n\nThe look is built; the red is green (faceLogin 14 of 14):\n\n- the shell's style block left index.html for shell.css; its blues are variables, face.css sets them green\n- face.html is the shell's skeleton on /shell.css; the login app opens at once and draws as Join does\n- on the home node, /face.html asks the node who it is and the owner is logged in (checked on my node: every file serves, the fallback works)\n- five older suites that read the shell's CSS from index.html now read shell.css\n\nThe commit waits on one grant: index.html (its style block replaced by the link to shell.css). Grant it?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:49:35.242Z",
+     "text": "That is what is built and waiting: the look and feel of the shell in green, the login opening at once. One grant stands between it and the commit: G4 (index.html). Once granted I commit, claim and verify; then a tag for the relay so the face shows it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:51:00.690Z",
+     "text": "tag so i can see on spirit-3"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-20T23:51:01.411Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:51:41.490Z",
+     "text": "A tag now would carry the old look: the new one is not committed, because index.html still waits on its grant (G4, open). Grant G4 and I commit, then tag at once."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:52:14.476Z",
+     "text": "commit 7a6bdc9cfd6c59ebf102e5fc7b427dedd1027477: goal/G30.9: box v14-v16: the face looks and feels like the shell, in green: the shell's style block leaves index.html for one sheet, shell.css, its blues as --shell-* variables, which face/face.css se\n- spirit/run/face.html\n- spirit/run/face/face.css\n- spirit/run/face/login/login.js\n- spirit/run/face/shell.js\n- spirit/run/index.html\n- spirit/run/js/relayServer.js\n- spirit/run/shell.css\n- spirit/test/armedButtons.js\n- spirit/test/contacts.js\n- spirit/test/contactsDetails.js\n- spirit/test/filesContentsSearch.js\n- spirit/test/iconIndex.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:52:39.839Z",
+     "text": "deskVerify: passed, at 7a6bdc9c (pulled). 7 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:52:41.062Z",
+     "text": "Claimed: 7a6bdc9c; verify passes (faceLogin 14 of 14).\n\nTagged: v-2026-10-21-01-52 at 7a6bdc9c, pushed. Update spirit-3 and reload the face; no setup step this time."
     }
    ]
   }
