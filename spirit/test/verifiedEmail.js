@@ -139,6 +139,20 @@ if (/emailVerified/.test(infoFace) && /Verify your email in Contacts/.test(infoF
   test.check('Info draws no face form for a relay with no verified email, and offers its natterDetails instead');
 else test.fail(OWED + 'Info draws the face form without a verified email, or offers no way to natterDetails');
 
+test.subHeading('5c. the Join icon while the node holds no seat (box v32)');
+// NAMED HERE: shell/join/, an intrinsic app with untilSeated in its manifest; the shell shows such an app on the
+// desktop only while relay.search answers no relay owned or claimed, and never in the Spirit group's grid.
+let joinManifest = null;
+try { joinManifest = JSON.parse(fs.readFileSync(path.join(RUN, 'shell', 'join', 'join.json'), 'utf8')); } catch (e) { joinManifest = null; }
+const joinApp = code('shell/join/join.js');
+if (joinManifest && joinManifest.intrinsic === true && joinManifest.untilSeated === true && /'relay\.join'/.test(joinApp) && /relay\.search/.test(joinApp) && /confirmation link/.test(joinApp))
+  test.check('shell/join is an intrinsic app shown until seated; it asks relay.join for the first listed relay and says a confirmation link is in the inbox');
+else test.fail(OWED + 'no shell/join app with untilSeated, or it asks no relay.join, or not its words');
+const desktop = (/function renderDesktop\(\) \{[\s\S]*?\n  \}/.exec(shellSrc) || [''])[0];
+if (/'join'/.test((/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*\]/.exec(shellSrc) || [''])[0]) && /untilSeated/.test(desktop) && /nodeSeated/.test(desktop) && /untilSeated/.test((/function renderAppGroup\([\s\S]*?\n  \}/.exec(shellSrc) || [''])[0]))
+  test.check('the shell declares join at boot, shows it on the desktop only while the node holds no seat, and keeps it out of the group grid');
+else test.fail(OWED + 'the shell does not show the join app by the node\'s seat');
+
 test.subHeading('6. a newly started node presents noderoutes.net as a contact');
 // Box v29: "A newly started node presents noderoutes.net as a contact already". Contacts' relay rows are relay.search's
 // (contacts.js asks it); a new node's list is what boot asserts (server.js calls ownerBadge.ensureRelays). So a fresh
