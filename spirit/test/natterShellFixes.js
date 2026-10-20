@@ -35,6 +35,9 @@ const RUN = path.join(__dirname, '..', 'run');
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
 const code = function (rel) { try { return fs.readFileSync(path.join(RUN, rel), 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'); } catch (e) { return ''; } };
 const homes = [];
+// THE APP IS GONE when its entry script and manifest are (goal/G30.7). A node's own data files in that folder (session.json,
+// minted.json, gitignored) are the owner's and stay where they are.
+function natterApp() { return ['natter.js', 'natter.json'].some(function (f) { return fs.existsSync(path.join(RUN, 'shell', 'natter', f)); }); }
 function home(name) { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'g307-' + name + '-')); homes.push(d); return d; }
 
 test.startTest('goal/G30.7: Natter and Info show what is true; relays are peers; a relay seats its owner at boot');
@@ -56,7 +59,7 @@ test.subHeading('3. Natter searches');
 // Natter retired (section 7), so its list with it: relays are searched in the Contacts list of peers seen, which is
 // the shared list search.
 const contactsList = code('shell/contacts/contacts.js');
-if (/contactsSeenList = window\.spiritElements\.shellCreateListSearch\(/.test(contactsList) && !fs.existsSync(path.join(RUN, 'shell', 'natter')))
+if (/contactsSeenList = window\.spiritElements\.shellCreateListSearch\(/.test(contactsList) && !natterApp())
   test.check('relays are searched in the Contacts list of peers seen, the shared list search');
 else test.fail(OWED + 'relays are not searched through the shared list');
 const relaySearch = (/function relaySearch\(body, deps\) \{[\s\S]*?\n  \}/.exec(hub) || [''])[0];
@@ -151,10 +154,10 @@ else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to n
 // else the sentence; rows carry owned and claimed. hub.relayRemove asks it with what the node knows.
 test.subHeading('7. Natter retires');
 const shellJs = code('js/client/shell.js');
-const natterGone = !fs.existsSync(path.join(RUN, 'shell', 'natter'));
+const natterGone = !natterApp();
 if (natterGone && !/INTRINSIC_APP_FOLDERS\s*=\s*\[[^\]]*'natter'/.test(shellJs) && !/NATTER_ID|function firstRun/.test(shellJs))
-  test.check('the Natter app is gone: its folder, its intrinsic entry and the first-run branch');
-else test.fail(OWED + 'Natter is still there: folder ' + !natterGone + ', or the shell still names it');
+  test.check('the Natter app is gone: its entry script and manifest, its intrinsic entry and the first-run branch');
+else test.fail(OWED + 'Natter is still there: its app files ' + !natterGone + ', or the shell still names it');
 const contactsSrc = fs.existsSync(path.join(RUN, 'shell', 'contacts', 'contacts.js')) ? fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8') : '';
 // The panels as the page draws them: each a <details> whose <summary> carries its title; the new one is named
 // contacts-relay-add-summary here.
