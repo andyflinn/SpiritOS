@@ -188,11 +188,12 @@ if (sheet.length > 10000 && /#desktop\s*\{/.test(sheet) && /<link rel="styleshee
 else test.fail(OWED + 'the shell\'s styles are not one shared sheet with its blues as variables');
 const faceVars = ((/:root\s*\{([^}]*)\}/.exec(faceSheet) || [])[1] || '');
 const varNames = (rootVars.match(/--shell-[a-z0-9-]+/g) || []);
-if (varNames.length && varNames.every(function (v) { return faceVars.indexOf(v) !== -1; }) && /'\/face\/shell\.css':\s*'\.\.\/shell\.css'/.test(code('js/relayServer.js')) && /'\/face\/face\.css'/.test(code('js/relayServer.js')))
+// /shell.css is one path the node serves as it is and the relay serves too, so face.html works on both (box v16).
+if (varNames.length && varNames.every(function (v) { return faceVars.indexOf(v) !== -1; }) && /'\/shell\.css':\s*'\.\.\/shell\.css'/.test(code('js/relayServer.js')) && /'\/face\/face\.css'/.test(code('js/relayServer.js')))
   test.check('face.css sets every --shell-* variable green, and the relay serves both sheets to the face');
 else test.fail(OWED + 'face.css does not set every shell variable, or the relay does not serve the sheets: ' + short(varNames));
 const fh = rawFile('face.html');
-if (/href="\/face\/shell\.css"/.test(fh) && /href="\/face\/face\.css"/.test(fh) && /id="desktop"/.test(fh) && /id="app-container"/.test(fh) && /id="app-header"/.test(fh)
+if (/href="\/shell\.css"/.test(fh) && /href="\/face\/face\.css"/.test(fh) && /id="desktop"/.test(fh) && /id="app-container"/.test(fh) && /id="app-header"/.test(fh)
     && /id="app-close"/.test(fh) && /id="app-home"/.test(fh) && /id="app-title"/.test(fh) && /id="app-content"/.test(fh) && !/<style/.test(fh))
   test.check('face.html is the shell\'s skeleton (desktop, title bar with Back and Home, app screen) on the shared sheets, with no style of its own');
 else test.fail(OWED + 'face.html is not the shell\'s skeleton on the shared sheets');
@@ -202,6 +203,10 @@ if (/app-icon/.test(fs2) && /!state\.loggedIn|!\(state && state\.loggedIn\)|logg
     && /join-steps/.test(la) && /stat-tile wide/.test(la) && /start-job-form card/.test(la) && /field-label/.test(la))
   test.check('the face shell opens the login app at once when logged out, and the login app draws its steps as Join does');
 else test.fail(OWED + 'the face shell does not open the login app at once, or the login app does not draw as Join');
+// On the home node (box v16): no relay login; the shell asks the node who it is and the owner is logged in.
+if (/'node\.card'/.test(fs2) && /\/api\/spirit/.test(fs2) && /home/.test(fs2))
+  test.check('on the home node the face shell asks node.card and the owner is logged in');
+else test.fail(OWED + 'the face shell has no home-node path (node.card through /api/spirit)');
 
 homes.forEach(function (d) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* busy */ } });
 test.reportSuccessFailureCount();
