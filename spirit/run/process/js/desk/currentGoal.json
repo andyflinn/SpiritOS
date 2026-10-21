@@ -1,5 +1,5 @@
 {
- "change": 78142,
+ "change": 78436,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,12 +10,11 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G30.10"
-   ],
+   "blocked": [],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -46,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
@@ -9051,10 +9050,11 @@
    "id": "goal/G30.10",
    "title": "Connect home node and face",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30"
@@ -9064,21 +9064,52 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/face/shell.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/faceHome.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayRequest.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/faceKeys.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceUpload.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "179ae047",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -9110,14 +9141,14 @@
     }
    ],
    "names": {
-    "wsl-claude": "wsl-claude",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Connect the home node and the face: requests from the logged-in face reach the home node, and the home node streams answers and updates back to the face, through the relay. No face node, no puppet process, no app servers on the relay box.\n\n- The relay serves face.html and the login app, nothing else. After login the login app sets up a sealed link with the home node and loads everything else from it, lazily: the home node serves the face its own version, so there is no version to sync. Contacts is the one app the face must have from the start; the rest loads when opened.\n- The home node acts as a puppet to its verified face: the face gets exactly the local shell's interface, through the same door a puppeteer uses on the home node, minus the email and face changes with the relay (adding or changing the email, asking a face name). Only the face and its connection are protected.\n- The home node keeps the one stream it holds to its relay; the logged-in face opens its own stream to the relay, tied to its login.\n- A face request goes into the member's stream as an event (no route, no in-flight slot); the home node answers on faceStream, and the relay hands the answer to the waiting face request. One request, one answer, no polling.\n- faceStream is node-internal, the owner's node to the owner's face, with the relay only shovelling bytes both ways. It is not a peerPost: no post limit (22 KB) and no size cap of its own; files, media and source travel whole. A file is a plain upload of its raw data, tagged with the request's id and piped straight into the waiting request: no base64, no JSON around it.\n- The home node streams to the face what it streams to its loopback shell.\n- On the home node, faceStream has its own serializing queue and a queue manager: face requests first, the fs-watcher, stats and the other streamed updates after. Tuning that queue will take experimentation.\n- After login everything on faceStream is sealed between the home node and the browser, with a browser-compatible seal whose key is lost with the session. That keeps the relay from reading it passively; a relay owner who swaps face.html or the login app could still read it, since those come from the relay, and the login says so to the member.\n- One face stream per member. A face opened while another device holds it warns: your face is open on another device; connecting here ends it there. Only its Connect here press moves the stream; the face it replaced gets a last event, taken by another device, and says so.\n- The face stream counts in the relay's one stream ceiling (set from its RAM), so a full relay refuses a new face as it refuses a member's stream: at most two streams per member, the home node's and one face's.\n- The two relay additions, the face request as a stream event and faceStream, need review and Andy's yes on each before they are built.\n- When the home node goes offline, the face keeps its shell and shows the small red not connected mark, as the local shell does.\n- After this item the face shell is no longer waiting for plumbing.\n\nNOT IN THIS ITEM: a reconnect that keeps the browser's cached content; app components found and installed on demand, with the home node learning what to deliver.",
-   "version": 15,
+   "box": "Connect the home node and the face: requests from the logged-in face reach the home node, and the home node streams answers and updates back to the face, through the relay. No face node, no puppet process, no app servers on the relay box.\n\n- The relay serves face.html and the login app, nothing else. After login the login app sets up a sealed link with the home node and loads everything else from it, lazily: the home node serves the face its own version, so there is no version to sync. Contacts is the one app the face must have from the start; the rest loads when opened.\n- The home node acts as a puppet to its verified face: the face gets exactly the local shell's interface, through the same door a puppeteer uses on the home node, minus the email and face changes with the relay (adding or changing the email, asking a face name). Only the face and its connection are protected.\n- The home node keeps the one stream it holds to its relay; the logged-in face opens its own stream to the relay, tied to its login.\n- A face request goes into the member's stream as an event (no route, no in-flight slot); the home node answers on faceStream, and the relay hands the answer to the waiting face request. One request, one answer, no polling.\n- faceStream is node-internal, the owner's node to the owner's face, with the relay only shovelling bytes both ways. It is not a peerPost: no post limit (22 KB) and no size cap of its own; files, media and source travel whole. A file is a plain upload of its raw data, tagged with the request's id and piped straight into the waiting request: no base64, no JSON around it.\n- The home node streams to the face what it streams to its loopback shell.\n- On the home node, faceStream has its own serializing queue and a queue manager: face requests first, the fs-watcher, stats and the other streamed updates after. Tuning that queue will take experimentation.\n- After login everything on faceStream is sealed between the home node and the browser, with a browser-compatible seal whose key is lost with the session. That keeps the relay from reading it passively; a relay owner who swaps face.html or the login app could still read it, since those come from the relay, and the login says so to the member.\n- One face stream per member. A face opened while another device holds it warns: your face is open on another device; connecting here ends it there. Only its Connect here press moves the stream; the face it replaced gets a last event, taken by another device, and says so.\n- The face stream counts in the relay's one stream ceiling (set from its RAM), so a full relay refuses a new face as it refuses a member's stream: at most two streams per member, the home node's and one face's.\n- The two relay additions, the face request as a stream event and faceStream, need review and Andy's yes on each before they are built.\n- When the home node goes offline, the face keeps its shell and shows the small red not connected mark, as the local shell does.\n- After this item the face shell is no longer waiting for plumbing.\n- The home node's face uploads go through relayRequest, the one outbound door, as a streamed upload; faceHome reaches for no http of its own.\n- The relay sets no request timeout, so the face's live upload stays open as long as the face does; the limit on headers stays.\n- The face learns the home node's keys (its public key and seal key) from faceHome itself, by a face request answered before the door; node.card is not changed.\n- The face shell offers spirit.shell.factRow, the old shell's fact row, so Relay Details and Contact draw in the face.\n\nNOT IN THIS ITEM: a reconnect that keeps the browser's cached content; app components found and installed on demand, with the home node learning what to deliver.",
+   "version": 18,
    "checks": [
     {
      "number": "Q1",
@@ -9129,6 +9160,51 @@
      "at": "2026-10-21T00:14:56.980Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/faceHome.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T03:31:12.296Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/relayRequest.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T03:31:14.464Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/faceHome.js, spirit/run/js/relayRequest.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T03:31:51.807Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T03:38:31.741Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/faceHome.js, spirit/run/js/relayRequest.js, spirit/run/js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T03:39:16.635Z"
     }
    ],
    "chat": [
@@ -9491,6 +9567,216 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T01:47:47.109Z",
      "text": "Green: settled, open none, box current (v15). It holds the whole design; the finer rulings since (the queue order and what is dropped, bundling, older browsers, the reconnect) are in its four steps, G30.14, G30.13, G30.12 and G30.11, all green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:23:21.475Z",
+     "text": "All four steps are Done, and their suites cover this box. Two gaps are left, and both are this design's own:\n\n- oneDoor is red: the home node's face upload calls http itself, because relayRequest cannot stream an upload. Fix: a streamed upload in relayRequest.js, the one outbound door, used by faceHome; relayRequest's tally goes up one, faceHome's to zero. That changes the interface.\n- The face's live stream stops after 5 minutes: the relay's web server ends any upload that runs longer (Node's default request timeout). Fix: lift that limit on the relay. The 60 s header limit stays.\n\nThe red would be oneDoor going green, and a faceStream upload that stays open past the limit.\n\nBuild both here?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:25:02.430Z",
+     "text": "hmmm why does faceHome sit outside of peerRequest? faceHome requires no user-interaction, correct?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:25:27.345Z",
+     "text": "Correct, no user interaction: faceHome answers the relay's face events by itself.\n\nIt sits outside only because relayRequest can't carry its uploads. relayRequest sends a whole JSON body and gives up after 30 s, while faceStream's uploads are raw streams with no size cap, and the live one stays open as long as the face does. Nothing else keeps it out. A streamed upload in relayRequest brings it inside."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:26:19.199Z",
+     "text": "would this eliminate the oneDoor red?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:26:50.257Z",
+     "text": "Yes. faceHome's two reaches (its http and https) go to zero. Correcting my earlier line: relayRequest's tally doesn't rise either, because the streamed upload reuses the http and https it already holds. oneDoor goes green with no change to its tally.\n\nOne thing oneDoor does not see: face/seal.js is a second implementation of the seal, in the browser, as your box asks. faceSealed holds it against seal.js both ways, and I checked it the same way in Chrome."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:27:58.650Z",
+     "text": "do that. brb"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:28:42.916Z",
+     "text": "Taking that as the streamed upload in relayRequest; it is in the box now. Building it.\n\nThe 5-minute limit on the relay too?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T03:29:52.681Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:29:57.082Z",
+     "text": "commit 2e2a16b0e514787bd12cecfcee73e78dde5d47cb: goal/G30.10: the red for the face uploads through the one outbound door: relayRequest.relayUpload sends each write as it happens, chunked, with its headers, and reads the answer; an address that is no\n- spirit/test/faceUpload.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:30:44.636Z",
+     "text": "Built; the red is 3 of 3 green, and oneDoor is green again (10 of 10). The face suites still pass. The commit waits on your grants for two core files:\n\n- relayRequest.js: relayUpload, a streamed upload to a relay, each write sent as it is made; same address rule as relayRequest, no deadline, no cap.\n- faceHome.js: uploads through it and holds no http of its own.\n\nStill open: the 5-minute limit on the relay."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:31:48.385Z",
+     "text": "commit 437dcd235ec5e6cb1e26ff5c3880ffb53d92b365: goal/G30.10: the face uploads go through the one outbound door: relayRequest.relayUpload streams a POST to a relay, each write sent as it is made (chunked), no deadline and no cap, the answer read and\n- spirit/run/js/faceHome.js\n- spirit/run/js/relayRequest.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:32:06.630Z",
+     "text": "deskVerify: passed, at 437dcd23 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:34:16.646Z",
+     "text": "tag for spirit-3?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:34:51.374Z",
+     "text": "Ready to tag, with one catch. Since v-2026-10-21-01-52, spirit-3 would get: face requests as stream events, the face's own stream, one face per member with Connect here, the sealed link, and face/seal.js. Your node has to pull and restart too: the face events are a flag day, relay and node together.\n\nWhat you'd see: log in at your face, and Contacts loads from your home node over the sealed link. This is its first run through a real relay, so expect something to need a fix.\n\nThe catch: the 5-minute limit is still on the relay. Calls keep working, but the live stream (presence dots, updates) stops after 5 minutes until the page is reloaded.\n\nMy recommendation: lift that limit first (one setting in relayServer.js, a few minutes), then tag. Lift it first?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:35:26.893Z",
+     "text": "i already pulled and restarted 65432 and 11111"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:36:01.433Z",
+     "text": "Good, your nodes are on the new code; only the relay is behind.\n\nTag as is, or lift the 5-minute limit first?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:36:39.074Z",
+     "text": "lift the 5 minute limit."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:38:02.757Z",
+     "text": "commit 4700e7d3f39d145b0737a28122ef36f8ec7f79cb: goal/G30.10: the red for lifting the 5-minute limit: relayServer sets no request timeout, so faceStream's upload outlives Node's default, and keeps the header limit\n- spirit/test/faceUpload.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:38:24.365Z",
+     "text": "Built: one line in relayServer.js, server.requestTimeout = 0. The header limit stays, and every other body is still capped. The red is 4 of 4.\n\nThe commit waits on your grant for relayServer.js. After that I'll tag for spirit-3."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:39:12.776Z",
+     "text": "commit 81aaf8560fd47c566bf6a424f6b3b58e1a31c791: goal/G30.10: the relay sets no request timeout (Andy: \"lift the 5 minute limit.\"): faceStream's live upload stays open as long as the face does; the header limit stays, and every other body is still b\n- spirit/run/js/relayServer.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:39:33.199Z",
+     "text": "deskVerify: passed, at 81aaf856 (pulled). 1 suite ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:39:48.300Z",
+     "text": "Claimed at 81aaf856; my verify passed, 4 of 4.\n\nTagged v-2026-10-21-05-39 on 81aaf856 and pushed it. spirit-3 takes it on its next update, and your nodes already run this code.\n\nTo try it: open your face, log in, and Contacts should load from your home node over the sealed link. Tell me what you see, especially anything red in the banner."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:50:04.846Z",
+     "text": "wow, it works surprisingly snappy, i logged in levant and i'm using his contacts, when i go into natterDetails for spirit-3, it stays frozen on this:\n\nThis browser cannot seal: your traffic is readable on the relay.\n⬅️\n🏠\nRelay Details for https://spirit.andyflinn.com\nasking that relay…\n\nit stays on \"asking that relay\""
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:51:20.655Z",
+     "text": "Good to hear. Both are mine:\n\n- 'Cannot seal' is wrong: your browser can seal. The face reads the home node's seal key from node.card, and node.card doesn't carry it, so the face fell back to unsealed. My red faked a card that had the key. Fix: the face asks faceHome for the home node's keys itself (a face request, not a node verb), and the red uses the real node's answer.\n- Relay Details hangs: it draws the relay's answer with spirit.shell.factRow, a small helper of the old shell that the face shell lacks, so drawing fails after the answer arrives. Fix: the face shell offers the same factRow.\n\nFold both into G30.10?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:52:46.897Z",
+     "text": "ok. go fix those things..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:54:29.250Z",
+     "text": "commit 0f5e91ef9cb9102367d560c0e174f8162e2cb5c5: goal/G30.10: the red for the two fixes found on spirit-3: { keys: 1 } is answered by faceHome with the real node's public key and seal key, before the door, and a request sealed to it opens on the nod\n- spirit/test/faceKeys.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:55:19.690Z",
+     "text": "commit 179ae0471af6c0570f85d2b83f5d56104d8f13bc: goal/G30.10: the two fixes found on spirit-3: faceHome answers { keys: 1 } with the node's public key and seal key before the door, and the face takes its keys from that rather than node.card, which c\n- spirit/run/face/shell.js\n- spirit/run/js/faceHome.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:55:38.227Z",
+     "text": "Fixed and claimed at 179ae047; my verify passed (faceKeys 3 of 3, the face suites green).\n\nTo see it, both ends move: your node needs a pull and restart (faceHome answers the keys), and spirit-3 needs a new tag (the relay serves face/shell.js).\n\nShall I cut the tag?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:56:32.257Z",
+     "text": "deskVerify: passed, at 179ae047 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:00:11.547Z",
+     "text": "new tag please"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:00:57.652Z",
+     "text": "Tagged v-2026-10-21-06-00 on 179ae047 and pushed it.\n\nUpdate spirit-3, then pull and restart 65432. Your face should then say it is sealed (the login step reads Connected to your home node over a sealed link), and Relay Details should draw."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:04:50.448Z",
+     "text": "WOW! this is awesome, and so fast i can't tell a difference to my local shell....."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:05:10.276Z",
+     "text": "Glad to hear it. G30.10 is verified and waits only for your Done; the other apps come to the face one by one, as you ruled."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:07:04.352Z",
+     "text": "funny thing.... with downloading EVERYTHING from my home node.... we won't have to update spirit-3 for every app we make work on the face...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:07:40.236Z",
+     "text": "Right. The relay serves only face.html, the face shell, the seal, the two sheets and the login app. Apps, elements and the kernel come from your home node, so making an app work on the face is a node change, a pull on your side. spirit-3 needs a tag only when one of those relay-served files or its face routes change, as the face shell did this time."
     }
    ]
   },
