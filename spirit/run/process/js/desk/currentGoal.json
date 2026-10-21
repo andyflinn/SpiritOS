@@ -1,5 +1,5 @@
 {
- "change": 81801,
+ "change": 81802,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -47,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -13054,10 +13054,9 @@
    "id": "goal/G30.19",
    "title": "Upgrade new shells contact application with probabilitySearch",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
