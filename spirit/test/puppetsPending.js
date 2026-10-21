@@ -134,11 +134,9 @@ test.subHeading('one return bound, both paths');
   const everyVerbSrc = fs.readFileSync(path.join(REPO, 'spirit/test/everyVerb.js'), 'utf8');
   const listBlock = /const LISTS_TODAY = \[([\s\S]*?)\];/.exec(everyVerbSrc);
   const stillLists = listBlock ? (listBlock[1].match(/'([a-z]+\.[a-zA-Z]+)'/g) || []).map(function (q) { return q.slice(1, -1); }) : null;
-  test.awaiting('puppets/G2', 'no verb answers with a list: each is search + get', stillLists !== null && stillLists.length === 0,
-    'still answering with a list (everyVerb.js LISTS_TODAY): ' + (stillLists ? stillLists.join(', ') : 'LISTS_TODAY NOT FOUND') +
-    '. Each becomes search(label) giving key/label pairs through the probability bucket, plus get(key), and the ' +
-    'apps that call it change in the same commit',
-    { there: 50, cost: 'a sitting per collection, after Andy\'s yes on the verb list' });
+  // BUILT (goal/G30.19 took peer.search, the last one): no verb answers with a list, so this asserts it stays so.
+  if (stillLists !== null && stillLists.length === 0) test.check('puppets/G2: no verb answers with a list: each is search + get');
+  else test.fail('puppets/G2: a verb answers with a list again (everyVerb.js LISTS_TODAY): ' + (stillLists ? stillLists.join(', ') : 'LISTS_TODAY NOT FOUND'));
 
   // puppets/G3, ANDY'S OWN INSTRUMENT ("then you need only one suite that
   // makes every api call"), is no longer owed: spirit/test/everyVerb.js is
