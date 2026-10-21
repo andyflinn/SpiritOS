@@ -1,5 +1,5 @@
 {
- "change": 79601,
+ "change": 79604,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -45,16 +45,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -11132,10 +11130,9 @@
    "id": "goal/G30.15",
    "title": "Fix details in new shell and in natterDetail for that shell...",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -12327,6 +12324,12 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T07:15:37.090Z",
      "text": "Agreed, and it is the right rule. As I'd write it in a box:\n\n- Every element that shows a server value listens to its updates itself; no app redraws it by hand.\n- A face is an input: it only asks for changes. The server's confirmed change, broadcast on the stream, repaints every element showing that value, wherever it is.\n- Contacts and Relay Details are made to comply first; nothing goes into the new shell that isn't such an element.\n\nThe first step is an inventory, not code: every place in Contacts and Relay Details that shows a server value, whether it listens today, and which stream event it would listen to.\n\nAdd a new item in G30 with this box, and I start with the inventory?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T07:21:43.221Z",
+     "text": "we'll continue later. i have to take care of a few other things.\n\n- i like your proposed approach.\n- inventory first.\n- then component (shell-element) construction and naming conventions.\n- then rebuild contacts and natterDetails with the new shell elements, or we do those apps and the elements in parallel.\n\ni'll click on done for this item, take a few hours, then return to start the long journey of re-building a shell that works anywhere...\n\nI am very pleased with the progress made in the last 24 hours.\n\nThanks. TTYL."
     }
    ]
   }
