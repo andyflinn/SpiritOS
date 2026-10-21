@@ -203,6 +203,29 @@ const done = (async function () {
   else test.fail(OWED + 'shell elements: ' + short(shell));
   if (/self\.feed = /.test(code('shell/js/probabilitySearch.js'))) test.check('probabilitySearch takes a streamed answer into its cache (feed)');
   else test.fail(OWED + 'probabilitySearch has no feed()');
+
+  // ── 6. One row of filters, the network a toggle at its end (box v8) ────────────────────────────────────────────────
+  // Andy: "KILL that [all] AND KILL [book], put [network] at the very and as a toggle, when its on then it shows peers
+  // from the network ALSO." NAMED HERE: contactSearch.filters, the list's filter definitions in order; a filter with
+  // toggle: true is one button, its value false until pressed (probabilitySearch draws and flips it).
+  test.subHeading('6. one filter row: all, puppets, blocked, held, relays, then a network toggle, off at first');
+  const F = (E.contactSearch && E.contactSearch.filters) || [];
+  const names = F.map(function (f) { return f.name; }).join(',');
+  const net6 = F.filter(function (f) { return f.name === 'network'; })[0];
+  const P = E.probabilitySearch;
+  const entries = [{ key: 'B', row: { name: 'bert', book: true }, at: 0 }, { key: 'N', row: { name: 'nina …x', book: false }, at: 1 },
+    { key: 'R', row: { name: 'relay', kind: 'relay', relay: true }, at: 2 }];
+  const shown = function (on) {
+    try { return P.order(entries, { words: '', values: { show: 'all', network: on }, filters: F }).map(function (w) { return w.key; }).join(','); }
+    catch (e) { return 'threw ' + e.message; }
+  };
+  if (names === 'show,network' && net6 && net6.toggle === true) test.check('the filters are show, then network as a toggle; no where, no book, no second all');
+  else test.fail(OWED + 'the filters are ' + short(names) + ', network ' + short(net6 && { toggle: net6.toggle }));
+  if (shown(false) === 'B,R' && shown(true) === 'B,N,R') test.check('off, the book and the relays; on, the network\'s peers as well');
+  else test.fail(OWED + 'off shows ' + shown(false) + ', on shows ' + shown(true));
+  const ps = code('shell/js/probabilitySearch.js');
+  if (/f\.toggle/.test(ps) && /values\[f\.name\] = f\.toggle \? false/.test(ps)) test.check('probabilitySearch draws a toggle filter as one button, off until pressed');
+  else test.fail(OWED + 'probabilitySearch has no toggle filter');
 }());
 
 done.then(function () {
