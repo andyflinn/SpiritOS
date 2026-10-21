@@ -1,5 +1,5 @@
 {
- "change": 78436,
+ "change": 78864,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.15"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -465,6 +466,18 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-20T23:57:36.774Z",
      "text": "Added: goal/G30.10, Connect home node and face. Its box holds your line and the two parts named earlier (requests to the home node's apiDoor through the relay; a stream from the home node to the face standing in for the SSE)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:16:10.820Z",
+     "text": "damn, no matter what i do, i can't get desk to show me the new item in G30"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:17:41.449Z",
+     "text": "Found it. G30.15 is there, but the List's empty search only returns what fits in one answer: the goal and four Done items, then 'more'. G30 has fifteen items now, and the Done ones crowd out the new one.\n\nFor now: type a word of its title in the search ('fix details'), and it comes up first.\n\nThe lasting fix is in the desk: on an empty search, rank open items above Done ones. That is a desk change, not in G30. Add a new item for it?"
     }
    ]
   },
@@ -11029,6 +11042,534 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T02:04:21.874Z",
      "text": "Not ready yet. Tagging it would deploy cleanly, but a live try would show only half the trip.\n\n- What is built (G30.14) is the relay's half: it puts the face request on your node's stream and waits for the answer.\n- Nobody answers yet. Your home node has no code that picks up a face event; that is G30.13.\n- With Files today, the face would send the request, your node would ignore it, and after 30 s the browser would get a 504.\n\nThe first real try with Files comes after G30.13, and the tag goes with that. Go on G30.13?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.15",
+   "title": "Fix details in new shell and in natterDetail for that shell...",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "claude-windows",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Fixes to the new shell (the face), found using it on spirit-3.\n\n- Relay Details on the face: a new invite shows in the invite list at once, as it does in the local shell. Today it shows only after the screen asks again; a deleted invite already goes at once. The owner's relay events (an invite minted, a claim, a rename) go to the face as they go to the local shell; the relay monitor still does not.\n- The new shell's favicon.svg is 🤓, and the browser tab shows the ID's label after it.\n- One face stream per member stands. A member with an open face holds three connections on its relay: the home node's stream, the face's stream, and the home node's upload feeding that face stream.\n- The capacity calculations are revised for faces, so a relay can serve all its members at once: the home node's feed upload counts in the one stream ceiling, a seat reserves three of the ceiling's streams, and README/CAPACITY.md says so.\n- The stream allowance is the RAM left after the relay's own at-rest memory, times 16 streams a megabyte. The at-rest memory is the relay's own resident memory measured at the end of its boot, kept as a constant until the next start.\n- The relay's status shows the parts: the relay at rest, the streams held by kind (home nodes, faces, feed uploads) and what they cost, the RAM still free, and the members a megabyte serves at three streams each.\n- Relay Details, for its owner, shows memory and disc: what is set, what runs, what the box can give, and a field for each to change it, with the members that setting serves. It says a change applies at the next restart, and offers Restart. It uses the relay's own config and restart.\n- Contacts' network search (the shell element peerFind, local shell and face alike) fills as soon as its fold opens, and an empty search answers like any other: what the relays rank first.\n- bash/face-setup writes the face site without compression (no encode gzip), so the face's stream reaches it as written; with it, Caddy held back the stream's last lines and the contact dots stayed white until a search.\n- The Log out button in the login app's Your home node step is a two-press button: the first press arms it, a press anywhere else disarms it, the second press logs out.",
+   "version": 15,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Invites appear live through the owner's relay events, which G30.13 keeps off the face with the monitor; send the owner's events (invite, claim, rename) to the face?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T04:31:48.649Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Your ID's label after the favicon: in the browser tab's title, or beside the favicon in the face's own bar?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T04:35:20.870Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "With a face a member holds three connections; should a seat reserve three of the ceiling's streams, with the home node's feed upload counted in it too?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T04:37:27.670Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:20:59.605Z",
+     "text": "Read. Why the invite list doesn't update in the face: the local shell redraws it on the relay's owner event (invite minted). The face gets none: faceHome leaves relay events out, as G30.13's box says for the monitor, and the face shell has no onRelayEvent. Delete updates because that screen asks again itself.\n\nOne question on it (Q above). Next, on the favicon: by your ID's label after it, do you mean the browser tab's title?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:23:20.890Z",
+     "text": "- are the new capacity figures calculated with 3 streams live per member, or is that calculation now out-of-date?\n\nOwner\nAndy Flinn\nMode\nkeys\nPeers\n17\nConnected\n6\nHeap\n13.1 MB of 256 MB (5%)\nRSS\n65.1 MB\nIn flight\n1\nActivity\n57 posts, 1263 B/s over 33 s\nConnections\nallowing 4096 (floor 1, ceiling 4096)"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:23:21.705Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:23:35.804Z",
+     "text": "Capacity: partly out of date.\n\n- The ceiling is the owner's RAM times 16 streams a megabyte, from ~42-58 KB measured per held stream (README/CAPACITY.md). Still right per stream.\n- Members admitted (seats) = that ceiling less members and live invites, i.e. one stream per member. Since G30.12 a face's stream counts in the same ceiling, so if many members open their faces, other members' node streams get turned away. That breaks 'admit only who we can serve'.\n- The home node's long upload feeding its face is a third connection per member with a face open, counted nowhere and never measured.\n\nSo with faces it is up to three per member. Whether seats should reserve two or three per member is a question for after Q1."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:23:55.625Z",
+     "text": "On those figures: allowing 4096 is your 256 MB times 16. Since G30.12 those 4096 are node and face streams together; the home node feed uploads are not in it, nor in RSS per stream as measured. My answer above stands: the figure is per stream, and the seats under it still assume one stream per member."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:26:31.226Z",
+     "text": "So with faces it is up to three per member. Whether seats should reserve two or three per member is a question for after Q1\n\ndid we not decide that only one face-stream per member is allowed.\n\nand the capacity calculations need to be revised.\n\ncan you integrate the box with all these issues?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:26:32.033Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:27:20.756Z",
+     "text": "Yes, one face stream per member stands. The three are the home node's stream, that one face stream, and the home node's upload feeding it; the face side is one.\n\nThe box now has all four points (v5), the capacity revision among them.\n\nOpen, one at a time: Q1 (the owner's relay events to the face). Then where the ID's label goes after the favicon, and how many connections a seat reserves for a member with a face."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:30:57.557Z",
+     "text": "Q1: Invites appear live through the owner's relay events, which G30.13 keeps off the face with the monitor; send the owner's events (invite, claim, rename) to the face?\n\nyes."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:30:58.640Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:31:46.744Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:31:47.706Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:32:02.273Z",
+     "text": "Q1 is in the box (v6): the owner's relay events go to the face; the monitor stays off.\n\nNext, Q2 above."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:34:50.726Z",
+     "text": "Q2: Your ID's label after the favicon: in the browser tab's title, or beside the favicon in the face's own bar?\n\nin the browser tab.\n\nalso, we need to pick a cool icon: 🤓"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:34:51.696Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:35:18.855Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:35:19.800Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:35:32.914Z",
+     "text": "Q2 is in the box (v7): 🤓 as the favicon, your ID's label in the tab.\n\nQ3 above, the last one. My recommendation is yes to both: count all three connections against the one ceiling, and admit members as if each opens a face. At 256 MB that is 1,365 members instead of 4,096, but every admitted member is guaranteed service. The alternative keeps 4,096 seats and refuses faces when the relay is full, but then a full relay also turns away members' home nodes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:36:29.074Z",
+     "text": "Q3: With a face a member holds three connections; should a seat reserve three of the ceiling's streams, with the home node's feed upload counted in it too?\n\nabsolutely. we want to be as sure as possible that we can serve all our members simultaneouly."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:36:30.065Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:37:09.239Z",
+     "text": "Q3 is in the box (v8). With that, every point has its answer and I have no more questions.\n\nGreen: settled, open none, box current (v8)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:37:25.957Z",
+     "text": "Q3: clear"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:37:26.750Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:41:36.681Z",
+     "text": "in the following stats (obtained from my face), it doesn't seem to give me an adequate overview of how much memory the relay is actually using, the relay-nodes own memory consumption, just for being loaded doesn't seem to be part of this overview:\n\nAndy Flinn\nMode\nkeys\nPeers\n17\nConnected\n6\nHeap\n13.1 MB of 256 MB (5%)\nRSS\n65.1 MB\nIn flight\n1\nActivity\n57 posts, 1263 B/s over 33 s\nConnections\nallowing 4096 (floor 1, ceiling 4096)"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:41:37.673Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:42:11.544Z",
+     "text": "You're right, and it is worse than the overview. The allowance is your 256 MB times 16 streams, as if the relay itself cost nothing. A relay at rest measured 60 MB (README/CAPACITY.md). So 4096 streams at ~58 KB plus that 60 MB comes to about 290 MB, past your 256.\n\nProposal, as two statements:\n- The allowance is the RAM left after the relay's own at-rest memory, times 16: about 3,100 streams at 256 MB, so about 1,000 members at three a seat.\n- The status shows the parts: the relay at rest, the streams held by kind (home nodes, faces, feed uploads) with what they cost, and the RAM still free.\n\nAdd both to the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:43:47.610Z",
+     "text": "now that we only run a relay on our VPS the relay should have a defferent memory allocation, maybe 400MB or so?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:43:48.484Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:44:27.586Z",
+     "text": "Yes, and it needs no code: 256 MB is only the default (half the box, never above 256). You may set more on purpose in the relay's config, up to what the box can give less a 25 MB margin; above that the relay refuses it.\n\nAt 400 MB, with the at-rest 60 MB taken off: about 5,400 streams, about 1,800 members at three a seat.\n\nHow much RAM does the spirit-3 VPS have? With that I can say whether 400 leaves the box enough."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:45:38.921Z",
+     "text": "what we need is, under managing my relay, a UI for memory and disc allocation."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:45:39.700Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:46:25.929Z",
+     "text": "The relay already has what that screen needs, so it is app work only: its owner verb config reads the figures on file, the ones running, and what the box can give, and writes new ones that apply at the next start; restart makes that start now.\n\nProposed for the box, three statements:\n- Relay Details, for its owner, shows memory and disc: what is set, what runs, what the box can give, and a field for each to change it; it says a change applies at the next restart, and offers Restart.\n- The allowance is the RAM left after the relay's own at-rest memory, times 16.\n- The status shows the parts: the relay at rest, the streams held by kind (home nodes, faces, feed uploads) and their cost, and the RAM still free.\n\nAdd all three to the box?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:47:56.069Z",
+     "text": "When that's in (not only the box, but in code) i'll set the thing to 512MB of ram and see what the new calculations look like...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:48:35.681Z",
+     "text": "All three are in the box (v9). Green: settled, open none, box current (v9). It goes to code with your Go, once design is off."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:48:58.752Z",
+     "text": "the number i really need to see is: How many members (with 3 streams) per MegaByte...."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:48:59.602Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:49:36.480Z",
+     "text": "16 streams a megabyte, three a member: about 5.3 members a megabyte of the RAM left after the relay at rest (~60 MB).\n\n- 256 MB: about 1,000 members\n- 512 MB: about 2,400 members\n\nIn the box (v10): the status shows members a megabyte, and the memory field shows the members its setting serves."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:52:46.041Z",
+     "text": "also: in contacts, the network search, when i press search with an empty search box, i get nothing, we should populate that thing as soon as the user opens that fold...."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:53:36.477Z",
+     "text": "and the presence dots in the contact list only turn green AFTER i query succesfully for peers on the network."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:53:37.461Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:54:00.073Z",
+     "text": "In the box (v11). The relays already answer an empty search: they rank their connected members and send the top. The stop is in peerFind, which drops an empty search before asking. It is the shared shell element, so the fix holds in your local shell too."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:54:44.724Z",
+     "text": "Two possible causes, and they need different fixes:\n\n- The node itself only learns presence from searches. Then your local shell shows the same.\n- The face is slow to get presence. On opening, the home node sends the whole file tree first (fs comes before presence in the priority order), each line sealed on its own, so presence waits behind it all. A search then only happens to take long enough.\n\nDoes your local shell's Contacts show them green before any search?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:56:14.346Z",
+     "text": "On opening, maybe contacts should send two empty searches, one for contacts and then one for peers... that way the whole thing will be primed...\n\n?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:56:15.420Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T04:56:53.965Z",
+     "text": "It would help, with limits:\n\n- A peer search marks the members it finds as present, so their dots go green. An empty search brings only the top-ranked members that fit one answer, so a contact further down can stay white.\n- The contacts search alone does not change presence: it reads what the node already knows.\n- If the cause is the face's file tree going first, priming hides it rather than fixing it.\n\nSo the cause decides: does your local shell's Contacts show them green before any search?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:57:49.686Z",
+     "text": "my local shell shows green dots in the contact list right away."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T04:59:12.633Z",
+     "text": "does the contact search return presence?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T04:59:13.843Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:00:50.733Z",
+     "text": "Then it is the face's. Not the sealing: I measured 1,000 sealed lines opening in 143 ms in Chrome.\n\nThe code reads right on paper: the home node sends presence on face-open, and the face rebuilds the presence job Contacts reads. So something on the way drops or holds the opening presence until a later change (your search) pushes it through. One candidate I can't see from here is the proxy in front of spirit-3 holding back the face stream's last small lines.\n\nI'll reproduce it on my machine: my node, a relay in a test process, and Contacts in a headless Chrome."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:01:26.629Z",
+     "text": "No. contact.search answers each row with its name and whether it is owned, blocked or held. The dots come only from the node's presence job: whole on the local shell, peer by peer down the stream on the face. That is why the face depends on the opening presence arriving."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:03:39.226Z",
+     "text": "Reproduced the face on my machine without Caddy: a relay in a test process, my node as the home node, sealed, Contacts in headless Chrome. The dots are green at once: 3 green, the same as the node's own shell. So the face code delivers the opening presence.\n\nThe difference on spirit-3 is the path. The face site that bash/face-setup writes has encode gzip. Compression in the proxy can hold back a stream's small last lines until more data pushes them out, which is your symptom: the presence comes last after the file tree, and your search pushes it through.\n\nCan you try, on spirit-3: take encode gzip out of the face site block, reload Caddy, and open the face again? If the dots are then green at once, the fix is face-setup leaving /face/stream uncompressed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T05:05:30.058Z",
+     "text": "Can you try, on spirit-3: take encode gzip out of the face site block, reload Caddy, and open the face again? If the dots are then green at once, the fix is face-setup leaving /face/stream uncompressed.\n\nin english?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:06:13.901Z",
+     "text": "Sorry. In plain steps, on the spirit-3 box:\n\n1. Open /etc/caddy/sites/faces.spirit.andyflinn.com.caddy (as root).\n2. Delete the one line that says encode gzip, and save.\n3. Run: systemctl reload caddy\n4. Reload your face in the browser and open Contacts.\n\nIf the dots are green straight away, Caddy's compression was holding them back, and I change face-setup so the face's stream is never compressed."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T05:06:31.316Z",
+     "text": "my caddy file\n\nroot@spirit-3:~/SpiritOS# more /etc/caddy/Caddyfile\n{\n        on_demand_tls {\n                ask http://127.0.0.1:65430/face/allowed\n        }\n}"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T05:06:32.218Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:07:02.261Z",
+     "text": "That is the main file; the line is in a different one, the face site file face-setup wrote. Please paste what these two show:\n\nls /etc/caddy/sites\ncat /etc/caddy/sites/faces.spirit.andyflinn.com.caddy\n\nIf the main Caddyfile you pasted is the whole file, it has no import line, and I'd like to see how the sites are loaded too."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T05:10:43.139Z",
+     "text": "YES! my contacts now show green dots right off the bat."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T05:10:44.053Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T05:11:22.541Z",
+     "text": "after i remove the zip stuff..."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T05:11:23.473Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:11:37.603Z",
+     "text": "Good, that settles it: Caddy's compression held the stream back.\n\nIn the box (v12): face-setup writes the face site without encode gzip. The cost is the relay's few face files going out uncompressed, about 40 KB; everything after login is sealed and barely compresses anyway.\n\nYour spirit-3 already has it by hand, so nothing more to do there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T05:13:43.770Z",
+     "text": "also in \"Your Node Home\" the loggout button must be of the re-arm type."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T05:13:44.621Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:14:32.987Z",
+     "text": "In the box (v13): Log out arms on the first press, disarms on a press anywhere else, logs out on the second."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T05:15:27.533Z",
+     "text": "this is all my complaints for now.\n\ngreen? if green i stop design mode, and that means \"go\"\n\ngreen?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T05:15:28.514Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:16:05.866Z",
+     "text": "Green: settled, open none, box current (v14).\n\nOne line I filled in while checking for gaps: the relay's at-rest memory is measured by the relay itself as it starts, before any stream, not a number written down. Say if you want it otherwise."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T05:17:51.559Z",
+     "text": "at-rest-memory. i think measuring at end-of-boot is fair, then using that number as a constant until the next startup.\n\ni take that as\n\ngreen."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T05:17:52.547Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T05:18:23.824Z",
+     "text": "In the box (v15): measured at the end of boot, a constant until the next start. Ready when design is off."
     }
    ]
   }
