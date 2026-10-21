@@ -1,5 +1,5 @@
 {
- "change": 79610,
+ "change": 79611,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -45,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -9146,10 +9146,9 @@
    "id": "goal/G30.10",
    "title": "Connect home node and face",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -9886,7 +9885,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G30.10"
+    "goal/G30"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -10239,7 +10238,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G30.10"
+    "goal/G30"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -10437,7 +10436,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G30.10"
+    "goal/G30"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -10838,7 +10837,7 @@
     "reopen"
    ],
    "blocking": [
-    "goal/G30.10"
+    "goal/G30"
    ],
    "blocked": [],
    "codeOffered": true,
