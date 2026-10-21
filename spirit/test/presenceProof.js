@@ -163,7 +163,7 @@ function mountContacts(people) {
   const RUN = path.join(__dirname, '..', 'run');
   const win = { spirit: shellSpirit };
   ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
-    'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js'].forEach(function (rel) {
+    'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js'].forEach(function (rel) {
     new Function('spirit', 'document', 'window', 'module', 'process', fs.readFileSync(path.join(RUN, rel), 'utf8'))(shellSpirit, doc, win, undefined, undefined);
   });
   new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, win, fakeFetch);

@@ -18,8 +18,8 @@
 //   - The job: one permanent job of type 'peer-search'; each update's data.item is { key, label } for one found row.
 //   - createFaceHome({ ..., renames }): renames is hub.contactRenames; the face gets 'contact.rename' lines.
 //   - shell/js/contactSearch.js: window.spiritElements.contactSearch.create(host, opts) -> { list, refresh, destroy },
-//     on probabilitySearch with contactElement rows; probabilitySearch gains feed(answer); contactElement gains
-//     found(fn) (the network rows, from its one subscription) and the add action.
+//     on probabilitySearch with contactElement rows; contactElement gains the add action. Since goal/G30.16 the network
+//     rows land in data.contacts (shell/js/spiritData.js, the faceless layer) and the list is a view of it.
 // rule/11: through testSupport only; its own scratch folders.
 
 const fs = require('fs');
@@ -169,7 +169,7 @@ const done = (async function () {
   else test.fail(OWED + 'face/shell.js does not deliver contact.rename');
 
   // ── 5. The shell: one list fed twice, Add on a network row ─────────────────────────────────────────────────────────
-  test.subHeading('5. contactElement carries found() and Add; probabilitySearch takes a fed answer');
+  test.subHeading('5. a network row lands in data.contacts; Add; the list is a view of the tree');
   const asked = [];
   const subscribers = [];
   const window = { spiritElements: {}, spiritProbability: null };
@@ -182,27 +182,27 @@ const done = (async function () {
   window.spirit = spirit;
   const ctx = vm.createContext({ window: window, spirit: spirit, console: console, Promise: Promise, document: { addEventListener: function () {} } });
   const loaded = {};
-  ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js'].forEach(function (rel) {
+  ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js', 'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js'].forEach(function (rel) {
     try { vm.runInContext(fs.readFileSync(path.join(RUN, rel), 'utf8'), ctx, { filename: rel }); loaded[rel] = true; }
     catch (e) { loaded[rel] = e.message; }
   });
   const E = window.spiritElements;
   let shell = null;
   try {
-    const got = [];
-    const off = E.contactElement.found(function (item) { got.push(item.key); });
     subscribers.slice().forEach(function (h) { if (h.onUpdate) h.onUpdate({ id: 'job_9', type: 'peer-search', data: { item: { key: far, label: '{"name":"annfar","book":false}' } } }); });
     const net = E.contactElement.create({ key: far, name: 'annfar', book: false, relay: 'https://lab.example', publicLabel: 'annfar' });
     asked.length = 0;
     await net.act('add', {});
     const add = asked.filter(function (x) { return x.verb === 'peer.acquire'; })[0];
-    shell = { found: got.join(','), off: typeof off, add: add ? add.args : null, contactSearch: !!(E.contactSearch && typeof E.contactSearch.create === 'function') };
+    const landed = window.spiritData && window.spiritData.get('contacts/' + far);
+    shell = { found: landed && landed.book === false ? far : '', off: 'function', add: add ? add.args : null, contactSearch: !!(E.contactSearch && typeof E.contactSearch.create === 'function') };
   } catch (e) { shell = { threw: e.message, loaded: loaded }; }
   if (shell && shell.found === far && shell.off === 'function' && shell.add && shell.add.publicKey === far && shell.add.url === 'https://lab.example' && shell.contactSearch)
-    test.check('a peer-search update reaches found(); Add asks peer.acquire with the row\'s relay; contactSearch is an element');
+    test.check('a peer-search update lands in data.contacts; Add asks peer.acquire with the row\'s relay; contactSearch is an element');
   else test.fail(OWED + 'shell elements: ' + short(shell));
-  if (/self\.feed = /.test(code('shell/js/probabilitySearch.js'))) test.check('probabilitySearch takes a streamed answer into its cache (feed)');
-  else test.fail(OWED + 'probabilitySearch has no feed()');
+  if (/data: 'contacts'/.test(code('shell/js/contactSearch.js')) && /window\.spiritData\.seat\(o\.data/.test(code('shell/js/probabilitySearch.js')))
+    test.check('the contact list is a view of data.contacts, its answers seated in the tree');
+  else test.fail(OWED + 'the contact list is not a view of data.contacts');
 
   // ── 6. One row of filters, the network a toggle at its end (box v8) ────────────────────────────────────────────────
   // Andy: "KILL that [all] AND KILL [book], put [network] at the very and as a toggle, when its on then it shows peers

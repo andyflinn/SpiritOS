@@ -80,7 +80,7 @@ async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 // process, as in a page.
 const PAGE_SCRIPTS = [
   'js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
-  'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js',
+  'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js',
 ];
 
 function mountApp(people) {

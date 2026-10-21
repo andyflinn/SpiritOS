@@ -1,8 +1,9 @@
 // spirit/run/shell/js/contactSearch.js
 // CONTACTS' ONE SEARCH, A SHELL ELEMENT (goal/G30.19). Contacts draws it, and Join draws it as its contact step. The box:
 //   - One search in two tiers. contact.search answers at once from the book and the shadow (the peers the node has
-//     heard of), and starts a network search on the node; each network result streams in as one row, through
-//     contactElement.found, and joins the same cache.
+//     heard of), and starts a network search on the node; each network result streams in as one row. All of it lands in
+//     data.contacts, the faceless layer (shell/js/spiritData.js, goal/G30.16), and this list is a view of it: every list
+//     of contacts on the page shows the same rows.
 //   - One list, cached by key: a peer in the book and found on the network is one row. One row of filters instead of
 //     two folds: all, my puppets, blocked, held, relays, and at its end a network toggle, off at first (box v8).
 //     Columns: presence, status, label (sorts as text), and Add on a row the book does not hold.
@@ -88,6 +89,7 @@
 
     list = window.spiritElements.probabilitySearch.create(host, {
       api: { verb: function (name, args) { return search(args); } },
+      data: 'contacts',
       server: 'contact',
       verb: 'search',
       args: function (text) { return { q: text }; },
@@ -129,17 +131,11 @@
       }, function (err) { say('could not add: ' + ((err && err.message) || err)); });
     });
 
-    // THE NETWORK'S ROWS, one at a time, into the same cache.
-    var off = window.spiritElements.contactElement.found(function (item) {
-      if (relayKeys[item.key]) return;
-      list.feed({ items: [item] });
-    });
-
     list.refresh();
     return {
       list: list,
       refresh: function () { list.refresh(); },
-      destroy: function () { off(); list.destroy(); },
+      destroy: function () { list.destroy(); },
     };
   }
 

@@ -1,6 +1,8 @@
 // Files (goal/G30.16): the node's files in the standard list-tool, shell/js/probabilitySearch.js, each row a fileElement
-// (shell/js/rows/fileElement.js) that keeps itself current from the fs-watcher. The search is fs.search, by name or by
-// contents; the columns sort while the field is empty. A press opens the file in this pane, in the viewer for its kind
+// (shell/js/rows/fileElement.js). The list is a view of data.files, the faceless layer's mirror of the node's tree
+// (shell/js/spiritData.js, kept by the fs-watcher's stream), at home and on the face: nothing is asked while the field
+// is empty, and names are ranked from the mirror at once; fs.search is asked only by contents, what the page cannot
+// answer. The columns sort while the field is empty. A press opens the file in this pane, in the viewer for its kind
 // (shell/js/textViewer.js, mediaViewer.js, both on fileViewer.js), at home and on the face alike; ← Files goes back.
 // The file selector pane (goal/G29.8) stood here; it stays for the apps not yet ported.
 //
@@ -8,14 +10,16 @@
 // APP_ID_RENAMES and INTRINSIC_APP_FOLDERS in js/client/shell.js).
 
 var filesList = null;
-var filesShown = null;
-var filesOpen = Object.create(null);   // the folders open in the tree, by path; all collapsed at first   // the media viewer open, dropped when another file or the list is shown
+var filesShown = null;                 // the media viewer open, dropped when another file or the list is shown
+var filesOpen = Object.create(null);   // the folders open in the tree, by path; all collapsed at first
 
 function filesSearch(api, args) {
   var a = args || {};
+  // The tree is in the page already: only a search by contents asks the node.
+  if (!a.contents || !a.q) return Promise.resolve({ status: 200, body: { ok: true, items: [], more: false } });
   return Promise.resolve(api.verb('fs.search', { q: a.q || '', contents: a.contents || '' })).then(function (r) {
     var body = (r && r.body) || {};
-    var FE = window.spiritElements.fileElement;
+    var D = window.spiritData;
     // fs.search labels a name match with its path and a contents match with json {path, line}; the list wants json.
     var items = (body.items || []).map(function (i) {
       var row = null;
@@ -24,7 +28,7 @@ function filesSearch(api, args) {
       var raw = String((row && row.path) || i.key);
       var folder = /\/$/.test(raw);
       var path = raw.replace(/\/+$/, '');
-      var k = FE.known(path) || {};
+      var k = D.get('files/' + path) || {};
       return { key: path, label: JSON.stringify({ path: path, name: path.slice(path.lastIndexOf('/') + 1), kind: folder ? 'folder' : (k.kind || 'file'),
         size: k.size, modified: k.modified, line: (row && row.line) || 0 }) };
     });
@@ -57,9 +61,9 @@ spirit.shell.activateApp({
     container.innerHTML = '<div data-files="list"></div><div data-files="file" hidden></div>';
     var listHost = container.querySelector('[data-files="list"]');
     var fileHost = container.querySelector('[data-files="file"]');
-    E.fileElement.watch();
     filesList = window.spiritElements.probabilitySearch.create(listHost, {
       api: { verb: function (name, args) { return filesSearch(api, args); } },
+      data: 'files',
       server: 'fs',
       verb: 'search',
       args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
@@ -69,7 +73,7 @@ spirit.shell.activateApp({
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
       ],
-      element: function (row) { return E.fileElement.create(row); },
+      element: function (row, key) { return E.fileElement.create(Object.assign({ path: key }, row)); },
       matched: function (row) { return { name: String(row.name || ''), path: String(row.path || '') }; },
       filters: [
         { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },

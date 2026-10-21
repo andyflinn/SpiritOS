@@ -1,10 +1,10 @@
 // spirit/run/shell/js/rows/fileElement.js
 // ONE FILE OR FOLDER, AS A ROW ELEMENT (goal/G30.18). Its subject is a path; its fields icon, name, size and changed;
-// it is fed by the fs-watcher's events for that path, which carry the size and the time of change, so a change to a file
-// repaints that file's cells and nothing else. rowElement.js does the shared work; this file says what a file is.
+// it reads data.files of the faceless layer (shell/js/spiritData.js, goal/G30.16), which the fs-watcher's stream keeps,
+// so a change to a file repaints that file's cells and nothing else. rowElement.js does the shared work; this file says what a file is.
 //
-// THE STREAM DISPATCH OF FILES (the box: "lives per kind, in the element's own file"): one subscription to the node's
-// jobs for every file row on the page, and an index by path. A row registers on create and leaves on destroy.
+// THE DISPATCH OF FILES: one watch on data.files for every file row on the page, and an index by path. A row registers
+// on create and leaves on destroy.
 //
 // Actions: open (the viewer the page hands in, ctx.open, or the text launcher) and remove (fs.delete). An action asks
 // and paints nothing: the fs-watcher's own event repaints, or marks the row gone. expandInfo asks fs.stat and
@@ -28,37 +28,28 @@
     return isNaN(d.getTime()) ? String(iso) : d.toISOString().slice(0, 16).replace('T', ' ');
   }
 
-  // WHAT THE WATCHER LAST SAID OF EACH PATH (goal/G30.16): the tree arrives as create commands when the page subscribes,
-  // usually before the rows that show it exist, so a row made later starts from this. A delete forgets the path.
-  var known = Object.create(null);
+  function known(p) { var D = window.spiritData; return (D && D.get('files/' + p)) || null; }
   var subscribed = false;
-  // The fs-watcher's commands, by path, to the rows that show that path.
+  // A write to data.files, by path, to the rows that show that path.
   function dispatch(idx) {
-    if (subscribed) return;
+    if (subscribed || !window.spiritData) return;
     subscribed = true;
-    spirit.core.jobs.subscribe({
-      onUpdate: function (job) {
-        var cmd = job && job.type === 'fs-watcher' && job.data && job.data.command;
-        if (!cmd || !cmd.path) return;
-        var p = String(cmd.path);
-        if (cmd.op === 'deleteFile' || cmd.op === 'deleteDirectory') delete known[p];
-        else known[p] = { kind: cmd.op === 'createDirectory' ? 'folder' : 'file', size: cmd.size, modified: cmd.modified };
-        idx.forKey(p).forEach(function (el) {
-          if (cmd.op === 'deleteFile' || cmd.op === 'deleteDirectory') el.apply({ gone: true });
-          else el.apply({ size: cmd.size, modified: cmd.modified, gone: false });
-        });
-      },
+    window.spiritData.watch('files', function (path, v) {
+      var p = String(path).slice('files/'.length);
+      if (!p) return;
+      idx.forKey(p).forEach(function (el) {
+        if (!v) el.apply({ gone: true });
+        else el.apply({ kind: v.kind, size: v.size, modified: v.modified, gone: false });
+      });
     });
   }
 
   function index() { files = files || E.rowElement.index(dispatch); return files; }
-  // Start listening before any row exists, so the tree is known when the rows come (Files calls it at mount).
-  function watch() { dispatch(index()); }
 
   function create(row) {
     var r = row || {};
     var p = String(r.path || '');
-    var k = known[p] || {};
+    var k = known(p) || {};
     return E.rowElement.create({
       kind: 'file',
       key: p,
@@ -94,5 +85,5 @@
     });
   }
 
-  E.fileElement = { create: create, watch: watch, known: function (p) { return known[String(p)] || null; } };
+  E.fileElement = { create: create };
 }());

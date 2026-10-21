@@ -121,7 +121,7 @@ function fakeDocument() {
 // no process, as in a page: fieldRules.js takes its node branch on process.
 const PAGE_SCRIPTS = [
   'js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
-  'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js',
+  'shell/js/spiritData.js', 'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js',
 ];
 function loadPage(doc, shellSpirit) {
   const win = { spirit: shellSpirit };

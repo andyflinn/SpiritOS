@@ -1,13 +1,12 @@
 // spirit/run/shell/js/rows/contactElement.js
 // ONE CONTACT, AS A ROW ELEMENT (goal/G30.18). Its subject is a public key; its fields presence (the dot), status
 // (owned, blocked, held), label (the name, editable in a details dialog) and add (a button on a row the book does not
-// hold). It is fed by the relay-presence job and by contact renames, so a peer arriving repaints that peer's dot and a
-// rename that peer's label, and nothing else. rowElement.js does the shared work; this file says what a contact is.
+// hold). It reads data.contacts of the faceless layer (shell/js/spiritData.js, goal/G30.16), which presence, renames, the
+// network search and every contact search keep, so a peer arriving repaints that peer's dot and a rename that peer's
+// label, and nothing else. rowElement.js does the shared work; this file says what a contact is.
 //
-// THE STREAM DISPATCH OF CONTACTS (the box: per kind, in the element's own file): one subscription for every contact
-// row on the page, and an index by key. A row registers on create and leaves on destroy. The same subscription carries
-// the network search (goal/G30.19): each update of the 'peer-search' job is one row found, handed to found(fn), so a
-// list adds the people it did not have.
+// THE DISPATCH OF CONTACTS: one watch on data.contacts for every contact row on the page, and an index by key. A row
+// registers on create and leaves on destroy. A row found on the network joins every list through the tree.
 //
 // What a row offers depends on what it is (goal/G30.19): a row in the book open (Contact), block, unblock and remove
 // (contact.forget); a row found on the network add (peer.acquire, at the relay that found it); a relay open (Relay
@@ -18,9 +17,6 @@
   var E = window.spiritElements = window.spiritElements || {};
   var contacts = null;
   var subscribed = false;
-  var finders = [];
-  var table = null;
-  var told = Object.create(null);   // keys the presence table has spoken of
 
   function icons() { return (window.spirit && spirit.core && spirit.core.const && spirit.core.const.ICON) || {}; }
   function esc(s) {
@@ -33,41 +29,17 @@
     return { normalize: R.normalize, problem: R.problem, maxBytes: R.MAX_BYTES };
   }
 
-  function presenceOf(t, key) {
-    var proof = t && t[key];
-    return proof && typeof proof === 'object' ? proof.present === true : undefined;
-  }
+  function known(key) { var D = window.spiritData; return (D && D.get('contacts/' + key)) || null; }
+  // A write to data.contacts, by key, to the rows that show that key: only the fields a row shows.
   function dispatch(idx) {
-    if (subscribed) return;
+    if (subscribed || !window.spiritData) return;
     subscribed = true;
-    function take(job) {
-      if (!job) return;
-      if (job.type === 'peer-search') {
-        var item = job.data && job.data.item;
-        if (item && item.key) finders.slice().forEach(function (fn) { try { fn(item); } catch (e) { /* one list's fault */ } });
-        return;
-      }
-      if (job.type !== 'relay-presence') return;
-      table = (job.data && job.data.presence) || {};
-      idx.keys().forEach(function (key) {
-        // A key the table never mentioned keeps what its row said (the relay that found it): the nearer answer wins. A
-        // key it mentioned and dropped goes white: nobody is in a position to say any more.
-        var present = presenceOf(table, key);
-        if (present === undefined) {
-          if (!told[key]) return;
-          delete told[key];
-        } else told[key] = true;
-        idx.forKey(key).forEach(function (el) { el.apply({ present: present }); });
-      });
-    }
-    spirit.core.jobs.subscribe({
-      // The snapshot's presence only: a network row found before this page opened is not news.
-      onSnapshot: function (jobs) { (jobs || []).forEach(function (j) { if (j && j.type === 'relay-presence') take(j); }); },
-      onUpdate: take,
-      onContactRename: function (d) {
-        if (!d || !d.key) return;
-        idx.forKey(String(d.key)).forEach(function (el) { el.apply({ name: String(d.caption || '') }); });
-      },
+    window.spiritData.watch('contacts', function (path, v) {
+      var key = String(path).slice('contacts/'.length);
+      if (!key || !v) return;
+      var changes = {};
+      ['present', 'name', 'owned', 'blocked', 'held', 'book'].forEach(function (f) { if (f in v) changes[f] = v[f]; });
+      idx.forKey(key).forEach(function (el) { el.apply(changes); });
     });
   }
   function index() {
@@ -75,20 +47,12 @@
     return contacts;
   }
 
-  // The network search's rows, one { key, label } at a time; answers the unsubscribe.
-  function found(fn) {
-    if (typeof fn !== 'function') return function () {};
-    finders.push(fn);
-    dispatch(index());
-    return function () { finders = finders.filter(function (x) { return x !== fn; }); };
-  }
-
   function create(row) {
     var r = row || {};
     var key = String(r.key || r.publicKey || '');
     var relay = r.kind === 'relay' || r.relay === true;
     var inBook = r.book !== false;
-    var known = presenceOf(table, key);
+    var was = known(key) || {};
     var actions = relay ? [
       { name: 'open', label: 'Open', run: function (el, ctx) {
         return typeof ctx.callDialog === 'function' ? ctx.callDialog('shell/natterDetails', { url: String(el.row.url || el.key) }) : null;
@@ -111,7 +75,7 @@
       key: key,
       index: index(),
       row: { key: key, name: r.name || '', owned: r.owned === true, blocked: r.blocked === true, held: r.held === true,
-        present: known !== undefined ? known : r.present, book: inBook, kind: relay ? 'relay' : (r.kind || 'node'),
+        present: was.present !== undefined ? was.present : r.present, book: inBook, kind: relay ? 'relay' : (r.kind || 'node'),
         relay: typeof r.relay === 'string' ? r.relay : '', url: r.url || '', publicLabel: r.publicLabel || '' },
       fields: [
         // The dot, and what it means on its title, where the question is asked (Contacts' wording, goal/G2.9).
@@ -148,5 +112,5 @@
     });
   }
 
-  E.contactElement = { create: create, found: found };
+  E.contactElement = { create: create };
 }());

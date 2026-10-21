@@ -22,9 +22,12 @@
 //   columns                    [{ field, from, label, width, align, sort }]: sort is how the field compares, 'text', 'path',
 //                              'number' or 'date'; without it the column is not a sort trigger. from names the row's value
 //                              when it is not the field's own name (a contact's label column shows its name)
+//   data                       optional: a branch of the faceless layer (shell/js/spiritData.js, goal/G30.16): the list is
+//                              a view of it. Its rows are the branch's, the server's answers are seated in it, and a
+//                              write to it redraws the list
 //   element(row, key)          optional: the rowElement that draws a row (shell/js/rows/)
 //   filters, matched, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch
-// }) -> { refresh, redraw, words(), ask(verb, args), sort(field, direction), feed(answer), destroy }
+// }) -> { refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
 //
 // probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, matched, score }.
@@ -168,10 +171,15 @@
     }
     // The page's own rows, when the app has them (rows()); each joins the cache by its key.
     var pageKeys = Object.create(null);
+    function pageRows() {
+      if (o.data && window.spiritData) return window.spiritData.rows(o.data);
+      return typeof o.rows === 'function' ? o.rows() : null;
+    }
     function takePage() {
-      if (typeof o.rows !== 'function') return;
+      var page = pageRows();
+      if (!page) return;
       var now = Object.create(null);
-      (o.rows() || []).forEach(function (r, i) {
+      page.forEach(function (r, i) {
         if (!r || r.key == null) return;
         var key = String(r.key);
         now[key] = true;
@@ -248,6 +256,8 @@
     }
     // THE SERVER'S ANSWERS ONLY FEED THE CACHE.
     function take(answer) {
+      // A VIEW: the answer goes into the tree, and the tree's write redraws this list and every other one of that type.
+      if (o.data && window.spiritData) { window.spiritData.seat(o.data, answer && answer.items); return; }
       (answer && Array.isArray(answer.items) ? answer.items : []).forEach(function (it) {
         var row = null;
         try { row = JSON.parse(it.label); } catch (e) { row = null; }
@@ -365,22 +375,21 @@
       pressRow(rowOf(t));
     });
     if (o.api && typeof o.api.onPublished === 'function') off = o.api.onPublished(function () { ask(); }, o.server);
+    var unwatch = o.data && window.spiritData ? window.spiritData.watch(o.data, function () { draw(); }) : null;
 
     self.refresh = function () { draw(); ask(); };
     self.redraw = function () { draw(); };
     self.words = function () { return words(); };
     self.ask = function (verb, args) { return lend(verb, args); };
-    // AN ANSWER THAT ARRIVES ON THE STREAM (goal/G30.19: the network search's rows, one at a time) feeds the cache like
-    // the list's own; the words as they stand rank it.
-    self.feed = function (answer) { if (!live) return; take(answer); draw(); };
     self.sort = setSort;
     self.destroy = function () {
       live = false;
       if (typeof off === 'function') off();
+      if (typeof unwatch === 'function') unwatch();
       off = null;
       Object.keys(byKey).forEach(function (k) { if (byKey[k].el) byKey[k].el.destroy(); });
     };
-    if (typeof o.rows === 'function') draw();
+    if (typeof o.rows === 'function' || o.data) draw();
     return self;
   }
 
