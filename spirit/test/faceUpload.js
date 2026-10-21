@@ -73,6 +73,13 @@ const done = new Promise(function (resolve) { server.listen(0, '127.0.0.1', reso
   if (reaches === 0 && /relayUpload/.test(fh))
     test.check('faceHome uploads through relayRequest.relayUpload and holds no http of its own (oneDoor tally zero)');
   else test.fail(OWED + 'faceHome still reaches ' + reaches + ' times, or does not use relayUpload');
+
+  // Andy, on the relay's 5-minute cut of a long upload (Node's default requestTimeout): "lift the 5 minute limit."
+  test.subHeading('3. the relay lets the face\'s live upload stay open');
+  const rs = code('js/relayServer.js');
+  if (/\bserver\.requestTimeout\s*=\s*0\b/.test(rs) && !/\bserver\.headersTimeout\s*=\s*0\b/.test(rs))
+    test.check('relayServer sets no request timeout, so faceStream\'s upload outlives 5 minutes; the header limit stays');
+  else test.fail(OWED + 'relayServer keeps Node\'s 5-minute request timeout, or dropped the header limit too');
 }).catch(function (e) { test.fail('the suite threw ' + e.message); });
 
 done.then(function () {
