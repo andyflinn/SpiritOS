@@ -1,5 +1,5 @@
 {
- "change": 79604,
+ "change": 79610,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -45,14 +45,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -9878,10 +9880,9 @@
    "id": "goal/G30.11",
    "title": "Face loads its shell sealed from the home node",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -10232,10 +10233,9 @@
    "id": "goal/G30.12",
    "title": "One face stream per member, Connect here",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -10431,14 +10431,13 @@
    "id": "goal/G30.13",
    "title": "Home node answers the face through faceStream's queue",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
-    "goal/G30.11"
+    "goal/G30.10"
    ],
    "blocked": [],
    "codeOffered": true,
@@ -10833,15 +10832,13 @@
    "id": "goal/G30.14",
    "title": "Relay: face request as a stream event, and faceStream's pipe",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
-    "goal/G30.13",
-    "goal/G30.12"
+    "goal/G30.10"
    ],
    "blocked": [],
    "codeOffered": true,
