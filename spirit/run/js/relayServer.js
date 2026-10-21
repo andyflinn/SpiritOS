@@ -875,6 +875,11 @@ function restartNow() {
   process.on('SIGINT', function () { goodbye('SIGINT'); });
 }
 
+// NO REQUEST TIMEOUT (goal/G30.10; Andy: "lift the 5 minute limit."). Node ends any request whose body is still
+// arriving after 5 minutes, and faceStream's live upload stays open as long as the face does. The limit on headers
+// (headersTimeout) stays, and every body but the face uploads is still bounded by refuseTooBig.
+server.requestTimeout = 0;
+
 server.listen(port, BIND_HOST, () => {
   console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
   // UNOWNED, SAID OUT LOUD. A relay with no owner takes no claim at all:
