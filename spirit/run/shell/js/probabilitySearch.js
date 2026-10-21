@@ -19,7 +19,7 @@
 // probabilitySearch.create(container, {
 //   api, server, verb          the shell api, the server searched (its stream too) and its search verb
 //   args(text, values)         the verb's arguments from the words and the filters' values
-//   columns                    [{ field, from, label, width, align, sort }]: sort is how the field compares, 'text',
+//   columns                    [{ field, from, label, width, align, sort }]: sort is how the field compares, 'text', 'path',
 //                              'number' or 'date'; without it the column is not a sort trigger. from names the row's value
 //                              when it is not the field's own name (a contact's label column shows its name)
 //   element(row, key)          optional: the rowElement that draws a row (shell/js/rows/)
@@ -60,6 +60,12 @@
     cols.forEach(function (c) { o[c.field] = valueOf(entry, c.from || c.field); });
     return o;
   }
+  function comparePaths(x, y) {
+    var a = x.toLowerCase().split('/');
+    var b = y.toLowerCase().split('/');
+    for (var i = 0; i < Math.min(a.length, b.length); i++) { if (a[i] !== b[i]) return a[i].localeCompare(b[i]); }
+    return a.length - b.length;
+  }
   function compareBy(column, direction) {
     var dir = direction === 'desc' ? -1 : 1;
     var how = (column && column.sort) || 'text';
@@ -68,6 +74,8 @@
       var y = valueOf(b, column.from || column.field);
       var d;
       if (how === 'number') d = (Number(x) || 0) - (Number(y) || 0);
+      // A path as a tree reads it (goal/G30.16): folder by folder, so a folder's contents follow it, before its next sibling.
+      else if (how === 'path') d = comparePaths(String(x == null ? '' : x), String(y == null ? '' : y));
       else if (how === 'date') d = (Date.parse(x) || 0) - (Date.parse(y) || 0);
       else d = String(x == null ? '' : x).toLowerCase().localeCompare(String(y == null ? '' : y).toLowerCase());
       return d * dir || a.at - b.at;

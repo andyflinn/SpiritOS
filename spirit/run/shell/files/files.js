@@ -8,7 +8,8 @@
 // APP_ID_RENAMES and INTRINSIC_APP_FOLDERS in js/client/shell.js).
 
 var filesList = null;
-var filesShown = null;   // the media viewer open, dropped when another file or the list is shown
+var filesShown = null;
+var filesOpen = Object.create(null);   // the folders open in the tree, by path; all collapsed at first   // the media viewer open, dropped when another file or the list is shown
 
 function filesSearch(api, args) {
   var a = args || {};
@@ -64,19 +65,33 @@ spirit.shell.activateApp({
       args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
       columns: [
         { field: 'icon', label: '', width: '1.5em' },
-        { field: 'name', from: 'path', label: 'Name', sort: 'text' },
+        { field: 'name', from: 'path', label: 'Name', sort: 'path' },
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
       ],
       element: function (row) { return E.fileElement.create(row); },
       matched: function (row) { return { name: String(row.name || ''), path: String(row.path || '') }; },
-      filters: [{ name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] }],
+      filters: [
+        { name: 'in', choices: [{ value: 'names', word: 'names' }, { value: 'contents', word: 'contents' }] },
+        // THE TREE (box v12; Andy: "when no search is active, then the presentation is a tree-view, by default all folders
+        // collapsed."): while the field is empty a row shows only when every folder above it is open. Not drawn.
+        { name: 'tree', when: function () { return false; }, test: function (row) {
+          if (filesList && filesList.words()) return 1;
+          var parts = String(row.path || '').split('/');
+          for (var i = 1; i < parts.length; i++) { if (!filesOpen[parts.slice(0, i).join('/')]) return 0; }
+          return 1;
+        } },
+      ],
       details: function (row, key) {
+        // A folder opens or closes in the tree; with words it is only a row.
+        if (row.kind === 'folder') { if (filesOpen[key]) delete filesOpen[key]; else filesOpen[key] = true; filesList.redraw(); return; }
         // A file found by its contents opens at that line with the words marked (goal/G29.11).
         filesShow(fileHost, listHost, key, row.line > 0 ? filesList.words() : '', row.line || 0);
       },
       empty: 'No file matches.',
     });
+    // The tree is in path order until a header is pressed.
+    filesList.sort('name', 'asc');
     filesList.refresh();
   },
 
