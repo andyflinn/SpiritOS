@@ -28,9 +28,9 @@
 // each piece's text its bytes in base64. Its stream is sealed to k line by line, k handed over by face-open. A face
 // that cannot seal is answered as before, unsealed; it was warned that the relay can read it.
 
-const http = require('http');
-const https = require('https');
 const auth = require('./relayAuth');
+// Every upload goes out through the one outbound door (goal/G30.10): relayRequest.relayUpload, streamed.
+const relayUpload = require('./relayRequest').relayUpload;
 const seal = require('./seal');
 
 const FACE_PRIORITY = { fs: 2, presence: 3, app: 4, stats: 5 };
@@ -82,19 +82,10 @@ function createFaceQueue(sink, encode) {
   return { push: push };
 }
 
-// A writable POST to a relay, the bytes sent as they are written (chunked: no length is known).
-function postTo(url, p, headers) {
-  const target = new URL(p, url);
-  const lib = target.protocol === 'https:' ? https : http;
-  const req = lib.request(target, { method: 'POST', headers: Object.assign({ 'content-type': 'application/octet-stream' }, headers) });
-  req.on('response', function (res) { res.resume(); });
-  return req;
-}
-
 function createFaceHome(opts) {
   const o = opts || {};
   const say = typeof o.log === 'function' ? o.log : function () {};
-  const upload = o.upload || postTo;
+  const upload = o.upload || relayUpload;
   const jobs = o.jobs;
   const faces = Object.create(null);   // relay url -> { req, queue } while a face is open there
   let presence = Object.create(null);  // key -> { present, at }: what the faces were last told

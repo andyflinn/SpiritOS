@@ -202,8 +202,46 @@ function pipeRequest(pipePath, method, pathname, bodyText, opts) {
   });
 }
 
+// ── A STREAMED UPLOAD TO A RELAY (goal/G30.10) ───────────────────────
+//
+// Andy's box: "The home node's face uploads go through relayRequest, the one
+// outbound door, as a streamed upload; faceHome reaches for no http of its
+// own." faceStream is not a peerPost (goal/G30.14): no post limit and no
+// size cap, a file piped whole, and the live updates one upload that stays
+// open as long as the face does. So no deadline and no buffered body here:
+// the caller writes, each write goes out as it is made (chunked, no length
+// known), and ends it. The relay's answer is read and dropped; the caller
+// hears 'response', 'error' and 'close' on the request it is handed.
+//
+// The same address rule as relayRequest: an address assertRelayUrl refuses
+// is refused before any socket opens, said on the request's 'error'.
+function relayUpload(relayUrl, pathname, extraHeaders) {
+  var target;
+  try { target = assertRelayUrl(relayUrl + pathname); }
+  catch (e) {
+    var refused = new (require('stream').PassThrough)();
+    process.nextTick(function () { refused.destroy(e); });
+    return refused;
+  }
+  var lib = target.protocol === 'https:' ? https : http;
+  var req = lib.request({
+    protocol: target.protocol,
+    hostname: target.hostname,
+    port: target.port,
+    path: target.pathname + target.search,
+    method: 'POST',
+    headers: Object.assign({
+      'Content-Type': 'application/octet-stream',
+      'Transfer-Encoding': 'chunked',
+      'Host': target.host
+    }, extraHeaders || {})
+  }, function (res) { res.resume(); });
+  return req;
+}
+
 module.exports = {
   pipeRequest: pipeRequest,
   relayRequest: relayRequest,
+  relayUpload: relayUpload,
   RELAY_ANSWER_DEADLINE_MS: RELAY_ANSWER_DEADLINE_MS,
 };
