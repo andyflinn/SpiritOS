@@ -1,5 +1,5 @@
 {
- "change": 77859,
+ "change": 78141,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -37,8 +38,8 @@
    "waived": false,
    "rules": [],
    "names": {
-    "claude-windows": "claude-windows",
     "wsl-claude": "wsl-claude",
+    "claude-windows": "claude-windows",
     "claude-ubuntu": "claude-ubuntu",
     "ollama agent node": "levant-local"
    },
@@ -46,13 +47,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 6,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "working": [
     "claude-windows"
@@ -4267,7 +4267,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
@@ -5274,7 +5275,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 1,
    "half": true,
@@ -6268,7 +6270,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
@@ -6925,7 +6928,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 1,
    "half": false,
@@ -7536,7 +7540,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
@@ -8277,7 +8282,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
@@ -8549,7 +8555,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
@@ -9048,15 +9055,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G30"
    ],
-   "blocked": [
-    "goal/G30.11"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -9078,6 +9084,7 @@
    "waived": false,
    "rules": [],
    "names": {
+    "wsl-claude": "wsl-claude",
     "claude-windows": "claude-windows"
    },
    "asks": 0,
@@ -9465,10 +9472,11 @@
    "id": "goal/G30.11",
    "title": "Face loads its shell sealed from the home node",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30.10"
@@ -9478,21 +9486,92 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/face.html",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/face.css",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/login/login.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/login/login.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/seal.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/face/shell.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/js/faceHome.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/kernel.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/presenceNode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relay.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/relayServer.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/faceLogin.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceSealed.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "6ca4f9f5",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -9524,14 +9603,14 @@
     }
    ],
    "names": {
-    "wsl-claude": "wsl-claude",
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Step 3 of goal/G30.10. Waits on goal/G30.13.\n\n- The relay serves face.html and the login app, nothing else. After login the login app sets up a sealed link with the home node (a browser-compatible seal, its key lost with the session) and loads everything else from the home node, lazily, in the home node's own version. Contacts is the one app the face must have from the start; the rest loads when opened.\n- The seal is the node's own (X25519, HKDF-SHA256, AES-256-GCM), done in the browser with WebCrypto; large files are sealed piece by piece as they stream. A browser whose WebCrypto lacks X25519 is served unsealed, with a warning that its traffic is readable on the relay.\n- The login says to the member that a relay owner who swaps face.html or the login app could read what the face shows.\n- With the home node offline the face keeps its shell and shows the small red not connected mark, as the local shell does.\n- After this item the face shell is no longer waiting for plumbing.",
-   "version": 2,
+   "box": "Step 3 of goal/G30.10. Waits on goal/G30.13.\n\n- The relay serves face.html and the login app, nothing else. After login the login app sets up a sealed link with the home node (a browser-compatible seal, its key lost with the session) and loads everything else from the home node, lazily, in the home node's own version.\n- In this item the face runs Contacts only, loaded from the start. Files comes later (out of scope for now); every other app is looked at one by one.\n- The face shell makes every call asynchronously.\n- The seal is the node's own (X25519, HKDF-SHA256, AES-256-GCM), done in the browser with WebCrypto; large files are sealed piece by piece as they stream. A browser whose WebCrypto lacks X25519 is served unsealed, with a warning that its traffic is readable on the relay.\n- The login says to the member that a relay owner who swaps face.html or the login app could read what the face shows.\n- With the home node offline the face keeps its shell and shows the small red not connected mark, as the local shell does.\n- After this item the face shell is no longer waiting for plumbing.",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
@@ -9543,6 +9622,69 @@
      "at": "2026-10-21T01:46:07.760Z",
      "placedBy": "claude-windows",
      "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/faceHome.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:56:16.915Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/kernel.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:56:18.215Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/presenceNode.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:56:26.557Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: js/relay.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:56:20.252Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: js/relayServer.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:56:23.749Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T02:56:22.746Z"
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/faceHome.js, spirit/run/js/kernel.js, spirit/run/js/presenceNode.js, spirit/run/js/relay.js, spirit/run/js/relayServer.js, spirit/run/js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T03:15:47.808Z"
     }
    ],
    "chat": [
@@ -9593,6 +9735,90 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-21T02:24:04.679Z",
      "text": "wsl. take the red?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:27:11.664Z",
+     "text": "Taking G30.11. The shape, and its cost, before I build:\n\n- The seal is the node's own seal, unchanged. The face makes one key for the session and seals each request to the home node's seal key from its card; the home node seals each answer back to the face's key, a file in pieces. A browser without X25519 runs unsealed with the warning.\n- The relay serves face.html (its script and sheets) and the login app; everything else comes through the sealed link.\n- The big part: the node's own shell can't run in the face, because the kernel loads files synchronously and the link is asynchronous. So the face shell gets its own small core: the app interface Contacts uses (verbs, peer posts, dialogs, the contact selector, peerFind) and the job and presence feeds, rebuilt from the face stream.\n- Contacts loads at start; any other app loads when opened, once its manifest says it runs in a face.\n- Cost: a few hundred lines in the face shell, plus the seal on both ends. Some Contacts dialogs open other apps; those load on demand and may need their own fixes.\n\nBuild it this way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:32:34.022Z",
+     "text": "so the new shell need to operate 100% asynchronously?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:33:18.637Z",
+     "text": "Yes. In the face every file and every call crosses the relay and is decrypted on arrival, and a browser can only do that asynchronously. The old shell has three synchronous calls (loadFile, statFile, getAnnotations); the face shell has none."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:34:32.459Z",
+     "text": "so the new shell will have to make those calls async. any greater blast radius?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T02:34:33.312Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:35:17.533Z",
+     "text": "Small. Counted in the tree:\n\n- Contacts makes no synchronous call: it runs in the face as is.\n- Four apps read a file synchronously, once each: chatter (its prefs), deskAgentRemote (puppets.json), join (its own steps) and textEditor (the file it opens). Each needs a one-line change to async before it can open in a face; until then they stay off the face.\n- The old shell keeps its six synchronous calls on loopback; the face shell is new code and has none."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T02:36:28.565Z",
+     "text": "we're worried about contacts only, then Files (oos for now). the rest will be looked at 1 by one."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T02:36:29.287Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:37:20.268Z",
+     "text": "Box updated (v3): Contacts only in this item, Files later, every other app one by one; the face shell fully asynchronous. Building it in the shape above."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:41:01.401Z",
+     "text": "commit fde4aa15e4b5b66a95f4be8704d31d0161cdaf57: goal/G30.11: the red for the sealed link and the face loading from its home node: face/seal.js is the node's seal in WebCrypto, both ways; a sealed request is answered sealed, a large file piece by pi\n- spirit/test/faceSealed.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:54:48.861Z",
+     "text": "Built; the red is 7 of 7 green, and the earlier face suites still pass. The commit waits on your grants for six core files:\n\n- kernel.js: asks and subscribes through the face's transport when the face shell sets one; nothing changes on loopback.\n- faceHome.js: opens a sealed request, answers sealed (a file in 64 KB pieces), seals each stream line.\n- relay.js, relayServer.js: face-open carries the face's key; face/seal.js is served beside face.html.\n- presenceNode.js, server.js: hand the key on.\n\nNot tried in a browser yet: after the commit I'll run face.html on my node's loopback in a headless browser.\n\nA miss of mine from G30.13: oneDoor is red. faceHome's upload calls http itself, and relayRequest can't stream an upload. Fix: a streamed upload in relayRequest.js, the one outbound door, with faceHome using it; relayRequest's tally goes up one and faceHome's to zero. That changes the interface.\n\nShall I add it to G30.11?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T02:56:56.698Z",
+     "text": "commit 6ca4f9f5f2dd6a97a00c6da7bc594390e6729137: goal/G30.11: the sealed link and the face loading from its home node: face/seal.js is the node's seal in WebCrypto; the face seals each request to its home node's seal key with one key for the page, a\n- spirit/run/face.html\n- spirit/run/face/face.css\n- spirit/run/face/login/login.js\n- spirit/run/face/login/login.json\n- spirit/run/face/seal.js\n- spirit/run/face/shell.js\n- spirit/run/js/faceHome.js\n- spirit/run/js/kernel.js\n- spirit/run/js/presenceNode.js\n- spirit/run/js/relay.js\n- spirit/run/js/relayServer.js\n- spirit/run/js/server.js\n- spirit/test/faceLogin.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T03:11:50.784Z",
+     "text": "deskVerify: passed, at 6ca4f9f5 (pulled). 2 suites ran green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T03:11:56.835Z",
+     "text": "Claimed at 6ca4f9f5; my verify passed, 7 of 7.\n\nTried in a real browser on my node's loopback (headless Chrome):\n\n- face.html loads the home node's own 30 page parts; the desktop shows Your home node and Contacts.\n- Contacts opens and draws its table, with no script errors.\n- The seal works in Chrome both ways against the node's seal.js.\n\nNot tried: the face through a relay. That needs a relay with a face domain, and spirit-3 is yours.\n\nFound on the way, not from this item: a node whose page has not been opened for a long time piles up untaken packets. The first page to open the stream then blocks the node while it marks them. Mine took 90 s at 522 MB of node.db.\n\nStill open: the oneDoor question above."
     }
    ]
   },
@@ -9686,7 +9912,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
@@ -9879,7 +10106,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
@@ -10286,7 +10514,8 @@
     }
    ],
    "names": {
-    "claude-windows": "claude-windows"
+    "claude-windows": "claude-windows",
+    "wsl-claude": "wsl-claude"
    },
    "asks": 0,
    "half": false,
