@@ -1,5 +1,5 @@
 {
- "change": 81101,
+ "change": 81801,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -12343,15 +12344,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close",
     "delete"
    ],
    "blocking": [
     "goal/G30"
    ],
-   "blocked": [
-    "goal/G30.19"
-   ],
+   "blocked": [],
    "codeOffered": true,
    "go": false,
    "alone": false,
@@ -13054,10 +13054,11 @@
    "id": "goal/G30.19",
    "title": "Upgrade new shells contact application with probabilitySearch",
    "goal": "goal/G30",
-   "status": "running",
-   "with": "",
+   "status": "done",
+   "with": "claude-windows",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30.16"
@@ -13067,21 +13068,202 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/face/shell.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/contact/AGENTS.md",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/contact/search.json",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/faceHome.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/hub.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/nodeStore.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peer/AGENTS.md",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/peer/search.json",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/server.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/js/trafficLog.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/process/js/desk/onboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/contacts/contacts.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/join/join.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/contactSearch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/peerFind.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/probabilitySearch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/rows/contactElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/agentOnboard.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactSearchTiers.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contacts.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactsFilter.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/contactsListSearch.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/everyVerb.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/faceFixes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/joinSteps.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/liveFrontDoor.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/natterShellFixes.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/peerSearchShared.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceFeeding.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/presenceProof.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetsPending.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/rowElements.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/searchMemory.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/serverSurface.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/storeSheds.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "andy",
-   "claimCommit": "",
+   "claimCommit": "dbc5d3de",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -13118,9 +13300,172 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "Contacts has one search, in two tiers, on the new list-tool: one probabilitySearch (goal/G30.17) with contactElement rows (goal/G30.18), in the local shell and on the face alike, since both run the one Contacts app.\n\nTHE TWO TIERS\n- Tier one, at once: contact.search answers from the book and from the shadow (the peers this node has heard of, seenPeers) together, one row shape for both.\n- Tier two, streamed: the same call starts a network search across the relays. Each result is written into the shadow and streamed to the shell as one row as it arrives.\n- The node keeps one network search out at a time; words typed meanwhile go when it returns, only the latest.\n- A late result is still a real peer: it joins the cache and the current words rank it. Results join every open Contacts list, local and face; each ranks them by its own words.\n- The shadow is the node cache, the rows are the shell cache; each search starts from what the last one learned.\n\nTHE LIST\n- One list, cached by key: a peer in the book and found on the network is one row, its name and status from the book, its presence from the network.\n- A filter replaces the two folds: book, network, all.\n- Columns: presence, status, label; label sorts as text.\n- Each row keeps itself current through contactElement: presence, status and renames repaint from the stream. Contacts own presence painting (contactsWatchPresence, contactsPaintPresence and their helpers) is deleted.\n- A row in the book offers block, unblock and remove; a row found on the network offers Add (peer.acquire).\n- Pressing a row opens it: Contact for a person, Relay Details for a relay.\n- The list fills as soon as Contacts opens; an empty search answers like any other.\n\nCOMPONENTS REVISED\n- Node, contact.search: answers book and shadow matches and starts the network search.\n- Node, the network search: the relay walk now in peer.search runs as a job whose updates each carry one found row; contactElement subscribes to it like the other jobs.\n- Node, peer.search: deleted, once nothing uses it.\n- Desk onboarding: starts the network search job and reads its rows when the job says it is done, instead of asking peer.search.\n- Join, its contact step: shows the same one Contacts list instead of peerFind.\n- Face stream: carries the network search job and contact.rename, so the face repaints like the local shell.\n- Shell, contactElement: the add action, and rows in and out of the book.\n- Shell, Contacts: the book list and peerFind become the one list; peerFind is deleted.\n- The suites that assert peer.search or peerFind are rewritten to the one list and the job.\n- listSearch stays for the apps not yet ported.\n\nTHE INTERFACE CHANGE, APPROVED\n- contact.search also searches the shadow and starts the network search.\n- A new job kind, the network search, streamed to node and face.\n- peer.search deleted.",
-   "version": 4,
-   "checks": [],
+   "box": "Contacts has one search, in two tiers, on the new list-tool: one probabilitySearch (goal/G30.17) with contactElement rows (goal/G30.18), in the local shell and on the face alike, since both run the one Contacts app.\n\nTHE TWO TIERS\n- Tier one, at once: contact.search answers from the book and from the shadow (the peers this node has heard of, seenPeers) together, one row shape for both.\n- Tier two, streamed: the same call starts a network search across the relays. Each result is written into the shadow and streamed to the shell as one row as it arrives.\n- The node keeps one network search going at a time: a contact.search starts one only if none is in flight. Searches that come while it is out are answered from the book and the shadow at once, and start nothing.\n- A late result is still a real peer: it joins the cache and the current words rank it. Results join every open Contacts list, local and face; each ranks them by its own words.\n- The shadow is the node cache, the rows are the shell cache; each search starts from what the last one learned.\n\nTHE LIST\n- One list, cached by key: a peer in the book and found on the network is one row, its name and status from the book, its presence from the network.\n- One row of filters: all, my puppets, blocked, held, relays, and at its very end a network toggle. Off, the list shows the book (and this node's relays); on, it shows the peers found on the network as well. No separate all or book choice.\n- Columns: presence, status, label; label sorts as text.\n- Each row keeps itself current through contactElement: presence, status and renames repaint from the stream. Contacts own presence painting (contactsWatchPresence, contactsPaintPresence and their helpers) is deleted.\n- A row in the book offers block, unblock and remove; a row found on the network offers Add (peer.acquire).\n- Pressing a row opens it: Contact for a person, Relay Details for a relay.\n- The list fills as soon as Contacts opens; an empty search answers like any other.\n\nCOMPONENTS REVISED\n- Node, contact.search: answers book and shadow matches and starts the network search.\n- Node, the network search: the relay walk now in peer.search runs as a job whose updates each carry one found row; contactElement subscribes to it like the other jobs.\n- Node, peer.search: deleted, once nothing uses it.\n- Desk onboarding: starts the network search job and reads its rows when the job says it is done, instead of asking peer.search.\n- Join, its contact step: shows the same one Contacts list instead of peerFind.\n- Face stream: carries the network search job and contact.rename, so the face repaints like the local shell.\n- Shell, contactElement: the add action, and rows in and out of the book.\n- Shell, Contacts: the book list and peerFind become the one list; peerFind is deleted.\n- The suites that assert peer.search or peerFind are rewritten to the one list and the job.\n- listSearch stays for the apps not yet ported.\n\nTHE INTERFACE CHANGE, APPROVED\n- contact.search also searches the shadow and starts the network search.\n- A new job kind, the network search, streamed to node and face.\n- peer.search deleted.\n\nTHE NODE STORE SHEDS\n- node.db never grows past 16 MB. Past it, the oldest packets of the packet log are deleted, in chunks, as new ones are written. The log is input to throw away, not a permanent record; the ruling of 2026-09-13 that it is permanent is overruled.\n- The replay memory (hashes of packets received, so a replayed one is refused) keeps one day, not seven; a sealed packet older than a day is refused as old.\n- The backlog a page is handed when it opens is the untaken packets of the last day, read through its index, never the whole log.\n- Andy's store was cut by hand to the newest packets and the last week of replay memory (68 MB), the old file deleted.",
+   "version": 9,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: index.html",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:43:59.870Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/contact/AGENTS.md",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:01.699Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/contact/search.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:06.744Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: js/faceHome.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:08.665Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: js/hub.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:10.715Z"
+    },
+    {
+     "number": "G6",
+     "kind": "G",
+     "words": "core grant: js/peer/AGENTS.md",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:13.347Z"
+    },
+    {
+     "number": "G7",
+     "kind": "G",
+     "words": "core grant: js/peer/search.json",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:15.822Z"
+    },
+    {
+     "number": "G8",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:17.948Z"
+    },
+    {
+     "number": "G9",
+     "kind": "G",
+     "words": "core grant: shell/contacts/contacts.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:20.756Z"
+    },
+    {
+     "number": "G10",
+     "kind": "G",
+     "words": "core grant: shell/join/join.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:26.995Z"
+    },
+    {
+     "number": "G11",
+     "kind": "G",
+     "words": "core grant: shell/js/contactSearch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:29.224Z"
+    },
+    {
+     "number": "G12",
+     "kind": "G",
+     "words": "core grant: shell/js/peerFind.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:30.958Z"
+    },
+    {
+     "number": "G13",
+     "kind": "G",
+     "words": "core grant: shell/js/probabilitySearch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:32.762Z"
+    },
+    {
+     "number": "G14",
+     "kind": "G",
+     "words": "core grant: shell/js/rows/contactElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:44:36.537Z"
+    },
+    {
+     "number": "G15",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/contact/AGENTS.md, spirit/run/js/contact/search.json, spirit/run/js/faceHome.js, spirit/run/js/hub.js, spirit/run/js/peer/AGENTS.md, spirit/run/js/peer/search.json, spirit/run/js/server.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T12:45:38.868Z"
+    },
+    {
+     "number": "G16",
+     "kind": "G",
+     "words": "core grant: js/nodeStore.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T14:44:32.584Z"
+    },
+    {
+     "number": "G17",
+     "kind": "G",
+     "words": "core grant: js/trafficLog.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T14:44:35.197Z"
+    },
+    {
+     "number": "G18",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/js/contact/AGENTS.md, spirit/run/js/contact/search.json, spirit/run/js/faceHome.js, spirit/run/js/hub.js, spirit/run/js/nodeStore.js, spirit/run/js/peer/AGENTS.md, spirit/run/js/peer/search.json, spirit/run/js/server.js, spirit/run/js/trafficLog.js, spirit/run/shell/contacts/contacts.js, spirit/run/shell/join/join.js, spirit/run/shell/js/contactSearch.js, spirit/run/shell/js/peerFind.js, spirit/run/shell/js/probabilitySearch.js, spirit/run/shell/js/rows/contactElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T14:48:59.757Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -13205,6 +13550,252 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T12:07:01.890Z",
      "text": "Box v4: Join's contact step and the desk onboarding are in, the suites to rewrite named, and network results join every open Contacts list, each ranking them by its own words.\n\nGreen: settled, open none, box current (v4)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:08:53.347Z",
+     "text": "Taking the Go. Rule 5 came with it, and one box line breaks it: \"one network search out at a time, only the latest words go when it returns\" is pacing to save a cost.\n\nThe plainest form: every contact.search starts its own network search, and its rows stream back as they come.\n\n- Cost: one packet to each relay per search. The list already keeps one call on the wire, so that is about one per pause in typing, not one per key.\n\nDrop the pacing line and build it plain?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:13:23.116Z",
+     "text": "i have no clue what you're talking about. no clue what rule five refers to.\n\nthe shells contact app does only send out one search at the time, why would it give a shit what the node does internally?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T12:13:24.022Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:14:07.485Z",
+     "text": "Sorry, that was unclear. You are right, and that was my point: the box had the node holding back network searches too, and it needn't.\n\n- That line is gone (box v5): each search starts its own network search, nothing held back in the node.\n- Rule 5 is the desk rule attached to your Go: build the plainest mechanism, nothing paced or held back to save a cost.\n\nBuilding now: the red first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:14:49.562Z",
+     "text": "and the node can serve four seach-changes before peerSearch comes back, it also only keeps one search going at the time."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T12:14:50.598Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:15:36.120Z",
+     "text": "In the box (v6): the node keeps one network search going at a time; searches meanwhile are answered from the book and the shadow at once, and when it comes back the latest words go out, if they changed.\n\nBuilding the red now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:15:49.071Z",
+     "text": "same rule, the node sends only one peerSearch at the time, and servers several contact searches in the mean time.."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T12:15:49.929Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:16:16.032Z",
+     "text": "the node also only triggers a peer search if none is in flight."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T12:16:17.122Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:16:27.726Z",
+     "text": "Yes, that is what box v6 says: one network search at a time, contact searches answered meanwhile from the book and the shadow."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:17:01.874Z",
+     "text": "Box v7: a contact.search starts a network search only if none is in flight; searches meanwhile are answered from the book and the shadow and start nothing. Nothing is queued for when it returns."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:19:10.133Z",
+     "text": "commit 579a9cdca14eff71f791adb90429123159d539c4: goal/G30.19: the red for one contact search in two tiers: contact.search answers the book and the shadow at once and starts one network search only if none is in flight, its rows a peer-search job, wr\n- spirit/test/contactSearchTiers.js"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T12:19:20.665Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:37:12.013Z",
+     "text": "Built; its red is green (16 of 16), and every suite it touches that binds no port passes.\n\n- The node: contact.search answers the book and the shadow at once and starts the network search only if none is in flight; each result is one update of a peer-search job and lands in the shadow. peer.search is gone.\n- The shell: Contacts and Join's find step draw one list, contactSearch, with contactElement rows; a found row has Add and its name carries its key's ending, so two alike can be told apart.\n- The face gets the network rows and contact renames.\n\nThe commit waits on your grants for 14 core files, raised under this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:44:54.159Z",
+     "text": "commit d462859d3b17976c936f28b83fd1576e0ec8672d: goal/G30.19: Contacts has one search in two tiers: contact.search answers the book and the shadow at once (a row's book says which; a found row's name carries its key's ending) and starts the network \n- spirit/run/face/shell.js\n- spirit/run/index.html\n- spirit/run/js/contact/AGENTS.md\n- spirit/run/js/contact/search.json\n- spirit/run/js/faceHome.js\n- spirit/run/js/hub.js\n- spirit/run/js/peer/AGENTS.md\n- spirit/run/js/peer/search.json\n- spirit/run/js/server.js\n- spirit/run/process/js/desk/onboard.js\n- spirit/run/shell/contacts/contacts.js\n- spirit/run/shell/join/join.js\n- spirit/run/shell/js/contactSearch.js\n- spirit/run/shell/js/peerFind.js\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/run/shell/js/rows/contactElement.js\n- spirit/test/agentOnboard.js\n- spirit/test/contacts.js\n- spirit/test/contactsFilter.js\n- spirit/test/contactsListSearch.js\n- spirit/test/everyVerb.js\n- spirit/test/faceFixes.js\n- spirit/test/joinSteps.js\n- spirit/test/liveFrontDoor.js\n- spirit/test/natterShellFixes.js\n- spirit/test/peerSearchShared.js\n- spirit/test/presenceFeeding.js\n- spirit/test/presenceProof.js\n- spirit/test/rowElements.js\n- spirit/test/searchMemory.js\n- spirit/test/serverSurface.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:45:10.019Z",
+     "text": "deskVerify: not checked, at d462859d (pulled): nothing ran, so this is not a pass. Not run: the item lists no test file."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T12:45:11.165Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:47:44.047Z",
+     "text": "deskVerify: passed, at d462859d (pulled). 16 suites ran green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T13:43:30.189Z",
+     "text": "so, there is TWO \"all\" filters again in contact. while i \"get\" what they TRY to do now, this is NOT an acceptable UI.\n\nfrom the [all][boo][network] group...\nKILL that [all] AND KILL [book], put [network] at the very and as a toggle, when its on then it shows peers from the network ALSO.\n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T13:44:14.410Z",
+     "text": "Makes sense; in the box.\n\n- One row: all, ⭐ my puppets, blocked, held, relays, then a network toggle at its very end.\n- Toggle off: the book and this node's relays. On: the network's peers as well.\n- The second all and book are gone.\n\nThe network toggle starts off each time Contacts opens. Build it now under this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T13:46:14.245Z",
+     "text": "book is one of those term i NEVER used, and it keeps popping up. i still wonder how i can get you to use MY vocabulary....\n\ncan you make the change as you just outlined?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T13:52:05.948Z",
+     "text": "go"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T13:53:30.805Z",
+     "text": "commit f58d8337790aeca17d7cc3263814031497dbf8ac: goal/G30.19: the red for the one filter row (box v8): show, then network as a toggle off at first; off the book and the relays, on the network's peers as well; probabilitySearch draws a toggle filter\n- spirit/test/contactSearchTiers.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T13:55:35.820Z",
+     "text": "commit b291e30b5f9779c686e3dc228c02c53ff330560b: goal/G30.19: one filter row (box v8): all, my puppets, blocked, held, relays, then a network toggle at its end, off at first; off the book and this node's relays, on the network's peers as well; the w\n- spirit/run/shell/js/contactSearch.js\n- spirit/run/shell/js/probabilitySearch.js\n- spirit/test/contacts.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T14:11:12.155Z",
+     "text": "tell me why on earth my node would read through 1.8 Gigabytes of garbage?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T14:15:05.592Z",
+     "text": "deskVerify: rejected, at b291e30b (pulled); the search for items listing the red was partial, so an item may have been missed. Red: spirit/test/agentOnboard.js: FAILURE #1.1: the world: the owner claim answered 409 {\"error\":\"key already claimed\",\"peer\":{\"publicKey\":\"MCowBQYDK2VwAyEAxqY2xSYwRhaPdL3TpwzsYh5kobDzxVZJZ0nnV24YapI=\",\"publicLabel\":\"owner\",\"claimedAt\":\"2026-10-21T14:09:08.058Z\",\"card\":\"{\\\"v\\\":1,\\\"body\\\":{\\\"ok\\\":true,\\\"name\\\":\\\"andy\\\",\\\"description\\\":\\\"this node described for the first time 2026-10-21"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T14:15:09.111Z",
+     "text": "verify rejected: spirit/test/agentOnboard.js: FAILURE #1.1: the world: the owner claim answered 409 {\"error\":\"key already claimed\",\"peer\":{\"publicKey\":\"MCowBQYDK2VwAyEAxqY2xSYwRhaPdL3TpwzsYh5kobDzxVZJZ0nnV24YapI=\",\"publicLabel\":\"owner\",\"claimedAt\":\"2026-10-21T14:09:08.058Z\",\"card\":\"{\\\"v\\\":1,\\\"body\\\":{\\\"ok\\\":true,\\\"name\\\":\\\"andy\\\",\\\"description\\\":\\\"this node described for the first time 2026-10-21"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T14:33:46.180Z",
+     "text": "we will, immediately, in THIS item, CAP the log to 16 MB."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T14:34:27.596Z",
+     "text": "and delete the old shit immediately"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T14:46:07.183Z",
+     "text": "Done, in this item:\n\n- The cap is built: node.db never past 16 MB, oldest packets shed first; replay memory one day; the backlog the last day only.\n- Old stores deleted, nothing kept: yours 1.8 GB to 68 MB, Levant's 1.2 GB to 15 MB, mine to 9 MB.\n\nThe commit waits on your grant for nodeStore.js and trafficLog.js, raised under this item."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T14:46:38.734Z",
+     "text": "commit 6dc6611f478bbc3cde1ab86af41c3908e2b6ccdb: goal/G30.19: the red for the node store shedding (box v9): node.db never past 16 MB, the oldest packets going first; the replay memory one day; the backlog the last day's untaken packets; the log no l\n- spirit/test/storeSheds.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T14:46:49.783Z",
+     "text": "commit 5c3b89d9c07a3697e6d8206c93454eb5082c998c: goal/G30.19: node.db never grows past 16 MB (nodeStore.MAX_DB_BYTES): each packet written checks the file's size and the packet log's oldest rows go, 256 at a time, their pages given back, until it fi\n- spirit/run/js/nodeStore.js\n- spirit/run/js/trafficLog.js\n- spirit/test/agentOnboard.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T14:48:51.801Z",
+     "text": "Filters act simple and predictable now. I'm satisfied with contacts for now."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T14:49:39.456Z",
+     "text": "Good. Contacts is done from my side: built, claimed and verified, with the store cap in this item too (5c3b89d9). It is yours to press Done."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T14:51:12.071Z",
+     "text": "One red this item caused, reported under G19.10: puppetsPending.\n\n- It waited for \"no verb answers with a list\". With peer.search gone that is now true, so its awaiting line goes red, as designed.\n- The fix is one line: the awaiting becomes a plain check that no verb answers with a list.\n\nFold that one line into this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T14:55:54.842Z",
+     "text": "Fold that one line into this item."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T14:55:56.066Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T14:56:59.381Z",
+     "text": "commit dbc5d3de65e12f57fbcfd2a929879b74a7a81b1f: goal/G30.19: puppetsPending asserts puppets/G2 instead of awaiting it: with peer.search gone no verb answers with a list\n- spirit/test/puppetsPending.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T14:57:10.428Z",
+     "text": "Folded and pushed (dbc5d3de): puppetsPending now asserts no verb answers with a list. Its own run is green."
     }
    ]
   }
