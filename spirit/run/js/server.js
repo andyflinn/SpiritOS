@@ -192,6 +192,8 @@ let peerRouter = null;
 const loopbackVerbs = require('./verbTable').createVerbTable();
 // The flat apiDoor (goal/G30.4), set once the app client exists below; /api/spirit dispatches through it (goal/G30.5).
 let nodeDoor = null;
+// This node's face (goal/G30.13), built on nodeDoor once it exists; presence hands it the relay's face events.
+let faceHome = null;
 // THE DECLARATION FORM (goal/G10.5), MOUNTED (goal/G30.4): each module's verbs are {request, reply, handler},
 // declared bare (stat, not fs.stat); loopbackVerbs.mount gives them their family name and adds the AGENTS family of
 // the folder js/<family>/. A module does not know the name it is mounted under (Andy, 2026-10-20).
@@ -247,6 +249,35 @@ function peekVerb(req) {
 // Existing only so the shutdown handler has somebody to tell. Nothing else
 // reads it, and a stream removes itself in teardown below.
 const pageStreams = new Set();
+
+// A FILE, AS THE BROWSER'S GET IS SERVED IT. One function, so the face asking its home node for a file (faceHome,
+// goal/G30.13) passes the same gate as the browser on loopback.
+function serveGet(pathname, res) {
+  const isHomeRequest = pathname === '/' || pathname === '/index.html';
+  const relativePath = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
+  const filePath = isHomeRequest
+    ? path.join(ROOT_DIR, HOME_PAGE)
+    : fsPath(ROOT_DIR, pathname);
+
+  if (!filePath) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden');
+    return;
+  }
+
+  // This route is a completely independent path to the filesystem from
+  // kernel.js's own loadFile — it's the raw route the browser's
+  // synchronous loadFile XHR hits directly. Boot assets bypass the
+  // generic gate unconditionally; everything else goes through the same
+  // fileServable check loadFile/scanFolder use.
+  if (BOOT_ASSETS.indexOf(relativePath) === -1 && !spirit.core.fs.fileServable(relativePath)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+    return;
+  }
+
+  sendFile(res, filePath);
+}
 
 function handleSseConnection(req, res) {
   res.writeHead(200, {
@@ -900,30 +931,7 @@ const server = http.createServer((req, res) => {
   // type system can see.
 
   if (req.method === 'GET') {
-    const isHomeRequest = pathname === '/' || pathname === '/index.html';
-    const relativePath = isHomeRequest ? HOME_PAGE : pathname.replace(/^\/+/, '');
-    const filePath = isHomeRequest
-      ? path.join(ROOT_DIR, HOME_PAGE)
-      : fsPath(ROOT_DIR, pathname);
-
-    if (!filePath) {
-      res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Forbidden');
-      return;
-    }
-
-    // This route is a completely independent path to the filesystem from
-    // kernel.js's own loadFile — it's the raw route the browser's
-    // synchronous loadFile XHR hits directly. Boot assets bypass the
-    // generic gate unconditionally; everything else goes through the same
-    // fileServable check loadFile/scanFolder use.
-    if (BOOT_ASSETS.indexOf(relativePath) === -1 && !spirit.core.fs.fileServable(relativePath)) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('Not found');
-      return;
-    }
-
-    sendFile(res, filePath);
+    serveGet(pathname, res);
     return;
   }
 
@@ -1504,6 +1512,19 @@ contactBook.syncMarks(ROOT_DIR);
       log: function (line) { console.log(line); },
     }));
 
+    // ── THIS NODE'S FACE (goal/G30.13) ──────────────────────────────────
+    //
+    // A request from the owner's face runs through the door the puppeteer uses above (nodeDoor.call), a file through
+    // the browser's own GET (serveGet); faceStream carries what the loopback shell gets. faceHome.js says the rest.
+    faceHome = require('./faceHome').createFaceHome({
+      call: function (verb, args) { return nodeDoor.call(verb, args); },
+      serveFile: function (rel, res) { serveGet('/' + rel, res); },
+      identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
+      relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
+      jobs: jobs,
+      log: function (line) { console.log(line); },
+    });
+
     // ── THE STREAM TO THE MASTER (goal/G14.5) ─────────────────────────
     //
     // Andy, 2026-10-10: "inside the puppet, the publisher then publishes to the master as well", "just send all
@@ -1634,6 +1655,10 @@ contactBook.syncMarks(ROOT_DIR);
       // as `owner-event` (onOwnerEvent, below), not `relay-event`, since
       // R2 split the two. Adoption lives there now.
     },
+    // This node's face (goal/G30.13): the relay's face, face-open and face-close events, answered by faceHome.
+    onFace: function (url, data) { if (faceHome) faceHome.request(url, data); },
+    onFaceOpen: function (url) { if (faceHome) faceHome.open(url); },
+    onFaceClose: function (url) { if (faceHome) faceHome.close(url); },
     // AND THE MEMBERSHIP HALF, WHICH IS KEPT (R2).
     //
     //   Andy: "There is a category of events on the relay that the owner

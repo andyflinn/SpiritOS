@@ -210,6 +210,11 @@ function createPresence(opts) {
   // is about a PEER and not about a relay, nobody addressed it to this
   // node, and it must never reach the traffic log.
   const onRoute = opts.onRoute || null;
+  // THIS NODE'S FACE (goal/G30.13): a request from the logged-in face, and its stream opening and closing, as the
+  // relay puts them on this stream (relay.faceCall, faceOpen). Handed on to faceHome, which answers.
+  const onFace = opts.onFace || null;
+  const onFaceOpen = opts.onFaceOpen || null;
+  const onFaceClose = opts.onFaceClose || null;
 
   // onRoster STOOD HERE. The relay no longer sends the whole roll on
   // connect (cycle 3, 0012 widened): a relay's picture starts from what
@@ -471,6 +476,9 @@ function createPresence(opts) {
         // guard here could only ever have hidden the absence.
         else if (msg.event === 'request') router.onRequest(url, msg.data);
         else if (msg.event === 'reply') router.onReply(msg.data);
+        else if (msg.event === 'face' && onFace) { try { onFace(url, msg.data); } catch (e) { /* one request, refused alone */ } }
+        else if (msg.event === 'face-open' && onFaceOpen) { try { onFaceOpen(url); } catch (e) { /* the face waits */ } }
+        else if (msg.event === 'face-close' && onFaceClose) { try { onFaceClose(url); } catch (e) { /* already gone */ } }
         // A RELAY TELLING ITS OWNER HOW IT IS DOING. Only a relay this
         // node OWNS ever sends one — the rule is enforced at the far end,
         // where the owner's key is, and this side does not second-guess
