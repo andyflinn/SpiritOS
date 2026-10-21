@@ -160,6 +160,50 @@ const done = (async function () {
   if (!missing.length)
     test.check('owner events wired to the face, 🤓 and the tab title, at-rest measured at boot, the status parts and the allocation screen, peerFind on open, no gzip, Log out two-press, CAPACITY.md');
   else test.fail(OWED + 'missing: ' + missing.join(', '));
+
+  // Found on spirit-3 (box v16; Andy: "a do-nothing interface", "disc should be measured in GB"): the screen showed what
+  // the relay booted with, and Restart wrote those figures back over the Save. Now: raising applies at once, lowering at
+  // the next restart, what is set is read from the file, Restart only restarts, a refusal stays, disc in GB.
+  // NAMED HERE: relay.reconfigure(ask) is exported (the owner's config verb, as its post reaches it), and createRelay
+  // takes deps.readConfig, the file as it stands, beside writeConfig and restart.
+  test.subHeading('5. the allocation screen does what it says');
+  let file = { ramLimitMB: 8, discLimitMB: 64 };
+  const restarts = [];
+  const home5 = fs.mkdtempSync(path.join(os.tmpdir(), 'g3015c-'));
+  homes.push(home5);
+  plant.ensureAt(home5, 'relay');
+  const C = createRelay(home5, { config: { ramLimitMB: 8, discLimitMB: 64, source: 'test' },
+    writeConfig: function (c) { file = { ramLimitMB: c.ramLimitMB, discLimitMB: c.discLimitMB }; return true; },
+    readConfig: function () { return file; },
+    restart: function () { restarts.push(1); return { will: true }; } });
+  let raise5 = null; let down = null; let readBack = null; let only = null; const fileBefore = {};
+  try {
+    raise5 = C.reconfigure({ ramLimitMB: 16, discLimitMB: 128 });
+    const raised = { allowance: C.allowance(), cap: C.capacity().ramLimitMB };
+    down = C.reconfigure({ ramLimitMB: 12, discLimitMB: 128 });
+    down.allowanceAfter = C.allowance();
+    readBack = C.reconfigure({});
+    Object.assign(fileBefore, file);
+    only = C.reconfigure({ restart: true });
+    raise5.raised = raised;
+  } catch (e) { raise5 = { threw: e.message }; }
+  if (raise5 && raise5.ok && raise5.raised && raise5.raised.allowance === 256 && raise5.raised.cap === 16 && /now/.test(String(raise5.applies))
+      && down && down.ok && /next start/.test(String(down.applies)) && down.allowanceAfter === 256
+      && readBack && readBack.onFile && readBack.onFile.ramLimitMB === 12
+      && only && only.ok && only.restarting === true && restarts.length === 1 && file.ramLimitMB === fileBefore.ramLimitMB)
+    test.check('raising applies at once, lowering at the next restart, set is read from the file, and Restart alone writes nothing');
+  else test.fail(OWED + 'raise ' + short(raise5) + ', lower ' + short(down) + ', read ' + short(readBack && readBack.onFile) + ', restart ' + short(only) + ', restarts ' + restarts.length + ', file ' + short(file));
+
+  const nd2 = code('spirit/run/shell/natterDetails/natterDetails.js');
+  const ui = {
+    discInGB: /Disc, GB/.test(nd2) && /\* 1024/.test(nd2),
+    restartOnly: /config:\s*\{\s*restart:\s*true\s*\}|\{\s*restart:\s*true\s*\}/.test(nd2) && !/restart:\s*true\s*\},\s*\n?\s*button/.test(nd2),
+    refusalStays: /ndAllocSaid\s*=\s*\(b && b\.error\)|ndAllocSaid\s*=\s*.*refused/.test(nd2),
+    relayReadsFile: /deps\.readConfig/.test(code('spirit/run/js/relay.js')) && /readConfig/.test(code('spirit/run/js/relayServer.js')),
+  };
+  const uiMissing = Object.keys(ui).filter(function (k) { return !ui[k]; });
+  if (!uiMissing.length) test.check('the screen sets disc in GB, keeps a refusal, Restart sends only the restart, and the relay reads its own file');
+  else test.fail(OWED + 'missing: ' + uiMissing.join(', '));
 }());
 
 done.then(function () {
