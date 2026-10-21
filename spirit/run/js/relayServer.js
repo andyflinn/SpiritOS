@@ -390,6 +390,9 @@ function isRelayPublicPath(method, pathname) {
   // inside relay.js by a signature, and refused instantly if the peer is
   // not there to receive it (decision 0006).
   if (method === 'POST' && (pathname === '/api/relay/post' || pathname === '/api/relay/reply')) return true;
+  // THE HOME NODE'S UPLOADS TO ITS FACE (goal/G30.14): gated inside relay.js by a signature naming this relay and the
+  // request's id.
+  if (method === 'POST' && (pathname === '/api/relay/face/answer' || pathname === '/api/relay/face/stream')) return true;
   return false;
 }
 
@@ -452,6 +455,32 @@ function faceDoor(req, res, url, pathname) {
     return true;
   }
   if (req.method === 'GET' && FACE_FILES[pathname]) { faceSend(res, 200, FACE_FILES[pathname]); return true; }
+  // THE FACE REACHES ITS HOME NODE (goal/G30.14), by its login: a call or a file is a stream event to the home node,
+  // and this response waits for the home node's upload; /face/stream is the face's own stream of live updates.
+  if ((req.method === 'POST' && pathname === '/face/call') || (req.method === 'GET' && pathname === '/face/file')) {
+    const sidNow = faceCookie(req);
+    const refuse = function (said) {
+      if (res.headersSent) return;
+      res.writeHead(said.status || 502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: said.error }));
+    };
+    if (req.method === 'GET') {
+      const said = relay.faceCall(sidNow, { get: url.searchParams.get('path') || '' }, res);
+      if (!said.ok) refuse(said);
+      return true;
+    }
+    readJsonBody(req).then(function (body) {
+      const said = relay.faceCall(sidNow, body || {}, res);
+      if (!said.ok) refuse(said);
+    }, function () { refuse({ status: 400, error: 'the body is not json' }); });
+    return true;
+  }
+  if (req.method === 'GET' && pathname === '/face/stream') {
+    res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
+    const said = relay.faceOpen(faceCookie(req), res);
+    if (!said.ok) res.end(JSON.stringify({ type: 'refused', status: said.status, error: said.error }) + '\n');
+    return true;
+  }
   if (req.method === 'POST' && pathname === '/face/api') {
     readJsonBody(req).then(function (body) {
       const verb = String((body && body.verb) || '');
@@ -489,7 +518,10 @@ const server = http.createServer((req, res) => {
   // stands in for that gate is not "nothing": isRelayPublicPath (above)
   // reduces the answerable surface to the one door and the members'
   // stream, and both are gated by signature checks in relayAuth.js.
-  if (common.refuseTooBig(req, res)) return;
+  // The home node's uploads to its face are not posts: faceStream has no size cap (goal/G30.14, Andy's yes), and
+  // they are piped through as they arrive, never held whole.
+  const faceUpload = req.method === 'POST' && /^\/api\/relay\/face\/(answer|stream)(\?|$)/.test(String(req.url || ''));
+  if (!faceUpload && common.refuseTooBig(req, res)) return;
 
   const parsed = common.parseRequestPath(req, res);
   if (!parsed) return;
@@ -686,6 +718,26 @@ const server = http.createServer((req, res) => {
           code: spiritErrors.classify(result.status, result.error, result).code,
         }));
       }
+      return;
+    }
+
+    // THE HOME NODE ANSWERS ITS FACE (goal/G30.14): the raw body is piped into the face's waiting response, or into
+    // its open stream, as it arrives. Who it is, and the signature over this relay and the id, are headers, so the
+    // body is never read here.
+    if (pathname === '/api/relay/face/answer' || pathname === '/api/relay/face/stream') {
+      const from = String(req.headers['x-spirit-from'] || '');
+      const sig = String(req.headers['x-spirit-sig'] || '');
+      const said = pathname === '/api/relay/face/answer'
+        ? relay.faceAnswer(from, url.searchParams.get('id') || '', sig, req, { status: req.headers['x-spirit-status'], type: req.headers['x-spirit-type'] })
+        : relay.faceFeed(from, sig, req);
+      if (!said.ok) {
+        res.writeHead(said.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: said.error, code: spiritErrors.classify(said.status, said.error, said).code }));
+        req.resume();
+        return;
+      }
+      // Answered once the upload has been carried through.
+      req.on('end', function () { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ ok: true })); });
       return;
     }
 

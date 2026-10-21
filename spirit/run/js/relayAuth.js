@@ -118,6 +118,26 @@ function streamSignatureOk(publicKey, key, relayKey, sig, atMs) {
   return false;
 }
 
+// ── AN UPLOAD FROM THE HOME NODE TO ITS FACE (goal/G30.14) ───────────
+//
+// faceStream: the home node answers a face request, or feeds the face's live updates, by an upload the relay pipes
+// straight into the face. The upload is signed over the member's key, THIS relay's key (so it cannot be replayed on
+// another relay) and the request's id ('stream' for the live updates), with the minute and the same window either way
+// as a stream signature. The body is not signed: it is node-internal and may be any size, piped as it arrives.
+function faceMessage(key, relayKey, id, atMs) {
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'face\n' + String(key || '') + '\n' + String(relayKey || '') + '\n' + String(id || '') + '\n' + minute;
+}
+
+function faceSignatureOk(publicKey, key, relayKey, id, sig, atMs) {
+  if (!publicKey || !sig || !relayKey || !id) return false;
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    if (verify(publicKey, faceMessage(key, relayKey, id, now + step * 60000), sig)) return true;
+  }
+  return false;
+}
+
 // removePeerMessage and removePeerSignatureOk STOOD HERE, under a note
 // arguing that removal — the one owner action that destroys — least
 // deserved a shared signature, and that it had to name the KEY because
@@ -710,6 +730,8 @@ module.exports = {
   claimMessage,
   streamMessage,
   streamSignatureOk,
+  faceMessage,
+  faceSignatureOk,
   postMessage,
   hintMessage,
   hintsSigned,

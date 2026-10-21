@@ -4154,12 +4154,93 @@ function createRelay(rootDir, deps) {
     return { ok: true, status: 200 };
   }
 
+  // ── THE FACE REACHES ITS HOME NODE (goal/G30.14) ─────────────────────
+  //
+  // Two relay additions, each approved by Andy (2026-10-21):
+  //   - A FACE REQUEST IS A STREAM EVENT: the logged-in face's request goes into the member's stream as a 'face' event
+  //     { id, request }, with no route and no in-flight slot; the face's response waits for the answer.
+  //   - faceStream: node-internal, the owner's node to the owner's face, this relay only shovelling bytes. The home
+  //     node answers a request by an upload signed for its id (relayAuth.faceSignatureOk), which is piped straight into
+  //     the waiting response as it arrives; the live updates are one long upload, piped into the face's own stream.
+  //     Not a peerPost: no post limit and no size cap, nothing held whole here. The relay neither seals nor opens it.
+  // A request the home node never answers is ended with 504 after FACE_CALL_MS.
+  var FACE_CALL_MS = 30 * 1000;
+  var faceCalls = new Map();    // request id -> { key, sink, timer }: the face responses waiting for their answer
+  var faceStreams = new Map();  // member key -> the face's open stream
+  // The member a login belongs to, its session moved on by this interaction.
+  function faceOwner(sid) {
+    var s = faceSession(sid);
+    return s.ok ? faceMember(s.name) : null;
+  }
+  function faceCall(sid, request, sink) {
+    var m = faceOwner(sid);
+    if (!m) return { ok: false, status: 401, error: 'not logged in' };
+    if (!activeRows[m.publicKey]) return { ok: false, status: 503, error: 'this face\'s node is not present' };
+    var id = require('crypto').randomBytes(12).toString('base64url');
+    var timer = setTimeout(function () {
+      var c = faceCalls.get(id);
+      if (!c) return;
+      faceCalls.delete(id);
+      try { c.sink.writeHead(504, { 'Content-Type': 'text/plain; charset=utf-8' }); c.sink.end('the home node did not answer'); } catch (e) { /* the face went */ }
+    }, FACE_CALL_MS);
+    if (timer && typeof timer.unref === 'function') timer.unref();
+    faceCalls.set(id, { key: m.publicKey, sink: sink, timer: timer });
+    presentNow.send(m.publicKey, 'face', { id: id, request: request == null ? null : request });
+    return { ok: true, status: 202, id: id };
+  }
+  // The home node's answer to one face request: signed for this relay and that id, piped whole into the response.
+  function faceAnswer(key, id, sig, source, meta) {
+    var k = String(key || '');
+    var rid = String(id || '');
+    if (!findByKey(k) || !auth.faceSignatureOk(k, k, relayPublicKey(), rid, sig)) return { ok: false, status: 403, error: 'bad face signature' };
+    var c = faceCalls.get(rid);
+    if (!c || c.key !== k) return { ok: false, status: 404, error: 'no face request with that id' };
+    faceCalls.delete(rid);
+    clearTimeout(c.timer);
+    var m = meta || {};
+    c.sink.writeHead(Number(m.status) || 200, { 'Content-Type': String(m.type || 'application/octet-stream'), 'Cache-Control': 'no-store' });
+    source.pipe(c.sink);
+    return { ok: true, status: 200 };
+  }
+  // The face's own stream, by its login. The home node hears face-open, and face-close when it ends.
+  function faceOpen(sid, sink) {
+    var m = faceOwner(sid);
+    if (!m) return { ok: false, status: 401, error: 'not logged in' };
+    if (!activeRows[m.publicKey]) return { ok: false, status: 503, error: 'this face\'s node is not present' };
+    var key = m.publicKey;
+    var before = faceStreams.get(key);
+    if (before && before !== sink) { try { before.end(); } catch (e) { /* gone */ } }
+    faceStreams.set(key, sink);
+    sink.on('close', function () {
+      if (faceStreams.get(key) !== sink) return;
+      faceStreams.delete(key);
+      presentNow.send(key, 'face-close', {});
+    });
+    presentNow.send(key, 'face-open', {});
+    return { ok: true, status: 200 };
+  }
+  // The home node's long upload of the face's live updates, piped into the face's open stream as it arrives.
+  function faceFeed(key, sig, source) {
+    var k = String(key || '');
+    if (!findByKey(k) || !auth.faceSignatureOk(k, k, relayPublicKey(), 'stream', sig)) return { ok: false, status: 403, error: 'bad face signature' };
+    var sink = faceStreams.get(k);
+    if (!sink) return { ok: false, status: 409, error: 'no face is open' };
+    source.pipe(sink, { end: false });
+    return { ok: true, status: 200 };
+  }
+
   return {
     // The face (goal/G30.9): which face a host is, the one-field login, the session and Log out.
     faceAt: faceAt,
     faceLogin: faceLogin,
     faceSession: faceSession,
     faceLogout: faceLogout,
+    // The face reaches its home node (goal/G30.14): a request as a stream event, the answers and the live updates
+    // piped from the home node's uploads.
+    faceCall: faceCall,
+    faceAnswer: faceAnswer,
+    faceOpen: faceOpen,
+    faceFeed: faceFeed,
     claim: claim,
     forgetPeer: forgetPeer,
     join: join,
