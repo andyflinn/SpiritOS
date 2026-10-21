@@ -1,5 +1,5 @@
 {
- "change": 80892,
+ "change": 80969,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -12341,7 +12341,7 @@
    "title": "Giving Face to \"Files\", TextViewer and MediaViewer.",
    "goal": "goal/G30",
    "status": "",
-   "with": "claude-windows",
+   "with": "",
    "buttons": [
     "close",
     "delete"
@@ -12350,8 +12350,7 @@
     "goal/G30"
    ],
    "blocked": [
-    "goal/G30.17",
-    "goal/G30.18"
+    "goal/G30.17"
    ],
    "codeOffered": true,
    "go": false,
@@ -12503,11 +12502,9 @@
    "id": "goal/G30.17",
    "title": "shell/js/probabilitySearch.js: the standard shell list-tool",
    "goal": "goal/G30",
-   "status": "running",
-   "with": "",
-   "buttons": [
-    "delete"
-   ],
+   "status": "build",
+   "with": "claude-windows",
+   "buttons": [],
    "blocking": [
     "goal/G30.16"
    ],
@@ -12518,19 +12515,19 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "claude-windows",
    "verifier": "",
    "creator": "claude-windows",
    "claimCommit": "",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -12666,6 +12663,18 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T10:47:26.529Z",
      "text": "Understood: not in this box. Phones and desktops come as their own pass once Contacts and Files stand, over the shell, Your home node, Contacts, Files and the viewers together."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T11:45:37.451Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:45:42.029Z",
+     "text": "commit 48ac202c8a23ae3ba08724f7be6bbf510d6371db: goal/G30.17: the red for probabilitySearch: with words the ranking orders the list, column sort is off and rows that scored zero are still listed; with the field empty rows keep the order they came, o\n- spirit/test/probabilitySearch.js"
     }
    ]
   },
@@ -12673,10 +12682,11 @@
    "id": "goal/G30.18",
    "title": "Elements for a single file and a single contact",
    "goal": "goal/G30",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "delete"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G30.16"
@@ -12686,21 +12696,47 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/rowElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/rows/contactElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/rows/fileElement.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/rowElements.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "b790d56d",
    "redCommit": "",
-   "waived": false,
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -12739,7 +12775,53 @@
    "full": false,
    "box": "DRAFT. Elements for a single file and a single contact: two rowElements (element groups), fileElement and contactElement, in shell/js/rows/ (shell/js/rows/fileElement.js, shell/js/rows/contactElement.js). They carry the listeners and painters a subject needs for real-time updates, wherever the element is used: a list row and a details panel show the same element, so nothing has to keep the two in sync.\n\nThey are rowElements, the complementary shell elements to probabilitySearch (goal/G30.17): the shape that is ideal for its rows. The family: fileElement and contactElement in this item; jobElement and goalElement later, out of scope here.\n\nTHE CONTRACT EVERY rowElement MEETS (this pair is its first; probabilitySearch knows only this shape)\n- Made from one row of a search answer; a key; its fields in order; a listener on its subject; destroy.\n- expandInfo: fetches what is too large for a row, when it is wanted: long text, descriptions, attached lists, fan-out data. A row and a details header use the element's fields; a details screen asks expandInfo for the rest.\n- shell/js/rowElement.js holds what every row element shares, and fileElement and contactElement inherit from it: each hands in only its own subject, fields, stream and expandInfo. rowElement does the shared work once: paints each field into its cell, registers the one listener with the stream dispatcher, drops it on destroy, runs expandInfo and keeps its answer. Inheriting is plain: rowElement.create(parts) builds the element from the parts fileElement or contactElement hands in; no class chains.\n- The stream dispatch lives per kind, in the element's own file: fileElement.js holds one stream subscription for all file rows and an index by path, contactElement.js one for all contact rows indexed by key. A row registers its subject there on create and leaves on destroy; rowElement only gives that register-and-leave helper. There is no separate dispatcher.\n- A rowElement carries its actions (add, block, remove, open), so a row and a details screen offer the same ones.\n- Fan-outs: an element may carry references to the elements that hang off its subject, such as a chatElement when the subject has a chat.\n\nTHE SHAPE OF A rowElement\n- An item is a listener and its fields, in order:\n  { listener, fields: [ { name, fieldRule, painter, editor } ] }\n- listener: one per item (usually per row). It hears the stream events about its subject and hands each changed field to that field's painter; it is dropped when the item leaves the screen.\n- fieldRule: the field's rule from js/fieldRules.js, the one definition both sides of the wire use (bytes, not characters). An editor checks it before taxing the wire.\n- painter: draws the field's value. A changed field repaints only itself.\n- editor (only where the value may be changed): asks the server for the change and never paints the result; the confirmed change, broadcast on the stream, repaints the field everywhere it is shown. Editors are for the item's details dialog; a list row usually shows its fields without them.\n\nfileElement\n- Subject: one file or folder, by its path.\n- Fields: icon (by its kind and type), name, size, changed. Fed by the fs-watcher's events for that path, which carry the size and the time of change.\n\ncontactElement\n- Subject: one contact, by its key.\n- Fields: presence (the dot), status (owned, blocked, held), label (editable: the rename).\n- Fed by the presence events for that key and the contact's own changes (a rename, a block).\n\nIN A LIST\n- probabilitySearch (goal/G30.17) takes an item's fields as its columns: the column mapping names the item's fields, and each cell is that field's painter.",
    "version": 10,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: index.html",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:43:18.352Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: shell/js/rowElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:43:20.355Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: shell/js/rows/contactElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:43:22.401Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "core grant: shell/js/rows/fileElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:43:24.349Z"
+    },
+    {
+     "number": "G5",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/shell/js/rowElement.js, spirit/run/shell/js/rows/contactElement.js, spirit/run/shell/js/rows/fileElement.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:45:50.545Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -12872,6 +12954,36 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T11:33:17.350Z",
      "text": "In the box: the dispatch per kind, no separate dispatcher.\n\nGreen: settled, open none, box current (v10)."
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T11:36:29.578Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:36:35.184Z",
+     "text": "commit 0dd00e80c6e38246518cfd1a773f2a70d59a5271: goal/G30.18: the red for the rowElements: rowElement.create paints each field into its cell, repaints only a changed one, runs an action, asks expandInfo once and leaves its index on destroy; fileElem\n- spirit/test/rowElements.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:40:05.852Z",
+     "text": "Built; the red is 3 of 3, and the suites that read shell/js and index.html are green. The commit waits on your grants for four files:\n\n- shell/js/rowElement.js: the shared work. Each field painted into its cell, only a changed one repainted, actions that ask and paint nothing, expandInfo asked once and kept, destroy leaving the index. Each kind gets one stream subscription for all its rows.\n- shell/js/rows/fileElement.js: icon, name, size, changed; fed by the fs-watcher by path; open, remove.\n- shell/js/rows/contactElement.js: presence, status, label (checked with fieldRules before contact.label); fed by presence and renames by key; open, block, unblock, remove.\n- index.html: loads the three, so the old shell and the face both have them.\n\nOne cost to know: on loopback, kernel's jobs.subscribe opens a stream per call, so each kind adds one stream to a page that uses it. On the face they share its one stream."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:43:56.135Z",
+     "text": "commit b790d56d409e33a784520ed8f4f202affab9279e: goal/G30.18: the rowElements: shell/js/rowElement.js does the shared work once (each field painted into its cell, only a changed field repainted, actions that ask and paint nothing, expandInfo asked o\n- spirit/run/index.html\n- spirit/run/shell/js/rowElement.js\n- spirit/run/shell/js/rows/contactElement.js\n- spirit/run/shell/js/rows/fileElement.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:44:12.004Z",
+     "text": "deskVerify: passed, at b790d56d (pulled). 1 suite ran green."
     }
    ]
   }
