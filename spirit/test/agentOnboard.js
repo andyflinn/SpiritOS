@@ -182,7 +182,9 @@ function pointAt(home, relayUrl, relayKey) {
   const owned = await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy' });
   const andyCard = await verb(andyPort, { verb: 'node.card' });
   const andyKey = andyCard.body.publicKey || '';
-  if (owned.status >= 200 && owned.status < 300 && andyKey) test.check('the world: Andy\'s node owns the scratch relay');
+  // A RELAY SEATS ITS OWNER AT BOOT (goal/G30.7), so the claim may find his seat already there: 409, his own key.
+  const seatedAlready = owned.status === 409 && owned.body && owned.body.peer && owned.body.peer.publicKey === andyKey;
+  if (((owned.status >= 200 && owned.status < 300) || seatedAlready) && andyKey) test.check('the world: Andy\'s node owns the scratch relay');
   else { test.fail('the world: the owner claim answered ' + owned.status + ' ' + short(owned.body)); return; }
 
   // ANOTHER AGENT HAS ALREADY WRITTEN AT THE DESK, under its own key.

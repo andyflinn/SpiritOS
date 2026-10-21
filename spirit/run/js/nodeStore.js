@@ -140,6 +140,11 @@ function available() {
 // peer on several relays is normal and the fourth-best way to reach
 // somebody has never been the one that worked.
 const MAX_ROUTES = 3;
+// THE WHOLE FILE'S CAP, and what goes past it (goal/G30.19; Andy: "cap in to 16 MB"): see shedToCap.
+const MAX_DB_BYTES = 16 * 1024 * 1024;
+const SHED_CHUNK = 256;
+// The backlog a page is handed when it opens: the untaken packets of the last day (Andy: "one day.").
+const BACKLOG_MS = 24 * 60 * 60 * 1000;
 
 // ── WHAT IS NEVER KEPT (cycle 11's R5) ────────────────────────────
 //
@@ -801,8 +806,12 @@ function open(rootDir, opts) {
     // THE ARRIVALS NOT YET TAKEN (goal/G4.31), every one, oldest first: what a stream replays when it opens. Both
     // partial indexes' WHEREs are repeated (traffic_arrivals_at for the rows, traffic_hash for each one's mark), so it
     // never reads the whole log, which cost about a second per desk ask on a long-lived node.
-    untaken: db.prepare("SELECT t.* FROM traffic t WHERE t.dir = 'in' AND t.admitted = 1 AND NOT EXISTS " +
+    // THE LAST DAY'S ONLY (goal/G30.19): an untaken packet older than BACKLOG_MS is not work still waiting (Andy: "I
+    // don't go clean a room my mother tld me to clean 60 years ago"); `at > ?` keeps the read to the index's newest rows.
+    untaken: db.prepare("SELECT t.* FROM traffic t WHERE t.dir = 'in' AND t.admitted = 1 AND t.at > ? AND NOT EXISTS " +
       "(SELECT 1 FROM traffic m WHERE m.hash = t.hash AND m.hash <> '' AND m.mark = 'taken') ORDER BY t.at"),
+    // The oldest rows, a chunk at a time, for the shedding below.
+    shed: db.prepare('DELETE FROM traffic WHERE seq IN (SELECT seq FROM traffic ORDER BY seq LIMIT ?)'),
     // The highest stamp written. NOT the last seq's: the migration
     // (transport/R19.5) appends a node's older history after rows it wrote
     // since, so seq order and time order part there. Read once per process.
@@ -829,8 +838,24 @@ function open(rootDir, opts) {
     return out;
   }
 
+  // ── THE FILE NEVER GROWS PAST MAX_DB_BYTES (goal/G30.19) ─────────────
+  //
+  // Andy, 2026-10-21: "cap in to 16 MB", "learn to throw out shit, or else my box is gonna grind to a hold very soon",
+  // "make sure the code doesn't allow it to grow anymore". Every packet written asks the file's size (page_count, no
+  // read); past the cap the packet log's oldest rows go, a chunk at a time, and their pages are given back to the disc,
+  // until it fits or the log is empty. The log is what grows; everything else here has its own bound.
+  function fileBytes() { return q.pages.get().page_count * q.pageSize.get().page_size; }
+  function shedToCap() {
+    for (let pass = 0; pass < 64 && fileBytes() > MAX_DB_BYTES; pass += 1) {
+      if (!tq.shed.run(SHED_CHUNK).changes) break;
+      db.exec('PRAGMA incremental_vacuum');
+    }
+  }
+
   const store = {
     path: dbPath(rootDir),
+    // The file's size, the number the cap is on.
+    fileBytes: fileBytes,
 
     // THE NODE LOG'S TABLE (transport/R19.3). A row goes in as the object
     // trafficLog.js built and comes out as the same object, in seq order.
@@ -846,14 +871,16 @@ function open(rootDir, opts) {
           return TRAFFIC_TYPES[c] === 'bool' ? (v ? 1 : 0) : v;
         });
         vals.push(Object.keys(extra).length ? JSON.stringify(extra) : null);
-        return Number(tq.add.run.apply(tq.add, vals).lastInsertRowid);
+        const seq = Number(tq.add.run.apply(tq.add, vals).lastInsertRowid);
+        shedToCap();
+        return seq;
       },
       all: function () { return tq.all.all().map(trafficRow); },
       // The indexed reads (transport/R19.4). `since` is an ISO time, '' for all.
       byHash: function (hash) { return tq.byHash.all(String(hash || '')).map(trafficRow); },
       owner: function (since, limit) { return tq.owner.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
       arrivals: function (since, limit) { return tq.arrivals.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
-      untaken: function () { return tq.untaken.all().map(trafficRow); },
+      untaken: function () { return tq.untaken.all(new Date(Date.now() - BACKLOG_MS).toISOString()).map(trafficRow); },
       lastAt: function () { const r = tq.lastAt.get(); return (r && r.at) || ''; },
       // For the migration's way back (transport/R19.5).
       maxSeq: function () { return tq.maxSeq.get().n; },
@@ -1010,7 +1037,10 @@ function open(rootDir, opts) {
       // number — C2 — and separating them would create the silent hole
       // the condition exists to close.
       //
-      // SEVEN DAYS, and it is a figure to rule rather than a discovery.
+      // ONE DAY (goal/G30.19, Andy: "learn to throw out shit"): at a packet a second the seven days below cost 56 MB,
+      // three times the whole file's cap. A sealed packet older than a day is refused as old.
+      //
+      // It was SEVEN DAYS, and it is a figure to rule rather than a discovery.
       // The argument for it: a relay does not queue, so a legitimate post
       // today is seconds old and a window of minutes would do — but the
       // seal was deliberately built without a session so a message CAN
@@ -1025,7 +1055,7 @@ function open(rootDir, opts) {
       // convenience: a node an hour fast would otherwise have every
       // message refused as being from the future, which reads as a
       // network fault and is not one.
-      WINDOW_MS: 7 * 24 * 60 * 60 * 1000,
+      WINDOW_MS: 24 * 60 * 60 * 1000,
       SKEW_MS: 60 * 60 * 1000,
 
       // Answers what the caller must decide, rather than a boolean it
@@ -1353,6 +1383,7 @@ function open(rootDir, opts) {
 
 module.exports = {
   open: open,
+  MAX_DB_BYTES: MAX_DB_BYTES,
   MAX_ROUTES: MAX_ROUTES,
   CHOICES: CHOICES,
   available: available,

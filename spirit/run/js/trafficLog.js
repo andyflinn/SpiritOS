@@ -715,8 +715,8 @@ function createTrafficLog(opts) {
     return marked;
   }
 
-  // The whole history, marks folded in. Nothing is pruned on the way out
-  // any more, because nothing is pruned at all.
+  // What the log still holds, marks folded in. The log is not permanent (goal/G30.19, overruling 2026-09-13's
+  // "permanent. period."): node.db sheds its oldest rows past nodeStore.MAX_DB_BYTES.
   function read() {
     return historyOf(rootDir);
   }
