@@ -1,5 +1,5 @@
 {
- "change": 80969,
+ "change": 81006,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,6 +10,7 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,16 +47,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 5,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -12350,7 +12349,7 @@
     "goal/G30"
    ],
    "blocked": [
-    "goal/G30.17"
+    "goal/G30.19"
    ],
    "codeOffered": true,
    "go": false,
@@ -12502,9 +12501,12 @@
    "id": "goal/G30.17",
    "title": "shell/js/probabilitySearch.js: the standard shell list-tool",
    "goal": "goal/G30",
-   "status": "build",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G30.16"
    ],
@@ -12513,19 +12515,35 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/index.html",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/run/shell/js/probabilitySearch.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/probabilitySearch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "claude-windows",
-   "verifier": "",
+   "verifier": "claude-windows",
    "creator": "claude-windows",
-   "claimCommit": "",
+   "claimCommit": "4de6673b",
    "redCommit": "",
    "waived": true,
    "rules": [
@@ -12566,7 +12584,35 @@
    "full": false,
    "box": "The standard shell list-tool: shell/js/probabilitySearch.js, a finished intrinsic shell element. Files and Contacts both use it. Apps not yet ported into the new shell keep using shell/shared/js/listSearch.js until none does; then it is deleted.\n\nWHAT WE TAKE FROM shell/shared/js/listSearch.js\n- Rows kept by key, every row any search brought, in one unbounded probability bucket; a later answer replaces a row with the same key.\n- Ranking as you type: every row scored by probabilityStringObjectMatch against the words, times every filter's test; best on top.\n- The matched letters marked in the row, and the match bar beside it.\n- One call on the wire at a time, no typing pause; the latest words go the moment the answer returns.\n- Filters declared by the app and drawn by the element, toggles included.\n\nWHAT WE ADD\n- A column mapping: which value field of a row goes in which column. It defines the column headers, and a header is a sort trigger.\n- Column sort, client-side only, on the cached rows, combined with the filters; the server keeps no sort indexes.\n- Search is row and data acquisition, with its filters; sorting is viewing the cached rows from different perspectives.\n- No count line: the list says neither how many match nor that more exist.\n- No cut-off: a search never stops where only zero-probability rows are left. Server-side above all, a server fills its bucket with all it has; the browser is better off with too much data than too little.\n\nTHE CONFIGURATION OBJECT\n- api, server, verb: where the rows come from (the server searched, its stream, its search verb).\n- args(text, filters): the verb's arguments.\n- columns: [{ field, label, width, align, sort }]: the column mapping; sort says how a field compares (text, number or date). Replaces head and paint.\n- element(row): optional, the shell element that draws a row when a row is more than its fields (a file, a contact).\n- filters, matched(row, filters), score(row, filters), rows(), fold(row, key), empty: as in listSearch.\n- Returns { refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }.\n\nBEHAVIOUR, AND WHAT SHAPES IT\n- The server's answers only feed the cache. While a search is out the words keep changing, so the server never knows the current words; what the list shows is always ranked from the cache against the words as they stand now.\n- Text in the search field: column sort is off; the ranking orders the list (columns and filters say what is matched).\n- The field empty: the cached rows stand in rows() order, or the order they came; a header press sorts by its column's field, a second press reverses; filters still apply.\n- A change to a row's value field, heard on its server's stream, redraws that row's cells only.\n- destroy drops every listener, so a list that leaves the screen leaves nothing behind.",
    "version": 5,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: index.html",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:50:07.833Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: shell/js/probabilitySearch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:50:10.015Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: spirit/run/index.html, spirit/run/shell/js/probabilitySearch.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-21T11:51:14.083Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -12675,6 +12721,24 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T11:45:42.029Z",
      "text": "commit 48ac202c8a23ae3ba08724f7be6bbf510d6371db: goal/G30.17: the red for probabilitySearch: with words the ranking orders the list, column sort is off and rows that scored zero are still listed; with the field empty rows keep the order they came, o\n- spirit/test/probabilitySearch.js"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:49:26.662Z",
+     "text": "Built; the red is 3 of 3. Also tried in a real browser (headless Chrome on my node): three file rows drawn by fileElement, the Size header sorted up then down, 'gamma' put gamma.js first with the others still listed, no header sorts while searching, no count line.\n\nThe commit waits on your grants for two files:\n- shell/js/probabilitySearch.js: the list-tool.\n- index.html: loads it.\n\nlistSearch stays as it is for the apps not yet ported."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:51:00.393Z",
+     "text": "commit 4de6673b4dbcf1b383721c52ac2f9c65ef7aa815: goal/G30.17: shell/js/probabilitySearch.js, the standard shell list-tool: from listSearch, rows by key in one unbounded probability bucket, ranking as you type times the filters, the marks and the mat\n- spirit/run/index.html\n- spirit/run/shell/js/probabilitySearch.js"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:51:17.609Z",
+     "text": "deskVerify: passed, at 4de6673b (pulled). 1 suite ran green."
     }
    ]
   },
@@ -12986,6 +13050,50 @@
      "text": "deskVerify: passed, at b790d56d (pulled). 1 suite ran green."
     }
    ]
+  },
+  {
+   "id": "goal/G30.19",
+   "title": "Upgrade new shells contact application with probabilitySearch",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.16"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {},
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
