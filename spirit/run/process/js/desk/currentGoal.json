@@ -1,5 +1,5 @@
 {
- "change": 81802,
+ "change": 81886,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "excluded": [
     "ollama agent node"
    ],
@@ -12341,11 +12340,9 @@
    "id": "goal/G30.16",
    "title": "Giving Face to \"Files\", TextViewer and MediaViewer.",
    "goal": "goal/G30",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -12353,17 +12350,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -12371,15 +12368,44 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "names": {
     "claude-windows": "claude-windows"
    },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "I want to give face the Files and the two Viewer, so i can examine the workings of fs-watcher and the generic viewers\n\n- Files shell app (basically a shell-element)\n- textViewer / launcher (becomes shell-element)\n- mediaViewer (becomes shell-element)\n- this include also the codeMirror display of text Files. (becomes shell-element)\n\n- this time, i want to try the following: every table-row is a shell-element of type \"file\"\n\n- there will be a shell element caller fileViewer, and two elements based on the fileViewer, the textViewer and the mediaViewer\n- the fileViewer brings with it: annotationManager, and fStatViewer.\n\njust a little preview of how this might be structured.\n- A file element owns its value fields (name, size, changed, kind); a field that changes redraws only its cell.\n- The file list is the standard list-tool, shell/js/probabilitySearch.js (goal/G30.17), given the file fields as its columns.\n\nChallenges:\n- making a list of file-elements look like a table with consistent cell-widths?\n- having every fileElement listen for changes in it's size, or changes in it's associated fStat-element?",
-   "version": 8,
+   "box": "I want to give face the Files and the two Viewer, so i can examine the workings of fs-watcher and the generic viewers\n\n- Files shell app (basically a shell-element)\n- textViewer / launcher (becomes shell-element)\n- mediaViewer (becomes shell-element)\n- this include also the codeMirror display of text Files. (becomes shell-element)\n\n- this time, i want to try the following: every table-row is a shell-element of type \"file\"\n\n- there will be a shell element caller fileViewer, and two elements based on the fileViewer, the textViewer and the mediaViewer\n- the fileViewer brings with it: annotationManager, and fStatViewer.\n\njust a little preview of how this might be structured.\n- A file element owns its value fields (name, size, changed, kind); a field that changes redraws only its cell.\n- The file list is the standard list-tool, shell/js/probabilitySearch.js (goal/G30.17), given the file fields as its columns.\n\nChallenges:\n- making a list of file-elements look like a table with consistent cell-widths?\n- having every fileElement listen for changes in it's size, or changes in it's associated fStat-element?\n\nSETTLED\n- Consistent cell widths: the list-tool is a table with declared columns (goal/G30.17).\n- Each file row listens: fileElement holds one fs-watcher subscription for all rows and repaints only the changed cell (goal/G30.18).\n- The text and media viewers move out of the old shell as shell elements (fileViewer, textViewer, mediaViewer); the old inline ones are deleted.\n- On the face the mediaViewer plays as the pieces arrive: each sealed piece is opened as it comes and fed to the player. Formats that cannot start from their beginning alone (an MP4 whose index sits at its end) play once complete. The pieces stay in the viewer while it is open, so playing again plays from memory; closing the viewer drops them.\n- The viewers keep what they do today, as elements: the title with the file name and Open for an app registered for its extension (the textViewer displays; editing stays the handler's, the textEditor app), the info bubble from fs.stat (fStatViewer), the annotations (annotationManager over fs.annotations and fs.annotate). CodeMirror loads when a textViewer first needs it, on the face as at home.\n- The Files app's list is a probabilitySearch over fs.search with fileElement rows; fileSelector stays for the apps not yet ported.",
+   "version": 11,
    "checks": [],
    "chat": [
     {
@@ -12495,6 +12521,66 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-21T10:25:58.172Z",
      "text": "Added goal/G30.18, blocking this one: elements for a single file and a single contact. Its box is empty for you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T15:00:03.937Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T15:01:29.738Z",
+     "text": "Not green yet. Settled by G30.17 and G30.18, so I'd write them into the box:\n\n- Consistent cell widths: the list-tool is a table with declared columns.\n- Each file row listens: fileElement holds one fs-watcher subscription for all rows and repaints only the changed cell.\n\nOpen:\n\n- The text and media viewers live inside the old shell today, which the face does not load; they move out as shell elements (fileViewer, textViewer, mediaViewer), and the old inline ones are deleted.\n- The face has no URL to a file on your node, so the mediaViewer there fetches the bytes through the sealed link and shows them from memory; a large video loads whole before it plays.\n\nIs loading media whole on the face acceptable for now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T15:03:46.315Z",
+     "text": "The text and media viewers live inside the old shell today, which the face does not load; they move out as shell elements (fileViewer, textViewer, mediaViewer), and the old inline ones are deleted.\n- good.\n\nThe face has no URL to a file on your node, so the mediaViewer there fetches the bytes through the sealed link and shows them from memory; a large video loads whole before it plays.\n- how does the face get all the other files from my node then?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T15:04:39.162Z",
+     "text": "The same way: the face asks your node for each file by path through the sealed link (the kernel's scripts, the apps, the CSS). The answer arrives in sealed pieces of 64 KB, and the face waits for all of them before it uses the file. For scripts that is invisible; for a video it means the whole file first.\n\nThe pieces already arrive in order, so the mediaViewer could open them as they come and start playing after the first few.\n\nWhole for now, or play as the pieces arrive?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T15:07:09.558Z",
+     "text": "if you can, play as the pieces arrive. does that mean that \"play again\" fetches the whole file again?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T15:07:55.317Z",
+     "text": "No. The viewer keeps the pieces while it is open, so playing again plays from memory; closing the viewer throws them away.\n\nOne limit: a video whose index sits at the end of the file (many MP4s) cannot start from its first pieces, so that one plays once it is complete. WebM, MP3 and streaming-ready MP4 play as they arrive.\n\nIn the box (v10)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T15:11:19.788Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T15:12:18.778Z",
+     "text": "Two gaps closed in the box (v11): the viewers keep what they do today (title with Open for a registered app, the textViewer displays and editing stays the textEditor's, the stat bubble, annotations, CodeMirror loaded when first needed, on the face too), and the Files list is a probabilitySearch over fs.search with fileElement rows.\n\nGreen: settled, open none, box current (v11)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T15:13:09.991Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T15:13:31.413Z",
+     "text": "Green: settled, open none, box current (v11)."
     }
    ]
   },
