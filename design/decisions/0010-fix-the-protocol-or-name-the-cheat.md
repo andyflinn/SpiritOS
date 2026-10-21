@@ -301,6 +301,7 @@ A door is a way of speaking. So is a word said through it.
 | `face` | **added 2026-10-21 by goal/G30.14 with Andy's yes (Q1 on that item).** A request from the member's logged-in face, `{ id, request }`, put on the member's own stream with no route and no in-flight slot; the home node answers it by a `faceMessage` upload for that id |
 | `face-open` | **added 2026-10-21 by goal/G30.14 with the same yes.** The member's face opened its own stream to this relay: the home node starts feeding the face's live updates |
 | `face-close` | **added 2026-10-21 by goal/G30.14 with the same yes.** The member's face's stream ended: the home node stops feeding it |
+| `taken` | **added 2026-10-21 by goal/G30.12, Andy's box ("the face it replaced gets a last event, taken by another device").** Not on the member's stream: the last line this relay writes on a face's own stream when another login's Connect here moves it; the face says so |
 | `relay-status` | what this box looks like, to the owner only, on membership change and on a stream opening or closing — never on a timer (0006) |
 | `relay-event` | one routed thing happened. Opt-in (`monitor`), owner only, live only, never stored |
 | `owner-event` | what this relay did about who belongs on it. Always on, owner only, and **kept** — see 0009 and the R2 note |

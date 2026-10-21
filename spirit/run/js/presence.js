@@ -91,6 +91,10 @@ function createRegistry(opts) {
   // newcomer away with 503, and closing existing streams is the Governor's
   // separate, reported act (evictIdlest), not a side effect of a connect.
   var allowed = typeof opts.allowed === 'number' ? opts.allowed : Infinity;
+  // STREAMS HELD OUTSIDE THIS BOOK, counted against the same allowance (goal/G30.12: "the face stream counts in the
+  // relay's one stream ceiling"). The relay hands in how many face streams it holds.
+  var others = typeof opts.others === 'function' ? opts.others : function () { return 0; };
+  function full() { return Object.keys(sinks).length + (others() || 0) >= allowed; }
 
   function rateOk(id) {
     var t = nowFn();
@@ -142,7 +146,7 @@ function createRegistry(opts) {
     var old = sinks[id];
     // A reconnect replaces a stream it already counted, so it never needs
     // room; only a newcomer is measured against the allowance.
-    if (!old && !always && Object.keys(sinks).length >= allowed) {
+    if (!old && !always && full()) {
       return { ok: false, status: 503, full: true };
     }
     if (old && old !== sink) close(old);
@@ -265,6 +269,7 @@ function createRegistry(opts) {
     evictIdlest: evictIdlest,
     setAllowed: setAllowed,
     allowed: function () { return allowed; },
+    full: full,
     isPresent: isPresent,
     present: present,
     send: send,

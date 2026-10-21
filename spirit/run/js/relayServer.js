@@ -477,8 +477,9 @@ function faceDoor(req, res, url, pathname) {
   }
   if (req.method === 'GET' && pathname === '/face/stream') {
     res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
-    const said = relay.faceOpen(faceCookie(req), res);
-    if (!said.ok) res.end(JSON.stringify({ type: 'refused', status: said.status, error: said.error }) + '\n');
+    // ?here=1 is the face's Connect here press (goal/G30.12): it moves the stream from another device.
+    const said = relay.faceOpen(faceCookie(req), res, { here: url.searchParams.get('here') === '1' });
+    if (!said.ok) res.end(JSON.stringify({ type: 'refused', status: said.status, code: said.code || '', error: said.error }) + '\n');
     return true;
   }
   if (req.method === 'POST' && pathname === '/face/api') {

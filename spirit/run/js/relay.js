@@ -472,7 +472,8 @@ function createRelay(rootDir, deps) {
 
   // Who is holding a stream open right now. In RAM, never persisted —
   // presence is true only while a socket is open (PRESENCE.md §4).
-  var presentNow = presence.createRegistry();
+  // The face streams (faceOpen, below) count in this one allowance (goal/G30.12).
+  var presentNow = presence.createRegistry({ others: function () { return faceStreams ? faceStreams.size : 0; } });
   // Pending requests: hash -> who asked, who was asked. No bodies, never
   // disk. `open()` performs the delivery itself, so nothing here can
   // forward a request it could not match the reply to (ROUTER.md §4b).
@@ -4166,7 +4167,7 @@ function createRelay(rootDir, deps) {
   // A request the home node never answers is ended with 504 after FACE_CALL_MS.
   var FACE_CALL_MS = 30 * 1000;
   var faceCalls = new Map();    // request id -> { key, sink, timer }: the face responses waiting for their answer
-  var faceStreams = new Map();  // member key -> the face's open stream
+  var faceStreams = new Map();  // member key -> { sink, sid, source }: the face's open stream, its login, the feed into it
   // The member a login belongs to, its session moved on by this interaction.
   function faceOwner(sid) {
     var s = faceSession(sid);
@@ -4203,29 +4204,51 @@ function createRelay(rootDir, deps) {
     return { ok: true, status: 200 };
   }
   // The face's own stream, by its login. The home node hears face-open, and face-close when it ends.
-  function faceOpen(sid, sink) {
+  //
+  // ONE FACE STREAM PER MEMBER (goal/G30.12, Andy's box): the same login reconnecting (a reload, a dropped network)
+  // replaces its own stream without a word; another login, another device, is refused with the warning until its
+  // Connect here press (opts.here), which moves the stream: the face it replaced gets a last line, taken, and ends.
+  // Either way the home node hears face-open again and feeds the new stream; its old upload is cut from the old one.
+  // A new face stream counts in the one stream allowance (presence.js, others), so a full relay refuses it 503.
+  function faceOpen(sid, sink, opts) {
     var m = faceOwner(sid);
     if (!m) return { ok: false, status: 401, error: 'not logged in' };
     if (!activeRows[m.publicKey]) return { ok: false, status: 503, error: 'this face\'s node is not present' };
     var key = m.publicKey;
+    var s = String(sid || '');
     var before = faceStreams.get(key);
-    if (before && before !== sink) { try { before.end(); } catch (e) { /* gone */ } }
-    faceStreams.set(key, sink);
+    if (before && before.sid !== s && !(opts && opts.here)) {
+      return { ok: false, status: 409, code: 'face-elsewhere', error: 'your face is open on another device; connecting here ends it there' };
+    }
+    if (!before && presentNow.full()) return { ok: false, status: 503, full: true, error: 'this relay is full' };
+    var entry = { sink: sink, sid: s, source: null };
+    faceStreams.set(key, entry);
+    if (before && before.sink !== sink) {
+      if (before.source) { try { before.source.unpipe(before.sink); } catch (e) { /* gone */ } }
+      try {
+        if (before.sid !== s) before.sink.write(JSON.stringify({ event: 'taken', data: {} }) + '\n');
+        before.sink.end();
+      } catch (e) { /* gone */ }
+    }
     sink.on('close', function () {
-      if (faceStreams.get(key) !== sink) return;
+      if (faceStreams.get(key) !== entry) return;
       faceStreams.delete(key);
+      if (entry.source) { try { entry.source.unpipe(sink); } catch (e) { /* gone */ } }
       presentNow.send(key, 'face-close', {});
     });
     presentNow.send(key, 'face-open', {});
     return { ok: true, status: 200 };
   }
-  // The home node's long upload of the face's live updates, piped into the face's open stream as it arrives.
+  // The home node's long upload of the face's live updates, piped into the face's open stream as it arrives. A new
+  // upload takes the place of the one before it.
   function faceFeed(key, sig, source) {
     var k = String(key || '');
     if (!findByKey(k) || !auth.faceSignatureOk(k, k, relayPublicKey(), 'stream', sig)) return { ok: false, status: 403, error: 'bad face signature' };
-    var sink = faceStreams.get(k);
-    if (!sink) return { ok: false, status: 409, error: 'no face is open' };
-    source.pipe(sink, { end: false });
+    var entry = faceStreams.get(k);
+    if (!entry) return { ok: false, status: 409, error: 'no face is open' };
+    if (entry.source && entry.source !== source) { try { entry.source.unpipe(entry.sink); } catch (e) { /* gone */ } }
+    entry.source = source;
+    source.pipe(entry.sink, { end: false });
     return { ok: true, status: 200 };
   }
 
