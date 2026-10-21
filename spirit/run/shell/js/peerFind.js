@@ -58,8 +58,8 @@
 
     // Nothing is asked while no words are typed: a search with no words would ask every relay for anyone.
     function source(text) {
+      // AN EMPTY SEARCH ANSWERS LIKE ANY OTHER (goal/G30.15): what the relays rank first. It used to be dropped here.
       var q = String(text || '').trim();
-      if (!q) { seen = []; silent = []; paintNote(); return Promise.resolve({ items: [], more: false }); }
       cards = Object.create(null);
       return ask('peer.search', { q: q }).then(function (data) {
         var items = (data && Array.isArray(data.items)) ? data.items : [];
@@ -187,6 +187,13 @@
       },
       empty: 'Type part of a name, or * for anyone.',
     });
+
+    // FILLED AS SOON AS ITS FOLD OPENS (goal/G30.15): the app hands its <details> as `fold`, and opening it searches
+    // with whatever the field holds, nothing included.
+    if (o.fold && typeof o.fold.addEventListener === 'function') {
+      o.fold.addEventListener('toggle', function () { if (o.fold.open) list.refresh(); });
+      if (o.fold.open) list.refresh();
+    }
 
     return { list: list, redraw: redraw };
   }

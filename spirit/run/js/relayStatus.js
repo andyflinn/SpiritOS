@@ -164,6 +164,9 @@ function report(opts) {
     binding: o.binding || undefined,
 
     levers: o.levers || undefined,
+    // WHAT THE RELAY HOLDS, IN PARTS (goal/G30.15): its memory at rest, the streams by kind and their cost, the RAM
+    // still free, the members it serves at three streams a seat. Passed through whole, like the rest.
+    capacity: o.capacity || undefined,
     // THE CAPTURE TIME, passed through rather than taken here: this file
     // reads no clock it was not handed. It is what lets a monitor say
     // "as of 14:02" instead of drawing a stale report as a live one.

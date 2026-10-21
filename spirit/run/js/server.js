@@ -1784,6 +1784,8 @@ contactBook.syncMarks(ROOT_DIR);
       // event itself (hub.adoptClaim — it replaced a roster sweep that read
       // a list no relay may return, 2026-09-19).
       try { hub.adoptClaim(ev); } catch (e) { /* a contact list is not a reason to drop an event */ }
+      // And to the owner's face, as to his loopback pages (goal/G30.15); the monitor (onRelayEvent) is not.
+      if (faceHome) { try { faceHome.ownerEvent(ev); } catch (e) { /* a witness */ } }
       return relayEvents.note(ev);
     },
     // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the

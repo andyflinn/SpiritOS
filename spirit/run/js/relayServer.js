@@ -410,8 +410,8 @@ const FACE_DIR = path.join(__dirname, '..', 'face');
 // /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
 // (goal/G30.9, box v16); face.css turns its colours green.
 // face.html's own parts and the login app, nothing else (goal/G30.11): everything after login comes from the home node.
-const FACE_FILES = { '/shell.css': '../shell.css', '/face/face.css': 'face.css', '/face/shell.js': 'shell.js', '/face/seal.js': 'seal.js', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
-const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+const FACE_FILES = { '/shell.css': '../shell.css', '/face/face.css': 'face.css', '/face/shell.js': 'shell.js', '/face/seal.js': 'seal.js', '/face/favicon.svg': 'favicon.svg', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
+const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
   return m ? m[1] : '';
@@ -882,6 +882,11 @@ server.requestTimeout = 0;
 
 server.listen(port, BIND_HOST, () => {
   console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
+  // THE RELAY'S OWN MEMORY AT REST, measured at the end of boot and kept until the next start (goal/G30.15; Andy: "i
+  // think measuring at end-of-boot is fair, then using that number as a constant until the next startup."): the
+  // allowance is the owner's RAM less this.
+  const atRestMB = relay.atRest(process.memoryUsage().rss / (1024 * 1024));
+  console.log(`    at rest ${atRestMB} MB; ${relay.capacity().members === null ? 'no allowance' : relay.capacity().members + ' member seat(s) at three streams each'}`);
   // UNOWNED, SAID OUT LOUD. A relay with no owner takes no claim at all:
   // the owner is written at install time and never over the wire
   // (goal/G16.8 — Andy: "the relays should do first-claim, it should

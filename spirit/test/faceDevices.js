@@ -148,6 +148,7 @@ const done = (async function () {
     box.presence.setAllowed(2);                  // bert's node and bert's face fill it
     carlRefused = nodeStream(carl);
     b2.emit('close');                            // bert's face leaves
+    feed2.destroy();                             // and his node ends its feed, as on face-close (counted since G30.15)
     await settle();
     carlIn = nodeStream(carl);                   // carl takes the room
     faceRefused = box.faceOpen(sidB, sink());    // and a new face finds it full

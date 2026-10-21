@@ -70,8 +70,23 @@
       linkStep.innerHTML =
         '<div class="job-manifest-note">Logged in as ' + escape(h.facts.face) + '. ' + escape(how) + '</div>' +
         (h.facts.home ? '' : '<div class="start-job-form card"><button type="button" id="face-logout">Log out</button></div>');
+      // TWO PRESSES (goal/G30.15): the first arms it, a press anywhere else disarms it (the shell's armUntilElsewhere),
+      // the second logs out.
       var out = document.getElementById('face-logout');
-      if (out) out.addEventListener('click', function () { api.post('logout').then(function () { window.location.reload(); }, api.refresh); });
+      if (out) out.addEventListener('click', function () {
+        if (out.getAttribute('data-armed') !== '1') {
+          out.setAttribute('data-armed', '1');
+          out.classList.add('armed');
+          out.textContent = 'Log out? Press again';
+          if (typeof api.armUntilElsewhere === 'function') api.armUntilElsewhere(function () {
+            out.removeAttribute('data-armed');
+            out.classList.remove('armed');
+            out.textContent = 'Log out';
+          });
+          return;
+        }
+        api.post('logout').then(function () { window.location.reload(); }, api.refresh);
+      });
     }
   }
 

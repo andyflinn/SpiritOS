@@ -34,6 +34,9 @@ printf '{ "domain": "%s" }\n' "$FACE_DOMAIN" > "$FACE_JSON"
 chmod 644 "$FACE_JSON"
 
 # ── 2. CADDY, FOR EVERY NAME UNDER THE DOMAIN ─────────────────────────
+# NO COMPRESSION (goal/G30.15). With Caddy's gzip encoding on, it held back the face stream's last small lines until more data
+# pushed them out, so the face's contact dots stayed white until a search; found on spirit-3, and gone once the line
+# was taken out. Everything after login is sealed and barely compresses anyway.
 mkdir -p "$SITES_DIR"
 say "write $SITE_FILE for *.$FACE_DOMAIN -> 127.0.0.1:$NODE_PORT"
 cat > "$SITE_FILE" <<SITE
@@ -43,7 +46,6 @@ cat > "$SITE_FILE" <<SITE
 	tls {
 		on_demand
 	}
-	encode gzip
 	reverse_proxy 127.0.0.1:$NODE_PORT
 }
 SITE

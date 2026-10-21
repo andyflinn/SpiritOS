@@ -280,6 +280,27 @@ pessimistic, so the computed ceiling sits slightly below what the box
 would actually carry. Nothing was ever in danger; a little capacity was
 being left unused.
 
+### Faces: the relay at rest, and three streams a seat (goal/G30.15)
+
+Two things the product above left out, both found on spirit-3 with a face open:
+
+- **The relay itself.** The allowance spent the whole of the owner's RAM on
+  streams, as if the relay cost nothing; a relay at rest measured 60 MB above.
+  At 256 MB that was 4,096 streams, about 290 MB once held. The allowance is now
+  the RAM **left after the relay's own memory at rest**, times 16: the relay
+  measures its resident memory at the end of boot and keeps that figure until
+  the next start.
+- **A member with an open face holds three connections**: its home node's
+  stream, its face's stream, and its home node's upload feeding that face. All
+  three count in the one ceiling, and a seat reserves **three** streams, so
+  every admitted member can be served at once.
+
+So a relay serves **about 5.3 members a megabyte** of the RAM left after its
+own: 16 streams a megabyte, three a member. At 256 MB with 60 MB at rest that
+is about 1,000 members; at 512 MB, about 2,400. The owner's status shows the
+parts (at rest, streams by kind, free, members a megabyte), and Relay Details
+sets the memory and disc figures, each with the members it serves.
+
 ---
 
 ## Disc: what a row costs

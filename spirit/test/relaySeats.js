@@ -76,8 +76,11 @@ function relayWith(ramLimitMB) {
 // protection: even without a seat bound a relay could not be filled
 // faster than ten members a minute. It is why over-admission was a slow
 // leak rather than an outage, and it is why nobody noticed.
-const RAM_MB = 0.25;
-const SEATS = Math.max(1, Math.floor(RAM_MB * 16));
+// THREE STREAMS A SEAT since goal/G30.15 (a member with an open face holds its node's stream, its face's stream and
+// its node's feed upload), so the same four seats take three times the RAM: 0.75 MB is 12 streams.
+const RAM_MB = 0.75;
+const STREAMS = Math.max(1, Math.floor(RAM_MB * 16));
+const SEATS = Math.floor(STREAMS / 3);
 
 test.subHeading('The boundary: the seat after the last one is refused');
 
@@ -199,9 +202,9 @@ test.subHeading('THE MONITORING HALF: an owner sees it coming');
   const report = w.box.snapshot();
   const s = report && report.seats;
 
-  if (s && s.allowance === SEATS && s.held === 1 && s.outstanding === 1 &&
+  if (s && s.allowance === STREAMS && s.members === SEATS && s.held === 1 && s.outstanding === 1 &&
       s.free === SEATS - 2) {
-    test.check('the report carries held, outstanding, allowance and free — all four, ' +
+    test.check('the report carries held, outstanding, the streams and the seats they make, and free — ' +
       'because two of them cannot be derived from the others');
   } else {
     test.fail('seats missing or wrong in the report: ' + JSON.stringify(s));

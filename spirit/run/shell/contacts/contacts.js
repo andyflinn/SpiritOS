@@ -602,6 +602,8 @@ spirit.shell.activateApp({
     contactsSeenList = window.spiritElements.peerFind.create({
       listHost: document.getElementById('contacts-seen-list'),
       noteHost: document.getElementById('contacts-seen-note'),
+      // Its fold: opening it fills the list (goal/G30.15).
+      fold: document.getElementById('contacts-seen-section'),
       addClass: 'contacts-seen-add',
       ask: function (verb, args) { return contactsApi.verb(verb, args); },
       peerPost: function (app, key, body) { return contactsApi.peerPost(app, key, body); },

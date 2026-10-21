@@ -557,6 +557,18 @@ function ndGovernorFacts(report) {
   if (m && typeof m.posts === 'number') {
     rows.push(['Activity', m.posts + ' posts, ' + (m.bytesPerSec || 0) + ' B/s over ' + (m.seconds || 0) + ' s']);
   }
+  // WHAT THE RELAY HOLDS, IN PARTS (goal/G30.15; Andy: "the number i really need to see is: How many members (with 3
+  // streams) per MegaByte"): its own memory at rest, the streams by kind at what each costs, the RAM still free, and
+  // the members it serves.
+  var c = report.capacity;
+  if (c) {
+    rows.push(['At rest', c.atRestMB + ' MB']);
+    var s = c.streams || {};
+    rows.push(['Streams', (s.nodes || 0) + ' home nodes, ' + (s.faces || 0) + ' faces, ' + (s.feeds || 0) + ' feeds, ' + c.streamKB + ' KB each']);
+    if (typeof c.freeMB === 'number') rows.push(['Free', c.freeMB + ' MB of ' + c.ramLimitMB + ' MB']);
+    rows.push(['Members a megabyte', c.membersPerMB + ', at ' + c.seatStreams + ' streams each']);
+    if (typeof c.members === 'number') rows.push(['Members served', c.members]);
+  }
   var lever = report.levers && report.levers.connections1;
   if (lever) {
     // The lever's readOut (lever.js) is {value, floor, ceiling, ...}: the allowance is its value, as relayMonitor
@@ -1011,6 +1023,112 @@ function ndSetRelayLabel(button) {
   });
 }
 
+// ── MEMORY AND DISC, FOR ITS OWNER (goal/G30.15) ────────────────────
+//
+//   Andy: "what we need is, under managing my relay, a UI for memory and disc allocation."
+//
+// The relay's own config verb answers it: read with an empty ask (what is on file, what runs, what the box can give,
+// the roll), written with figures that apply at the next start, and restart:true asks for that start now. Each field
+// says the members its figure serves: the RAM left after the relay's own memory at rest, 16 streams a megabyte, three
+// streams a seat. Restart drops every stream on the box, so it takes two presses.
+var ndAlloc = null;       // the config read's answer
+var ndAllocAsked = false;
+var ndAllocSaid = '';
+function ndAllocMembers(ramMB) {
+  var r = (ndAlloc && ndAlloc.running) || {};
+  var mb = Number(ramMB) - Number(r.atRestMB || 0);
+  if (!(mb > 0)) return 0;
+  return Math.floor(Math.floor(mb * Number(r.streamsPerMB || 16)) / Number(r.seatStreams || 3));
+}
+function ndReadAlloc() {
+  var relayKey = ndRelayKey();
+  if (!relayKey) return;
+  ndAllocAsked = true;
+  ndApi.peerPost('relay', relayKey, { config: {} }).then(function (r) {
+    ndAlloc = r && r.ok && r.body ? r.body : null;
+    if (!ndAlloc) ndAllocSaid = (r && (r.error || (r.body && r.body.error))) || 'the relay did not say';
+    ndRender();
+  });
+}
+function ndAllocationHtml() {
+  if (!ndBadge || !ndBadge.owned) return '';
+  if (!ndAlloc && !ndAllocAsked) ndReadAlloc();
+  if (!ndAlloc) {
+    return ndPanel('allocation', ndIcon.INFO, 'Memory and disc',
+      '<div class="job-manifest-note">' + ndEscapeHtml(ndAllocSaid || 'asking that relay…') + '</div>', 'natter-allocation');
+  }
+  var f = ndAlloc.onFile || {};
+  var run = ndAlloc.running || {};
+  var room = ndAlloc.room || {};
+  var roll = ndAlloc.roll || {};
+  var ram = f.ramLimitMB !== undefined ? f.ramLimitMB : run.ramLimitMB;
+  var disc = f.discLimitMB !== undefined ? f.discLimitMB : run.discLimitMB;
+  return ndPanel('allocation', ndIcon.INFO, 'Memory and disc',
+    spirit.shell.factRow([
+      ['Memory set', ram + ' MB'], ['Memory running', run.ramLimitMB + ' MB'],
+      ['The box can give', (room.ramMaxMB !== undefined ? room.ramMaxMB + ' MB' : 'not known')],
+      ['The relay at rest', (run.atRestMB || 0) + ' MB'], ['Members served now', run.members === undefined || run.members === null ? 'no limit' : run.members],
+    ]) +
+    spirit.shell.factRow([
+      ['Disc set', disc + ' MB'], ['Disc running', run.discLimitMB + ' MB'],
+      ['The box can give', (room.discMaxMB !== undefined ? room.discMaxMB + ' MB' : 'not known')],
+      ['The roll uses', (roll.discUsedMB || 0) + ' MB'],
+    ]) +
+    '<div class="start-job-form card">' +
+      '<label class="field-label">Memory, MB<input type="number" min="1" class="nd-alloc-ram" value="' + ndEscapeHtml(ram) + '"></label>' +
+      '<span class="job-manifest-note nd-alloc-serves">serves ' + ndAllocMembers(ram) + ' members</span>' +
+      '<label class="field-label">Disc, MB<input type="number" min="1" class="nd-alloc-disc" value="' + ndEscapeHtml(disc) + '"></label>' +
+      '<button type="button" class="cancel-btn nd-alloc-save">Save</button>' +
+      '<button type="button" class="cancel-btn nd-alloc-restart">Restart</button>' +
+    '</div>' +
+    '<div class="job-manifest-note">A change applies at the next restart of the relay.</div>' +
+    '<div class="job-manifest-note nd-alloc-out">' + ndEscapeHtml(ndAllocSaid) + '</div>',
+    'natter-allocation');
+}
+// The members a typed memory figure serves, said under the field as it is typed.
+function ndAllocTyped(input) {
+  var panel = input.closest('.natter-allocation');
+  var said = panel && panel.querySelector('.nd-alloc-serves');
+  if (said) said.textContent = 'serves ' + ndAllocMembers(input.value) + ' members';
+}
+function ndAllocAsk(ask, out) {
+  var relayKey = ndRelayKey();
+  if (!relayKey) { ndNoKey(out, 'nd-alloc-out'); return; }
+  out.textContent = 'asking…';
+  ndApi.peerPost('relay', relayKey, { config: ask }).then(function (r) {
+    var b = r && r.body;
+    if (r && r.ok && b && b.ok !== false) {
+      ndAllocSaid = ask.restart
+        ? (b.restarting ? 'restarting now: the new figures apply as it comes back' : 'written, but this relay cannot restart itself: ' + (b.restartRefused || 'no restarter'))
+        : 'written: ' + b.after.ramLimitMB + ' MB memory (' + b.after.members + ' members), ' + b.after.discLimitMB + ' MB disc, from the next restart';
+      ndAlloc = null;
+      ndAllocAsked = false;
+      ndRender();
+      return;
+    }
+    out.className = 'job-manifest-note nd-alloc-out is-error';
+    out.textContent = (b && b.error) || (r && r.error) || 'refused';
+  });
+}
+function ndAllocSave(button) {
+  var panel = button.closest('.natter-allocation');
+  ndAllocAsk({ ramLimitMB: Number(panel.querySelector('.nd-alloc-ram').value), discLimitMB: Number(panel.querySelector('.nd-alloc-disc').value) },
+    panel.querySelector('.nd-alloc-out'));
+}
+function ndAllocRestart(button) {
+  if (button.getAttribute('data-armed') !== '1') {
+    button.setAttribute('data-armed', '1');
+    button.classList.add('armed');
+    button.textContent = 'Restart? Every stream drops';
+    if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
+    return;
+  }
+  var f = (ndAlloc && ndAlloc.onFile) || {};
+  var run = (ndAlloc && ndAlloc.running) || {};
+  ndAllocAsk({ ramLimitMB: f.ramLimitMB !== undefined ? f.ramLimitMB : run.ramLimitMB, discLimitMB: f.discLimitMB !== undefined ? f.discLimitMB : run.discLimitMB, restart: true },
+    button.closest('.natter-allocation').querySelector('.nd-alloc-out'));
+}
+
 // A DATE, NOT A DURATION. The invite panel next door says "in 6 days"
 // because an expiry is a countdown and what you want is how long you
 // have. An enrolment is a fact in the past and what you want is WHEN —
@@ -1246,6 +1364,7 @@ function ndRender() {
     // (goal/G22.6).
     ndOwnerGroupHtml(
       ndRelayLabelHtml() +
+      ndAllocationHtml() +
       ndInvitePanel()
     ) +
     ndRemoveHtml();
@@ -1612,6 +1731,12 @@ spirit.shell.activateApp({
       var relayLabelBtn = target.closest('.nd-relay-label-go');
       if (relayLabelBtn) { ndSetRelayLabel(relayLabelBtn); return; }
 
+      // Memory and disc (goal/G30.15).
+      var allocSave = target.closest('.nd-alloc-save');
+      if (allocSave) { ndAllocSave(allocSave); return; }
+      var allocRestart = target.closest('.nd-alloc-restart');
+      if (allocRestart) { ndAllocRestart(allocRestart); return; }
+
 
 
 
@@ -1644,6 +1769,12 @@ spirit.shell.activateApp({
     // Rename was the other one, and went to Info with its panel.
     // The `change` listener for the partner picker stood here; the picker
     // went with partnering (goal/G22.6).
+
+    // The members a memory figure serves, said as it is typed (goal/G30.15).
+    ndBody().addEventListener('input', function (event) {
+      var t = event.target;
+      if (t && t.classList && t.classList.contains('nd-alloc-ram')) ndAllocTyped(t);
+    });
 
     ndBody().addEventListener('keydown', function (event) {
       if (event.key !== 'Enter') return;

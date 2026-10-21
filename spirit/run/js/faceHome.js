@@ -166,7 +166,8 @@ function createFaceHome(opts) {
     // identity; node.card does not carry the seal key and is not changed for this.
     if (r.keys === 1) {
       const self = o.identity() || {};
-      json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || '') });
+      // And its name, for the face's tab title (goal/G30.15: "the browser tab shows the ID's label").
+      json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || ''), name: String(self.name || '') });
       return;
     }
     const no = faceRefuses(r);
@@ -260,7 +261,14 @@ function createFaceHome(opts) {
     try { face.req.end(); } catch (e) { /* gone */ }
   }
 
-  return { request: request, open: open, close: close };
+  // WHAT A RELAY THIS NODE OWNS DID ABOUT ITS MEMBERSHIP (goal/G30.15): an invite minted, a claim, a rename, as the
+  // loopback shell gets it on its 'relay-event' line, so Relay Details on the face redraws at once. The relay monitor
+  // is not handed here and stays off the face. At the app servers' priority.
+  function ownerEvent(ev) {
+    if (ev && typeof ev === 'object') toFaces(FACE_PRIORITY.app, { event: 'relay-event', data: ev });
+  }
+
+  return { request: request, open: open, close: close, ownerEvent: ownerEvent };
 }
 
 module.exports = {

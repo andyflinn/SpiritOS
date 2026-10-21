@@ -130,10 +130,19 @@ var lever = require('./lever');
 // holds, on the careful side, and README/CAPACITY.md is where it is argued.
 var STREAMS_PER_MB = 16;
 
-function allowanceFor(ramLimitMB) {
+// A SEAT IS THREE STREAMS (goal/G30.15, Andy: "we want to be as sure as possible that we can serve all our members
+// simultaneouly."): a member with an open face holds its home node's stream, its face's stream and its home node's
+// upload feeding that face, so a seat reserves three of the allowance's streams.
+var SEAT_STREAMS = 3;
+
+// THE RAM LEFT AFTER THE RELAY ITSELF (goal/G30.15): the owner's figure less the relay's own memory at rest, measured
+// at the end of boot (atRest, below) and kept until the next start. Before boot ends, and in every in-process suite
+// that never sets it, it is zero.
+function allowanceFor(ramLimitMB, atRestMB) {
   var mb = Number(ramLimitMB);
   if (!(mb > 0)) return null;
-  return Math.max(1, Math.floor(mb * STREAMS_PER_MB));
+  var rest = Number(atRestMB) > 0 ? Number(atRestMB) : 0;
+  return Math.max(1, Math.floor((mb - rest) * STREAMS_PER_MB));
 }
 
 // ── STRANGERS ARE HELD BY ONE TABLE OF REQUESTING ADDRESSES (goal/G22.6) ──
@@ -473,7 +482,8 @@ function createRelay(rootDir, deps) {
   // Who is holding a stream open right now. In RAM, never persisted —
   // presence is true only while a socket is open (PRESENCE.md §4).
   // The face streams (faceOpen, below) count in this one allowance (goal/G30.12).
-  var presentNow = presence.createRegistry({ others: function () { return faceStreams ? faceStreams.size : 0; } });
+  // goal/G30.15: and the home nodes' feed uploads into them, the third connection of a member with an open face.
+  var presentNow = presence.createRegistry({ others: function () { return (faceStreams ? faceStreams.size : 0) + (faceFeeds ? faceFeeds.size : 0); } });
   // Pending requests: hash -> who asked, who was asked. No bodies, never
   // disk. `open()` performs the delivery itself, so nothing here can
   // forward a request it could not match the reply to (ROUTER.md §4b).
@@ -512,13 +522,27 @@ function createRelay(rootDir, deps) {
   // configuration (relayServer.js reads relay-state/config.json); a relay
   // built without one — every in-process suite — has no allowance.
   var config = deps.config || null;
-  var allowance = config ? allowanceFor(config.ramLimitMB) : null;
-  var gauges = allowance ? {
-    connections1: lever.make('connections1', {
-      floor: 1, ceiling: allowance, value: allowance, worseAt: 'floor',
-    }),
-  } : null;
-  if (allowance) presentNow.setAllowed(allowance);
+  var atRestMB = 0;
+  var allowance = config ? allowanceFor(config.ramLimitMB, atRestMB) : null;
+  var gauges = null;
+  function setAllowance() {
+    gauges = allowance ? {
+      connections1: lever.make('connections1', {
+        floor: 1, ceiling: allowance, value: allowance, worseAt: 'floor',
+      }),
+    } : null;
+    if (allowance) presentNow.setAllowed(allowance);
+  }
+  setAllowance();
+  // The relay's own memory at rest, in MB, measured by relayServer at the end of boot (goal/G30.15); the allowance is
+  // computed again from it once, and holds until the next start.
+  function atRest(mb) {
+    var n = Number(mb);
+    if (!(n > 0)) return atRestMB;
+    atRestMB = Math.round(n * 10) / 10;
+    if (config) { allowance = allowanceFor(config.ramLimitMB, atRestMB); setAllowance(); }
+    return atRestMB;
+  }
 
   // ── THE SECOND BOUND: WHAT THE ROLL MAY OCCUPY (cycle 9) ───────────
   //
@@ -601,8 +625,11 @@ function createRelay(rootDir, deps) {
     function held() {
       try { return store.members.count(); } catch (e) { return 0; }
     }
+    // The members the allowance serves, three streams a seat (goal/G30.15).
+    function members() { return allowance ? Math.floor(allowance / SEAT_STREAMS) : null; }
     return {
       allowance: function () { return allowance; },
+      members: members,
       held: held,
       outstanding: live,
       // Seats left for somebody NOT yet holding one. Never negative: a
@@ -610,13 +637,13 @@ function createRelay(rootDir, deps) {
       // than a negative number that arithmetic elsewhere would carry.
       free: function (nowMs) {
         if (!allowance) return null;
-        return Math.max(0, allowance - held() - live(nowMs));
+        return Math.max(0, members() - held() - live(nowMs));
       },
       // Admission asks only about MEMBERS, not invites: a claim redeeming
       // an invite is taking the seat that invite was already holding, so
       // counting both would refuse the very token the relay issued.
       fullForMembers: function () {
-        return allowance !== null && held() >= allowance;
+        return allowance !== null && held() >= members();
       },
     };
   }());
@@ -682,6 +709,11 @@ function createRelay(rootDir, deps) {
           ramLimitMB: config.ramLimitMB,
           discLimitMB: config.discLimitMB,
           allowance: allowance,
+          // goal/G30.15: the members that serves, three streams a seat, after the relay's own memory at rest.
+          members: seats.members(),
+          atRestMB: atRestMB,
+          seatStreams: SEAT_STREAMS,
+          streamsPerMB: STREAMS_PER_MB,
           clamped: !!config.overflow,
         },
         // ── THE MEASUREMENT ITSELF, NOT JUST ITS CONCLUSION ────────
@@ -750,15 +782,17 @@ function createRelay(rootDir, deps) {
           checked.config.discLimitMB + ' MB. Remove members first — nobody is evicted by a number.',
       };
     }
-    // STRANDED BY RAM: the new allowance is fewer streams than there are
-    // members, so somebody on the roll could never connect.
-    var after = allowanceFor(checked.config.ramLimitMB);
-    if (after !== null && held > after) {
+    // STRANDED BY RAM: the new allowance serves fewer members (three
+    // streams a seat, goal/G30.15) than are on the roll, so somebody could
+    // not be served. Measured against this boot's at-rest memory.
+    var after = allowanceFor(checked.config.ramLimitMB, atRestMB);
+    var afterMembers = after === null ? null : Math.floor(after / SEAT_STREAMS);
+    if (afterMembers !== null && held > afterMembers) {
       return {
         ok: false,
         status: 409,
-        error: 'that RAM figure allows ' + after + ' connection(s) and this relay has ' + held +
-          ' member(s), so ' + (held - after) + ' could never connect. Remove members first — ' +
+        error: 'that RAM figure serves ' + afterMembers + ' member(s) at ' + SEAT_STREAMS + ' streams each, and this relay has ' + held +
+          ' member(s), so ' + (held - afterMembers) + ' could not be served. Remove members first — ' +
           'nobody is evicted by a number.',
       };
     }
@@ -783,6 +817,7 @@ function createRelay(rootDir, deps) {
         ramLimitMB: checked.config.ramLimitMB,
         discLimitMB: checked.config.discLimitMB,
         allowance: after,
+        members: afterMembers,
       },
     };
 
@@ -1095,6 +1130,8 @@ function createRelay(rootDir, deps) {
         held: seats.held(),
         outstanding: seats.outstanding(),
         allowance: seats.allowance(),
+        // The seats themselves, three streams each (goal/G30.15); allowance stays the streams.
+        members: seats.members(),
         free: seats.free(),
       },
       // `messages: messages.length` STOOD HERE and went with the ring.
@@ -1201,9 +1238,9 @@ function createRelay(rootDir, deps) {
     return {
       ok: false,
       status: 507,
-      error: 'this relay is full: ' + seats.held() + ' of ' + seats.allowance() +
+      error: 'this relay is full: ' + seats.held() + ' of ' + seats.members() +
         ' members, which is what ' + (config && config.ramLimitMB) +
-        ' MB of RAM can serve at once. Its owner must raise ramLimitMB or remove members.',
+        ' MB of RAM can serve at once, three streams each. Its owner must raise ramLimitMB or remove members.',
     };
   }
 
@@ -1680,7 +1717,7 @@ function createRelay(rootDir, deps) {
         ok: false,
         status: 507,
         error: 'this relay is full: ' + seats.held() + ' members and ' +
-          seats.outstanding() + ' invites outstanding, against ' + seats.allowance() +
+          seats.outstanding() + ' invites outstanding, against ' + seats.members() +
           ' seats. Minting now would promise a seat that does not exist — ' +
           'raise ramLimitMB, remove members, or let invites expire.',
       };
@@ -3821,6 +3858,8 @@ function createRelay(rootDir, deps) {
       // know the order of, and never one named in the app's code. Sent
       // under `levers`, the name the owner's monitor already draws.
       levers: gauges ? Object.keys(gauges).reduce(function (o, k) { o[k] = gauges[k].readOut(); return o; }, {}) : undefined,
+      // WHAT IT HOLDS, IN PARTS (goal/G30.15).
+      capacity: capacity(),
       // WHEN THIS WAS TAKEN. Without it a stale view reads as a live one:
       // a setting applied while the owner's stream was down is not seen
       // until the next report, and "as of 14:02" is the difference
@@ -4168,6 +4207,7 @@ function createRelay(rootDir, deps) {
   var FACE_CALL_MS = 30 * 1000;
   var faceCalls = new Map();    // request id -> { key, sink, timer }: the face responses waiting for their answer
   var faceStreams = new Map();  // member key -> { sink, sid, source }: the face's open stream, its login, the feed into it
+  var faceFeeds = new Map();    // member key -> the home node's open feed upload, counted in the ceiling (goal/G30.15)
   // The member a login belongs to, its session moved on by this interaction.
   function faceOwner(sid) {
     var s = faceSession(sid);
@@ -4249,8 +4289,34 @@ function createRelay(rootDir, deps) {
     if (!entry) return { ok: false, status: 409, error: 'no face is open' };
     if (entry.source && entry.source !== source) { try { entry.source.unpipe(entry.sink); } catch (e) { /* gone */ } }
     entry.source = source;
+    // Counted in the one stream ceiling while it is open (goal/G30.15), one per member: a new upload replaces the last.
+    faceFeeds.set(k, source);
+    var gone = function () { if (faceFeeds.get(k) === source) faceFeeds.delete(k); };
+    if (typeof source.on === 'function') { source.on('close', gone); source.on('end', gone); }
     source.pipe(entry.sink, { end: false });
     return { ok: true, status: 200 };
+  }
+
+  // WHAT THE RELAY HOLDS, IN PARTS (goal/G30.15): the owner's RAM, the relay's own memory at rest, the streams it holds
+  // by kind and what they cost at 16 a megabyte, the RAM still free, and the members it serves at three streams a seat.
+  function capacity() {
+    var nodes = presentNow.present().length;
+    var faces = faceStreams.size;
+    var feeds = faceFeeds.size;
+    var streamKB = Math.round(1024 / STREAMS_PER_MB);
+    var ram = config ? Number(config.ramLimitMB) : null;
+    var usedMB = Math.round((atRestMB + (nodes + faces + feeds) * streamKB / 1024) * 10) / 10;
+    return {
+      ramLimitMB: ram,
+      atRestMB: atRestMB,
+      streamKB: streamKB,
+      streams: { nodes: nodes, faces: faces, feeds: feeds },
+      usedMB: usedMB,
+      freeMB: ram === null ? null : Math.round((ram - usedMB) * 10) / 10,
+      seatStreams: SEAT_STREAMS,
+      members: seats.members(),
+      membersPerMB: Math.round(STREAMS_PER_MB / SEAT_STREAMS * 10) / 10,
+    };
   }
 
   return {
@@ -4265,6 +4331,9 @@ function createRelay(rootDir, deps) {
     faceAnswer: faceAnswer,
     faceOpen: faceOpen,
     faceFeed: faceFeed,
+    // goal/G30.15: the relay's memory at rest, set by relayServer at the end of boot, and what it holds in parts.
+    atRest: atRest,
+    capacity: capacity,
     claim: claim,
     forgetPeer: forgetPeer,
     join: join,

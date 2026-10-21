@@ -90,20 +90,22 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
 // ═══════════════════════════════════════════════════════════════════════
 
 {
-  const RAM_MB = 0.25;
+  // 3/4 MB → 12 streams → 4 seats at three streams a seat (goal/G30.15): the owner and three members.
+  const RAM_MB = 0.75;
   const w = relayWith(RAM_MB);
   const allowance = w.box.allowance();
+  const seats = Math.floor(allowance / 3);
   const perTarget = router.DEFAULT_PER_TARGET;
 
   // THE ARITHMETIC, read off the live objects rather than restated. This
   // is the assertion that fires when one half moves alone.
-  if (allowance * perTarget <= allowance && perTarget === 1) {
-    test.check('the halves multiply out: ' + allowance + ' seats x ' + perTarget +
-      ' route each = ' + (allowance * perTarget) + ', within the ' + allowance +
-      ' the RAM figure bought');
+  if (seats * perTarget <= allowance && perTarget === 1) {
+    test.check('the halves multiply out: ' + seats + ' seats x ' + perTarget +
+      ' route each = ' + (seats * perTarget) + ', within the ' + allowance +
+      ' streams the RAM figure bought');
   } else {
-    test.fail('THE PRODUCT IS BROKEN: ' + allowance + ' seats x ' + perTarget +
-      ' routes = ' + (allowance * perTarget) + ' against an allowance of ' + allowance +
+    test.fail('THE PRODUCT IS BROKEN: ' + seats + ' seats x ' + perTarget +
+      ' routes = ' + (seats * perTarget) + ' against an allowance of ' + allowance +
       '. One half moved without the other — either DEFAULT_PER_TARGET rose ' +
       '(router.js) or the seat cap stopped tracking the allowance (relay.js).');
   }
@@ -112,17 +114,17 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   // until somebody drives it. Fill the roll, then make every member a
   // target at once.
   const joined = [];
-  for (let i = 0; i < allowance + 2; i += 1) {
+  for (let i = 0; i < seats + 2; i += 1) {
     const id = join(w, 'm' + i);
     if (!id) break;
     joined.push(id);
   }
 
-  if (joined.length === allowance - 1) {
+  if (joined.length === seats - 1) {
     test.check('the roll fills at the seat cap — ' + joined.length +
-      ' members beside the owner, ' + allowance + ' seats');
+      ' members beside the owner, ' + seats + ' seats of three streams');
   } else {
-    test.fail('roll filled to ' + joined.length + ' against ' + (allowance - 1) + ' expected');
+    test.fail('roll filled to ' + joined.length + ' against ' + (seats - 1) + ' expected');
   }
 
   // EVERY MEMBER STREAMING FIRST. A relay routes to somebody it can
@@ -220,10 +222,10 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   const live = w.box.routes.size();
 
   if (opened === joined.length && again && again.ok && third && third.ok === false && third.status === 429 &&
-      live <= allowance) {
+      live <= seats) {
     test.check('every member can be reached at once (' + opened + '), another sender still reaches a ' +
       'busy member, that sender\'s next request is refused, and ' + live + ' open routes never exceed the ' +
-      allowance + ' seats bought');
+      seats + ' seats bought');
   } else {
     test.fail('opened ' + opened + ' of ' + joined.length + ', another sender ' +
       JSON.stringify(again) + ', its next ' + JSON.stringify(third) + ', live routes ' + live + ' against allowance ' + allowance);

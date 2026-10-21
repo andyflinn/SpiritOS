@@ -82,8 +82,9 @@ test.subHeading('The allowance is the owner\'s RAM, fixed at boot');
 test.subHeading('It holds: the owner always, members up to the allowance');
 
 {
-  // 1/8 MB → 2 streams: small enough to fill in a test.
-  const R = relayWith(0.125);
+  // 3/8 MB → 6 streams: small enough to fill in a test, and two seats (three streams a seat since goal/G30.15): the
+  // owner's and anna's, so anna can still join through an invite.
+  const R = relayWith(0.375);
   const a = member(R, 'anna');
 
   // ── BERT AND CARA ARE SEEDED, BECAUSE THIS STATE CAN NO LONGER
@@ -115,24 +116,19 @@ test.subHeading('It holds: the owner always, members up to the allowance');
   // anybody travels. Deleting it would leave the guarantee resting on
   // those two doors alone.
   const store = relayStore.open(R.home);
-  const b = auth.generateIdentity('bert');
-  const c = auth.generateIdentity('cara');
-  [['bert', b], ['cara', c]].forEach(function (pair) {
-    store.members.put({
-      publicKey: pair[1].publicKey,
-      publicLabel: pair[0],
-      claimedAt: new Date().toISOString(),
-    });
+  const seeded = ['bert', 'cara', 'dora', 'emil', 'fred', 'gus'].map(function (name) {
+    const id = auth.generateIdentity(name);
+    store.members.put({ publicKey: id.publicKey, publicLabel: name, claimedAt: new Date().toISOString() });
+    return id;
   });
-  const ra = open(R.box, a);
-  const rb = open(R.box, b);
-  const rc = open(R.box, c);
+  const fit = [open(R.box, a)].concat(seeded.slice(0, 5).map(function (id) { return open(R.box, id); }));
+  const over = open(R.box, seeded[5]);
   const ro = open(R.box, R.owner);
-  if (R.box.allowance() === 2 && ra.ok !== false && rb.ok !== false &&
-      rc && rc.ok === false && rc.status === 503 && ro.ok !== false) {
-    test.check('two members fit, the third is refused 503 full, and the owner is admitted over the allowance');
+  if (R.box.allowance() === 6 && fit.every(function (r) { return r && r.ok !== false; }) &&
+      over && over.ok === false && over.status === 503 && ro.ok !== false) {
+    test.check('six streams fit, the seventh is refused 503 full, and the owner is admitted over the allowance');
   } else {
-    test.fail('opens: ' + JSON.stringify([ra, rb, rc, ro]) + ', allowance ' + R.box.allowance());
+    test.fail('opens: ' + JSON.stringify(fit.concat([over, ro])) + ', allowance ' + R.box.allowance());
   }
 }
 

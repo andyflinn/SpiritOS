@@ -176,21 +176,25 @@ async function run() {
 
   // ── AND SETS THEM, WHICH CHANGES THE FILE ON DISC ────────────────
   test.subHeading('A set over the wire changes the file, and says it applies at next start');
-  const set = await askOwner(w, { config: { ramLimitMB: 32, discLimitMB: 16 } });
+  // The allowance is the RAM left after the relay's own memory at rest (goal/G30.15), measured at the end of its boot
+  // and read back above; so the figure set here sits well above it.
+  const atRest = Number((readBack && readBack.running && readBack.running.atRestMB) || 0);
+  const set = await askOwner(w, { config: { ramLimitMB: 192, discLimitMB: 16 } });
   const after = readConfig(w);
-  if (set && set.ok && set.applies === 'next start' && after.ramLimitMB === 32 && after.discLimitMB === 16) {
+  if (set && set.ok && set.applies === 'next start' && after.ramLimitMB === 192 && after.discLimitMB === 16) {
     test.check('the owner\'s packet rewrote relay-state/config.json without anybody touching the box');
   } else {
     test.fail('the set did not land: ' + JSON.stringify(set).slice(0, 200) + ' file=' + JSON.stringify(after));
   }
-  if (set.now.allowance === written.ramLimitMB * 16 && set.after.allowance === 32 * 16) {
-    test.check('and the answer says what the allowance was and will be');
+  if (atRest > 0 && set && set.now && set.now.allowance === Math.max(1, Math.floor((written.ramLimitMB - atRest) * 16)) &&
+      set.after.allowance === Math.floor((192 - atRest) * 16) && set.after.members === Math.floor(set.after.allowance / 3)) {
+    test.check('and the answer says what the allowance was and will be, after the relay\'s ' + atRest + ' MB at rest, and the members it serves');
   } else {
-    test.fail('the allowances were wrong: ' + JSON.stringify([set.now, set.after]));
+    test.fail('the allowances were wrong (at rest ' + atRest + '): ' + JSON.stringify(set && [set.now, set.after]));
   }
 
   test.subHeading('A restart it cannot promise is refused, not attempted');
-  const asked = await askOwner(w, { config: { ramLimitMB: 33, restart: true } });
+  const asked = await askOwner(w, { config: { ramLimitMB: 193, restart: true } });
   if (asked && asked.ok && asked.restarting === false && /systemd/.test(asked.restartRefused || '')) {
     test.check('a relay nobody would bring back writes the figures and says so — it does not stop');
   } else {

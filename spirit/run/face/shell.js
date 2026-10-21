@@ -168,6 +168,9 @@
       var table = {};
       Object.keys(presence).forEach(function (k) { table[k] = presence[k]; });
       update({ id: 'face-presence', type: 'relay-presence', data: { presence: table } });
+    } else if (ev.event === 'relay-event' && ev.data) {
+      // What a relay the home node owns did (goal/G30.15): to the kernel's subscribers, as the loopback stream hands it.
+      subscribers.slice().forEach(function (h) { if (h.onRelayEvent) { try { h.onRelayEvent(ev.data); } catch (e) { /* one app's fault */ } } });
     } else if (ev.event === 'taken') {
       streamStopped = true;
       setConnected(false);
@@ -319,16 +322,20 @@
         });
       },
       onFiles: function () { return function () {}; },
+      // What a relay the home node owns did, as the old shell hands it (goal/G30.15): Relay Details redraws on it.
+      onRelayEvent: function (fn) { return events({ onRelayEvent: fn }); },
       ui: { elements: window.spiritElements || {} },
     };
     return api;
   }
 
   var currentClick = null;
+  // As the old shell does: the click is stamped on the way down, and an armed button is disarmed on the way up, after
+  // its own handler ran, by any click but the one that armed it. So the confirming press acts before the disarm.
+  document.addEventListener('click', function (e) { currentClick = e; }, true);
   document.addEventListener('click', function (e) {
-    currentClick = e;
     if (armed && armed.at !== e) { var a = armed; armed = null; try { a.disarm(); } catch (x) { /* harmless twice */ } }
-  }, true);
+  }, false);
 
   function show(id) {
     active = id;
@@ -423,7 +430,8 @@
   }
   function mountLogin() {
     loginMounted = true;
-    login.mount(loginPane, { post: post, refresh: refresh });
+    // armUntilElsewhere: the shell's two-press rule, for Log out (goal/G30.15).
+    login.mount(loginPane, { post: post, refresh: refresh, armUntilElsewhere: function (disarm) { if (typeof disarm === 'function') armed = { disarm: disarm, at: currentClick }; } });
     hand();
   }
 
@@ -432,6 +440,7 @@
     if (link.starting) return;
     link.starting = true;
     var home = !!(state && state.home);
+    if (state && state.face) document.title = String(state.face);
     var ready = home
       ? Promise.resolve()
       // The home node's keys, from faceHome itself (goal/G30.10): node.card carries no seal key.
@@ -440,6 +449,8 @@
           try { keys = JSON.parse(bytesText(r.bytes)); } catch (e) { keys = null; }
           if (r.status !== 200 || !keys || !keys.publicKey) throw new Error('the home node did not answer');
           link.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
+          // The tab says whose face this is: the ID's label after the 🤓 (goal/G30.15).
+          if (keys.name) document.title = String(keys.name);
           return window.faceSeal && link.node.sealKey ? window.faceSeal.supported() : false;
         }).then(function (can) {
           if (!can) { say('This browser cannot seal: your traffic is readable on the relay.'); return null; }
