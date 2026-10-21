@@ -434,9 +434,12 @@
     var home = !!(state && state.home);
     var ready = home
       ? Promise.resolve()
-      : ask('node.card', {}).then(function (r) {
-          if (r.status !== 200 || !r.body || !r.body.publicKey) throw new Error('the home node did not answer');
-          link.node = { publicKey: r.body.publicKey, sealKey: r.body.sealKey || '', name: r.body.name || '' };
+      // The home node's keys, from faceHome itself (goal/G30.10): node.card carries no seal key.
+      : call({ keys: 1 }).then(function (r) {
+          var keys = null;
+          try { keys = JSON.parse(bytesText(r.bytes)); } catch (e) { keys = null; }
+          if (r.status !== 200 || !keys || !keys.publicKey) throw new Error('the home node did not answer');
+          link.node = { publicKey: keys.publicKey, sealKey: keys.sealKey || '' };
           return window.faceSeal && link.node.sealKey ? window.faceSeal.supported() : false;
         }).then(function (can) {
           if (!can) { say('This browser cannot seal: your traffic is readable on the relay.'); return null; }
@@ -447,7 +450,7 @@
       if (home) setConnected(true);
       return loadParts();
     }).then(function () {
-      window.spirit.shell = { activateApp: activateApp };
+      window.spirit.shell = { activateApp: activateApp, factRow: factRow };
       link.loaded = true;
       openStream(false);
       return Promise.all(FIRST_APPS.map(function (p) { return loadApp(p.split('/').slice(0, -1).join('/')); }));
@@ -457,6 +460,18 @@
       say(String((e && e.message) || e));
       setTimeout(function () { if (!link.loaded) start(); }, 5000);
     });
+  }
+
+  // The old shell's fact row (js/client/shell.js factRow), the same markup, for the dialogs that draw with it
+  // (Relay Details, Contact): pairs of [label, value], escaped.
+  function factRow(pairs) {
+    var esc = spirit.core.util.escapeHtml;
+    return '<div class="fact-row">' + (pairs || []).map(function (pair) {
+      return '<div class="fact">' +
+        '<span class="fact-label">' + esc(String(pair[0])) + '</span>' +
+        '<span class="fact-value">' + esc(String(pair[1])) + '</span>' +
+        '</div>';
+    }).join('') + '</div>';
   }
 
   function activateApp(behavior) {

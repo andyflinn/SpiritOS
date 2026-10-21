@@ -162,6 +162,13 @@ function createFaceHome(opts) {
       r = inner;
       res = sealedInto(res, k);
     }
+    // THE HOME NODE'S KEYS (goal/G30.10): what the face seals to. Answered here, before the door, from the node's own
+    // identity; node.card does not carry the seal key and is not changed for this.
+    if (r.keys === 1) {
+      const self = o.identity() || {};
+      json(res, 200, { publicKey: String(self.publicKey || ''), sealKey: String(self.sealPublicKey || '') });
+      return;
+    }
     const no = faceRefuses(r);
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
