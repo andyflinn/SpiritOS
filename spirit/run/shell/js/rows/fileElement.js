@@ -57,7 +57,12 @@
       row: { path: p, name: p.slice(p.lastIndexOf('/') + 1), kind: r.kind || k.kind || 'file',
         size: r.size !== undefined ? r.size : k.size, modified: r.modified || k.modified, gone: false },
       fields: [
-        { name: 'icon', from: ['kind', 'gone'], paint: function (v) { var I = icons(); return v.gone ? (I.NO || '×') : v.kind === 'folder' ? (I.FOLDER || '') : (I.FILE || ''); } },
+        // Its depth rides along (one per slash), so a tree view can indent it (goal/G30.16: Files' tree, 2em a level).
+        { name: 'icon', from: ['kind', 'gone'], paint: function (v) {
+          var I = icons();
+          var glyph = v.gone ? (I.NO || '×') : v.kind === 'folder' ? (I.FOLDER || '') : (I.FILE || '');
+          return '<span class="file-depth" style="--depth:' + (String(v.path || '').split('/').length - 1) + '">' + glyph + '</span>';
+        } },
         // Where it lives, then what it is: the folders dimmed, the name at full strength (goal/G30.16; a list of bare names
         // read as if every file sat at the top).
         { name: 'name', from: ['path'], paint: function (v) {

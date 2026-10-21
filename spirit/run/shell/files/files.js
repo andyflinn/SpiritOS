@@ -58,7 +58,10 @@ function filesShow(host, listHost, path, words, line) {
 spirit.shell.activateApp({
   mount: function (container, api) {
     var E = window.spiritElements;
-    container.innerHTML = '<div data-files="list"></div><div data-files="file" hidden></div>';
+    // THE TREE'S INDENT (Andy: "in tree-mode an indent of 2em per slash ahead of the file-icon."): only while the field is
+    // empty, when the list is the tree.
+    container.innerHTML = '<style>.files-tree .file-depth{display:inline-block;padding-left:calc(var(--depth) * 2em)}</style>' +
+      '<div data-files="list" class="files-tree"></div><div data-files="file" hidden></div>';
     var listHost = container.querySelector('[data-files="list"]');
     var fileHost = container.querySelector('[data-files="file"]');
     filesList = window.spiritElements.probabilitySearch.create(listHost, {
@@ -68,7 +71,7 @@ spirit.shell.activateApp({
       verb: 'search',
       args: function (text, values) { return { q: text, contents: values.in === 'contents' ? 'yes' : '' }; },
       columns: [
-        { field: 'icon', label: '', width: '1.5em' },
+        { field: 'icon', label: '' },
         { field: 'name', from: 'path', label: 'Name', sort: 'path' },
         { field: 'size', label: 'Size', sort: 'number', align: 'right' },
         { field: 'changed', from: 'modified', label: 'Changed', sort: 'date' },
@@ -96,6 +99,8 @@ spirit.shell.activateApp({
     });
     // The tree is in path order until a header is pressed.
     filesList.sort('name', 'asc');
+    listHost.addEventListener('input', function () { listHost.classList.toggle('files-tree', !filesList.words()); });
+    listHost.addEventListener('click', function () { listHost.classList.toggle('files-tree', !filesList.words()); });
     filesList.refresh();
   },
 
