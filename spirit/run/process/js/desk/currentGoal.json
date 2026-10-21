@@ -1,5 +1,5 @@
 {
- "change": 81100,
+ "change": 81101,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "excluded": [
     "ollama agent node"
    ],
@@ -12502,10 +12502,9 @@
    "id": "goal/G30.17",
    "title": "shell/js/probabilitySearch.js: the standard shell list-tool",
    "goal": "goal/G30",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
