@@ -207,12 +207,17 @@ async function run() {
     // sees this node's hand between them — a fixture answers the shape it
     // was given, so a suite driving the app can be green about a field
     // the node never sends.
-    const searched = await hub(portOf(alfa), 'POST', '/api/spirit',
-      { verb: 'peer.search', q: '*' });
-    // The shared shape since goal/G29.17: items, each label the row as json.
-    const seenRows = ((searched.body && searched.body.items) || []).map(function (i) {
-      try { return JSON.parse(i.label); } catch (e) { return {}; }
-    });
+    // SINCE goal/G30.19 the network search is contact.search's tier two: the first ask starts it, its rows land in the
+    // shadow, and a later ask answers them at once (book: false, with what the relay said of their presence).
+    let seenRows = [];
+    for (let i = 0; i < 20 && !seenRows.length; i++) {
+      const searched = await hub(portOf(alfa), 'POST', '/api/spirit', { verb: 'contact.search', q: '*' });
+      // The shared shape since goal/G29.17: items, each label the row as json.
+      seenRows = ((searched.body && searched.body.items) || []).map(function (it) {
+        try { return JSON.parse(it.label); } catch (e) { return {}; }
+      }).filter(function (r) { return r.book === false && r.present !== undefined; });
+      if (!seenRows.length) await sleep(300);
+    }
 
     if (seenRows.length) {
       test.check('a member searching its own relay gets seenRows back');

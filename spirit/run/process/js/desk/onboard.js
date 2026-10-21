@@ -19,7 +19,7 @@
 //      fresh node that is noderoutes.net, the only seed since goal/G19.15). A url not yet listed is claimed all the
 //      same: relay.claim meets it first and lists it. The seat is claimed with the invite, unless this node already
 //      holds it (a second run is not refused for its own seat).
-//   2  the desk node is the one node a search for the desk label finds (peer.search, as Contacts' Find asks it, with
+//   2  the desk node is the one node a search for the desk label finds (contact.search, as Contacts asks it, with
 //      the label matched exactly), whoever owns the relay. None found, or more than one, ends the run and says so.
 //      It is acquired as a contact, and set as deskClient's desk once deskClient is switched on.
 //   3  the commit hooks are installed in this clone (commitCheck.js install <port>).
@@ -98,10 +98,12 @@ async function main() {
   // stream to a relay just claimed on may still be opening; the search answers who is online.
   let found = [];
   for (let i = 0; i < SEARCH_TRIES; i++) {
-    const s = await ask('peer.search', { q: deskLabel });
-    // The shared shape since goal/G29.17: items, each label the row as json.
+    // contact.search (goal/G30.19): the book and the shadow at once, and a network search started, whose rows land in
+    // the shadow, so a later try finds what an earlier one started.
+    const s = await ask('contact.search', { q: deskLabel });
+    // The shared shape since goal/G29.17: items, each key the public key, each label the row as json.
     const matches = ((s && s.body && Array.isArray(s.body.items)) ? s.body.items : []).map(function (i) {
-      try { return JSON.parse(i.label); } catch (e) { return null; }
+      try { return Object.assign(JSON.parse(i.label), { publicKey: i.key }); } catch (e) { return null; }
     });
     found = matches.filter(function (m) { return m && m.publicKey && String(m.publicLabel || '') === deskLabel; });
     if (found.length) break;

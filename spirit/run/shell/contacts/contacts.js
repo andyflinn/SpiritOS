@@ -82,12 +82,10 @@ var CONTACTS_UNKNOWN_LABELS = {
   },
 };
 
-// THE BOOK IS THE PEER PICKER (goal/G29.6). Andy, 2026-10-17: "now i want the contactSelector to be just a wrapper
-// around our new list-selector", and "no fucking protecting old design." The book is a contactSelector pane
-// (shell/js/contactSelector.js) on the shared list with its search (goal/G29.4): its search box, its cache of every
-// search run, its ranking, its filters per state (★ my puppets, blocked, held) and its one request on the wire are the
-// list's; this app says what the status column shows and what a pick does.
-var contactsBook = null;
+// ONE SEARCH IN TWO TIERS (goal/G30.19): the book, the shadow and the network in one list, shell/js/contactSearch.js,
+// which Join draws too. Its rows are contactElements and keep themselves current; this app paints no presence. The
+// book's contactSelector pane and the Find someone on the network fold (peerFind) stood here and are deleted.
+var contactsList = null;
 var contactsSelfTail = '';
 
 
@@ -172,79 +170,9 @@ function contactsStatus(text) {
 //     lost your position twice per look;
 //   - one person at a time, with their neighbours not listed above and
 //     below them while you read their numbers.
-// PRESENCE, AND THE JOIN HAPPENS HERE AND ONLY HERE (PRESENCE.md, Stage
-// 4). Presence arrives keyed by public key because a key is the only
-// thing a relay and this node agree about; contactBook says who that is.
-//
-// Three marks, and the third is the point of the other two:
-//
-//   GREEN  a relay we are connected to says this key is present
-//   RED    a relay we are connected to says this key is absent
-//   WHITE  no relay mentions this key at all
-//
-// White is NOT a dimmer red. A contact we share no relay with is not
-// offline, they are UNSEEN, and painting them red would be this column
-// claiming knowledge it does not have. That is also why a removed peer
-// goes white rather than red: they have no row anywhere any more, so
-// nobody is in a position to say they are absent.
-//
-// FALSE NEGATIVES ONLY. Anything unknown, stale or unreachable reads as
-// white — the mark that promises nothing.
-var contactsPresence = Object.create(null);
-var contactsPresenceSeen = false;
-
-// The table holds a proof per ID, {present, at} (goal/G2.9: "timestamped
-// presence by ID"). The dot reads what was said; `at` is there for whoever
-// wants its age.
-function contactsPresenceState(publicKey) {
-  var proof = contactsPresence[publicKey];
-  return proof && typeof proof === 'object' ? proof.present : undefined;
-}
-
-function contactsPresenceMark(publicKey) {
-  // Before the first payload arrives nothing is known about anybody, and
-  // a screenful of red on load would be a lie that corrects itself a
-  // second later — which is worse than a screenful of white that fills
-  // in, because the lie is the one that looks like information.
-  if (!contactsPresenceSeen) return contactsIcon.WHITE_CIRCLE;
-  var state = contactsPresenceState(publicKey);
-  if (state === true) return contactsIcon.GREEN_CIRCLE;
-  if (state === false) return contactsIcon.RED_CIRCLE;
-  return contactsIcon.WHITE_CIRCLE;
-}
-
-function contactsPresenceTitle(publicKey) {
-  if (!contactsPresenceSeen) return 'not known yet';
-  var state = contactsPresenceState(publicKey);
-  if (state === true) return 'present — a relay you share is holding their connection';
-  if (state === false) return 'absent — a relay you share says they are not connected';
-  return 'not known — no relay you are connected to mentions this key';
-}
-
-
-// contactsMemberOf, contactsIsMember AND contactsSeatTitle STOOD HERE,
-// reading `memberOf` off the row — a roster's word, gone 2026-09-19 (see
-// hub.js where reconcileMembers stood).
-
-// THE STATE WORDS, THE ROW AND LABEL PAINTERS AND THE BOOK TABLE STOOD HERE: the label carried the state as a word
-// ("Bert — blocked") and this file read it back off the end. Since goal/G29.6 contact.search's label is json {name,
-// owned, blocked, held} and the picker draws the row; the status column below shows blocked and held.
-var CONTACTS_STATUSES = [{ status: 'none' }, { status: 'blocked', iconKey: 'NO' }, { status: 'held', iconKey: 'WAITING' }];
-function contactsStatusOf(row) { return row.blocked ? 'blocked' : row.held ? 'held' : 'none'; }
-
-// Presence as the relay-presence job last said it, handed to the picker per key with what the dot means.
-// A key the job no longer mentions is set back too, white and "not known", as the old table repainted every row.
-var contactsPresencePainted = Object.create(null);
-function contactsPaintPresence() {
-  if (!contactsBook) return;
-  Object.keys(contactsPresencePainted).forEach(function (key) {
-    if (!(key in contactsPresence)) { contactsBook.present(key, false, contactsPresenceTitle(key)); delete contactsPresencePainted[key]; }
-  });
-  Object.keys(contactsPresence).forEach(function (key) {
-    contactsBook.present(key, contactsPresenceState(key) === true, contactsPresenceTitle(key));
-    contactsPresencePainted[key] = true;
-  });
-}
+// CONTACTS' OWN PRESENCE TABLE AND ITS PAINTING STOOD HERE (contactsPresence, contactsPresenceMark,
+// contactsPaintPresence and their helpers). A row's dot is its contactElement's now (goal/G30.18, G30.19): it listens to
+// the relay-presence job itself, green, red or white with the same meaning.
 
 function contactsPaintSelf() {
   var el = document.getElementById('contacts-self');
@@ -254,44 +182,10 @@ function contactsPaintSelf() {
     : '';
 }
 
-// The book asked again with what is typed: after an add, or a decision on a contact's own screen.
+// The list asked again with what is typed: after an add, or a decision on a contact's own screen.
 function contactsRefresh() {
-  if (contactsBook) contactsBook.refresh();
+  if (contactsList) contactsList.refresh();
 }
-// The picker's source: the node's contact.search with the list's own arguments, its selfTail read on the way.
-// THE BOOK, AND THIS NODE'S RELAYS BESIDE IT (goal/G30.7; Andy, 2026-10-20: "the relays don't appear in the contact
-// list.... so i cannot reach natterDetails", "and there's no relay filter in the contacs search"). A relay is never
-// written into the book: its rows come from relay.search, marked relay, keyed by its url, and match the same words.
-var contactsRelayUrls = Object.create(null);
-function contactsSearchBookFor(text, args) {
-  var a = args || { q: text };
-  var book = a.relay === 'yes' ? Promise.resolve({ items: [], more: false }) : contactsAsk('contact.search', a).then(function (data) {
-    if (data && data.selfTail) { contactsSelfTail = data.selfTail; contactsPaintSelf(); }
-    return data || { items: [], more: false };
-  });
-  var relays = (a.owned === 'yes' || a.blocked === 'yes' || a.held === 'yes') ? Promise.resolve({ items: [] })
-    : contactsAsk('relay.search', { q: String(text || '').trim() || '*' }).then(function (d) { return d || { items: [] }; }, function () { return { items: [] }; });
-  return Promise.all([book, relays]).then(function (got) {
-    var rows = (got[1].items || []).map(function (i) {
-      var r = null;
-      try { r = JSON.parse(i.label); } catch (e) { r = null; }
-      contactsRelayUrls[i.key] = true;
-      // owned is the star, as on a puppet: this node owns that relay (Andy: "they don't show me the Star icon (i own them)").
-      return { key: i.key, label: JSON.stringify({ name: (r && (r.relayLabel || r.name)) || i.key, relay: true, url: i.key, owned: !!(r && r.owned) }), relayKey: (r && r.relayKey) || '' };
-    });
-    // A RELAY ONCE ADDED TO THE BOOK (by its key, before relays were peers) shows once, as the relay: the relay row
-    // opens natterDetails, where a book row would offer Block and Forget on a relay this node holds a seat on.
-    var relayKeys = Object.create(null);
-    rows.forEach(function (r) { if (r.relayKey) relayKeys[r.relayKey] = true; });
-    var book = (got[0].items || []).filter(function (i) { return !relayKeys[i.key]; });
-    return { items: book.concat(rows.map(function (r) { return { key: r.key, label: r.label }; })), more: !!got[0].more, selfTail: got[0].selfTail };
-  });
-}
-
-// FIND SOMEONE ON THE NETWORK IS A SHELL ELEMENT (goal/G30.1, box v39): shell/js/peerFind.js, moved whole from here, so
-// Contacts and the Join app draw one panel. It asks peer.search, draws the rows with their dot, Add and description
-// bubble, and adds by peer.acquire; Contacts hands it its presence table and what to do after an Add.
-var contactsSeenList = null;
 
 // Factory is the tightest setting that still lets two people who added
 // each other talk. A file that is missing, empty or nonsense therefore
@@ -374,53 +268,8 @@ function contactsPaintUnknown() {
   }
 }
 
-// THE WIRE, AND IT IS ALREADY THERE. The node holds one connection per
-// relay and publishes what it hears as a permanent `relay-presence` job,
-// so the shell's existing jobs channel carries this — no new shell
-// surface, no second socket of our own, and nothing added to the bones
-// so that a column could work.
-//
-// PRESENCE.md Stage 3 proposes spirit.core.presence.subscribe() to fold
-// several app subscriptions into one EventSource. Contacts is the only
-// app that consumes this arc — the document says so — so that fold would
-// today have exactly one thing to fold. Left undone deliberately; if a
-// second app ever wants presence, do Stage 3 then rather than opening a
-// third socket.
-// ONCE PER PAGE, NOT ONCE PER MOUNT.
-//
-// The shell loads an app's script once and mounts it on every entry, and
-// activateApp takes mount/render/loadFile/open — there is no unmount
-// hook. So a subscription opened in mount() and never closed would be a
-// new EventSource every time somebody walked into Contacts, each one
-// feeding its own repaint of a table that is drawn once.
-//
-// Guarded here rather than solved by adding a lifecycle hook to the
-// shell: a column does not get to change the app contract. That the
-// contract has no unmount is worth raising on its own, away from this.
-var contactsWatching = false;
-
-function contactsWatchPresence() {
-  if (contactsWatching) return;
-  contactsWatching = true;
-
-  function take(job) {
-    if (!job || job.type !== 'relay-presence') return;
-    var table = (job.data && job.data.presence) || null;
-    if (!table) return;
-    contactsPresence = table;
-    contactsPresenceSeen = true;
-    contactsPaintPresence();
-  }
-
-  spirit.core.jobs.subscribe({
-    // The snapshot matters as much as the updates: an app mounted after
-    // the job last changed would otherwise sit white until something
-    // moved, and "nothing has happened yet" would look identical to
-    // "nobody is here".
-    onSnapshot: function (jobs) { (jobs || []).forEach(take); },
-    onUpdate: take,
-  });
-}
+// CONTACTS' PRESENCE SUBSCRIPTION STOOD HERE (contactsWatchPresence): contactElement holds the one subscription for
+// every contact row on the page (goal/G30.18).
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -476,70 +325,8 @@ spirit.shell.activateApp({
       // THE BOOK'S OWN SEARCH, on top. Andy: "the search box below searches
       // all available relays. the box on top, should not." It searches only
       // this node's book, and what it finds is added to the table.
+      // THE ONE LIST (goal/G30.19): the book, the shadow and the network, with a filter instead of two folds.
       '<div id="contacts-book" class="stat-tile wide"></div>' +
-      // name= makes the two folds one exclusive group: opening either
-      // closes the other, done by the browser with no JS and no state.
-      // Named from this app's id prefix rather than its app id, because
-      // app ids are folder-derived and have moved before — a group named
-      // from one would silently regroup on the next move. See
-      // UI_DESIGN_STYLE.md §3.
-      // ADD-SOMEONE-BY-HANDLE STOOD HERE, and it asked `peer.find`.
-      //
-      //   Andy: "this new item should be integrated in: Find someone by
-      //   handle. The user shouldn't worry about relays, they just want to
-      //   find somebody."
-      //
-      // Two panels answered what turned out to be one question, and the
-      // reason for keeping them apart stopped being true. The old comment
-      // said they were different — "is the john I was told about here"
-      // versus "who is here" — and that was fair while a search could not
-      // rank: a partial query drowned an exact one.
-      //
-      // It ranks now. An exact handle scores 1.0 and comes first out of a
-      // million, so typing the name you were told IS the handle lookup,
-      // and typing part of it is the other question. One box answers both.
-      //
-      // AND peer.find WAS THE WEAKER HALF besides: it asked `urls[0]` —
-      // the first row of relays.json, whatever the question — so it could
-      // not see a second relay, let alone a partner's members, and the
-      // Confirm it offered carried no route for the acquire to use.
-      // Under Add-someone, because adding is what you come here to do and
-      // this is the standing answer for people you have not. No count of
-      // who is waiting: under Hold the hub writes them into the book, so
-      // they are rows in the table above — which is more than a number,
-      // and something you can act on.
-      // ── PEOPLE YOU COULD ADD, WHICH IS WHY YOU CAME ─────────────────
-      //
-      //   Andy: "this must fit seamlessly into contacts itself, and the
-      //   list there must present peers that are not yet in the contacts
-      //   list from our bound relay or other relays."
-      //
-      // Add-by-handle asks you to already know the name. This is the
-      // other half: everybody visible from here and not yet known —
-      // across every relay this node is on AND their partners, which the
-      // node gathers so the page does not have to know how many places it
-      // took. `peer.search` — it ASKS each relay who matches rather than
-      // downloading each roll, which is the same question with a bound
-      // on the answer. (It said `peer.candidates` until 2026-09-17; that
-      // verb had already stopped being called and is now deleted.)
-      //
-      // Beside Add-by-handle rather than replacing it, because they
-      // answer different questions: one is "is the john I was told about
-      // here", this is "who is here".
-      '<details class="stat-tile wide" name="contacts-panels" id="contacts-seen-section">' +
-        // NOT "on your relays". Andy: "The user shouldn't worry about
-        // relays, they just want to find somebody." Which relay somebody
-        // is on is the node's problem — it is how the search is answered
-        // and where the confirm is checked, and neither is a question a
-        // person came here with.
-        // "on the network", which is not "on your relays": Andy, 2026-09-27,
-        // "the search box below should indicate that it searches the
-        // "network"", beside the book's own box on top, which does not.
-        '<summary id="contacts-seen-summary">Find someone on the network</summary>' +
-        // The shared list (goal/G29.17), its own search box and count; the note below says what it does not.
-        '<div id="contacts-seen-list"></div>' +
-        '<div id="contacts-seen-note"></div>' +
-      '</details>' +
       // ADD A RELAY, moved here from Natter (goal/G30.7; Andy, 2026-10-20: "putting the add-relay into contacts, in a
       // folding-panel, right below \"Find someone on the network\""). relay.add lists it on its card's answer; the label
       // is this node's private caption, never on the wire.
@@ -597,73 +384,15 @@ spirit.shell.activateApp({
       }, function (e) { out.textContent = 'not added: ' + ((e && e.message) || 'no answer'); });
     });
 
-    // FIND SOMEONE ON THE NETWORK (goal/G30.1, box v39): the shell element peerFind, drawn here as before. Its rows' Add
-    // keeps the class contacts-seen-add; the dot reads this app's presence table first, the answering relay's word after.
-    contactsSeenList = window.spiritElements.peerFind.create({
-      listHost: document.getElementById('contacts-seen-list'),
-      noteHost: document.getElementById('contacts-seen-note'),
-      // Its fold: opening it fills the list (goal/G30.15).
-      fold: document.getElementById('contacts-seen-section'),
-      addClass: 'contacts-seen-add',
-      ask: function (verb, args) { return contactsApi.verb(verb, args); },
-      peerPost: function (app, key, body) { return contactsApi.peerPost(app, key, body); },
-      callDialog: function (id, params) { return contactsApi.callDialog(id, params); },
-      presence: function (key) { return contactsPresenceSeen ? contactsPresenceState(key) : undefined; },
-      onAdded: function () { contactsRefresh(); },
+    // THE ONE LIST (goal/G30.19). A row opens the person (contactsDetails) or the relay (natterDetails) by its element's
+    // open; a dialog that changed something asks the list again.
+    contactsList = window.spiritElements.contactSearch.create(document.getElementById('contacts-book'), {
+      api: contactsApi,
       say: contactsStatus,
-    }).list;
-
-    // Confirming is what writes the contact. Delegated, because the rows
-    // are painted and repainted.
-    // THE ADD-BY-HANDLE CONFIRM STOOD HERE, and it acquired with a key
-    // and NO URL — so peer.acquire fell back to `urls[0]` and could only
-    // ever confirm somebody on the first relay in the file. A peer found
-    // on a second relay, or on a partner's, was unconfirmable by the very
-    // panel built for confirming.
-    //
-    // The seen-list Add above carries the relay the row came from, which
-    // is why merging the two panels fixed a bug rather than only removing
-    // a box.
-
-    // A row opens the person, and that is all a row does now.
-    //
-    // callDialog rather than launchApp, because this is a question with
-    // an answer. The shell hands the dialog its subject on every call
-    // and gives back what it decided, so the code that opens the screen
-    // is the code three lines below that acts on it — rather than a hook
-    // declared at the bottom of the file, far from the click.
-    //
-    // The key alone. The dialog re-fetches the row rather than being
-    // handed one, because the numbers move while it is open.
-    //
-    // The answer matters because render() repaints from a list this app
-    // fetched and does not fetch again: without re-reading, blocking
-    // somebody on their own screen would leave an unmarked row behind
-    // you, and the mark is the whole of what a row says about that
-    // decision. A dialog that decided nothing answers null, and costs
-    // this table nothing.
-    contactsBook = contactsApi.ui.elements.createContactSelector({
-      face: 'pane', statuses: CONTACTS_STATUSES, status: contactsStatusOf, search: contactsSearchBookFor,
-      empty: 'Nobody in your book matches: search the network below to add someone.',
+      selfTail: function (tail) { contactsSelfTail = tail; contactsPaintSelf(); },
+      empty: 'Nobody matches: the network is searched as you type.',
     });
-    document.getElementById('contacts-book').appendChild(contactsBook);
-    contactsBook.addEventListener('change', function () {
-      // A relay row opens the relay's own screen (goal/G30.7).
-      if (contactsRelayUrls[contactsBook.value]) {
-        contactsApi.callDialog('shell/natterDetails', { url: contactsBook.value }).then(function (result) {
-          if (result && result.changed) contactsRefresh();
-        });
-        return;
-      }
-      contactsApi.callDialog('shell/contactsDetails', { key: contactsBook.value })
-        .then(function (result) {
-          if (result && result.changed) contactsRefresh();
-        });
-    });
-    contactsWatchPresence();
   },
 
-  render: function () {
-    contactsPaintPresence();
-  },
+  render: function () {},
 });

@@ -19,11 +19,12 @@
 // probabilitySearch.create(container, {
 //   api, server, verb          the shell api, the server searched (its stream too) and its search verb
 //   args(text, values)         the verb's arguments from the words and the filters' values
-//   columns                    [{ field, label, width, align, sort }]: sort is how the field compares, 'text', 'number'
-//                              or 'date'; without it the column is not a sort trigger
+//   columns                    [{ field, from, label, width, align, sort }]: sort is how the field compares, 'text',
+//                              'number' or 'date'; without it the column is not a sort trigger. from names the row's value
+//                              when it is not the field's own name (a contact's label column shows its name)
 //   element(row, key)          optional: the rowElement that draws a row (shell/js/rows/)
 //   filters, matched, score, rows(), fold(row, key), details(row, key, el), pick(row, key), empty   as in listSearch
-// }) -> { refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }
+// }) -> { refresh, redraw, words(), ask(verb, args), sort(field, direction), feed(answer), destroy }
 //
 // probabilitySearch.order(entries, state) is the list's pure heart: what it draws, in order. entries [{ key, row, at,
 // gone, el }], state { words, values, filters, sort: { field, direction }, columns, matched, score }.
@@ -56,15 +57,15 @@
     var cols = state.columns || [];
     if (!cols.length) return entry.el ? entry.el.row : entry.row;
     var o = {};
-    cols.forEach(function (c) { o[c.field] = valueOf(entry, c.field); });
+    cols.forEach(function (c) { o[c.field] = valueOf(entry, c.from || c.field); });
     return o;
   }
   function compareBy(column, direction) {
     var dir = direction === 'desc' ? -1 : 1;
     var how = (column && column.sort) || 'text';
     return function (a, b) {
-      var x = valueOf(a, column.field);
-      var y = valueOf(b, column.field);
+      var x = valueOf(a, column.from || column.field);
+      var y = valueOf(b, column.from || column.field);
       var d;
       if (how === 'number') d = (Number(x) || 0) - (Number(y) || 0);
       else if (how === 'date') d = (Date.parse(x) || 0) - (Date.parse(y) || 0);
@@ -206,7 +207,7 @@
       function cellsOf(w) {
         var e = w.entry.el;
         return columns.map(function (c) {
-          var html = e ? '' : mark(valueOf(w.entry, c.field));
+          var html = e ? '' : mark(valueOf(w.entry, c.from || c.field));
           return '<td data-field="' + esc(c.field) + '"' + (c.align ? ' align="' + esc(c.align) + '"' : '') + '>' + html + '</td>';
         }).join('');
       }
@@ -353,6 +354,9 @@
     self.redraw = function () { draw(); };
     self.words = function () { return words(); };
     self.ask = function (verb, args) { return lend(verb, args); };
+    // AN ANSWER THAT ARRIVES ON THE STREAM (goal/G30.19: the network search's rows, one at a time) feeds the cache like
+    // the list's own; the words as they stand rank it.
+    self.feed = function (answer) { if (!live) return; take(answer); draw(); };
     self.sort = setSort;
     self.destroy = function () {
       live = false;

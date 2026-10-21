@@ -1,4 +1,0 @@
-{
-  "description": "Who matches a text (q) across every configured relay, plus matches remembered here, ranked on the probability modules (goal/G29.17): {q, items: [{key: publicKey, label: json {publicKey, publicLabel, tail, atKey, relay, relayLabel, present, via, viaPartner, acquiredVia, fromMemory, seenAt}}], more, asked, remembered, silent: [relays that did not answer]}.",
-  "parameters": "q is optional; empty or * is anyone."
-}

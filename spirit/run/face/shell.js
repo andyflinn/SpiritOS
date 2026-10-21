@@ -171,6 +171,9 @@
     } else if (ev.event === 'relay-event' && ev.data) {
       // What a relay the home node owns did (goal/G30.15): to the kernel's subscribers, as the loopback stream hands it.
       subscribers.slice().forEach(function (h) { if (h.onRelayEvent) { try { h.onRelayEvent(ev.data); } catch (e) { /* one app's fault */ } } });
+    } else if (ev.event === 'contact.rename' && ev.data && ev.data.key) {
+      // A contact renamed at home (goal/G30.19): to the kernel's subscribers, as the loopback stream hands it.
+      subscribers.slice().forEach(function (h) { if (h.onContactRename) { try { h.onContactRename(ev.data); } catch (e) { /* one app's fault */ } } });
     } else if (ev.event === 'taken') {
       streamStopped = true;
       setConnected(false);

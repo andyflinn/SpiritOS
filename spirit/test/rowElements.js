@@ -145,9 +145,9 @@ const done = (async function () {
       expand: asked.map(function (x) { return x.verb + ':' + x.args.key; }).join(','),
       fields: p.cells().map(function (z) { return z.name; }).join(','), rule: !!(window.spiritFieldRules && window.spiritFieldRules.label) };
   } catch (e) { people = { threw: e.message }; }
-  if (people && people.subs === 1 && people.pPresence === 'G' && people.pPresencePaints === 2 && people.qPresencePaints === 1
+  if (people && people.subs === 1 && />G<\/span>/.test(people.pPresence) && people.pPresencePaints === 2 && people.qPresencePaints === 1
       && /Quinn/.test(people.qLabel) && people.pLabelPaints === 1 && people.pStatusPaints === 1 && people.blockAsked === 'KEY-P'
-      && people.opened === 'shell/contactsDetails KEY-P' && people.expand === 'contact.get:KEY-Q' && people.fields === 'presence,status,label')
+      && people.opened === 'shell/contactsDetails KEY-P' && people.expand === 'contact.get:KEY-Q' && people.fields === 'presence,status,label,add')
     test.check('two contact rows share one subscription; presence repaints only Pia\'s dot, a rename only Quin\'s label; block asks and paints nothing; open opens Contact; expandInfo asks contact.get');
   else test.fail(OWED + 'contactElement: ' + short(people));
 }());

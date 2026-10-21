@@ -15,7 +15,8 @@
 //   - Relay Details, for its owner, shows memory and disc (set, running, what the box can give), a field for each with
 //     the members that setting serves, says a change applies at the next restart, and offers Restart; it uses the
 //     relay's own config and restart.
-//   - peerFind fills as soon as its fold opens, and an empty search answers like any other.
+//   - peerFind fills as soon as its fold opens, and an empty search answers like any other. Since goal/G30.19 that is
+//     Contacts' one list, contactSearch, which fills as soon as it is drawn.
 //   - bash/face-setup writes the face site without compression.
 //   - The login app's Log out is a two-press button.
 // NAMED HERE where the box names none:
@@ -140,7 +141,7 @@ const done = (async function () {
   const shell = code('spirit/run/face/shell.js');
   const rs = code('spirit/run/js/relayServer.js');
   const nd = code('spirit/run/shell/natterDetails/natterDetails.js');
-  const pf = code('spirit/run/shell/js/peerFind.js');
+  const cs = code('spirit/run/shell/js/contactSearch.js');
   const ct = code('spirit/run/shell/contacts/contacts.js');
   const login = code('spirit/run/face/login/login.js');
   const checks = {
@@ -151,14 +152,14 @@ const done = (async function () {
     atRestAtBoot: /\.atRest\(/.test(rs) && /memoryUsage\(\)\.rss/.test(rs),
     statusParts: /capacity/.test(code('spirit/run/js/relayStatus.js')) && /capacity/.test(nd) && /members a megabyte|members per megabyte|membersPerMB/.test(nd),
     allocationScreen: /ramLimitMB/.test(nd) && /discLimitMB/.test(nd) && /restart:\s*true/.test(nd) && /next restart/i.test(nd),
-    peerFindEmpty: !/if \(!q\) \{ seen = \[\]/.test(pf) && /toggle/.test(pf) && /fold:/.test(ct),
+    listFillsWhenDrawn: /\n\s*list\.refresh\(\);\s*\n\s*return \{/.test(cs) && /spiritElements\.contactSearch\.create\(/.test(ct),
     noGzip: !/encode gzip/.test(code('bash/face-setup')),
     logoutTwoPress: /data-armed|[A-Za-z]Armed\b/.test(login) && /armUntilElsewhere/.test(login),
     capacityDoc: /three/i.test(raw('README/CAPACITY.md')) && /at rest|at-rest/i.test(raw('README/CAPACITY.md')) && /G30\.15/.test(raw('README/CAPACITY.md')),
   };
   const missing = Object.keys(checks).filter(function (k) { return !checks[k]; });
   if (!missing.length)
-    test.check('owner events wired to the face, 🤓 and the tab title, at-rest measured at boot, the status parts and the allocation screen, peerFind on open, no gzip, Log out two-press, CAPACITY.md');
+    test.check('owner events wired to the face, 🤓 and the tab title, at-rest measured at boot, the status parts and the allocation screen, the contact list filled when drawn, no gzip, Log out two-press, CAPACITY.md');
   else test.fail(OWED + 'missing: ' + missing.join(', '));
 
   // Found on spirit-3 (box v16; Andy: "a do-nothing interface", "disc should be measured in GB"): the screen showed what

@@ -26,8 +26,9 @@ const hubModule = require('../run/js/hub');
 
 const RELAY = 'http://relay-a.example';
 const SLOTS = peerRank.SLOTS;
-// goal/G29.17: the peer search answers the shared shape {items: [{key, label}]}, each label the row as JSON.
-function rowsOf(body) { return ((body && body.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } }); }
+// goal/G29.17: the search answers the shared shape {items: [{key, label}]}, each label the row as JSON; the key is the
+// public key (goal/G30.19: contact.search's label does not repeat it).
+function rowsOf(body) { return keyed(body); }
 
 function makeHome() {
   const H = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-searchmem-'));
@@ -49,23 +50,22 @@ function relayAnswering(rows) {
   };
 }
 
+// SINCE goal/G30.19 THE SEARCH IS contact.search, IN TWO TIERS: memory (the book and the shadow) answers at once, and the
+// relays' rows follow as the peer-search job's updates, noted in the shadow. So "the relays lead, memory fills in"
+// became "memory answers now, the relays' rows follow and are remembered". settle waits for the walk.
+function settle() { return new Promise(function (r) { setTimeout(r, 30); }); }
 function search(H, q, router) {
-  return new Promise(function (resolve) {
-    const res = {
-      status: 0,
-      writeHead: function (s) { res.status = s; },
-      setHeader: function () {},
-      end: function (b) {
-        let parsed = null;
-        try { parsed = JSON.parse(b); } catch (e) { parsed = { raw: String(b) }; }
-        resolve({ status: res.status, body: parsed });
-      },
-    };
-    hubModule.createHub(H).handleSearch({}, res,
-      function () { return Promise.resolve({ q: q }); },
-      { router: router });
-  });
+  const net = [];
+  const jobs = {
+    createJob: function (kind, type) { return { id: 'job_1', type: type, data: {} }; },
+    updateJob: function (id, patch) { if (patch && patch.data && patch.data.item) net.push(patch.data.item); return null; },
+  };
+  let body = null;
+  try { body = hubModule.createHub(H).contactSearch({ q: q }, { jobs: jobs, router: router }); }
+  catch (e) { body = { status: 500, error: e.message }; }
+  return settle().then(function () { return { status: body.status, body: body, net: net }; });
 }
+function keyed(body) { return ((body && body.items) || []).map(function (i) { let r = {}; try { r = JSON.parse(i.label); } catch (e) { r = {}; } r.publicKey = i.key; return r; }); }
 
 function byKey(list, key) {
   return (list || []).filter(function (r) { return r.publicKey === key; })[0] || null;
@@ -92,24 +92,28 @@ async function run() {
   S.note('K-FRIEND-0', { at: 'RK-B', label: 'bella friend 0', present: false });
   const seenBefore = S.get('K-MEM').seen;
 
-  test.subHeading('Online: the relays lead, memory fills in');
+  test.subHeading('Online: memory answers now, the relays\' rows follow');
 
   const live = relayAnswering([{ publicKey: 'K-LIVE', publicLabel: 'bella live' }]);
   const on = await search(H, 'bella', live);
   const m = rowsOf(on.body);
 
-  const liveRow = byKey(m, 'K-LIVE');
-  if (on.status === 200 && liveRow && !liveRow.fromMemory && liveRow.publicLabel === 'bella live' &&
-      m.filter(function (r) { return r.publicKey === 'K-LIVE'; }).length === 1) {
-    test.check('a peer the relay answered for appears once, as the relay said it — the live row wins over the remembered one');
+  const liveNet = on.net.filter(function (i) { return i.key === 'K-LIVE'; });
+  let liveRow = null;
+  try { liveRow = JSON.parse(liveNet[0].label); } catch (e) { liveRow = null; }
+  if (on.status === 200 && liveNet.length === 1 && liveRow && liveRow.publicLabel === 'bella live' && liveRow.present === true &&
+      m.filter(function (r) { return r.publicKey === 'K-LIVE'; }).length <= 1) {
+    test.check('a peer the relay answered for follows once, as the relay said it, present; memory\'s answer holds it at most once');
   } else {
-    test.fail('live row: ' + JSON.stringify(liveRow));
+    test.fail('live row: ' + JSON.stringify(liveNet) + ', in memory\'s answer ' + m.filter(function (r) { return r.publicKey === 'K-LIVE'; }).length);
   }
+  const after = rowsOf((await search(H, 'bella live', null)).body);
+  if (byKey(after, 'K-LIVE') && /^bella live …/.test(byKey(after, 'K-LIVE').name)) test.check('and the next search finds it in memory under the name the relay gave');
+  else test.fail('after the walk, memory holds K-LIVE as ' + JSON.stringify(byKey(after, 'K-LIVE')));
 
   const mem = byKey(m, 'K-MEM');
-  if (mem && mem.fromMemory === true && mem.present === true && mem.relay === 'http://relay-b.example' &&
-      mem.atKey === 'RK-B' && typeof mem.seenAt === 'string') {
-    test.check('somebody only memory knows is filled in, marked as remembered, dated, with their route');
+  if (mem && mem.book === false && mem.present === true && mem.relay === 'http://relay-b.example' && typeof mem.seenAt === 'string') {
+    test.check('somebody only memory knows is answered at once, marked not in the book, dated, with the relay they were at');
   } else {
     test.fail('memory row: ' + JSON.stringify(mem));
   }
@@ -135,10 +139,10 @@ async function run() {
     test.fail(friends.length + ' friends of ' + (SLOTS + 5) + ', friend 0: ' + JSON.stringify(byKey(friends, 'K-FRIEND-0')));
   }
 
-  if (on.body.remembered === m.filter(function (r) { return r.fromMemory; }).length) {
-    test.check('and the answer counts how many came from memory: ' + on.body.remembered);
+  if (friends.every(function (r) { return r.book === true; }) && m.filter(function (r) { return /^K-STRANGER-|^K-MEM$/.test(r.publicKey); }).every(function (r) { return r.book === false; })) {
+    test.check('and each row says whether the book holds it (the count of remembered rows went with peer.search)');
   } else {
-    test.fail('remembered=' + on.body.remembered);
+    test.fail('book marks: ' + JSON.stringify(m.slice(0, 3)));
   }
 
   if (S.get('K-MEM').seen === seenBefore) {
@@ -148,7 +152,7 @@ async function run() {
   }
 
   const none = await search(H, 'zzzz', live);
-  if ((rowsOf(none.body)).filter(function (r) { return r.fromMemory; }).length === 0) {
+  if ((rowsOf(none.body)).filter(function (r) { return r.book === false; }).length === 0) {
     test.check('memory is matched like a relay: a name nobody has finds nobody');
   } else {
     test.fail('zzzz matched: ' + JSON.stringify(rowsOf(none.body)));
@@ -157,19 +161,17 @@ async function run() {
   test.subHeading('A relay that does not answer: memory answers for it');
 
   const quiet = await search(H, 'bella remembered', relayAnswering(null));
-  if (quiet.status === 200 && byKey(rowsOf(quiet.body), 'K-MEM') &&
-      (quiet.body.silent || []).indexOf(RELAY) !== -1) {
-    test.check('the relay is named as silent, and memory still finds who it can');
+  if (quiet.status === 200 && byKey(rowsOf(quiet.body), 'K-MEM') && quiet.net.length === 0) {
+    test.check('memory still finds who it can, and the silent relay adds nobody');
   } else {
-    test.fail('quiet: ' + JSON.stringify(quiet.body));
+    test.fail('quiet: ' + JSON.stringify(quiet.body) + ', network rows ' + JSON.stringify(quiet.net));
   }
 
   test.subHeading('Not connected at all: memory, instead of a refusal');
 
   const off = await search(H, 'bella remembered', null);
-  if (off.status === 200 && byKey(rowsOf(off.body), 'K-MEM') && off.body.asked === 0 &&
-      (off.body.silent || []).indexOf(RELAY) !== -1) {
-    test.check('a node with no connection answers from memory (it used to answer 503), asking nobody and saying so');
+  if (off.status === 200 && byKey(rowsOf(off.body), 'K-MEM') && off.net.length === 0) {
+    test.check('a node with no connection answers from memory (it used to answer 503), asking nobody');
   } else {
     test.fail('offline: ' + off.status + ' ' + JSON.stringify(off.body));
   }

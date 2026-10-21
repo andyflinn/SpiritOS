@@ -15,6 +15,8 @@
 //     present, acquiredVia, fromMemory, ...}; key is the public key. q, asked, remembered and silent stay beside items.
 //   - the old graded search stays while the other old searches still need it; peerSearch.js goes. (All of it is
 //     gone since goal/G29.22.)
+// SINCE goal/G30.19 peer.search is gone: the network search is tier two of contact.search, its rows the peer-search
+// job's updates in the same shape; Contacts' one list (contactSearch) is the panel. Sections 3 and 4 assert that.
 // rule/11: through testSupport only.
 
 const fs = require('fs');
@@ -70,28 +72,26 @@ const ranker = code('js/peerRank.js');
 if (/probabilityStringObjectMatch/.test(ranker) && /probabilityBucket/.test(ranker) && !/gradedSearch/.test(ranker)) test.check('peerRank uses the probability modules, not the graded search');
 else test.fail(OWED + 'peerRank does not stand on the probability modules');
 
-test.subHeading('3. peer.search answers the shared shape');
+test.subHeading('3. the network search answers the shared shape (contact.search, goal/G30.19)');
 const server = code('js/server.js');
-// The peer family's search in the flat door's tables since goal/G30.5: 'search' under peer, the one whose reply carries
-// the question back (q) and the relays that could not answer (silent).
-const decl = (/'search':\s*\{\s*request:\s*\{\s*q:\s*''\s*\},\s*reply:\s*\{\s*q:[^\n]*silent[^\n]*/.exec(server) || [''])[0];
-if (/items:\s*\[\s*\{\s*key:\s*''\s*,\s*label:\s*''\s*\}\s*\]/.test(decl) && /more:\s*false/.test(decl) && !/matches:/.test(decl)) test.check('server.js declares peer.search answering {items: [{key, label}], more, ...}');
+// contact.search in the flat door's tables: q and the state filters in, the shared shape out.
+const decl = (/'search':\s*\{\s*request:\s*\{\s*q:\s*'',\s*owned[^\n]*/.exec(server) || [''])[0];
+if (/items:\s*\[\s*\{\s*key:\s*''\s*,\s*label:\s*''\s*\}\s*\]/.test(decl) && /more:\s*false/.test(decl) && /hub\.contactSearch\(/.test(decl)) test.check('server.js declares contact.search answering {items: [{key, label}], more, ...}');
 else test.fail(OWED + 'server.js declares ' + short(decl));
-if (/items:\s*/.test((/res\.end\(JSON\.stringify\(\{\s*q:\s*q,[\s\S]{0,300}/.exec(hub) || [''])[0])) test.check('hub.js answers items');
-else test.fail(OWED + 'hub.js\'s peer.search answer carries no items');
+if (/item:\s*\{\s*key:\s*row\.publicKey,\s*label:\s*label\s*\}/.test(hub)) test.check('each network row is one peer-search job update in the same shape, {key, label}');
+else test.fail(OWED + 'the network search\'s rows are not {key, label}');
 const onboard = code('process/js/desk/onboard.js');
-if (!/body\.matches/.test(onboard) && /body\.items/.test(onboard)) test.check('the desk\'s onboard reads items');
-else test.fail(OWED + 'process/js/desk/onboard.js still reads matches');
+if (!/body\.matches/.test(onboard) && /body\.items/.test(onboard) && /'contact\.search'/.test(onboard)) test.check('the desk\'s onboard reads items, from contact.search');
+else test.fail(OWED + 'process/js/desk/onboard.js still reads matches or asks peer.search');
 
-test.subHeading('4. the Contacts panel is the shared list');
+test.subHeading('4. Contacts\' one list is the standard list-tool');
 const contacts = code('shell/contacts/contacts.js');
-if (!/id="contacts-seen-q"/.test(contacts) && !/id="contacts-seen-go"/.test(contacts)) test.check('the panel\'s own input and Search button are gone');
-else test.fail(OWED + 'Find someone on the network still has its own input or Search button');
-// The panel is the shell element peerFind since goal/G30.1 (box v39); Contacts draws it with its own Add class.
-const finder = code('shell/js/peerFind.js');
-if (/spiritElements\.peerFind\.create\(/.test(contacts) && /shellCreateListSearch\(/.test(finder) && /'peer\.search'/.test(finder) && !/function contactsSearchSeen\(/.test(contacts)) test.check('the panel draws through the shared list, asking peer.search');
-else test.fail(OWED + 'the panel does not draw through the shared list');
-if (/contacts-seen-add/.test(contacts) && /function saidCell\(/.test(finder)) test.check('a row still has its Add and the sentence the node said about itself');
-else test.fail(OWED + 'the row lost Add or the said cell');
+if (!/id="contacts-seen-q"/.test(contacts) && !/id="contacts-seen-go"/.test(contacts) && !/contacts-seen-section/.test(contacts)) test.check('the panel\'s own input, Search button and fold are gone');
+else test.fail(OWED + 'Find someone on the network still has its own input, Search button or fold');
+const finder = code('shell/js/contactSearch.js');
+if (/spiritElements\.contactSearch\.create\(/.test(contacts) && /spiritElements\.probabilitySearch\.create\(/.test(finder) && /'contact\.search'/.test(finder) && !/function contactsSearchSeen\(/.test(contacts)) test.check('the list draws through the list-tool, asking contact.search');
+else test.fail(OWED + 'the list does not draw through the list-tool');
+if (/data-action="add"/.test(code('shell/js/rows/contactElement.js')) && /function askCard\(/.test(finder) && /card: true/.test(finder)) test.check('a network row has its Add, and pressing it asks that node who it is');
+else test.fail(OWED + 'a network row lost Add or the card it asks');
 
 test.reportSuccessFailureCount();

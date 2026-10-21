@@ -59,10 +59,11 @@ test.subHeading('3. Natter searches');
 // Natter retired (section 7), so its list with it: relays are searched in the Contacts list of peers seen, which is
 // the shared list search.
 const contactsList = code('shell/contacts/contacts.js');
-// The list of peers seen is the shell element peerFind since goal/G30.1 (box v39); Contacts draws it.
-const finder = code('shell/js/peerFind.js');
-if (/contactsSeenList = window\.spiritElements\.peerFind\.create\(/.test(contactsList) && /shellCreateListSearch\(/.test(finder) && !natterApp())
-  test.check('relays are searched in the Contacts list of peers seen, the shared list search');
+// The list of peers seen was the shell element peerFind (goal/G30.1, box v39); since goal/G30.19 it is Contacts' one
+// list, contactSearch, on the standard list-tool.
+const finder = code('shell/js/contactSearch.js');
+if (/spiritElements\.contactSearch\.create\(/.test(contactsList) && /spiritElements\.probabilitySearch\.create\(/.test(finder) && !natterApp())
+  test.check('relays are searched in Contacts\' one list, on the standard list-tool');
 else test.fail(OWED + 'relays are not searched through the shared list');
 const relaySearch = (/function relaySearch\(body, deps\) \{[\s\S]*?\n  \}/.exec(hub) || [''])[0];
 if (/label:\s*JSON\.stringify\(/.test(relaySearch)) test.check('relay.search answers each row\'s label as JSON');
@@ -144,10 +145,12 @@ try {
 } catch (e) { added = { threw: e.message }; }
 if (added && added.kind === 'relay' && added.at === 'https://added.example') test.check('a relay added to the list enters the shadow as a relay peer too');
 else test.fail(OWED + 'an added relay in the shadow: ' + short(added));
-if (/kind:/.test((/function fromMemory[\s\S]*?\n  \}/.exec(hub) || [''])[0])) test.check('peer.search rows carry kind in their label');
-else test.fail(OWED + 'peer.search rows carry no kind');
-const contacts = code('shell/contacts/contacts.js');
-if (/kind\s*===\s*'relay'/.test(finder) && /callDialog\('shell\/natterDetails'/.test(finder)) test.check('the Contacts list of peers seen has a relay filter, and a relay opens natterDetails');
+// Since goal/G30.19 the shadow's rows are contact.search's (strangerLabel), peer.search being gone.
+if (/kind:/.test((/function fromMemory[\s\S]*?\n  \}/.exec(hub) || [''])[0]) && /kind: row\.kind/.test((/function strangerLabel[\s\S]*?\n  \}/.exec(hub) || [''])[0]))
+  test.check('the shadow\'s rows carry kind in their label');
+else test.fail(OWED + 'the shadow\'s rows carry no kind');
+const contactRow = code('shell/js/rows/contactElement.js');
+if (/value: 'relay', word: 'relays'/.test(finder) && /callDialog\('shell\/natterDetails'/.test(contactRow)) test.check('Contacts\' one list has a relay filter, and a relay row opens natterDetails');
 else test.fail(OWED + 'the Contacts peer list has no relay filter or no way to natterDetails');
 
 // NATTER RETIRES (the box, v20; Andy, 2026-10-20: "i feel like killing natter now, and putting the add-relay into
@@ -164,15 +167,17 @@ const selector = code('shell/js/contactSelector.js');
 if (/name: 'show'/.test(selector) && /value: 'relay', word: 'relays'/.test(selector) && /value: 'owned'/.test(selector) && !/name: 'owned'|name: 'relay'/.test(selector))
   test.check('the contact selector has one row of mutually exclusive choices: all, my puppets, relays (and blocked, held when present)');
 else test.fail(OWED + 'the contact selector has no relay filter, or still two all buttons');
-const contactsCode = code('shell/contacts/contacts.js');
-if (/function contactsSearchBookFor[\s\S]{0,900}relay\.search/.test(contactsCode) && /contactsRelayUrls\[contactsBook\.value\][\s\S]{0,200}shell\/natterDetails/.test(contactsCode))
+// Since goal/G30.19 Contacts' one list (contactSearch) asks relay.search beside contact.search, and a relay row's
+// element opens natterDetails.
+const contactsCode = code('shell/js/contactSearch.js');
+if (/function search\(args\)[\s\S]{0,900}'relay\.search'/.test(contactsCode) && /relay \? \[[\s\S]{0,300}shell\/natterDetails/.test(contactRow))
   test.check('the contact list adds this node\'s relays (relay.search) and a relay row opens natterDetails');
 else test.fail(OWED + 'the contact list shows no relays, or a relay row opens no natterDetails');
 
 // Andy, 2026-10-20: on noderoutes he got Block and Forget ("It also allows me to block or forget a relay that i have a
 // seat on..... not optimal...."): a relay's book row (added before relays were peers) gives way to the relay row, and
 // the network search offers no Add for a relay.
-if (/relayKey: relayKeys\.pinned\(rootDir, row\.url\)/.test(hub) && /!relayKeys\[i\.key\]/.test(contactsCode) && /c\.kind === 'relay' \? '<span class="muted">a relay<\/span>'/.test(finder))
+if (/relayKey: relayKeys\.pinned\(rootDir, row\.url\)/.test(hub) && /!relayKeys\[i\.key\]/.test(contactsCode) && /v\.book === false && v\.kind !== 'relay'/.test(contactRow))
   test.check('a relay\'s book row gives way to its relay row (matched by the relay key relay.search now carries), and a relay has no Add');
 else test.fail(OWED + 'a relay can still show as a book contact, or be added to the book');
 
@@ -185,11 +190,12 @@ else test.fail(OWED + 'Natter is still there: its app files ' + !natterGone + ',
 const contactsSrc = fs.existsSync(path.join(RUN, 'shell', 'contacts', 'contacts.js')) ? fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8') : '';
 // The panels as the page draws them: each a <details> whose <summary> carries its title; the new one is named
 // contacts-relay-add-summary here.
-const iFind = contactsSrc.indexOf('<summary id="contacts-seen-summary">Find someone on the network');
+// Since goal/G30.19 Find someone on the network is the one list on top (contacts-book), its fold gone.
+const iFind = contactsSrc.indexOf('<div id="contacts-book"');
 const iAdd = contactsSrc.indexOf('<summary id="contacts-relay-add-summary">Add a relay');
 const iWrite = contactsSrc.indexOf('<summary id="contacts-unknown-summary">People who write and are not in this book');
 if (iFind !== -1 && iAdd > iFind && iWrite > iAdd && /relay\.add/.test(code('shell/contacts/contacts.js')))
-  test.check('Contacts has the Add a relay panel below Find someone on the network and before People who write, adding through relay.add');
+  test.check('Contacts has the Add a relay panel below the one list and before People who write, adding through relay.add');
 else test.fail(OWED + 'the Add a relay panel is not in Contacts where the box puts it (' + [iFind, iAdd, iWrite].join(', ') + ')');
 
 test.subHeading('8. a relay you own, or hold a seat on, stays on the list');

@@ -188,6 +188,8 @@ function createFaceHome(opts) {
     if (!job) return 0;
     if (job.type === 'fs-watcher') return FACE_PRIORITY.fs;
     if (job.type === 'server-stats') return FACE_PRIORITY.stats;
+    // The network search's rows (goal/G30.19), each one update, beside presence: Contacts on the face fills as at home.
+    if (job.type === 'peer-search') return FACE_PRIORITY.presence;
     if (/^process\/js\/[^/]+$/.test(String(job.module || '')) && job.app && typeof job.app === 'object') return FACE_PRIORITY.app;
     return 0;
   }
@@ -219,6 +221,11 @@ function createFaceHome(opts) {
     if (p) toFaces(p, { event: 'job-updated', data: job });
   }
   if (jobs && jobs.events) jobs.events.on('job-updated', onJob);
+  // A CONTACT RENAMED (goal/G30.19), as the loopback shell gets it on its 'contact.rename' line (hub.contactRenames), so
+  // a contactElement on the face repaints its label like one at home.
+  if (o.renames && typeof o.renames.subscribe === 'function') {
+    o.renames.subscribe(function (row) { if (row && row.key) toFaces(FACE_PRIORITY.presence, { event: 'contact.rename', data: row }); });
+  }
 
   // The face opened: one long upload, and first what a loopback shell gets on connect, the tree as commands (server.js
   // handleSseConnection), presence peer by peer, the app servers' objects.

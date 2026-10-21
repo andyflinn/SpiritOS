@@ -1522,6 +1522,7 @@ contactBook.syncMarks(ROOT_DIR);
       identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
       relayKey: function (url) { return relayKeys.pinned(ROOT_DIR, url) || ''; },
       jobs: jobs,
+      renames: hub.contactRenames,
       log: function (line) { console.log(line); },
     });
 
@@ -2151,7 +2152,7 @@ contactBook.syncMarks(ROOT_DIR);
   loopbackVerbs.mount('contact', path.join(__dirname, 'contact'), {
     // The book, searched: peer.list is gone (puppets/G2). Never asks a
     // relay; that is peer.search's job.
-    'search': { request: { q: '', owned: '', blocked: '', held: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, selfTail: '' }, handler: proxyVerb(function (b) { return hub.contactSearch(b); }) },
+    'search': { request: { q: '', owned: '', blocked: '', held: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, selfTail: '' }, handler: proxyVerb(function (b) { return hub.contactSearch(b, { jobs: jobs, router: peerRouter }); }) },
     'get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
     'block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
     'unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
@@ -2197,16 +2198,8 @@ contactBook.syncMarks(ROOT_DIR);
       hub.handlePost(rq, rs, readJsonBody, { router: peerRouter });
     } },
     'acquire': { request: { publicKey: '', publicLabel: '', url: '', via: '' }, reply: { publicKey: '', publicLabel: '', acquiredVia: '' }, handler: function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); } },
-    // Ask every relay who matches, rather than downloading every
-    // roll to find out. See hub.handleSearch.
-    //
-    // `peer.candidates` STOOD BESIDE THIS and answered the same question
-    // by downloading every roll on every relay and partner. Deleted
-    // 2026-09-17 with no caller — see the tombstone in hub.js.
-    // THE SHARED SHAPE (goal/G29.17): items [{key: public key, label: the row as json}], best match first.
-    'search': { request: { q: '' }, reply: { q: '', items: [{ key: '', label: '' }], more: false, asked: 0, remembered: 0, silent: [''] }, handler: function (rq, rs) {
-      hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter });
-    } },
+    // peer.search STOOD HERE: the network search is tier two of contact.search now (goal/G30.19, Andy: "interface
+    // change/reduction approved.").
   }, { wire: true, by: 'hub.js' });
 }
 

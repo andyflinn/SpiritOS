@@ -22,8 +22,9 @@
 //      written by presenceNode (its caller noted the route already).
 //   5. Contacts paints the dot from the proof: present true green, false red, no proof white; its title names the
 //      state as before (the age may follow later — not asserted).
-//      SINCE goal/G29.6 the book is the peer picker (contactSelector on the shared list), which draws green or white:
-//      present true green, false white with the absent title, no proof white. Red for absent is gone by design.
+//      SINCE goal/G30.19 Contacts is the one list (shell/js/contactSearch.js) and each row is a contactElement
+//      (shell/js/rows/contactElement.js) that paints its own dot from the relay-presence job: present true green,
+//      false red, no proof white. Contacts paints no dot itself.
 // Suites asserting the old shape (presence[key] === true: presenceNode, presenceReconcile, presenceFeeding,
 // presenceWire and friends) go red on the build and are flipped to the proof by the builder — the handover.
 
@@ -93,17 +94,46 @@ function node() {
   return { me: me, P: P, jobs: jobs, noted: noted, streams: streams };
 }
 
-// The Contacts page, mounted as spirit/test/contactsFilter.js mounts it, its jobs subscription captured.
+// The Contacts page, mounted as spirit/test/contacts.js mounts it (goal/G30.19: the one list, its rows contactElements),
+// the jobs subscription captured. The stand-in page is contacts.js's: an element keeps its html, listeners and
+// attributes; a table written into it makes its rows elements (tr[data-key], each td[data-field]), where a row paints.
 function mountContacts(people) {
   const byId = {};
-  function fakeElement(id) {
+  function fakeElement(id, attrs) {
     let html = '';
-    const el = { id: id || '', value: '', textContent: '', style: {}, dataset: {}, children: [], listeners: {}, hidden: false, className: '',
+    const attributes = Object.assign({}, attrs || {});
+    let rows = {};
+    const el = { id: id || '', value: '', textContent: '', style: {}, dataset: {}, listeners: {}, hidden: false, className: '', scrollTop: 0,
       addEventListener: function (ev, fn) { (el.listeners[ev] = el.listeners[ev] || []).push(fn); },
-      fire: function (ev, arg) { (el.listeners[ev] || []).forEach(function (fn) { fn(arg || {}); }); },
-      dispatchEvent: function (event) { el.fire(event.type, event); return true; }, contains: function () { return true; },
-      appendChild: function (c) { el.children.push(c); return c; }, focus: function () {} };
-    Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
+      fire: function (ev, arg) { (el.listeners[ev] || []).slice().forEach(function (fn) { fn(arg || {}); }); },
+      getAttribute: function (name) { return Object.prototype.hasOwnProperty.call(attributes, name) ? attributes[name] : null; },
+      focus: function () {},
+      closest: function (selector) { return selector === '[data-key]' && attributes['data-key'] != null ? el : null; },
+      querySelector: function (selector) { const m = /^tr\[data-key="([^"]*)"\]$/.exec(selector); return m && rows[m[1]] ? rows[m[1]] : null; },
+      querySelectorAll: function (selector) { return selector === 'td[data-field]' ? (el.cells || []) : []; },
+      rows: function () { return rows; } };
+    Object.defineProperty(el, 'innerHTML', {
+      get: function () { return html; },
+      set: function (v) {
+        html = String(v);
+        rows = {};
+        const trs = /<tr data-key="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g;
+        let t;
+        while ((t = trs.exec(html))) {
+          const tr = fakeElement('', { 'data-key': t[1] });
+          tr.cells = [];
+          const tds = /<td data-field="([^"]*)"([^>]*)>([\s\S]*?)<\/td>/g;
+          let d;
+          while ((d = tds.exec(t[2]))) {
+            const title = /title="([^"]*)"/.exec(d[2]);
+            const td = fakeElement('', title ? { 'data-field': d[1], title: title[1] } : { 'data-field': d[1] });
+            td.innerHTML = d[3];
+            tr.cells.push(td);
+          }
+          rows[t[1]] = tr;
+        }
+      },
+      enumerable: true });
     return el;
   }
   const doc = { byId: byId, activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); } };
@@ -111,61 +141,52 @@ function mountContacts(people) {
     const sent = (function () { try { return JSON.parse((init && init.body) || '{}'); } catch (e) { return {}; } })();
     let answer;
     if (sent.verb === 'contact.search') { const r = hubModule.searchPeople(people, sent.q, sent); answer = { ok: true, items: r.items, more: r.more, selfTail: null }; }
+    else if (sent.verb === 'relay.search') answer = { ok: true, items: [], more: false };
     else if (sent.verb === 'contact.senders') answer = { ok: true, policy: 'silent' };
-    else answer = { ok: true, people: people, selfTail: null, matches: [] };
+    else answer = { ok: true };
     const t = JSON.stringify(answer);
     return Promise.resolve({ status: 200, text: function () { return Promise.resolve(t); }, json: function () { return Promise.resolve(JSON.parse(t)); } });
   };
   let behavior = null;
-  let subscriber = null;
+  const subscribers = [];
   const shellSpirit = {
-    shell: { activateApp: function (b) { behavior = b; }, fileInfoRow: function (l, v) { return '<div>' + l + v + '</div>'; }, factRow: function () { return ''; } },
+    shell: { activateApp: function (b) { behavior = b; } },
     core: {
       ask: test.browserAsk(fakeFetch),
       util: { escapeHtml: spirit.core.util.escapeHtml, formatBytes: spirit.core.util.formatBytes },
       const: { ICON: spirit.core.const.ICON },
-      jobs: { subscribe: function (s) { subscriber = s; return function () {}; } },
+      jobs: { subscribe: function (s) { subscribers.push(s); return function () {}; } },
     },
   };
-  // THE PICKER AS THE SHELL GIVES IT (goal/G29.6): the book is a contactSelector pane on the shared list, so the page
-  // loads the probability modules, listSearch.js and contactSelector.js, and the app gets the selector as api.ui.elements.
+  // THE LIST AS THE SHELL GIVES IT (goal/G30.19): the scripts index.html loads for it, in its order, no module and no
+  // process, as in a page; then the app.
   const RUN = path.join(__dirname, '..', 'run');
-  const win = {};
-  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
+  const win = { spirit: shellSpirit };
+  ['js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
+    'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js'].forEach(function (rel) {
+    new Function('spirit', 'document', 'window', 'module', 'process', fs.readFileSync(path.join(RUN, rel), 'utf8'))(shellSpirit, doc, win, undefined, undefined);
   });
-  new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(doc, win);
-  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'))(shellSpirit, doc, win);
-  // Find someone on the network is the shell element peerFind since goal/G30.1 (box v39): the page's window carries it.
-  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'peerFind.js'), 'utf8'))(shellSpirit, doc, win);
   new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, win, fakeFetch);
   const api = {
-    ui: { elements: { createContactSelector: win.spiritElements.createContactSelector } },
-    verb: function (name, args) {
-      const payload = { verb: String(name) };
-      if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
-      return fakeFetch('/api/spirit', { method: 'POST', body: JSON.stringify(payload) }).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t, body: JSON.parse(t) }; }); });
-    },
+    verb: function (name, args) { return shellSpirit.core.ask(name, args); },
     escapeHtml: spirit.core.util.escapeHtml, launchApp: function () {}, callDialog: function () { return Promise.resolve(null); },
-    peerPost: function () { return Promise.resolve({ ok: false }); }, readProject: function () { return null; },
-    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    peerPost: function () { return Promise.resolve({ ok: false }); },
   };
   behavior.mount(fakeElement('container'), api, null);
-  return { doc: doc, feed: function (job) { if (subscriber && subscriber.onUpdate) subscriber.onUpdate(job); } };
+  const pane = doc.getElementById('contacts-book');
+  const pre = (/id="(probsearch-\d+-)text"/.exec(pane.innerHTML) || [])[1] || '';
+  return { doc: doc, list: function () { return doc.getElementById(pre + 'list'); },
+    feed: function (job) { subscribers.forEach(function (s) { if (s && s.onUpdate) s.onUpdate(job); }); } };
 }
 function person(key, label) { return { publicKey: key, publicLabel: label, caption: label, myLabel: '', choice: 'added', blocked: false, present: null }; }
-// The presence cell of one row in the picker's list (goal/G29.6: <tr data-key>, cells ★, presence, name, status): the
-// second cell, its glyph and its title.
-function dotOf(doc, key) {
-  // The book's list, whichever the page made it as: the network search (peerFind) makes its own list too.
-  let html = '';
-  for (let n = 1; n <= 5 && html.indexOf('data-key="' + key + '"') === -1; n += 1) html = doc.getElementById('listsearch-' + n + '-list').innerHTML;
-  const i = html.indexOf('data-key="' + key + '"');
-  if (i === -1) return '';
-  const row = html.slice(i, html.indexOf('</tr>', i));
-  const cells = row.match(/<td[^>]*>[^<]*<\/td>/g) || [];
-  const m = /<td class="icon-cell"(?: title="([^"]*)")?>([^<]*)<\/td>/.exec(cells[1] || '');
-  return m ? m[2] + ' | ' + (m[1] || '') : '';
+// The presence cell of one row in the list (goal/G30.19: <tr data-key>, cells presence, status, label, add) as its
+// contactElement painted it: its glyph and its title.
+function dotOf(page, key) {
+  const tr = page.list().rows()[key];
+  const td = tr && tr.cells.filter(function (c) { return c.getAttribute('data-field') === 'presence'; })[0];
+  if (!td) return '';
+  const title = td.getAttribute('title') || ((/title="([^"]*)"/.exec(td.innerHTML) || [])[1]) || '';
+  return td.innerHTML.replace(/<[^>]*>/g, '') + ' | ' + title;
 }
 
 test.startTest('goal/G2.9: timestamped presence-proof per ID, sent to the browser and persisted alike');
@@ -235,14 +256,14 @@ test.startTest('goal/G2.9: timestamped presence-proof per ID, sent to the browse
   page.feed({ id: 'job_9', type: 'relay-presence', kind: 'permanent', data: { presence: table } });
   await settled();
   const ICON = spirit.core.const.ICON;
-  const db = dotOf(page.doc, BERT), dc = dotOf(page.doc, CAROL), dd = dotOf(page.doc, DAVE);
-  // goal/G29.6: the picker draws green or white, so carol's absent proof is white; the red dot is gone by design, and
-  // what she was said to be rides on the title below.
-  if (db.indexOf(ICON.GREEN_CIRCLE) === 0 && dc.indexOf(ICON.WHITE_CIRCLE) === 0 && dd.indexOf(ICON.WHITE_CIRCLE) === 0) {
-    test.check('bert green, carol white (absent), dave white — from proofs, not booleans');
+  const db = dotOf(page, BERT), dc = dotOf(page, CAROL), dd = dotOf(page, DAVE);
+  // goal/G30.19: each row's contactElement paints its dot from the proof: present green, absent red, no proof white.
+  if (db.indexOf(ICON.GREEN_CIRCLE) === 0 && dc.indexOf(ICON.RED_CIRCLE) === 0 && dd.indexOf(ICON.WHITE_CIRCLE) === 0) {
+    test.check('bert green, carol red (absent), dave white — from proofs, not booleans, painted by each row');
   } else test.fail(OWED + 'dots from proofs: bert ' + describe(db) + ', carol ' + describe(dc) + ', dave ' + describe(dd));
+  // Contract 5: the title names the state as before.
   if (/present/.test(db) && /absent/.test(dc)) test.check('and the titles still name the state');
-  else test.fail(OWED + 'titles: bert ' + describe(db) + ', carol ' + describe(dc));
+  else test.fail('titles: bert ' + describe(db) + ', carol ' + describe(dc) + ' — contactElement paints the dot glyph with no title, so the state is named nowhere but by colour');
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
 });

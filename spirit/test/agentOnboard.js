@@ -94,7 +94,7 @@ function verb(port, body) {
   };
   return once().then(function (r) { return r.status ? r : sleep(200).then(once); });
 }
-// A stand-in node for goal/G19.15's label checks: it holds its seat, has a key, and answers peer.search with the
+// A stand-in node for goal/G19.15's label checks: it holds its seat, has a key, and answers contact.search with the
 // matches given. Anything else is a 500, so a run that went past the desk search would say so.
 function fakeNode(matches) {
   const server = require('http').createServer(function (req, res) {
@@ -106,7 +106,8 @@ function fakeNode(matches) {
       const answers = {
         'relay.get': { ok: true, relay: { claimed: true } },
         'node.card': { publicKey: 'MCowBQYDK2VwAyEAagentOnboardStandInAAAAAAAAAAAAAAAAAAAAA=' },
-        'peer.search': { q: b.q, items: matches.map(function (m) { return { key: m.publicKey, label: JSON.stringify(m) }; }), more: false, asked: 1, remembered: 0, silent: [] },
+        // contact.search since goal/G30.19 (peer.search is gone): the key beside the row as json.
+        'contact.search': { ok: true, items: matches.map(function (m) { return { key: m.publicKey, label: JSON.stringify(m) }; }), more: false, selfTail: '' },
       };
       const a = answers[b.verb];
       res.writeHead(a ? 200 : 500, { 'Content-Type': 'application/json' });

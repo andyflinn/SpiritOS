@@ -209,9 +209,11 @@ const listHtml = function (p, m) {
   if (/data-key="K-chat"/.test(l3a) && /data-key="K-own"/.test(l3b) && /Ownrow/.test(l3b) && !asks3.length) test.check('options.search rows without a label, and options.contacts rows, are listed without asking the node');
   else test.fail(OWED + 'own rows read ' + short([l3a, l3b, asks3]));
 
-  test.subHeading('10. Contacts lists its book with the picker');
+  // Since goal/G30.19 Contacts' book is its one list, contactSearch (the book, the shadow and the network), not the
+  // picker; the rule this section kept stands: no state words read off a label.
+  test.subHeading('10. Contacts lists its book with the one list');
   const contacts = strip(fs.readFileSync(path.join(RUN, 'shell', 'contacts', 'contacts.js'), 'utf8'));
-  if (/createContactSelector\(\s*\{[^}]*face:\s*['"]pane['"]/.test(contacts) && !/CONTACTS_STATE_BLOCKED|CONTACTS_STATE_WAITING|contactsLabelHtml/.test(contacts)) test.check('Contacts\' book is a contactSelector pane; it reads no state words off a label');
+  if (/spiritElements\.contactSearch\.create\(/.test(contacts) && !/CONTACTS_STATE_BLOCKED|CONTACTS_STATE_WAITING|contactsLabelHtml/.test(contacts)) test.check('Contacts\' book is its one list (contactSearch); it reads no state words off a label');
   else test.fail(OWED + 'Contacts still draws its own book table from label words');
   const sel = strip(fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'));
   if (!/contact-selector-rows|contact-selector-search/.test(sel) && !/createContactLabel/.test(sel)) test.check('the selector draws no list or search box of its own any more');

@@ -10,16 +10,14 @@
 //   1. The term stays in the box; while it stands, the list follows it live as he types (an input event, no Search
 //      press needed).
 //   2. A small × at the right of the box clears the term and brings the whole list back.
-//   3. The network search below is untouched.
-// SINCE goal/G29.6 THE BOX IS THE PEER PICKER'S. Andy, 2026-10-17: "no fucking protecting old design." The book is a
-// contactSelector pane on the shared list (shell/shared/js/listSearch.js, goal/G29.4): its own text box and its ✕
-// (listsearch-<n>-text, listsearch-<n>-clear) replace contacts-book-q and contacts-book-clear, and the list RANKS from
-// its cache as he types — "best matches on top, every row the filters let through shown" (the list's box) — then asks
-// contact.search with the words. So "shows Carol alone" became "Carol on top, and the node asked for carol"; Escape is
-// not part of the shared list and is dropped here (goal/G29.6).
-// Driven as spirit/test/contacts.js drives the app: the script loaded with fake document, api and fetch, the fake
-// answering contact.search the way the node would (hub.searchPeople), the picker loaded as the shell loads it, and its
-// real handlers fired.
+// SINCE goal/G30.19 THE BOX IS THE ONE LIST'S. The contactSelector pane and the separate network search (peerFind) are
+// deleted: Contacts draws shell/js/contactSearch.js on the standard list tool (shell/js/probabilitySearch.js), whose
+// own text box and ✕ (probsearch-<n>-text, probsearch-<n>-clear) are the ones meant here. The list RANKS from its cache
+// as he types, best on top and nothing cut, then asks contact.search with the words — so "shows Carol alone" is "Carol
+// on top, and the node asked for carol". The network is the same search's second tier, not a box below.
+// Driven as spirit/test/contacts.js drives the app: the scripts index.html loads for the list, then the app, into a
+// stand-in page, the fake answering contact.search the way the node would (hub.searchPeople), and its real handlers
+// fired. rule/11: through testSupport only.
 
 const fs = require('fs');
 const path = require('path');
@@ -34,66 +32,73 @@ const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
 const CAROL = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
 const DAVE = 'MCowBQYDK2VwAyEAdavedavedavedavedavedavedavedavedave=';
 
-function fakeElement(id) {
+// THE STAND-IN PAGE, as spirit/test/contacts.js keeps it: an element keeps its html, listeners and attributes; a table
+// written into it makes its rows elements of their own (tr[data-key], each td[data-field]), where a row paints.
+function fakeElement(id, attrs) {
   let html = '';
+  const attributes = Object.assign({}, attrs || {});
+  let rows = {};
   const el = {
-    id: id || '', value: '', textContent: '', style: {}, dataset: {}, children: [], listeners: {}, hidden: false, className: '',
+    id: id || '', value: '', textContent: '', style: {}, dataset: {}, listeners: {}, hidden: false, className: '', scrollTop: 0,
     addEventListener: function (event, fn) { (el.listeners[event] = el.listeners[event] || []).push(fn); },
-    appendChild: function (child) { el.children.push(child); return child; },
-    fire: function (event, arg) { (el.listeners[event] || []).forEach(function (fn) { fn(arg || {}); }); },
-    dispatchEvent: function (event) { el.fire(event.type, event); return true; },
-    contains: function () { return true; },
-    click: function () { el.fire('click'); }, focus: function () {},
+    fire: function (event, arg) { (el.listeners[event] || []).slice().forEach(function (fn) { fn(arg || {}); }); },
+    getAttribute: function (name) { return Object.prototype.hasOwnProperty.call(attributes, name) ? attributes[name] : null; },
+    focus: function () {},
+    closest: function (selector) { return selector === '[data-key]' && attributes['data-key'] != null ? el : null; },
+    querySelector: function (selector) { const m = /^tr\[data-key="([^"]*)"\]$/.exec(selector); return m && rows[m[1]] ? rows[m[1]] : null; },
+    querySelectorAll: function (selector) { return selector === 'td[data-field]' ? (el.cells || []) : []; },
+    rows: function () { return rows; },
   };
-  Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); el.children.length = 0; }, enumerable: true });
+  Object.defineProperty(el, 'innerHTML', {
+    get: function () { return html; },
+    set: function (v) {
+      html = String(v);
+      rows = {};
+      const trs = /<tr data-key="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g;
+      let t;
+      while ((t = trs.exec(html))) {
+        const tr = fakeElement('', { 'data-key': t[1] });
+        tr.cells = [];
+        const tds = /<td data-field="([^"]*)"[^>]*>([\s\S]*?)<\/td>/g;
+        let d;
+        while ((d = tds.exec(t[2]))) { const td = fakeElement('', { 'data-field': d[1] }); td.innerHTML = d[2]; tr.cells.push(td); }
+        rows[t[1]] = tr;
+      }
+    },
+    enumerable: true,
+  });
   return el;
 }
 function fakeDocument() {
   const byId = {};
   return { byId: byId, activeElement: null, getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); }, createElement: function () { return fakeElement(''); } };
 }
-function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
+function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 
-// THE PICKER AS THE SHELL GIVES IT (goal/G29.6): the probability modules, the shared list and the contact selector
-// loaded into the page, the selector handed to the app as api.ui.elements.
-function loadPicker(doc, shellSpirit) {
-  const win = {};
-  ['probabilityStringMatch.js', 'probabilityStringObjectMatch.js', 'probabilityBucket.js'].forEach(function (f) {
-    new Function('window', 'module', fs.readFileSync(path.join(RUN, 'js', f), 'utf8'))(win, undefined);
-  });
-  new Function('document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'shared', 'js', 'listSearch.js'), 'utf8'))(doc, win);
-  const made = [];
-  const real = win.spiritElements.shellCreateListSearch;
-  win.spiritElements.shellCreateListSearch = function (el, cfg) { const l = real(el, cfg); made.push({ el: el, cfg: cfg, list: l }); return l; };
-  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8'))(shellSpirit, doc, win);
-  // Find someone on the network is the shell element peerFind since goal/G30.1 (box v39), loaded by index.html.
-  new Function('spirit', 'document', 'window', fs.readFileSync(path.join(RUN, 'shell', 'js', 'peerFind.js'), 'utf8'))(shellSpirit, doc, win);
-  return { win: win, made: made };
-}
+// THE LIST AS THE SHELL GIVES IT (goal/G30.19): the scripts index.html loads for it, in its order, no module and no
+// process, as in a page.
+const PAGE_SCRIPTS = [
+  'js/probabilityBucket.js', 'js/probabilityStringMatch.js', 'js/probabilityStringObjectMatch.js', 'js/fieldRules.js',
+  'shell/js/rowElement.js', 'shell/js/rows/contactElement.js', 'shell/js/probabilitySearch.js', 'shell/js/contactSearch.js',
+];
 
 function mountApp(people) {
   const doc = fakeDocument();
   const asked = [];
   const fakeFetch = function (url, init) {
-    let verb = '';
-    try { verb = JSON.parse(String((init && init.body) || '{}')).verb || ''; } catch (e) { verb = ''; }
     const sent = (function () { try { return JSON.parse((init && init.body) || '{}'); } catch (e) { return {}; } })();
     let answer;
-    if (verb === 'contact.search') { asked.push(sent); const r = hubModule.searchPeople(people, sent.q, sent); answer = { ok: true, items: r.items, more: r.more, selfTail: null }; }
-    else if (verb === 'contact.get') { const p = people.filter(function (x) { return x.publicKey === sent.key; })[0]; answer = p ? { ok: true, key: sent.key, person: p } : { ok: false, error: 'not in the book' }; }
-    else if (verb === 'contact.senders') answer = { ok: true, policy: 'silent' };
-    else answer = { ok: true, people: people, selfTail: null, matches: [] };
+    if (sent.verb === 'contact.search') { asked.push(sent); const r = hubModule.searchPeople(people, sent.q, sent); answer = { ok: true, items: r.items, more: r.more, selfTail: null }; }
+    else if (sent.verb === 'relay.search') answer = { ok: true, items: [], more: false };
+    else if (sent.verb === 'contact.senders') answer = { ok: true, policy: 'silent' };
+    else answer = { ok: true };
     const t = JSON.stringify(answer);
-    return Promise.resolve({ status: answer.ok ? 200 : 404, text: function () { return Promise.resolve(t); }, json: function () { return Promise.resolve(JSON.parse(t)); } });
+    return Promise.resolve({ status: 200, text: function () { return Promise.resolve(t); }, json: function () { return Promise.resolve(JSON.parse(t)); } });
   };
   let behavior = null;
   const shellSpirit = {
-    shell: {
-      activateApp: function (b) { behavior = b; },
-      fileInfoRow: function (label, value) { return '<div class="file-info-row"><span>' + label + '</span><span>' + value + '</span></div>'; },
-      factRow: function (pairs) { return '<div class="fact-row">' + (pairs || []).map(function (p) { return '<div class="fact"><span>' + spirit.core.util.escapeHtml(String(p[0])) + '</span><span>' + spirit.core.util.escapeHtml(String(p[1])) + '</span></div>'; }).join('') + '</div>'; },
-    },
+    shell: { activateApp: function (b) { behavior = b; } },
     core: {
       ask: test.browserAsk(fakeFetch),
       util: { escapeHtml: spirit.core.util.escapeHtml, formatBytes: spirit.core.util.formatBytes },
@@ -101,33 +106,30 @@ function mountApp(people) {
       jobs: { subscribe: function () { return function () {}; } },
     },
   };
-  const picker = loadPicker(doc, shellSpirit);
-  new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, picker.win, fakeFetch);  // the page's window, the shared list on it (goal/G29.17)
+  const win = { spirit: shellSpirit };
+  PAGE_SCRIPTS.forEach(function (rel) {
+    new Function('spirit', 'document', 'window', 'module', 'process', fs.readFileSync(path.join(RUN, rel), 'utf8'))(shellSpirit, doc, win, undefined, undefined);
+  });
+  new Function('spirit', 'document', 'window', 'fetch', fs.readFileSync(APP_SCRIPT, 'utf8'))(shellSpirit, doc, win, fakeFetch);
   const api = {
-    verb: function (name, args) {
-      const payload = { verb: String(name) };
-      if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
-      return fakeFetch('/api/spirit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-        .then(function (r) { return r.text().then(function (t) { let body = null; try { body = JSON.parse(t); } catch (e) { body = null; } return { status: r.status, text: t, body: body }; }); });
-    },
+    verb: function (name, args) { return shellSpirit.core.ask(name, args); },
     escapeHtml: spirit.core.util.escapeHtml,
     launchApp: function () {}, callDialog: function () { return Promise.resolve(null); },
     peerPost: function () { return Promise.resolve({ ok: false, status: 503, body: null, error: 'not reachable' }); },
-    readProject: function () { return null; },
-    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-    ui: { elements: { createContactSelector: picker.win.spiritElements.createContactSelector } },
   };
   behavior.mount(fakeElement('container'), api, null);
-  const book = picker.made[picker.made.length - 1];
-  const pre = book ? (/id="(listsearch-\d+-)text"/.exec(book.el.innerHTML) || [])[1] : '';
-  return { doc: doc, asked: asked, pane: book && book.el, part: function (name) { return doc.getElementById(pre + name); } };
+  const pane = doc.getElementById('contacts-book');
+  const pre = (/id="(probsearch-\d+-)text"/.exec(pane.innerHTML) || [])[1] || '';
+  return { doc: doc, asked: asked, pane: pane, part: function (name) { return doc.getElementById(pre + name); } };
 }
 function person(key, label) { return { publicKey: key, publicLabel: label, caption: label, myLabel: '', choice: 'added', blocked: false, present: null }; }
-// The names in the picker's list, in the order drawn.
+// The names in the list, in the order drawn: each row's label cell, as its contactElement painted it.
 function names(app) {
-  const html = app.part('list').innerHTML;
-  return ['Bert', 'Carol', 'Dave'].map(function (n) { return [html.indexOf('>' + n + '<'), n]; })
-    .filter(function (p) { return p[0] !== -1; }).sort(function (a, b) { return a[0] - b[0]; }).map(function (p) { return p[1]; });
+  const rows = app.part('list').rows();
+  return Object.keys(rows).map(function (k) {
+    const td = rows[k].cells.filter(function (c) { return c.getAttribute('data-field') === 'label'; })[0];
+    return td ? td.innerHTML : '';
+  });
 }
 
 test.startTest('goal/G2.7: the book search filters the visible list, the term stays, × clears it');
@@ -138,11 +140,11 @@ test.startTest('goal/G2.7: the book search filters the visible list, the term st
   const box = app.part('text');
 
   test.subHeading('the whole book first, asked with no words');
-  if (names(app).length === 3) test.check('Bert, Carol and Dave are shown');
+  if (names(app).join(',') === 'Bert,Carol,Dave') test.check('Bert, Carol and Dave are shown');
   else test.fail(OWED + 'the book shows ' + JSON.stringify(names(app)) + ' — the red cannot see the list it means to filter');
 
-  // goal/G29.6: the picker's own box; the list ranks from what it holds at once, then asks the node with the words.
-  test.subHeading('1. a term in the picker\'s box ranks the list live, stays, and asks the node');
+  // goal/G30.19: the one list's box; it ranks from what it holds at once, then asks the node with the words.
+  test.subHeading('1. a term in the list\'s box ranks the list live, stays, and asks the node');
   box.value = 'carol';
   app.pane.fire('input', { target: box });
   const drawnAtOnce = names(app);
@@ -150,20 +152,23 @@ test.startTest('goal/G2.7: the book search filters the visible list, the term st
   const shown = names(app);
   if (drawnAtOnce[0] === 'Carol' && shown[0] === 'Carol' && box.value === 'carol') test.check('typing carol puts Carol on top at once, from the cache, and the box still says carol');
   else test.fail(OWED + 'after typing carol the list reads ' + JSON.stringify(drawnAtOnce) + ' then ' + JSON.stringify(shown) + ' and the box says ' + JSON.stringify(box.value));
+  // Nothing cut (goal/G30.17): the rows the words miss are still listed, below.
+  if (shown.length === 3) test.check('and Bert and Dave are still listed, below her — the list ranks, it cuts nothing');
+  else test.fail(OWED + 'after typing carol the list holds ' + JSON.stringify(shown));
   if (app.asked.some(function (a) { return a.q === 'carol'; })) test.check('and contact.search was asked with the words, no Search press needed');
   else test.fail(OWED + 'contact.search was asked ' + JSON.stringify(app.asked));
 
-  // goal/G29.6: the ✕ is the shared list's (listsearch-<n>-clear); Escape is not part of the shared list, so dropped.
+  // goal/G30.19: the ✕ is the list tool's (probsearch-<n>-clear).
   test.subHeading('2. the ✕ clears the term and the whole list is back');
   const clear = app.part('clear');
   if (/✕/.test(app.pane.innerHTML) && clear) {
     app.pane.fire('click', { target: clear });
     await settled();
     const back = names(app);
-    // All three back, not the book's order: the list re-sorts what it holds, an equal score keeping its place (goal/G29.6).
-    if (back.length === 3 && box.value === '') test.check('the ✕ emptied the box and all three are back');
+    // With the field empty the rows stand in the order they came (goal/G30.17).
+    if (back.join(',') === 'Bert,Carol,Dave' && box.value === '') test.check('the ✕ emptied the box and all three are back, in the order they came');
     else test.fail(OWED + 'after the ✕ the list shows ' + JSON.stringify(back) + ' and the box says ' + JSON.stringify(box.value));
-  } else test.fail(OWED + 'no ✕ at the right of the picker\'s box');
+  } else test.fail(OWED + 'no ✕ at the right of the list\'s box');
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
 });

@@ -68,9 +68,8 @@ for (const block of serverSrc.matchAll(/loopbackVerbs\.mount\('([a-z][a-z0-9]*)'
 // one becomes search + get it must LEAVE this list, and a new verb that
 // answers with an array must be ADDED to it knowingly. Either way this
 // suite goes red until the list says what is true.
-const LISTS_TODAY = [
-  'peer.search',
-];
+// peer.search left it with goal/G30.19: the verb is gone, its question contact.search's tier two.
+const LISTS_TODAY = [];
 
 function freePort() {
   return new Promise(function (resolve, reject) {

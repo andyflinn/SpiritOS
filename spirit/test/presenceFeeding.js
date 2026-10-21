@@ -17,7 +17,7 @@
 //      persisted by presenceNode since the second half (presenceProof.js), which reversed "heard notes nobody".
 //      A relay this node holds no open stream to marks nothing (there is no live word to give) and `heard`
 //      says so (false). The newest word wins: a key the relay had said absent goes green again on `heard`.
-//   2. hub.handleSearch hears every row a relay answered, at the relay that was asked — a partner's member too
+//   2. the network search (hub.handleSearch until goal/G30.19, contact.search's tier two since) hears every row a relay answered, at the relay that was asked — a partner's member too
 //      (claude-windows, G2.8 review: a route through the asked relay exists, so the dot is honest). A row memory
 //      supplied is not heard: it is what the node already had, not evidence. A relay that fails the question hears
 //      nobody.
@@ -121,11 +121,14 @@ function fakeRes(resolve) {
 }
 // Since goal/G19.14 hub asks the router what presence knows (peerPost holds the streams), so the picture's
 // stand-in rides on the router handed in.
+// Since goal/G30.19 the network search is contact.search's tier two (peer.search is gone): asked, it walks the relays
+// in the background; settled waits for the walk.
 function search(H, q, router, presence) {
-  return new Promise(function (resolve) {
-    hubModule.createHub(H).handleSearch({}, fakeRes(resolve), function () { return Promise.resolve({ q: q }); },
-      { router: Object.assign({}, router, presence) });
-  });
+  const jobs = { createJob: function (kind, type) { return { id: 'job_1', type: type, data: {} }; }, updateJob: function () { return null; } };
+  let out = null;
+  try { out = hubModule.createHub(H).contactSearch({ q: q }, { jobs: jobs, router: Object.assign({}, router, presence) }); }
+  catch (e) { out = { status: 500, error: e.message }; }
+  return settled().then(function () { return { status: out.status, body: out }; });
 }
 function post(H, to, router, presence) {
   return new Promise(function (resolve) {

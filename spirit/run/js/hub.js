@@ -276,6 +276,9 @@ function contactLabel(p) {
   return JSON.stringify({
     name: name ? (p.ambiguous && tail ? name + ' ' + tail : name) : (tail || '(no name)'),
     owned: p.owned === true, blocked: p.blocked === true, held: p.held === true,
+    // In the book, beside the shadow's and the network's rows in the one Contacts list (goal/G30.19); their own name
+    // beside mine, for a caller matching what they call themselves (the desk onboarding).
+    book: true, publicLabel: String(p.publicLabel || ''),
   });
 }
 // RANKED WITH THE PROBABILITY MODULES (goal/G29.6; Andy: "so hub and relay will use probability search from now on."):
@@ -1430,13 +1433,87 @@ function createHub(rootDir) {
   // the label is json {name, owned, blocked, held} (contactLabel), the
   // words are ranked by the probability modules, and owned, blocked and
   // held are yes-filters beside q (searchPeople).
-  function contactSearch(body) {
-    var r = searchPeople(buildPeople(rootDir), body && body.q, body);
+  //
+  // ONE SEARCH IN TWO TIERS (goal/G30.19, the node interface change Andy approved: "interface change/reduction
+  // approved."). Tier one, at once: the book's matches and the shadow's (the peers this node has heard of, seenPeers),
+  // one row shape, a row's `book` saying which. Tier two: the same call starts the network search (walkRelays), whose
+  // rows stream as the 'peer-search' job and land in the shadow, so the next search starts from what this one learned.
+  // ONE NETWORK SEARCH AT A TIME (Andy: "the node also only triggers a peer search if none is in flight."): a search
+  // while one is out is answered from the book and the shadow and starts nothing; nothing waits for it to return.
+  var networkOut = false;
+  var networkJob = null;
+  function contactSearch(body, deps) {
+    var d = deps || {};
+    var q = String((body && body.q) || '').trim();
+    var people = buildPeople(rootDir);
+    var r = searchPeople(people, q, body);
     var self = auth.loadIdentity(rootDir);
-    return { ok: true, status: 200, items: r.items, more: r.more,
+    var items = r.items;
+    var more = r.more;
+    var filtered = body && (body.owned === 'yes' || body.blocked === 'yes' || body.held === 'yes');
+    if (!filtered) {
+      var inBook = Object.create(null);
+      people.forEach(function (p) { inBook[p.publicKey] = true; });
+      // The shadow's strangers, matched and capped as a relay's members are (fromMemory, R39); the absent left out.
+      var memory = fromMemory(/^\*+$/.test(q) ? '' : q, inBook, self.publicKey, relayLabels());
+      if (memory.more) more = true;
+      items = items.concat(memory.rows
+        .filter(function (row) { return !inBook[row.publicKey]; })
+        .map(function (row) { return { key: row.publicKey, label: strangerLabel(row) }; }));
+    }
+    if (!networkOut && d.jobs) networkSearch(q, d);
+    return { ok: true, status: 200, items: items, more: more,
       // One fact beside the pairs, never a row: what to tell somebody
       // adding you (the page's "your key ends …").
       selfTail: keyTail(self.publicKey) };
+  }
+
+  // A row the book does not hold, from the shadow or a relay: what the list shows and what Add needs (its relay).
+  // ITS NAME CARRIES ITS KEY'S ENDING: a row found on the network is somebody you are deciding whether to add, where
+  // picking the right key is the decision, and two found under one name must not read alike (Contacts kept the tail
+  // for exactly the candidates). Rows stream in one at a time, so no answer sees them all to mark only the alike.
+  function strangerLabel(row) {
+    var said = String(row.publicLabel || '').trim();
+    return JSON.stringify({
+      name: (said ? said + ' ' : '') + '…' + keyTail(row.publicKey),
+      owned: false, blocked: false, held: false, book: false,
+      publicLabel: String(row.publicLabel || ''), present: row.present === true ? true : row.present === false ? false : undefined,
+      relay: row.relay || '', kind: row.kind || 'node',
+      // When the shadow last heard of them (0020); a row the network just found has none, being news.
+      seenAt: row.seenAt || undefined,
+    });
+  }
+  function relayLabels() {
+    var labels = Object.create(null);
+    ownerBadge.loadRelays(rootDir).forEach(function (x) { if (x && x.url) labels[x.url] = x.label || ''; });
+    return labels;
+  }
+
+  // TIER TWO: the walk, each row noted in the shadow and sent as one update of the 'peer-search' job, a contact as its
+  // book row. d.walk stands in for the relays in a suite; d.router is the live one.
+  function networkSearch(q, d) {
+    networkOut = true;
+    if (!networkJob) networkJob = d.jobs.createJob('permanent', 'peer-search', {});
+    var ranks = require('./seenPeers');
+    var onRow = function (row) {
+      shadow(rootDir).note(row.publicKey, {
+        at: row.atKey, url: row.relay, label: row.publicLabel,
+        present: true,
+        rank: row.viaPartner ? ranks.HEARSAY : ranks.HOST,
+      });
+      var b = contactBook.byPublicKey(rootDir, row.publicKey);
+      var label = b
+        ? JSON.stringify(Object.assign(JSON.parse(contactLabel({ publicKey: b.publicKey, tail: keyTail(b.publicKey), publicLabel: b.publicLabel || '',
+          myLabel: b.myLabel || '', held: !contactBook.listens(b), blocked: contactBook.isBlocked(b), owned: b.owned === true })), { present: true }))
+        : strangerLabel(row);
+      d.jobs.updateJob(networkJob.id, { data: { q: q, item: { key: row.publicKey, label: label } } });
+    };
+    var walk = typeof d.walk === 'function' ? d.walk : function (words, each) { return walkRelays(d.router, words, each); };
+    var going = null;
+    try { going = walk(q, onRow); } catch (e) { going = null; }
+    Promise.resolve(going)
+      .catch(function () { /* a walk that failed found nobody; the next search starts another */ })
+      .then(function () { networkOut = false; });
   }
 
   function contactGet(body) {
@@ -2185,242 +2262,47 @@ function createHub(rootDir) {
     };
   }
 
-  // ── ASK EACH RELAY, DO NOT DOWNLOAD EACH RELAY ───────────────────────
-  //
-  //   Andy: "This approach will not be sustainable if there's even just a
-  //   thousand people in this list… We want the partner-space
-  //   searchable."
-  //
-  // handleCandidates fetched every roll whole and subtracted what this
-  // node knows — fine at ten members and absurd at a thousand: 150 KB per
-  // relay, per refresh, to build a list nobody can read. It was kept "for
-  // the small case" and deleted on 2026-09-17 once the app had moved off
-  // it entirely; see the tombstone below. This is what asks instead.
-  //
-  // One signed post per relay, capped answers, and the relay does the
-  // matching over rows it already holds in RAM. When a relay holds its
-  // partners' members (tier two) the same request covers partner space and
-  // nothing here changes.
-  function handleSearch(req, res, readJsonBody, deps) {
-    // The router, and through it the live picture, told what the relay answered (goal/G2.9, goal/G19.14).
-    var router = deps && deps.router;
-    readJsonBody(req).then(function (body) {
-      var q = String((body && body.q) || '').trim();
-      // No floor: see relay.js. A short query is a real question with a
-      // ranked, capped answer, and refusing it here would put the crutch
-      // back one layer out.
-      // NOT CONNECTED IS NOT NOBODY (R39). This refused outright with 503;
-      // now every relay counts as silent and memory answers alone —
-      // Andy: "if the userbox is offline, search can revert to memory".
-      var configured = ownerBadge.configuredUrls(rootDir);
-      var urls = router ? configured : [];
-      var myKey = auth.loadIdentity(rootDir).publicKey;
-      var found = Object.create(null);
-      var truncated = false;
-      // ── A RELAY THAT CANNOT SEARCH IS NOT A RELAY WITH NOBODY ON IT ──
-      //
-      // A box running code older than this verb answers `no such peer`
-      // and contributes nothing. Counting that as "no matches" would make
-      // an empty result mean two different things — nobody is called
-      // that, or nobody could look — and on a network where relays update
-      // on their owners' schedules the second is normal, not exceptional.
-      //
-      // Seen immediately: spirit.andyflinn.com is pinned to a tag and
-      // returned nothing for a name that is plainly on it.
-      var silent = router ? [] : configured.slice();
-
-      // ── THE NODE ALREADY KNOWS THE KEY ─────────────────────────────
-      //
-      //   Andy: "sticking to protocol and its interface calls will save
-      //   us in the long run... the protocol has cut down response time
-      //   for device-login from 30 seconds to a fraction of a second."
-      //
-      // This fetched the WHOLE roll over plain HTTPS to read one field
-      // off it — relayPublicKey — so that it could then send the search
-      // as a proper packet. A 150 KB download on the path whose entire
-      // purpose is to stop downloading rolls.
-      //
-      // relayKeys.js has held that key since first contact; pinning it is
-      // what makes a relay identifiable at all. And the LABEL comes off
-      // relays.json, which is what this person called it rather than what
-      // the box calls itself — better for a result row either way.
-      var labels = Object.create(null);
-      ownerBadge.loadRelays(rootDir).forEach(function (r) {
-        if (r && r.url) labels[r.url] = r.label || '';
-      });
-
-      return Promise.all(urls.map(function (url) {
-        var relayKey = relayKeys.pinned(rootDir, url);
-        // No pin means this node has never spoken to it. Nothing to do
-        // but say so — fetching a key from the box you are asking about
-        // is how you get answered by whoever is standing there.
-        if (!relayKey) { silent.push(url); return Promise.resolve(null); }
-        return sendPacket(router, url, relayKey, systemPayload({ search: { q: q } })).then(function (answer) {
-          var said = null;
-          try { said = JSON.parse((answer && answer.text) || ''); }
-          catch (e) { said = null; }
-          var out = (said && said.body) || {};
-          if (!out || out.ok !== true) { silent.push(url); return; }
-          if (out.more) truncated = true;
-          (out.matches || []).forEach(function (p) {
-            if (!p || !p.publicKey || p.publicKey === myKey) return;
-            if (found[p.publicKey]) return;
-            // A relay on an older release still answers its offline
-            // members, marked `present: false`. Search is online only
-            // (relay.js walkRoll, 2026-09-19), whichever relay answered.
-            if (p.present === false) return;
-            // THE DOT LEARNS FROM THE ANSWER (goal/G2.9). The relay asked has just carried this row — a member
-            // of its own or of a partner it reached — so the live table hears it at that relay, as a broadcast
-            // would be heard, and the Contacts dot paints without a restart. A row memory supplies below is not
-            // heard: it is what this node already had, not evidence.
-            if (router && typeof router.heard === 'function') {
-              try { router.heard(url, p.publicKey); } catch (e) { /* the picture is a witness to the search, never a reason to fail it */ }
-            }
-            var row = contactBook.byPublicKey(rootDir, p.publicKey);
-            found[p.publicKey] = {
-              publicKey: p.publicKey,
-              publicLabel: p.publicLabel || '',
-              tail: keyTail(p.publicKey),
-              // WHICH RELAY THIS PEER LIVES AT, as a key, which is what a
-              // route is made of.
-              //
-              //   Andy: "in a search request, it is the node who already
-              //   knows the via field at request time."
-              //
-              // The node asked a relay it has pinned, and the answer says
-              // whether the row came from that relay or from a partner of
-              // it. Both halves are here and the key half was thrown away:
-              // `via` was used to look a URL up and then dropped, so a
-              // contact acquired from a search arrived with an address in
-              // `relays` and NOTHING in `routes`.
-              //
-              // `relayKeys.pinned` is this node's own record of the key it
-              // accepted for that URL, so a row with no `via` is a member
-              // of the relay that answered — and that relay's key is the
-              // route.
-              atKey: p.via || relayKeys.pinned(rootDir, url) || '',
-              // WHICH RELAY THIS ROW CAN BE ACQUIRED FROM, which is not
-              // always the one that answered. A row carrying `via` came
-              // from a PARTNER of this relay, and confirming a key means
-              // finding it on a roll — so the URL has to be the
-              // partner's or the confirm is looked up in the wrong book
-              // and answers "no peer at ... with that key".
-              //
-              // `via` is a relay KEY, because that is what a relay pins
-              // and the only thing it can name a partner by without
-              // trusting a URL somebody sent it. Resolved to a URL below,
-              // by asking the relay that answered who it partners with.
-              relay: url,
-              relayLabel: labels[url] || '',
-              // ── WHETHER THE RELAY THAT ANSWERED SEES THEM CONNECTED ──
-              //
-              //   Andy: "hmm the search might need a filter argument
-              //   (onlineOnly = true)... discuss?"
-              //
-              // The discussion found the field already existed and was
-              // being thrown away here. The relay computes it per row
-              // (relay.js, `present: presentNow.isPresent(...)`) and the
-              // ranker weighs it at a quarter of an exact match — so
-              // presence has been deciding which rows reach the browser
-              // all along, while the browser was told nothing about it.
-              //
-              // NOT THE SAME FACT AS THIS NODE'S OWN PRESENCE TABLE, and
-              // that is why it is worth carrying rather than looked up.
-              // This node knows who is present on the relays IT holds
-              // streams to; a row that came from a PARTNER is somebody it
-              // has no stream to and can never answer for. The relay that
-              // answered can, and this is it saying so.
-              //
-              // *Superseded 2026-09-19, marked in place.* This said a
-              // filter was deliberately not built — "hiding absent people
-              // would mean a search for somebody whose laptop is shut
-              // answers 'nobody found'". Andy ruled the other way: "search
-              // should respond with active/online members only. A node can
-              // reconcile with its contact list to conclude that a contact
-              // is offline." That cost is accepted: an offline person is
-              // not found, and a key already held still routes.
-              //
-              // So the relay answers the connected only and no longer
-              // marks rows; every row here is present at the relay that
-              // answered, and the field says so for the screen's dot.
-              present: true,
-              via: p.via || null,
-              viaPartner: !!p.via,
-              acquiredVia: row ? contactBook.acquiredVia(row) : null,
-            };
-          });
-        }).catch(function () { silent.push(url); });
-      })).then(function () {
-        // A PARTNER'S KEY BECAME A PARTNER'S URL HERE, by asking each relay
-        // `{partners: true}`. That verb went with partnering (Andy's
-        // decision, goal/G22.6), and a relay's search answers only its own
-        // members, so no row carries a `via` to resolve; the reply's `via`
-        // and `viaPartner` fields stay, null and false, as the verb's
-        // declared shape (peer/search.json) until a ruling changes it.
-        return null;
-      }).then(function () {
-        var list = Object.keys(found).map(function (k) { return found[k]; });
-        // What memory adds, taken now — after every relay has answered or
-        // timed out — and kept apart from `list` until the notes below
-        // are written, because a remembered row is not news.
-        var remembered = fromMemory(q, found, myKey, labels);
-        if (remembered.more) truncated = true;
-
-        // NOTED HERE, AFTER THE PARTNER URLS ARE RESOLVED, so what is
-        // kept is where the peer actually is rather than where the
-        // question was sent. Nothing is written to the contact book —
-        // this is what the node has lately been told about, and it waits
-        // until somebody acts on it.
-        //
-        // ── AND EVERY ROW IS PRESENT, BECAUSE BEING FOUND IS THE EVIDENCE ──
-        //
-        //   Andy: "strangers can only be found if they ARE present, this
-        //   warrants a 'present' on the shadow-roll-row of every search
-        //   result."
-        //
-        // Search is online-only (the `present === false` drop above), so
-        // `present: true` is true by construction rather than by trust —
-        // and for EVERY row that came back, not only the ones somebody
-        // clicks.
-        //
-        // RANK BY WHO SAID IT (R29, retrofitted here). A row from the relay
-        // this node asked is that relay speaking about its own member:
-        // HOST. A row a partner carried is second-hand: HEARSAY, and any
-        // better-sourced name or route outranks it when one arrives.
-        var ranks = require('./seenPeers');
-        list.forEach(function (row) {
-          shadow(rootDir).note(row.publicKey, {
-            at: row.atKey, url: row.relay, label: row.publicLabel,
+  // THE NETWORK SEARCH (goal/G30.19: tier two of contact.search; it was the verb peer.search, deleted with Andy's
+  // approval of the interface reduction). Every configured relay asked once; onRow(row) for each peer found, as it
+  // comes; resolves when every relay has answered or failed. Online only: a relay answers its connected members.
+  function walkRelays(router, q, onRow) {
+    if (!router) return Promise.resolve();
+    var myKey = auth.loadIdentity(rootDir).publicKey;
+    var found = Object.create(null);
+    var labels = relayLabels();
+    return Promise.all(ownerBadge.configuredUrls(rootDir).map(function (url) {
+      // No pin means this node has never spoken to it; fetching a key from the box asked is how you get answered by
+      // whoever is standing there.
+      var relayKey = relayKeys.pinned(rootDir, url);
+      if (!relayKey) return Promise.resolve(null);
+      return sendPacket(router, url, relayKey, systemPayload({ search: { q: q } })).then(function (answer) {
+        var said = null;
+        try { said = JSON.parse((answer && answer.text) || ''); } catch (e) { said = null; }
+        var out = (said && said.body) || {};
+        if (!out || out.ok !== true) return;
+        (out.matches || []).forEach(function (p) {
+          if (!p || !p.publicKey || p.publicKey === myKey || found[p.publicKey]) return;
+          if (p.present === false) return;
+          // THE DOT LEARNS FROM THE ANSWER (goal/G2.9): the relay asked has just carried this row.
+          if (typeof router.heard === 'function') {
+            try { router.heard(url, p.publicKey); } catch (e) { /* a witness to the search, never a reason to fail it */ }
+          }
+          found[p.publicKey] = true;
+          onRow({
+            publicKey: p.publicKey,
+            publicLabel: p.publicLabel || '',
+            // The relay's key is the route: a row with no via is a member of the relay that answered.
+            atKey: p.via || relayKey || '',
+            relay: url,
+            relayLabel: labels[url] || '',
             present: true,
-            rank: row.viaPartner ? ranks.HEARSAY : ranks.HOST,
+            viaPartner: !!p.via,
           });
         });
-        // NOT NOTED: a row memory supplied is what the node already had,
-        // and writing it back would stamp it seen today and present — the
-        // one thing it is not evidence of.
-        list = list.concat(remembered.rows);
-        // RANKED, NOT ALPHABETICAL (goal/G29.17): the relays' rows and memory's together, best match first, by the
-        // same ranker every relay ran; room for every row, so nothing a relay or the book gave is cut here.
-        var ranked = peerRank.rank(list, q, list.length).rows;
-        // THE SHARED SHAPE (goal/G29.17): {items: [{key, label}], more}, as every search the shared list draws.
-        // The key is the public key; the label the row as built above.
-        var items = ranked.map(function (row) { return { key: row.publicKey, label: JSON.stringify(row) }; });
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({
-          q: q, items: items, more: truncated,
-          asked: urls.length,
-          // How many came from memory rather than a relay. A count, not
-          // the store: each row says so itself (`fromMemory`) and how old
-          // it is (`seenAt`), which is the value crossing (0020).
-          remembered: remembered.rows.length,
-          // Named, not counted: 'one relay could not answer' is useless
-          // without saying which, and the owner of that relay is often
-          // the person reading this.
-          silent: silent,
-        }));
-      });
-    }).catch(function () { fail(res, 400, 'bad body'); });
+      }).catch(function () { /* a relay that could not answer adds nobody */ });
+    }));
   }
+
 
   // ── handleCandidates STOOD HERE, AND TOOK THE LAST WHOLE-ROLL ────
   //     FAN-OUT WITH IT (2026-09-17)
@@ -2992,7 +2874,6 @@ function createHub(rootDir) {
     relayGet: relayGet,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,
-    handleSearch: handleSearch,
     contactSearch: contactSearch,
     contactGet: contactGet,
     handleContact: handleContact,
