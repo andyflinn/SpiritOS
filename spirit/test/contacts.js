@@ -200,6 +200,7 @@ function networkRows(found) {
 
 function mountApp(options) {
   const doc = fakeDocument();
+  let networkShown = false;
   const log = [];
   const opts = options || {};
 
@@ -317,7 +318,14 @@ function mountApp(options) {
       });
     },
     // The network search's rows, one 'peer-search' update each, as the face stream carries them.
+    // The network toggle is off until pressed (box v8), so the first rows found press it on: these sections are about
+    // the found rows, and contactSearchTiers asserts the toggle itself.
     found: function (items) {
+      if (!networkShown) {
+        networkShown = true;
+        doc.getElementById('contacts-book').fire('click', { target: { id: '', closest: function () { return null; },
+          getAttribute: function (n) { return n === 'data-filter' ? 'network' : n === 'data-value' ? 'toggle' : null; } } });
+      }
       items.forEach(function (item) {
         jobFeed.forEach(function (h) { if (h.onUpdate) h.onUpdate({ id: 'j3', type: 'peer-search', data: { item: item } }); });
       });
@@ -800,16 +808,15 @@ function foundOnTheNetwork() {
       test.fail('a row went missing: ' + JSON.stringify(rowKeys(app)));
     }
 
-    // THE FILTER (where): book or network, instead of two folds.
-    pressFilter(app, 'where', 'network');
-    const networkOnly = rowKeys(app).slice().sort().join(',');
-    pressFilter(app, 'where', 'book');
+    // THE NETWORK TOGGLE (box v8): on, the found rows beside the book; off, the book alone.
+    const networkOn = rowKeys(app).slice().sort().join(',');
+    pressFilter(app, 'network', 'toggle');
     const bookOnly = rowKeys(app).join(',');
-    pressFilter(app, 'where', 'all');
-    if (networkOnly === [here, faraway].sort().join(',') && bookOnly === BERT) {
-      test.check('the network filter shows only the found rows, the book filter only the book');
+    pressFilter(app, 'network', 'toggle');
+    if (networkOn === [BERT, here, faraway].sort().join(',') && bookOnly === BERT) {
+      test.check('the network toggle on shows the found rows beside the book; off, the book alone');
     } else {
-      test.fail('filters: network ' + networkOnly + ' | book ' + bookOnly);
+      test.fail('toggle: on ' + networkOn + ' | off ' + bookOnly);
     }
 
     pressAction(app, here, 'add');

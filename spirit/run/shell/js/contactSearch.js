@@ -3,9 +3,9 @@
 //   - One search in two tiers. contact.search answers at once from the book and the shadow (the peers the node has
 //     heard of), and starts a network search on the node; each network result streams in as one row, through
 //     contactElement.found, and joins the same cache.
-//   - One list, cached by key: a peer in the book and found on the network is one row. A filter (book, network, all)
-//     instead of two folds, beside the contact selector's (all, my puppets, relays, blocked, held). Columns: presence,
-//     status, label (sorts as text), and Add on a row the book does not hold.
+//   - One list, cached by key: a peer in the book and found on the network is one row. One row of filters instead of
+//     two folds: all, my puppets, blocked, held, relays, and at its end a network toggle, off at first (box v8).
+//     Columns: presence, status, label (sorts as text), and Add on a row the book does not hold.
 //   - Each row is a contactElement and keeps itself current; this paints no presence.
 //   - Pressing a row opens it: Contact for a person in the book, Relay Details for a relay. A network row asks that
 //     node who it is and says so.
@@ -24,6 +24,28 @@
   function is(kind) {
     return function (row) { return !!row && (kind === 'relay' ? (row.kind === 'relay' || row.relay === true) : row[kind] === true); };
   }
+
+  // ONE ROW OF FILTERS (box v8; Andy: "KILL that [all] AND KILL [book], put [network] at the very and as a toggle, when
+  // its on then it shows peers from the network ALSO").
+  var FILTERS = [
+    // As the contact selector had it (goal/G30.7; Andy, 2026-10-20: "Gimme 3 Buttons: [all] [⭐ my puppets] [relays]
+    // where all 3 are mutually exclusive"): all, then each kind the list holds any of.
+    { name: 'show',
+      choices: function (all) {
+        var I = icons();
+        var out = [{ value: 'all', word: 'all' }];
+        if (all.some(is('owned'))) out.push({ value: 'owned', icon: I.STAR || '★', word: 'my puppets' });
+        if (all.some(is('blocked'))) out.push({ value: 'blocked', icon: I.NO || '', word: 'blocked' });
+        if (all.some(is('held'))) out.push({ value: 'held', icon: I.WAITING || '', word: 'held' });
+        if (all.some(is('relay'))) out.push({ value: 'relay', word: 'relays' });
+        return out;
+      },
+      test: function (row, v) { return !v || v === 'all' || is(v)(row) ? 1 : 0; },
+      when: function (all) { return ['owned', 'blocked', 'held', 'relay'].some(function (n) { return all.some(is(n)); }); } },
+    // At its very end. Off, the book and this node's relays; on, the network's peers (book: false) as well.
+    { name: 'network', word: 'network', toggle: true,
+      test: function (row, on) { return row.book === false && row.kind !== 'relay' && row.relay !== true ? (on ? 1 : 0) : 1; } },
+  ];
 
   function create(host, opts) {
     var o = opts || {};
@@ -77,24 +99,7 @@
       ],
       element: function (row, key) { var el = window.spiritElements.contactElement.create(Object.assign({ key: key }, row)); els[key] = el; return el; },
       matched: function (row) { return { name: String((row && row.name) || ''), publicLabel: String((row && row.publicLabel) || '') }; },
-      filters: [
-        { name: 'where', choices: [{ value: 'all', word: 'all' }, { value: 'book', word: 'book' }, { value: 'network', word: 'network' }],
-          test: function (row, v) { var inBook = row.book !== false; return v === 'book' ? (inBook ? 1 : 0) : v === 'network' ? (inBook ? 0 : 1) : 1; } },
-        // ONE ROW, MUTUALLY EXCLUSIVE, as the contact selector had it (goal/G30.7; Andy, 2026-10-20: "Gimme 3 Buttons:
-        // [all] [⭐ my puppets] [relays] where all 3 are mutually exclusive"): all, then each kind the list holds any of.
-        { name: 'show',
-          choices: function (all) {
-            var I = icons();
-            var out = [{ value: 'all', word: 'all' }];
-            if (all.some(is('owned'))) out.push({ value: 'owned', icon: I.STAR || '★', word: 'my puppets' });
-            if (all.some(is('blocked'))) out.push({ value: 'blocked', icon: I.NO || '', word: 'blocked' });
-            if (all.some(is('held'))) out.push({ value: 'held', icon: I.WAITING || '', word: 'held' });
-            if (all.some(is('relay'))) out.push({ value: 'relay', word: 'relays' });
-            return out;
-          },
-          test: function (row, v) { return !v || v === 'all' || is(v)(row) ? 1 : 0; },
-          when: function (all) { return ['owned', 'blocked', 'held', 'relay'].some(function (n) { return all.some(is(n)); }); } },
-      ],
+      filters: FILTERS,
       details: function (row, key, el) {
         if (row.book === false && row.kind !== 'relay') { askCard(row, key); return; }
         if (!el) return;
@@ -139,5 +144,5 @@
   }
 
   window.spiritElements = window.spiritElements || {};
-  window.spiritElements.contactSearch = { create: create };
+  window.spiritElements.contactSearch = { create: create, filters: FILTERS };
 }());

@@ -104,7 +104,8 @@
     var columns = Array.isArray(o.columns) ? o.columns : [];
     var filters = Array.isArray(o.filters) ? o.filters : [];
     var values = Object.create(null);
-    filters.forEach(function (f) { values[f.name] = f.multi ? {} : (Array.isArray(f.choices) && f.choices.length ? f.choices[0].value : ''); });
+    // A TOGGLE (goal/G30.19) is one button, { name, word, icon, toggle: true }, its value false until pressed.
+    filters.forEach(function (f) { values[f.name] = f.toggle ? false : f.multi ? {} : (Array.isArray(f.choices) && f.choices.length ? f.choices[0].value : ''); });
     var bucket = P().createProbabilityBucket(Infinity);
     var byKey = Object.create(null);    // key -> { key, row, at, gone, el }, the one object the bucket holds for it
     var seated = 0;
@@ -124,11 +125,14 @@
     }
     function words() { var t = el('text'); return t ? String(t.value || '').trim() : ''; }
     function cachedRows() { return Object.keys(byKey).map(function (k) { return byKey[k].row; }); }
-    function choicesOf(f) { return (typeof f.choices === 'function' ? f.choices(cachedRows()) : f.choices) || []; }
+    function choicesOf(f) {
+      if (f.toggle) return [{ value: 'toggle', word: f.word || f.name, icon: f.icon }];
+      return (typeof f.choices === 'function' ? f.choices(cachedRows()) : f.choices) || [];
+    }
     function filterHtml() {
       return filters.filter(function (f) { return typeof f.when !== 'function' || !!f.when(cachedRows()); }).map(function (f) {
         return '<span data-filter="' + esc(f.name) + '">' + choicesOf(f).map(function (c) {
-          var on = f.multi ? !values[f.name][c.value] : values[f.name] === c.value;
+          var on = f.toggle ? values[f.name] === true : f.multi ? !values[f.name][c.value] : values[f.name] === c.value;
           return '<button type="button" data-filter="' + esc(f.name) + '" data-value="' + esc(c.value) + '" style="margin-right:1em;' +
             (on ? 'font-weight:bold;outline:1px solid currentColor' : 'opacity:0.6') + '">' + esc((c.icon ? c.icon + ' ' : '') + (c.word || '')) + '</button>';
         }).join('') + '</span>';
@@ -338,8 +342,10 @@
       var name = typeof t.getAttribute === 'function' ? t.getAttribute('data-filter') : null;
       var value = typeof t.getAttribute === 'function' ? t.getAttribute('data-value') : null;
       if (name != null && value != null) {
+        var toggle = filters.filter(function (f) { return f.name === name && f.toggle; })[0];
         var multi = filters.filter(function (f) { return f.name === name && f.multi; })[0];
-        if (multi) { if (values[name][value]) delete values[name][value]; else values[name][value] = true; }
+        if (toggle) values[name] = !values[name];
+        else if (multi) { if (values[name][value]) delete values[name][value]; else values[name][value] = true; }
         else values[name] = value;
         typed();
         return;
