@@ -250,6 +250,14 @@ function open(rootDir) {
     if (ecols.indexOf('emailVerified') === -1) db.exec('ALTER TABLE members ADD COLUMN emailVerified INTEGER NOT NULL DEFAULT 0');
   } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
 
+  // A MEMBER'S FACE LOGINS (goal/G30.15; Andy: "why would the relay not stash my login on my member-row?"): one per
+  // device, as JSON [{ hash, until }], the hash of the login cookie and its idle deadline. Never the cookie itself, so a
+  // copied relay.db logs nobody in. They go with the row when a member leaves.
+  try {
+    const lcols = db.prepare('PRAGMA table_info(members)').all().map(function (c) { return c.name; });
+    if (lcols.indexOf('faceLogins') === -1) db.exec("ALTER TABLE members ADD COLUMN faceLogins TEXT NOT NULL DEFAULT '[]'");
+  } catch (e) { /* a read-only store cannot migrate; it reads what is there */ }
+
   const hasOwnerColumn = db.prepare('PRAGMA table_info(members)').all()
     .some(function (c) { return c.name === 'owner'; });
   if (hasOwnerColumn) db.exec('ALTER TABLE members DROP COLUMN owner');
@@ -386,6 +394,20 @@ function build(rootDir, db, key) {
       // The email a confirmed join code proved, written verified. True when the member is on the roll.
       setEmail: function (publicKey, email) {
         return faceStmt('email', 'UPDATE members SET email = ?, emailVerified = 1 WHERE publicKey = ?').run(String(email || ''), String(publicKey || '')).changes > 0;
+      },
+      // The member's face logins, one per device: [{ hash, until }] (goal/G30.15).
+      faceLogins: function (publicKey) {
+        const row = faceStmt('loginsGet', 'SELECT faceLogins FROM members WHERE publicKey = ?').get(String(publicKey || ''));
+        try { const list = JSON.parse((row && row.faceLogins) || '[]'); return Array.isArray(list) ? list : []; } catch (e) { return []; }
+      },
+      setFaceLogins: function (publicKey, list) {
+        return faceStmt('loginsSet', 'UPDATE members SET faceLogins = ? WHERE publicKey = ?').run(JSON.stringify(Array.isArray(list) ? list : []), String(publicKey || '')).changes > 0;
+      },
+      // The member holding a login with this cookie hash, or null.
+      byFaceLogin: function (hash) {
+        const h = String(hash || '');
+        if (!h) return null;
+        return member(faceStmt('loginsBy', "SELECT * FROM members WHERE instr(faceLogins, ?) > 0 LIMIT 1").get('"' + h + '"'));
       },
     },
 

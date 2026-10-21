@@ -197,7 +197,7 @@ const done = (async function () {
   const nd2 = code('spirit/run/shell/natterDetails/natterDetails.js');
   const ui = {
     discInGB: /Disc, GB/.test(nd2) && /\* 1024/.test(nd2),
-    restartOnly: /config:\s*\{\s*restart:\s*true\s*\}|\{\s*restart:\s*true\s*\}/.test(nd2) && !/restart:\s*true\s*\},\s*\n?\s*button/.test(nd2),
+    restartOnly: /\{\s*restart:\s*true\s*\}/.test(nd2) && !/discLimitMB[^}\n]*restart:\s*true/.test(nd2),
     refusalStays: /ndAllocSaid\s*=\s*\(b && b\.error\)|ndAllocSaid\s*=\s*.*refused/.test(nd2),
     relayReadsFile: /deps\.readConfig/.test(code('spirit/run/js/relay.js')) && /readConfig/.test(code('spirit/run/js/relayServer.js')),
   };

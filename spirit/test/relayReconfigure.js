@@ -151,11 +151,13 @@ test.subHeading('A signed owner grant writes the file and says what applies');
 
 {
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 32, source: 'file' });
+  // Both figures raised, so they apply at once (goal/G30.15: "enlarging the memory limit would NOT require a restart,
+  // only reducing the memory limit would do that").
   const out = ask(R, { config: { ramLimitMB: 128, discLimitMB: 64 } });
-  if (out && out.ok && out.applies === 'next start' &&
+  if (out && out.ok && out.applies === 'now' &&
       out.after.ramLimitMB === 128 && out.after.discLimitMB === 64 &&
       out.now.ramLimitMB === 64) {
-    test.check('the answer carries both figures, before and after');
+    test.check('the answer carries both figures, before and after, and a raise applies now');
   } else {
     test.fail('the grant did not take: ' + JSON.stringify(out));
   }
@@ -236,14 +238,14 @@ test.subHeading('A figure past what the box can give is refused here, not at the
 test.subHeading('A shrink that would strand members is refused — the owner evicts first');
 
 {
-  // Sixteen streams a megabyte, so 1 MB allows 16 connections. Eighteen
-  // members means two could never connect.
+  // Sixteen streams a megabyte and three a seat (goal/G30.15), so 1 MB
+  // serves 5 members. Nineteen members means fourteen could not be served.
   const R = relayWith({ ramLimitMB: 64, discLimitMB: 32, source: 'file' });
   for (let i = 0; i < 18; i += 1) member(R, 'm' + i);
   const out = ask(R, { config: { ramLimitMB: 1 } });
-  if (out && !out.ok && out.status === 409 && /could never connect/.test(out.error) &&
+  if (out && !out.ok && out.status === 409 && /could not be served/.test(out.error) &&
       /Remove members first/.test(out.error)) {
-    test.check('19 members against 16 connections is refused, and the sentence says how many');
+    test.check('19 members against the 5 that 1 MB serves is refused, and the sentence says how many');
   } else {
     test.fail('a stranding shrink was accepted: ' + JSON.stringify(out));
   }
@@ -255,8 +257,9 @@ test.subHeading('A shrink that would strand members is refused — the owner evi
 
   // …and it goes through once there is room, which is the other half of
   // the rule: this is a refusal to strand, not a refusal to shrink.
-  const ok = ask(R, { config: { ramLimitMB: 2 } });
-  if (ok && ok.ok && ok.after.allowance === 32) {
+  // 4 MB is 64 streams, 21 seats of three: room for all nineteen.
+  const ok = ask(R, { config: { ramLimitMB: 4 } });
+  if (ok && ok.ok && ok.after.allowance === 64 && ok.after.members === 21) {
     test.check('the same shrink to a figure that fits everybody is accepted');
   } else {
     test.fail('a safe shrink was refused: ' + JSON.stringify(ok));

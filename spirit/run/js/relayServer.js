@@ -283,12 +283,19 @@ const relay = createRelay.createRelay(undefined, {
   writeConfig: function (next) {
     try {
       fs.writeFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), relayConfig.fileText(next));
-      console.log(`    owner reconfigured: ${next.ramLimitMB} MB RAM, ${next.discLimitMB} MB disc (applies at next start)`);
+      console.log(`    owner reconfigured: ${next.ramLimitMB} MB RAM, ${next.discLimitMB} MB disc (a raise applies now, a cut at next start)`);
       return true;
     } catch (e) {
       console.error('    could not write relay-state/config.json: ' + e.message);
       return false;
     }
+  },
+
+  // THE FILE AS IT STANDS (goal/G30.15), so the owner's read shows a Save at once rather than what this process
+  // booted with. null when there is none or it does not parse.
+  readConfig: function () {
+    try { return JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), 'utf8')); }
+    catch (e) { return null; }
   },
 
   // ── A RESTART THIS PROCESS CANNOT PROMISE ON ITS OWN ──────────────

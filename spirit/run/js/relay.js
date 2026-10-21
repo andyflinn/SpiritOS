@@ -566,6 +566,8 @@ function createRelay(rootDir, deps) {
     }
     return {
       limitMB: function () { return limitMB; },
+      // Raised while running (goal/G30.15): more room applies at once.
+      setLimitMB: function (mb) { limitMB = mb; limitBytes = mb * 1024 * 1024; },
       usedBytes: used,
       full: function () { return limitBytes !== null && used() >= limitBytes; },
     };
@@ -692,10 +694,21 @@ function createRelay(rootDir, deps) {
     // this process is actually running on, what the box could give, and
     // what is on the roll. Everything needed to choose the next figure.
     var reading = ask.ramLimitMB === undefined && ask.discLimitMB === undefined;
+    // RESTART ALONE (goal/G30.15): a restart asked with no figures writes nothing. The screen's Restart once sent the
+    // figures the relay booted with, and wrote them back over the owner's Save.
+    if (reading && ask.restart) {
+      var alone = restart ? restart() : { will: false, why: 'this relay cannot restart itself' };
+      return { ok: true, status: 200, restarting: !!(alone && alone.will), restartRefused: alone && alone.will ? undefined : ((alone && alone.why) || 'no restarter') };
+    }
     if (reading) {
       var box = measure ? measure() : null;
       var room = box ? relayLimits.ceilings(box) : {};
-      var onFile = relayConfig.asked(config);
+      // WHAT THE FILE SAYS, read from the file (goal/G30.15): what the relay booted with is `running`; a Save shows here
+      // at once. deps.readConfig is the file as it stands; without one, what was asked at boot.
+      var readConfig = typeof deps.readConfig === 'function' ? deps.readConfig : null;
+      var fileNow = null;
+      try { fileNow = readConfig ? readConfig() : null; } catch (e) { fileNow = null; }
+      var onFile = fileNow && typeof fileNow.ramLimitMB === 'number' ? fileNow : relayConfig.asked(config);
       return {
         ok: true,
         status: 200,
@@ -802,14 +815,33 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 500, error: 'could not write relay-state/config.json' };
     }
 
+    // RAISING APPLIES AT ONCE, LOWERING AT THE NEXT START (goal/G30.15; Andy: "enlarging the memory limit would NOT
+    // require a restart, only reducing the memory limit would do that"). More room cuts nobody off, so a raised figure
+    // is taken now: the allowance and the seats for memory, the bound for disc. A lowered one waits for the restart.
+    var ramNow = checked.config.ramLimitMB >= config.ramLimitMB;
+    var discNow = checked.config.discLimitMB >= config.discLimitMB;
+    var nowBefore = { ramLimitMB: config.ramLimitMB, discLimitMB: config.discLimitMB, allowance: allowance };
+    if (ramNow && checked.config.ramLimitMB !== config.ramLimitMB) {
+      config.ramLimitMB = checked.config.ramLimitMB;
+      allowance = allowanceFor(config.ramLimitMB, atRestMB);
+      setAllowance();
+    }
+    if (discNow && checked.config.discLimitMB !== config.discLimitMB) {
+      config.discLimitMB = checked.config.discLimitMB;
+      discLimit.setLimitMB(config.discLimitMB);
+    }
+    var applies = ramNow && discNow ? 'now' : (!ramNow && !discNow ? 'next start' : 'memory ' + (ramNow ? 'now' : 'at the next start') + ', disc ' + (discNow ? 'now' : 'at the next start'));
+
     var answer = {
       ok: true,
       status: 200,
-      applies: 'next start',
+      applies: applies,
+      ram: ramNow ? 'now' : 'next start',
+      disc: discNow ? 'now' : 'next start',
       now: {
-        ramLimitMB: config.ramLimitMB,
-        discLimitMB: config.discLimitMB,
-        allowance: allowance,
+        ramLimitMB: nowBefore.ramLimitMB,
+        discLimitMB: nowBefore.discLimitMB,
+        allowance: nowBefore.allowance,
         members: held,
         discUsedMB: Math.round((usedBytes / (1024 * 1024)) * 100) / 100,
       },
@@ -4165,7 +4197,9 @@ function createRelay(rootDir, deps) {
     if (tok && t && joinHash(t) === tok.hash) {
       faceTokens.delete(n);
       var sid = require('crypto').randomBytes(24).toString('base64url');
-      faceSessions.set(sid, { name: n, until: clock() + FACE_IDLE_MS });
+      var fresh = { name: n, until: clock() + FACE_IDLE_MS, written: 0 };
+      faceSessions.set(sid, fresh);
+      keepLogin(sid, fresh);
       return { ok: true, status: 200, loggedIn: true, session: sid, name: n };
     }
     // The member's own email: a mail with the token and the link, within the join's caps (one a minute, five an hour).
@@ -4181,16 +4215,63 @@ function createRelay(rootDir, deps) {
     }
     return neutral;
   }
-  // A session, moved to 7 days from now by this interaction; gone after 7 days idle.
+  // ── A FACE LOGIN KEPT ON THE MEMBER'S ROW (goal/G30.15) ──────────────
+  //
+  // Andy: "why would the relay not stash my login on my member-row?", "save the cookie 1. after login 2. after
+  // re-connect 3. every day", "delete it on logoff/logout", and one login per device. The memory map stays the working
+  // copy; the row holds the cookie's hash and its idle deadline (relayStore faceLogins), so a restarted relay finds a
+  // login it has never seen in memory and the face's own 5-second retry brings it back.
+  var FACE_LOGINS_MAX = 8;                    // devices per member; the oldest goes when a ninth logs in
+  var FACE_WRITE_MS = 24 * 60 * 60 * 1000;    // "every day"
+  function keepLogin(sid, s) {
+    var m = s && faceMember(s.name);
+    if (!m) return;
+    var h = joinHash(sid);
+    var t = clock();
+    try {
+      var list = store.members.faceLogins(m.publicKey).filter(function (l) { return l && l.hash !== h && l.until > t; });
+      list.push({ hash: h, until: s.until });
+      if (list.length > FACE_LOGINS_MAX) list = list.slice(list.length - FACE_LOGINS_MAX);
+      store.members.setFaceLogins(m.publicKey, list);
+      s.written = t;
+    } catch (e) { /* the memory copy still holds it until a restart */ }
+  }
+  function dropLogin(sid, publicKey) {
+    var h = joinHash(sid);
+    try {
+      store.members.setFaceLogins(publicKey, store.members.faceLogins(publicKey).filter(function (l) { return l && l.hash !== h; }));
+    } catch (e) { /* it ends at its deadline anyway */ }
+  }
+  // A login this relay has no memory of: found on its member's row, if still within its deadline.
+  function recallLogin(sid) {
+    var h = joinHash(sid);
+    var m = null;
+    try { m = store.members.byFaceLogin(h); } catch (e) { m = null; }
+    if (!m || !m.faceName) return null;
+    var kept = store.members.faceLogins(m.publicKey).filter(function (l) { return l && l.hash === h; })[0];
+    if (!kept || !(kept.until > clock())) { dropLogin(sid, m.publicKey); return null; }
+    var s = { name: m.faceName, until: clock() + FACE_IDLE_MS, written: 0 };
+    faceSessions.set(sid, s);
+    keepLogin(sid, s);    // a reconnect after a restart writes the new deadline
+    return s;
+  }
+  // A session, moved to 7 days from now by this interaction; gone after 7 days idle. Written to the row once a day.
   function faceSession(sid) {
     faceSweep();
-    var s = faceSessions.get(String(sid || ''));
+    var id = String(sid || '');
+    var s = faceSessions.get(id) || (id ? recallLogin(id) : null);
     if (!s) return { ok: false, status: 401, error: 'not logged in' };
     s.until = clock() + FACE_IDLE_MS;
+    if (clock() - (s.written || 0) >= FACE_WRITE_MS) keepLogin(id, s);
     return { ok: true, status: 200, name: s.name };
   }
   function faceLogout(sid) {
-    faceSessions.delete(String(sid || ''));
+    var id = String(sid || '');
+    var s = faceSessions.get(id);
+    var m = s ? faceMember(s.name) : null;
+    if (!m) { try { m = store.members.byFaceLogin(joinHash(id)); } catch (e) { m = null; } }
+    if (m) dropLogin(id, m.publicKey);
+    faceSessions.delete(id);
     return { ok: true, status: 200 };
   }
 
@@ -4253,6 +4334,9 @@ function createRelay(rootDir, deps) {
   function faceOpen(sid, sink, opts) {
     var m = faceOwner(sid);
     if (!m) return { ok: false, status: 401, error: 'not logged in' };
+    // A reconnect writes the login's deadline to the row (goal/G30.15, "after re-connect").
+    var kept = faceSessions.get(String(sid || ''));
+    if (kept) keepLogin(String(sid || ''), kept);
     if (!activeRows[m.publicKey]) return { ok: false, status: 503, error: 'this face\'s node is not present' };
     var key = m.publicKey;
     var s = String(sid || '');
@@ -4334,6 +4418,8 @@ function createRelay(rootDir, deps) {
     // goal/G30.15: the relay's memory at rest, set by relayServer at the end of boot, and what it holds in parts.
     atRest: atRest,
     capacity: capacity,
+    // The owner's config verb, as their post reaches it (goal/G30.15: exported so it can be driven in-process).
+    reconfigure: reconfigure,
     claim: claim,
     forgetPeer: forgetPeer,
     join: join,

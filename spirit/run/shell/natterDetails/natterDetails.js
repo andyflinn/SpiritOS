@@ -1063,6 +1063,8 @@ function ndAllocationHtml() {
   var roll = ndAlloc.roll || {};
   var ram = f.ramLimitMB !== undefined ? f.ramLimitMB : run.ramLimitMB;
   var disc = f.discLimitMB !== undefined ? f.discLimitMB : run.discLimitMB;
+  // DISC IN GB (goal/G30.15; Andy: "disc should be measured in GB, not MB"); the relay keeps MB.
+  var gb = function (mb) { return mb === undefined || mb === null ? 'not known' : (Math.round(Number(mb) / 1024 * 100) / 100) + ' GB'; };
   return ndPanel('allocation', ndIcon.INFO, 'Memory and disc',
     spirit.shell.factRow([
       ['Memory set', ram + ' MB'], ['Memory running', run.ramLimitMB + ' MB'],
@@ -1070,18 +1072,18 @@ function ndAllocationHtml() {
       ['The relay at rest', (run.atRestMB || 0) + ' MB'], ['Members served now', run.members === undefined || run.members === null ? 'no limit' : run.members],
     ]) +
     spirit.shell.factRow([
-      ['Disc set', disc + ' MB'], ['Disc running', run.discLimitMB + ' MB'],
-      ['The box can give', (room.discMaxMB !== undefined ? room.discMaxMB + ' MB' : 'not known')],
+      ['Disc set', gb(disc)], ['Disc running', gb(run.discLimitMB)],
+      ['The box can give', gb(room.discMaxMB)],
       ['The roll uses', (roll.discUsedMB || 0) + ' MB'],
     ]) +
     '<div class="start-job-form card">' +
       '<label class="field-label">Memory, MB<input type="number" min="1" class="nd-alloc-ram" value="' + ndEscapeHtml(ram) + '"></label>' +
       '<span class="job-manifest-note nd-alloc-serves">serves ' + ndAllocMembers(ram) + ' members</span>' +
-      '<label class="field-label">Disc, MB<input type="number" min="1" class="nd-alloc-disc" value="' + ndEscapeHtml(disc) + '"></label>' +
+      '<label class="field-label">Disc, GB<input type="number" min="0.01" step="0.01" class="nd-alloc-disc" value="' + ndEscapeHtml(Math.round(Number(disc) / 1024 * 100) / 100) + '"></label>' +
       '<button type="button" class="cancel-btn nd-alloc-save">Save</button>' +
       '<button type="button" class="cancel-btn nd-alloc-restart">Restart</button>' +
     '</div>' +
-    '<div class="job-manifest-note">A change applies at the next restart of the relay.</div>' +
+    '<div class="job-manifest-note">More memory or disc applies at once; less applies at the next restart of the relay.</div>' +
     '<div class="job-manifest-note nd-alloc-out">' + ndEscapeHtml(ndAllocSaid) + '</div>',
     'natter-allocation');
 }
@@ -1098,21 +1100,26 @@ function ndAllocAsk(ask, out) {
   ndApi.peerPost('relay', relayKey, { config: ask }).then(function (r) {
     var b = r && r.body;
     if (r && r.ok && b && b.ok !== false) {
+      var when = function (w) { return w === 'now' ? 'now' : 'at the next restart'; };
       ndAllocSaid = ask.restart
-        ? (b.restarting ? 'restarting now: the new figures apply as it comes back' : 'written, but this relay cannot restart itself: ' + (b.restartRefused || 'no restarter'))
-        : 'written: ' + b.after.ramLimitMB + ' MB memory (' + b.after.members + ' members), ' + b.after.discLimitMB + ' MB disc, from the next restart';
+        ? (b.restarting ? 'restarting now: it comes back on the figures in its file' : 'this relay cannot restart itself: ' + (b.restartRefused || 'no restarter'))
+        : 'saved: ' + b.after.ramLimitMB + ' MB memory (' + b.after.members + ' members) ' + when(b.ram) + ', ' +
+          (Math.round(b.after.discLimitMB / 1024 * 100) / 100) + ' GB disc ' + when(b.disc);
       ndAlloc = null;
       ndAllocAsked = false;
       ndRender();
       return;
     }
+    // KEPT, so the next redraw does not wipe it (goal/G30.15).
+    ndAllocSaid = (b && b.error) || (r && r.error) || 'refused';
     out.className = 'job-manifest-note nd-alloc-out is-error';
-    out.textContent = (b && b.error) || (r && r.error) || 'refused';
+    out.textContent = ndAllocSaid;
   });
 }
 function ndAllocSave(button) {
   var panel = button.closest('.natter-allocation');
-  ndAllocAsk({ ramLimitMB: Number(panel.querySelector('.nd-alloc-ram').value), discLimitMB: Number(panel.querySelector('.nd-alloc-disc').value) },
+  // Disc is typed in GB; the relay takes MB.
+  ndAllocAsk({ ramLimitMB: Number(panel.querySelector('.nd-alloc-ram').value), discLimitMB: Math.round(Number(panel.querySelector('.nd-alloc-disc').value) * 1024) },
     panel.querySelector('.nd-alloc-out'));
 }
 function ndAllocRestart(button) {
@@ -1123,10 +1130,8 @@ function ndAllocRestart(button) {
     if (ndApi && ndApi.armUntilElsewhere) ndApi.armUntilElsewhere(ndDisarm);
     return;
   }
-  var f = (ndAlloc && ndAlloc.onFile) || {};
-  var run = (ndAlloc && ndAlloc.running) || {};
-  ndAllocAsk({ ramLimitMB: f.ramLimitMB !== undefined ? f.ramLimitMB : run.ramLimitMB, discLimitMB: f.discLimitMB !== undefined ? f.discLimitMB : run.discLimitMB, restart: true },
-    button.closest('.natter-allocation').querySelector('.nd-alloc-out'));
+  // RESTART ONLY (goal/G30.15): no figures go with it, so nothing in the file is written over.
+  ndAllocAsk({ restart: true }, button.closest('.natter-allocation').querySelector('.nd-alloc-out'));
 }
 
 // A DATE, NOT A DURATION. The invite panel next door says "in 6 days"
