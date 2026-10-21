@@ -1,5 +1,5 @@
 {
- "change": 81006,
+ "change": 81099,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,7 +10,6 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -47,14 +46,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "excluded": [
     "ollama agent node"
    ],
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -13055,11 +13056,9 @@
    "id": "goal/G30.19",
    "title": "Upgrade new shells contact application with probabilitySearch",
    "goal": "goal/G30",
-   "status": "",
+   "status": "running",
    "with": "",
    "buttons": [
-    "go",
-    "close",
     "delete"
    ],
    "blocking": [
@@ -13067,17 +13066,17 @@
    ],
    "blocked": [],
    "codeOffered": true,
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -13085,15 +13084,131 @@
    "claimCommit": "",
    "redCommit": "",
    "waived": false,
-   "rules": [],
-   "names": {},
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "Contacts has one search, in two tiers, on the new list-tool: one probabilitySearch (goal/G30.17) with contactElement rows (goal/G30.18), in the local shell and on the face alike, since both run the one Contacts app.\n\nTHE TWO TIERS\n- Tier one, at once: contact.search answers from the book and from the shadow (the peers this node has heard of, seenPeers) together, one row shape for both.\n- Tier two, streamed: the same call starts a network search across the relays. Each result is written into the shadow and streamed to the shell as one row as it arrives.\n- The node keeps one network search out at a time; words typed meanwhile go when it returns, only the latest.\n- A late result is still a real peer: it joins the cache and the current words rank it. Results join every open Contacts list, local and face; each ranks them by its own words.\n- The shadow is the node cache, the rows are the shell cache; each search starts from what the last one learned.\n\nTHE LIST\n- One list, cached by key: a peer in the book and found on the network is one row, its name and status from the book, its presence from the network.\n- A filter replaces the two folds: book, network, all.\n- Columns: presence, status, label; label sorts as text.\n- Each row keeps itself current through contactElement: presence, status and renames repaint from the stream. Contacts own presence painting (contactsWatchPresence, contactsPaintPresence and their helpers) is deleted.\n- A row in the book offers block, unblock and remove; a row found on the network offers Add (peer.acquire).\n- Pressing a row opens it: Contact for a person, Relay Details for a relay.\n- The list fills as soon as Contacts opens; an empty search answers like any other.\n\nCOMPONENTS REVISED\n- Node, contact.search: answers book and shadow matches and starts the network search.\n- Node, the network search: the relay walk now in peer.search runs as a job whose updates each carry one found row; contactElement subscribes to it like the other jobs.\n- Node, peer.search: deleted, once nothing uses it.\n- Desk onboarding: starts the network search job and reads its rows when the job says it is done, instead of asking peer.search.\n- Join, its contact step: shows the same one Contacts list instead of peerFind.\n- Face stream: carries the network search job and contact.rename, so the face repaints like the local shell.\n- Shell, contactElement: the add action, and rows in and out of the book.\n- Shell, Contacts: the book list and peerFind become the one list; peerFind is deleted.\n- The suites that assert peer.search or peerFind are rewritten to the one list and the job.\n- listSearch stays for the apps not yet ported.\n\nTHE INTERFACE CHANGE, APPROVED\n- contact.search also searches the shadow and starts the network search.\n- A new job kind, the network search, streamed to node and face.\n- peer.search deleted.",
+   "version": 4,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:51:55.924Z",
+     "text": "fill the box, it's self-evident."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:53:06.912Z",
+     "text": "Box filled (v1). The two points that aren't purely self-evident:\n\n- Contacts' own presence painting is deleted, since contactElement now does it; that is your rule that what replaces a mechanism deletes the old one.\n- Relays sit in the book too, so a relay row's open goes to Relay Details, not Contact. contactElement learns that from its row.\n\nCut or change anything."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:53:55.653Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:54:27.430Z",
+     "text": "Not yet, one gap. contactElement repaints a label on the node's contact.rename, but the face's stream doesn't carry that event (G30.13 sends only its listed kinds). So on the face a rename would not show until a reload.\n\nThe line it needs: 'faceHome streams contact.rename to the face, as the loopback stream carries it.'\n\nAlso, not a question: the network list's Add becomes an add action on contactElement (peer.acquire), a small addition to the element.\n\nAdd the rename line?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:57:21.902Z",
+     "text": "Hmm, I'm starting to wonder if there should be only one search in contacts and it somehow combines contact-search and peerSearch (like layered, contact search calls the node, the node returns contacts immediately, but sends of a peer-search, and when that comes, the node just streams each result of the peer search to the shell....\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:58:05.306Z",
+     "text": "I like it; it is the cache rule applied fully.\n\n- One list, one cache by key. The book's matches come at once; each network result streams in later and joins the same cache. A contact found on the network too is one row: the book gives its name and status, the network its presence.\n- Late is fine: a network result for words you have since changed is still a real peer, so it simply becomes a row and the current words rank it.\n- A row knows whether it is in the book: in the book it offers block and remove, found on the network it offers Add.\n- The node keeps one network search out at a time, the latest words going when it returns, so typing doesn't flood the relays.\n\nWhat it costs: contact.search changes what it does (it also starts a network search), and the node gains a stream event for each network result. Both are the node's interface, so they need your yes on that change itself, after review.\n\nWrite it into the box as the design, with that interface change named for your yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:58:48.810Z",
+     "text": "the node's cache its it's shadow-row, in this two-tier contact search..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:00:11.716Z",
+     "text": "Yes, and it already exists: the node keeps a shadow of every peer it has heard of (seenPeers, kept in its store), beside the book.\n\n- First answer, at once: the book's matches plus the shadow's matches, so peers seen before show up without asking any relay.\n- Then the network search goes out; each result is written into the shadow and streamed to the shell as a row.\n- So the shadow is the node's cache and the shell's rows are the shell's cache; the next search starts from what the last one learned.\n\nWrite the box around this two-tier search (book and shadow at once, network streamed into the shadow), with the interface change named for your yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:01:22.031Z",
+     "text": "yes. in this box, then revise all necessary components even node ones..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:02:48.218Z",
+     "text": "Box v2: one search in two tiers, every component to revise named, the node's included.\n\n- The network search becomes a job, so the stream and contactElement carry it the way they carry presence; no new event kind.\n- peer.search and peerFind lose their only use and are deleted.\n- The face stream gains the network search job and contact.rename, which closes the rename gap.\n\nThe three node interface changes are listed at the end of the box; is that interface change a yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:03:42.554Z",
+     "text": "interface change/reduction approved.\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:04:30.945Z",
+     "text": "Approval recorded in the box (v3).\n\nNot green yet, one gap: two more places use the network search.\n\n- Join's contact step shows peerFind, the same find-someone list.\n- The desk's agent onboarding asks peer.search for the desk's label and waits for one whole answer.\n\nMy proposal: Join's step shows the same one Contacts list, and the onboarding starts the network search job and reads its rows when the job says it is done. Then peer.search and peerFind have no user left.\n\nThat way?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T12:06:05.013Z",
+     "text": "That way.\n\nall in this item.\n\nupdate box and then tell me if green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T12:07:01.890Z",
+     "text": "Box v4: Join's contact step and the desk onboarding are in, the suites to rewrite named, and network results join every open Contacts list, each ranking them by its own words.\n\nGreen: settled, open none, box current (v4)."
+    }
+   ]
   }
  ]
 }
