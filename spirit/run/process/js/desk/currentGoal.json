@@ -1,5 +1,5 @@
 {
- "change": 76881,
+ "change": 77644,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,11 +10,12 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.10"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -45,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 5,
    "excluded": [
     "ollama agent node",
     "wsl-claude"
@@ -62,8 +63,8 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "Andy, 2026-10-19: \"This goal is now really about folding relay and face into one.... it will come with a lot of shell fixes later......\"\n\nDECIDED\n- Secrets stay on the node, in relay-state/, never served to a page, never in git. No encryption at rest.\n- Providers are a generic dataset, plugins only where a provider needs its own flow. Each provider record carries its help in prose with links to where the key is obtained.\n- Andy, 2026-10-19: \"we don't need a keys app.\"\n- An app never sees a key: it asks the node to call provider X, the node attaches the credential and returns the answer only. Granted per app and per provider.\n- Only Andy adds, changes or removes a key or connects an OAuth account, from his own session.\n- Only the relay/face owner holds the OAuth agreements with the login providers; a member needs none. The home node never sees an OAuth flow: its face says this verified email is you.\n- A member chooses a name one level under the relay domain (andy.noderoutes.net), tied to their verified email. One wildcard DNS record and one wildcard certificate (*.noderoutes.net, Let's Encrypt by DNS challenge), Caddy proxying every name to the one relay, the Host header picking the member face.\n- The home node acts as a puppet to its verified face. The relay/face serves the shell code; a face request goes into the member stream as an event (no route, no in-flight slot); the home node answers and live-updates by faceStream, caught at the face among the streamed events.\n- The two relay additions, the visitor request as a stream event and faceStream, need review and Andy's yes on each.\n\nFACTS FROM THE TREE\n- Name routing is built: appFaceApp takes the one label under the face domain from the Host header (faceRoute.nameOf) and asks grantFace, slots name to key, on the face owner node. The relay holds per member only key, label and signed card (relayStore.js).\n- The stream already carries heartbeats, presence and route events that open no route; its bound is the stream backlog cap.\n- The relay reads its configuration once at boot (relayConfig.js); the face is a process of the face owner node, like grantFace.\n\nThe open points are the Q checks of this item.\n\nFOR G30.1 WHEN IT IS REVIVED\n- The onboarding of goal/G30.2 brings email verification; any change of a member's email is then verified the same way (Andy, 2026-10-19).",
-   "version": 10,
+   "box": "Andy, 2026-10-19: \"This goal is now really about folding relay and face into one.... it will come with a lot of shell fixes later......\"\n\nDECIDED\n- Secrets stay on the node, in relay-state/, never served to a page, never in git. No encryption at rest.\n- Providers are a generic dataset, plugins only where a provider needs its own flow. Each provider record carries its help in prose with links to where the key is obtained.\n- Andy, 2026-10-19: \"we don't need a keys app.\"\n- An app never sees a key: it asks the node to call provider X, the node attaches the credential and returns the answer only. Granted per app and per provider.\n- Only Andy adds, changes or removes a key or connects an OAuth account, from his own session.\n- Only the relay/face owner holds the OAuth agreements with the login providers; a member needs none. The home node never sees an OAuth flow: its face says this verified email is you.\n- A member chooses a name one level under the relay domain (andy.noderoutes.net), tied to their verified email. One wildcard DNS record and one wildcard certificate (*.noderoutes.net, Let's Encrypt by DNS challenge), Caddy proxying every name to the one relay, the Host header picking the member face.\n\nThe routing between face and home node is goal/G30.10's; its design is in that item.\n\nThe open points are the Q checks of this item.\n\nFOR G30.1 WHEN IT IS REVIVED\n- The onboarding of goal/G30.2 brings email verification; any change of a member's email is then verified the same way (Andy, 2026-10-19).",
+   "version": 11,
    "checks": [
     {
      "number": "Q1",
@@ -454,6 +455,18 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-20T14:58:19.420Z",
      "text": "need a break. ttyl. signoff."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-20T23:56:37.162Z",
+     "text": "add item, connect home-node and face, routing requests from face to home-node and streaming responses and updates from home-node to face"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-20T23:57:36.774Z",
+     "text": "Added: goal/G30.10, Connect home node and face. Its box holds your line and the two parts named earlier (requests to the home node's apiDoor through the relay; a stream from the home node to the face standing in for the SSE)."
     }
    ]
   },
@@ -9025,6 +9038,1040 @@
      "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
      "at": "2026-10-20T23:52:41.062Z",
      "text": "Claimed: 7a6bdc9c; verify passes (faceLogin 14 of 14).\n\nTagged: v-2026-10-21-01-52 at 7a6bdc9c, pushed. Update spirit-3 and reload the face; no setup step this time."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.10",
+   "title": "Connect home node and face",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [
+    "goal/G30.11",
+    "goal/G30.12"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Connect the home node and the face: requests from the logged-in face reach the home node, and the home node streams answers and updates back to the face, through the relay. No face node, no puppet process, no app servers on the relay box.\n\n- The relay serves face.html and the login app, nothing else. After login the login app sets up a sealed link with the home node and loads everything else from it, lazily: the home node serves the face its own version, so there is no version to sync. Contacts is the one app the face must have from the start; the rest loads when opened.\n- The home node acts as a puppet to its verified face: the face gets exactly the local shell's interface, through the same door a puppeteer uses on the home node, minus the email and face changes with the relay (adding or changing the email, asking a face name). Only the face and its connection are protected.\n- The home node keeps the one stream it holds to its relay; the logged-in face opens its own stream to the relay, tied to its login.\n- A face request goes into the member's stream as an event (no route, no in-flight slot); the home node answers on faceStream, and the relay hands the answer to the waiting face request. One request, one answer, no polling.\n- faceStream is node-internal, the owner's node to the owner's face, with the relay only shovelling bytes both ways. It is not a peerPost: no post limit (22 KB) and no size cap of its own; files, media and source travel whole. A file is a plain upload of its raw data, tagged with the request's id and piped straight into the waiting request: no base64, no JSON around it.\n- The home node streams to the face what it streams to its loopback shell.\n- On the home node, faceStream has its own serializing queue and a queue manager: face requests first, the fs-watcher, stats and the other streamed updates after. Tuning that queue will take experimentation.\n- After login everything on faceStream is sealed between the home node and the browser, with a browser-compatible seal whose key is lost with the session. That keeps the relay from reading it passively; a relay owner who swaps face.html or the login app could still read it, since those come from the relay, and the login says so to the member.\n- One face stream per member. A face opened while another device holds it warns: your face is open on another device; connecting here ends it there. Only its Connect here press moves the stream; the face it replaced gets a last event, taken by another device, and says so.\n- The face stream counts in the relay's one stream ceiling (set from its RAM), so a full relay refuses a new face as it refuses a member's stream: at most two streams per member, the home node's and one face's.\n- The two relay additions, the face request as a stream event and faceStream, need review and Andy's yes on each before they are built.\n- When the home node goes offline, the face keeps its shell and shows the small red not connected mark, as the local shell does.\n- After this item the face shell is no longer waiting for plumbing.\n\nNOT IN THIS ITEM: a reconnect that keeps the browser's cached content; app components found and installed on demand, with the home node learning what to deliver.",
+   "version": 15,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do face streams count in the relay's one stream ceiling, so a full relay refuses a new face as it refuses a member's stream?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T00:14:56.980Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:01:24.171Z",
+     "text": "something fundamental:\n\n- if we could actually stream uphill to the face, via the relay, we'd probably get much better performance. but relay-capacity would now exactly carre 3 streams per member, if we enforce maximum 2 face active.... a face on another device would simply \"steal\" the face-side strem-slot.....\n\ni know we already had a clunky concept of how to do this, but..\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:02:12.724Z",
+     "text": "I think it is the right shape, and it reuses what is there:\n\n- The home node already holds one stream to its relay. The logged-in face opens its own stream to the relay, tied to its login.\n- A face request goes to the relay, which hands it down the home node's stream; the home node answers it on the reply door it already has, and the relay returns the answer to the face. One request, one answer, no polling.\n- Updates the home node wants the face to see, it posts to the relay once; the relay writes them to that member's face streams. The page's live updates without a second connection to the home node.\n- Two faces per member, the newest takes the slot of the oldest: the evicted face gets a last event, taken by another device, and says so.\n- What it costs: at most three streams per member instead of one, so the relay's stream ceiling (set from its RAM) is reached three times sooner when every member has two faces open.\n- The old concept (a face node asking the owner node for routes) is deleted; nothing of it is needed.\n\nOne question: do face streams count in the same ceiling, so a full relay refuses a new face as it refuses a member's stream?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:05:51.392Z",
+     "text": "What it costs: at most three streams per member instead of one, so the relay's stream ceiling (set from its RAM) is reached three times sooner when every member has two faces open.\n\nwe're also saving at least one or two full node-processes, no-appFaceApp puppet, and no appServers running on it....\n\nI'm fine with your proposal, fill the box with it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:06:34.841Z",
+     "text": "In the box (v2): the proposal as agreed. The one open question is on the item as a Q: do face streams count in the relay's one stream ceiling?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:08:13.682Z",
+     "text": "Q1: Do face streams count in the relay's one stream ceiling, so a full relay refuses a new face as it refuses a member's stream?\n\nideally yes. one face-stream per member maximum, it about the same thing: predictable capacity for the relay."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:08:54.943Z",
+     "text": "In the box (v3): one face stream per member, taken by the newest device; it counts in the relay's one ceiling, so a full relay refuses a new face. At most two streams per member.\n\nQ1 is answered; clear it when you are content with the wording."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:11:47.602Z",
+     "text": "yes, a logged in device blocks others devices from taking the stream.\n\nis that what you propose?\n\nWhatsApp does something similar with its web-interface, i can only have one browser window open at the time, connected to whatsAPP"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:12:19.110Z",
+     "text": "No, I proposed the opposite: the newest device takes the slot. You describe the first one holding it.\n\nWhatsApp sits between the two: a second window says WhatsApp is open in another window, with a Use here button; pressing it moves the session there, and the first window says it was taken.\n\n- A: the newest takes it at once (what the box says now)\n- B: the first holds it; a second device is refused\n- C: as WhatsApp: the second device shows Use here, and only that press moves the stream\n\nA, B or C?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:12:32.261Z",
+     "text": "What's app basically warns the user, if you connect here, your other connections will be lost...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:13:20.191Z",
+     "text": "Taken as C, in the box (v4): a face opened while another device holds the stream warns that connecting here ends it there; only its Connect here press moves the stream, and the other face says it was taken."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:14:07.670Z",
+     "text": "yes, that would be awesome."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:14:34.775Z",
+     "text": "Recorded. Checking the box for gaps before the design is whole; three remain, one at a time:\n\n- which home-node verbs a face request may reach\n- which updates the home node streams to the face\n- what the face shows while the home node is offline\n\nFirst: a logged-in face is you, so it could reach every verb your node answers at home; or only the verbs of the apps marked face:true. Every verb, or face:true apps only?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:14:56.054Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:15:59.972Z",
+     "text": "shouldn't you move the detailed design from goal to this item so it states clearly what will be done here?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:17:13.061Z",
+     "text": "Moved. This item's box (v5) now carries the routing design that stood on the goal: the home node as puppet to its face, the face request as an event in the member's stream, faceStream for the live updates, and that both relay additions need review and your yes each. The goal's box (v11) points here instead, and its stale facts (appFaceApp and grantFace, both deleted) are gone.\n\nStill open: every verb, or face:true apps only?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:19:20.001Z",
+     "text": "the face will get the exact same interface as the local shell, minus email and face updates with the relay, we only protect the face and its connection, other than that the face uses the same door as a puppeteer would use on the home node."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:20:19.280Z",
+     "text": "In the box (v6): the face gets the local shell's whole interface through the puppeteer's door, minus the email and face changes with the relay; faceStream carries what the local shell's stream carries. That answers the first two gaps.\n\nLast one: while the home node is offline, the face shows an offline page (it does today), or the shell with a notice that the node is away?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:20:31.145Z",
+     "text": "concetually this: the home-node streams to the shell loopback shell the same stuff as it streams to the face."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:21:04.222Z",
+     "text": "Yes, that is the box's line: one stream, the same to the loopback shell and to the face.\n\nStill open, the last gap: with the home node offline, the plain offline page, or the shell with a notice that the node is away?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:22:08.044Z",
+     "text": "and we need to talk about size limits on the upstream posts to the face...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:22:52.750Z",
+     "text": "The limits as they stand (limits.js):\n\n- one post through the relay: 22 KB sealed, 16 KB of plain text\n- one stream event: about 135 KB; a stream's unread backlog: about 270 KB, past which a slow reader is cut off rather than buffered\n\nWhere the face meets them:\n\n- most answers are far under 16 KB (searches are already cut to fit)\n- a file opened in an app can be megabytes: over 16 KB it has to travel in pieces under the limit, each its own post, as the file-transfer seed says\n- the local shell's first snapshot is large: on your node about 940 events, about 365 KB, more than the face stream's backlog; it has to arrive paged, or the face asks for what it shows\n\nOne question: in this item, do answers over 16 KB travel in pieces, or are they refused for now, with pieces a later item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:27:43.097Z",
+     "text": "what I'm saying: the faceStream verb on relay is not really a peerPost, it is owner to owner (of the node), and what concerns me is: a lot of items visible in the shell are files (media, source code etc), and we have the opporunity to get the face working quickly if the faceStream post is perceived as node-internal with the relay just doing bidirectional shoveling...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:28:55.070Z",
+     "text": "In the box (v7): faceStream is node-internal, owner to owner; the relay only shovels bytes both ways, and the post limits do not apply.\n\nI think it is right, and it is what makes files and media work:\n\n- A face request is a small event down the home node's stream; the home node answers by opening one upload to the relay that the relay pipes straight into the face's waiting response, as it arrives. A megabyte file is never held whole on the relay: what sits there is what the two sockets hold.\n- The live updates are one long-running upload from the home node, piped into the face's stream the same way.\n- Both ends are proven: the home node by its key, the face by its login. Nobody else can open either side.\n- What it costs: the relay box's bandwidth is what the face uses; a video watched on the face crosses the relay twice. No cap per member is in the design so far.\n\nOne question: does the relay cap the bytes a member's face may move (per day, say), or none for now?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:33:29.904Z",
+     "text": "so the relay on GET requests from the face, delivers the pieces it has, app-scripts etc. directly and read-only, for user-files, the get-request is packaged in json and thrown down the SSE connection of the homeNode, who replies, unfortunately, with a json-package that encodes the GET-data base64, the relay then returns the decoded data as reply to the GET request?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:34:04.307Z",
+     "text": "Yes, with one change:\n\n- App scripts and the shell's own files: the relay serves them itself, read-only, from its own tree. One catch: they are the relay's version, so a home node on another version may not match them.\n- User files: the GET goes down the home node's stream as a small JSON event, as you say.\n- The change is the answer: no JSON, no base64. The home node answers with a plain upload of the bytes to the relay, tagged with the request's id, and the relay pipes them straight into the waiting GET. Base64 makes everything a third larger, and to decode it the relay would have to hold the whole file first; the plain upload is never held whole."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:34:46.325Z",
+     "text": "i already decided no size-cap in the faceStream verb"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:35:33.581Z",
+     "text": "Recorded (v8): faceStream has no size cap.\n\nNext: the home node answers a file GET with a plain upload of the bytes, tagged with the request's id, piped by the relay into the waiting GET; not base64 in JSON. Yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:36:36.619Z",
+     "text": "anything labeled \"core\" or intrinsic is delivered by the relay. we'll worry about release-level sync later. before alpha there will be NO backward compatibility."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:37:26.171Z",
+     "text": "Recorded (v9): the relay delivers anything core or intrinsic itself; version sync later, no backward compatibility before alpha.\n\nStill open: the home node answers a file GET with a plain upload of the bytes, piped by the relay into the waiting GET, not base64 in JSON. Yes?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:38:00.870Z",
+     "text": "posting raw date to faceStream is fine with me. it saves bandwidth and memory on the relay."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:38:21.728Z",
+     "text": "raw file data i mean"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:38:57.632Z",
+     "text": "Recorded (v10): raw file data posted to faceStream, piped into the waiting GET.\n\nLast gap: with the home node offline, the face shows the plain offline page, or the shell with a notice that the node is away?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:39:36.290Z",
+     "text": "and the faceStream cannot be sealed because the browser won't be able to unseal."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:40:26.195Z",
+     "text": "Recorded (v11): faceStream is not sealed; https carries it both ways.\n\nThe consequence, named once: the relay sees the face's traffic in the clear, your files included, as it already sees the login. On your own relay that is you; a member on someone else's relay trusts its owner with what his face shows.\n\nLast gap, still open: the home node offline, the plain offline page or the shell with a notice?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:43:05.605Z",
+     "text": "The consequence, named once: the relay sees the face's traffic in the clear, your files included, as it already sees the login. On your own relay that is you; a member on someone else's relay trusts its owner with what his face shows.\n\nthat is a disclosure we must make.\n\ni know that most modern browser can seal, but a different type of keyPair and lost with the browser session, so it could be done later as an additional layer, or should it be done now?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:43:44.254Z",
+     "text": "Recorded (v12): the disclosure, on the face's login: the relay's owner can see what the face shows.\n\nOn sealing in the browser, I would do it later, for one reason: the relay serves the shell's own code to the face. A relay owner who wanted to read the traffic could serve a shell that hands him the browser's key. So sealing protects nothing against the relay until the shell's code reaches the face from somewhere the relay cannot change, or is checked against a signature the home node made. With that in place, sealing is worth adding as a layer; without it, it is cost (every piece sealed and opened) for no protection.\n\nThat is my recommendation, not a ruling: later, after a signed shell?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:45:30.598Z",
+     "text": "the other version would be: the home-node servers EVERYTHING, no version-sync issue and everything could be sealed with a browser-compatible seal."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:45:58.046Z",
+     "text": "Weighed:\n\n- For: the face always runs your node's own version, so no sync to manage; the relay keeps no shell tree, only face.html and the login; and every byte after login can be sealed between your node and the browser.\n- Against: the first load is slower, the whole shell crossing the relay from your node instead of from the relay box.\n- What sealing then stops: a relay that reads passively (logs, a stolen disk, a curious operator who changes nothing). What it still cannot stop: a relay owner who swaps the small loader face.html carries, since that first page always comes from the relay. Only something the relay never serves (an installed app, say) closes that.\n\nOn balance I lean to yours: the version match alone removes a whole class of trouble, and passive privacy is worth having. The disclosure stays, worded for the active case.\n\nHome node serves everything, sealed after login: your call, is that the ruling?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:49:46.528Z",
+     "text": "The shell will be lazy-load, so nothing unused will ever be loaded, and the schell still caches probability tables and get some real-time snazzyness....\n\nAnother reason to use this shell version for SMART load-as-needed, stuff. This version of the shell will \"search for app-Components and install them on demand, the home node will learn the configuration and only deliver that...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:50:15.398Z",
+     "text": "That answers the cost I named: with lazy load, only what is opened crosses the relay, and the shell's caches stay.\n\nIt replaces an earlier ruling in the box (the relay delivers anything core or intrinsic), so one word to make it the record: the home node serves everything to the face, sealed after login, the relay only face.html and the login. Yes?\n\nThe app components found and installed on demand, with the home node learning what to deliver, I would keep for a later item unless you want it in this one."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:50:23.546Z",
+     "text": "that's where the login applet comes in...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:51:01.744Z",
+     "text": "So, as I read it: the relay serves face.html and the login app, nothing else; after login the login app sets up the sealed link and loads everything else from the home node, lazily. Is that the ruling?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:51:06.316Z",
+     "text": "contacts are the only mandatory/crucial thing there..."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:51:38.344Z",
+     "text": "claude-windows 02:51 So, as I read it: the relay serves face.html and the login app, nothing else; after login the login app sets up the sealed link and loads everything else from the home node, lazily. Is that the ruling?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:51:50.453Z",
+     "text": "I read that as: Contacts is the one app the face must have from the start; the rest loads when opened. I will put that in the box once the first point is settled.\n\nOne plain answer first, please: the home node serves everything to the face after login (sealed), the relay only face.html and the login app. Yes or no?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:52:42.857Z",
+     "text": "Recorded, and the box rewritten whole so it reads as one design (v13): the relay serves face.html and the login app only; the home node serves everything after login, lazily and sealed; Contacts the one app from the start; the disclosure worded for the swapped-loader case.\n\nOne gap left: with the home node offline, the plain offline page or the shell with a notice?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:53:22.692Z",
+     "text": "One plain answer first, please: the home node serves everything to the face after login (sealed), the relay only face.html and the login app. Yes or no?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:53:53.983Z",
+     "text": "Already in the box (v13). The one gap left: with the home node offline, the plain offline page or the shell with a notice?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T00:55:19.081Z",
+     "text": "if the home node goes offline, the shell shows that little red thing like the current shell, \"no connection\", we'll figure out later how a reconnect works while preserving the browsers cached content."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T00:56:15.455Z",
+     "text": "In the box (v14): offline, the face keeps its shell with the red not connected mark. Not in this item: the reconnect that keeps the cache, and the on-demand app components.\n\nThe design reads whole to me. Building it is large, so the order I would take:\n\n- the two relay additions first (the face request as a stream event, faceStream with its pipe), each needing your yes as the box says\n- the home node answering face requests through the puppeteer door, and streaming to the face what it streams to its loopback shell\n- the sealed link set up by the login app, and the lazy loading of the shell from the home node\n- the one-stream-per-member rule with Connect here\n\nEnd design and Go?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:00:22.435Z",
+     "text": "yep, and the node-side mechanism for faceStream needs its own serializing queue + queue manager, where face requests are first priority, and fs-watcher and stats etc are of lesser priorities. experimentation will likely be needed to manage that queue effectively."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:01:16.002Z",
+     "text": "In the box (v15): faceStream on the home node gets its own serializing queue with a queue manager, face requests first, fs-watcher and stats after; tuned by experiment.\n\nI start with the red as soon as G30 leaves design and G30.10 has its Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:02:02.816Z",
+     "text": "do you recommend braking this down into properly blocked/sequenced items?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:02:32.226Z",
+     "text": "Yes. Four items, each blocking G30.10, in this order:\n\n- 1. Relay: the face request as a stream event and faceStream's pipe (the two relay additions, your yes on each). Waits on nothing.\n- 2. Home node: answers face requests through the puppeteer door, and streams to the face what it streams to its loopback shell, through faceStream's queue and queue manager. Waits on 1.\n- 3. Face: the login app sets up the sealed link and loads the shell lazily from the home node, Contacts first; offline shows the red mark. Waits on 2.\n- 4. Relay: one face stream per member, Connect here, counted in the stream ceiling. Waits on 1; can run beside 2.\n\nG30.10 keeps the whole design as its box and closes when the four do. Add these four?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:03:01.847Z",
+     "text": "add items to break this design down into four properly sequenced steps...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:05:25.954Z",
+     "text": "Added, each with its part of the design in its box:\n\n- goal/G30.14 Relay: face request as a stream event, and faceStream's pipe (step 1, needs your yes on each addition)\n- goal/G30.13 Home node answers the face through faceStream's queue (step 2, waits on G30.14)\n- goal/G30.11 Face loads its shell sealed from the home node (step 3, waits on G30.13)\n- goal/G30.12 One face stream per member, Connect here (step 4, waits on G30.14)\n\nG30.11 and G30.12 block G30.10, which keeps the whole design. First to build is G30.14, once it has its Go."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:06:03.897Z",
+     "text": "is this the first to do?\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:06:41.740Z",
+     "text": "No: this one closes last. First to do is goal/G30.14 (the relay additions), then G30.13 and G30.12, then G30.11.\n\nGreen: settled, open none, box current (v15)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:46:57.500Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:47:47.109Z",
+     "text": "Green: settled, open none, box current (v15). It holds the whole design; the finer rulings since (the queue order and what is dropped, bundling, older browsers, the reconnect) are in its four steps, G30.14, G30.13, G30.12 and G30.11, all green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.11",
+   "title": "Face loads its shell sealed from the home node",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.10"
+   ],
+   "blocked": [
+    "goal/G30.13"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Step 3 of goal/G30.10. Waits on goal/G30.13.\n\n- The relay serves face.html and the login app, nothing else. After login the login app sets up a sealed link with the home node (a browser-compatible seal, its key lost with the session) and loads everything else from the home node, lazily, in the home node's own version. Contacts is the one app the face must have from the start; the rest loads when opened.\n- The seal is the node's own (X25519, HKDF-SHA256, AES-256-GCM), done in the browser with WebCrypto; large files are sealed piece by piece as they stream. A browser whose WebCrypto lacks X25519 is served unsealed, with a warning that its traffic is readable on the relay.\n- The login says to the member that a relay owner who swaps face.html or the login app could read what the face shows.\n- With the home node offline the face keeps its shell and shows the small red not connected mark, as the local shell does.\n- After this item the face shell is no longer waiting for plumbing.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "A browser whose WebCrypto lacks X25519 (older ones) cannot seal: is the face refused there, or served unsealed with a warning?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T01:46:07.760Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:42:42.373Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:43:23.040Z",
+     "text": "Not yet green: settled otherwise, box current (v1), one open, now Q1.\n\nChecked first: the node's seal is X25519, then HKDF-SHA256, then AES-256-GCM, and a current browser has all three in WebCrypto, so the browser can seal and open the same way your node does. Large files are sealed piece by piece as they stream.\n\nThe open point is older browsers, whose WebCrypto lacks X25519: Q1, is the face refused there, or served unsealed with a warning?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:44:55.193Z",
+     "text": "screw older browsers. serve them unsealed with a warning."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:45:42.512Z",
+     "text": "In the box (v2): the seal is the node's own, done with WebCrypto in the browser; an older browser without X25519 is served unsealed with a warning. That answers Q1; clear it and the item is green."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:46:06.863Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:46:28.073Z",
+     "text": "Green: settled, open none, box current (v2).\n\nAll four steps of G30.10 are green now (G30.14, G30.13, G30.12, G30.11). G30.14 is first; it needs G30 out of design and its Go."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.12",
+   "title": "One face stream per member, Connect here",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.10"
+   ],
+   "blocked": [
+    "goal/G30.14"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Step 4 of goal/G30.10. Waits on goal/G30.14; may run beside goal/G30.13.\n\n- One face stream per member. A face opened while another device holds it warns: your face is open on another device; connecting here ends it there. Only its Connect here press moves the stream; the face it replaced gets a last event, taken by another device, and says so.\n- The same login reconnecting (a reload, a dropped network) replaces its own stream without the warning; the warning is for a different login, another device.\n- The face stream counts in the relay's one stream ceiling (set from its RAM), so a full relay refuses a new face as it refuses a member's stream: at most two streams per member.",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:39:55.424Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:40:39.826Z",
+     "text": "One unstated case, added as the plain default (strike it if wrong): the same login reconnecting, a reload or a dropped network, takes back its own stream without the warning; the warning is for another device.\n\nGreen: settled, open none, box current (v2)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:41:10.108Z",
+     "text": "claude-windows 03:40 One unstated case, added as the plain default (strike it if wrong): the same login reconnecting, a reload or a dropped network, takes back its own stream without the warning; the warning is for another device.\n\nyes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:41:17.434Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:41:52.862Z",
+     "text": "Green: settled, open none, box current (v2); the reconnect default is now yours."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.13",
+   "title": "Home node answers the face through faceStream's queue",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.11"
+   ],
+   "blocked": [
+    "goal/G30.14"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Step 2 of goal/G30.10. Waits on goal/G30.14.\n\n- The home node answers face requests through the same door a puppeteer uses on it: the local shell's whole interface, minus the email and face changes with the relay. Only the face and its connection are protected.\n- It streams to the face what it streams to its loopback shell.\n- faceStream on the home node has its own serializing queue and a queue manager: in priority order: 1. face requests, 2. the fs-watcher stream, 3. the presence stream, 4. the app servers' streams, 5. stats events, dropped whenever the queue is busy; 6. the node-monitor is not sent at all for now. Tuning it will take experimentation.\n- faceStream is newline-separated, one event a line. An answer to a face request goes out on its own, at once. All other events (fs-watcher, presence, app servers' streams) are bundled: whatever is waiting goes out together in the next write, each still its own whole line. Nothing is merged; the fs-watcher's events are never dropped, and a face that falls behind catches up in one write instead of being cut off.\n- The node streams presence peer by peer: one event for each peer whose presence changed, not the whole table each time. Where presence arrives as the answer to a search, it comes bundled, as a search answer does.\n- What the face is sent of the updates (Andy's sketch): stats are dropped whenever the queue is busy; the relay-monitor streams are not sent at all for now (later the relay may put them into its owner's face stream as it does into his home node's); route updates go only to the home node, never to the face.",
+   "version": 8,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "When the face reads slower than the node streams, do the lesser updates wait without bound, or is the face cut off past a bound, as the relay cuts a slow reader?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T01:28:50.478Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "When the face falls far behind on fs-watcher events, do they all wait (the default now in the box), does it get one resync line, or is the face cut off?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T01:37:46.025Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:13:22.185Z",
+     "text": "red Q's?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:13:46.623Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:14:03.607Z",
+     "text": "One red Q, now on the item as Q1: when the face reads slower than the home node streams, do the lesser updates (fs-watcher, stats) wait without bound, or is the face cut off past a bound, as the relay does with a slow reader?\n\nI leave out dropping or merging updates on purpose: that would be a decision for you, not a default (rule/5).\n\nNothing else is open: the door is the puppeteer's, the stream is the loopback shell's, and the order is face requests first."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:14:26.256Z",
+     "text": "Not yet green: settled otherwise, box current (v1), one open, Q1 (now filed; my first try was refused for length): when the face reads slower than the node streams, do the lesser updates wait without bound, or is the face cut off past a bound?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:21:04.170Z",
+     "text": "Q1: When the face reads slower than the node streams, do the lesser updates wait without bound, or is the face cut off past a bound, as the relay cuts a slow reader?\n\n- stats just get dropped completely if the queue is busy\n- relay-monitor streams are completely dropped for now. later, the relay can throw those into it's owners face-stream when it throws them into the home-owners home-node stream. \n- route-updates go only to the home node....\n\n\nthis is a general sketch\n\nopinions?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:22:08.524Z",
+     "text": "In the box (v2), your sketch. My opinion:\n\n- Stats dropped when busy: right; a stat is stale the moment the next one is made, so nothing is lost.\n- Relay-monitor not sent: right for now; it is the relay's, and the relay can feed it straight to its owner's face later without the home node.\n- Route updates to the home node only: right; the face never routes.\n\nThe one stream the sketch leaves open is the fs-watcher, and it is the one the face needs: an open app reads its files through it. My suggestion: it queues behind face requests and is never dropped one by one (a lost change leaves a stale view); if it falls too far behind, the face is sent one resync line and asks the file view again, instead of being cut off.\n\nThe fs-watcher like that, or as you see it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:22:32.155Z",
+     "text": "the fs-watcher stream has priority over app-server streams"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:23:16.177Z",
+     "text": "In the box (v3): face requests, then fs-watcher, then the app servers' streams; stats last, dropped when busy.\n\nStill open (Q1): when the fs-watcher falls far behind, one resync line and the face asks its file view again, or the face cut off?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:25:17.121Z",
+     "text": "priorities\n\n1. face-requests\n2. fs-watcher\n3. presence-stream\n4. appServer streams\n5. stats events get dropped if queue is busy\n6. node-monitor completely dropped for now. \n\ndoes this make sense?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:26:04.490Z",
+     "text": "It makes sense, and it is in the box (v4) as you list it.\n\nOne note, not a change: presence arrives as a whole table each time, so only the latest one matters; letting a newer one replace an older still waiting would save the face work. That is merging, so it is yours to say, not mine to build in.\n\nStill open (Q1): the fs-watcher far behind, a resync line or the face cut off?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:26:52.480Z",
+     "text": "One note, not a change: presence arrives as a whole table each time, so only the latest one matters; letting a newer one replace an older still waiting would save the face work. That is merging, so it is yours to say, not mine to build in.\n\npresence will have to fucking change."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:27:16.823Z",
+     "text": "Agreed that sending the whole table each time is the thing to change. Changing presence touches the relay, every node and the shell, well beyond this item.\n\nAdd a new item for it, with this one sending presence as it is meanwhile?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:27:32.252Z",
+     "text": "the node will stream presence peer by fucking peer."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:28:10.372Z",
+     "text": "if the presence arrives in a search, there the bundling is acceptable"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:28:22.371Z",
+     "text": "In the box (v5): the node streams presence peer by peer, one event per peer that changed. Read as part of this item; say if it is its own.\n\nStill open (Q1): the fs-watcher far behind, a resync line or the face cut off?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:28:49.563Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:29:01.936Z",
+     "text": "In the box (v6): presence streamed peer by peer; bundled only where it is the answer to a search."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:29:24.037Z",
+     "text": "shit, i deleted the red Q accidentally before i read it..."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:29:41.862Z",
+     "text": "Q1 cleared. The fs-watcher-falling-behind case was left open, so the box (v7) holds the plainest default: its events are never dropped and wait behind face requests, and the face is not cut off. Strike it if you want otherwise.\n\nGreen: settled, open none, box current (v7)."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:30:06.744Z",
+     "text": "No harm done; it is back as Q2: when the face falls far behind on fs-watcher events, do they all wait (the default I put in the box), does the face get one resync line and reload its file view, or is it cut off?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:32:31.572Z",
+     "text": "Q2: When the face falls far behind on fs-watcher events, do they all wait (the default now in the box), does it get one resync line, or is the face cut off?\n\ncounter-Q\n\nif the faceStream is newline-separated, can the faceStream easily bundle events?\n\nexplain?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:33:08.528Z",
+     "text": "i mean bundle events ouside of face-requests,"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:33:10.359Z",
+     "text": "Yes, easily, and without losing anything.\n\n- Newline-separated means each event is one line of JSON, and the face splits what it receives on newlines. It does not care whether a write carried one line or two hundred.\n- So bundling is just this: when several events are waiting, the queue writes them out together in one go, each still its own whole line. Nothing is merged or dropped; every event arrives as it was made.\n- What it saves is the per-write cost: one write, one trip through the relay, one wake-up of the page, instead of many.\n\nThat answers Q2 better than my three options: when the face falls behind, the waiting fs-watcher events all go out together in the next write; nothing is dropped, nobody is cut off, and the face catches up in one step. Put that in the box?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:33:48.609Z",
+     "text": "In the box (v8): face-request answers go out alone and at once; every other event is bundled, whatever is waiting written together, each its own line, nothing merged or dropped. That answers Q2; clear it when the wording suits you."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:34:25.418Z",
+     "text": "Newline-separated means each event is one line of JSON, and the face splits what it receives on newlines. It does not care whether a write carried one line or two hundred.\nSo bundling is just this: when several events are waiting, the queue writes them out together in one go, each still its own whole line. Nothing is merged or dropped; every event arrives as it was made.\nWhat it saves is the per-write cost: one write, one trip through the relay, one wake-up of the page, instead of many.\n\nyes. into the box."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:35:01.527Z",
+     "text": "Already there (v8), with face-request answers going out alone. Q2 stays open on the item until you clear it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:35:55.893Z",
+     "text": "Q2: When the face falls far behind on fs-watcher events, do they all wait (the default now in the box), does it get one resync line, or is the face cut off?\n\ni dont get this Q"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:36:16.209Z",
+     "text": "Plainly: Q2 asked what happens when your phone on a slow network cannot take file-change events as fast as your node makes them. Your bundling answers it: the events wait and go out together in the next write, none lost, and the phone is never disconnected for being slow. That is in the box, so Q2 has nothing left to decide; Q2: clear closes it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:36:39.863Z",
+     "text": "surely a resync is more costly that a wait...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:37:00.793Z",
+     "text": "Yes: a resync reloads the whole file view, a wait costs nothing extra. So wait it is, as the box says; the resync idea is dropped. Q2: clear closes it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:37:37.175Z",
+     "text": "green?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:37:45.088Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:38:14.373Z",
+     "text": "Green: settled, open none, box current (v8)."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.14",
+   "title": "Relay: face request as a stream event, and faceStream's pipe",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.13",
+    "goal/G30.12"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Step 1 of goal/G30.10, whose box holds the whole design. The two relay additions, each approved by Andy (Q1 and Q2, 2026-10-21).\n\n- The face request as a stream event: a request from the logged-in face goes into the member's stream as an event (no route, no in-flight slot), carrying an id.\n- faceStream: node-internal, the owner's node to the owner's face, the relay only shovelling bytes both ways. Not a peerPost: no post limit and no size cap. The home node answers a request by an upload tagged with its id, which the relay pipes straight into the waiting face request; a file is its raw data, no base64, no JSON around it. The live updates are one long-running upload, piped into the face's stream the same way.\n- The relay neither seals nor opens faceStream: after login what it pipes is already sealed between the home node and the browser (goal/G30.11).\n- The face opens its own stream to the relay, tied to its login.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Yes to the relay addition: a request from the logged-in face goes into the member's stream as an event?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T01:10:23.067Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Yes to the relay addition faceStream: the home node's uploads piped by the relay into the face, no post limit, no size cap, unsealed on the relay?",
+     "test": "",
+     "state": "cleared",
+     "by": "andy",
+     "at": "2026-10-21T01:11:39.532Z",
+     "placedBy": "claude-windows",
+     "placedKey": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0="
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:08:05.217Z",
+     "text": "this is first. green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:08:56.000Z",
+     "text": "Not yet green: settled otherwise, box current (v1), but two open, the yes the box asks for on each relay addition. They are on the item as Q1 and Q2:\n\n- Q1: a request from the logged-in face goes into the member's stream as an event\n- Q2: faceStream, the home node's uploads piped by the relay into the face, no post limit, no size cap\n\nClear both and it is green."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:09:09.147Z",
+     "text": "Correction: Desk takes one open Q from me per item, so only Q1 is on it now (the face request as a stream event). The faceStream yes follows as the next Q once Q1 is cleared."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:09:13.351Z",
+     "text": "Q1: Yes to the relay addition: a request from the logged-in face goes into the member's stream as an event?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:09:46.902Z",
+     "text": "Thank you, the yes on Q1 is taken. Desk still holds Q1 open until it is cleared (Q1: clear); then I put the faceStream yes as the next Q."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:10:22.139Z",
+     "text": "Q1: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:11:00.339Z",
+     "text": "Q1 is on record as yes. The second, now on the item as Q2: yes to faceStream, the home node's uploads piped by the relay straight into the face, no post limit, no size cap?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:11:18.058Z",
+     "text": "Q2: Yes to the relay addition faceStream: the home node's uploads piped by the relay into the face, no post limit, no size cap, unsealed on the relay?\n\nyes."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:11:38.366Z",
+     "text": "Q2: clear"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:12:05.536Z",
+     "text": "Both yeses in the box (v2). One word on my Q2 wording: unsealed on the relay meant the relay neither seals nor opens faceStream; after login what it pipes is already sealed between your node and the browser, as G30.11 says. The box words it so.\n\nClear Q2 and the item is green for its Go."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T01:12:23.476Z",
+     "text": "Green: settled, open none, box current (v2). Ready for its Go; G30 is in design, so it needs end-design first."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T01:12:28.275Z",
+     "text": "green."
     }
    ]
   }
