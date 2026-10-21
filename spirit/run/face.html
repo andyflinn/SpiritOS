@@ -3,7 +3,9 @@
      THE NEW SHELL IN THE MAKING (goal/G30.9): the lazy-load shell, served by the relay at <face>.<relay host> and by
      the home node at /face.html alike. It has the shell's skeleton (the desktop, the title bar with Back and Home,
      the app screen) on the shell's one sheet, /shell.css, with the face's green after it. Logged out, the desktop is
-     empty but for the login app, which opens at once; its apps load only when opened (face/shell.js). -->
+     empty but for the login app, which opens at once. Logged in, everything else comes from the home node over the
+     sealed link (goal/G30.11; face/seal.js is the node's seal in WebCrypto, face/shell.js says the rest); the not
+     connected mark is the local shell's, and the banner line carries what the face must say (unsealed, another device). -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -13,6 +15,7 @@
   <link rel="stylesheet" href="/face/face.css" />
 </head>
 <body>
+  <div id="face-banner" hidden></div>
   <div id="desktop"></div>
 
   <div id="app-container" hidden>
@@ -20,10 +23,12 @@
       <button id="app-close" type="button" title="Back">⬅️</button>
       <button id="app-home" type="button" title="Home">🏠</button>
       <div id="app-title"></div>
+      <span id="app-offline" title="This face cannot reach its home node right now; it reconnects by itself" hidden>not connected</span>
     </div>
     <div id="app-content"></div>
   </div>
 
+  <script src="/face/seal.js"></script>
   <script src="/face/shell.js"></script>
 </body>
 </html>

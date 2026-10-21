@@ -477,7 +477,7 @@ function createPresence(opts) {
         else if (msg.event === 'request') router.onRequest(url, msg.data);
         else if (msg.event === 'reply') router.onReply(msg.data);
         else if (msg.event === 'face' && onFace) { try { onFace(url, msg.data); } catch (e) { /* one request, refused alone */ } }
-        else if (msg.event === 'face-open' && onFaceOpen) { try { onFaceOpen(url); } catch (e) { /* the face waits */ } }
+        else if (msg.event === 'face-open' && onFaceOpen) { try { onFaceOpen(url, msg.data); } catch (e) { /* the face waits */ } }
         else if (msg.event === 'face-close' && onFaceClose) { try { onFaceClose(url); } catch (e) { /* already gone */ } }
         // A RELAY TELLING ITS OWNER HOW IT IS DOING. Only a relay this
         // node OWNS ever sends one — the rule is enforced at the far end,

@@ -409,7 +409,8 @@ function isRelayPublicPath(method, pathname) {
 const FACE_DIR = path.join(__dirname, '..', 'face');
 // /shell.css is the shell's one sheet, served at the path the node serves it too, so face.html works on both
 // (goal/G30.9, box v16); face.css turns its colours green.
-const FACE_FILES = { '/shell.css': '../shell.css', '/face/face.css': 'face.css', '/face/shell.js': 'shell.js', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
+// face.html's own parts and the login app, nothing else (goal/G30.11): everything after login comes from the home node.
+const FACE_FILES = { '/shell.css': '../shell.css', '/face/face.css': 'face.css', '/face/shell.js': 'shell.js', '/face/seal.js': 'seal.js', '/face/login/login.js': 'login/login.js', '/face/login/login.json': 'login/login.json' };
 const FACE_TYPES = { '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 function faceCookie(req) {
   const m = /(?:^|;\s*)spirit_face=([A-Za-z0-9_-]+)/.exec(String(req.headers.cookie || ''));
@@ -478,7 +479,8 @@ function faceDoor(req, res, url, pathname) {
   if (req.method === 'GET' && pathname === '/face/stream') {
     res.writeHead(200, { 'Content-Type': 'application/x-ndjson; charset=utf-8', 'Cache-Control': 'no-store' });
     // ?here=1 is the face's Connect here press (goal/G30.12): it moves the stream from another device.
-    const said = relay.faceOpen(faceCookie(req), res, { here: url.searchParams.get('here') === '1' });
+    // ?key= is the face's sealing key (goal/G30.11), handed to the home node in face-open.
+    const said = relay.faceOpen(faceCookie(req), res, { here: url.searchParams.get('here') === '1', key: url.searchParams.get('key') || '' });
     if (!said.ok) res.end(JSON.stringify({ type: 'refused', status: said.status, code: said.code || '', error: said.error }) + '\n');
     return true;
   }

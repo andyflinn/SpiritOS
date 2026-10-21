@@ -2,8 +2,9 @@
 // THE FACE'S LOGIN APP (goal/G30.9), the counterpart of the node's Join app, drawn as Join draws: every step a bullet,
 // done ones ticked, the open one expanded with its form. It draws what the shell hands it (onSteps: the facts, the
 // open step, the done steps) and decides nothing. One field, Log in: it takes the member's verified email or the token
-// from the mail, and the page never says which it got. After login: waiting for plumbing, and Log out (on the face;
-// on the home node its owner is logged in and there is nothing to log out of).
+// from the mail, and the page never says which it got; it says that a relay owner who swaps face.html or this app could
+// read what the face shows (goal/G30.11). After login: the home node, reached sealed or not (the shell decides and hands
+// it over), and Log out (on the face; on the home node its owner is logged in and there is nothing to log out of).
 
 (function () {
   var api = null;
@@ -54,13 +55,23 @@
       document.getElementById('face-login-go').addEventListener('click', go);
       document.getElementById('face-login-field').addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
     }
-    var plumbing = document.getElementById('face-step-plumbing');
-    if (plumbing) {
-      plumbing.innerHTML =
-        '<div class="job-manifest-note">Logged in as ' + escape(h.facts.face) + '. Waiting for plumbing: reaching your home node comes next.</div>' +
+    // The last step stays drawn once done: who is logged in, how the home node is reached, and Log out.
+    var last = steps[steps.length - 1];
+    var linkStep = document.getElementById('face-step-link');
+    if (!linkStep && last && last.until === 'link' && h.done[steps.length - 1]) {
+      pane.querySelector('.join-steps').insertAdjacentHTML('beforeend', '<li class="stat-tile wide"><div id="face-step-link"></div></li>');
+      linkStep = document.getElementById('face-step-link');
+    }
+    if (linkStep) {
+      var how = h.facts.home ? 'This is your home node.'
+        : !h.facts.up ? 'Your home node is not connected; this face reconnects by itself.'
+        : h.facts.sealed ? 'Connected to your home node over a sealed link.'
+        : 'Connected to your home node unsealed: this browser cannot seal, so your traffic is readable on the relay.';
+      linkStep.innerHTML =
+        '<div class="job-manifest-note">Logged in as ' + escape(h.facts.face) + '. ' + escape(how) + '</div>' +
         (h.facts.home ? '' : '<div class="start-job-form card"><button type="button" id="face-logout">Log out</button></div>');
       var out = document.getElementById('face-logout');
-      if (out) out.addEventListener('click', function () { api.post('logout').then(api.refresh, api.refresh); });
+      if (out) out.addEventListener('click', function () { api.post('logout').then(function () { window.location.reload(); }, api.refresh); });
     }
   }
 

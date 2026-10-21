@@ -10,3 +10,7 @@
   --shell-accent-strong: #167a44;
   --shell-link: #8effb6;
 }
+
+/* What the face must say (goal/G30.11): unsealed, open on another device, taken. */
+#face-banner { display: flex; gap: 8px; align-items: center; padding: 6px 12px; background: #b00020; color: #fff; font-size: 13px; }
+#face-banner[hidden] { display: none; }

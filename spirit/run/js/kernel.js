@@ -70,6 +70,11 @@ spirit.keyTail = function (publicKey) {
 // disagreed about which they wanted and a caller picking a helper by
 // return shape picks wrong eventually.
 spirit.core.ask = function (verb, args, base) {
+  // ON A FACE (goal/G30.11) the page is not on its node: the face shell sets window.spiritTransport, and every ask goes
+  // through it, over the sealed link to the home node.
+  if (!base && typeof window !== 'undefined' && window.spiritTransport && typeof window.spiritTransport.ask === 'function') {
+    return window.spiritTransport.ask(String(verb), args || {});
+  }
   const payload = { verb: String(verb) };
   if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
   return fetch((base || '') + '/api/spirit', {
@@ -1108,6 +1113,8 @@ if (isNode()) {
   spirit.core.jobs = {
     subscribe: function(handlers) {
       handlers = handlers || {};
+      // ON A FACE (goal/G30.11) the events come down the face's own stream, which the face shell holds.
+      if (window.spiritTransport && typeof window.spiritTransport.events === 'function') return window.spiritTransport.events(handlers);
       // THE STREAM COMES BACK BY ITSELF, AND SAYS WHEN IT IS DOWN. Andy,
       // 2026-09-30, cut off from both agents after his node restarted:
       // "this should work without a hickup." A browser retries an

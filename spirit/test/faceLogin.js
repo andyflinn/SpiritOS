@@ -11,7 +11,8 @@
 //   - The relay decides the login and sends the mail: the token alone, and a link to <face>.<relay host>/?<token>.
 //   - The token is used once and is good for 10 minutes, with the join's caps: one a minute, five an hour per face.
 //   - A login is a cookie for that face host, valid until 7 days after the last interaction; Log out ends it.
-//   - After login the login app says "waiting for plumbing".
+//   - After login the login app says "waiting for plumbing". (Superseded by goal/G30.11: "After this item the face shell
+//     is no longer waiting for plumbing". The second step is the link to the home node, checked below as that.)
 //   - Certificates, DNS and Caddy on the relay box come from scripts in ./bash.
 // NAMED HERE where the box names none:
 //   - relay-state/face.json { "domain": "<relay host>" }, placed by the owner as mail.json is (bash/face-setup writes
@@ -159,9 +160,9 @@ try { loginManifest = JSON.parse(fs.readFileSync(path.join(RUN, 'face', 'login',
 const loginApp = code('face/login/login.js');
 const faceHtml = code('face.html');
 const faceShell = code('face/shell.js');
-if (loginManifest && Array.isArray(loginManifest.steps) && loginManifest.steps.map(function (s) { return s.until; }).join(',') === 'login,plumbing'
-    && /onSteps:/.test(loginApp) && /waiting for plumbing/i.test(loginApp) && /Log in/.test(loginApp) && (loginApp.match(/<input/g) || []).length === 1)
-  test.check('the login app is a steps app (login, then plumbing): one field, Log in, and after login it says waiting for plumbing');
+if (loginManifest && Array.isArray(loginManifest.steps) && loginManifest.steps.map(function (s) { return s.until; }).join(',') === 'login,link'
+    && /onSteps:/.test(loginApp) && /home node/i.test(loginApp) && /Log in/.test(loginApp) && (loginApp.match(/<input/g) || []).length === 1)
+  test.check('the login app is a steps app (login, then the link to the home node): one field, Log in, and after login it says how the home node is reached');
 else test.fail(OWED + 'the login app: manifest ' + short(loginManifest) + ', or its field, words or onSteps');
 if (/face\/shell\.js/.test(faceHtml) && /\.onSteps\(/.test(faceShell) && /'state'/.test(faceShell) && /get\('app'\)|location\.search/.test(faceShell))
   test.check('face.html boots the face shell, which asks the relay where the user stands and hands it to the login app');
@@ -199,7 +200,7 @@ if (/href="\/shell\.css"/.test(fh) && /href="\/face\/face\.css"/.test(fh) && /id
 else test.fail(OWED + 'face.html is not the shell\'s skeleton on the shared sheets');
 const fs2 = code('face/shell.js');
 const la = code('face/login/login.js');
-if (/app-icon/.test(fs2) && /!state\.loggedIn|!\(state && state\.loggedIn\)|loggedIn === false/.test(fs2) && /openApp\(\)/.test(fs2)
+if (/app-icon/.test(fs2) && /!state\.loggedIn|!\(state && state\.loggedIn\)|loggedIn === false/.test(fs2) && /openLogin\(\)/.test(fs2)
     && /join-steps/.test(la) && /stat-tile wide/.test(la) && /start-job-form card/.test(la) && /field-label/.test(la))
   test.check('the face shell opens the login app at once when logged out, and the login app draws its steps as Join does');
 else test.fail(OWED + 'the face shell does not open the login app at once, or the login app does not draw as Join');

@@ -22,11 +22,19 @@
 // A request { get: path } is a file, served by the node's own GET (serveFile, the gate the browser's GET passes);
 // any other is { verb, ...args } through call (nodeDoor.call, the puppeteer's door).
 
+// THE SEALED LINK (goal/G30.11). A face that can seal (face/seal.js, the node's own seal in WebCrypto) makes one key for
+// its session and sends each request as { sealed: 1, e, n, c, k }, sealed from its key k to this node's key; the answer
+// is ndjson, each line sealed from this node to k: first { status, type }, then the body in pieces of FACE_PIECE bytes,
+// each piece's text its bytes in base64. Its stream is sealed to k line by line, k handed over by face-open. A face
+// that cannot seal is answered as before, unsealed; it was warned that the relay can read it.
+
 const http = require('http');
 const https = require('https');
 const auth = require('./relayAuth');
+const seal = require('./seal');
 
 const FACE_PRIORITY = { fs: 2, presence: 3, app: 4, stats: 5 };
+const FACE_PIECE = 64 * 1024;
 
 // What a face may not ask its home node (the box: "minus the email and face changes with the relay"). The email is
 // set by relay.join, the face name by relay.face, which posts { face } to the relay; a peer.post carrying { face }
@@ -47,7 +55,8 @@ function faceRefuses(request) {
 // THE SERIALIZING QUEUE. One write at a time on the sink; an event pushed while the sink is free is written at once,
 // one pushed while it is busy waits, and everything waiting goes out together in the next write, in priority order.
 // Stats are dropped whenever the queue is busy.
-function createFaceQueue(sink) {
+function createFaceQueue(sink, encode) {
+  const outLine = typeof encode === 'function' ? encode : function (line) { return line; };
   let waiting = {};
   let busy = false;
   function anyWaiting() { return Object.keys(waiting).length > 0; }
@@ -64,7 +73,8 @@ function createFaceQueue(sink) {
   function push(priority, event) {
     if (priority === FACE_PRIORITY.stats && (busy || anyWaiting())) return false;
     let line = '';
-    try { line = JSON.stringify(event); } catch (e) { return false; }
+    try { line = outLine(JSON.stringify(event)); } catch (e) { return false; }
+    if (!line) return false;
     (waiting[priority] = waiting[priority] || []).push(line);
     flush();
     return true;
@@ -120,12 +130,47 @@ function createFaceHome(opts) {
     res.end(JSON.stringify(body));
   }
 
+  // An answer sealed to the face's key k: the head as the first sealed line, then the body in sealed pieces as it is
+  // written. The relay sees one ndjson answer, status 200, and reads none of it.
+  function sealedInto(res, k) {
+    const me = o.identity();
+    let held = Buffer.alloc(0);
+    function line(text) { return JSON.stringify(seal.seal(k, me.publicKey, k, text)) + '\n'; }
+    function pieces(final) {
+      while (held.length >= FACE_PIECE || (final && held.length)) {
+        const piece = held.subarray(0, FACE_PIECE);
+        held = held.subarray(piece.length);
+        res.write(line(piece.toString('base64')));
+      }
+    }
+    return {
+      writeHead: function (status, headers) {
+        const h = headers || {};
+        res.writeHead(200, { 'Content-Type': 'application/x-ndjson' });
+        res.write(line(JSON.stringify({ status: status || 200, type: String(h['Content-Type'] || h['content-type'] || 'application/octet-stream') })));
+        return this;
+      },
+      write: function (chunk) { held = Buffer.concat([held, Buffer.from(chunk)]); pieces(false); return true; },
+      end: function (chunk) { if (chunk) held = Buffer.concat([held, Buffer.from(chunk)]); pieces(true); res.end(); },
+    };
+  }
+
   function request(url, data) {
     const d = data || {};
     const id = String(d.id || '');
     if (!id) return;
-    const r = d.request || {};
-    const res = answerInto(url, id);
+    let r = d.request || {};
+    let res = answerInto(url, id);
+    if (r.sealed === 1) {
+      const k = String(r.k || '');
+      const me = o.identity();
+      const got = k ? seal.open(me.sealPrivateKey, k, me.publicKey, r) : null;
+      let inner = null;
+      try { inner = got ? JSON.parse(got.text) : null; } catch (e) { inner = null; }
+      if (!inner || typeof inner !== 'object') { json(res, 400, { ok: false, code: 'not-opened', error: 'the sealed request did not open' }); return; }
+      r = inner;
+      res = sealedInto(res, k);
+    }
     const no = faceRefuses(r);
     if (no) { json(res, 403, { ok: false, code: 'not-from-the-face', error: no }); return; }
     if (typeof r.get === 'string') { o.serveFile(r.get.replace(/^\/+/, ''), res); return; }
@@ -178,11 +223,15 @@ function createFaceHome(opts) {
 
   // The face opened: one long upload, and first what a loopback shell gets on connect, the tree as commands (server.js
   // handleSseConnection), presence peer by peer, the app servers' objects.
-  function open(url) {
+  // k is the face's key from face-open: given, every line is sealed to it; absent, the face could not seal.
+  function open(url, k) {
     close(url);
     const req = upload(url, '/api/relay/face/stream', signed(url, 'stream'));
     if (!req) return;
-    const face = { req: req, queue: createFaceQueue(req) };
+    const key = String(k || '');
+    const me = key ? o.identity() : null;
+    const encode = key ? function (line) { return JSON.stringify(seal.seal(key, me.publicKey, key, line)); } : null;
+    const face = { req: req, queue: createFaceQueue(req, encode) };
     faces[url] = face;
     if (typeof req.on === 'function') {
       req.on('error', function (e) { say('face: the stream to ' + url + ' failed: ' + e.message); });
@@ -217,5 +266,5 @@ function createFaceHome(opts) {
 }
 
 module.exports = {
-  createFaceHome: createFaceHome, createFaceQueue: createFaceQueue, faceRefuses: faceRefuses, FACE_PRIORITY: FACE_PRIORITY,
+  createFaceHome: createFaceHome, createFaceQueue: createFaceQueue, faceRefuses: faceRefuses, FACE_PRIORITY: FACE_PRIORITY, FACE_PIECE: FACE_PIECE,
 };

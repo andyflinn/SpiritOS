@@ -4236,7 +4236,8 @@ function createRelay(rootDir, deps) {
       if (entry.source) { try { entry.source.unpipe(sink); } catch (e) { /* gone */ } }
       presentNow.send(key, 'face-close', {});
     });
-    presentNow.send(key, 'face-open', {});
+    // The face's sealing key, when it has one (goal/G30.11): the home node seals this stream to it.
+    presentNow.send(key, 'face-open', { key: String((opts && opts.key) || '') });
     return { ok: true, status: 200 };
   }
   // The home node's long upload of the face's live updates, piped into the face's open stream as it arrives. A new
