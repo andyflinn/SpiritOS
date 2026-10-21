@@ -1,5 +1,5 @@
 {
- "change": 79611,
+ "change": 80891,
  "line": 8510,
  "goal": "goal/G30",
  "items": [
@@ -10,11 +10,13 @@
    "status": "goal run passed",
    "with": "",
    "buttons": [
-    "done",
+    "go-all",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G30.16"
+   ],
    "codeOffered": false,
    "go": false,
    "alone": false,
@@ -45,7 +47,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 3,
    "excluded": [
     "ollama agent node"
    ],
@@ -12326,6 +12328,524 @@
      "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
      "at": "2026-10-21T07:21:43.221Z",
      "text": "we'll continue later. i have to take care of a few other things.\n\n- i like your proposed approach.\n- inventory first.\n- then component (shell-element) construction and naming conventions.\n- then rebuild contacts and natterDetails with the new shell elements, or we do those apps and the elements in parallel.\n\ni'll click on done for this item, take a few hours, then return to start the long journey of re-building a shell that works anywhere...\n\nI am very pleased with the progress made in the last 24 hours.\n\nThanks. TTYL."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T07:22:08.187Z",
+     "text": "Thank you. Noted for when you are back, in your order: the inventory, then the elements and their naming, then Contacts and Relay Details on them. Nothing starts before you open it. Listening."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.16",
+   "title": "Giving Face to \"Files\", TextViewer and MediaViewer.",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30"
+   ],
+   "blocked": [
+    "goal/G30.17",
+    "goal/G30.18"
+   ],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "andy",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "I want to give face the Files and the two Viewer, so i can examine the workings of fs-watcher and the generic viewers\n\n- Files shell app (basically a shell-element)\n- textViewer / launcher (becomes shell-element)\n- mediaViewer (becomes shell-element)\n- this include also the codeMirror display of text Files. (becomes shell-element)\n\n- this time, i want to try the following: every table-row is a shell-element of type \"file\"\n\n- there will be a shell element caller fileViewer, and two elements based on the fileViewer, the textViewer and the mediaViewer\n- the fileViewer brings with it: annotationManager, and fStatViewer.\n\njust a little preview of how this might be structured.\n- A file element owns its value fields (name, size, changed, kind); a field that changes redraws only its cell.\n- The file list is the standard list-tool, shell/js/probabilitySearch.js (goal/G30.17), given the file fields as its columns.\n\nChallenges:\n- making a list of file-elements look like a table with consistent cell-widths?\n- having every fileElement listen for changes in it's size, or changes in it's associated fStat-element?",
+   "version": 8,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T09:39:57.187Z",
+     "text": "thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T09:40:17.966Z",
+     "text": "Read. What stands in the way today:\n\n- The two viewers are not apps: they live inline in the old shell's index.html (text-file-launcher, the media viewer), and the face never loads that part.\n- Files leans on the old shell: its file-type helpers (mimeTypeForName, classifyMimeType, CATEGORY) and the file selector, which reads the old shell's file tree.\n- The text editor reads and writes its file synchronously, which the face cannot do.\n- CodeMirror loads only when an app asks for it; the face has to fetch it on that first ask.\n\nThis fits the rule from G30.15: the file tree as an element fed by the fs-watcher stream, the viewers as elements of their own.\n\nOne question shapes the item: do the viewers move out of index.html into shell elements, used by the old shell and the face alike?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T09:52:51.065Z",
+     "text": "mote thoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T09:53:34.076Z",
+     "text": "Thoughts, on your two challenges and around them:\n\n- A table that is a list of elements: the list element owns one table and its columns; each file element draws its own row into it. The table keeps the widths consistent, and the rows stay separate elements. (A CSS grid where each row lays its cells into the parent's columns does the same, if a table feels wrong.)\n- Every row listening for itself, without a thousand stream handlers: one dispatcher on the fs-watcher stream, keyed by path. A file element registers its path and hears only the events for that path. Each still listens itself; the lookup costs the same at 10 rows or 10,000.\n- The stat is already on the stream: every fs-watcher event carries the path, the change, the size and when it changed. So the fStatViewer needs no request of its own; it is fed by the same event as its row.\n- Rows come and go (search, scrolling), so every element needs a 'gone' step that drops its listener. The shell has no unmount today, and Contacts already works around that. A proper element lifecycle (mount, listen, leave) is the first piece to build.\n- The annotationManager: annotations are read synchronously today. It needs an async read and, under your rule, should listen for annotation changes too.\n- The face already gets the whole tree as fs-watcher commands at face-open, so Files on the face has its data from the first second.\n\nThe lifecycle and the dispatcher are what every later element stands on."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T09:57:37.298Z",
+     "text": "hmmm how about: the file has a set of value-fields and the search-list is given a mapping of which fields belong into which column?\n\nthe if the list/table is configured that way, it will implicitly define column headers, and make the column headers sort-triggers?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T09:58:25.239Z",
+     "text": "I like it. It replaces what each app writes by hand today: listSearch takes a header row and a paint function per app, and a mapping does both.\n\n- The file element owns its value fields (name, size, changed, kind). A field that changes redraws only its cell.\n- The list gets the mapping (field, column label, maybe width or alignment), and draws the headers from it.\n- A header press sorts by its field, a second press reverses.\n\nOne choice in the sorting: the list only holds what the search brought (the bucket, cut at one answer with 'more'). Sorting what is loaded is instant but can miss rows it doesn't have; asking the server to sort is complete but costs a round trip. Which, for a header press: sort what's loaded, or ask the server?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:00:30.666Z",
+     "text": "when the search field contains a value, column sort is disabled, when the search field is empty, the cached rows can be arranged using column-sort and the search filters combined."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:01:16.948Z",
+     "text": "In the box (v4): the value fields, the column mapping with headers as sort triggers, and sorting only when the search field is empty, combined with the filters."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:14:55.485Z",
+     "text": "the column sort is only a fancy real-time tool affecting cached rows. server side you'd need to have indices to support that... nah.\n\n- search is row/data acquisition (with filters included)\n- sorting is data-viewing from different perspectives (with filters)\n\n- i have a string dislike for searches that cut of a list when there's is only 0.0 probability rows left, may as well fill the bucket with all ya got.\n\nOh, and I'm pretty damn shocked i cannot find a searchBucketElement in shell/js/ we will definitely use one for files and contacts. it will be that element that facilitates the generic parts of filter/search/sort in search-result-tables."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:15:59.593Z",
+     "text": "In the box (v6): search acquires, sorting views; sort client-side only; no cut-off at zero probability; one search-bucket element in shell/js/ for Files and Contacts.\n\nOn the shock: it half exists, under another name and folder. shell/shared/js/listSearch.js (shellCreateListSearch) already does filters, the probability bucket and a row cache by key. peerFind, the contact selector, the file selector and the app-server and api-branch selectors use it; Desk's List and Files do not.\n\nSo I'd grow that one into the search-bucket element (moved to shell/js/, given the column mapping and the client-side sort) rather than write a second. Agreed?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:16:40.065Z",
+     "text": "Correction to my list: listSearch is used by more than I named. Also Chatter, Grants, Jobs and the Fallout plugin. Desk's own List and Files really do not."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:18:18.265Z",
+     "text": "no cut-off at zero probability is very important server-side, if you got a bucket , fill it, the client-side, the browser is better of with too much data than too little, i do like how the probabilites show up in searched lists. where is that element anyways, the one that does all that fancy probability-decorating?"
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T10:18:19.285Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:19:17.897Z",
+     "text": "In the box (v7): server-side above all, a bucket is filled with all there is.\n\nThe probability decorating is the same element: shell/shared/js/listSearch.js. It keeps every row any search brought, scores each one against your words as you type (probabilityStringObjectMatch), marks the matching letters, and draws the match bar beside the row. So it is already most of the search-bucket element; what it lacks is the column mapping and the column sort."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:23:21.364Z",
+     "text": "we'll create a finished intrinisic variety in shell/js probabilitySearch, stealing from the one in shell/shared/js/ what is a good idea, and integrate it with the new concepts we're discussing here.\n\nadd item, blocking this one: \"shell/js/probabilitySearch.js Standard shell list-tool\" or similar."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:24:45.066Z",
+     "text": "Added goal/G30.17, blocking this one: shell/js/probabilitySearch.js, the standard shell list-tool. The search and sort rulings moved into its box; this box points to it."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:25:26.660Z",
+     "text": "add item, just ONE item, blocking this one: \"elements for single-file and single contact\""
+    },
+    {
+     "by": "desk",
+     "key": "",
+     "at": "2026-10-21T10:25:27.743Z",
+     "text": "message delivered, claude-windows busy"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:25:58.172Z",
+     "text": "Added goal/G30.18, blocking this one: elements for a single file and a single contact. Its box is empty for you."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.17",
+   "title": "shell/js/probabilitySearch.js: the standard shell list-tool",
+   "goal": "goal/G30",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.16"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "The standard shell list-tool: shell/js/probabilitySearch.js, a finished intrinsic shell element. Files and Contacts both use it. Apps not yet ported into the new shell keep using shell/shared/js/listSearch.js until none does; then it is deleted.\n\nWHAT WE TAKE FROM shell/shared/js/listSearch.js\n- Rows kept by key, every row any search brought, in one unbounded probability bucket; a later answer replaces a row with the same key.\n- Ranking as you type: every row scored by probabilityStringObjectMatch against the words, times every filter's test; best on top.\n- The matched letters marked in the row, and the match bar beside it.\n- One call on the wire at a time, no typing pause; the latest words go the moment the answer returns.\n- Filters declared by the app and drawn by the element, toggles included.\n\nWHAT WE ADD\n- A column mapping: which value field of a row goes in which column. It defines the column headers, and a header is a sort trigger.\n- Column sort, client-side only, on the cached rows, combined with the filters; the server keeps no sort indexes.\n- Search is row and data acquisition, with its filters; sorting is viewing the cached rows from different perspectives.\n- No count line: the list says neither how many match nor that more exist.\n- No cut-off: a search never stops where only zero-probability rows are left. Server-side above all, a server fills its bucket with all it has; the browser is better off with too much data than too little.\n\nTHE CONFIGURATION OBJECT\n- api, server, verb: where the rows come from (the server searched, its stream, its search verb).\n- args(text, filters): the verb's arguments.\n- columns: [{ field, label, width, align, sort }]: the column mapping; sort says how a field compares (text, number or date). Replaces head and paint.\n- element(row): optional, the shell element that draws a row when a row is more than its fields (a file, a contact).\n- filters, matched(row, filters), score(row, filters), rows(), fold(row, key), empty: as in listSearch.\n- Returns { refresh, redraw, words(), ask(verb, args), sort(field, direction), destroy }.\n\nBEHAVIOUR, AND WHAT SHAPES IT\n- The server's answers only feed the cache. While a search is out the words keep changing, so the server never knows the current words; what the list shows is always ranked from the cache against the words as they stand now.\n- Text in the search field: column sort is off; the ranking orders the list (columns and filters say what is matched).\n- The field empty: the cached rows stand in rows() order, or the order they came; a header press sorts by its column's field, a second press reverses; filters still apply.\n- A change to a row's value field, heard on its server's stream, redraws that row's cells only.\n- destroy drops every listener, so a list that leaves the screen leaves nothing behind.",
+   "version": 5,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:30:19.519Z",
+     "text": "structure the box in blocks\n\n- what we steal from shared/list search\n- what we add\n- configuration object definition\n- behavior, and how it's influenced by configuration object elements \n\nor similar"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:31:17.992Z",
+     "text": "Box restructured in your four blocks.\n\nThe configuration block is my proposal, built from what listSearch takes today: columns and element(row) are the new parts, the rest carries over. Cut or change anything there."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:37:01.149Z",
+     "text": "why the count-line? explain the actual need? it reminds me of the old days of information must be complete and pageable...\n\nwhy?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:37:26.096Z",
+     "text": "There is no real need; I carried it over from listSearch (its G29.4 box) without asking.\n\nThe only useful part: one answer has a size cap, so the list may not hold everything the server has. A small sign that it held back more tells you that narrowing the words could bring what's missing. The count itself is the pageable thinking you mean.\n\nDrop the count and keep only that small 'there is more' sign, or drop both?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:37:52.937Z",
+     "text": "drop it."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:38:29.514Z",
+     "text": "Dropped, all of it (box v4): no count, no more-sign. Say if you want the more-sign back."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:39:36.486Z",
+     "text": "think of it like this: while the server-side scrambles to find matches.... the client has already typed or deleted a bunch of characters in the search string, the server will never know what the current search expression looks like...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:40:28.091Z",
+     "text": "Yes: any number from the server describes words that are already gone. In the box, first line of Behaviour: the server's answers only feed the cache, and the list is always ranked from the cache against the words as they stand now."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:41:22.093Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:41:45.481Z",
+     "text": "Not yet: one open question.\n\nYour rule is that what replaces a mechanism deletes the old one. listSearch has ten users today: peerFind, the contact, file, app-server and api-branch selectors, Chatter, Grants, Jobs, the Fallout plugin, and Contacts through peerFind.\n\nDoes this item move all ten onto probabilitySearch and delete listSearch, or only Files and Contacts now, with the rest as their own items?\n\nAnd a note: the configuration block is my proposal; your silence on it so far I read as no objection."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:43:17.328Z",
+     "text": "that's why we make a new one, intrinsic in shell/js, applications not yet ported into the new shell can use the old one, until the old one is no longer used and can be killed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:44:05.085Z",
+     "text": "In the box: the old one stays for the apps not yet ported, and is deleted once none uses it.\n\nGreen: settled, open none, box current (v5)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:44:42.363Z",
+     "text": "we will also consider, for the new shell, how elements act on a cell phone, when only touch and swipe are available."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:45:21.778Z",
+     "text": "Noted. For this element it would mean:\n\n- A tap on a header sorts, a second reverses; a tap on a row opens it.\n- Nothing depends on hover or a keyboard: what a hover title says today (the match bar, a mark) has to be readable without it.\n- Swipe stays free for now; later it could carry a row's actions (add, remove).\n\nAs a line in this box: 'Every action works by touch alone; nothing depends on hover or a keyboard.' Add it?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:46:56.895Z",
+     "text": "once we have contacts and files, we will iterate shell, \"your Home Node\", contacts, files, and viewers, to work on both, cell phones and desktops."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:47:26.529Z",
+     "text": "Understood: not in this box. Phones and desktops come as their own pass once Contacts and Files stand, over the shell, Your home node, Contacts, Files and the viewers together."
+    }
+   ]
+  },
+  {
+   "id": "goal/G30.18",
+   "title": "Elements for a single file and a single contact",
+   "goal": "goal/G30",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "delete"
+   ],
+   "blocking": [
+    "goal/G30.16"
+   ],
+   "blocked": [],
+   "codeOffered": true,
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "creator": "claude-windows",
+   "claimCommit": "",
+   "redCommit": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "names": {
+    "claude-windows": "claude-windows"
+   },
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "DRAFT. Elements for a single file and a single contact: two rowElements (element groups), fileElement and contactElement, in shell/js/rows/ (shell/js/rows/fileElement.js, shell/js/rows/contactElement.js). They carry the listeners and painters a subject needs for real-time updates, wherever the element is used: a list row and a details panel show the same element, so nothing has to keep the two in sync.\n\nThey are rowElements, the complementary shell elements to probabilitySearch (goal/G30.17): the shape that is ideal for its rows. The family: fileElement and contactElement in this item; jobElement and goalElement later, out of scope here.\n\nTHE CONTRACT EVERY rowElement MEETS (this pair is its first; probabilitySearch knows only this shape)\n- Made from one row of a search answer; a key; its fields in order; a listener on its subject; destroy.\n- expandInfo: fetches what is too large for a row, when it is wanted: long text, descriptions, attached lists, fan-out data. A row and a details header use the element's fields; a details screen asks expandInfo for the rest.\n- shell/js/rowElement.js holds what every row element shares, and fileElement and contactElement inherit from it: each hands in only its own subject, fields, stream and expandInfo. rowElement does the shared work once: paints each field into its cell, registers the one listener with the stream dispatcher, drops it on destroy, runs expandInfo and keeps its answer. Inheriting is plain: rowElement.create(parts) builds the element from the parts fileElement or contactElement hands in; no class chains.\n- The stream dispatch lives per kind, in the element's own file: fileElement.js holds one stream subscription for all file rows and an index by path, contactElement.js one for all contact rows indexed by key. A row registers its subject there on create and leaves on destroy; rowElement only gives that register-and-leave helper. There is no separate dispatcher.\n- A rowElement carries its actions (add, block, remove, open), so a row and a details screen offer the same ones.\n- Fan-outs: an element may carry references to the elements that hang off its subject, such as a chatElement when the subject has a chat.\n\nTHE SHAPE OF A rowElement\n- An item is a listener and its fields, in order:\n  { listener, fields: [ { name, fieldRule, painter, editor } ] }\n- listener: one per item (usually per row). It hears the stream events about its subject and hands each changed field to that field's painter; it is dropped when the item leaves the screen.\n- fieldRule: the field's rule from js/fieldRules.js, the one definition both sides of the wire use (bytes, not characters). An editor checks it before taxing the wire.\n- painter: draws the field's value. A changed field repaints only itself.\n- editor (only where the value may be changed): asks the server for the change and never paints the result; the confirmed change, broadcast on the stream, repaints the field everywhere it is shown. Editors are for the item's details dialog; a list row usually shows its fields without them.\n\nfileElement\n- Subject: one file or folder, by its path.\n- Fields: icon (by its kind and type), name, size, changed. Fed by the fs-watcher's events for that path, which carry the size and the time of change.\n\ncontactElement\n- Subject: one contact, by its key.\n- Fields: presence (the dot), status (owned, blocked, held), label (editable: the rename).\n- Fed by the presence events for that key and the contact's own changes (a rename, a block).\n\nIN A LIST\n- probabilitySearch (goal/G30.17) takes an item's fields as its columns: the column mapping names the item's fields, and each cell is that field's painter.",
+   "version": 10,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:58:01.773Z",
+     "text": "fill the box with a draft.\n\nwe create two \"itemElements\"\n\nmaybe they're better thought of as: element groups.\n\nthese fileItem and contactItem might be structured as follows:\n\nand array of objects, one for each field in a fileRow, or contactRow, \n\nitemRow (listeners usually at row-level)\n{\n    listener:listener,\n    icon1:{\n        fieldRule:object,\n        painter:painter,\n    },\n    label:{\n        fieldrule:object,\n        painter:labelPainter,\n        editor:labelEditor,\n    }\n}\n\n\nthaoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T10:58:58.673Z",
+     "text": "Draft in the box. Thoughts on your sketch:\n\n- I like 'element group': the item is the unit that listens, its fields are the units that paint. One listener per row, not per cell, keeps the stream handlers few.\n- fieldRule already exists as a place: js/fieldRules.js, your one definition for both sides of the wire. Each field points at its rule there rather than carrying its own.\n- The editor asks and never paints. The confirmed change on the stream repaints the field everywhere, which is your face rule from G30.15.\n- Fields as an ordered array rather than named keys (icon1, label): the order is the default column order, and probabilitySearch's column mapping can still pick any of them by name.\n- The same item draws a row and the subject's own screen (Contact, a file's details), with the same painters.\n\nOne question: should the item also carry its actions (add, block, remove, open), so a row and a details screen offer the same ones?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T10:59:47.356Z",
+     "text": "in the list, editors usually won't be used, but int itemDetails dialogs, these will come in handy...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:00:25.528Z",
+     "text": "In the box (v2): editors live in the item details dialog; a row shows its fields without them.\n\nStill open: do items carry their actions (add, block, remove, open)?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:02:06.949Z",
+     "text": "we want to prevent problems like syncing detailPanel contents with ilst-row-contents, these rowElements (fileElement,contactElement) serve the purpose of carrying the listeners and painters needed, for real-time updates, whwerever these elements are used...."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:02:48.463Z",
+     "text": "In the box (v3): that purpose at the top, and your names, fileElement and contactElement. A row and a details panel are the same element, so there is nothing to keep in sync."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:05:57.099Z",
+     "text": "these are meant to be the complimentary shellElements to the new probabilitySearch element.\n\nthink of **itemElements**\n\n- fileElement\n- contactElement\n- jobElement (oos)\n- goalElement (oos)\n\nas the shape that is ideal for use in probabilitySearch \n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:07:02.038Z",
+     "text": "In the box (v4): the itemElements family, two now, job and goal later.\n\nThoughts:\n- One contract every itemElement meets, so probabilitySearch knows a single shape and nothing per app: made from a search row; a key; its fields in order (name, rule, painter, editor); a listener on its subject; destroy. probabilitySearch then takes element: contactElement and the column names, and is done.\n- Each itemElement turns its search answer's row into its fields, so the server's label stays small: the G4.24 rule (rows carry what the list shows) falls out of it.\n- goalElement later is also the cure for Desk's List: Desk on probabilitySearch with goalElement rows.\n\nOne contract for all itemElements, defined in this item?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:15:41.709Z",
+     "text": "i think we're getting there, these elements probably should carry functions like\n\n- expandInfo    ---> fetches large text boxes, descriptions, attached lists, fan-out data, since these elements are primarily to fill lists and Detail-headers, they mights carry references to fan-outs like chatElement (if an item has associated chat) etc...\n\n- this is why i decided to put fileElement and contactElement into the same desk item, so we can have a beginning pair... for an element type. we even might put them all into a sub-folder shell/js/rows/\n\n- shell/js/rows/fileElement\n- shell/js/rows/contactElement"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:16:30.826Z",
+     "text": "In the box (v5): the contract as its own block, with expandInfo and fan-outs, and the folder shell/js/rows/.\n\nOne thought on expandInfo: it fits the G4.24 rule exactly. A row carries what the list shows, and expandInfo is the 'go to details to fetch the rest' half, owned by the element, so every list and every details screen fetch it the same way."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:18:14.858Z",
+     "text": "we can even create shell/js/rowElement.js which prefills row elements with common items.... and have\n\n- shell/js/rows/fileElement\n- shell/js/rows/contactElement\n\n\"enherit\" from shell/js/rowElement.js\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:18:59.305Z",
+     "text": "Yes, that is where the contract lives. In the box (v6).\n\nThoughts:\n- rowElement.js does the shared work once: paints each field into its cell, registers the one listener with the stream dispatcher, drops it on destroy, and runs expandInfo and keeps its answer. fileElement and contactElement only say their subject, their fields and painters, which stream events concern them, and how expandInfo fetches.\n- 'Inherit' as the rest of the shell does it, plainly: rowElement.create(parts) builds the element and fileElement hands in its parts. No class chains to read through.\n\nOne naming question: the box calls the family itemElements, the folder is rows/ and the base rowElement. Call the family rowElements throughout?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:19:57.094Z",
+     "text": "call the family rowElements throughout."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:20:53.398Z",
+     "text": "Done (box v7): rowElements throughout."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:24:14.233Z",
+     "text": "Thoughts:\nrowElement.js does the shared work once: paints each field into its cell, registers the one listener with the stream dispatcher, drops it on destroy, and runs expandInfo and keeps its answer. fileElement and contactElement only say their subject, their fields and painters, which stream events concern them, and how expandInfo fetches.\n'Inherit' as the rest of the shell does it, plainly: rowElement.create(parts) builds the element and fileElement hands in its parts. No class chains to read through.\n\nOne naming question: the box calls the family itemElements, the folder is rows/ and the base rowElement. Call the family rowElements throughout?\n\nYes."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:25:02.924Z",
+     "text": "In the box (v8): what rowElement does once, and rowElement.create(parts)."
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:26:45.147Z",
+     "text": "greenish?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:27:11.240Z",
+     "text": "Greenish, with two points open:\n\n1. Do rowElements carry their actions (add, block, remove, open), so a row and a details screen offer the same ones?\n2. Next: the box leans on a stream dispatcher (one stream listener handing each event only to the element for that path or key), and no item builds it yet.\n\nFirst, 1?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:31:09.250Z",
+     "text": "1. Do rowElements carry their actions (add, block, remove, open), so a row and a details screen offer the same ones?\n- i think yes.\n\n2. Next: the box leans on a stream dispatcher (one stream listener handing each event only to the element for that path or key), and no item builds it yet.\n- i think this item must solve the problem, i get the feeling the stream-dispatch is contact or file specific and needs to be carried  by the fileElement or contactElement since only they know which kind of events they need to listen to....\n\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:31:51.048Z",
+     "text": "1 is in the box (v9): rowElements carry their actions.\n\n2: you're right that only the element knows which events concern it (files by path, contacts by key, presence and renames). One refinement, so a list of 10,000 files doesn't check every event 10,000 times: the dispatch lives per kind, in the element's own file. fileElement.js holds one stream subscription for all file rows and an index by path; contactElement.js one for all contact rows, indexed by key. Each row registers its subject there on create and leaves on destroy; rowElement only gives that register-and-leave helper.\n\nSo this item solves it, and no separate dispatcher exists. Agreed?"
+    },
+    {
+     "by": "andy",
+     "key": "MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=",
+     "at": "2026-10-21T11:32:41.850Z",
+     "text": "agreed."
+    },
+    {
+     "by": "claude-windows",
+     "key": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+     "at": "2026-10-21T11:33:17.350Z",
+     "text": "In the box: the dispatch per kind, no separate dispatcher.\n\nGreen: settled, open none, box current (v10)."
     }
    ]
   }
